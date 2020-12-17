@@ -1,0 +1,60 @@
+# Commands covered:  join
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+test join-1.1 {basic join commands} {
+    join {a b c} xyz
+} axyzbxyzc
+test join-1.2 {basic join commands} {
+    join {a b c} {}
+} abc
+test join-1.3 {basic join commands} {
+    join {} xyz
+} {}
+test join-1.4 {basic join commands} {
+    join {12 34 56}
+} {12 34 56}
+
+test join-2.1 {join errors} {
+    list [catch join msg] $msg $errorCode
+} {1 {wrong # args: should be "join list ?joinString?"} {TCL WRONGARGS}}
+test join-2.2 {join errors} {
+    list [catch {join a b c} msg] $msg $errorCode
+} {1 {wrong # args: should be "join list ?joinString?"} {TCL WRONGARGS}}
+test join-2.3 {join errors} {
+    list [catch {join "a \{ c" 111} msg] $msg $errorCode
+} {1 {unmatched open brace in list} {TCL VALUE LIST BRACE}}
+
+test join-3.1 {joinString is binary ok} {
+  string length [join {a b c} a\0b]
+} 9
+test join-3.2 {join is binary ok} {
+  string length [join "a\0b a\0b a\0b"]
+} 11
+
+test join-4.1 {shimmer segfault prevention} {
+    set l {0 0}
+    join $l $l
+} {00 00}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

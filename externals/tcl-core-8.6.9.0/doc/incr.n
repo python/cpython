@@ -1,0 +1,61 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH incr n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+incr \- Increment the value of a variable
+.SH SYNOPSIS
+\fBincr \fIvarName \fR?\fIincrement\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Increments the value stored in the variable whose name is \fIvarName\fR.
+The value of the variable must be an integer.
+If \fIincrement\fR is supplied then its value (which must be an
+integer) is added to the value of variable \fIvarName\fR;  otherwise
+1 is added to \fIvarName\fR.
+The new value is stored as a decimal string in variable \fIvarName\fR
+and also returned as result.
+.PP
+Starting with the Tcl 8.5 release, the variable \fIvarName\fR passed
+to \fBincr\fR may be unset, and in that case, it will be set to
+the value \fIincrement\fR or to the default increment value of \fB1\fR.
+.SH EXAMPLES
+.PP
+Add one to the contents of the variable \fIx\fR:
+.PP
+.CS
+\fBincr\fR x
+.CE
+.PP
+Add 42 to the contents of the variable \fIx\fR:
+.PP
+.CS
+\fBincr\fR x 42
+.CE
+.PP
+Add the contents of the variable \fIy\fR to the contents of the
+variable \fIx\fR:
+.PP
+.CS
+\fBincr\fR x $y
+.CE
+.PP
+Add nothing at all to the variable \fIx\fR (often useful for checking
+whether an argument to a procedure is actually integral and generating
+an error if it is not):
+.PP
+.CS
+\fBincr\fR x 0
+.CE
+.SH "SEE ALSO"
+expr(n), set(n)
+.SH KEYWORDS
+add, increment, variable, value

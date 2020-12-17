@@ -1,0 +1,801 @@
+# Commands covered:  string
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# This differs from the original string tests in that the tests call
+# things in procs, which uses the compiled string code instead of
+# the runtime parse string code.  The tests of import should match
+# their equivalent number in string.test.
+#
+# Copyright (c) 2001 by ActiveState Corporation.
+# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Some tests require the testobj command
+
+testConstraint testobj [expr {[info commands testobj] != {}}]
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
+
+test stringComp-1.1 {error conditions} {
+    proc foo {} {string gorp a b}
+    list [catch {foo} msg] $msg
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+test stringComp-1.2 {error conditions} {
+    proc foo {} {string}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string subcommand ?arg ...?"}}
+test stringComp-1.3 {error condition - undefined method during compile} {
+    # We don't want this to complain about 'never' because it may never
+    # be called, or string may get redefined.  This must compile OK.
+    proc foo {str i} {
+        if {"yes" == "no"} { string never called but complains here }
+        string index $str $i
+    }
+    foo abc 0
+} a
+
+## Test string compare|equal over equal constraints
+## Use result for string compare, and negate it for string equal
+## The body will be tested both in and outside a proc
+set i 0
+foreach {tname tbody tresult tcode} {
+    {too few args} {
+	string compare a
+    } {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"} {error}
+    {bad args} {
+	string compare a b c
+    } {bad option "a": must be -nocase or -length} {error}
+    {bad args} {
+	string compare -length -nocase str1 str2
+    } {expected integer but got "-nocase"} {error}
+    {too many args} {
+	string compare -length 10 -nocase str1 str2 str3
+    } {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"} {error}
+    {compare with length unspecified} {
+	string compare -length 10 10
+    } {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"} {error}
+    {basic operation fail} {
+	string compare abcde abdef
+    } {-1} {}
+    {basic operation success} {
+	string compare abcde abcde
+    } {0} {}
+    {with length} {
+	string compare -length 2 abcde abxyz
+    } {0} {}
+    {with special index} {
+	string compare -length end-3 abcde abxyz
+    } {expected integer but got "end-3"} {error}
+    {unicode} {
+	string compare ab\u7266 ab\u7267
+    } {-1} {}
+    {unicode} {string compare \334 \u00dc} 0 {}
+    {unicode} {string compare \334 \u00fc} -1 {}
+    {unicode} {string compare \334\334\334\374\374 \334\334\334\334\334} 1 {}
+    {high bit} {
+	# This test will fail if the underlying comparaison
+	# is using signed chars instead of unsigned chars.
+	# (like SunOS's default memcmp thus the compat/memcmp.c)
+	string compare "\x80" "@"
+	# Nb this tests works also in utf8 space because \x80 is
+	# translated into a 2 or more bytelength but whose first byte has
+	# the high bit set.
+    } {1} {}
+    {-nocase 1} {string compare -nocase abcde abdef} {-1} {}
+    {-nocase 2} {string compare -nocase abcde Abdef} {-1} {}
+    {-nocase 3} {string compare -nocase abcde ABCDE} {0} {}
+    {-nocase 4} {string compare -nocase abcde abcde} {0} {}
+    {-nocase unicode} {
+	string compare -nocase \334 \u00dc
+    } 0 {}
+    {-nocase unicode} {
+	string compare -nocase \334\334\334\374\u00fc \334\334\334\334\334
+    } 0 {}
+    {-nocase with length} {
+	string compare -length 2 -nocase abcde Abxyz
+    } {0} {}
+    {-nocase with length} {
+	string compare -nocase -length 3 abcde Abxyz
+    } {-1} {}
+    {-nocase with length <= 0} {
+	string compare -nocase -length -1 abcde AbCdEf
+    } {-1} {}
+    {-nocase with excessive length} {
+	string compare -nocase -length 50 AbCdEf abcde
+    } {1} {}
+    {-len unicode} {
+	# These are strings that are 6 BYTELENGTH long, but the length
+	# shouldn't make a different because there are actually 3 CHARS long
+	string compare -len 5 \334\334\334 \334\334\374
+    } -1 {}
+    {-nocase with special index} {
+	string compare -nocase -length end-3 Abcde abxyz
+    } {expected integer but got "end-3"} error
+    {null strings} {
+	string compare "" ""
+    } 0 {}
+    {null strings} {
+	string compare "" foo
+    } -1 {}
+    {null strings} {
+	string compare foo ""
+    } 1 {}
+    {-nocase null strings} {
+	string compare -nocase "" ""
+    } 0 {}
+    {-nocase null strings} {
+	string compare -nocase "" foo
+    } -1 {}
+    {-nocase null strings} {
+	string compare -nocase foo ""
+    } 1 {}
+    {with length, unequal strings} {
+	string compare -length 2 abc abde
+    } 0 {}
+    {with length, unequal strings} {
+	string compare -length 2 ab abde
+    } 0 {}
+    {with NUL character vs. other ASCII} {
+	# Be careful here, since UTF-8 rep comparison with memcmp() of
+	# these puts chars in the wrong order
+	string compare \x00 \x01
+    } -1 {}
+    {high bit} {
+	string compare "a\x80" "a@"
+    } 1 {}
+    {high bit} {
+	string compare "a\x00" "a\x01"
+    } -1 {}
+    {high bit} {
+	string compare "\x00\x00" "\x00\x01"
+    } -1 {}
+    {binary equal} {
+	string compare [binary format a100 0] [binary format a100 0]
+    } 0 {}
+    {binary neq} {
+	string compare [binary format a100a 0 1] [binary format a100a 0 0]
+    } 1 {}
+    {binary neq inequal length} {
+	string compare [binary format a20a 0 1] [binary format a100a 0 0]
+    } 1 {}
+} {
+    if {$tname eq ""} { continue }
+    if {$tcode eq ""} { set tcode ok }
+    test stringComp-2.[incr i] "string compare, $tname" \
+	-body [list eval $tbody] \
+	-returnCodes $tcode -result $tresult
+    test stringComp-2.[incr i] "string compare bc, $tname" \
+	-body "[list proc foo {} $tbody];foo" \
+	-returnCodes $tcode -result $tresult
+    if {"error" ni $tcode} {
+	set tresult [expr {!$tresult}]
+    } else {
+	set tresult [string map {compare equal} $tresult]
+    }
+    set tbody [string map {compare equal} $tbody]
+    test stringComp-2.[incr i] "string equal, $tname" \
+	-body [list eval $tbody] \
+	-returnCodes $tcode -result $tresult
+    test stringComp-2.[incr i] "string equal bc, $tname" \
+	-body "[list proc foo {} $tbody];foo" \
+	-returnCodes $tcode -result $tresult
+}
+
+# need a few extra tests short abbr cmd
+test stringComp-3.1 {string compare, shortest method name} {
+    proc foo {} {string co abcde ABCDE}
+    foo
+} 1
+test stringComp-3.2 {string equal, shortest method name} {
+    proc foo {} {string e abcde ABCDE}
+    foo
+} 0
+test stringComp-3.3 {string equal -nocase} {
+    proc foo {} {string eq -nocase abcde ABCDE}
+    foo
+} 1
+
+test stringComp-4.1 {string first, too few args} {
+    proc foo {} {string first a}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
+test stringComp-4.2 {string first, bad args} {
+    proc foo {} {string first a b c}
+    list [catch {foo} msg] $msg
+} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
+test stringComp-4.3 {string first, too many args} {
+    proc foo {} {string first a b 5 d}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
+test stringComp-4.4 {string first} {
+    proc foo {} {string first bq abcdefgbcefgbqrs}
+    foo
+} 12
+test stringComp-4.5 {string first} {
+    proc foo {} {string fir bcd abcdefgbcefgbqrs}
+    foo
+} 1
+test stringComp-4.6 {string first} {
+    proc foo {} {string f b abcdefgbcefgbqrs}
+    foo
+} 1
+test stringComp-4.7 {string first} {
+    proc foo {} {string first xxx x123xx345xxx789xxx012}
+    foo
+} 9
+test stringComp-4.8 {string first} {
+    proc foo {} {string first "" x123xx345xxx789xxx012}
+    foo
+} -1
+test stringComp-4.9 {string first, unicode} {
+    proc foo {} {string first x abc\u7266x}
+    foo
+} 4
+test stringComp-4.10 {string first, unicode} {
+    proc foo {} {string first \u7266 abc\u7266x}
+    foo
+} 3
+test stringComp-4.11 {string first, start index} {
+    proc foo {} {string first \u7266 abc\u7266x 3}
+    foo
+} 3
+test stringComp-4.12 {string first, start index} {
+    proc foo {} {string first \u7266 abc\u7266x 4}
+    foo
+} -1
+test stringComp-4.13 {string first, start index} {
+    proc foo {} {string first \u7266 abc\u7266x end-2}
+    foo
+} 3
+test stringComp-4.14 {string first, negative start index} {
+    proc foo {} {string first b abc -1}
+    foo
+} 1
+
+test stringComp-5.1 {string index} {
+    proc foo {} {string index}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string index string charIndex"}}
+test stringComp-5.2 {string index} {
+    proc foo {} {string index a b c}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string index string charIndex"}}
+test stringComp-5.3 {string index} {
+    proc foo {} {string index abcde 0}
+    foo
+} a
+test stringComp-5.4 {string index} {
+    proc foo {} {string in abcde 4}
+    foo
+} e
+test stringComp-5.5 {string index} {
+    proc foo {} {string index abcde 5}
+    foo
+} {}
+test stringComp-5.6 {string index} {
+    proc foo {} {string index abcde -10}
+    list [catch {foo} msg] $msg
+} {0 {}}
+test stringComp-5.7 {string index} {
+    proc foo {} {string index a xyz}
+    list [catch {foo} msg] $msg
+} {1 {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}}
+test stringComp-5.8 {string index} {
+    proc foo {} {string index abc end}
+    foo
+} c
+test stringComp-5.9 {string index} {
+    proc foo {} {string index abc end-1}
+    foo
+} b
+test stringComp-5.10 {string index, unicode} {
+    proc foo {} {string index abc\u7266d 4}
+    foo
+} d
+test stringComp-5.11 {string index, unicode} {
+    proc foo {} {string index abc\u7266d 3}
+    foo
+} \u7266
+test stringComp-5.12 {string index, unicode over char length, under byte length} {
+    proc foo {} {string index \334\374\334\374 6}
+    foo
+} {}
+test stringComp-5.13 {string index, bytearray object} {
+    proc foo {} {string index [binary format a5 fuz] 0}
+    foo
+} f
+test stringComp-5.14 {string index, bytearray object} {
+    proc foo {} {string index [binary format I* {0x50515253 0x52}] 3}
+    foo
+} S
+test stringComp-5.15 {string index, bytearray object} {
+    proc foo {} {
+	set b [binary format I* {0x50515253 0x52}]
+	set i1 [string index $b end-6]
+	set i2 [string index $b 1]
+	string compare $i1 $i2
+    }
+    foo
+} 0
+test stringComp-5.16 {string index, bytearray object with string obj shimmering} {
+    proc foo {} {
+	set str "0123456789\x00 abcdedfghi"
+	binary scan $str H* dump
+	string compare [string index $str 10] \x00
+    }
+    foo
+} 0
+test stringComp-5.17 {string index, bad integer} -body {
+    proc foo {} {string index "abc" 0o8}
+    list [catch {foo} msg] $msg
+} -match glob -result {1 {*invalid octal number*}}
+test stringComp-5.18 {string index, bad integer} -body {
+    proc foo {} {string index "abc" end-0o0289}
+    list [catch {foo} msg] $msg
+} -match glob -result {1 {*invalid octal number*}}
+test stringComp-5.19 {string index, bytearray object out of bounds} {
+    proc foo {} {string index [binary format I* {0x50515253 0x52}] -1}
+    foo
+} {}
+test stringComp-5.20 {string index, bytearray object out of bounds} {
+    proc foo {} {string index [binary format I* {0x50515253 0x52}] 20}
+    foo
+} {}
+
+
+proc largest_int {} {
+    # This will give us what the largest valid int on this machine is,
+    # so we can test for overflow properly below on >32 bit systems
+    set int 1
+    set exp 7; # assume we get at least 8 bits
+    while {$int > 0} { set int [expr {1 << [incr exp]}] }
+    return [expr {$int-1}]
+}
+
+## string is
+## not yet bc
+
+catch {rename largest_int {}}
+
+## string last
+## not yet bc
+
+## string length
+## not yet bc
+test stringComp-8.1 {string bytelength} {
+    proc foo {} {string bytelength}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string bytelength string"}}
+test stringComp-8.2 {string bytelength} {
+    proc foo {} {string bytelength a b}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string bytelength string"}}
+test stringComp-8.3 {string bytelength} {
+    proc foo {} {string bytelength "\u00c7"}
+    foo
+} 2
+test stringComp-8.4 {string bytelength} {
+    proc foo {} {string b ""}
+    foo
+} 0
+
+## string length
+##
+test stringComp-9.1 {string length} {
+    proc foo {} {string length}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string length string"}}
+test stringComp-9.2 {string length} {
+    proc foo {} {string length a b}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string length string"}}
+test stringComp-9.3 {string length} {
+    proc foo {} {string length "a little string"}
+    foo
+} 15
+test stringComp-9.4 {string length} {
+    proc foo {} {string le ""}
+    foo
+} 0
+test stringComp-9.5 {string length, unicode} {
+    proc foo {} {string le "abcd\u7266"}
+    foo
+} 5
+test stringComp-9.6 {string length, bytearray object} {
+    proc foo {} {string length [binary format a5 foo]}
+    foo
+} 5
+test stringComp-9.7 {string length, bytearray object} {
+    proc foo {} {string length [binary format I* {0x50515253 0x52}]}
+    foo
+} 8
+
+## string map
+## not yet bc
+
+## string match
+##
+test stringComp-11.1 {string match, too few args} {
+    proc foo {} {string match a}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
+test stringComp-11.2 {string match, too many args} {
+    proc foo {} {string match a b c d}
+    list [catch {foo} msg] $msg
+} {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
+test stringComp-11.3 {string match} {
+    proc foo {} {string match abc abc}
+    foo
+} 1
+test stringComp-11.4 {string match} {
+    proc foo {} {string mat abc abd}
+    foo
+} 0
+test stringComp-11.5 {string match} {
+    proc foo {} {string match ab*c abc}
+    foo
+} 1
+test stringComp-11.6 {string match} {
+    proc foo {} {string match ab**c abc}
+    foo
+} 1
+test stringComp-11.7 {string match} {
+    proc foo {} {string match ab* abcdef}
+    foo
+} 1
+test stringComp-11.8 {string match} {
+    proc foo {} {string match *c abc}
+    foo
+} 1
+test stringComp-11.9 {string match} {
+    proc foo {} {string match *3*6*9 0123456789}
+    foo
+} 1
+test stringComp-11.10 {string match} {
+    proc foo {} {string match *3*6*9 01234567890}
+    foo
+} 0
+test stringComp-11.11 {string match} {
+    proc foo {} {string match a?c abc}
+    foo
+} 1
+test stringComp-11.12 {string match} {
+    proc foo {} {string match a??c abc}
+    foo
+} 0
+test stringComp-11.13 {string match} {
+    proc foo {} {string match ?1??4???8? 0123456789}
+    foo
+} 1
+test stringComp-11.14 {string match} {
+    proc foo {} {string match {[abc]bc} abc}
+    foo
+} 1
+test stringComp-11.15 {string match} {
+    proc foo {} {string match {a[abc]c} abc}
+    foo
+} 1
+test stringComp-11.16 {string match} {
+    proc foo {} {string match {a[xyz]c} abc}
+    foo
+} 0
+test stringComp-11.17 {string match} {
+    proc foo {} {string match {12[2-7]45} 12345}
+    foo
+} 1
+test stringComp-11.18 {string match} {
+    proc foo {} {string match {12[ab2-4cd]45} 12345}
+    foo
+} 1
+test stringComp-11.19 {string match} {
+    proc foo {} {string match {12[ab2-4cd]45} 12b45}
+    foo
+} 1
+test stringComp-11.20 {string match} {
+    proc foo {} {string match {12[ab2-4cd]45} 12d45}
+    foo
+} 1
+test stringComp-11.21 {string match} {
+    proc foo {} {string match {12[ab2-4cd]45} 12145}
+    foo
+} 0
+test stringComp-11.22 {string match} {
+    proc foo {} {string match {12[ab2-4cd]45} 12545}
+    foo
+} 0
+test stringComp-11.23 {string match} {
+    proc foo {} {string match {a\*b} a*b}
+    foo
+} 1
+test stringComp-11.24 {string match} {
+    proc foo {} {string match {a\*b} ab}
+    foo
+} 0
+test stringComp-11.25 {string match} {
+    proc foo {} {string match {a\*\?\[\]\\\x} "a*?\[\]\\x"}
+    foo
+} 1
+test stringComp-11.26 {string match} {
+    proc foo {} {string match ** ""}
+    foo
+} 1
+test stringComp-11.27 {string match} {
+    proc foo {} {string match *. ""}
+    foo
+} 0
+test stringComp-11.28 {string match} {
+    proc foo {} {string match "" ""}
+    foo
+} 1
+test stringComp-11.29 {string match} {
+    proc foo {} {string match \[a a}
+    foo
+} 1
+test stringComp-11.30 {string match, bad args} {
+    proc foo {} {string match - b c}
+    list [catch {foo} msg] $msg
+} {1 {bad option "-": must be -nocase}}
+test stringComp-11.31 {string match case} {
+    proc foo {} {string match a A}
+    foo
+} 0
+test stringComp-11.32 {string match nocase} {
+    proc foo {} {string match -n a A}
+    foo
+} 1
+test stringComp-11.33 {string match nocase} {
+    proc foo {} {string match -nocase a\334 A\374}
+    foo
+} 1
+test stringComp-11.34 {string match nocase} {
+    proc foo {} {string match -nocase a*f ABCDEf}
+    foo
+} 1
+test stringComp-11.35 {string match case, false hope} {
+    # This is true because '_' lies between the A-Z and a-z ranges
+    proc foo {} {string match {[A-z]} _}
+    foo
+} 1
+test stringComp-11.36 {string match nocase range} {
+    # This is false because although '_' lies between the A-Z and a-z ranges,
+    # we lower case the end points before checking the ranges.
+    proc foo {} {string match -nocase {[A-z]} _}
+    foo
+} 0
+test stringComp-11.37 {string match nocase} {
+    proc foo {} {string match -nocase {[A-fh-Z]} g}
+    foo
+} 0
+test stringComp-11.38 {string match case, reverse range} {
+    proc foo {} {string match {[A-fh-Z]} g}
+    foo
+} 1
+test stringComp-11.39 {string match, *\ case} {
+    proc foo {} {string match {*\abc} abc}
+    foo
+} 1
+test stringComp-11.40 {string match, *special case} {
+    proc foo {} {string match {*[ab]} abc}
+    foo
+} 0
+test stringComp-11.41 {string match, *special case} {
+    proc foo {} {string match {*[ab]*} abc}
+    foo
+} 1
+test stringComp-11.42 {string match, *special case} {
+    proc foo {} {string match "*\\" "\\"}
+    foo
+} 0
+test stringComp-11.43 {string match, *special case} {
+    proc foo {} {string match "*\\\\" "\\"}
+    foo
+} 1
+test stringComp-11.44 {string match, *special case} {
+    proc foo {} {string match "*???" "12345"}
+    foo
+} 1
+test stringComp-11.45 {string match, *special case} {
+    proc foo {} {string match "*???" "12"}
+    foo
+} 0
+test stringComp-11.46 {string match, *special case} {
+    proc foo {} {string match "*\\*" "abc*"}
+    foo
+} 1
+test stringComp-11.47 {string match, *special case} {
+    proc foo {} {string match "*\\*" "*"}
+    foo
+} 1
+test stringComp-11.48 {string match, *special case} {
+    proc foo {} {string match "*\\*" "*abc"}
+    foo
+} 0
+test stringComp-11.49 {string match, *special case} {
+    proc foo {} {string match "?\\*" "a*"}
+    foo
+} 1
+test stringComp-11.50 {string match, *special case} {
+    proc foo {} {string match "\\" "\\"}
+    foo
+} 0
+test stringComp-11.51 {string match; *, -nocase and UTF-8} {
+    proc foo {} {string match -nocase [binary format I 717316707] \
+	    [binary format I 2028036707]}
+    foo
+} 1
+test stringComp-11.52 {string match, null char in string} {
+    proc foo {} {
+	set ptn "*abc*"
+	foreach elem [list "\u0000@abc" "@abc" "\u0000@abc\u0000" "blahabcblah"] {
+	    lappend out [string match $ptn $elem]
+	}
+	set out
+    }
+    foo
+} {1 1 1 1}
+test stringComp-11.53 {string match, null char in pattern} {
+    proc foo {} {
+	set out ""
+	foreach {ptn elem} [list \
+		"*\u0000abc\u0000"  "\u0000abc\u0000" \
+		"*\u0000abc\u0000"  "\u0000abc\u0000ef" \
+		"*\u0000abc\u0000*" "\u0000abc\u0000ef" \
+		"*\u0000abc\u0000"  "@\u0000abc\u0000ef" \
+		"*\u0000abc\u0000*"  "@\u0000abc\u0000ef" \
+		] {
+	    lappend out [string match $ptn $elem]
+	}
+	set out
+    }
+    foo
+} {1 0 1 0 1}
+test stringComp-11.54 {string match, failure} {
+    proc foo {} {
+	set longString ""
+	for {set i 0} {$i < 10} {incr i} {
+	    append longString "abcdefghijklmnopqrstuvwxy\u0000z01234567890123"
+	}
+	list [string match *cba* $longString] \
+		[string match *a*l*\u0000* $longString] \
+		[string match *a*l*\u0000*123 $longString] \
+		[string match *a*l*\u0000*123* $longString] \
+		[string match *a*l*\u0000*cba* $longString] \
+		[string match *===* $longString]
+    }
+    foo
+} {0 1 1 1 0 0}
+
+## string range
+test stringComp-12.1 {Bug 3588366: end-offsets before start} {
+    apply {s {
+	string range $s 0 end-5
+    }} 12345
+} {}
+
+## string repeat
+## not yet bc
+
+## string replace
+test stringComp-14.1 {Bug 82e7f67325} {
+    apply {x {
+	set a [join $x {}]
+	lappend b [string length [string replace ___! 0 2 $a]]
+	lappend b [string length [string replace ___! 0 2 $a[unset a]]]
+    }} {a b}
+} {3 3}
+test stringComp-14.2 {Bug 82e7f67325} memory {
+    # As in stringComp-14.1, but make sure we don't retain too many refs
+    leaktest {
+	apply {x {
+	    set a [join $x {}]
+	    lappend b [string length [string replace ___! 0 2 $a]]
+	    lappend b [string length [string replace ___! 0 2 $a[unset a]]]
+	}} {a b}
+    }
+} {0}
+test stringComp-14.3 {Bug 0dca3bfa8f} {
+    apply {arg {
+	set argCopy $arg
+	set arg [string replace $arg 1 2 aa]
+	# Crashes in comparison before fix
+	expr {$arg ne $argCopy}
+    }} abcde
+} 1
+test stringComp-14.4 {Bug 1af8de570511} {
+    apply {{x y} {
+	# Generate an unshared string value
+	set val ""
+	for { set i 0 } { $i < $x } { incr i } {
+	    set val [format "0%s" $val]
+	}
+	string replace $val[unset val] 1 1 $y
+    }} 4 x
+} 0x00
+test stringComp-14.5 {} {
+    string length [string replace [string repeat a\u00fe 2] 3 end {}]
+} 3
+
+## string tolower
+## not yet bc
+
+## string toupper
+## not yet bc
+
+## string totitle
+## not yet bc
+
+## string trim*
+## not yet bc
+
+## string word*
+## not yet bc
+
+## string cat
+test stringComp-29.1 {string cat, no arg} {
+    proc foo {} {string cat}
+    foo
+} ""
+test stringComp-29.2 {string cat, single arg} {
+    proc foo {} {
+	set x FOO
+	string compare $x [string cat $x]
+    }
+    foo
+} 0
+test stringComp-29.3 {string cat, two args} {
+    proc foo {} {
+	set x FOO
+	string compare $x$x [string cat $x $x]
+    }
+    foo
+} 0
+test stringComp-29.4 {string cat, many args} {
+    proc foo {} {
+	set x FOO
+	set n 260
+	set xx [string repeat $x $n]
+	set vv [string repeat {$x} $n]
+	set vvs [string repeat {$x } $n]
+	set r1 [string compare $xx [subst $vv]]
+	set r2 [string compare $xx [eval "string cat $vvs"]]
+	list $r1 $r2
+    }
+    foo
+} {0 0}
+
+
+# cleanup
+catch {rename foo {}}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -1,0 +1,462 @@
+'\"
+'\" $Id: tixForm.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixForm n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+tixForm \- Geometry manager based on attachment rules
+'\"
+'\"
+'\"
+.SH SYNOPSIS
+\fBtixForm\fI option arg ?arg ...?\fR
+.BE
+.SH DESCRIPTION
+.PP
+'\"
+The \fBtixForm\fR command is used to communicate with the
+\fBtixForm\fR Geometry Manager, a geometry manager that arranges the
+geometry of the children in a parent window according to attachment
+rules. The \fBtixForm\fR geometry manager is very flexible and
+powerful; it can be used to emulate all the existing features of the
+Tk packer and placer geometry managers (see \fBpack(n)\fR,
+\fBplace(n)\fR).
+'\"
+The \fBtixForm\fR command can have any of several forms,
+depending on the \fIoption\fR argument:
+'\"
+.TP
+\fBtixForm\fI slave \fR?\fIoptions\fR?
+'\"
+If the first argument to \fBtixForm\fR is a window name (any value
+starting with ``.''), then the command is processed in the same way as
+\fBtixForm configure\fR.
+'\"
+.TP
+\fBtixForm check \fImaster\fR
+'\"
+This command checks whether there is circular dependency in the
+attachments of the master's slaves (see the section \fBCIRCULAR
+DEPENDENCY\fR below). It returns the Boolean value \fBTRUE\fR if it
+discover circular dependency and \fBFALSE\fR otherwise.
+'\"
+.TP
+\fBtixForm configure\fI slave \fR?\fI\-option value ...\fR?
+'\"
+Sets or adjusts the attachment values of the slave window
+according to the \fI\-option value\fR argument pairs. 
+'\"
+.RS
+'\"
+.TP
+\fB\-b\fR \fIattachment\fR
+'\"
+Abbreviation for the \fB\-bottom\fR option.
+'\"
+.TP
+\fB\-bottom\fR \fIattachment\fR
+'\"
+Specifies an attachment for the bottom edge of the slave window. The
+attachment must specied according to the section \fBSPECIFYING
+ATTACHMENTS\fR below.
+'\"
+.TP
+\fB\-bottomspring\fR \fIweight\fR
+'\"
+Specifies the weight of the spring at the bottom edge of the slave
+window. See the section \fBUSING SPRINGS\fR below.
+'\"
+.TP
+\fB\-bp\fR \fIvalue\fR
+'\"
+Abbreviation for the \fB\-padbottom\fR option.
+'\"
+.TP
+\fB\-bs\fR \fIweight\fR
+'\"
+Abbreviation for the \fB\-bottomspring\fR option.
+'\"
+'\"
+.TP
+\fB\-fill\fR \fImaster\fR
+'\"
+Specifies the fillings when springs are used for this widget. The
+value must be \fBx\fR, \fBy\fR, \fBboth\fR or \fBnone\fR.
+'\"
+.TP
+\fB\-in\fR \fImaster\fR
+'\"
+Places the slave window into the specified master window. If the slave
+was originally in another master window, all attachment values with
+respect to the original master window are discarded. Even if the
+attachment values are the same as in the original master window, they
+need to be specified again.  The \fB\-in\fR flag, when needed, must appear
+as the first flag after the name of the slave. Otherwise an error is
+generated.
+'\"
+.TP
+\fB\-l\fR \fIattachment\fR
+'\"
+Abbreviation for the \fB\-left\fR option.
+'\"
+.TP
+\fB\-left\fR \fIattachment\fR
+'\"
+Specifies an attachment for the left edge of the slave window. The
+attachment must specied according to the section \fBSPECIFYING
+ATTACHMENTS\fR below.
+'\"
+.TP
+\fB\-leftspring\fR \fIweight\fR
+'\"
+Specifies the weight of the spring at the left edge of the slave
+window. See the section \fBUSING SPRINGS\fR below.
+'\"
+.TP
+\fB\-lp\fR \fIvalue\fR
+'\"
+Abbreviation for the \fB\-padleft\fR option.
+'\"
+.TP
+\fB\-ls\fR \fIweight\fR
+'\"
+Abbreviation for the \fB\-leftspring\fR option.
+'\"
+'\"
+.TP
+\fB\-padbottom\fR \fIvalue\fR
+'\"
+Specifies the amount of external padding to leave on the bottom side
+of the slave. The \fIvalue\fR may have any of the forms acceptable to
+\fBTk_GetPixels(3)\fR.
+'\"
+'\"
+.TP
+\fB\-padleft\fR \fIvalue\fR
+'\"
+Specifies the amount of external padding to leave on the left side of
+the slave.
+'\"
+.TP
+\fB\-padright\fR \fIvalue\fR
+'\"
+Specifies the amount of external padding to leave on the right side of
+the slave.
+'\"
+.TP
+\fB\-padtop\fR \fIvalue\fR
+'\"
+Specifies the amount of external padding to leave on the top side of
+the slave.
+'\"
+.TP
+\fB\-padx\fR \fIvalue\fR
+'\"
+Specifies the amount of external padding to leave on both the left and
+the right sides of the slave.
+'\"
+.TP
+\fB\-pady\fR \fIvalue\fR
+'\"
+Specifies the amount of external padding to leave on both the top and
+the bottom sides of the slave.
+'\"
+'\"
+.TP
+\fB\-r\fR \fIattachment\fR
+'\"
+Abbreviation for the \fB\-right\fR option.
+'\"
+.TP
+\fB\-right\fR \fIattachment\fR
+'\"
+Specifies an attachment for the right edge of the slave window. The
+attachment must specied according to the section \fBSPECIFYING
+ATTACHMENTS\fR below.
+'\"
+.TP
+\fB\-rightspring\fR \fIweight\fR
+'\"
+Specifies the weight of the spring at the right edge of the slave
+window. See the section \fBUSING SPRINGS\fR below.
+'\"
+'\"
+.TP
+\fB\-rp\fR \fIvalue\fR
+'\"
+Abbreviation for the \fB\-padright\fR option.
+'\"
+.TP
+\fB\-rs\fR \fIweight\fR
+'\"
+Abbreviation for the \fB\-rightspring\fR option.
+'\"
+'\"
+.TP
+\fB\-t\fR \fIattachment\fR
+'\"
+Abbreviation for the \fB\-top\fR option.
+'\"
+.TP
+\fB\-top\fR \fIattachment\fR
+'\"
+Specifies an attachment for the top edge of the slave window. The
+attachment must specied according to the section \fBSPECIFYING
+ATTACHMENTS\fR below.
+'\"
+'\"
+.TP
+\fB\-topspring\fR \fIweight\fR
+'\"
+Specifies the weight of the spring at the top edge of the slave
+window. See the section \fBUSING SPRINGS\fR below.
+'\"
+'\"
+.TP
+\fB\-tp\fR \fIvalue\fR
+'\"
+Abbreviation for the \fB\-padtop\fR option.
+'\"
+.TP
+\fB\-ts\fR \fIweight\fR
+'\"
+Abbreviation for the \fB\-topspring\fR option.
+'\"
+.RE
+.TP
+\fBtixForm forget\fI slave \fR?\fIslave ...\fR?
+'\"
+Removes each of the slaves from its master and unmaps their windows.
+The slaves will no longer be managed by tixForm. All attachment values
+with respect to their master windows are discarded. If another slave
+is attached to this slave, then the attachment of the other slave will
+be changed to grid attachment based on its geometry.
+'\"
+.TP
+\fBtixForm grid \fImaster \fR?\fIx_size y_size\fR?
+'\"
+When \fIx_size\fR and \fIy_size\fR are given, this command returns the
+number of grids of the master window in a pair of integers of the form
+{\fIx_size y_size\fR}. When both \fIx_size\fR and \fIy_size\fR are
+given, this command changes the number of horizontal and vertical
+grids on the master window.
+'\"
+.TP
+\fBtixForm info\fI slave\fR ?\fIoption\fR?
+'\"
+Queries the attachment options of a slave window. \fIoption\fR can be
+any of the options accepted by the \fBtixForm configure\fR command. If
+\fIoption\fR is given, only the value of that option is returned.
+Otherwise, this command returns a list whose elements are the current
+configuration state of the slave given in the same \fIoption\-value\fR form
+that might be specified to \fBtixForm configure\fR. The first two
+elements in this list list are "\fB\-in\fI master\fR" where
+\fImaster\fR is the slave's master window.
+'\"
+.TP
+\fBtixForm slaves \fImaster\fR
+'\"
+Returns a list of all of the slaves for the master window. The order
+of the slaves in the list is the same as their order in the packing
+order. If master has no slaves then an empty string is returned.
+'\"
+.PP
+.SH SPECIFYING ATTACHMENTS
+'\"
+One can specify an attachment for each side of a slave window managed
+by tixForm. An attachment is specified in the the form "\-\fIside\fR
+{\fIanchor_point\fR \fIoffset\fR}". \-\fIside\fR can be one of
+\fB\-top\fR, \fB\-bottom\fR, \fB\-left\fR or \fB\-right\fR.
+.PP
+\fIOffset\fR is given in screen units (i.e. any of the forms
+acceptable to \fBTk_GetPixels\fR).  A positive offset indicates
+shifting to a position to the right or bottom of an anchor point. A
+negative offset indicates shifting to a position to the left or top of
+an anchor point.
+.PP
+\fIAnchor_point\fR can be given in one of the
+following forms:
+'\"
+.RS
+.TP
+\fBGrid Attachment\fR
+'\"
+The master window is divided into a number of horizontal and vertical
+grids. By default the master window is divided into 100x100 grids; the
+number of grids can be adjusted by the \fBtixForm grid\fR command. A
+grid attachment anchor point is given by a \fB%\fR sign followed by an
+\fBinteger\fR value. For example, \fB%0\fR spceifies the first grid
+line (the top or left edge of the master window). \fB%100\fR spceifies
+the last grid line (the bottom or right edge of the master window). 
+'\"
+.TP
+\fBOpposite Side Attachment\fR
+'\"
+Opposite attachment specifies an anchor point located on the
+\fBopposite\fR side of another slave widget, which must be managed by
+tixForm in the same master window. An opposite attachment anchor point
+is given by the name of another widget. For example, "tixForm .b \-top
+{.a 0}" attaches the \fBtop\fR side of the widget \fB\.b\fR to the
+\fBbottom\fR of the widget \fB\.a\fR.
+'\"
+.TP
+\fBParallel Side Attachment\fR
+'\"
+Opposite attachment specifies an anchor point located on the
+\fBsame\fR side of another slave widget, which must be managed by
+tixForm in the same master window. An parallel attachment anchor point
+is given by the sign \fB&\fR follwed by the name of another widget.
+For example, "tixForm .b \-top {&.a 0}" attaches the \fBtop\fR side of
+the widget \fB\.b\fR to the \fBtop\fR of the widget \fB\.a\fR, making
+the \fBtop\fR sides of these two widgets at the same vertical position
+in their parent window.
+'\"
+.TP
+\fBNo Attachment\fR
+'\"
+Specifies a side of the slave to be attached to nothing, indicated by
+the keyword \fBnone\fR. When the \fBnone\fR anchor point is given, the
+offser must be zero.
+
+When a side of a slave is attached to \fB{none 0}\fR, the position
+of this side is calculated by the position of the other side and the
+natural size of the slave. For example, if a the \fBleft\fR side of a
+widget is attached to \fB{%0 100}\fR, its \fBright\fR side attached to
+\fB{none 0}\fR, and the natural size of the widget is \fB50\fR pixels,
+the \fBright\fR side of the widget will be positioned at pixel \fB{%0
+149}\fR.
+
+When both \fB\-top\fR and \fB\-bottom\fR are attached to \fBnone\fR,
+then by default \fB\-top\fR will be attached to \fB{%0 0}\fR. When both
+\fB\-left\fR and \fB\-right\fR are attached to none, then by default
+\fB\-left\fR will be attached to \fB{%0 0}\fR.
+'\"
+.RE
+.PP
+Shifting effects can be achieved by specifying a non-zero offset with
+an anchor point. In the following example, the \fBtop\fR side of
+widget \fB\.b\fR is attached to the \fBbottom\fR of \fB\.a\fR; hence \fB\.b\fR 
+always appears below \fB\.a\fR.  Also, the left edge of \fB\.b\fR
+is attached to the \fBleft\fR side of \fB\.a\fR with a 10
+pixel offest.  Therefore, the \fBleft\fR edge of \fB\.b\fR is always
+shifted 10 pixels to the right of \fB\.a\fR's \fBleft\fR edge:
+.PP
+.CS
+tixForm .b \-left {.a 10} \-top {.a 0}
+.CE
+.PP
+\fBABBREVIATIONS:\fR Certain abbreviations can be made on the
+attachment specifications: First an offset of zero can be omitted.
+Thus, the following two lines are equivalent:
+.PP
+.CS
+tixForm .b \-top {.a 0} \-right {%100 0}
+tixForm .b \-top {.a}   \-right {%100}
+.CE
+.PP
+Also, because of the way TCL handles lists, when you omit the offset,
+you can also leave out the braces. So you can further simplify the
+above to:
+.PP
+.CS
+tixForm .b \-top .a \-right %100
+.CE
+.PP
+In the second case, when the anchor point is omitted, the offset must
+be given. A default anchor point is chosen according to the value of
+the offset. If the anchor point is \fB0\fR or positive, the default
+anchor point %0 is used; thus, "tixForm \.b \-top 15" attaches the top
+edge of \fB\.b\fR to a position 15 pixels below the top edge of the
+master window. If the anchor point is "\fB-0\fR" or negative, the
+default anchor point \fB%100\fR is used; thus, "tixForm \.a \-right
+\-2" attaches the right edge of \fB\.a\fR to a position 2 pixels to
+the left of the master window's \fBright\fR edge.  An further example
+below shows a command with its equivalent abbreviation.
+'\"
+.CS
+tixForm .b \-top {%0 10} \-bottom {%100 0}
+tixForm .b \-top 10      \-bottom \-0
+.CE
+.PP
+.SH USING SPRINGS
+'\"
+To be written.
+'\"
+.PP
+.SH ALGORITHM OF TIXFORM
+'\"
+TixForm starts with any slave in the list of slaves of the master
+window. Then it tries to determine the position of each side of the
+slave.
+.PP
+If the attachment of a side of the slave is grid attachment, the
+position of the side is readily determined.
+.PP
+If the attachment of this side is \fBnone\fR, then tixForm tries to
+determine the position of the opposite side first, and then use the
+position of the opposite side and the natural size of the slave to
+determine the position of this side.
+.PP
+If the attachment is opposite or parallel widget attachments, then
+tixForm tries to determine the positions of the other widget first,
+and then use the positions of the other widget and the natural size of
+the slave determine the position of this side. This recursive
+algorithmis carried on until the positions of all slaves are
+determined.
+.PP
+.SH CIRCULAR DEPENDENCY
+.PP
+The algorithm of tixForm will fail if a circular dependency exists in
+the attachments of the slaves. For example:
+.PP
+.CS
+tixForm .c \-left .b
+tixForm .b \-right .c
+.CE
+.PP
+In this example, the position of the left side of \fB.b\fR depends on
+the right side of \fB.c\fR, which in turn depends on the left side of \fB.b\fR.
+.PP
+When a circular dependency is discovered during the execution of the
+tixForm algorithm, tixForm will generate a background error and the
+geometry of the slaves are undefined (and will be arbitrary). Notice
+that tixForm only executes the algorithm when the specification of the
+slaves' attachments is complete.  Therefore, it allows intermediate
+states of circular dependency during the specification of the slaves'
+attachments.  Also, unlike the Motif Form manager widget, tixForm
+defines circular dependency as "\fIdependency in the same
+dimension\fR". Therefore, the following code fragment will does not
+have circular dependency because the two widgets do not depend on each
+other in the same dimension (\fB\.b\fR depends \fB.c\fR in the
+horizontal dimension and \fB.c\fR depends on \fB.b\fR in the vertical
+dimension):
+.PP
+.CS
+tixForm .b \-left .c
+tixForm .c \-top .b
+.CE
+.PP
+.SH BUGS
+'\"
+.PP
+Springs have not been fully implemented yet.
+'\"
+.SH KEYWORDS
+Tix(n), Form, Geometry Management
+

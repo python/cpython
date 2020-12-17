@@ -1,0 +1,43 @@
+<HEAD>
+<TITLE> Creating a TixComboBox Widget<A NAME=141>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html438 HREF=subsubsection3_3_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html436 HREF=subsection3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html430 HREF=subsection3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html440 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html439 HREF=subsubsection3_3_4_2.html> Controlling the Style </A>
+<B>Up:</B> <A NAME=tex2html437 HREF=subsection3_3_4.html> Another Tix Widget: </A>
+<B> Previous:</B> <A NAME=tex2html431 HREF=subsection3_3_4.html> Another Tix Widget: </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00034100000000000000> Creating a TixComboBox Widget<A NAME=141>&nbsp;</A></A></H3>
+<P>
+<blockquote> <tt> tixComboBox .c -label &quot;Animal:&quot; -editable true<BR>
+.c insert end cat<BR>
+.c insert end dog<BR>
+.c insert end pig
+</tt>
+</blockquote>
+<P><CENTER>(Figure 1-9) Creating a ComboBox<A NAME=19>&nbsp;</A>
+  </CENTER>
+<P>
+In program 1-9, we set up a ComboBox <tt>.c</tt>
+  for the user to select an animal to play with. If the user is just a
+  dull person like you and me, he would just press the arrow button
+  and select a pre-designated animal such as ``dog''.  However, if he
+  wants to try something new, he could type ``micky'' or ``sloth''
+  into the entry widget and he will get to play with his favorite
+  animal.
+<P>
+Of course, sometimes we don't want too many sloths around us and we
+  want to limit the range of the user's selections. In this case we
+  can do one of two things. First, we can set the <tt>-editable</tt>
+  option to <tt>false</tt> so that the user cannot type in the entry
+  widget at all.  Alternatively, we can use the <tt>-validatecmd</tt>
+  option (see section 1.4.3) to check input the input.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

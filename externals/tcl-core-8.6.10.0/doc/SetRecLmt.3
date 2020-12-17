@@ -1,0 +1,53 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_SetRecursionLimit 3 7.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SetRecursionLimit \- set maximum allowable nesting depth in interpreter
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_SetRecursionLimit\fR(\fIinterp, depth\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Interpreter whose recursion limit is to be set.
+Must be greater than zero.
+.AP int depth in
+New limit for nested calls to \fBTcl_Eval\fR for \fIinterp\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+At any given time Tcl enforces a limit on the number of recursive
+calls that may be active for \fBTcl_Eval\fR and related procedures
+such as \fBTcl_GlobalEval\fR.
+Any call to \fBTcl_Eval\fR that exceeds this depth is aborted with
+an error.
+By default the recursion limit is 1000.
+.PP
+\fBTcl_SetRecursionLimit\fR may be used to change the maximum
+allowable nesting depth for an interpreter.
+The \fIdepth\fR argument specifies a new limit for \fIinterp\fR,
+and \fBTcl_SetRecursionLimit\fR returns the old limit.
+To read out the old limit without modifying it, invoke
+\fBTcl_SetRecursionLimit\fR with \fIdepth\fR equal to 0.
+.PP
+The \fBTcl_SetRecursionLimit\fR only sets the size of the Tcl
+call stack:  it cannot by itself prevent stack overflows on the
+C stack being used by the application.  If your machine has a
+limit on the size of the C stack, you may get stack overflows
+before reaching the limit set by \fBTcl_SetRecursionLimit\fR.
+If this happens, see if there is a mechanism in your system for
+increasing the maximum size of the C stack.
+
+.SH KEYWORDS
+nesting depth, recursion

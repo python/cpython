@@ -1,0 +1,79 @@
+'\"
+'\" Copyright (c) 1999 Scriptics Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_InitStubs 3 8.4 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_InitStubs \- initialize the Tk stubs mechanism
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+const char *
+\fBTk_InitStubs\fR(\fIinterp, version, exact\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp in
+.AP Tcl_Interp *interp in
+Tcl interpreter handle.
+.AP char *version in
+A version string consisting of one or more decimal numbers
+separated by dots.
+.AP int exact in
+Non-zero means that only the particular Tk version specified by
+\fIversion\fR is acceptable.
+Zero means that versions newer than \fIversion\fR are also
+acceptable as long as they have the same major version number
+as \fIversion\fR.
+.BE
+.SH INTRODUCTION
+.PP
+The Tcl stubs mechanism defines a way to dynamically bind
+extensions to a particular Tcl implementation at run time.
+the stubs mechanism requires no changes to applications
+incorporating Tcl/Tk interpreters.  Only developers creating
+C-based Tcl/Tk extensions need to take steps to use the
+stubs mechanism with their extensions.
+See the \fBTcl_InitStubs\fR page for more information.
+.PP
+Enabling the stubs mechanism for a Tcl/Tk extension requires the following
+steps:
+.IP 1) 5
+Call \fBTcl_InitStubs\fR in the extension before calling any other
+Tcl functions.
+.IP 2) 5
+Call \fBTk_InitStubs\fR if the extension before calling any other
+Tk functions.
+.IP 2) 5
+Define the \fBUSE_TCL_STUBS\fR and the \fBUSE_TK_STUBS\fR
+symbols. Typically, you would include the \fB\-DUSE_TCL_STUBS\fR and
+the \fB\-DUSE_TK_STUBS\fR flags when compiling the extension.
+.IP 3) 5
+Link the extension with the Tcl and Tk stubs libraries instead of the
+standard Tcl and Tk libraries.  On Unix platforms, the library names
+are \fIlibtclstub8.4.a\fR and \fIlibtkstub8.4.a\fR; on Windows
+platforms, the library names are \fItclstub84.lib\fR and
+\fItkstub84.lib\fR. Adjust the library names with appropriate version
+number but note that the extension may only be used with versions of
+Tcl/Tk that have that version number or higher.
+.SH DESCRIPTION
+.PP
+\fBTk_InitStubs\fR attempts to initialize the Tk stub table pointers
+and ensure that the correct version of Tk is loaded.  In addition
+to an interpreter handle, it accepts as arguments a version number
+and a Boolean flag indicating whether the extension requires
+an exact version match or not.  If \fIexact\fR is 0, then the
+extension is indicating that newer versions of Tk are acceptable
+as long as they have the same major version number as \fIversion\fR;
+non-zero means that only the specified \fIversion\fR is acceptable.
+\fBTcl_InitStubs\fR returns a string containing the actual version
+of Tk satisfying the request, or NULL if the Tk version is not
+acceptable, does not support the stubs mechanism, or any other
+error condition occurred.
+.SH "SEE ALSO"
+\fBTcl_InitStubs\fR
+.SH KEYWORDS
+stubs

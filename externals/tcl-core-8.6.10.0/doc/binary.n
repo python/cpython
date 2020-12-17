@@ -1,0 +1,908 @@
+'\"
+'\" Copyright (c) 1997 by Sun Microsystems, Inc.
+'\" Copyright (c) 2008 by Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH binary n 8.0 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+binary \- Insert and extract fields from binary strings
+.SH SYNOPSIS
+.VS 8.6
+\fBbinary decode \fIformat\fR ?\fI\-option value ...\fR? \fIdata\fR
+.br
+\fBbinary encode \fIformat\fR ?\fI\-option value ...\fR? \fIdata\fR
+.br
+.VE 8.6
+\fBbinary format \fIformatString \fR?\fIarg arg ...\fR?
+.br
+\fBbinary scan \fIstring formatString \fR?\fIvarName varName ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command provides facilities for manipulating binary data.  The
+subcommand \fBbinary format\fR creates a binary string from normal
+Tcl values.  For example, given the values 16 and 22, on a 32-bit
+architecture, it might produce an 8-byte binary string consisting of
+two 4-byte integers, one for each of the numbers.  The subcommand
+\fBbinary scan\fR, does the opposite: it extracts data
+from a binary string and returns it as ordinary Tcl string values.
+.VS 8.6
+The \fBbinary encode\fR and \fBbinary decode\fR subcommands convert
+binary data to or from string encodings such as base64 (used in MIME
+messages for example).
+.VE 8.6
+.PP
+Note that other operations on binary data, such as taking a subsequence of it,
+getting its length, or reinterpreting it as a string in some encoding, are
+done by other Tcl commands (respectively \fBstring range\fR,
+\fBstring length\fR and \fBencoding convertfrom\fR in the example cases).  A
+binary string in Tcl is merely one where all the characters it contains are in
+the range \eu0000\-\eu00FF.
+.SH "BINARY ENCODE AND DECODE"
+.VS 8.6
+.PP
+When encoding binary data as a readable string, the starting binary data is
+passed to the \fBbinary encode\fR command, together with the name of the
+encoding to use and any encoding-specific options desired. Data which has been
+encoded can be converted back to binary form using \fBbinary decode\fR. The
+following formats and options are supported.
+.TP
+\fBbase64\fR
+.
+The \fBbase64\fR binary encoding is commonly used in mail messages and XML
+documents, and uses mostly upper and lower case letters and digits. It has the
+distinction of being able to be rewrapped arbitrarily without losing
+information.
+.RS
+.PP
+During encoding, the following options are supported:
+.TP
+\fB\-maxlen \fIlength\fR
+.
+Indicates that the output should be split into lines of no more than
+\fIlength\fR characters. By default, lines are not split.
+.TP
+\fB\-wrapchar \fIcharacter\fR
+.
+Indicates that, when lines are split because of the \fB\-maxlen\fR option,
+\fIcharacter\fR should be used to separate lines. By default, this is a
+newline character,
+.QW \en .
+.PP
+During decoding, the following options are supported:
+.TP
+\fB\-strict\fR
+.
+Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
+.RE
+.TP
+\fBhex\fR
+.
+The \fBhex\fR binary encoding converts each byte to a pair of hexadecimal
+digits in big-endian form.
+.RS
+.PP
+No options are supported during encoding. During decoding, the following
+options are supported:
+.TP
+\fB\-strict\fR
+.
+Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
+.RE
+.TP
+\fBuuencode\fR
+.
+The \fBuuencode\fR binary encoding used to be common for transfer of data
+between Unix systems and on USENET, but is less common these days, having been
+largely superseded by the \fBbase64\fR binary encoding.
+.RS
+.PP
+During encoding, the following options are supported (though changing them may
+produce files that other implementations of decoders cannot process):
+.TP
+\fB\-maxlen \fIlength\fR
+.
+Indicates that the output should be split into lines of no more than
+\fIlength\fR characters. By default, lines are split every 61 characters, and
+this must be in the range 3 to 85 due to limitations in the encoding.
+.TP
+\fB\-wrapchar \fIcharacter\fR
+.
+Indicates that, when lines are split because of the \fB\-maxlen\fR option,
+\fIcharacter\fR should be used to separate lines. By default, this is a
+newline character,
+.QW \en .
+.PP
+During decoding, the following options are supported:
+.TP
+\fB\-strict\fR
+.
+Instructs the decoder to throw an error if it encounters unexpected whitespace
+characters. Otherwise it ignores them.
+.PP
+Note that neither the encoder nor the decoder handle the header and footer of
+the uuencode format.
+.RE
+.VE 8.6
+.SH "BINARY FORMAT"
+.PP
+The \fBbinary format\fR command generates a binary string whose layout
+is specified by the \fIformatString\fR and whose contents come from
+the additional arguments.  The resulting binary value is returned.
+.PP
+The \fIformatString\fR consists of a sequence of zero or more field
+specifiers separated by zero or more spaces.  Each field specifier is
+a single type character followed by an optional flag character followed
+by an optional numeric \fIcount\fR.
+Most field specifiers consume one argument to obtain the value to be
+formatted.  The type character specifies how the value is to be
+formatted.  The \fIcount\fR typically indicates how many items of the
+specified type are taken from the value.  If present, the \fIcount\fR
+is a non-negative decimal integer or \fB*\fR, which normally indicates
+that all of the items in the value are to be used.  If the number of
+arguments does not match the number of fields in the format string
+that consume arguments, then an error is generated. The flag character
+is ignored for \fBbinary format\fR.
+.PP
+Here is a small example to clarify the relation between the field
+specifiers and the arguments:
+.CS
+\fBbinary format\fR d3d {1.0 2.0 3.0 4.0} 0.1
+.CE
+.PP
+The first argument is a list of four numbers, but because of the count
+of 3 for the associated field specifier, only the first three will be
+used. The second argument is associated with the second field
+specifier. The resulting binary string contains the four numbers 1.0,
+2.0, 3.0 and 0.1.
+.PP
+Each type-count pair moves an imaginary cursor through the binary
+data, storing bytes at the current position and advancing the cursor
+to just after the last byte stored.  The cursor is initially at
+position 0 at the beginning of the data.  The type may be any one of
+the following characters:
+.IP \fBa\fR 5
+Stores a byte string of length \fIcount\fR in the output string.
+Every character is taken as modulo 256 (i.e. the low byte of every
+character is used, and the high byte discarded) so when storing
+character strings not wholly expressible using the characters \eu0000-\eu00ff,
+the \fBencoding convertto\fR command should be used first to change
+the string into an external representation
+if this truncation is not desired (i.e. if the characters are
+not part of the ISO 8859\-1 character set.)
+If \fIarg\fR has fewer than \fIcount\fR bytes, then additional zero
+bytes are used to pad out the field.  If \fIarg\fR is longer than the
+specified length, the extra characters will be ignored.  If
+\fIcount\fR is \fB*\fR, then all of the bytes in \fIarg\fR will be
+formatted.  If \fIcount\fR is omitted, then one character will be
+formatted.  For example,
+.RS
+.CS
+\fBbinary format\fR a7a*a alpha bravo charlie
+.CE
+will return a string equivalent to \fBalpha\e000\e000bravoc\fR,
+.CS
+\fBbinary format\fR a* [encoding convertto utf-8 \eu20ac]
+.CE
+will return a string equivalent to \fB\e342\e202\e254\fR (which is the
+UTF-8 byte sequence for a Euro-currency character) and
+.CS
+\fBbinary format\fR a* [encoding convertto iso8859-15 \eu20ac]
+.CE
+will return a string equivalent to \fB\e244\fR (which is the ISO
+8859\-15 byte sequence for a Euro-currency character). Contrast these
+last two with:
+.CS
+\fBbinary format\fR a* \eu20ac
+.CE
+which returns a string equivalent to \fB\e254\fR (i.e. \fB\exac\fR) by
+truncating the high-bits of the character, and which is probably not
+what is desired.
+.RE
+.IP \fBA\fR 5
+This form is the same as \fBa\fR except that spaces are used for
+padding instead of nulls.  For example,
+.RS
+.CS
+\fBbinary format\fR A6A*A alpha bravo charlie
+.CE
+will return \fBalpha bravoc\fR.
+.RE
+.IP \fBb\fR 5
+Stores a string of \fIcount\fR binary digits in low-to-high order
+within each byte in the output string.  \fIArg\fR must contain a
+sequence of \fB1\fR and \fB0\fR characters.  The resulting bytes are
+emitted in first to last order with the bits being formatted in
+low-to-high order within each byte.  If \fIarg\fR has fewer than
+\fIcount\fR digits, then zeros will be used for the remaining bits.
+If \fIarg\fR has more than the specified number of digits, the extra
+digits will be ignored.  If \fIcount\fR is \fB*\fR, then all of the
+digits in \fIarg\fR will be formatted.  If \fIcount\fR is omitted,
+then one digit will be formatted.  If the number of bits formatted
+does not end at a byte boundary, the remaining bits of the last byte
+will be zeros.  For example,
+.RS
+.CS
+\fBbinary format\fR b5b* 11100 111000011010
+.CE
+will return a string equivalent to \fB\ex07\ex87\ex05\fR.
+.RE
+.IP \fBB\fR 5
+This form is the same as \fBb\fR except that the bits are stored in
+high-to-low order within each byte.  For example,
+.RS
+.CS
+\fBbinary format\fR B5B* 11100 111000011010
+.CE
+will return a string equivalent to \fB\exe0\exe1\exa0\fR.
+.RE
+.IP \fBH\fR 5
+Stores a string of \fIcount\fR hexadecimal digits in high-to-low
+within each byte in the output string.  \fIArg\fR must contain a
+sequence of characters in the set
+.QW 0123456789abcdefABCDEF .
+The resulting bytes are emitted in first to last order with the hex digits
+being formatted in high-to-low order within each byte.  If \fIarg\fR
+has fewer than \fIcount\fR digits, then zeros will be used for the
+remaining digits.  If \fIarg\fR has more than the specified number of
+digits, the extra digits will be ignored.  If \fIcount\fR is
+\fB*\fR, then all of the digits in \fIarg\fR will be formatted.  If
+\fIcount\fR is omitted, then one digit will be formatted.  If the
+number of digits formatted does not end at a byte boundary, the
+remaining bits of the last byte will be zeros.  For example,
+.RS
+.CS
+\fBbinary format\fR H3H*H2 ab DEF 987
+.CE
+will return a string equivalent to \fB\exab\ex00\exde\exf0\ex98\fR.
+.RE
+.IP \fBh\fR 5
+This form is the same as \fBH\fR except that the digits are stored in
+low-to-high order within each byte. This is seldom required. For example,
+.RS
+.CS
+\fBbinary format\fR h3h*h2 AB def 987
+.CE
+will return a string equivalent to \fB\exba\ex00\exed\ex0f\ex89\fR.
+.RE
+.IP \fBc\fR 5
+Stores one or more 8-bit integer values in the output string.  If no
+\fIcount\fR is specified, then \fIarg\fR must consist of an integer
+value. If \fIcount\fR is specified, \fIarg\fR must consist of a list
+containing at least that many integers. The low-order 8 bits of each integer
+are stored as a one-byte value at the cursor position.  If \fIcount\fR
+is \fB*\fR, then all of the integers in the list are formatted. If the
+number of elements in the list is greater
+than \fIcount\fR, then the extra elements are ignored.  For example,
+.RS
+.CS
+\fBbinary format\fR c3cc* {3 -3 128 1} 260 {2 5}
+.CE
+will return a string equivalent to
+\fB\ex03\exfd\ex80\ex04\ex02\ex05\fR, whereas
+.CS
+\fBbinary format\fR c {2 5}
+.CE
+will generate an error.
+.RE
+.IP \fBs\fR 5
+This form is the same as \fBc\fR except that it stores one or more
+16-bit integers in little-endian byte order in the output string.  The
+low-order 16-bits of each integer are stored as a two-byte value at
+the cursor position with the least significant byte stored first.  For
+example,
+.RS
+.CS
+\fBbinary format\fR s3 {3 -3 258 1}
+.CE
+will return a string equivalent to
+\fB\ex03\ex00\exfd\exff\ex02\ex01\fR.
+.RE
+.IP \fBS\fR 5
+This form is the same as \fBs\fR except that it stores one or more
+16-bit integers in big-endian byte order in the output string.  For
+example,
+.RS
+.CS
+\fBbinary format\fR S3 {3 -3 258 1}
+.CE
+will return a string equivalent to
+\fB\ex00\ex03\exff\exfd\ex01\ex02\fR.
+.RE
+.IP \fBt\fR 5
+This form (mnemonically \fItiny\fR) is the same as \fBs\fR and \fBS\fR
+except that it stores the 16-bit integers in the output string in the
+native byte order of the machine where the Tcl script is running.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.IP \fBi\fR 5
+This form is the same as \fBc\fR except that it stores one or more
+32-bit integers in little-endian byte order in the output string.  The
+low-order 32-bits of each integer are stored as a four-byte value at
+the cursor position with the least significant byte stored first.  For
+example,
+.RS
+.CS
+\fBbinary format\fR i3 {3 -3 65536 1}
+.CE
+will return a string equivalent to
+\fB\ex03\ex00\ex00\ex00\exfd\exff\exff\exff\ex00\ex00\ex01\ex00\fR
+.RE
+.IP \fBI\fR 5
+This form is the same as \fBi\fR except that it stores one or more one
+or more 32-bit integers in big-endian byte order in the output string.
+For example,
+.RS
+.CS
+\fBbinary format\fR I3 {3 -3 65536 1}
+.CE
+will return a string equivalent to
+\fB\ex00\ex00\ex00\ex03\exff\exff\exff\exfd\ex00\ex01\ex00\ex00\fR
+.RE
+.IP \fBn\fR 5
+This form (mnemonically \fInumber\fR or \fInormal\fR) is the same as
+\fBi\fR and \fBI\fR except that it stores the 32-bit integers in the
+output string in the native byte order of the machine where the Tcl
+script is running.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.IP \fBw\fR 5
+This form is the same as \fBc\fR except that it stores one or more
+64-bit integers in little-endian byte order in the output string.  The
+low-order 64-bits of each integer are stored as an eight-byte value at
+the cursor position with the least significant byte stored first.  For
+example,
+.RS
+.CS
+\fBbinary format\fR w 7810179016327718216
+.CE
+will return the string \fBHelloTcl\fR
+.RE
+.IP \fBW\fR 5
+This form is the same as \fBw\fR except that it stores one or more one
+or more 64-bit integers in big-endian byte order in the output string.
+For example,
+.RS
+.CS
+\fBbinary format\fR Wc 4785469626960341345 110
+.CE
+will return the string \fBBigEndian\fR
+.RE
+.IP \fBm\fR 5
+This form (mnemonically the mirror of \fBw\fR) is the same as \fBw\fR
+and \fBW\fR except that it stores the 64-bit integers in the output
+string in the native byte order of the machine where the Tcl script is
+running.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.IP \fBf\fR 5
+This form is the same as \fBc\fR except that it stores one or more one
+or more single-precision floating point numbers in the machine's native
+representation in the output string.  This representation is not
+portable across architectures, so it should not be used to communicate
+floating point numbers across the network.  The size of a floating
+point number may vary across architectures, so the number of bytes
+that are generated may vary.  If the value overflows the
+machine's native representation, then the value of FLT_MAX
+as defined by the system will be used instead.  Because Tcl uses
+double-precision floating point numbers internally, there may be some
+loss of precision in the conversion to single-precision.  For example,
+on a Windows system running on an Intel Pentium processor,
+.RS
+.CS
+\fBbinary format\fR f2 {1.6 3.4}
+.CE
+will return a string equivalent to
+\fB\excd\excc\excc\ex3f\ex9a\ex99\ex59\ex40\fR.
+.RE
+.IP \fBr\fR 5
+This form (mnemonically \fIreal\fR) is the same as \fBf\fR except that
+it stores the single-precision floating point numbers in little-endian
+order.  This conversion only produces meaningful output when used on
+machines which use the IEEE floating point representation (very
+common, but not universal.)
+.IP \fBR\fR 5
+This form is the same as \fBr\fR except that it stores the
+single-precision floating point numbers in big-endian order.
+.IP \fBd\fR 5
+This form is the same as \fBf\fR except that it stores one or more one
+or more double-precision floating point numbers in the machine's native
+representation in the output string.  For example, on a
+Windows system running on an Intel Pentium processor,
+.RS
+.CS
+\fBbinary format\fR d1 {1.6}
+.CE
+will return a string equivalent to
+\fB\ex9a\ex99\ex99\ex99\ex99\ex99\exf9\ex3f\fR.
+.RE
+.IP \fBq\fR 5
+This form (mnemonically the mirror of \fBd\fR) is the same as \fBd\fR
+except that it stores the double-precision floating point numbers in
+little-endian order.  This conversion only produces meaningful output
+when used on machines which use the IEEE floating point representation
+(very common, but not universal.)
+.IP \fBQ\fR 5
+This form is the same as \fBq\fR except that it stores the
+double-precision floating point numbers in big-endian order.
+.IP \fBx\fR 5
+Stores \fIcount\fR null bytes in the output string.  If \fIcount\fR is
+not specified, stores one null byte.  If \fIcount\fR is \fB*\fR,
+generates an error.  This type does not consume an argument.  For
+example,
+.RS
+.CS
+\fBbinary format\fR a3xa3x2a3 abc def ghi
+.CE
+will return a string equivalent to \fBabc\e000def\e000\e000ghi\fR.
+.RE
+.IP \fBX\fR 5
+Moves the cursor back \fIcount\fR bytes in the output string.  If
+\fIcount\fR is \fB*\fR or is larger than the current cursor position,
+then the cursor is positioned at location 0 so that the next byte
+stored will be the first byte in the result string.  If \fIcount\fR is
+omitted then the cursor is moved back one byte.  This type does not
+consume an argument.  For example,
+.RS
+.CS
+\fBbinary format\fR a3X*a3X2a3 abc def ghi
+.CE
+will return \fBdghi\fR.
+.RE
+.IP \fB@\fR 5
+Moves the cursor to the absolute location in the output string
+specified by \fIcount\fR.  Position 0 refers to the first byte in the
+output string.  If \fIcount\fR refers to a position beyond the last
+byte stored so far, then null bytes will be placed in the uninitialized
+locations and the cursor will be placed at the specified location.  If
+\fIcount\fR is \fB*\fR, then the cursor is moved to the current end of
+the output string.  If \fIcount\fR is omitted, then an error will be
+generated.  This type does not consume an argument. For example,
+.RS
+.CS
+\fBbinary format\fR a5@2a1@*a3@10a1 abcde f ghi j
+.CE
+will return \fBabfdeghi\e000\e000j\fR.
+.RE
+.SH "BINARY SCAN"
+.PP
+The \fBbinary scan\fR command parses fields from a binary string,
+returning the number of conversions performed.  \fIString\fR gives the
+input bytes to be parsed (one byte per character, and characters not
+representable as a byte have their high bits chopped)
+and \fIformatString\fR indicates how to parse it.
+Each \fIvarName\fR gives the name of a variable; when a field is
+scanned from \fIstring\fR the result is assigned to the corresponding
+variable.
+.PP
+As with \fBbinary format\fR, the \fIformatString\fR consists of a
+sequence of zero or more field specifiers separated by zero or more
+spaces.  Each field specifier is a single type character followed by
+an optional flag character followed by an optional numeric \fIcount\fR.
+Most field specifiers consume one
+argument to obtain the variable into which the scanned values should
+be placed.  The type character specifies how the binary data is to be
+interpreted.  The \fIcount\fR typically indicates how many items of
+the specified type are taken from the data.  If present, the
+\fIcount\fR is a non-negative decimal integer or \fB*\fR, which
+normally indicates that all of the remaining items in the data are to
+be used.  If there are not enough bytes left after the current cursor
+position to satisfy the current field specifier, then the
+corresponding variable is left untouched and \fBbinary scan\fR returns
+immediately with the number of variables that were set.  If there are
+not enough arguments for all of the fields in the format string that
+consume arguments, then an error is generated. The flag character
+.QW u
+may be given to cause some types to be read as unsigned values. The flag
+is accepted for all field types but is ignored for non-integer fields.
+.PP
+A similar example as with \fBbinary format\fR should explain the
+relation between field specifiers and arguments in case of the binary
+scan subcommand:
+.CS
+\fBbinary scan\fR $bytes s3s first second
+.CE
+.PP
+This command (provided the binary string in the variable \fIbytes\fR
+is long enough) assigns a list of three integers to the variable
+\fIfirst\fR and assigns a single value to the variable \fIsecond\fR.
+If \fIbytes\fR contains fewer than 8 bytes (i.e. four 2-byte
+integers), no assignment to \fIsecond\fR will be made, and if
+\fIbytes\fR contains fewer than 6 bytes (i.e. three 2-byte integers),
+no assignment to \fIfirst\fR will be made.  Hence:
+.CS
+puts [\fBbinary scan\fR abcdefg s3s first second]
+puts $first
+puts $second
+.CE
+will print (assuming neither variable is set previously):
+.CS
+1
+25185 25699 26213
+can't read "second": no such variable
+.CE
+.PP
+It is \fIimportant\fR to note that the \fBc\fR, \fBs\fR, and \fBS\fR
+(and \fBi\fR and \fBI\fR on 64bit systems) will be scanned into
+long data size values.  In doing this, values that have their high
+bit set (0x80 for chars, 0x8000 for shorts, 0x80000000 for ints),
+will be sign extended.  Thus the following will occur:
+.CS
+set signShort [\fBbinary format\fR s1 0x8000]
+\fBbinary scan\fR $signShort s1 val; \fI# val == 0xFFFF8000\fR
+.CE
+If you require unsigned values you can include the
+.QW u
+flag character following
+the field type. For example, to read an unsigned short value:
+.CS
+set signShort [\fBbinary format\fR s1 0x8000]
+\fBbinary scan\fR $signShort su1 val; \fI# val == 0x00008000\fR
+.CE
+.PP
+Each type-count pair moves an imaginary cursor through the binary data,
+reading bytes from the current position.  The cursor is initially
+at position 0 at the beginning of the data.  The type may be any one of
+the following characters:
+.IP \fBa\fR 5
+The data is a byte string of length \fIcount\fR.  If \fIcount\fR
+is \fB*\fR, then all of the remaining bytes in \fIstring\fR will be
+scanned into the variable.  If \fIcount\fR is omitted, then one
+byte will be scanned.
+All bytes scanned will be interpreted as being characters in the
+range \eu0000-\eu00ff so the \fBencoding convertfrom\fR command will be
+needed if the string is not a binary string or a string encoded in ISO
+8859\-1.
+For example,
+.RS
+.CS
+\fBbinary scan\fR abcde\e000fghi a6a10 var1 var2
+.CE
+will return \fB1\fR with the string equivalent to \fBabcde\e000\fR
+stored in \fIvar1\fR and \fIvar2\fR left unmodified, and
+.CS
+\fBbinary scan\fR \e342\e202\e254 a* var1
+set var2 [encoding convertfrom utf-8 $var1]
+.CE
+will store a Euro-currency character in \fIvar2\fR.
+.RE
+.IP \fBA\fR 5
+This form is the same as \fBa\fR, except trailing blanks and nulls are stripped from
+the scanned value before it is stored in the variable.  For example,
+.RS
+.CS
+\fBbinary scan\fR "abc efghi  \e000" A* var1
+.CE
+will return \fB1\fR with \fBabc efghi\fR stored in \fIvar1\fR.
+.RE
+.IP \fBb\fR 5
+The data is turned into a string of \fIcount\fR binary digits in
+low-to-high order represented as a sequence of
+.QW 1
+and
+.QW 0
+characters.  The data bytes are scanned in first to last order with
+the bits being taken in low-to-high order within each byte.  Any extra
+bits in the last byte are ignored.  If \fIcount\fR is \fB*\fR, then
+all of the remaining bits in \fIstring\fR will be scanned.  If
+\fIcount\fR is omitted, then one bit will be scanned.  For example,
+.RS
+.CS
+\fBbinary scan\fR \ex07\ex87\ex05 b5b* var1 var2
+.CE
+will return \fB2\fR with \fB11100\fR stored in \fIvar1\fR and
+\fB1110000110100000\fR stored in \fIvar2\fR.
+.RE
+.IP \fBB\fR 5
+This form is the same as \fBb\fR, except the bits are taken in
+high-to-low order within each byte.  For example,
+.RS
+.CS
+\fBbinary scan\fR \ex70\ex87\ex05 B5B* var1 var2
+.CE
+will return \fB2\fR with \fB01110\fR stored in \fIvar1\fR and
+\fB1000011100000101\fR stored in \fIvar2\fR.
+.RE
+.IP \fBH\fR 5
+The data is turned into a string of \fIcount\fR hexadecimal digits in
+high-to-low order represented as a sequence of characters in the set
+.QW 0123456789abcdef .
+The data bytes are scanned in first to last
+order with the hex digits being taken in high-to-low order within each
+byte. Any extra bits in the last byte are ignored. If \fIcount\fR is
+\fB*\fR, then all of the remaining hex digits in \fIstring\fR will be
+scanned. If \fIcount\fR is omitted, then one hex digit will be
+scanned. For example,
+.RS
+.CS
+\fBbinary scan\fR \ex07\exC6\ex05\ex1f\ex34 H3H* var1 var2
+.CE
+will return \fB2\fR with \fB07c\fR stored in \fIvar1\fR and
+\fB051f34\fR stored in \fIvar2\fR.
+.RE
+.IP \fBh\fR 5
+This form is the same as \fBH\fR, except the digits are taken in
+reverse (low-to-high) order within each byte. For example,
+.RS
+.CS
+\fBbinary scan\fR \ex07\ex86\ex05\ex12\ex34 h3h* var1 var2
+.CE
+will return \fB2\fR with \fB706\fR stored in \fIvar1\fR and
+\fB502143\fR stored in \fIvar2\fR.
+.PP
+Note that most code that wishes to parse the hexadecimal digits from
+multiple bytes in order should use the \fBH\fR format.
+.RE
+.IP \fBc\fR 5
+The data is turned into \fIcount\fR 8-bit signed integers and stored
+in the corresponding variable as a list. If \fIcount\fR is \fB*\fR,
+then all of the remaining bytes in \fIstring\fR will be scanned.  If
+\fIcount\fR is omitted, then one 8-bit integer will be scanned.  For
+example,
+.RS
+.CS
+\fBbinary scan\fR \ex07\ex86\ex05 c2c* var1 var2
+.CE
+will return \fB2\fR with \fB7 -122\fR stored in \fIvar1\fR and \fB5\fR
+stored in \fIvar2\fR.  Note that the integers returned are signed, but
+they can be converted to unsigned 8-bit quantities using an expression
+like:
+.CS
+set num [expr { $num & 0xff }]
+.CE
+.RE
+.IP \fBs\fR 5
+The data is interpreted as \fIcount\fR 16-bit signed integers
+represented in little-endian byte order.  The integers are stored in
+the corresponding variable as a list.  If \fIcount\fR is \fB*\fR, then
+all of the remaining bytes in \fIstring\fR will be scanned.  If
+\fIcount\fR is omitted, then one 16-bit integer will be scanned.  For
+example,
+.RS
+.CS
+\fBbinary scan\fR \ex05\ex00\ex07\ex00\exf0\exff s2s* var1 var2
+.CE
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
+stored in \fIvar2\fR.  Note that the integers returned are signed, but
+they can be converted to unsigned 16-bit quantities using an expression
+like:
+.CS
+set num [expr { $num & 0xffff }]
+.CE
+.RE
+.IP \fBS\fR 5
+This form is the same as \fBs\fR except that the data is interpreted
+as \fIcount\fR 16-bit signed integers represented in big-endian byte
+order.  For example,
+.RS
+.CS
+\fBbinary scan\fR \ex00\ex05\ex00\ex07\exff\exf0 S2S* var1 var2
+.CE
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
+stored in \fIvar2\fR.
+.RE
+.IP \fBt\fR 5
+The data is interpreted as \fIcount\fR 16-bit signed integers
+represented in the native byte order of the machine running the Tcl
+script.  It is otherwise identical to \fBs\fR and \fBS\fR.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.IP \fBi\fR 5
+The data is interpreted as \fIcount\fR 32-bit signed integers
+represented in little-endian byte order.  The integers are stored in
+the corresponding variable as a list.  If \fIcount\fR is \fB*\fR, then
+all of the remaining bytes in \fIstring\fR will be scanned.  If
+\fIcount\fR is omitted, then one 32-bit integer will be scanned.  For
+example,
+.RS
+.CS
+set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exf0\exff\exff\exff
+\fBbinary scan\fR $str i2i* var1 var2
+.CE
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
+stored in \fIvar2\fR.  Note that the integers returned are signed, but
+they can be converted to unsigned 32-bit quantities using an expression
+like:
+.CS
+set num [expr { $num & 0xffffffff }]
+.CE
+.RE
+.IP \fBI\fR 5
+This form is the same as \fBI\fR except that the data is interpreted
+as \fIcount\fR 32-bit signed integers represented in big-endian byte
+order.  For example,
+.RS
+.CS
+set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exff\exff\exff\exf0
+\fBbinary scan\fR $str I2I* var1 var2
+.CE
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
+stored in \fIvar2\fR.
+.RE
+.IP \fBn\fR 5
+The data is interpreted as \fIcount\fR 32-bit signed integers
+represented in the native byte order of the machine running the Tcl
+script.  It is otherwise identical to \fBi\fR and \fBI\fR.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.IP \fBw\fR 5
+The data is interpreted as \fIcount\fR 64-bit signed integers
+represented in little-endian byte order.  The integers are stored in
+the corresponding variable as a list.  If \fIcount\fR is \fB*\fR, then
+all of the remaining bytes in \fIstring\fR will be scanned.  If
+\fIcount\fR is omitted, then one 64-bit integer will be scanned.  For
+example,
+.RS
+.CS
+set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exf0\exff\exff\exff
+\fBbinary scan\fR $str wi* var1 var2
+.CE
+will return \fB2\fR with \fB30064771077\fR stored in \fIvar1\fR and
+\fB\-16\fR stored in \fIvar2\fR.  Note that the integers returned are
+signed and cannot be represented by Tcl as unsigned values.
+.RE
+.IP \fBW\fR 5
+This form is the same as \fBw\fR except that the data is interpreted
+as \fIcount\fR 64-bit signed integers represented in big-endian byte
+order.  For example,
+.RS
+.CS
+set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exff\exff\exff\exf0
+\fBbinary scan\fR $str WI* var1 var2
+.CE
+will return \fB2\fR with \fB21474836487\fR stored in \fIvar1\fR and \fB\-16\fR
+stored in \fIvar2\fR.
+.RE
+.IP \fBm\fR 5
+The data is interpreted as \fIcount\fR 64-bit signed integers
+represented in the native byte order of the machine running the Tcl
+script.  It is otherwise identical to \fBw\fR and \fBW\fR.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.IP \fBf\fR 5
+The data is interpreted as \fIcount\fR single-precision floating point
+numbers in the machine's native representation.  The floating point
+numbers are stored in the corresponding variable as a list.  If
+\fIcount\fR is \fB*\fR, then all of the remaining bytes in
+\fIstring\fR will be scanned.  If \fIcount\fR is omitted, then one
+single-precision floating point number will be scanned.  The size of a
+floating point number may vary across architectures, so the number of
+bytes that are scanned may vary.  If the data does not represent a
+valid floating point number, the resulting value is undefined and
+compiler dependent.  For example, on a Windows system running on an
+Intel Pentium processor,
+.RS
+.CS
+\fBbinary scan\fR \ex3f\excc\excc\excd f var1
+.CE
+will return \fB1\fR with \fB1.6000000238418579\fR stored in
+\fIvar1\fR.
+.RE
+.IP \fBr\fR 5
+This form is the same as \fBf\fR except that the data is interpreted
+as \fIcount\fR single-precision floating point number in little-endian
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
+.IP \fBR\fR 5
+This form is the same as \fBf\fR except that the data is interpreted
+as \fIcount\fR single-precision floating point number in big-endian
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
+.IP \fBd\fR 5
+This form is the same as \fBf\fR except that the data is interpreted
+as \fIcount\fR double-precision floating point numbers in the
+machine's native representation. For example, on a Windows system
+running on an Intel Pentium processor,
+.RS
+.CS
+\fBbinary scan\fR \ex9a\ex99\ex99\ex99\ex99\ex99\exf9\ex3f d var1
+.CE
+will return \fB1\fR with \fB1.6000000000000001\fR
+stored in \fIvar1\fR.
+.RE
+.IP \fBq\fR 5
+This form is the same as \fBd\fR except that the data is interpreted
+as \fIcount\fR double-precision floating point number in little-endian
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
+.IP \fBQ\fR 5
+This form is the same as \fBd\fR except that the data is interpreted
+as \fIcount\fR double-precision floating point number in big-endian
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
+.IP \fBx\fR 5
+Moves the cursor forward \fIcount\fR bytes in \fIstring\fR.  If
+\fIcount\fR is \fB*\fR or is larger than the number of bytes after the
+current cursor position, then the cursor is positioned after
+the last byte in \fIstring\fR.  If \fIcount\fR is omitted, then the
+cursor is moved forward one byte.  Note that this type does not
+consume an argument.  For example,
+.RS
+.CS
+\fBbinary scan\fR \ex01\ex02\ex03\ex04 x2H* var1
+.CE
+will return \fB1\fR with \fB0304\fR stored in \fIvar1\fR.
+.RE
+.IP \fBX\fR 5
+Moves the cursor back \fIcount\fR bytes in \fIstring\fR.  If
+\fIcount\fR is \fB*\fR or is larger than the current cursor position,
+then the cursor is positioned at location 0 so that the next byte
+scanned will be the first byte in \fIstring\fR.  If \fIcount\fR
+is omitted then the cursor is moved back one byte.  Note that this
+type does not consume an argument.  For example,
+.RS
+.CS
+\fBbinary scan\fR \ex01\ex02\ex03\ex04 c2XH* var1 var2
+.CE
+will return \fB2\fR with \fB1 2\fR stored in \fIvar1\fR and \fB020304\fR
+stored in \fIvar2\fR.
+.RE
+.IP \fB@\fR 5
+Moves the cursor to the absolute location in the data string specified
+by \fIcount\fR.  Note that position 0 refers to the first byte in
+\fIstring\fR.  If \fIcount\fR refers to a position beyond the end of
+\fIstring\fR, then the cursor is positioned after the last byte.  If
+\fIcount\fR is omitted, then an error will be generated.  For example,
+.RS
+.CS
+\fBbinary scan\fR \ex01\ex02\ex03\ex04 c2@1H* var1 var2
+.CE
+will return \fB2\fR with \fB1 2\fR stored in \fIvar1\fR and \fB020304\fR
+stored in \fIvar2\fR.
+.RE
+.SH "PORTABILITY ISSUES"
+.PP
+The \fBr\fR, \fBR\fR, \fBq\fR and \fBQ\fR conversions will only work
+reliably for transferring data between computers which are all using
+IEEE floating point representations.  This is very common, but not
+universal.  To transfer floating-point numbers portably between all
+architectures, use their textual representation (as produced by
+\fBformat\fR) instead.
+.SH EXAMPLES
+.PP
+This is a procedure to write a Tcl string to a binary-encoded channel as
+UTF-8 data preceded by a length word:
+.PP
+.CS
+proc \fIwriteString\fR {channel string} {
+    set data [encoding convertto utf-8 $string]
+    puts -nonewline [\fBbinary format\fR Ia* \e
+            [string length $data] $data]
+}
+.CE
+.PP
+This procedure reads a string from a channel that was written by the
+previously presented \fIwriteString\fR procedure:
+.PP
+.CS
+proc \fIreadString\fR {channel} {
+    if {![\fBbinary scan\fR [read $channel 4] I length]} {
+        error "missing length"
+    }
+    set data [read $channel $length]
+    return [encoding convertfrom utf-8 $data]
+}
+.CE
+.PP
+This converts the contents of a file (named in the variable \fIfilename\fR) to
+base64 and prints them:
+.PP
+.CS
+set f [open $filename rb]
+set data [read $f]
+close $f
+puts [\fBbinary encode\fR base64 \-maxlen 64 $data]
+.CE
+.SH "SEE ALSO"
+encoding(n), format(n), scan(n), string(n), tcl_platform(n)
+.SH KEYWORDS
+binary, format, scan
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

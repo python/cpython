@@ -1,0 +1,75 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH local n "" itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::local \- create an object local to a procedure
+.SH SYNOPSIS
+\fBitcl::local \fIclassName objName\fR ?\fIarg arg ...\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBlocal\fR command creates an \fB[incr\ Tcl]\fR object that
+is local to the current call frame.  When the call frame goes away,
+the object is automatically deleted.  This command is useful for
+creating objects that are local to a procedure.
+.PP
+As a side effect, this command creates a variable named
+"\fBitcl-local-\fIxxx\fR", where \fIxxx\fR is the name of
+the object that is created.  This variable detects when the
+call frame is destroyed and automatically deletes the
+associated object.
+
+.SH EXAMPLE
+.PP
+In the following example, a simple "counter" object is used
+within the procedure "test".  The counter is created as a
+local object, so it is automatically deleted each time the
+procedure exits.  The \fBputs\fR statements included in the
+constructor/destructor show the object coming and going
+as the procedure is called.
+.PP
+.CS
+itcl::class counter {
+    private variable count 0
+    constructor {} {
+        puts "created: $this"
+    }
+    destructor {
+        puts "deleted: $this"
+    }
+
+    method bump {{by 1}} {
+        incr count $by
+    }
+    method get {} {
+        return $count
+    }
+}
+
+proc test {val} {
+    local counter x
+    for {set i 0} {$i < $val} {incr i} {
+        x bump
+    }
+    return [x get]
+}
+
+set result [test 5]
+puts "test: $result"
+
+set result [test 10]
+puts "test: $result"
+
+puts "objects: [itcl::find objects *]"
+.CE
+
+.SH KEYWORDS
+class, object, procedure

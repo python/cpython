@@ -1,0 +1,210 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH button n 4.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+button \- Create and manipulate 'button' action widgets
+.SH SYNOPSIS
+\fBbutton\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-activebackground	\-font	\-relief
+\-activeforeground	\-foreground	\-repeatdelay
+\-anchor	\-highlightbackground	\-repeatinterval
+\-background	\-highlightcolor	\-takefocus
+\-bitmap	\-highlightthickness	\-text
+\-borderwidth	\-image	\-textvariable
+\-compound	\-justify	\-underline
+\-cursor	\-padx	\-wraplength
+\-disabledforeground	\-pady
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-command command Command
+Specifies a Tcl command to associate with the button.  This command
+is typically invoked when mouse button 1 is released over the button
+window.
+.OP \-default default Default
+Specifies one of three states for the default ring: \fBnormal\fR,
+\fBactive\fR, or \fBdisabled\fR.  In active state, the button is drawn
+with the platform specific appearance for a default button.  In normal
+state, the button is drawn with the platform specific appearance for a
+non-default button, leaving enough space to draw the default button
+appearance.  The normal and active states will result in buttons of
+the same size.  In disabled state, the button is drawn with the
+non-default button appearance without leaving space for the default
+appearance.  The disabled state may result in a smaller button than
+the active state.
+.OP \-height height Height
+Specifies a desired height for the button.
+If an image or bitmap is being displayed in the button then the value is in
+screen units (i.e. any of the forms acceptable to \fBTk_GetPixels\fR);
+for text it is in lines of text.
+If this option is not specified, the button's desired height is computed
+from the size of the image or bitmap or text being displayed in it.
+.OP \-overrelief overRelief OverRelief
+Specifies an alternative relief for the button, to be used when the
+mouse cursor is over the widget.  This option can be used to make
+toolbar buttons, by configuring \fB\-relief flat \-overrelief
+raised\fR.  If the value of this option is the empty string, then no
+alternative relief is used when the mouse cursor is over the button.
+The empty string is the default value.
+.OP \-state state State
+Specifies one of three states for the button:  \fBnormal\fR, \fBactive\fR,
+or \fBdisabled\fR.  In normal state the button is displayed using the
+\fB\-foreground\fR and \fB\-background\fR options.  The active state is
+typically used when the pointer is over the button.  In active state
+the button is displayed using the \fB\-activeforeground\fR and
+\fB\-activebackground\fR options.  Disabled state means that the button
+should be insensitive:  the default bindings will refuse to activate
+the widget and will ignore mouse button presses.
+In this state the \fB\-disabledforeground\fR and
+\fB\-background\fR options determine how the button is displayed.
+.OP \-width width Width
+Specifies a desired width for the button.
+If an image or bitmap is being displayed in the button then the value is in
+screen units (i.e. any of the forms acceptable to \fBTk_GetPixels\fR).
+For a text button (no image or with \fB\-compound none\fR) then the width
+specifies how much space in characters to allocate for the text label.
+If the width is negative then this specifies a minimum width.
+If this option is not specified, the button's desired width is computed
+from the size of the image or bitmap or text being displayed in it.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBbutton\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a button widget.
+Additional
+options, described above, may be specified on the command line
+or in the option database
+to configure aspects of the button such as its colors, font,
+text, and initial relief.  The \fBbutton\fR command returns its
+\fIpathName\fR argument.  At the time this command is invoked,
+there must not exist a window named \fIpathName\fR, but
+\fIpathName\fR's parent must exist.
+.PP
+A button is a widget that displays a textual string, bitmap or image.
+If text is displayed, it must all be in a single font, but it
+can occupy multiple lines on the screen (if it contains newlines
+or if wrapping occurs because of the \fB\-wraplength\fR option) and
+one of the characters may optionally be underlined using the
+\fB\-underline\fR option.
+It can display itself in either of three different ways, according
+to
+the \fB\-state\fR option;
+it can be made to appear raised, sunken, or flat;
+and it can be made to flash.  When a user invokes the
+button (by pressing mouse button 1 with the cursor over the
+button), then the Tcl command specified in the \fB\-command\fR
+option is invoked.
+.SH "WIDGET COMMAND"
+.PP
+The \fBbutton\fR command creates a new Tcl command whose
+name is \fIpathName\fR.  This
+command may be used to invoke various
+operations on the widget.  It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for button widgets:
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBbutton\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBbutton\fR
+command.
+.TP
+\fIpathName \fBflash\fR
+Flash the button.  This is accomplished by redisplaying the button
+several times, alternating between the configured activebackground
+and background colors.  At the end of the flash the button is left
+in the same normal/active state as when the command was invoked.
+This command is ignored if the button's state is \fBdisabled\fR.
+.TP
+\fIpathName \fBinvoke\fR
+Invoke the Tcl command associated with the button, if there is one.
+The return value is the return value from the Tcl command, or an
+empty string if there is no command associated with the button.
+This command is ignored if the button's state is \fBdisabled\fR.
+.SH "DEFAULT BINDINGS"
+.PP
+Tk automatically creates class bindings for buttons that give them
+default behavior:
+.IP [1]
+A button activates whenever the mouse passes over it and deactivates
+whenever the mouse leaves the button.
+Under Windows, this binding is only active when mouse button 1 has
+been pressed over the button.
+.IP [2]
+A button's relief is changed to sunken whenever mouse button 1 is
+pressed over the button, and the relief is restored to its original
+value when button 1 is later released.
+.IP [3]
+If mouse button 1 is pressed over a button and later released over
+the button, the button is invoked.  However, if the mouse is not
+over the button when button 1 is released, then no invocation occurs.
+.IP [4]
+When a button has the input focus, the space key causes the button
+to be invoked.
+.PP
+If the button's state is \fBdisabled\fR then none of the above
+actions occur:  the button is completely non-responsive.
+.PP
+The behavior of buttons can be changed by defining new bindings for
+individual widgets or by redefining the class bindings.
+.SH "PLATFORM NOTES"
+.PP
+On Aqua/Mac OS X, some configuration options are ignored for the purpose of
+drawing of the widget because they would otherwise conflict with platform
+guidelines. The \fBconfigure\fR and \fBcget\fR subcommands can still
+manipulate the values, but do not cause any variation to the look of the
+widget. The options affected notably include \fB\-background\fR and
+\fB\-relief\fR.
+.SH EXAMPLES
+.PP
+This is the classic Tk
+.QW "Hello, World!"
+demonstration:
+.PP
+.CS
+\fBbutton\fR .b \-text "Hello, World!" \-command exit
+pack .b
+.CE
+.PP
+This example demonstrates how to handle button accelerators:
+.PP
+.CS
+\fBbutton\fR .b1 \-text Hello \-underline 0
+\fBbutton\fR .b2 \-text World \-underline 0
+bind . <Key\-h> {.b1 flash; .b1 invoke}
+bind . <Key\-w> {.b2 flash; .b2 invoke}
+pack .b1 .b2
+.CE
+.SH "SEE ALSO"
+ttk::button(n)
+.SH KEYWORDS
+button, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

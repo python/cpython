@@ -1,0 +1,82 @@
+<HEAD>
+<TITLE> Declaring and Using Variables<A NAME=65>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1276 HREF=subsubsection3_8_5_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1274 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1268 HREF=subsubsection3_8_4_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1278 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1277 HREF=subsubsection3_8_5_1.html> Initialization of Public </A>
+<B>Up:</B> <A NAME=tex2html1275 HREF=section3_8.html> Tix Object Oriented </A>
+<B> Previous:</B> <A NAME=tex2html1269 HREF=subsubsection3_8_4_5.html> The SetBindings Method</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00085000000000000000> Declaring and Using Variables<A NAME=65>&nbsp;</A></A></H2>
+<P>
+The private variables of a widget class do not need to be
+  declared. In fact they can be initialized and used anywhere by any
+  method. Usually, however, general purpose private variables are
+  initialized by the <tt>InitWidgetRec</tt> method and subwidget
+  variables are initialized in the <tt>ConstructWidget</tt> method.
+<P>We have seen in the <tt>tixArrowButton:InitWidgetRec</tt> example that
+  the private variable <tt>data(count)</tt> was initialized there. Also,
+  the private variable <tt>data(w:button)</tt> was initialized in <tt>tixArrowButton:ConstructWidget</tt> and subsequently used in <tt>tixArrowButton:SetBindings</tt>.
+<P>In contrast, public variables must be declared inside the class
+  declaration. The following arguments are used to declare the public
+  variables and specify various options for them:
+<P>
+<blockquote> <UL><P><LI><P><tt>-flag</tt>: As shown in the class declaration in figure
+  6-2, the <tt>-flag</tt> argument declares all the public
+  variables of the TixArrowButton class, <tt>-direction</tt> and <tt>-state</tt>
+<P><LI><P><tt>-configspec</tt>: We can use the <tt>-configspec</tt> argument to
+  specify the details of each public variable. For example, the
+  following declaration
+<P>
+<blockquote> <P><tt> -configspec {<BR>
+    {-direction direction Direction e}<BR>
+    {-state state State normal}<BR>
+}</tt>
+<P></blockquote>
+<P>specifies that the <tt>-direction</tt> variable has the resource
+  name <tt>direction</tt> and resource class <tt>Direction</tt>; its default
+  value is <tt>e</tt>. The application programmer can assign value to
+  this variable by using the <tt>-direction</tt> option in the command
+  line or by specifying resources in the Tk option database with its
+  resource name or class. The declaration of <tt>-state</tt> installs
+  similar definitions for that variable.
+<P><LI><P><tt>-alias</tt>: The <tt>-alias</tt> argument is used to specify
+  alternative names for public variables. In our example, the setting
+<P>
+<blockquote> <P><tt> -alias {<BR>
+    {-dir -direction}<BR>
+}</tt>
+<P></blockquote>
+<P>specifies that <tt>-dir</tt> is the same variable as <tt>-direction</tt>. Therefore, when the application issue the command
+<P>
+<blockquote> <P><tt> .up config -dir w
+</tt>
+<P></blockquote>
+<P>it is the same as issuing
+<P>
+<blockquote> <tt> .up config -direction w
+</tt>
+<P></blockquote>
+<P>
+   The <tt>-alias</tt> option provides only an alternative name for
+  the application programmer. Inside the widget's implementation code,
+  the variable is still accessed as <tt>data(-direction)</tt>, <em>not</em>
+  <tt>data(-dir)</tt>.  
+<P></UL>
+</blockquote>
+<P>
+<HR>
+<UL> 
+<LI> <A NAME=tex2html1279 HREF=subsubsection3_8_5_1.html#SECTION00085100000000000000> Initialization of Public Variables<A NAME=651>&nbsp;</A></A>
+<LI> <A NAME=tex2html1280 HREF=subsubsectionstar3_8_5_2.html#SECTION00085200000000000000>  Type Checker<A NAME=6511>&nbsp;</A></A>
+<LI> <A NAME=tex2html1281 HREF=subsubsection3_8_5_3.html#SECTION00085300000000000000> Public Variable Configuration Methods<A NAME=652>&nbsp;</A></A>
+<LI> <A NAME=tex2html1282 HREF=subsubsectionstar3_8_5_4.html#SECTION00085400000000000000>  Configuration Methods and Public Variable Initialization<A NAME=6521>&nbsp;</A></A>
+</UL>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

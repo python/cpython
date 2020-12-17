@@ -1,0 +1,13 @@
+REM = This file is generated from rules.vc 
+TCL_MAJOR_VERSION = \
+8
+TCL_MINOR_VERSION = \
+6
+TCL_PATCH_LEVEL = \
+8.6.9
+TK_MAJOR_VERSION = \
+8
+TK_MINOR_VERSION = \
+6
+TK_PATCH_LEVEL = \
+8.6.9

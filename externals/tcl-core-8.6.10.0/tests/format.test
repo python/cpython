@@ -1,0 +1,624 @@
+# Commands covered:  format
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1994 The Regents of the University of California.
+# Copyright (c) 1994-1998 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# %u output depends on word length, so this test is not portable.
+testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+testConstraint wideIs64bit \
+	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+
+test format-1.1 {integer formatting} {
+    format "%*d %d %d %d" 6 34 16923 -12 -1
+} {    34 16923 -12 -1}
+test format-1.2 {integer formatting} {
+    format "%4d %4d %4d %4d %d %#x %#X" 6 34 16923 -12 -1 14 12
+} {   6   34 16923  -12 -1 0xe 0XC}
+test format-1.3 {integer formatting} longIs32bit {
+    format "%4u %4u %4u %4u %d %#o" 6 34 16923 -12 -1 0
+} {   6   34 16923 4294967284 -1 0}
+test format-1.3.1 {integer formatting} longIs64bit {
+    format "%4u %4u %4u %4u %d %#o" 6 34 16923 -12 -1 0
+} {   6   34 16923 18446744073709551604 -1 0}
+test format-1.4 {integer formatting} {
+    format "%-4d %-4i %-4d %-4ld" 6 34 16923 -12 -1
+} {6    34   16923 -12 }
+test format-1.5 {integer formatting} {
+    format "%04d %04d %04d %04i" 6 34 16923 -12 -1
+} {0006 0034 16923 -012}
+test format-1.6 {integer formatting} {
+    format "%00*d" 6 34
+} {000034}
+# Printing negative numbers in hex or octal format depends on word
+# length, so these tests are not portable.
+test format-1.7 {integer formatting} longIs32bit {
+    format "%4x %4x %4x %4x" 6 34 16923 -12 -1
+} {   6   22 421b fffffff4}
+test format-1.7.1 {integer formatting} longIs64bit {
+    format "%4x %4x %4x %4x" 6 34 16923 -12 -1
+} {   6   22 421b fffffffffffffff4}
+test format-1.8 {integer formatting} longIs32bit {
+    format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
+} {0x0 0x6 0X22 0X421B 0xfffffff4}
+test format-1.8.1 {integer formatting} longIs64bit {
+    format "%#x %#x %#X %#X %#x" 0 6 34 16923 -12 -1
+} {0x0 0x6 0X22 0X421B 0xfffffffffffffff4}
+test format-1.9 {integer formatting} longIs32bit {
+    format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
+} {  0x0                  0x6                 0x22               0x421b           0xfffffff4}
+test format-1.9.1 {integer formatting} longIs64bit {
+    format "%#5x %#20x %#20x %#20x %#20x" 0 6 34 16923 -12 -1
+} {  0x0                  0x6                 0x22               0x421b   0xfffffffffffffff4}
+test format-1.10 {integer formatting} longIs32bit {
+    format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
+} {0x0   0x6                  0x22                 0x421b               0xfffffff4          }
+test format-1.10.1 {integer formatting} longIs64bit {
+    format "%-#5x %-#20x %-#20x %-#20x %-#20x" 0 6 34 16923 -12 -1
+} {0x0   0x6                  0x22                 0x421b               0xfffffffffffffff4  }
+test format-1.11 {integer formatting} longIs32bit {
+    format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
+} {0     06                   042                  041033               037777777764        }
+test format-1.11.1 {integer formatting} longIs64bit {
+    format "%-#5o %-#20o %#-20o %#-20o %#-20o" 0 6 34 16923 -12 -1
+} {0     06                   042                  041033               01777777777777777777764}
+test format-1.12 {integer formatting} {
+    format "%b %#b %#b %llb" 5 0 5 [expr {2**100}]
+} {101 0b0 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
+test format-1.13 {integer formatting} longIs32bit {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0 6 34 16923 -12}
+test format-1.13.1 {integer formatting} longIs64bit {
+    format "%#d %#d %#d %#d %#d" 0 6 34 16923 -12 -1
+} {0 6 34 16923 -12}
+test format-1.14 {integer formatting} longIs32bit {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {    0                    6                   34                16923                  -12}
+test format-1.14.1 {integer formatting} longIs64bit {
+    format "%#5d %#20d %#20d %#20d %#20d" 0 6 34 16923 -12 -1
+} {    0                    6                   34                16923                  -12}
+test format-1.15 {integer formatting} longIs32bit {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0     6                    34                   16923                -12                 }
+test format-1.15.1 {integer formatting} longIs64bit {
+    format "%-#5d %-#20d %-#20d %-#20d %-#20d" 0 6 34 16923 -12 -1
+} {0     6                    34                   16923                -12                 }
+
+
+test format-2.1 {string formatting} {
+    format "%s %s %c %s" abcd {This is a very long test string.} 120 x
+} {abcd This is a very long test string. x x}
+test format-2.2 {string formatting} {
+    format "%20s %20s %20c %20s" abcd {This is a very long test string.} 120 x
+} {                abcd This is a very long test string.                    x                    x}
+test format-2.3 {string formatting} {
+    format "%.10s %.10s %c %.10s" abcd {This is a very long test string.} 120 x
+} {abcd This is a  x x}
+test format-2.4 {string formatting} {
+    format "%s %s %% %c %s" abcd {This is a very long test string.} 120 x
+} {abcd This is a very long test string. % x x}
+test format-2.5 {string formatting, embedded nulls} {
+    format "%10s" abc\0def
+} "   abc\0def"
+test format-2.6 {string formatting, international chars} {
+    format "%10s" abc\ufeffdef
+} "   abc\ufeffdef"
+test format-2.7 {string formatting, international chars} {
+    format "%.5s" abc\ufeffdef
+} "abc\ufeffd"
+test format-2.8 {string formatting, international chars} {
+    format "foo\ufeffbar%s" baz
+} "foo\ufeffbarbaz"
+test format-2.9 {string formatting, width} {
+    format "a%5sa" f
+} "a    fa"
+test format-2.10 {string formatting, width} {
+    format "a%-5sa" f
+} "af    a"
+test format-2.11 {string formatting, width} {
+    format "a%2sa" foo
+} "afooa"
+test format-2.12 {string formatting, width} {
+    format "a%0sa" foo
+} "afooa"
+test format-2.13 {string formatting, precision} {
+    format "a%.2sa" foobarbaz
+} "afoa"
+test format-2.14 {string formatting, precision} {
+    format "a%.sa" foobarbaz
+} "aa"
+test format-2.15 {string formatting, precision} {
+    list [catch {format "a%.-2sa" foobarbaz} msg] $msg
+} {1 {bad field specifier "-"}}
+test format-2.16 {string formatting, width and precision} {
+    format "a%5.2sa" foobarbaz
+} "a   foa"
+test format-2.17 {string formatting, width and precision} {
+    format "a%5.7sa" foobarbaz
+} "afoobarba"
+
+test format-3.1 {Tcl_FormatObjCmd: character formatting} {
+    format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 65 65 65 65 65 65 3 65 -4 65
+} "|A|A|A|A|A     |     A|  A|A   |"
+test format-3.2 {Tcl_FormatObjCmd: international character formatting} {
+    format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 0xa2 0x4e4e 0x25a 0xc3 0xff08 0 3 0x6575 -4 0x4e4f
+} "|\ua2|\u4e4e|\u25a|\uc3|\uff08     |     \0|  \u6575|\u4e4f   |"
+
+test format-4.1 {e and f formats} {eformat} {
+    format "%e %e %e %e" 34.2e12 68.514 -.125 -16000. .000053
+} {3.420000e+13 6.851400e+01 -1.250000e-01 -1.600000e+04}
+test format-4.2 {e and f formats} {eformat} {
+    format "%20e %20e %20e %20e" 34.2e12 68.514 -.125 -16000. .000053
+} {        3.420000e+13         6.851400e+01        -1.250000e-01        -1.600000e+04}
+test format-4.3 {e and f formats} {eformat} {
+    format "%.1e %.1e %.1e %.1e" 34.2e12 68.514 -.126 -16000. .000053
+} {3.4e+13 6.9e+01 -1.3e-01 -1.6e+04}
+test format-4.4 {e and f formats} {eformat} {
+    format "%020e %020e %020e %020e" 34.2e12 68.514 -.126 -16000. .000053
+} {000000003.420000e+13 000000006.851400e+01 -00000001.260000e-01 -00000001.600000e+04}
+test format-4.5 {e and f formats} {eformat} {
+    format "%7.1e %7.1e %7.1e %7.1e" 34.2e12 68.514 -.126 -16000. .000053
+} {3.4e+13 6.9e+01 -1.3e-01 -1.6e+04}
+test format-4.6 {e and f formats} {
+    format "%f %f %f %f" 34.2e12 68.514 -.125 -16000. .000053
+} {34200000000000.000000 68.514000 -0.125000 -16000.000000}
+test format-4.7 {e and f formats} {
+    format "%.4f %.4f %.4f %.4f %.4f" 34.2e12 68.514 -.125 -16000. .000053
+} {34200000000000.0000 68.5140 -0.1250 -16000.0000 0.0001}
+test format-4.8 {e and f formats} {eformat} {
+    format "%.4e %.5e %.6e" -9.99996 -9.99996 9.99996
+} {-1.0000e+01 -9.99996e+00 9.999960e+00}
+test format-4.9 {e and f formats} {
+    format "%.4f %.5f %.6f" -9.99996 -9.99996 9.99996
+} {-10.0000 -9.99996 9.999960}
+test format-4.10 {e and f formats} {
+    format "%20f %-20f %020f" -9.99996 -9.99996 9.99996
+} {           -9.999960 -9.999960            0000000000009.999960}
+test format-4.11 {e and f formats} {
+    format "%-020f %020f" -9.99996 -9.99996 9.99996
+} {-9.999960            -000000000009.999960}
+test format-4.12 {e and f formats} {eformat} {
+    format "%.0e %#.0e" -9.99996 -9.99996 9.99996
+} {-1e+01 -1.e+01}
+test format-4.13 {e and f formats} {
+    format "%.0f %#.0f" -9.99996 -9.99996 9.99996
+} {-10 -10.}
+test format-4.14 {e and f formats} {
+    format "%.4f %.5f %.6f" -9.99996 -9.99996 9.99996
+} {-10.0000 -9.99996 9.999960}
+test format-4.15 {e and f formats} {
+    format "%3.0f %3.0f %3.0f %3.0f" 1.0 1.1 1.01 1.001
+} {  1   1   1   1}
+test format-4.16 {e and f formats} {
+    format "%3.1f %3.1f %3.1f %3.1f" 0.0 0.1 0.01 0.001
+} {0.0 0.1 0.0 0.0}
+
+test format-5.1 {g-format} {eformat} {
+    format "%.3g" 12341.0
+} {1.23e+04}
+test format-5.2 {g-format} {eformat} {
+    format "%.3G" 1234.12345
+} {1.23E+03}
+test format-5.3 {g-format} {
+    format "%.3g" 123.412345
+} {123}
+test format-5.4 {g-format} {
+    format "%.3g" 12.3412345
+} {12.3}
+test format-5.5 {g-format} {
+    format "%.3g" 1.23412345
+} {1.23}
+test format-5.6 {g-format} {
+    format "%.3g" 1.23412345
+} {1.23}
+test format-5.7 {g-format} {
+    format "%.3g" .123412345
+} {0.123}
+test format-5.8 {g-format} {
+    format "%.3g" .012341
+} {0.0123}
+test format-5.9 {g-format} {
+    format "%.3g" .0012341
+} {0.00123}
+test format-5.10 {g-format} {
+    format "%.3g" .00012341
+} {0.000123}
+test format-5.11 {g-format} {eformat} {
+    format "%.3g" .00001234
+} {1.23e-05}
+test format-5.12 {g-format} {eformat} {
+    format "%.4g" 9999.6
+} {1e+04}
+test format-5.13 {g-format} {
+    format "%.4g" 999.96
+} {1000}
+test format-5.14 {g-format} {
+    format "%.3g" 1.0
+} {1}
+test format-5.15 {g-format} {
+    format "%.3g" .1
+} {0.1}
+test format-5.16 {g-format} {
+    format "%.3g" .01
+} {0.01}
+test format-5.17 {g-format} {
+    format "%.3g" .001
+} {0.001}
+test format-5.18 {g-format} {eformat} {
+    format "%.3g" .00001
+} {1e-05}
+test format-5.19 {g-format} {eformat} {
+    format "%#.3g" 1234.0
+} {1.23e+03}
+test format-5.20 {g-format} {eformat} {
+    format "%#.3G" 9999.5
+} {1.00E+04}
+
+test format-6.1 {floating-point zeroes} {eformat} {
+    format "%e %f %g" 0.0 0.0 0.0 0.0
+} {0.000000e+00 0.000000 0}
+test format-6.2 {floating-point zeroes} {eformat} {
+    format "%.4e %.4f %.4g" 0.0 0.0 0.0 0.0
+} {0.0000e+00 0.0000 0}
+test format-6.3 {floating-point zeroes} {eformat knownMsvcBug} {
+    format "%#.4e %#.4f %#.4g" 0.0 0.0 0.0 0.0
+} {0.0000e+00 0.0000 0.000}
+test format-6.4 {floating-point zeroes} {eformat} {
+    format "%.0e %.0f %.0g" 0.0 0.0 0.0 0.0
+} {0e+00 0 0}
+test format-6.5 {floating-point zeroes} {eformat knownMsvcBug} {
+    format "%#.0e %#.0f %#.0g" 0.0 0.0 0.0 0.0
+} {0.e+00 0. 0.}
+test format-6.6 {floating-point zeroes} {
+    format "%3.0f %3.0f %3.0f %3.0f" 0.0 0.0 0.0 0.0
+} {  0   0   0   0}
+test format-6.7 {floating-point zeroes} {
+    format "%3.0f %3.0f %3.0f %3.0f" 1.0 1.1 1.01 1.001
+} {  1   1   1   1}
+test format-6.8 {floating-point zeroes} {
+    format "%3.1f %3.1f %3.1f %3.1f" 0.0 0.1 0.01 0.001
+} {0.0 0.1 0.0 0.0}
+
+test format-7.1 {various syntax features} {
+    format "%*.*f" 12 3 12.345678901
+} {      12.346}
+test format-7.2 {various syntax features} {
+    format "%0*.*f" 12 3 12.345678901
+} {00000012.346}
+test format-7.3 {various syntax features} {
+    format "\*\t\\n"
+} {*	\n}
+
+test format-8.1 {error conditions} {
+    catch format
+} 1
+test format-8.2 {error conditions} {
+    catch format msg
+    set msg
+} {wrong # args: should be "format formatString ?arg ...?"}
+test format-8.3 {error conditions} {
+    catch {format %*d}
+} 1
+test format-8.4 {error conditions} {
+    catch {format %*d} msg
+    set msg
+} {not enough arguments for all format specifiers}
+test format-8.5 {error conditions} {
+    catch {format %*.*f 12}
+} 1
+test format-8.6 {error conditions} {
+    catch {format %*.*f 12} msg
+    set msg
+} {not enough arguments for all format specifiers}
+test format-8.7 {error conditions} {
+    catch {format %*.*f 12 3}
+} 1
+test format-8.8 {error conditions} {
+    catch {format %*.*f 12 3} msg
+    set msg
+} {not enough arguments for all format specifiers}
+test format-8.9 {error conditions} {
+    list [catch {format %*d x 3} msg] $msg
+} {1 {expected integer but got "x"}}
+test format-8.10 {error conditions} {
+    list [catch {format %*.*f 2 xyz 3} msg] $msg
+} {1 {expected integer but got "xyz"}}
+test format-8.11 {error conditions} {
+    catch {format %d 2a}
+} 1
+test format-8.12 {error conditions} {
+    catch {format %d 2a} msg
+    set msg
+} {expected integer but got "2a"}
+test format-8.13 {error conditions} {
+    catch {format %c 2x}
+} 1
+test format-8.14 {error conditions} {
+    catch {format %c 2x} msg
+    set msg
+} {expected integer but got "2x"}
+test format-8.15 {error conditions} {
+    catch {format %f 2.1z}
+} 1
+test format-8.16 {error conditions} {
+    catch {format %f 2.1z} msg
+    set msg
+} {expected floating-point number but got "2.1z"}
+test format-8.17 {error conditions} {
+    catch {format ab%}
+} 1
+test format-8.18 {error conditions} {
+    catch {format ab% 12} msg
+    set msg
+} {format string ended in middle of field specifier}
+test format-8.19 {error conditions} {
+    catch {format %q x}
+} 1
+test format-8.20 {error conditions} {
+    catch {format %q x} msg
+    set msg
+} {bad field specifier "q"}
+test format-8.21 {error conditions} {
+    catch {format %d}
+} 1
+test format-8.22 {error conditions} {
+    catch {format %d} msg
+    set msg
+} {not enough arguments for all format specifiers}
+test format-8.23 {error conditions} {
+    catch {format "%d %d" 24 xyz} msg
+    set msg
+} {expected integer but got "xyz"}
+
+test format-9.1 {long result} {
+    set a {1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
+    format {1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG %s %s} $a $a
+} {1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG 1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
+
+test format-10.1 {"h" format specifier} {
+    format %hd 0xffff
+} -1
+test format-10.2 {"h" format specifier} {
+    format %hx 0x10fff
+} fff
+test format-10.3 {"h" format specifier} {
+    format %hd 0x10000
+} 0
+test format-10.4 {"h" format specifier} {
+    # Bug 1154163: This is minimal behaviour for %hx specifier!
+    format %hx 1
+} 1
+test format-10.5 {"h" format specifier} {
+    # Bug 1284178: Highly out-of-range values shouldn't cause errors
+    format %hu 0x100000000
+} 0
+
+test format-11.1 {XPG3 %$n specifiers} {
+    format {%2$d %1$d} 4 5
+} {5 4}
+test format-11.2 {XPG3 %$n specifiers} {
+    format {%2$d %1$d %1$d %3$d} 4 5 6
+} {5 4 4 6}
+test format-11.3 {XPG3 %$n specifiers} {
+    list [catch {format {%2$d %3$d} 4 5} msg] $msg
+} {1 {"%n$" argument index out of range}}
+test format-11.4 {XPG3 %$n specifiers} {
+    list [catch {format {%2$d %0$d} 4 5 6} msg] $msg
+} {1 {"%n$" argument index out of range}}
+test format-11.5 {XPG3 %$n specifiers} {
+    list [catch {format {%d %1$d} 4 5 6} msg] $msg
+} {1 {cannot mix "%" and "%n$" conversion specifiers}}
+test format-11.6 {XPG3 %$n specifiers} {
+    list [catch {format {%2$d %d} 4 5 6} msg] $msg
+} {1 {cannot mix "%" and "%n$" conversion specifiers}}
+test format-11.7 {XPG3 %$n specifiers} {
+    list [catch {format {%2$d %3d} 4 5 6} msg] $msg
+} {1 {cannot mix "%" and "%n$" conversion specifiers}}
+test format-11.8 {XPG3 %$n specifiers} {
+    format {%2$*d %3$d} 1 10 4
+} {         4 4}
+test format-11.9 {XPG3 %$n specifiers} {
+    format {%2$.*s %4$d} 1 5 abcdefghijklmnop 44
+} {abcde 44}
+test format-11.10 {XPG3 %$n specifiers} {
+    list [catch {format {%2$*d} 4} msg] $msg
+} {1 {"%n$" argument index out of range}}
+test format-11.11 {XPG3 %$n specifiers} {
+    list [catch {format {%2$*d} 4 5} msg] $msg
+} {1 {"%n$" argument index out of range}}
+test format-11.12 {XPG3 %$n specifiers} {
+    list [catch {format {%2$*d} 4 5 6} msg] $msg
+} {0 {    6}}
+
+test format-12.1 {negative width specifiers} {
+    format "%*d" -47 25
+} {25                                             }
+
+test format-13.1 {tcl_precision fuzzy comparison} {
+    catch {unset a}
+    catch {unset b}
+    catch {unset c}
+    catch {unset d}
+    set a 0.0000000000001
+    set b 0.00000000000001
+    set c 0.00000000000000001
+    set d [expr $a + $b + $c]
+    format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
+} {0.0000000000 0.000000000000 0.000000000000110 0.00000000000011001}
+test format-13.2 {tcl_precision fuzzy comparison} {
+    catch {unset a}
+    catch {unset b}
+    catch {unset c}
+    catch {unset d}
+    set a 0.000000000001
+    set b 0.000000000000005
+    set c 0.0000000000000008
+    set d [expr $a + $b + $c]
+    format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
+} {0.0000000000 0.000000000001 0.000000000001006 0.00000000000100580}
+test format-13.3 {tcl_precision fuzzy comparison} {
+    catch {unset a}
+    catch {unset b}
+    catch {unset c}
+    set a 0.00000000000099
+    set b 0.000000000000011
+    set c [expr $a + $b]
+    format {%0.10f %0.12f %0.15f %0.17f} $c $c $c $c
+} {0.0000000000 0.000000000001 0.000000000001001 0.00000000000100100}
+test format-13.4 {tcl_precision fuzzy comparison} {
+    catch {unset a}
+    catch {unset b}
+    catch {unset c}
+    set a 0.444444444444
+    set b 0.33333333333333
+    set c [expr $a + $b]
+    format {%0.10f %0.12f %0.15f %0.16f} $c $c $c $c
+} {0.7777777778 0.777777777777 0.777777777777330 0.7777777777773300}
+test format-13.5 {tcl_precision fuzzy comparison} {
+    catch {unset a}
+    catch {unset b}
+    catch {unset c}
+    set a 0.444444444444
+    set b 0.99999999999999
+    set c [expr $a + $b]
+    format {%0.10f %0.12f %0.15f} $c $c $c
+} {1.4444444444 1.444444444444 1.444444444443990}
+
+test format-14.1 {testing MAX_FLOAT_SIZE for 0 and 1} {
+    format {%s} ""
+} {}
+test format-14.2 {testing MAX_FLOAT_SIZE for 0 and 1} {
+    format {%s} "a"
+} {a}
+
+test format-15.1 {testing %0..s 0 padding for chars/strings} {
+    format %05s a
+} {0000a}
+test format-15.2 {testing %0..s 0 padding for chars/strings} {
+    format "% 5s" a
+} {    a}
+test format-15.3 {testing %0..s 0 padding for chars/strings} {
+    format %5s a
+} {    a}
+test format-15.4 {testing %0..s 0 padding for chars/strings} {
+    format %05c 61
+} {0000=}
+test format-15.5 {testing %d space padding for integers} {
+    format "(% 1d) (% 1d)" 10 -10
+} {( 10) (-10)}
+test format-15.6 {testing %d plus padding for integers} {
+    format "(%+1d) (%+1d)" 10 -10
+} {(+10) (-10)}
+
+set a "0123456789"
+set b ""
+for {set i 0} {$i < 290} {incr i} {
+    append b $a
+}
+for {set i 290} {$i < 400} {incr i} {
+    test format-16.[expr $i -289] {testing MAX_FLOAT_SIZE} {
+        format {%s} $b
+    } $b
+    append b "x"
+}
+
+test format-17.1 {testing %d with wide} {wideIs64bit wideBiggerThanInt} {
+    format %d 7810179016327718216
+} 1819043144
+test format-17.2 {testing %ld with wide} {wideIs64bit} {
+    format %ld 7810179016327718216
+} 7810179016327718216
+test format-17.3 {testing %ld with non-wide} {wideIs64bit} {
+    format %ld 42
+} 42
+test format-17.4 {testing %l with non-integer} {
+    format %lf 1
+} 1.000000
+test format-17.5 {testing %llu with positive bignum} -body {
+    format %llu 0xabcdef0123456789abcdef
+} -returnCodes 1 -result {unsigned bignum format is invalid}
+test format-17.6 {testing %llu with negative number} -body {
+    format %llu -1
+} -returnCodes 1 -result {unsigned bignum format is invalid}
+
+test format-18.1 {do not demote existing numeric values} {
+    set a 0xaaaaaaaa
+    # Ensure $a and $b are separate objects
+    set b 0xaaaa
+    append b aaaa
+    set result [expr {$a == $b}]
+    format %08lx $b
+    lappend result [expr {$a == $b}]
+    set b 0xaaaa
+    append b aaaa
+    lappend result [expr {$a == $b}]
+    format %08x $b
+    lappend result [expr {$a == $b}]
+} {1 1 1 1}
+test format-18.2 {do not demote existing numeric values} {wideBiggerThanInt} {
+    set a [expr {0xaaaaaaaaaa + 1}]
+    set b 0xaaaaaaaaab
+    list [format %08x $a] [expr {$a == $b}]
+} {aaaaaaab 1}
+
+test format-19.1 {regression test - tcl-core message by Brian Griffin on 26 0ctober 2004} -body {
+    set x 0x8fedc654
+    list [expr { ~ $x }] [format %08x [expr { ~$x }]]
+} -match regexp -result {-2414724693 f*701239ab}
+test format-19.2 {Bug 1867855} {
+    format %llx 0
+} 0
+test format-19.3 {Bug 2830354} {
+    string length [format %340f 0]
+} 340
+
+test format-19.4.1 {Bug d498578df4: width overflow should cause limit exceeded} \
+-constraints {longIs32bit} -body {
+    # in case of overflow into negative, it produces width -2 (and limit exceeded),
+    # in case of width will be unsigned, it will be outside limit (2GB for 32bit)...
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
+
+test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} -body {
+    # limit should exceeds in any case,
+    # and it don't throw an error in case the bug is not fixed (and probably no segfault).
+    format %[expr {0xffffffffffffffff - 1}]g 0
+} -returnCodes error -result "max size for a Tcl value exceeded"
+
+# Note that this test may fail in future versions
+test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
+    set x [dict create a b c d]
+    format %s $x
+    # After this, obj in $x should be a dict
+    # We are testing to make sure it has not been shimmered to a
+    # different intrep when that is not necessary.
+    # Whether or not there is a string rep - we should not care!
+    tcl::unsupported::representation $x
+} -match glob -result {value is a dict *}
+
+# cleanup
+catch {unset a}
+catch {unset b}
+catch {unset c}
+catch {unset d}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

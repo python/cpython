@@ -1,0 +1,36 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+.TH HWND 3 8.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetHWND, Tk_AttachHWND \- manage interactions between the Windows handle and an X window
+.SH SYNOPSIS
+.nf
+\fB#include <tkPlatDecls.h>\fR
+.sp
+HWND
+\fBTk_GetHWND\fR(\fIwindow\fR)
+.sp
+Window
+\fBTk_AttachHWND\fR(\fItkwin, hwnd\fR)
+.SH ARGUMENTS
+.AP Window window in
+X token for window.
+.AP Tk_Window tkwin in
+Tk window for window.
+.AP HWND hwnd in
+Windows HWND for window.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetHWND\fR returns the Windows HWND identifier for X Windows
+window given by \fIwindow\fR.
+.PP
+\fBTk_AttachHWND\fR binds the Windows HWND identifier to the
+specified Tk_Window given by \fItkwin\fR. It returns an X Windows
+window that encapsulates the HWND.
+.SH KEYWORDS
+identifier, window

@@ -1,0 +1,267 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH glob n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+glob \- Return names of files that match patterns
+.SH SYNOPSIS
+\fBglob \fR?\fIswitches\fR? ?\fIpattern ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command performs file name
+.QW globbing
+in a fashion similar to
+the csh shell or bash shell.
+It returns a list of the files whose names match any
+of the \fIpattern\fR arguments. No particular order is guaranteed
+in the list, so if a sorted list is required the caller should use
+\fBlsort\fR.
+.SS OPTIONS
+.PP
+If the initial arguments to \fBglob\fR start with \fB\-\fR then
+they are treated as switches. The following switches are
+currently supported:
+.TP
+\fB\-directory\fR \fIdirectory\fR
+.
+Search for files which match the given patterns starting in the given
+\fIdirectory\fR. This allows searching of directories whose name
+contains glob-sensitive characters without the need to quote such
+characters explicitly. This option may not be used in conjunction with
+\fB\-path\fR, which is used to allow searching for complete file paths
+whose names may contain glob-sensitive characters.
+.TP
+\fB\-join\fR
+.
+The remaining pattern arguments, after option processing, are treated
+as a single pattern obtained by joining the arguments with directory
+separators.
+.TP
+\fB\-nocomplain\fR
+.
+Allows an empty list to be returned without error; without this
+switch an error is returned if the result list would be empty.
+.TP
+\fB\-path\fR \fIpathPrefix\fR
+.
+Search for files with the given \fIpathPrefix\fR where the rest of the name
+matches the given patterns. This allows searching for files with names
+similar to a given file (as opposed to a directory) even when the names
+contain glob-sensitive
+characters. This option may not be used in conjunction with
+\fB\-directory\fR. For example, to find all files with the same root name
+as $path, but differing extensions, you should use
+.QW "\fBglob \-path [file rootname $path] .*\fR"
+which will work even if \fB$path\fR contains
+numerous glob-sensitive characters.
+.TP
+\fB\-tails\fR
+.
+Only return the part of each file found which follows the last directory
+named in any \fB\-directory\fR or \fB\-path\fR path specification.
+Thus
+.QW "\fBglob \-tails \-directory $dir *\fR"
+is equivalent to
+.QW "\fBset pwd [pwd]; cd $dir; glob *; cd $pwd\fR" .
+For \fB\-path\fR specifications, the returned names will include the last
+path segment, so
+.QW "\fBglob \-tails \-path [file rootname ~/foo.tex] .*\fR"
+will return paths like \fBfoo.aux foo.bib foo.tex\fR etc.
+.TP
+\fB\-types\fR \fItypeList\fR
+.
+Only list files or directories which match \fItypeList\fR, where the items
+in the list have two forms. The first form is like the \-type option of
+the Unix find command:
+\fIb\fR (block special file),
+\fIc\fR (character special file),
+\fId\fR (directory),
+\fIf\fR (plain file),
+\fIl\fR (symbolic link),
+\fIp\fR (named pipe),
+or \fIs\fR (socket), where multiple types may be specified in the list.
+\fBGlob\fR will return all files which match at least one of the types given.
+Note that symbolic links will be returned both if \fB\-types l\fR is given,
+or if the target of a link matches the requested type. So, a link to
+a directory will be returned if \fB\-types d\fR was specified.
+.RS
+.PP
+The second form specifies types where all the types given must match.
+These are \fIr\fR, \fIw\fR, \fIx\fR as file permissions, and
+\fIreadonly\fR, \fIhidden\fR as special permission cases. On the
+Macintosh, MacOS types and creators are also supported, where any item
+which is four characters long is assumed to be a MacOS type
+(e.g. \fBTEXT\fR). Items which are of the form \fI{macintosh type XXXX}\fR
+or \fI{macintosh creator XXXX}\fR will match types or creators
+respectively. Unrecognized types, or specifications of multiple MacOS
+types/creators will signal an error.
+.PP
+The two forms may be mixed, so \fB\-types {d f r w}\fR will find all
+regular files OR directories that have both read AND write permissions.
+The following are equivalent:
+.PP
+.CS
+\fBglob \-type d *\fR
+\fBglob */\fR
+.CE
+.PP
+except that the first case doesn't return the trailing
+.QW /
+and is more platform independent.
+.RE
+.TP
+\fB\-\|\-\fR
+.
+Marks the end of switches. The argument following this one will
+be treated as a \fIpattern\fR even if it starts with a \fB\-\fR.
+.SS "GLOBBING PATTERNS"
+.PP
+The \fIpattern\fR arguments may contain any of the following
+special characters, which are a superset of those supported by
+\fBstring match\fR:
+.TP 10
+\fB?\fR
+.
+Matches any single character.
+.TP 10
+\fB*\fR
+.
+Matches any sequence of zero or more characters.
+.TP 10
+\fB[\fIchars\fB]\fR
+.
+Matches any single character in \fIchars\fR. If \fIchars\fR
+contains a sequence of the form \fIa\fB\-\fIb\fR then any
+character between \fIa\fR and \fIb\fR (inclusive) will match.
+.TP 10
+\fB\e\fIx\fR
+.
+Matches the character \fIx\fR.
+.TP 10
+\fB{\fIa\fB,\fIb\fB,\fI...\fR}
+.
+Matches any of the sub-patterns \fIa\fR, \fIb\fR, etc.
+.PP
+On Unix, as with csh, a
+.QW . \|
+at the beginning of a file's name or just after a
+.QW /
+must be matched explicitly or with a {} construct, unless the
+\fB\-types hidden\fR flag is given (since
+.QW . \|
+at the beginning of a file's name indicates that it is hidden). On
+other platforms, files beginning with a
+.QW . \|
+are handled no differently to any others, except the special directories
+.QW . \|
+and
+.QW .. \|
+which must be matched explicitly (this is to avoid a recursive pattern like
+.QW "glob \-join * * * *"
+from recursing up the directory hierarchy as well as down). In addition, all
+.QW /
+characters must be matched explicitly.
+.LP
+If the first character in a \fIpattern\fR is
+.QW ~
+then it refers to the home directory for the user whose name follows the
+.QW ~ .
+If the
+.QW ~
+is followed immediately by
+.QW /
+then the value of the HOME environment variable is used.
+.PP
+The \fBglob\fR command differs from csh globbing in two ways.
+First, it does not sort its result list (use the \fBlsort\fR
+command if you want the list sorted).
+Second, \fBglob\fR only returns the names of files that actually
+exist; in csh no check for existence is made unless a pattern
+contains a ?, *, or [] construct.
+.LP
+When the \fBglob\fR command returns relative paths whose filenames
+start with a tilde
+.QW ~
+(for example through \fBglob *\fR or \fBglob \-tails\fR, the returned
+list will not quote the tilde with
+.QW ./ .
+This means care must be taken if those names are later to
+be used with \fBfile join\fR, to avoid them being interpreted as
+absolute paths pointing to a given user's home directory.
+.SH "WINDOWS PORTABILITY ISSUES"
+.PP
+For Windows UNC names, the servername and sharename components of the path
+may not contain ?, *, or [] constructs. On Windows NT, if \fIpattern\fR is
+of the form
+.QW \fB~\fIusername\fB@\fIdomain\fR ,
+it refers to the home
+directory of the user whose account information resides on the specified NT
+domain server. Otherwise, user account information is obtained from
+the local computer.
+.PP
+Since the backslash character has a special meaning to the glob
+command, glob patterns containing Windows style path separators need
+special care. The pattern
+.QW \fIC:\e\efoo\e\e*\fR
+is interpreted as
+.QW \fIC:\efoo\e*\fR
+where
+.QW \fI\ef\fR
+will match the single character
+.QW \fIf\fR
+and
+.QW \fI\e*\fR
+will match the single character
+.QW \fI*\fR
+and will not be
+interpreted as a wildcard character. One solution to this problem is
+to use the Unix style forward slash as a path separator. Windows style
+paths can be converted to Unix style paths with the command
+.QW "\fBfile join\fR \fB$path\fR"
+or
+.QW "\fBfile normalize\fR \fB$path\fR" .
+.SH EXAMPLES
+.PP
+Find all the Tcl files in the current directory:
+.PP
+.CS
+\fBglob\fR *.tcl
+.CE
+.PP
+Find all the Tcl files in the user's home directory, irrespective of
+what the current directory is:
+.PP
+.CS
+\fBglob\fR \-directory ~ *.tcl
+.CE
+.PP
+Find all subdirectories of the current directory:
+.PP
+.CS
+\fBglob\fR \-type d *
+.CE
+.PP
+Find all files whose name contains an
+.QW a ,
+a
+.QW b
+or the sequence
+.QW cde :
+.PP
+.CS
+\fBglob\fR \-type f *{a,b,cde}*
+.CE
+.SH "SEE ALSO"
+file(n)
+.SH KEYWORDS
+exist, file, glob, pattern
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,1224 @@
+Microsoft (R) Macro Assembler Version 14.00.24210.0	    10/18/20 10:26:12
+inffas32.asm						     Page 1 - 1
+
+
+				;/* inffas32.asm is a hand tuned assembler version of inffast.c -- fast decoding
+				; *
+				; * inffas32.asm is derivated from inffas86.c, with translation of assembly code
+				; *
+				; * Copyright (C) 1995-2003 Mark Adler
+				; * For conditions of distribution and use, see copyright notice in zlib.h
+				; *
+				; * Copyright (C) 2003 Chris Anderson <christop@charm.net>
+				; * Please use the copyright conditions above.
+				; *
+				; * Mar-13-2003 -- Most of this is derived from inffast.S which is derived from
+				; * the gcc -S output of zlib-1.2.0/inffast.c.  Zlib-1.2.0 is in beta release at
+				; * the moment.  I have successfully compiled and tested this code with gcc2.96,
+				; * gcc3.2, icc5.0, msvc6.0.  It is very close to the speed of inffast.S
+				; * compiled with gcc -DNO_MMX, but inffast.S is still faster on the P3 with MMX
+				; * enabled.  I will attempt to merge the MMX code into this version.  Newer
+				; * versions of this and inffast.S can be found at
+				; * http://www.eetbeetee.com/zlib/ and http://www.charm.net/~christop/zlib/
+				; *
+				; * 2005 : modification by Gilles Vollant
+				; */
+				; For Visual C++ 4.x and higher and ML 6.x and higher
+				;   ml.exe is in directory \MASM611C of Win95 DDK
+				;   ml.exe is also distributed in http://www.masm32.com/masmdl.htm
+				;    and in VC++2003 toolkit at http://msdn.microsoft.com/visualc/vctoolkit2003/
+				;
+				;
+				;   compile with command line option
+				;   ml  /coff /Zi /c /Flinffas32.lst inffas32.asm
+
+				;   if you define NO_GZIP (see inflate.h), compile with
+				;   ml  /coff /Zi /c /Flinffas32.lst /DNO_GUNZIP inffas32.asm
+
+
+				; zlib122sup is 0 fort zlib 1.2.2.1 and lower
+				; zlib122sup is 8 fort zlib 1.2.2.2 and more (with addition of dmax and head
+				;        in inflate_state in inflate.h)
+ = 00000008			zlib1222sup      equ    8
+
+
+				IFDEF GUNZIP
+				ELSE
+				  IFNDEF NO_GUNZIP
+ = 0000000B			    INFLATE_MODE_TYPE    equ 11
+ = 0000001A			    INFLATE_MODE_BAD     equ 26
+				  ELSE
+				  ENDIF
+				ENDIF
+
+
+				; 75 "inffast.S"
+				;FILE "inffast.S"
+
+				;;;GLOBAL _inflate_fast
+
+				;;;SECTION .text
+
+
+
+					.586p
+					.mmx
+
+					name	inflate_fast_x86
+					.MODEL	FLAT
+
+ 00000000			_DATA			segment
+ 00000000			inflate_fast_use_mmx:
+ 00000000  00000001			dd	1
+
+
+ 00000000			_TEXT			segment
+
+
+
+				ALIGN 4
+ 00000000  46 61 73 74 20		db	'Fast decoding Code from Chris Anderson'
+	   64 65 63 6F 64
+	   69 6E 67 20 43
+	   6F 64 65 20 66
+	   72 6F 6D 20 43
+	   68 72 69 73 20
+	   41 6E 64 65 72
+	   73 6F 6E
+ 00000026  00				db	0
+
+				ALIGN 4
+ 00000028			invalid_literal_length_code_msg:
+ 00000028  69 6E 76 61 6C		db	'invalid literal/length code'
+	   69 64 20 6C 69
+	   74 65 72 61 6C
+	   2F 6C 65 6E 67
+	   74 68 20 63 6F
+	   64 65
+ 00000043  00				db	0
+
+				ALIGN 4
+ 00000044			invalid_distance_code_msg:
+ 00000044  69 6E 76 61 6C		db	'invalid distance code'
+	   69 64 20 64 69
+	   73 74 61 6E 63
+	   65 20 63 6F 64
+	   65
+ 00000059  00				db	0
+
+				ALIGN 4
+ 0000005C			invalid_distance_too_far_msg:
+ 0000005C  69 6E 76 61 6C		db	'invalid distance too far back'
+	   69 64 20 64 69
+	   73 74 61 6E 63
+	   65 20 74 6F 6F
+	   20 66 61 72 20
+	   62 61 63 6B
+ 00000079  00				db	0
+
+
+				ALIGN 4
+ 0000007C			inflate_fast_mask:
+ 0000007C  00000000		dd	0
+ 00000080  00000001		dd	1
+ 00000084  00000003		dd	3
+ 00000088  00000007		dd	7
+ 0000008C  0000000F		dd	15
+ 00000090  0000001F		dd	31
+ 00000094  0000003F		dd	63
+ 00000098  0000007F		dd	127
+ 0000009C  000000FF		dd	255
+ 000000A0  000001FF		dd	511
+ 000000A4  000003FF		dd	1023
+ 000000A8  000007FF		dd	2047
+ 000000AC  00000FFF		dd	4095
+ 000000B0  00001FFF		dd	8191
+ 000000B4  00003FFF		dd	16383
+ 000000B8  00007FFF		dd	32767
+ 000000BC  0000FFFF		dd	65535
+ 000000C0  0001FFFF		dd	131071
+ 000000C4  0003FFFF		dd	262143
+ 000000C8  0007FFFF		dd	524287
+ 000000CC  000FFFFF		dd	1048575
+ 000000D0  001FFFFF		dd	2097151
+ 000000D4  003FFFFF		dd	4194303
+ 000000D8  007FFFFF		dd	8388607
+ 000000DC  00FFFFFF		dd	16777215
+ 000000E0  01FFFFFF		dd	33554431
+ 000000E4  03FFFFFF		dd	67108863
+ 000000E8  07FFFFFF		dd	134217727
+ 000000EC  0FFFFFFF		dd	268435455
+ 000000F0  1FFFFFFF		dd	536870911
+ 000000F4  3FFFFFFF		dd	1073741823
+ 000000F8  7FFFFFFF		dd	2147483647
+ 000000FC  FFFFFFFF		dd	4294967295
+
+
+ = 00000000			mode_state	 equ	0	;/* state->mode	*/
+ = 00000028			wsize_state	 equ	(32+zlib1222sup)	;/* state->wsize */
+ = 00000030			write_state	 equ	(36+4+zlib1222sup)	;/* state->write */
+ = 00000034			window_state	 equ	(40+4+zlib1222sup)	;/* state->window */
+ = 00000038			hold_state	 equ	(44+4+zlib1222sup)	;/* state->hold	*/
+ = 0000003C			bits_state	 equ	(48+4+zlib1222sup)	;/* state->bits	*/
+ = 0000004C			lencode_state	 equ	(64+4+zlib1222sup)	;/* state->lencode */
+ = 00000050			distcode_state	 equ	(68+4+zlib1222sup)	;/* state->distcode */
+ = 00000054			lenbits_state	 equ	(72+4+zlib1222sup)	;/* state->lenbits */
+ = 00000058			distbits_state	 equ	(76+4+zlib1222sup)	;/* state->distbits */
+
+
+				;;SECTION .text
+				; 205 "inffast.S"
+				;GLOBAL	inflate_fast_use_mmx
+
+				;SECTION .data
+
+
+				; GLOBAL inflate_fast_use_mmx:object
+				;.size inflate_fast_use_mmx, 4
+				; 226 "inffast.S"
+				;SECTION .text
+
+				ALIGN 4
+ 00000100			_inflate_fast proc near
+ 00000100			.FPO (16, 4, 0, 0, 1, 0)
+ 00000100  57				push  edi
+ 00000101  56				push  esi
+ 00000102  55				push  ebp
+ 00000103  53				push  ebx
+ 00000104  9C				pushfd
+ 00000105  83 EC 40			sub  esp,64
+ 00000108  FC				cld
+
+
+
+
+ 00000109  8B 74 24 58			mov  esi, [esp+88]
+ 0000010D  8B 7E 1C			mov  edi, [esi+28]
+
+
+
+
+
+
+
+ 00000110  8B 56 04			mov  edx, [esi+4]
+ 00000113  8B 06			mov  eax, [esi+0]
+
+ 00000115  03 D0			add  edx,eax
+ 00000117  83 EA 0B			sub  edx,11
+
+ 0000011A  89 44 24 2C			mov  [esp+44],eax
+ 0000011E  89 54 24 14			mov  [esp+20],edx
+
+ 00000122  8B 6C 24 5C			mov  ebp, [esp+92]
+ 00000126  8B 4E 10			mov  ecx, [esi+16]
+ 00000129  8B 5E 0C			mov  ebx, [esi+12]
+
+ 0000012C  2B E9			sub  ebp,ecx
+ 0000012E  F7 DD			neg  ebp
+ 00000130  03 EB			add  ebp,ebx
+
+ 00000132  81 E9 00000101		sub  ecx,257
+ 00000138  03 CB			add  ecx,ebx
+
+ 0000013A  89 5C 24 3C			mov  [esp+60],ebx
+ 0000013E  89 6C 24 28			mov  [esp+40],ebp
+ 00000142  89 4C 24 10			mov  [esp+16],ecx
+				; 285 "inffast.S"
+ 00000146  8B 47 4C			mov  eax, [edi+lencode_state]
+ 00000149  8B 4F 50			mov  ecx, [edi+distcode_state]
+
+ 0000014C  89 44 24 08			mov  [esp+8],eax
+ 00000150  89 4C 24 0C			mov  [esp+12],ecx
+
+ 00000154  B8 00000001			mov  eax,1
+ 00000159  8B 4F 54			mov  ecx, [edi+lenbits_state]
+ 0000015C  D3 E0			shl  eax,cl
+ 0000015E  48				dec  eax
+ 0000015F  89 04 24			mov  [esp+0],eax
+
+ 00000162  B8 00000001			mov  eax,1
+ 00000167  8B 4F 58			mov  ecx, [edi+distbits_state]
+ 0000016A  D3 E0			shl  eax,cl
+ 0000016C  48				dec  eax
+ 0000016D  89 44 24 04			mov  [esp+4],eax
+
+ 00000171  8B 47 28			mov  eax, [edi+wsize_state]
+ 00000174  8B 4F 30			mov  ecx, [edi+write_state]
+ 00000177  8B 57 34			mov  edx, [edi+window_state]
+
+ 0000017A  89 44 24 34			mov  [esp+52],eax
+ 0000017E  89 4C 24 30			mov  [esp+48],ecx
+ 00000182  89 54 24 38			mov  [esp+56],edx
+
+ 00000186  8B 6F 38			mov  ebp, [edi+hold_state]
+ 00000189  8B 5F 3C			mov  ebx, [edi+bits_state]
+				; 321 "inffast.S"
+ 0000018C  8B 74 24 2C			mov  esi, [esp+44]
+ 00000190  8B 4C 24 14			mov  ecx, [esp+20]
+ 00000194  3B CE			cmp  ecx,esi
+ 00000196  77 22			ja   L_align_long
+
+ 00000198  83 C1 0B			add  ecx,11
+ 0000019B  2B CE			sub  ecx,esi
+ 0000019D  B8 0000000C			mov  eax,12
+ 000001A2  2B C1			sub  eax,ecx
+ 000001A4  8D 7C 24 1C			lea  edi, [esp+28]
+ 000001A8  F3/ A4			rep movsb
+ 000001AA  8B C8			mov  ecx,eax
+ 000001AC  33 C0			xor  eax,eax
+ 000001AE  F3/ AA			rep stosb
+ 000001B0  8D 74 24 1C			lea  esi, [esp+28]
+ 000001B4  89 74 24 14			mov  [esp+20],esi
+ 000001B8  EB 18			jmp  L_is_aligned
+
+
+ 000001BA			L_align_long:
+ 000001BA  F7 C6 00000003		test  esi,3
+ 000001C0  74 10			jz   L_is_aligned
+ 000001C2  33 C0			xor  eax,eax
+ 000001C4  8A 06			mov  al, [esi]
+ 000001C6  46				inc  esi
+ 000001C7  8B CB			mov  ecx,ebx
+ 000001C9  83 C3 08			add  ebx,8
+ 000001CC  D3 E0			shl  eax,cl
+ 000001CE  0B E8			or  ebp,eax
+ 000001D0  EB E8			jmp L_align_long
+
+ 000001D2			L_is_aligned:
+ 000001D2  8B 7C 24 3C			mov  edi, [esp+60]
+				; 366 "inffast.S"
+ 000001D6			L_check_mmx:
+ 000001D6  83 3D 00000000 R		cmp  dword ptr [inflate_fast_use_mmx],2
+	   02
+ 000001DD  0F 84 00000289		je   L_init_mmx
+ 000001E3  77 6B			ja   L_do_loop
+
+ 000001E5  50				push  eax
+ 000001E6  53				push  ebx
+ 000001E7  51				push  ecx
+ 000001E8  52				push  edx
+ 000001E9  9C				pushfd
+ 000001EA  8B 04 24			mov  eax, [esp]
+ 000001ED  81 34 24			xor  dword ptr [esp],0200000h
+	   00200000
+
+
+
+
+ 000001F4  9D				popfd
+ 000001F5  9C				pushfd
+ 000001F6  5A				pop  edx
+ 000001F7  33 D0			xor  edx,eax
+ 000001F9  74 44			jz   L_dont_use_mmx
+ 000001FB  33 C0			xor  eax,eax
+ 000001FD  0F A2			cpuid
+ 000001FF  81 FB 756E6547		cmp  ebx,0756e6547h
+ 00000205  75 38			jne  L_dont_use_mmx
+ 00000207  81 F9 6C65746E		cmp  ecx,06c65746eh
+ 0000020D  75 30			jne  L_dont_use_mmx
+ 0000020F  81 FA 49656E69		cmp  edx,049656e69h
+ 00000215  75 28			jne  L_dont_use_mmx
+ 00000217  B8 00000001			mov  eax,1
+ 0000021C  0F A2			cpuid
+ 0000021E  C1 E8 08			shr  eax,8
+ 00000221  83 E0 0F			and  eax,15
+ 00000224  83 F8 06			cmp  eax,6
+ 00000227  75 16			jne  L_dont_use_mmx
+ 00000229  F7 C2 00800000		test  edx,0800000h
+ 0000022F  75 02			jnz  L_use_mmx
+ 00000231  EB 0C			jmp  L_dont_use_mmx
+ 00000233			L_use_mmx:
+ 00000233  C7 05 00000000 R		mov  dword ptr [inflate_fast_use_mmx],2
+	   00000002
+ 0000023D  EB 0A			jmp  L_check_mmx_pop
+ 0000023F			L_dont_use_mmx:
+ 0000023F  C7 05 00000000 R		mov  dword ptr [inflate_fast_use_mmx],3
+	   00000003
+ 00000249			L_check_mmx_pop:
+ 00000249  5A				pop  edx
+ 0000024A  59				pop  ecx
+ 0000024B  5B				pop  ebx
+ 0000024C  58				pop  eax
+ 0000024D  EB 87			jmp  L_check_mmx
+				; 426 "inffast.S"
+				ALIGN 4
+ 00000250			L_do_loop:
+				; 437 "inffast.S"
+ 00000250  80 FB 0F			cmp  bl,15
+ 00000253  77 0D			ja   L_get_length_code
+
+ 00000255  33 C0			xor  eax,eax
+ 00000257  66| AD			lodsw
+ 00000259  8A CB			mov  cl,bl
+ 0000025B  80 C3 10			add  bl,16
+ 0000025E  D3 E0			shl  eax,cl
+ 00000260  0B E8			or  ebp,eax
+
+ 00000262			L_get_length_code:
+ 00000262  8B 14 24			mov  edx, [esp+0]
+ 00000265  8B 4C 24 08			mov  ecx, [esp+8]
+ 00000269  23 D5			and  edx,ebp
+ 0000026B  8B 04 91			mov  eax, [ecx+edx*4]
+
+ 0000026E			L_dolen:
+
+
+
+
+
+
+ 0000026E  8A CC			mov  cl,ah
+ 00000270  2A DC			sub  bl,ah
+ 00000272  D3 ED			shr  ebp,cl
+
+
+
+
+
+
+ 00000274  84 C0			test  al,al
+ 00000276  75 19			jnz   L_test_for_length_base
+
+ 00000278  C1 E8 10			shr  eax,16
+ 0000027B  AA				stosb
+
+ 0000027C			L_while_test:
+
+
+ 0000027C  39 7C 24 10			cmp  [esp+16],edi
+ 00000280  0F 86 00000462		jbe  L_break_loop
+
+ 00000286  39 74 24 14			cmp  [esp+20],esi
+ 0000028A  77 C4			ja   L_do_loop
+ 0000028C  E9 00000457			jmp  L_break_loop
+
+ 00000291			L_test_for_length_base:
+				; 502 "inffast.S"
+ 00000291  8B D0			mov  edx,eax
+ 00000293  C1 EA 10			shr  edx,16
+ 00000296  8A C8			mov  cl,al
+
+ 00000298  A8 10			test  al,16
+ 0000029A  0F 84 000000F4		jz   L_test_for_second_level_length
+ 000002A0  80 E1 0F			and  cl,15
+ 000002A3  74 25			jz   L_save_len
+ 000002A5  3A D9			cmp  bl,cl
+ 000002A7  73 11			jae  L_add_bits_to_len
+
+ 000002A9  8A E9			mov  ch,cl
+ 000002AB  33 C0			xor  eax,eax
+ 000002AD  66| AD			lodsw
+ 000002AF  8A CB			mov  cl,bl
+ 000002B1  80 C3 10			add  bl,16
+ 000002B4  D3 E0			shl  eax,cl
+ 000002B6  0B E8			or  ebp,eax
+ 000002B8  8A CD			mov  cl,ch
+
+ 000002BA			L_add_bits_to_len:
+ 000002BA  B8 00000001			mov  eax,1
+ 000002BF  D3 E0			shl  eax,cl
+ 000002C1  48				dec  eax
+ 000002C2  2A D9			sub  bl,cl
+ 000002C4  23 C5			and  eax,ebp
+ 000002C6  D3 ED			shr  ebp,cl
+ 000002C8  03 D0			add  edx,eax
+
+ 000002CA			L_save_len:
+ 000002CA  89 54 24 18			mov  [esp+24],edx
+
+
+ 000002CE			L_decode_distance:
+				; 549 "inffast.S"
+ 000002CE  80 FB 0F			cmp  bl,15
+ 000002D1  77 0D			ja   L_get_distance_code
+
+ 000002D3  33 C0			xor  eax,eax
+ 000002D5  66| AD			lodsw
+ 000002D7  8A CB			mov  cl,bl
+ 000002D9  80 C3 10			add  bl,16
+ 000002DC  D3 E0			shl  eax,cl
+ 000002DE  0B E8			or  ebp,eax
+
+ 000002E0			L_get_distance_code:
+ 000002E0  8B 54 24 04			mov  edx, [esp+4]
+ 000002E4  8B 4C 24 0C			mov  ecx, [esp+12]
+ 000002E8  23 D5			and  edx,ebp
+ 000002EA  8B 04 91			mov  eax, [ecx+edx*4]
+
+
+ 000002ED			L_dodist:
+ 000002ED  8B D0			mov  edx,eax
+ 000002EF  C1 EA 10			shr  edx,16
+ 000002F2  8A CC			mov  cl,ah
+ 000002F4  2A DC			sub  bl,ah
+ 000002F6  D3 ED			shr  ebp,cl
+				; 584 "inffast.S"
+ 000002F8  8A C8			mov  cl,al
+
+ 000002FA  A8 10			test  al,16
+ 000002FC  0F 84 000000B2		jz  L_test_for_second_level_dist
+ 00000302  80 E1 0F			and  cl,15
+ 00000305  74 65			jz  L_check_dist_one
+ 00000307  3A D9			cmp  bl,cl
+ 00000309  73 11			jae  L_add_bits_to_dist
+
+ 0000030B  8A E9			mov  ch,cl
+ 0000030D  33 C0			xor  eax,eax
+ 0000030F  66| AD			lodsw
+ 00000311  8A CB			mov  cl,bl
+ 00000313  80 C3 10			add  bl,16
+ 00000316  D3 E0			shl  eax,cl
+ 00000318  0B E8			or  ebp,eax
+ 0000031A  8A CD			mov  cl,ch
+
+ 0000031C			L_add_bits_to_dist:
+ 0000031C  B8 00000001			mov  eax,1
+ 00000321  D3 E0			shl  eax,cl
+ 00000323  48				dec  eax
+ 00000324  2A D9			sub  bl,cl
+ 00000326  23 C5			and  eax,ebp
+ 00000328  D3 ED			shr  ebp,cl
+ 0000032A  03 D0			add  edx,eax
+ 0000032C  EB 00			jmp  L_check_window
+
+ 0000032E			L_check_window:
+				; 625 "inffast.S"
+ 0000032E  89 74 24 2C			mov  [esp+44],esi
+ 00000332  8B C7			mov  eax,edi
+ 00000334  2B 44 24 28			sub  eax, [esp+40]
+
+ 00000338  3B C2			cmp  eax,edx
+ 0000033A  0F 82 00000094		jb   L_clip_window
+
+ 00000340  8B 4C 24 18			mov  ecx, [esp+24]
+ 00000344  8B F7			mov  esi,edi
+ 00000346  2B F2			sub  esi,edx
+
+ 00000348  83 E9 03			sub  ecx,3
+ 0000034B  8A 06			mov  al, [esi]
+ 0000034D  88 07			mov  [edi],al
+ 0000034F  8A 46 01			mov  al, [esi+1]
+ 00000352  8A 56 02			mov  dl, [esi+2]
+ 00000355  83 C6 03			add  esi,3
+ 00000358  88 47 01			mov  [edi+1],al
+ 0000035B  88 57 02			mov  [edi+2],dl
+ 0000035E  83 C7 03			add  edi,3
+ 00000361  F3/ A4			rep movsb
+
+ 00000363  8B 74 24 2C			mov  esi, [esp+44]
+ 00000367  E9 FFFFFF10			jmp  L_while_test
+
+				ALIGN 4
+ 0000036C			L_check_dist_one:
+ 0000036C  83 FA 01			cmp  edx,1
+ 0000036F  75 BD			jne  L_check_window
+ 00000371  39 7C 24 28			cmp  [esp+40],edi
+ 00000375  74 B7			je  L_check_window
+
+ 00000377  4F				dec  edi
+ 00000378  8B 4C 24 18			mov  ecx, [esp+24]
+ 0000037C  8A 07			mov  al, [edi]
+ 0000037E  83 E9 03			sub  ecx,3
+
+ 00000381  88 47 01			mov  [edi+1],al
+ 00000384  88 47 02			mov  [edi+2],al
+ 00000387  88 47 03			mov  [edi+3],al
+ 0000038A  83 C7 04			add  edi,4
+ 0000038D  F3/ AA			rep stosb
+
+ 0000038F  E9 FFFFFEE8			jmp  L_while_test
+
+				ALIGN 4
+ 00000394			L_test_for_second_level_length:
+
+
+
+
+ 00000394  A8 40			test  al,64
+ 00000396  0F 85 0000030E		jnz   L_test_for_end_of_block
+
+ 0000039C  B8 00000001			mov  eax,1
+ 000003A1  D3 E0			shl  eax,cl
+ 000003A3  48				dec  eax
+ 000003A4  23 C5			and  eax,ebp
+ 000003A6  03 C2			add  eax,edx
+ 000003A8  8B 54 24 08			mov  edx, [esp+8]
+ 000003AC  8B 04 82			mov  eax, [edx+eax*4]
+ 000003AF  E9 FFFFFEBA			jmp  L_dolen
+
+				ALIGN 4
+ 000003B4			L_test_for_second_level_dist:
+
+
+
+
+ 000003B4  A8 40			test  al,64
+ 000003B6  0F 85 000002E2		jnz   L_invalid_distance_code
+
+ 000003BC  B8 00000001			mov  eax,1
+ 000003C1  D3 E0			shl  eax,cl
+ 000003C3  48				dec  eax
+ 000003C4  23 C5			and  eax,ebp
+ 000003C6  03 C2			add  eax,edx
+ 000003C8  8B 54 24 0C			mov  edx, [esp+12]
+ 000003CC  8B 04 82			mov  eax, [edx+eax*4]
+ 000003CF  E9 FFFFFF19			jmp  L_dodist
+
+				ALIGN 4
+ 000003D4			L_clip_window:
+				; 721 "inffast.S"
+ 000003D4  8B C8			mov  ecx,eax
+ 000003D6  8B 44 24 34			mov  eax, [esp+52]
+ 000003DA  F7 D9			neg  ecx
+ 000003DC  8B 74 24 38			mov  esi, [esp+56]
+
+ 000003E0  3B C2			cmp  eax,edx
+ 000003E2  0F 82 000002DE		jb   L_invalid_distance_too_far
+
+ 000003E8  03 CA			add  ecx,edx
+ 000003EA  83 7C 24 30 00		cmp  dword ptr [esp+48],0
+ 000003EF  75 24			jne  L_wrap_around_window
+
+ 000003F1  2B C1			sub  eax,ecx
+ 000003F3  03 F0			add  esi,eax
+				; 749 "inffast.S"
+ 000003F5  8B 44 24 18			mov  eax, [esp+24]
+ 000003F9  3B C1			cmp  eax,ecx
+ 000003FB  76 60			jbe  L_do_copy1
+
+ 000003FD  2B C1			sub  eax,ecx
+ 000003FF  F3/ A4			rep movsb
+ 00000401  8B F7			mov  esi,edi
+ 00000403  2B F2			sub  esi,edx
+ 00000405  EB 56			jmp  L_do_copy1
+
+ 00000407  3B C1			cmp  eax,ecx
+ 00000409  76 52			jbe  L_do_copy1
+
+ 0000040B  2B C1			sub  eax,ecx
+ 0000040D  F3/ A4			rep movsb
+ 0000040F  8B F7			mov  esi,edi
+ 00000411  2B F2			sub  esi,edx
+ 00000413  EB 48			jmp  L_do_copy1
+
+ 00000415			L_wrap_around_window:
+				; 793 "inffast.S"
+ 00000415  8B 44 24 30			mov  eax, [esp+48]
+ 00000419  3B C8			cmp  ecx,eax
+ 0000041B  76 2C			jbe  L_contiguous_in_window
+
+ 0000041D  03 74 24 34			add  esi, [esp+52]
+ 00000421  03 F0			add  esi,eax
+ 00000423  2B F1			sub  esi,ecx
+ 00000425  2B C8			sub  ecx,eax
+
+
+ 00000427  8B 44 24 18			mov  eax, [esp+24]
+ 0000042B  3B C1			cmp  eax,ecx
+ 0000042D  76 2E			jbe  L_do_copy1
+
+ 0000042F  2B C1			sub  eax,ecx
+ 00000431  F3/ A4			rep movsb
+ 00000433  8B 74 24 38			mov  esi, [esp+56]
+ 00000437  8B 4C 24 30			mov  ecx, [esp+48]
+ 0000043B  3B C1			cmp  eax,ecx
+ 0000043D  76 1E			jbe  L_do_copy1
+
+ 0000043F  2B C1			sub  eax,ecx
+ 00000441  F3/ A4			rep movsb
+ 00000443  8B F7			mov  esi,edi
+ 00000445  2B F2			sub  esi,edx
+ 00000447  EB 14			jmp  L_do_copy1
+
+ 00000449			L_contiguous_in_window:
+				; 836 "inffast.S"
+ 00000449  03 F0			add  esi,eax
+ 0000044B  2B F1			sub  esi,ecx
+
+
+ 0000044D  8B 44 24 18			mov  eax, [esp+24]
+ 00000451  3B C1			cmp  eax,ecx
+ 00000453  76 08			jbe  L_do_copy1
+
+ 00000455  2B C1			sub  eax,ecx
+ 00000457  F3/ A4			rep movsb
+ 00000459  8B F7			mov  esi,edi
+ 0000045B  2B F2			sub  esi,edx
+
+ 0000045D			L_do_copy1:
+				; 862 "inffast.S"
+ 0000045D  8B C8			mov  ecx,eax
+ 0000045F  F3/ A4			rep movsb
+
+ 00000461  8B 74 24 2C			mov  esi, [esp+44]
+ 00000465  E9 FFFFFE12			jmp  L_while_test
+				; 878 "inffast.S"
+				ALIGN 4
+ 0000046C			L_init_mmx:
+ 0000046C  0F 77			emms
+
+
+
+
+
+ 0000046E  0F 6E C5			movd mm0,ebp
+ 00000471  8B EB			mov  ebp,ebx
+				; 896 "inffast.S"
+ 00000473  0F 6E 24 24			movd mm4,dword ptr [esp+0]
+ 00000477  0F 7F E3			movq mm3,mm4
+ 0000047A  0F 6E 6C 24 04		movd mm5,dword ptr [esp+4]
+ 0000047F  0F 7F EA			movq mm2,mm5
+ 00000482  0F EF C9			pxor mm1,mm1
+ 00000485  8B 5C 24 08			mov  ebx, [esp+8]
+ 00000489  EB 01			jmp  L_do_loop_mmx
+
+				ALIGN 4
+ 0000048C			L_do_loop_mmx:
+ 0000048C  0F D3 C1			psrlq mm0,mm1
+
+ 0000048F  83 FD 20			cmp  ebp,32
+ 00000492  77 12			ja  L_get_length_code_mmx
+
+ 00000494  0F 6E F5			movd mm6,ebp
+ 00000497  0F 6E 3E			movd mm7,dword ptr [esi]
+ 0000049A  83 C6 04			add  esi,4
+ 0000049D  0F F3 FE			psllq mm7,mm6
+ 000004A0  83 C5 20			add  ebp,32
+ 000004A3  0F EB C7			por mm0,mm7
+
+ 000004A6			L_get_length_code_mmx:
+ 000004A6  0F DB E0			pand mm4,mm0
+ 000004A9  0F 7E E0			movd eax,mm4
+ 000004AC  0F 7F DC			movq mm4,mm3
+ 000004AF  8B 04 83			mov  eax, [ebx+eax*4]
+
+ 000004B2			L_dolen_mmx:
+ 000004B2  0F B6 CC			movzx  ecx,ah
+ 000004B5  0F 6E C9			movd mm1,ecx
+ 000004B8  2B E9			sub  ebp,ecx
+
+ 000004BA  84 C0			test  al,al
+ 000004BC  75 19			jnz L_test_for_length_base_mmx
+
+ 000004BE  C1 E8 10			shr  eax,16
+ 000004C1  AA				stosb
+
+ 000004C2			L_while_test_mmx:
+
+
+ 000004C2  39 7C 24 10			cmp  [esp+16],edi
+ 000004C6  0F 86 0000021C		jbe L_break_loop
+
+ 000004CC  39 74 24 14			cmp  [esp+20],esi
+ 000004D0  77 BA			ja L_do_loop_mmx
+ 000004D2  E9 00000211			jmp L_break_loop
+
+ 000004D7			L_test_for_length_base_mmx:
+
+ 000004D7  8B D0			mov  edx,eax
+ 000004D9  C1 EA 10			shr  edx,16
+
+ 000004DC  A8 10			test  al,16
+ 000004DE  0F 84 000000E0		jz  L_test_for_second_level_length_mmx
+ 000004E4  83 E0 0F			and  eax,15
+ 000004E7  74 14			jz L_decode_distance_mmx
+
+ 000004E9  0F D3 C1			psrlq mm0,mm1
+ 000004EC  0F 6E C8			movd mm1,eax
+ 000004EF  0F 7E C1			movd ecx,mm0
+ 000004F2  2B E8			sub  ebp,eax
+ 000004F4  23 0C 85			and  ecx, [inflate_fast_mask+eax*4]
+	   0000007C R
+ 000004FB  03 D1			add  edx,ecx
+
+ 000004FD			L_decode_distance_mmx:
+ 000004FD  0F D3 C1			psrlq mm0,mm1
+
+ 00000500  83 FD 20			cmp  ebp,32
+ 00000503  77 12			ja L_get_dist_code_mmx
+
+ 00000505  0F 6E F5			movd mm6,ebp
+ 00000508  0F 6E 3E			movd mm7,dword ptr [esi]
+ 0000050B  83 C6 04			add  esi,4
+ 0000050E  0F F3 FE			psllq mm7,mm6
+ 00000511  83 C5 20			add  ebp,32
+ 00000514  0F EB C7			por mm0,mm7
+
+ 00000517			L_get_dist_code_mmx:
+ 00000517  8B 5C 24 0C			mov  ebx, [esp+12]
+ 0000051B  0F DB E8			pand mm5,mm0
+ 0000051E  0F 7E E8			movd eax,mm5
+ 00000521  0F 7F D5			movq mm5,mm2
+ 00000524  8B 04 83			mov  eax, [ebx+eax*4]
+
+ 00000527			L_dodist_mmx:
+
+ 00000527  0F B6 CC			movzx  ecx,ah
+ 0000052A  8B D8			mov  ebx,eax
+ 0000052C  C1 EB 10			shr  ebx,16
+ 0000052F  2B E9			sub  ebp,ecx
+ 00000531  0F 6E C9			movd mm1,ecx
+
+ 00000534  A8 10			test  al,16
+ 00000536  0F 84 000000AC		jz L_test_for_second_level_dist_mmx
+ 0000053C  83 E0 0F			and  eax,15
+ 0000053F  74 57			jz L_check_dist_one_mmx
+
+ 00000541			L_add_bits_to_dist_mmx:
+ 00000541  0F D3 C1			psrlq mm0,mm1
+ 00000544  0F 6E C8			movd mm1,eax
+ 00000547  0F 7E C1			movd ecx,mm0
+ 0000054A  2B E8			sub  ebp,eax
+ 0000054C  23 0C 85			and  ecx, [inflate_fast_mask+eax*4]
+	   0000007C R
+ 00000553  03 D9			add  ebx,ecx
+
+ 00000555			L_check_window_mmx:
+ 00000555  89 74 24 2C			mov  [esp+44],esi
+ 00000559  8B C7			mov  eax,edi
+ 0000055B  2B 44 24 28			sub  eax, [esp+40]
+
+ 0000055F  3B C3			cmp  eax,ebx
+ 00000561  0F 82 000000A9		jb L_clip_window_mmx
+
+ 00000567  8B CA			mov  ecx,edx
+ 00000569  8B F7			mov  esi,edi
+ 0000056B  2B F3			sub  esi,ebx
+
+ 0000056D  83 E9 03			sub  ecx,3
+ 00000570  8A 06			mov  al, [esi]
+ 00000572  88 07			mov  [edi],al
+ 00000574  8A 46 01			mov  al, [esi+1]
+ 00000577  8A 56 02			mov  dl, [esi+2]
+ 0000057A  83 C6 03			add  esi,3
+ 0000057D  88 47 01			mov  [edi+1],al
+ 00000580  88 57 02			mov  [edi+2],dl
+ 00000583  83 C7 03			add  edi,3
+ 00000586  F3/ A4			rep movsb
+
+ 00000588  8B 74 24 2C			mov  esi, [esp+44]
+ 0000058C  8B 5C 24 08			mov  ebx, [esp+8]
+ 00000590  E9 FFFFFF2D			jmp  L_while_test_mmx
+
+				ALIGN 4
+ 00000598			L_check_dist_one_mmx:
+ 00000598  83 FB 01			cmp  ebx,1
+ 0000059B  75 B8			jne  L_check_window_mmx
+ 0000059D  39 7C 24 28			cmp  [esp+40],edi
+ 000005A1  74 B2			je   L_check_window_mmx
+
+ 000005A3  4F				dec  edi
+ 000005A4  8B CA			mov  ecx,edx
+ 000005A6  8A 07			mov  al, [edi]
+ 000005A8  83 E9 03			sub  ecx,3
+
+ 000005AB  88 47 01			mov  [edi+1],al
+ 000005AE  88 47 02			mov  [edi+2],al
+ 000005B1  88 47 03			mov  [edi+3],al
+ 000005B4  83 C7 04			add  edi,4
+ 000005B7  F3/ AA			rep stosb
+
+ 000005B9  8B 5C 24 08			mov  ebx, [esp+8]
+ 000005BD  E9 FFFFFF00			jmp  L_while_test_mmx
+
+				ALIGN 4
+ 000005C4			L_test_for_second_level_length_mmx:
+ 000005C4  A8 40			test  al,64
+ 000005C6  0F 85 000000DE		jnz L_test_for_end_of_block
+
+ 000005CC  83 E0 0F			and  eax,15
+ 000005CF  0F D3 C1			psrlq mm0,mm1
+ 000005D2  0F 7E C1			movd ecx,mm0
+ 000005D5  23 0C 85			and  ecx, [inflate_fast_mask+eax*4]
+	   0000007C R
+ 000005DC  03 CA			add  ecx,edx
+ 000005DE  8B 04 8B			mov  eax, [ebx+ecx*4]
+ 000005E1  E9 FFFFFECC			jmp L_dolen_mmx
+
+				ALIGN 4
+ 000005E8			L_test_for_second_level_dist_mmx:
+ 000005E8  A8 40			test  al,64
+ 000005EA  0F 85 000000AE		jnz L_invalid_distance_code
+
+ 000005F0  83 E0 0F			and  eax,15
+ 000005F3  0F D3 C1			psrlq mm0,mm1
+ 000005F6  0F 7E C1			movd ecx,mm0
+ 000005F9  23 0C 85			and  ecx, [inflate_fast_mask+eax*4]
+	   0000007C R
+ 00000600  8B 44 24 0C			mov  eax, [esp+12]
+ 00000604  03 CB			add  ecx,ebx
+ 00000606  8B 04 88			mov  eax, [eax+ecx*4]
+ 00000609  E9 FFFFFF19			jmp  L_dodist_mmx
+
+				ALIGN 4
+ 00000610			L_clip_window_mmx:
+
+ 00000610  8B C8			mov  ecx,eax
+ 00000612  8B 44 24 34			mov  eax, [esp+52]
+ 00000616  F7 D9			neg  ecx
+ 00000618  8B 74 24 38			mov  esi, [esp+56]
+
+ 0000061C  3B C3			cmp  eax,ebx
+ 0000061E  0F 82 000000A2		jb  L_invalid_distance_too_far
+
+ 00000624  03 CB			add  ecx,ebx
+ 00000626  83 7C 24 30 00		cmp  dword ptr [esp+48],0
+ 0000062B  75 20			jne  L_wrap_around_window_mmx
+
+ 0000062D  2B C1			sub  eax,ecx
+ 0000062F  03 F0			add  esi,eax
+
+ 00000631  3B D1			cmp  edx,ecx
+ 00000633  76 58			jbe  L_do_copy1_mmx
+
+ 00000635  2B D1			sub  edx,ecx
+ 00000637  F3/ A4			rep movsb
+ 00000639  8B F7			mov  esi,edi
+ 0000063B  2B F3			sub  esi,ebx
+ 0000063D  EB 4E			jmp  L_do_copy1_mmx
+
+ 0000063F  3B D1			cmp  edx,ecx
+ 00000641  76 4A			jbe  L_do_copy1_mmx
+
+ 00000643  2B D1			sub  edx,ecx
+ 00000645  F3/ A4			rep movsb
+ 00000647  8B F7			mov  esi,edi
+ 00000649  2B F3			sub  esi,ebx
+ 0000064B  EB 40			jmp  L_do_copy1_mmx
+
+ 0000064D			L_wrap_around_window_mmx:
+
+ 0000064D  8B 44 24 30			mov  eax, [esp+48]
+ 00000651  3B C8			cmp  ecx,eax
+ 00000653  76 28			jbe  L_contiguous_in_window_mmx
+
+ 00000655  03 74 24 34			add  esi, [esp+52]
+ 00000659  03 F0			add  esi,eax
+ 0000065B  2B F1			sub  esi,ecx
+ 0000065D  2B C8			sub  ecx,eax
+
+
+ 0000065F  3B D1			cmp  edx,ecx
+ 00000661  76 2A			jbe  L_do_copy1_mmx
+
+ 00000663  2B D1			sub  edx,ecx
+ 00000665  F3/ A4			rep movsb
+ 00000667  8B 74 24 38			mov  esi, [esp+56]
+ 0000066B  8B 4C 24 30			mov  ecx, [esp+48]
+ 0000066F  3B D1			cmp  edx,ecx
+ 00000671  76 1A			jbe  L_do_copy1_mmx
+
+ 00000673  2B D1			sub  edx,ecx
+ 00000675  F3/ A4			rep movsb
+ 00000677  8B F7			mov  esi,edi
+ 00000679  2B F3			sub  esi,ebx
+ 0000067B  EB 10			jmp  L_do_copy1_mmx
+
+ 0000067D			L_contiguous_in_window_mmx:
+
+ 0000067D  03 F0			add  esi,eax
+ 0000067F  2B F1			sub  esi,ecx
+
+
+ 00000681  3B D1			cmp  edx,ecx
+ 00000683  76 08			jbe  L_do_copy1_mmx
+
+ 00000685  2B D1			sub  edx,ecx
+ 00000687  F3/ A4			rep movsb
+ 00000689  8B F7			mov  esi,edi
+ 0000068B  2B F3			sub  esi,ebx
+
+ 0000068D			L_do_copy1_mmx:
+
+
+ 0000068D  8B CA			mov  ecx,edx
+ 0000068F  F3/ A4			rep movsb
+
+ 00000691  8B 74 24 2C			mov  esi, [esp+44]
+ 00000695  8B 5C 24 08			mov  ebx, [esp+8]
+ 00000699  E9 FFFFFE24			jmp  L_while_test_mmx
+				; 1174 "inffast.S"
+ 0000069E			L_invalid_distance_code:
+
+
+
+
+
+ 0000069E  B9 00000044 R		mov  ecx, invalid_distance_code_msg
+ 000006A3  BA 0000001A			mov  edx,INFLATE_MODE_BAD
+ 000006A8  EB 2C			jmp  L_update_stream_state
+
+ 000006AA			L_test_for_end_of_block:
+
+
+
+
+
+ 000006AA  A8 20			test  al,32
+ 000006AC  74 0C			jz  L_invalid_literal_length_code
+
+ 000006AE  B9 00000000			mov  ecx,0
+ 000006B3  BA 0000000B			mov  edx,INFLATE_MODE_TYPE
+ 000006B8  EB 1C			jmp  L_update_stream_state
+
+ 000006BA			L_invalid_literal_length_code:
+
+
+
+
+
+ 000006BA  B9 00000028 R		mov  ecx, invalid_literal_length_code_msg
+ 000006BF  BA 0000001A			mov  edx,INFLATE_MODE_BAD
+ 000006C4  EB 10			jmp  L_update_stream_state
+
+ 000006C6			L_invalid_distance_too_far:
+
+
+
+ 000006C6  8B 74 24 2C			mov  esi, [esp+44]
+ 000006CA  B9 0000005C R		mov  ecx, invalid_distance_too_far_msg
+ 000006CF  BA 0000001A			mov  edx,INFLATE_MODE_BAD
+ 000006D4  EB 00			jmp  L_update_stream_state
+
+ 000006D6			L_update_stream_state:
+
+ 000006D6  8B 44 24 58			mov  eax, [esp+88]
+ 000006DA  85 C9			test  ecx,ecx
+ 000006DC  74 03			jz  L_skip_msg
+ 000006DE  89 48 18			mov  [eax+24],ecx
+ 000006E1			L_skip_msg:
+ 000006E1  8B 40 1C			mov  eax, [eax+28]
+ 000006E4  89 10			mov  [eax+mode_state],edx
+ 000006E6  EB 00			jmp  L_break_loop
+
+				ALIGN 4
+ 000006E8			L_break_loop:
+				; 1243 "inffast.S"
+ 000006E8  83 3D 00000000 R		cmp  dword ptr [inflate_fast_use_mmx],2
+	   02
+ 000006EF  75 02			jne  L_update_next_in
+
+
+
+ 000006F1  8B DD			mov  ebx,ebp
+
+ 000006F3			L_update_next_in:
+				; 1266 "inffast.S"
+ 000006F3  8B 44 24 58			mov  eax, [esp+88]
+ 000006F7  8B CB			mov  ecx,ebx
+ 000006F9  8B 50 1C			mov  edx, [eax+28]
+ 000006FC  C1 E9 03			shr  ecx,3
+ 000006FF  2B F1			sub  esi,ecx
+ 00000701  C1 E1 03			shl  ecx,3
+ 00000704  2B D9			sub  ebx,ecx
+ 00000706  89 78 0C			mov  [eax+12],edi
+ 00000709  89 5A 3C			mov  [edx+bits_state],ebx
+ 0000070C  8B CB			mov  ecx,ebx
+
+ 0000070E  8D 5C 24 1C			lea  ebx, [esp+28]
+ 00000712  39 5C 24 14			cmp  [esp+20],ebx
+ 00000716  75 14			jne  L_buf_not_used
+
+ 00000718  2B F3			sub  esi,ebx
+ 0000071A  8B 18			mov  ebx, [eax+0]
+ 0000071C  89 5C 24 14			mov  [esp+20],ebx
+ 00000720  03 F3			add  esi,ebx
+ 00000722  8B 58 04			mov  ebx, [eax+4]
+ 00000725  83 EB 0B			sub  ebx,11
+ 00000728  01 5C 24 14			add  [esp+20],ebx
+
+ 0000072C			L_buf_not_used:
+ 0000072C  89 30			mov  [eax+0],esi
+
+ 0000072E  BB 00000001			mov  ebx,1
+ 00000733  D3 E3			shl  ebx,cl
+ 00000735  4B				dec  ebx
+
+
+
+
+
+ 00000736  83 3D 00000000 R		cmp  dword ptr [inflate_fast_use_mmx],2
+	   02
+ 0000073D  75 08			jne  L_update_hold
+
+
+
+ 0000073F  0F D3 C1			psrlq mm0,mm1
+ 00000742  0F 7E C5			movd ebp,mm0
+
+ 00000745  0F 77			emms
+
+ 00000747			L_update_hold:
+
+
+
+ 00000747  23 EB			and  ebp,ebx
+ 00000749  89 6A 38			mov  [edx+hold_state],ebp
+
+
+
+
+ 0000074C  8B 5C 24 14			mov  ebx, [esp+20]
+ 00000750  3B DE			cmp  ebx,esi
+ 00000752  76 0A			jbe  L_last_is_smaller
+
+ 00000754  2B DE			sub  ebx,esi
+ 00000756  83 C3 0B			add  ebx,11
+ 00000759  89 58 04			mov  [eax+4],ebx
+ 0000075C  EB 0A			jmp  L_fixup_out
+ 0000075E			L_last_is_smaller:
+ 0000075E  2B F3			sub  esi,ebx
+ 00000760  F7 DE			neg  esi
+ 00000762  83 C6 0B			add  esi,11
+ 00000765  89 70 04			mov  [eax+4],esi
+
+
+
+
+ 00000768			L_fixup_out:
+
+ 00000768  8B 5C 24 10			mov  ebx, [esp+16]
+ 0000076C  3B DF			cmp  ebx,edi
+ 0000076E  76 0D			jbe  L_end_is_smaller
+
+ 00000770  2B DF			sub  ebx,edi
+ 00000772  81 C3 00000101		add  ebx,257
+ 00000778  89 58 10			mov  [eax+16],ebx
+ 0000077B  EB 0D			jmp  L_done
+ 0000077D			L_end_is_smaller:
+ 0000077D  2B FB			sub  edi,ebx
+ 0000077F  F7 DF			neg  edi
+ 00000781  81 C7 00000101		add  edi,257
+ 00000787  89 78 10			mov  [eax+16],edi
+
+
+
+
+
+ 0000078A			L_done:
+ 0000078A  83 C4 40			add  esp,64
+ 0000078D  9D				popfd
+ 0000078E  5B				pop  ebx
+ 0000078F  5D				pop  ebp
+ 00000790  5E				pop  esi
+ 00000791  5F				pop  edi
+ 00000792  C3				ret
+ 00000793			_inflate_fast endp
+
+ 00000004			_TEXT	ends
+				end
+Microsoft (R) Macro Assembler Version 14.00.24210.0	    10/18/20 10:26:12
+inffas32.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000004 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000793 Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+_inflate_fast  . . . . . . . . .	P Near	 00000100 _TEXT	Length= 00000693 Public
+  L_align_long . . . . . . . . .	L Near	 000001BA _TEXT	
+  L_is_aligned . . . . . . . . .	L Near	 000001D2 _TEXT	
+  L_check_mmx  . . . . . . . . .	L Near	 000001D6 _TEXT	
+  L_use_mmx  . . . . . . . . . .	L Near	 00000233 _TEXT	
+  L_dont_use_mmx . . . . . . . .	L Near	 0000023F _TEXT	
+  L_check_mmx_pop  . . . . . . .	L Near	 00000249 _TEXT	
+  L_do_loop  . . . . . . . . . .	L Near	 00000250 _TEXT	
+  L_get_length_code  . . . . . .	L Near	 00000262 _TEXT	
+  L_dolen  . . . . . . . . . . .	L Near	 0000026E _TEXT	
+  L_while_test . . . . . . . . .	L Near	 0000027C _TEXT	
+  L_test_for_length_base . . . .	L Near	 00000291 _TEXT	
+  L_add_bits_to_len  . . . . . .	L Near	 000002BA _TEXT	
+  L_save_len . . . . . . . . . .	L Near	 000002CA _TEXT	
+  L_decode_distance  . . . . . .	L Near	 000002CE _TEXT	
+  L_get_distance_code  . . . . .	L Near	 000002E0 _TEXT	
+  L_dodist . . . . . . . . . . .	L Near	 000002ED _TEXT	
+  L_add_bits_to_dist . . . . . .	L Near	 0000031C _TEXT	
+  L_check_window . . . . . . . .	L Near	 0000032E _TEXT	
+  L_check_dist_one . . . . . . .	L Near	 0000036C _TEXT	
+  L_test_for_second_level_length .	L Near	 00000394 _TEXT	
+  L_test_for_second_level_dist .	L Near	 000003B4 _TEXT	
+  L_clip_window  . . . . . . . .	L Near	 000003D4 _TEXT	
+  L_wrap_around_window . . . . .	L Near	 00000415 _TEXT	
+  L_contiguous_in_window . . . .	L Near	 00000449 _TEXT	
+  L_do_copy1 . . . . . . . . . .	L Near	 0000045D _TEXT	
+  L_init_mmx . . . . . . . . . .	L Near	 0000046C _TEXT	
+  L_do_loop_mmx  . . . . . . . .	L Near	 0000048C _TEXT	
+  L_get_length_code_mmx  . . . .	L Near	 000004A6 _TEXT	
+  L_dolen_mmx  . . . . . . . . .	L Near	 000004B2 _TEXT	
+  L_while_test_mmx . . . . . . .	L Near	 000004C2 _TEXT	
+  L_test_for_length_base_mmx . .	L Near	 000004D7 _TEXT	
+  L_decode_distance_mmx  . . . .	L Near	 000004FD _TEXT	
+  L_get_dist_code_mmx  . . . . .	L Near	 00000517 _TEXT	
+  L_dodist_mmx . . . . . . . . .	L Near	 00000527 _TEXT	
+  L_add_bits_to_dist_mmx . . . .	L Near	 00000541 _TEXT	
+  L_check_window_mmx . . . . . .	L Near	 00000555 _TEXT	
+  L_check_dist_one_mmx . . . . .	L Near	 00000598 _TEXT	
+  L_test_for_second_level_length_mmx .	L Near	 000005C4 _TEXT	
+  L_test_for_second_level_dist_mmx .	L Near	 000005E8 _TEXT	
+  L_clip_window_mmx  . . . . . .	L Near	 00000610 _TEXT	
+  L_wrap_around_window_mmx . . .	L Near	 0000064D _TEXT	
+  L_contiguous_in_window_mmx . .	L Near	 0000067D _TEXT	
+  L_do_copy1_mmx . . . . . . . .	L Near	 0000068D _TEXT	
+  L_invalid_distance_code  . . .	L Near	 0000069E _TEXT	
+  L_test_for_end_of_block  . . .	L Near	 000006AA _TEXT	
+  L_invalid_literal_length_code 	L Near	 000006BA _TEXT	
+  L_invalid_distance_too_far . .	L Near	 000006C6 _TEXT	
+  L_update_stream_state  . . . .	L Near	 000006D6 _TEXT	
+  L_skip_msg . . . . . . . . . .	L Near	 000006E1 _TEXT	
+  L_break_loop . . . . . . . . .	L Near	 000006E8 _TEXT	
+  L_update_next_in . . . . . . .	L Near	 000006F3 _TEXT	
+  L_buf_not_used . . . . . . . .	L Near	 0000072C _TEXT	
+  L_update_hold  . . . . . . . .	L Near	 00000747 _TEXT	
+  L_last_is_smaller  . . . . . .	L Near	 0000075E _TEXT	
+  L_fixup_out  . . . . . . . . .	L Near	 00000768 _TEXT	
+  L_end_is_smaller . . . . . . .	L Near	 0000077D _TEXT	
+  L_done . . . . . . . . . . . .	L Near	 0000078A _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+INFLATE_MODE_BAD . . . . . . . .	Number	 0000001Ah   
+INFLATE_MODE_TYPE  . . . . . . .	Number	 0000000Bh   
+bits_state . . . . . . . . . . .	Number	 0000003Ch   
+distbits_state . . . . . . . . .	Number	 00000058h   
+distcode_state . . . . . . . . .	Number	 00000050h   
+hold_state . . . . . . . . . . .	Number	 00000038h   
+inflate_fast_mask  . . . . . . .	L Near	 0000007C _TEXT	
+inflate_fast_use_mmx . . . . . .	L Near	 00000000 _DATA	
+invalid_distance_code_msg  . . .	L Near	 00000044 _TEXT	
+invalid_distance_too_far_msg . .	L Near	 0000005C _TEXT	
+invalid_literal_length_code_msg 	L Near	 00000028 _TEXT	
+lenbits_state  . . . . . . . . .	Number	 00000054h   
+lencode_state  . . . . . . . . .	Number	 0000004Ch   
+mode_state . . . . . . . . . . .	Number	 00000000h   
+window_state . . . . . . . . . .	Number	 00000034h   
+write_state  . . . . . . . . . .	Number	 00000030h   
+wsize_state  . . . . . . . . . .	Number	 00000028h   
+zlib1222sup  . . . . . . . . . .	Number	 00000008h   
+
+	   0 Warnings
+	   0 Errors

@@ -1,0 +1,77 @@
+<HEAD>
+<TITLE> 5.1.5 The <b><tt>tix filedialog</tt></b> Command<A NAME=515>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1044 HREF=subsection3_7_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1042 HREF=subsection3_7_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1038 HREF=subsubsection3_7_1_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1046 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1045 HREF=subsection3_7_2.html> Selecting Directories with </A>
+<B>Up:</B> <A NAME=tex2html1043 HREF=subsection3_7_1.html> File Selection Dialog </A>
+<B> Previous:</B> <A NAME=tex2html1039 HREF=subsubsection3_7_1_4.html> Specifying File Types </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00071500000000000000> 5.1.5 The <b><tt>tix filedialog</tt></b> Command<A NAME=515>&nbsp;</A></A></H3>
+<P>
+TixExFileSelectDialog and TixFileSelectDialog are very similar to
+  each other. So which one should we use? That is just a matter of
+  taste. However, since we know that programmers usually have bad
+  taste, clever programmers would rather step aside and let the users
+  exercise their own taste. To do this, we can use the <tt>tix
+  filedialog</tt> command.
+<P>
+   For any programs based on Tix, the user can choose his preferred
+  type of file dialog by setting the X resource <tt>FileDialog</tt> to
+  either <tt>tixFileSelectDialog</tt> or <tt>tixExFileSelectDialog</tt>.
+  This can usually be done by inserting a line similar to the
+  following into the user's <tt>.Xdefaults</tt> file:
+<blockquote> <P><tt> *myapp*FileDialog: tixExFileSelectDialog
+</tt>
+<P></blockquote>
+<P>
+   When we call the command <tt>tix filedialog</tt>, it will return a file
+  dialog widget of the user's preferred type.
+<P>
+   The advantage of using <tt>tix filedialog</tt> is it makes coding
+  flexible. If the management suddenly mandates that we dump the Motif
+  look-and-feel in favor of the MS Windows look-and-feel, we don't need to
+  dig up every line of <tt>tixFileSelectDialog</tt> calls and replace it with
+  <tt>tixExFileSelectDialog</tt>. Also, <tt>tix filedialog</tt> creates only one
+  copy of the file dialog, which can be shared by different parts of the
+  program. Therefore, we can avoid creating a separate file dialog widget
+  for each of the ``Open'', ``Save'' and ``Save As'' commands in our
+  application. This way, we can save resource since a file dialog is a
+  large widget and it takes up quite a bit of space.
+<P>
+<blockquote> <P><tt> set dialog [tix filedialog]<BR>
+$dialog -title &quot;Select A File&quot; -command selectCmd<BR>
+$dialog subwidget fsbox config -pattern &quot;*.txt&quot; -directory /usr/info<BR>
+if {[winfo class $dialog] == &quot;TixExFileSelectDialog&quot;} {<BR>
+    $dialog subwidget fsbox config -filetypes {<BR>
+        {\*}            {*     - All files}\<BR>
+        {\*.txt}        {*.txt - Text files}\<BR>
+        {\*.c}          {*.c   - C source files}\<BR>
+    }<BR>
+}<BR>
+$dialog popup<BR>
+<BR>
+proc selectCmd {filename} {<BR>
+    puts &quot;You have selected $filename&quot;<BR>
+}</tt>
+<P></blockquote>
+<P><CENTER>(Figure 5-4) Using the <tt>tix dialog</tt> command<A NAME=54>&nbsp;</A>
+  </CENTER>
+<P>
+   The use of the <tt>tix filedialog</tt> command is shown in program 5-4
+. This program is very similar to what we saw in program 5-1
+, except now we aren't really sure which type of file dialog
+  the user have chosen. Therefore, if we want to do something allowed for
+  only one type of file dialogs, we have to be careful. At line 4 of
+  program 5-4, we use the <tt>winfo</tt> command to see whether
+  the type of the file dialog is TixExFileSelectDialog. If so, we set the
+  value for the <tt>-filetypes</tt> option of its <tt>fsbox</tt> subwidget.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,301 @@
+#
+# ttk::spinbox widget tests
+#
+
+package require Tk
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test spinbox-1.0 "Spinbox tests -- setup" -body {
+    ttk::spinbox .sb
+} -cleanup { destroy .sb } -result .sb
+
+test spinbox-1.1 "Bad -values list" -setup {
+    ttk::spinbox .sb
+} -body {
+    .sb configure -values "bad \{list"
+} -cleanup {
+    destroy .sb
+} -returnCodes error -result "unmatched open brace in list"
+
+test spinbox-1.3.1 "get retrieves value" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb set 50
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 50
+
+test spinbox-1.3.2 "get retrieves value" -setup {
+    ttk::spinbox .sb -from 0 -to 100 -values 55
+} -body {
+     .sb set 55
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 55
+
+test spinbox-1.4.1 "set changes value" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb set 33
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 33
+
+test spinbox-1.4.2 "set changes value" -setup {
+    ttk::spinbox .sb -from 0 -to 100 -values 55
+} -body {
+    .sb set 33
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 33
+
+
+test spinbox-1.6.1 "insert start" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb set 5
+    .sb insert 0 4
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 45
+
+test spinbox-1.6.2 "insert end" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb set 5
+    .sb insert end 4
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 54
+
+test spinbox-1.6.3 "insert invalid index" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb set 5
+    .sb insert 100 4
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result 54
+
+test spinbox-1.7.1 "-command option: set doesnt fire" -setup {
+    ttk::spinbox .sb -from 0 -to 100 -command {set ::spinbox_test 1}
+} -body {
+    set ::spinbox_test 0
+    .sb set 50
+    set ::spinbox_test
+} -cleanup {
+    destroy .sb
+} -result 0
+
+test spinbox-1.7.2 "-command option: button handler will fire" -setup {
+    ttk::spinbox .sb -from 0 -to 100 -command {set ::spinbox_test 1}
+} -body {
+    set ::spinbox_test 0
+    .sb set 50
+    event generate .sb <<Increment>>
+    set ::spinbox_test
+} -cleanup {
+    destroy .sb
+} -result 1
+
+test spinbox-1.8.1 "option -validate" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb configure -validate all
+    .sb cget -validate
+} -cleanup {
+    destroy .sb
+} -result {all}
+
+test spinbox-1.8.2 "option -validate" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb configure -validate key
+    .sb configure -validate focus
+    .sb configure -validate focusin
+    .sb configure -validate focusout
+    .sb configure -validate none
+    .sb cget -validate
+} -cleanup {
+    destroy .sb
+} -result {none}
+
+test spinbox-1.8.3 "option -validate" -setup {
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb configure -validate bogus
+} -cleanup {
+    destroy .sb
+} -returnCodes error -result {bad validate "bogus": must be all, key, focus, focusin, focusout, or none}
+
+test spinbox-1.8.4 "-validate option: " -setup {
+    set ::spinbox_test {}
+    ttk::spinbox .sb -from 0 -to 100
+} -body {
+    .sb configure -validate all -validatecommand {lappend ::spinbox_test %P}
+    pack .sb
+    .sb set 50
+    focus -force .sb
+    after 500 {set ::spinbox_wait 1} ; vwait ::spinbox_wait
+    set ::spinbox_test
+} -cleanup {
+    destroy .sb
+} -result {50}
+
+
+test spinbox-2.0 "current command -- unset should be 0" -constraints nyi -setup {
+    ttk::spinbox .sb -values [list a b c d e a]
+} -body {
+    .sb current
+} -cleanup {
+    destroy .sb
+} -result 0
+# @@@ for combobox, this is -1.
+
+test spinbox-2.1 "current command -- set index" -constraints nyi -setup {
+    ttk::spinbox .sb -values [list a b c d e a]
+} -body {
+    .sb current 5
+    .sb get
+} -cleanup {
+    destroy .sb
+} -result a
+
+test spinbox-2.2 "current command -- change -values" -constraints nyi -setup {
+    ttk::spinbox .sb -values [list a b c d e a]
+} -body {
+    .sb current 5
+    .sb configure -values [list c b a d e]
+    .sb current
+} -cleanup {
+    destroy .sb
+} -result 2
+
+test spinbox-2.3 "current command -- change value" -constraints nyi -setup {
+    ttk::spinbox .sb -values [list c b a d e]
+} -body {
+    .sb current 2
+    .sb set "b"
+    .sb current
+} -cleanup {
+    destroy .sb
+} -result 1
+
+test spinbox-2.4 "current command -- value not in list" -constraints nyi -setup {
+    ttk::spinbox .sb -values [list c b a d e]
+} -body {
+    .sb current 2
+    .sb set "z"
+    .sb current
+} -cleanup {
+    destroy .sb
+} -result -1
+
+test spinbox-3.0 "textarea should expand to fill widget" -setup {
+    set SBV 5
+    set ::spinbox_test {}
+    ttk::spinbox .sb -from 0 -to 10 -textvariable SBV
+} -body {
+    grid .sb -sticky ew
+    grid columnconfigure . 0 -weight 1
+    bind . <Map> {
+        after idle {
+            wm geometry . "210x80"
+            after 100 {set ::spinbox_test [.sb identify element 5 5]}
+        }
+        bind . <Map> {}
+    }
+    after 500 {set ::spinbox_wait 1} ; vwait ::spinbox_wait
+    set ::spinbox_test
+} -cleanup {
+    destroy .sb
+    unset -nocomplain ::spinbox_test SBV
+} -result {textarea}
+
+# nostomp: NB intentional difference between ttk::spinbox and tk::spinbox;
+# see also #1439266
+#
+test spinbox-nostomp-1 "don't stomp on -variable (init; -from/to)" -body {
+    set SBV 55
+    ttk::spinbox .sb -textvariable SBV -from 0 -to 100 -increment 5
+    list $SBV [.sb get]
+} -cleanup {
+   unset SBV
+   destroy .sb
+} -result [list 55 55]
+
+test spinbox-nostomp-2 "don't stomp on -variable (init; -values)" -body {
+    set SBV Apr
+    ttk::spinbox .sb -textvariable SBV -values {Jan Feb Mar Apr May Jun Jul Aug}
+    list $SBV [.sb get]
+} -cleanup {
+   unset SBV
+   destroy .sb
+} -result [list Apr Apr]
+
+test spinbox-nostomp-3 "don't stomp on -variable (configure; -from/to)" -body {
+    set SBV 55
+    ttk::spinbox .sb
+    .sb configure -textvariable SBV -from 0 -to 100 -increment 5
+    list $SBV [.sb get]
+} -cleanup {
+   unset SBV
+   destroy .sb
+} -result [list 55 55]
+
+test spinbox-nostomp-4 "don't stomp on -variable (configure; -values)" -body {
+    set SBV Apr
+    ttk::spinbox .sb 
+    .sb configure -textvariable SBV -values {Jan Feb Mar Apr May Jun Jul Aug}
+    list $SBV [.sb get]
+} -cleanup {
+   unset SBV
+   destroy .sb
+} -result [list Apr Apr]
+
+test spinbox-dieoctaldie-1 "Cope with leading zeros" -body {
+    # See SF#2358545 -- ttk::spinbox also affected
+    set secs 07
+    ttk::spinbox .sb -from 0 -to 59 -format %02.0f -textvariable secs
+
+    set result [list $secs]
+    event generate .sb <<Increment>>; lappend result $secs
+    event generate .sb <<Increment>>; lappend result $secs
+    event generate .sb <<Increment>>; lappend result $secs
+    event generate .sb <<Increment>>; lappend result $secs
+
+    event generate .sb <<Decrement>>; lappend result $secs
+    event generate .sb <<Decrement>>; lappend result $secs
+    event generate .sb <<Decrement>>; lappend result $secs
+    event generate .sb <<Decrement>>; lappend result $secs
+
+    set result
+} -result [list 07 08 09 10 11 10 09 08 07] -cleanup { 
+    destroy .sb
+    unset secs
+}
+
+test spinbox-dieoctaldie-2 "Cope with general bad input" -body {
+    set result [list]
+    ttk::spinbox .sb -from 0 -to 100 -format %03.0f
+    .sb set asdfasdf ; lappend result [.sb get]
+    event generate .sb <<Increment>> ; lappend result [.sb get]
+    .sb set asdfasdf ; lappend result [.sb get]
+    event generate .sb <<Decrement>> ; lappend result [.sb get]
+} -result [list asdfasdf 000 asdfasdf 000] -cleanup {
+    destroy .sb
+}
+
+tcltest::cleanupTests
+
+# Local variables:
+# mode: tcl
+# End:

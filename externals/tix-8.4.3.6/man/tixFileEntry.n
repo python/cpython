@@ -1,0 +1,274 @@
+'\"
+'\" $Id: tixFileEntry.n,v 1.3 2002/01/25 08:48:47 idiscovery Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixFileEntry n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixFileEntry \- Create and manipulate tixFileEntry widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixFileEntry \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixFileEntry\fR class is derived from the \fBTixLabelWidget\fR
+class and inherits all the commands, options and
+subwidgets of its super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The FileEntry widget supports all the standard options of a frame
+widget. See the \fBoptions(n)\fR manual entry for details on the
+standard options.
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-activatecmd activateCmd ActivateCmd
+Specifies the command to be called when the user activates the
+\fBbutton\fR subwidget. This command is called before the file dialog
+is popped up and can be used to customize the file dialog (which may
+be shared by several FileEnt widget).
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies the command to be called when the \fB\-value\fR option of
+the FileEntry is changed. This usually happens when the user inputs a
+filename into the entry subwidget and hits the <Return> key. The
+command will be called with one arguments -- the new value of the
+FileEntry widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-dialogtype dialogType DialogType
+Specifies which type of file selection dialog should be popped up when
+the user invokes the \fBbutton\fR subwidget. Currently the following values
+are valid: \fBtixFileSelectDialog\fR, \fBtixExFileSelectDialog\fR,
+\fBtk_getOpenFile\fR, \fBtk_getSaveFile\fR or \fBtk_chooseDirectory\fR.
+'\"----------END
+'\"----------BEGIN
+.OP \-disablecallback disableCallback DisableCallback
+A boolean value indicating whether callbacks should be disabled. When
+set to true, the TCL command specified by the \fB\-command\fR option
+is not executed when the \fB\-value\fR of the FileEntry widget
+changes.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disableforeground disableForeground DisableForeground
+The foreground color to use for of the entry subwidget when the
+FileEntry widget is disabled.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-filebitmap fileBitmap FileBitmap
+Specifies the bitmap to display in side the \fBbutton\fR subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-label label Label
+Specifies the string to display as the label of this FileEntry widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-labelside labelSide LabelSide
+Specifies where the label should be displayed relative to the entry
+subwidget. Valid options are: \fBtop\fR, \fBleft\fR, \fBright\fR,
+\fBbottom\fR, \fBnone\fR or \fBacrosstop\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selectmode selectMode SelectMode
+Specifies how the FileEntry widget should react to \fC<KeyPress>\fR
+events. When set to "immediate", any user keyboard inputs will
+immediately change the \fB\-value\fR option. When set to "normal", the
+user keyboard inputs will be copied to the \fB\-value\fR option only
+if the\fC <Return>\fR key is pressed or the keyboard focus is
+changed. The use of the immediate mode is discouraged. For effective
+use of the FileEntry widget, one should use the normal mode together
+with the \fBupdate\fR widget command (see below).
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies the whether the FileEntry widget is normal or disabled. Only
+the values "normal" and "disabled" are recognized.
+'\"----------END
+'\"'
+'\"----------BEGIN
+.OP \-validatecmd validateCmd ValidateCmd
+Specifies a TCL command to be called when the -value of the
+FileEntry widget is about to change. This command is called
+with one parameter -- the new \fB\-value\fR entered by the user. This
+command is to validate this new value by returning a value it deems
+valid.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-value value Value
+Specifies the value of the FileEntry.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-variable variable Variable
+Specifies the global variable in which the value of the FileEntry
+should be stored. The value of the FileEntry will be automatically
+updated when this variable is changed.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBbutton\fR
+Class:		\fBButton\fR
+.fi
+.IP
+The button subwidget next to the entry subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBentry\fR
+Class:		\fBEntry\fR
+.fi
+.IP
+The entry subwidget in which the user can type in a filename.
+'\"----------END
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixFileEntry\fR command creates a new window (given by
+the \fIpathName\fR argument) and makes it into a FileEntry
+widget. Additional options, described above, may be specified on the
+command line or in the option database to configure aspects of the
+FileEntry such as its cursor and relief.
+.PP
+The FileEntry widget can be used to input a filename. The user can
+type in the filename manually. Alternatively, the user can press the
+button widget that sits next to the entry, which will bring up a file
+selection dialog of the type specified by the \fB\-dialogtype\fR option.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixFileEntry\fR command creates a new Tcl command whose
+name is the same as the path name of the FileEntry's
+window. This command may be used to invoke various operations on the
+widget. It has the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+FileEntry widget's path name. \fIOption\fR and the
+\fIarg\fRs determine the exact behavior of the command. The following
+commands are possible for FileEntry widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixFileEntry\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixFileEntry\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBinvoke\fR 
+'\"
+Forces the FileEntry widget to act as if the user has pressed the
+<return> key inside the entry subwidget.
+'\"
+.TP
+\fIpathName \fBfiledialog\fR \fI?args?\fR 
+'\"
+When no additional arguments are given, this command returns the
+pathname of the file dialog box associated with this FileEnt
+widget. When additional arguments are given, the widget command of the
+file dialog will be called with these arguments.
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget \fIname ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name. When options are given, the widget
+command of the specified subwidget will be called with these options.
+'\"
+.TP
+\fIpathName \fBupdate\fR
+'\"
+If the user has modified the entry using keyboard inputs, the update
+command will \fBupdate\fR the \fB\-value\fR of this FileEntry
+widget. When the FileEntry widget's \fB\-selectmode\fR option is set
+to "normal", one should call the \fBupdate\fR command on this widget
+before examining its \fB\-value\fR option. This command has no effect
+in if the \fB\-selectmode\fR option is set to "immediate".
+'\"
+'\"
+'\"----------------------------------------------------------------------
+'\".SH BINDINGS
+'\".PP
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+
+

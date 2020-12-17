@@ -1,0 +1,53 @@
+# -*- mode: TCL; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# method.test --
+#
+#       Tests code in tixMethod.c. It is organized in the standard
+#       fashion for Tcl tests.
+#
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# $Id: method.test,v 1.4 2004/12/24 00:37:21 hobbs Exp $
+
+
+package require Tix
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+tixClass tixTestClass_method {
+    -superclass {}
+    -classname  TixTestClass_Method
+    -method {
+	cget configure foo bar
+    }
+    -flag {
+	-x -y
+    }
+    -configspec {
+	{-x 0}
+	{-y 0}
+    }
+}
+
+proc tixTestClass_method:Constructor {args} {}
+
+test method-1.1 {auto-load method} {
+    catch {
+        # Make sure this method needs to be auto-loaded again
+
+        rename tixTestClass_method:foo {}
+    }
+
+    tixTestClass_method xx
+    set a [list [catch {xx foo} msg] $msg]
+    rename xx {}
+    set a
+} {0 returned_by_tixTestClass_method:foo}
+
+# cleanup
+::tcltest::cleanupTests
+return
+

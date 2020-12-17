@@ -1,0 +1,59 @@
+<HEAD>
+<TITLE> Delaying the Creation of New Pages<A NAME=213>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html632 HREF=subsubsection3_4_1_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html630 HREF=subsection3_4_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html624 HREF=subsubsection3_4_1_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html634 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html633 HREF=subsubsection3_4_1_4.html> Changing Page Tabs </A>
+<B>Up:</B> <A NAME=tex2html631 HREF=subsection3_4_1.html> TixNoteBook</A>
+<B> Previous:</B> <A NAME=tex2html625 HREF=subsubsection3_4_1_2.html> Keyboard Accelerators</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00041300000000000000> Delaying the Creation of New Pages<A NAME=213>&nbsp;</A></A></H3>
+<P>
+If your notebook contains many complicated pages, it may take quite a
+  while to create all widgets inside these pages and your program will
+  probably freezes for a few seconds when it pops up the notebook for
+  the first time. To avoid embarrassing moments like this, we can use
+  the ``delayed page creation'' feature of the TixNoteBook widget.
+<P>When we create a page using the <tt>add</tt> method, we can specify
+  the optional parameter <tt>-createcmd</tt> so that we only need to
+  create the page when the user wants to see it. This is illustrated
+  in program 2-3:
+<P>
+<blockquote> <P><tt> tixNoteBook .n<BR>
+.n add hd  -label &quot;Hard Disk&quot; -underline 0 -createcmd CreateHd<BR>
+.n add net -label &quot;Network&quot;   -underline 0 -createCmd CreateNet<BR>
+<BR>
+proc CreateHd {frame} {<BR>
+    tixControl $frame.access   -label &quot;Access Time:&quot;<BR>
+    tixControl $frame.write    -label &quot;Write Throughput:&quot;<BR>
+    tixControl $frame.read     -label &quot;Read Througput:&quot;<BR>
+    tixControl $frame.capacity -label &quot;Capacity:&quot;<BR>
+    pack $frame.access $frame.write $frame.read $frame.capacity <BR>        -side top -fill x<BR>
+}<BR>
+<BR>
+proc CreateNet {frame} {<BR>
+    ...<BR>
+}</tt>
+<P></blockquote>
+<P>
+<P>
+<P><CENTER>(Figure 2-3) Delayed Page Creation<A NAME=23>&nbsp;</A>
+  </CENTER>
+<P>
+In line 2 of program 2-3, we use the <tt>-createcmd</tt>
+  option to specify that the procedure <tt>CreateHd</tt> should be called
+  when the ``Hard Disk'' page needs to be created. <tt>CreateHd</tt>
+  takes one argument, the frame subwidget of the page. As we can see,
+  program program 2-3 is not very different than program
+  2-2, except now we can issue less commands during the
+  set-up of the NoteBook widget and the interface can be started up
+  more quickly.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,310 @@
+# This file is a Tcl script to test out the procedures in the file
+# tkColor.c.  It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1995-1998 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# cname --
+# Returns a proper name for a color, given its intensities.
+#
+# Arguments:
+# r, g, b -	Intensities on a 0-255 scale.
+
+proc cname {r g b} {
+    format #%02x%02x%02x $r $g $b
+}
+proc cname4 {r g b} {
+    format #%04x%04x%04x $r $g $b
+}
+
+# mkColors --
+# Creates a canvas and fills it with a 2-D array of squares, each of a
+# different color.
+#
+# Arguments:
+# c -		Name of canvas window to create.
+# width -	Number of squares in each row.
+# height -	Number of squares in each column.
+# r, g, b -	Initial value for red, green, and blue intensities.
+# rx, gx, bx -	Change in intensities between adjacent elements in row.
+# ry, gy, by -	Change in intensities between adjacent elements in column.
+
+proc mkColors {c width height r g b rx gx bx ry gy by} {
+    catch {destroy $c}
+    canvas $c -width 400 -height 200 -bd 0
+    for {set y 0} {$y < $height} {incr y} {
+	for {set x 0} {$x < $width} {incr x} {
+	    set color [format #%02x%02x%02x [expr $r + $y*$ry + $x*$rx] \
+		    [expr $g + $y*$gy + $x*$gx] [expr $b + $y*$by + $x*$bx]]
+	    $c create rectangle [expr 10*$x] [expr 20*$y] \
+		    [expr 10*$x + 10] [expr 20*$y + 20] -outline {} \
+		    -fill $color
+	}
+    }
+}
+
+# closest -
+# Given intensities between 0 and 255, return the closest intensities
+# that the server can provide.
+#
+# Arguments:
+# w -		Window in which to lookup color
+# r, g, b -	Desired intensities, between 0 and 255.
+
+proc closest {w r g b} {
+    set vals [winfo rgb $w [cname $r $g $b]]
+    list [expr [lindex $vals 0]/256] [expr [lindex $vals 1]/256] \
+	    [expr [lindex $vals 2]/256]
+}
+
+# c255  -
+# Given a list of red, green, and blue intensities, scale them
+# down to a 0-255 range.
+#
+# Arguments:
+# vals -	List of intensities.
+
+proc c255 {vals} {
+    list [expr {[lindex $vals 0]/256}] [expr {[lindex $vals 1]/256}] \
+	    [expr {[lindex $vals 2]/256}]
+}
+
+# colorsFree --
+#
+# Returns 1 if there appear to be free colormap entries in a window,
+# 0 otherwise.
+#
+# Arguments:
+# w -			Name of window in which to check.
+# red, green, blue -	Intensities to use in a trial color allocation
+#			to see if there are colormap entries free.
+
+proc colorsFree {w {red 31} {green 245} {blue 192}} {
+    set vals [winfo rgb $w [format #%02x%02x%02x $red $green $blue]]
+    expr ([lindex $vals 0]/256 == $red) && ([lindex $vals 1]/256 == $green) \
+	    && ([lindex $vals 2]/256 == $blue)
+}
+
+# -- WARNING (SB, 6.4.2017) --
+#
+# The if block below looks _very_ outdated. It didn't get any
+# substantial changes as far back as the fossil history goes. It might
+# be from a time, when 256 color was the best you could get! :-o.
+#
+# The problem is, on machines with a fancy 24 truecolor display, the
+# 'colorsFree' constraint doesn't get set, turning off pretty much every test
+# in this file.
+
+if {[testConstraint pseudocolor8]} {
+    toplevel .t -visual {pseudocolor 8} -colormap new
+    wm geom .t +0+0
+    mkColors .t.c 40 6 0 0 0 0 6 0 0 0 40
+    pack .t.c
+    update
+
+    testConstraint colorsFree [colorsFree .t.c 101 233 17]
+
+    if {[testConstraint colorsFree]} {
+	mkColors .t.c2 20 1 250 0 0 -10 0 0 0 0 0
+	pack .t.c2
+	testConstraint colorsFree [expr {![colorsFree .t.c]}]
+    }
+    destroy .t.c .t.c2
+}
+
+test color-1.1 {Tk_AllocColorFromObj - converting internal reps} colorsFree {
+    set x green
+    lindex $x 0
+    destroy .b1
+    button .b1 -foreground $x -text .b1
+    lindex $x 0
+    testcolor green
+} {{1 0}}
+test color-1.2 {Tk_AllocColorFromObj - discard stale color} colorsFree {
+    set x green
+    destroy .b1 .b2
+    button .b1 -foreground $x -text First
+    destroy .b1
+    set result {}
+    lappend result [testcolor green]
+    button .b2 -foreground $x -text Second
+    lappend result [testcolor green]
+} {{} {{1 1}}}
+test color-1.3 {Tk_AllocColorFromObj - reuse existing color} colorsFree {
+    set x green
+    destroy .b1 .b2
+    button .b1 -foreground $x -text First
+    set result {}
+    lappend result [testcolor green]
+    button .b2 -foreground $x -text Second
+    pack .b1 .b2 -side top
+    lappend result [testcolor green]
+} {{{1 1}} {{2 1}}}
+test color-1.4 {Tk_AllocColorFromObj - try other colors in list} colorsFree {
+    set x purple
+    destroy .b1 .b2 .t.b
+    button .b1 -foreground $x -text First
+    pack .b1 -side top
+    set result {}
+    lappend result [testcolor purple]
+    button .t.b -foreground $x -text Second
+    pack .t.b -side top
+    lappend result [testcolor purple]
+    button .b2 -foreground $x -text Third
+    pack .b2 -side top
+    lappend result [testcolor purple]
+} {{{1 1}} {{1 1} {1 0}} {{1 0} {2 1}}}
+test color-1.5 {Color table} nonPortable {
+    set fd [open ../xlib/rgb.txt]
+    set result {}
+    while {[gets $fd line] != -1} {
+    	if {[string index $line 0] == "!"} continue
+	set rgb [c255 [winfo rgb . [lrange $line 3 end]]]
+	if {$rgb != [lrange $line 0 2] } {
+		append result $line\n
+	}
+
+    }
+    return $result
+} {}
+
+test color-2.1 {Tk_GetColor procedure} colorsFree {
+    c255 [winfo rgb .t #FF0000]
+} {255 0 0}
+test color-2.2 {Tk_GetColor procedure} colorsFree {
+    list [catch {winfo rgb .t noname} msg] $msg
+} {1 {unknown color name "noname"}}
+test color-2.3 {Tk_GetColor procedure} colorsFree {
+    c255 [winfo rgb .t #123456]
+} {18 52 86}
+test color-2.4 {Tk_GetColor procedure} colorsFree {
+    list [catch {winfo rgb .t #xyz} msg] $msg
+} {1 {invalid color name "#xyz"}}
+test color-2.5 {Tk_GetColor procedure} colorsFree {
+    winfo rgb .t #00FF00
+} {0 65535 0}
+test color-2.6 {Tk_GetColor procedure} {colorsFree nonPortable} {
+    # Red doesn't always map to *pure* red
+    winfo rgb .t red
+} {65535 0 0}
+test color-2.7 {Tk_GetColor procedure} colorsFree {
+    winfo rgb .t #ff0000
+} {65535 0 0}
+test color-2.8 {Tk_GetColor, invalid char after 3 valid hex digits} -body {
+    winfo rgb . #abcg
+} -returnCodes error -result {invalid color name "#abcg"}
+test color-2.9 {Tk_GetColor, invalid char after 6 vaild hex digits} -body {
+    winfo rgb . #aabbccz
+} -returnCodes error -result {invalid color name "#aabbccz"}
+test color-2.10 {Tk_GetColor, 3 hex digits, last one invalid} -body {
+    winfo rgb . #abz
+} -returnCodes error -result {invalid color name "#abz"}
+test color-2.11 {Tk_GetColor, 6 hex digits, last one invalid} -body {
+    winfo rgb . #12345g
+} -returnCodes error -result {invalid color name "#12345g"}
+
+test color-3.1 {Tk_FreeColor procedure, reference counting} colorsFree {
+    eval destroy [winfo child .t]
+    mkColors .t.c 40 6 0 240 240 0 -6 0 0 0 -40
+    pack .t.c
+    mkColors .t.c2 20 1 250 0 0 -10 0 0 0 0 0
+    pack .t.c2
+    update
+    set last [.t.c2 create rectangle 50 50 70 60 -outline {} \
+	    -fill [cname 0 240 240]]
+    .t.c delete 1
+    set result [colorsFree .t]
+    .t.c2 delete $last
+    lappend result [colorsFree .t]
+} {0 1}
+test color-3.2 {Tk_FreeColor procedure, flushing stressed cmap information} colorsFree {
+    eval destroy [winfo child .t]
+    mkColors .t.c 40 6 0 240 240 0 -6 0 0 0 -40
+    pack .t.c
+    mkColors .t.c2 20 1 250 0 0 -10 0 0 0 0 0
+    mkColors .t.c2 20 1 250 250 0 -10 -10 0 0 0 0
+    pack .t.c2
+    update
+    closest .t 241 241 1
+} {240 240 0}
+test color-3.3 {Tk_FreeColorFromObj - reference counts} colorsFree {
+    set x purple
+    destroy .b1 .b2 .t.b
+    button .b1 -foreground $x -text First
+    pack .b1 -side top
+    button .t.b -foreground $x -text Second
+    pack .t.b -side top
+    button .b2 -foreground $x -text Third
+    pack .b2 -side top
+    set result {}
+    lappend result [testcolor purple]
+    destroy .b1
+    lappend result [testcolor purple]
+    destroy .b2
+    lappend result [testcolor purple]
+    destroy .t.b
+    lappend result [testcolor purple]
+} {{{1 0} {2 1}} {{1 0} {1 1}} {{1 0}} {}}
+test color-3.4 {Tk_FreeColorFromObj - unlinking from list} colorsFree {
+    destroy .b .t.b .t2 .t3
+    toplevel .t2 -visual {pseudocolor 8} -colormap new
+    toplevel .t3 -visual {pseudocolor 8} -colormap new
+    set x purple
+    button .b -foreground $x -text .b1
+    button .t.b1 -foreground $x -text .t.b1
+    button .t.b2 -foreground $x -text .t.b2
+    button .t2.b1 -foreground $x -text .t2.b1
+    button .t2.b2 -foreground $x -text .t2.b2
+    button .t2.b3 -foreground $x -text .t2.b3
+    button .t3.b1 -foreground $x -text .t3.b1
+    button .t3.b2 -foreground $x -text .t3.b2
+    button .t3.b3 -foreground $x -text .t3.b3
+    button .t3.b4 -foreground $x -text .t3.b4
+    set result {}
+    lappend result [testcolor purple]
+    destroy .t2
+    lappend result [testcolor purple]
+    destroy .b
+    lappend result [testcolor purple]
+    destroy .t3
+    lappend result [testcolor purple]
+    destroy .t
+    lappend result [testcolor purple]
+} {{{4 1} {3 0} {2 0} {1 0}} {{4 1} {2 0} {1 0}} {{4 1} {2 0}} {{2 0}} {}}
+
+test color-4.1 {FreeColorObjProc} -constraints {
+    colorsFree
+} -setup {
+    proc copy {s} {return [string index $s 0][string range $s 1 end]}
+} -body {
+    destroy .b
+    set x [copy purple]
+    button .b -foreground $x -text .b1
+    set y [copy purple]
+    .b configure -foreground $y
+    set z [copy purple]
+    .b configure -foreground $z
+    set result {}
+    lappend result [testcolor purple]
+    set x red
+    lappend result [testcolor purple]
+    set z 32
+    lappend result [testcolor purple]
+    destroy .b
+    lappend result [testcolor purple]
+    set y bogus
+    set result
+} -cleanup {
+    rename copy {}
+} -result {{{1 3}} {{1 2}} {{1 1}} {}}
+
+destroy .t
+
+# cleanup
+cleanupTests
+return

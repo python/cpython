@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\"
+.TH tk_chooseDirectory n 8.3 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_chooseDirectory \- pops up a dialog box for the user to select a directory.
+.SH SYNOPSIS
+\fBtk_chooseDirectory \fR?\fIoption value ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The procedure \fBtk_chooseDirectory\fR pops up a dialog box for the
+user to select a directory. The following \fIoption\-value\fR pairs are
+possible as command line arguments:
+.TP
+\fB\-command\fR \fIstring\fR
+Specifies the prefix of a Tcl command to invoke when the user closes the
+dialog after having selected an item. This callback is not called if the
+user cancelled the dialog. The actual command consists of \fIstring\fR
+followed by a space and the value selected by the user in the dialog. This
+is only available on Mac OS X.
+.TP
+\fB\-initialdir\fR \fIdirname\fR
+Specifies that the directories in \fIdirectory\fR should be displayed
+when the dialog pops up. If this parameter is not specified,
+the initial directory defaults to the current working directory
+on non-Windows systems and on Windows systems prior to Vista.
+On Vista and later systems, the initial directory defaults to the last
+user-selected directory for the application. If the
+parameter specifies a relative path, the return value will convert the
+relative path to an absolute path.
+.TP
+\fB\-message\fR \fIstring\fR
+Specifies a message to include in the client area of the dialog.
+This is only available on Mac OS X.
+.TP
+\fB\-mustexist\fR \fIboolean\fR
+Specifies whether the user may specify non-existent directories.  If
+this parameter is true, then the user may only select directories that
+already exist.  The default value is \fIfalse\fR.
+.TP
+\fB\-parent\fR \fIwindow\fR
+Makes \fIwindow\fR the logical parent of the dialog. The dialog
+is displayed on top of its parent window. On Mac OS X, this
+turns the file dialog into a sheet attached to the parent window.
+.TP
+\fB\-title\fR \fItitleString\fR
+Specifies a string to display as the title of the dialog box. If this
+option is not specified, then a default title will be displayed.
+.SH EXAMPLE
+.PP
+.CS
+set dir [\fBtk_chooseDirectory\fR \e
+        \-initialdir ~ \-title "Choose a directory"]
+if {$dir eq ""} {
+   label .l \-text "No directory selected"
+} else {
+   label .l \-text "Selected $dir"
+}
+.CE
+.SH "SEE ALSO"
+tk_getOpenFile(n), tk_getSaveFile(n)
+.SH KEYWORDS
+directory, selection, dialog, platform-specific
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

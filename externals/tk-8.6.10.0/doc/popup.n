@@ -1,0 +1,49 @@
+'\"
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_popup n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_popup \- Post a popup menu
+.SH SYNOPSIS
+\fBtk_popup \fImenu x y \fR?\fIentry\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This procedure posts a menu at a given position on the screen and
+configures Tk so that the menu and its cascaded children can be
+traversed with the mouse or the keyboard.
+\fIMenu\fR is the name of a menu widget and \fIx\fR and \fIy\fR
+are the root coordinates at which to display the menu.
+If \fIentry\fR is omitted or an empty string, the
+menu's upper left corner is positioned at the given point.
+Otherwise \fIentry\fR gives the index of an entry in \fImenu\fR and
+the menu will be positioned so that the entry is positioned over
+the given point.
+.SH EXAMPLE
+.PP
+How to attach a simple popup menu to a widget.
+.CS
+# Create a menu
+set m [menu .popupMenu]
+$m add command \-label "Example 1" \-command bell
+$m add command \-label "Example 2" \-command bell
+
+# Create something to attach it to
+pack [label .l \-text "Click me!"]
+
+# Arrange for the menu to pop up when the label is clicked
+bind .l <1> {\fBtk_popup\fR .popupMenu %X %Y}
+.CE
+.SH "SEE ALSO"
+bind(n), menu(n), tk_optionMenu(n)
+.SH KEYWORDS
+menu, popup
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

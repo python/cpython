@@ -1,0 +1,488 @@
+Microsoft (R) Macro Assembler (x64) Version 14.00.24210.0   10/18/20 09:30:40
+inffasx64.asm						     Page 1 - 1
+
+
+				; inffasx64.asm is a hand tuned assembler version of inffast.c - fast decoding
+				; version for AMD64 on Windows using Microsoft C compiler
+				;
+				; inffasx64.asm is automatically convert from AMD64 portion of inffas86.c
+				; inffasx64.asm is called by inffas8664.c, which contain more info.
+
+
+				; to compile this file, I use option
+				;   ml64.exe /Flinffasx64 /c /Zi inffasx64.asm
+				;   with Microsoft Macro Assembler (x64) for AMD64
+				;
+
+				; This file compile with Microsoft Macro Assembler (x64) for AMD64
+				;
+				;   ml64.exe is given with Visual Studio 2005/2008/2010 and Windows WDK
+				;
+				;   (you can get Windows WDK with ml64 for AMD64 from
+				;      http://www.microsoft.com/whdc/Devtools/wdk/default.mspx for low price)
+				;
+
+
+ 00000000			.code
+ 00000000			inffas8664fnc PROC
+
+				; see http://weblogs.asp.net/oldnewthing/archive/2004/01/14/58579.aspx and
+				; http://msdn.microsoft.com/library/en-us/kmarch/hh/kmarch/64bitAMD_8e951dd2-ee77-4728-8702-55ce4b5dd24a.xml.asp
+				;
+				; All registers must be preserved across the call, except for
+				;   rax, rcx, rdx, r8, r-9, r10, and r11, which are scratch.
+
+
+ 00000000  48/ 89 74 24			mov [rsp-8],rsi
+	   F8
+ 00000005  48/ 89 7C 24			mov [rsp-16],rdi
+	   F0
+ 0000000A  4C/ 89 64 24			mov [rsp-24],r12
+	   E8
+ 0000000F  4C/ 89 6C 24			mov [rsp-32],r13
+	   E0
+ 00000014  4C/ 89 74 24			mov [rsp-40],r14
+	   D8
+ 00000019  4C/ 89 7C 24			mov [rsp-48],r15
+	   D0
+ 0000001E  48/ 89 5C 24			mov [rsp-56],rbx
+	   C8
+
+ 00000023  48/ 8B C1			mov rax,rcx
+
+ 00000026  48/ 89 68 08			mov	[rax+8], rbp       ; /* save regs rbp and rsp */
+ 0000002A  48/ 89 20			mov	[rax], rsp
+
+ 0000002D  48/ 8B E0			mov	rsp, rax          ; /* make rsp point to &ar */
+
+ 00000030  48/ 8B 74 24			mov	rsi, [rsp+16]      ; /* rsi  = in */
+	   10
+ 00000035  48/ 8B 7C 24			mov	rdi, [rsp+32]      ; /* rdi  = out */
+	   20
+ 0000003A  4C/ 8B 4C 24			mov	r9, [rsp+24]       ; /* r9   = last */
+	   18
+ 0000003F  4C/ 8B 54 24			mov	r10, [rsp+48]      ; /* r10  = end */
+	   30
+ 00000044  48/ 8B 6C 24			mov	rbp, [rsp+64]      ; /* rbp  = lcode */
+	   40
+ 00000049  4C/ 8B 5C 24			mov	r11, [rsp+72]      ; /* r11  = dcode */
+	   48
+ 0000004E  48/ 8B 54 24			mov	rdx, [rsp+80]      ; /* rdx  = hold */
+	   50
+ 00000053  8B 5C 24 58			mov	ebx, [rsp+88]      ; /* ebx  = bits */
+ 00000057  44/ 8B 64 24			mov	r12d, [rsp+100]    ; /* r12d = lmask */
+	   64
+ 0000005C  44/ 8B 6C 24			mov	r13d, [rsp+104]    ; /* r13d = dmask */
+	   68
+				                                          ; /* r14d = len */
+				                                          ; /* r15d = dist */
+
+
+ 00000061  FC				cld
+ 00000062  4C/ 3B D7			cmp	r10, rdi
+ 00000065  74 05			je	L_one_time           ; /* if only one decode left */
+ 00000067  4C/ 3B CE			cmp	r9, rsi
+
+ 0000006A  75 2A		    jne L_do_loop
+
+
+ 0000006C			L_one_time:
+ 0000006C  4D/ 8B C4			mov	r8, r12           ; /* r8 = lmask */
+ 0000006F  80 FB 20			cmp	bl, 32
+ 00000072  77 50			ja	L_get_length_code_one_time
+
+ 00000074  AD				lodsd                         ; /* eax = *(uint *)in++ */
+ 00000075  8A CB			mov	cl, bl            ; /* cl = bits, needs it for shifting */
+ 00000077  80 C3 20			add	bl, 32             ; /* bits += 32 */
+ 0000007A  48/ D3 E0			shl	rax, cl
+ 0000007D  48/ 0B D0			or	rdx, rax          ; /* hold |= *((uint *)in)++ << bits */
+ 00000080  EB 42			jmp	L_get_length_code_one_time
+
+				ALIGN 4
+ 00000084			L_while_test:
+ 00000084  4C/ 3B D7			cmp	r10, rdi
+ 00000087  0F 86 0000023F		jbe	L_break_loop
+ 0000008D  4C/ 3B CE			cmp	r9, rsi
+ 00000090  0F 86 00000236		jbe	L_break_loop
+
+ 00000096			L_do_loop:
+ 00000096  4D/ 8B C4			mov	r8, r12           ; /* r8 = lmask */
+ 00000099  80 FB 20			cmp	bl, 32
+ 0000009C  77 0C			ja	L_get_length_code    ; /* if (32 < bits) */
+
+ 0000009E  AD				lodsd                         ; /* eax = *(uint *)in++ */
+ 0000009F  8A CB			mov	cl, bl            ; /* cl = bits, needs it for shifting */
+ 000000A1  80 C3 20			add	bl, 32             ; /* bits += 32 */
+ 000000A4  48/ D3 E0			shl	rax, cl
+ 000000A7  48/ 0B D0			or	rdx, rax          ; /* hold |= *((uint *)in)++ << bits */
+
+ 000000AA			L_get_length_code:
+ 000000AA  4C/ 23 C2			and	r8, rdx            ; /* r8 &= hold */
+ 000000AD  42/ 8B 44 85			mov	eax, [rbp+r8*4]  ; /* eax = lcode[hold & lmask] */
+	   00
+
+ 000000B2  8A CC			mov	cl, ah            ; /* cl = this.bits */
+ 000000B4  2A DC			sub	bl, ah            ; /* bits -= this.bits */
+ 000000B6  48/ D3 EA			shr	rdx, cl           ; /* hold >>= this.bits */
+
+ 000000B9  84 C0			test	al, al
+ 000000BB  75 23			jnz	L_test_for_length_base ; /* if (op != 0) 45.7% */
+
+ 000000BD  4D/ 8B C4			mov	r8, r12            ; /* r8 = lmask */
+ 000000C0  C1 E8 10			shr	eax, 16            ; /* output this.val char */
+ 000000C3  AA				stosb
+
+ 000000C4			L_get_length_code_one_time:
+ 000000C4  4C/ 23 C2			and	r8, rdx            ; /* r8 &= hold */
+ 000000C7  42/ 8B 44 85			mov	eax, [rbp+r8*4] ; /* eax = lcode[hold & lmask] */
+	   00
+
+ 000000CC			L_dolen:
+ 000000CC  8A CC			mov	cl, ah            ; /* cl = this.bits */
+ 000000CE  2A DC			sub	bl, ah            ; /* bits -= this.bits */
+ 000000D0  48/ D3 EA			shr	rdx, cl           ; /* hold >>= this.bits */
+
+ 000000D3  84 C0			test	al, al
+ 000000D5  75 09			jnz	L_test_for_length_base ; /* if (op != 0) 45.7% */
+
+ 000000D7  C1 E8 10			shr	eax, 16            ; /* output this.val char */
+ 000000DA  AA				stosb
+ 000000DB  EB A7			jmp	L_while_test
+
+				ALIGN 4
+ 000000E0			L_test_for_length_base:
+ 000000E0  44/ 8B F0			mov	r14d, eax         ; /* len = this */
+ 000000E3  41/ C1 EE 10			shr	r14d, 16           ; /* len = this.val */
+ 000000E7  8A C8			mov	cl, al
+
+ 000000E9  A8 10			test	al, 16
+ 000000EB  0F 84 000000C7		jz	L_test_for_second_level_length ; /* if ((op & 16) == 0) 8% */
+ 000000F1  80 E1 0F			and	cl, 15             ; /* op &= 15 */
+ 000000F4  74 12			jz	L_decode_distance    ; /* if (!op) */
+
+ 000000F6			L_add_bits_to_len:
+ 000000F6  2A D9			sub	bl, cl
+ 000000F8  33 C0			xor	eax, eax
+ 000000FA  FF C0			inc	eax
+ 000000FC  D3 E0			shl	eax, cl
+ 000000FE  FF C8			dec	eax
+ 00000100  23 C2			and	eax, edx          ; /* eax &= hold */
+ 00000102  48/ D3 EA			shr	rdx, cl
+ 00000105  44/ 03 F0			add	r14d, eax         ; /* len += hold & mask[op] */
+
+ 00000108			L_decode_distance:
+ 00000108  4D/ 8B C5			mov	r8, r13           ; /* r8 = dmask */
+ 0000010B  80 FB 20			cmp	bl, 32
+ 0000010E  77 0C			ja	L_get_distance_code  ; /* if (32 < bits) */
+
+ 00000110  AD				lodsd                         ; /* eax = *(uint *)in++ */
+ 00000111  8A CB			mov	cl, bl            ; /* cl = bits, needs it for shifting */
+ 00000113  80 C3 20			add	bl, 32             ; /* bits += 32 */
+ 00000116  48/ D3 E0			shl	rax, cl
+ 00000119  48/ 0B D0			or	rdx, rax          ; /* hold |= *((uint *)in)++ << bits */
+
+ 0000011C			L_get_distance_code:
+ 0000011C  4C/ 23 C2			and	r8, rdx           ; /* r8 &= hold */
+ 0000011F  43/ 8B 04 83			mov	eax, [r11+r8*4] ; /* eax = dcode[hold & dmask] */
+
+ 00000123			L_dodist:
+ 00000123  44/ 8B F8			mov	r15d, eax         ; /* dist = this */
+ 00000126  41/ C1 EF 10			shr	r15d, 16           ; /* dist = this.val */
+ 0000012A  8A CC			mov	cl, ah
+ 0000012C  2A DC			sub	bl, ah            ; /* bits -= this.bits */
+ 0000012E  48/ D3 EA			shr	rdx, cl           ; /* hold >>= this.bits */
+ 00000131  8A C8			mov	cl, al            ; /* cl = this.op */
+
+ 00000133  A8 10			test	al, 16             ; /* if ((op & 16) == 0) */
+ 00000135  0F 84 0000009D		jz	L_test_for_second_level_dist
+ 0000013B  80 E1 0F			and	cl, 15             ; /* op &= 15 */
+ 0000013E  74 50			jz	L_check_dist_one
+
+ 00000140			L_add_bits_to_dist:
+ 00000140  2A D9			sub	bl, cl
+ 00000142  33 C0			xor	eax, eax
+ 00000144  FF C0			inc	eax
+ 00000146  D3 E0			shl	eax, cl
+ 00000148  FF C8			dec	eax                 ; /* (1 << op) - 1 */
+ 0000014A  23 C2			and	eax, edx          ; /* eax &= hold */
+ 0000014C  48/ D3 EA			shr	rdx, cl
+ 0000014F  44/ 03 F8			add	r15d, eax         ; /* dist += hold & ((1 << op) - 1) */
+
+ 00000152			L_check_window:
+ 00000152  4C/ 8B C6			mov	r8, rsi           ; /* save in so from can use it's reg */
+ 00000155  48/ 8B C7			mov	rax, rdi
+ 00000158  48/ 2B 44 24			sub	rax, [rsp+40]      ; /* nbytes = out - beg */
+	   28
+
+ 0000015D  41/ 3B C7			cmp	eax, r15d
+ 00000160  0F 82 00000092		jb	L_clip_window        ; /* if (dist > nbytes) 4.2% */
+
+ 00000166  41/ 8B CE			mov	ecx, r14d         ; /* ecx = len */
+ 00000169  48/ 8B F7			mov	rsi, rdi
+ 0000016C  49/ 2B F7			sub	rsi, r15          ; /* from = out - dist */
+
+ 0000016F  D1 F9			sar	ecx, 1
+ 00000171  73 12			jnc	L_copy_two           ; /* if len % 2 == 0 */
+
+ 00000173  F3/ 66| A5			rep     movsw
+ 00000176  8A 06			mov	al, [rsi]
+ 00000178  88 07			mov	[rdi], al
+ 0000017A  48/ FF C7			inc	rdi
+
+ 0000017D  49/ 8B F0			mov	rsi, r8           ; /* move in back to %rsi, toss from */
+ 00000180  E9 FFFFFEFF			jmp	L_while_test
+
+ 00000185			L_copy_two:
+ 00000185  F3/ 66| A5			rep     movsw
+ 00000188  49/ 8B F0			mov	rsi, r8           ; /* move in back to %rsi, toss from */
+ 0000018B  E9 FFFFFEF4			jmp	L_while_test
+
+				ALIGN 4
+ 00000190			L_check_dist_one:
+ 00000190  41/ 83 FF 01			cmp	r15d, 1            ; /* if dist 1, is a memset */
+ 00000194  75 BC			jne	L_check_window
+ 00000196  48/ 39 7C 24			cmp	[rsp+40], rdi      ; /* if out == beg, outside window */
+	   28
+ 0000019B  74 B5			je	L_check_window
+
+ 0000019D  41/ 8B CE			mov	ecx, r14d         ; /* ecx = len */
+ 000001A0  8A 47 FF			mov	al, [rdi-1]
+ 000001A3  8A E0			mov	ah, al
+
+ 000001A5  D1 F9			sar	ecx, 1
+ 000001A7  73 05			jnc	L_set_two
+ 000001A9  88 07			mov	[rdi], al
+ 000001AB  48/ FF C7			inc	rdi
+
+ 000001AE			L_set_two:
+ 000001AE  F3/ 66| AB			rep     stosw
+ 000001B1  E9 FFFFFECE			jmp	L_while_test
+
+				ALIGN 4
+ 000001B8			L_test_for_second_level_length:
+ 000001B8  A8 40			test	al, 64
+ 000001BA  0F 85 000000E0		jnz	L_test_for_end_of_block ; /* if ((op & 64) != 0) */
+
+ 000001C0  33 C0			xor	eax, eax
+ 000001C2  FF C0			inc	eax
+ 000001C4  D3 E0			shl	eax, cl
+ 000001C6  FF C8			dec	eax
+ 000001C8  23 C2			and	eax, edx         ; /* eax &= hold */
+ 000001CA  41/ 03 C6			add	eax, r14d        ; /* eax += len */
+ 000001CD  8B 44 85 00			mov	eax, [rbp+rax*4] ; /* eax = lcode[val+(hold&mask[op])]*/
+ 000001D1  E9 FFFFFEF6			jmp	L_dolen
+
+				ALIGN 4
+ 000001D8			L_test_for_second_level_dist:
+ 000001D8  A8 40			test	al, 64
+ 000001DA  0F 85 000000D8		jnz	L_invalid_distance_code ; /* if ((op & 64) != 0) */
+
+ 000001E0  33 C0			xor	eax, eax
+ 000001E2  FF C0			inc	eax
+ 000001E4  D3 E0			shl	eax, cl
+ 000001E6  FF C8			dec	eax
+ 000001E8  23 C2			and	eax, edx         ; /* eax &= hold */
+ 000001EA  41/ 03 C7			add	eax, r15d        ; /* eax += dist */
+ 000001ED  41/ 8B 04 83			mov	eax, [r11+rax*4] ; /* eax = dcode[val+(hold&mask[op])]*/
+ 000001F1  E9 FFFFFF2D			jmp	L_dodist
+
+				ALIGN 4
+ 000001F8			L_clip_window:
+ 000001F8  8B C8			mov	ecx, eax         ; /* ecx = nbytes */
+ 000001FA  8B 44 24 5C			mov	eax, [rsp+92]     ; /* eax = wsize, prepare for dist cmp */
+ 000001FE  F7 D9			neg	ecx                ; /* nbytes = -nbytes */
+
+ 00000200  41/ 3B C7			cmp	eax, r15d
+ 00000203  0F 82 000000B9		jb	L_invalid_distance_too_far ; /* if (dist > wsize) */
+
+ 00000209  41/ 03 CF			add	ecx, r15d         ; /* nbytes = dist - nbytes */
+ 0000020C  83 7C 24 60 00		cmp	dword ptr [rsp+96], 0
+ 00000211  75 21			jne	L_wrap_around_window ; /* if (write != 0) */
+
+ 00000213  48/ 8B 74 24			mov	rsi, [rsp+56]     ; /* from  = window */
+	   38
+ 00000218  2B C1			sub	eax, ecx         ; /* eax  -= nbytes */
+ 0000021A  48/ 03 F0			add	rsi, rax         ; /* from += wsize - nbytes */
+
+ 0000021D  41/ 8B C6			mov	eax, r14d        ; /* eax = len */
+ 00000220  44/ 3B F1			cmp	r14d, ecx
+ 00000223  76 6F			jbe	L_do_copy           ; /* if (nbytes >= len) */
+
+ 00000225  2B C1			sub	eax, ecx         ; /* eax -= nbytes */
+ 00000227  F3/ A4			rep     movsb
+ 00000229  48/ 8B F7			mov	rsi, rdi
+ 0000022C  49/ 2B F7			sub	rsi, r15         ; /* from = &out[ -dist ] */
+ 0000022F  EB 63			jmp	L_do_copy
+
+				ALIGN 4
+ 00000234			L_wrap_around_window:
+ 00000234  8B 44 24 60			mov	eax, [rsp+96]     ; /* eax = write */
+ 00000238  3B C8			cmp	ecx, eax
+ 0000023A  76 38			jbe	L_contiguous_in_window ; /* if (write >= nbytes) */
+
+ 0000023C  8B 74 24 5C			mov	esi, [rsp+92]     ; /* from  = wsize */
+ 00000240  48/ 03 74 24			add	rsi, [rsp+56]     ; /* from += window */
+	   38
+ 00000245  48/ 03 F0			add	rsi, rax         ; /* from += write */
+ 00000248  48/ 2B F1			sub	rsi, rcx         ; /* from -= nbytes */
+ 0000024B  2B C8			sub	ecx, eax         ; /* nbytes -= write */
+
+ 0000024D  41/ 8B C6			mov	eax, r14d        ; /* eax = len */
+ 00000250  3B C1			cmp	eax, ecx
+ 00000252  76 40			jbe	L_do_copy           ; /* if (nbytes >= len) */
+
+ 00000254  2B C1			sub	eax, ecx         ; /* len -= nbytes */
+ 00000256  F3/ A4			rep     movsb
+ 00000258  48/ 8B 74 24			mov	rsi, [rsp+56]     ; /* from = window */
+	   38
+ 0000025D  8B 4C 24 60			mov	ecx, [rsp+96]     ; /* nbytes = write */
+ 00000261  3B C1			cmp	eax, ecx
+ 00000263  76 2F			jbe	L_do_copy           ; /* if (nbytes >= len) */
+
+ 00000265  2B C1			sub	eax, ecx         ; /* len -= nbytes */
+ 00000267  F3/ A4			rep     movsb
+ 00000269  48/ 8B F7			mov	rsi, rdi
+ 0000026C  49/ 2B F7			sub	rsi, r15         ; /* from = out - dist */
+ 0000026F  EB 23			jmp	L_do_copy
+
+				ALIGN 4
+ 00000274			L_contiguous_in_window:
+ 00000274  48/ 8B 74 24			mov	rsi, [rsp+56]     ; /* rsi = window */
+	   38
+ 00000279  48/ 03 F0			add	rsi, rax
+ 0000027C  48/ 2B F1			sub	rsi, rcx         ; /* from += write - nbytes */
+
+ 0000027F  41/ 8B C6			mov	eax, r14d        ; /* eax = len */
+ 00000282  3B C1			cmp	eax, ecx
+ 00000284  76 0E			jbe	L_do_copy           ; /* if (nbytes >= len) */
+
+ 00000286  2B C1			sub	eax, ecx         ; /* len -= nbytes */
+ 00000288  F3/ A4			rep     movsb
+ 0000028A  48/ 8B F7			mov	rsi, rdi
+ 0000028D  49/ 2B F7			sub	rsi, r15         ; /* from = out - dist */
+ 00000290  EB 02			jmp	L_do_copy           ; /* if (nbytes >= len) */
+
+				ALIGN 4
+ 00000294			L_do_copy:
+ 00000294  8B C8			mov	ecx, eax         ; /* ecx = len */
+ 00000296  F3/ A4			rep     movsb
+
+ 00000298  49/ 8B F0			mov	rsi, r8          ; /* move in back to %esi, toss from */
+ 0000029B  E9 FFFFFDE4			jmp	L_while_test
+
+ 000002A0			L_test_for_end_of_block:
+ 000002A0  A8 20			test	al, 32
+ 000002A2  74 0A			jz	L_invalid_literal_length_code
+ 000002A4  C7 44 24 74			mov	dword ptr [rsp+116], 1
+	   00000001
+ 000002AC  EB 26			jmp	L_break_loop_with_status
+
+ 000002AE			L_invalid_literal_length_code:
+ 000002AE  C7 44 24 74			mov	dword ptr [rsp+116], 2
+	   00000002
+ 000002B6  EB 1C			jmp	L_break_loop_with_status
+
+ 000002B8			L_invalid_distance_code:
+ 000002B8  C7 44 24 74			mov	dword ptr [rsp+116], 3
+	   00000003
+ 000002C0  EB 12			jmp	L_break_loop_with_status
+
+ 000002C2			L_invalid_distance_too_far:
+ 000002C2  C7 44 24 74			mov	dword ptr [rsp+116], 4
+	   00000004
+ 000002CA  EB 08			jmp	L_break_loop_with_status
+
+ 000002CC			L_break_loop:
+ 000002CC  C7 44 24 74			mov	dword ptr [rsp+116], 0
+	   00000000
+
+ 000002D4			L_break_loop_with_status:
+				; /* put in, out, bits, and hold back into ar and pop esp */
+ 000002D4  48/ 89 74 24			mov	[rsp+16], rsi     ; /* in */
+	   10
+ 000002D9  48/ 89 7C 24			mov	[rsp+32], rdi     ; /* out */
+	   20
+ 000002DE  89 5C 24 58			mov	[rsp+88], ebx     ; /* bits */
+ 000002E2  48/ 89 54 24			mov	[rsp+80], rdx     ; /* hold */
+	   50
+
+ 000002E7  48/ 8B 04 24			mov	rax, [rsp]       ; /* restore rbp and rsp */
+ 000002EB  48/ 8B 6C 24			mov	rbp, [rsp+8]
+	   08
+ 000002F0  48/ 8B E0			mov	rsp, rax
+
+
+
+ 000002F3  48/ 8B 74 24			mov rsi,[rsp-8]
+	   F8
+ 000002F8  48/ 8B 7C 24			mov rdi,[rsp-16]
+	   F0
+ 000002FD  4C/ 8B 64 24			mov r12,[rsp-24]
+	   E8
+ 00000302  4C/ 8B 6C 24			mov r13,[rsp-32]
+	   E0
+ 00000307  4C/ 8B 74 24			mov r14,[rsp-40]
+	   D8
+ 0000030C  4C/ 8B 7C 24			mov r15,[rsp-48]
+	   D0
+ 00000311  48/ 8B 5C 24			mov rbx,[rsp-56]
+	   C8
+
+ 00000316  C3			    ret 0
+				;          :
+				;          : "m" (ar)
+				;          : "memory", "%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi",
+				;            "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15"
+				;    );
+
+ 00000317			inffas8664fnc 	ENDP
+				;_TEXT	ENDS
+				END
+Microsoft (R) Macro Assembler (x64) Version 14.00.24210.0   10/18/20 09:30:40
+inffasx64.asm						     Symbols 2 - 1
+
+
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+inffas8664fnc  . . . . . . . . .	P 	 00000000 _TEXT	Length= 00000317 Public
+  L_one_time . . . . . . . . . .	L 	 0000006C _TEXT	
+  L_while_test . . . . . . . . .	L 	 00000084 _TEXT	
+  L_do_loop  . . . . . . . . . .	L 	 00000096 _TEXT	
+  L_get_length_code  . . . . . .	L 	 000000AA _TEXT	
+  L_get_length_code_one_time . .	L 	 000000C4 _TEXT	
+  L_dolen  . . . . . . . . . . .	L 	 000000CC _TEXT	
+  L_test_for_length_base . . . .	L 	 000000E0 _TEXT	
+  L_add_bits_to_len  . . . . . .	L 	 000000F6 _TEXT	
+  L_decode_distance  . . . . . .	L 	 00000108 _TEXT	
+  L_get_distance_code  . . . . .	L 	 0000011C _TEXT	
+  L_dodist . . . . . . . . . . .	L 	 00000123 _TEXT	
+  L_add_bits_to_dist . . . . . .	L 	 00000140 _TEXT	
+  L_check_window . . . . . . . .	L 	 00000152 _TEXT	
+  L_copy_two . . . . . . . . . .	L 	 00000185 _TEXT	
+  L_check_dist_one . . . . . . .	L 	 00000190 _TEXT	
+  L_set_two  . . . . . . . . . .	L 	 000001AE _TEXT	
+  L_test_for_second_level_length .	L 	 000001B8 _TEXT	
+  L_test_for_second_level_dist .	L 	 000001D8 _TEXT	
+  L_clip_window  . . . . . . . .	L 	 000001F8 _TEXT	
+  L_wrap_around_window . . . . .	L 	 00000234 _TEXT	
+  L_contiguous_in_window . . . .	L 	 00000274 _TEXT	
+  L_do_copy  . . . . . . . . . .	L 	 00000294 _TEXT	
+  L_test_for_end_of_block  . . .	L 	 000002A0 _TEXT	
+  L_invalid_literal_length_code 	L 	 000002AE _TEXT	
+  L_invalid_distance_code  . . .	L 	 000002B8 _TEXT	
+  L_invalid_distance_too_far . .	L 	 000002C2 _TEXT	
+  L_break_loop . . . . . . . . .	L 	 000002CC _TEXT	
+  L_break_loop_with_status . . .	L 	 000002D4 _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+
+	   0 Warnings
+	   0 Errors

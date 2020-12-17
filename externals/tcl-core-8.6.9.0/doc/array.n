@@ -1,0 +1,187 @@
+'\"
+'\" Copyright (c) 1993-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH array n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+array \- Manipulate array variables
+.SH SYNOPSIS
+\fBarray \fIoption arrayName\fR ?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command performs one of several operations on the
+variable given by \fIarrayName\fR.
+Unless otherwise specified for individual commands below,
+\fIarrayName\fR must be the name of an existing array variable.
+The \fIoption\fR argument determines what action is carried
+out by the command.
+The legal \fIoptions\fR (which may be abbreviated) are:
+.TP
+\fBarray anymore \fIarrayName searchId\fR
+Returns 1 if there are any more elements left to be processed
+in an array search, 0 if all elements have already been
+returned.
+\fISearchId\fR indicates which search on \fIarrayName\fR to
+check, and must have been the return value from a previous
+invocation of \fBarray startsearch\fR.
+This option is particularly useful if an array has an element
+with an empty name, since the return value from
+\fBarray nextelement\fR will not indicate whether the search
+has been completed.
+.TP
+\fBarray donesearch \fIarrayName searchId\fR
+This command terminates an array search and destroys all the
+state associated with that search.  \fISearchId\fR indicates
+which search on \fIarrayName\fR to destroy, and must have
+been the return value from a previous invocation of
+\fBarray startsearch\fR.  Returns an empty string.
+.TP
+\fBarray exists \fIarrayName\fR
+Returns 1 if \fIarrayName\fR is an array variable, 0 if there
+is no variable by that name or if it is a scalar variable.
+.TP
+\fBarray get \fIarrayName\fR ?\fIpattern\fR?
+Returns a list containing pairs of elements.  The first
+element in each pair is the name of an element in \fIarrayName\fR
+and the second element of each pair is the value of the
+array element.  The order of the pairs is undefined.
+If \fIpattern\fR is not specified, then all of the elements of the
+array are included in the result.
+If \fIpattern\fR is specified, then only those elements whose names
+match \fIpattern\fR (using the matching rules of
+\fBstring match\fR) are included.
+If \fIarrayName\fR is not the name of an array variable, or if
+the array contains no elements, then an empty list is returned.
+If traces on the array modify the list of elements, the elements
+returned are those that exist both before and after the call to
+\fBarray get\fR.
+.TP
+\fBarray names \fIarrayName\fR ?\fImode\fR? ?\fIpattern\fR?
+Returns a list containing the names of all of the elements in
+the array that match \fIpattern\fR.  \fIMode\fR may be one of
+\fB\-exact\fR, \fB\-glob\fR, or \fB\-regexp\fR.  If specified, \fImode\fR
+designates which matching rules to use to match \fIpattern\fR against
+the names of the elements in the array.  If not specified, \fImode\fR
+defaults to \fB\-glob\fR.  See the documentation for \fBstring match\fR
+for information on glob style matching, and the documentation for
+\fBregexp\fR for information on regexp matching.
+If \fIpattern\fR is omitted then the command returns all of
+the element names in the array.  If there are no (matching) elements
+in the array, or if \fIarrayName\fR is not the name of an array
+variable, then an empty string is returned.
+.TP
+\fBarray nextelement \fIarrayName searchId\fR
+Returns the name of the next element in \fIarrayName\fR, or
+an empty string if all elements of \fIarrayName\fR have
+already been returned in this search.  The \fIsearchId\fR
+argument identifies the search, and must have
+been the return value of an \fBarray startsearch\fR command.
+Warning:  if elements are added to or deleted from the array,
+then all searches are automatically terminated just as if
+\fBarray donesearch\fR had been invoked; this will cause
+\fBarray nextelement\fR operations to fail for those searches.
+.TP
+\fBarray set \fIarrayName list\fR
+Sets the values of one or more elements in \fIarrayName\fR.
+\fIlist\fR must have a form like that returned by \fBarray get\fR,
+consisting of an even number of elements.
+Each odd-numbered element in \fIlist\fR is treated as an element
+name within \fIarrayName\fR, and the following element in \fIlist\fR
+is used as a new value for that array element.
+If the variable \fIarrayName\fR does not already exist
+and \fIlist\fR is empty,
+\fIarrayName\fR is created with an empty array value.
+.TP
+\fBarray size \fIarrayName\fR
+Returns a decimal string giving the number of elements in the
+array.
+If \fIarrayName\fR is not the name of an array then 0 is returned.
+.TP
+\fBarray startsearch \fIarrayName\fR
+This command initializes an element-by-element search through the
+array given by \fIarrayName\fR, such that invocations of the
+\fBarray nextelement\fR command will return the names of the
+individual elements in the array.
+When the search has been completed, the \fBarray donesearch\fR
+command should be invoked.
+The return value is a
+search identifier that must be used in \fBarray nextelement\fR
+and \fBarray donesearch\fR commands; it allows multiple
+searches to be underway simultaneously for the same array.
+It is currently more efficient and easier to use either the \fBarray
+get\fR or \fBarray names\fR, together with \fBforeach\fR, to iterate
+over all but very large arrays.  See the examples below for how to do
+this.
+.TP
+\fBarray statistics \fIarrayName\fR
+Returns statistics about the distribution of data within the hashtable
+that represents the array.  This information includes the number of
+entries in the table, the number of buckets, and the utilization of
+the buckets.
+.TP
+\fBarray unset \fIarrayName\fR ?\fIpattern\fR?
+Unsets all of the elements in the array that match \fIpattern\fR (using the
+matching rules of \fBstring match\fR).  If \fIarrayName\fR is not the name
+of an array variable or there are no matching elements in the array, no
+error will be raised.  If \fIpattern\fR is omitted and \fIarrayName\fR is
+an array variable, then the command unsets the entire array.
+The command always returns an empty string.
+.SH EXAMPLES
+.CS
+\fBarray set\fR colorcount {
+    red   1
+    green 5
+    blue  4
+    white 9
+}
+
+foreach {color count} [\fBarray get\fR colorcount] {
+    puts "Color: $color Count: $count"
+}
+  \fB\(->\fR Color: blue Count: 4
+    Color: white Count: 9
+    Color: green Count: 5
+    Color: red Count: 1
+
+foreach color [\fBarray names\fR colorcount] {
+    puts "Color: $color Count: $colorcount($color)"
+}
+  \fB\(->\fR Color: blue Count: 4
+    Color: white Count: 9
+    Color: green Count: 5
+    Color: red Count: 1
+
+foreach color [lsort [\fBarray names\fR colorcount]] {
+    puts "Color: $color Count: $colorcount($color)"
+}
+  \fB\(->\fR Color: blue Count: 4
+    Color: green Count: 5
+    Color: red Count: 1
+    Color: white Count: 9
+
+\fBarray statistics\fR colorcount
+  \fB\(->\fR 4 entries in table, 4 buckets
+    number of buckets with 0 entries: 1
+    number of buckets with 1 entries: 2
+    number of buckets with 2 entries: 1
+    number of buckets with 3 entries: 0
+    number of buckets with 4 entries: 0
+    number of buckets with 5 entries: 0
+    number of buckets with 6 entries: 0
+    number of buckets with 7 entries: 0
+    number of buckets with 8 entries: 0
+    number of buckets with 9 entries: 0
+    number of buckets with 10 or more entries: 0
+    average search distance for entry: 1.2
+.CE
+.SH "SEE ALSO"
+list(n), string(n), variable(n), trace(n), foreach(n)
+.SH KEYWORDS
+array, element names, search

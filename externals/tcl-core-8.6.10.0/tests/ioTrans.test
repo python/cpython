@@ -1,0 +1,2095 @@
+# -*- tcl -*-
+# Functionality covered: operation of the reflected transformation
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2007 Andreas Kupries <andreask@activestate.com>
+#                                    <akupries@shaw.ca>
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Custom constraints used in this file
+testConstraint testchannel [llength [info commands testchannel]]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
+
+# testchannel cut|splice  Both needed to test the reflection in threads.
+# thread::send
+
+#----------------------------------------------------------------------
+
+# ### ### ### ######### ######### #########
+## Testing the reflected transformation.
+
+# Helper commands to record the arguments to handler methods.  Stored in a
+# script so that the tests needing this code do not need their own copy but
+# can access this variable.
+
+set helperscript {
+    if {[lsearch [namespace children] ::tcltest] == -1} {
+	package require tcltest 2
+	namespace import -force ::tcltest::*
+    }
+
+    # This forces the return options to be in the order that the test expects!
+    variable optorder {
+	-code !?! -level !?! -errorcode !?! -errorline !?! -errorinfo !?!
+	-errorstack !?!
+    }
+    proc noteOpts opts {
+	variable optorder
+	lappend ::res [dict merge $optorder $opts]
+    }
+
+    # Helper command, canned result for 'initialize' method.  Gets the
+    # optional methods as arguments. Use return features to post the result
+    # higher up.
+
+    proc handle.initialize {args} {
+	upvar args hargs
+	if {[lindex $hargs 0] eq "initialize"} {
+	    return -code return [list {*}$args initialize finalize read write]
+	}
+    }
+    proc handle.finalize {} {
+	upvar args hargs
+	if {[lindex $hargs 0] eq "finalize"} {
+	    return -code return ""
+	}
+    }
+    proc handle.read {} {
+	upvar args hargs
+	if {[lindex $hargs 0] eq "read"} {
+	    return -code return "@"
+	}
+    }
+    proc handle.drain {} {
+	upvar args hargs
+	if {[lindex $hargs 0] eq "drain"} {
+	    return -code return "<>"
+	}
+    }
+    proc handle.clear {} {
+	upvar args hargs
+	if {[lindex $hargs 0] eq "clear"} {
+	    return -code return ""
+	}
+    }
+
+    proc tempchan {{mode r+}} {
+	global tempchan
+	return [set tempchan [open [makeFile {test data} tempchanfile] $mode]]
+    }
+    proc tempdone {} {
+	global tempchan
+	catch {close $tempchan}
+	removeFile tempchanfile
+	return
+    }
+    proc tempview {} { viewFile tempchanfile }
+}
+
+# Set everything up in the main thread.
+eval $helperscript
+
+#puts <<[file channels]>>
+
+# ### ### ### ######### ######### #########
+
+test iortrans-1.0 {chan, wrong#args} -returnCodes error -body {
+    chan
+} -result {wrong # args: should be "chan subcommand ?arg ...?"}
+test iortrans-1.1 {chan, unknown method} -returnCodes error -body {
+    chan foo
+} -match glob -result {unknown or ambiguous subcommand "foo": must be*}
+
+# --- --- --- --------- --------- ---------
+# chan push, and method "initalize"
+
+test iortrans-2.0 {chan push, wrong#args, not enough} -returnCodes error -body {
+    chan push
+} -result {wrong # args: should be "chan push channel cmdprefix"}
+test iortrans-2.1 {chan push, wrong#args, too many} -returnCodes error -body {
+    chan push a b c
+} -result {wrong # args: should be "chan push channel cmdprefix"}
+test iortrans-2.2 {chan push, invalid channel} -setup {
+    proc foo {} {}
+} -returnCodes error -body {
+    chan push {} foo
+} -cleanup {
+    rename foo {}
+} -result {can not find channel named ""}
+test iortrans-2.3 {chan push, bad handler, not a list} -body {
+    chan push [tempchan] "foo \{"
+} -returnCodes error -cleanup {
+    tempdone
+} -result {unmatched open brace in list}
+test iortrans-2.4 {chan push, bad handler, not a command} -body {
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+} -result {invalid command name "foo"}
+test iortrans-2.5 {chan push, initialize failed, bad signature} -body {
+    proc foo {} {}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -result {wrong # args: should be "foo"}
+test iortrans-2.6 {chan push, initialize failed, bad signature} -body {
+    proc foo {} {}
+    chan push [tempchan] ::foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -result {wrong # args: should be "::foo"}
+test iortrans-2.7 {chan push, initialize failed, bad result, not a list} -body {
+    proc foo {args} {return "\{"}
+    catch {chan push [tempchan] foo}
+    return $::errorInfo
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {chan handler "foo initialize" returned non-list: *}
+test iortrans-2.8 {chan push, initialize failed, bad result, not a list} -body {
+    proc foo {args} {return \{\{\}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {chan handler "foo initialize" returned non-list: *}
+test iortrans-2.9 {chan push, initialize failed, bad result, empty list} -body {
+    proc foo {args} {}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*all required methods*}
+test iortrans-2.10 {chan push, initialize failed, bad result, bogus method name} -body {
+    proc foo {args} {return 1}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*bad method "1": must be *}
+test iortrans-2.11 {chan push, initialize failed, bad result, bogus method name} -body {
+    proc foo {args} {return {a b c}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*bad method "c": must be *}
+test iortrans-2.12 {chan push, initialize failed, bad result, required methods missing} -body {
+    # Required: initialize, and finalize.
+    proc foo {args} {return {initialize}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*all required methods*}
+test iortrans-2.13 {chan push, initialize failed, bad result, illegal method name} -body {
+    proc foo {args} {return {initialize finalize BOGUS}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*returned bad method "BOGUS": must be clear, drain, finalize, flush, initialize, limit?, read, or write}
+test iortrans-2.14 {chan push, initialize failed, bad result, mode/handler mismatch} -body {
+    proc foo {args} {return {initialize finalize}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*makes the channel inaccessible}
+# iortrans-2.15 event/watch methods elimimated, removed these tests.
+# iortrans-2.16
+test iortrans-2.17 {chan push, initialize failed, bad result, drain/read mismatch} -body {
+    proc foo {args} {return {initialize finalize drain write}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*supports "drain" but not "read"}
+test iortrans-2.18 {chan push, initialize failed, bad result, flush/write mismatch} -body {
+    proc foo {args} {return {initialize finalize flush read}}
+    chan push [tempchan] foo
+} -returnCodes error -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {*supports "flush" but not "write"}
+test iortrans-2.19 {chan push, initialize ok, creates channel} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	global res
+	lappend res $args
+	if {[lindex $args 0] ne "initialize"} {return}
+	return {initialize finalize drain flush read write}
+    }
+    lappend res [file channel rt*]
+    lappend res [chan push [tempchan] foo]
+    lappend res [close [lindex $res end]]
+    lappend res [file channel rt*]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{} {initialize rt* {read write}} file* {drain rt*} {flush rt*} {finalize rt*} {} {}}
+test iortrans-2.20 {chan push, init failure -> no channel, no finalize} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	global res
+	lappend res $args
+	return
+    }
+    lappend res [file channel rt*]
+    lappend res [catch {chan push [tempchan] foo} msg] $msg
+    lappend res [file channel rt*]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{} {initialize rt* {read write}} 1 {*all required methods*} {}}
+
+# --- --- --- --------- --------- ---------
+# method finalize (via close)
+
+# General note: file channels rt* finds the transform channel, however the
+# name reported will be that of the underlying base driver, fileXX here.  This
+# actually allows us to see if the whole channel is gone, or only the
+# transformation, but not the base.
+
+test iortrans-3.1 {chan finalize, handler destruction has no effect on channel} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    rename foo {}
+    lappend res [file channels file*]
+    lappend res [file channels rt*]
+    lappend res [catch {close $c} msg] $msg
+    lappend res [file channels file*]
+    lappend res [file channels rt*]
+} -cleanup {
+    tempdone
+} -result {{initialize rt* {read write}} file* file* {} 1 {invalid command name "foo"} {} {}}
+test iortrans-3.2 {chan finalize, for close} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    close $c
+    # Close deleted the channel.
+    lappend res [file channels rt*]
+    # Channel destruction does not kill handler command!
+    lappend res [info command foo]
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} {} foo}
+test iortrans-3.3 {chan finalize, for close, error, close error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code error 5
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg] $msg
+    # Channel is gone despite error.
+    lappend res [file channels rt*]
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 5 {}}
+test iortrans-3.4 {chan finalize, for close, error, close error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	error FOO
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg] $msg $::errorInfo
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 FOO {FOO
+*"close $c"}}
+test iortrans-3.5 {chan finalize, for close, arbitrary result, ignored} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return SOMETHING
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg] $msg
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 0 {}}
+test iortrans-3.6 {chan finalize, for close, break, close error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code 3
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg] $msg
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
+test iortrans-3.7 {chan finalize, for close, continue, close error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code 4
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg] $msg
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
+test iortrans-3.8 {chan finalize, for close, custom code, close error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code 777 BANG
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg] $msg
+} -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
+test iortrans-3.9 {chan finalize, for close, ignore level, close error} -setup {
+    set res {}
+} -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -level 5 -code 777 BANG
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [catch {close $c} msg opt] $msg
+    noteOpts $opt
+} -match glob -cleanup {
+    rename foo {}
+    tempdone
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}}
+
+# --- === *** ###########################
+# method read (via read)
+
+test iortrans-4.1 {chan read, transform call and return} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return snarf
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [read $c 10]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} snarf}
+test iortrans-4.2 {chan read, for non-readable channel} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args MUST_NOT_HAPPEN
+    }
+    set c [chan push [tempchan w] foo]
+    lappend res [catch {read $c 2} msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {1 {channel "file*" wasn't opened for reading}}
+test iortrans-4.3 {chan read, error return} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code error BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {read $c 2} msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} 1 BOOM!}
+test iortrans-4.4 {chan read, break return is error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code break BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {read $c 2} msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} 1 *bad code*}
+test iortrans-4.5 {chan read, continue return is error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code continue BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {read $c 2} msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} 1 *bad code*}
+test iortrans-4.6 {chan read, custom return is error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {read $c 2} msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} 1 *bad code*}
+test iortrans-4.7 {chan read, level is squashed} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -level 55 -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {read $c 2} msg opt] $msg
+    noteOpts $opt
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
+test iortrans-4.8 {chan read, read, bug 2921116} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    lappend res [read $c]
+    #lappend res [gets $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} {}}
+test iortrans-4.8.1 {chan read, bug 721ec69271} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    chan configure $c -buffersize 2
+    lappend res [read $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* te} {read rt* st} {read rt* { d}} {read rt* at} {read rt* {a
+}} {}}
+test iortrans-4.8.2 {chan read, bug 721ec69271} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+	return x
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    chan configure $c -buffersize 1
+    lappend res [read $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* t} {read rt* e} {read rt* s} {read rt* t} {read rt* { }} {read rt* d} {read rt* a} {read rt* t} {read rt* a} {read rt* {
+}} {}}
+test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    lappend res [gets $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} {}}
+
+# Driver for a base channel that emits several short "files"
+# with each terminated by a fleeting EOF
+    proc driver {cmd args} {
+        variable ::tcl::buffer
+        variable ::tcl::index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .....
+                return {initialize finalize watch read}
+            }
+            finalize {
+                if {![info exists index($chan)]} {return}
+                unset index($chan) buffer($chan)
+		array unset index
+		array unset buffer
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {![info exists index($chan)]} {
+                    driver initialize $chan
+                }
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                if {[string length $result] == 0} {
+                    driver finalize $chan
+                }
+                return $result
+            }
+        }
+    }
+
+# Channel read transform that is just the identity - pass all through
+    proc idxform {cmd handle args} {
+      switch -- $cmd {
+        initialize {
+            return {initialize finalize read}
+        }
+        finalize {
+            return
+        }
+        read {
+            lassign $args buffer
+            return $buffer
+        }
+      }
+    }
+
+# Test that all EOFs pass through full xform stack.  Proper data boundaries.
+# Check robustness against buffer sizes.
+test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.10.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    chan configure $chan -buffersize 3
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.10.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    chan configure $chan -buffersize 5
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+rename idxform {}
+
+# Channel read transform that delays the data and always returns something
+    proc delayxform {cmd handle args} {
+      variable store
+      switch -- $cmd {
+        initialize {
+	    set store($handle) {}
+            return {initialize finalize read drain}
+        }
+        finalize {
+	    unset store($handle)
+            return
+        }
+        read {
+            lassign $args buffer
+	    if {$store($handle) eq {}} {
+		set reply [string index $buffer 0]
+		set store($handle) [string range $buffer 1 end]
+	    } else {
+		set reply $store($handle)
+		set store($handle) $buffer
+	    }
+            return $reply
+        }
+	drain {
+	    delayxform read $handle {}
+	}
+      }
+    }
+
+# Test that all EOFs pass through full xform stack.  Proper data boundaries.
+# Check robustness against buffer sizes.
+test iortrans-4.11 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.11.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    chan configure $chan -buffersize 3
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    chan configure $chan -buffersize 5
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+    rename delayxform {}
+
+# Channel read transform that delays the data and may return {}
+    proc delay2xform {cmd handle args} {
+      variable store
+      switch -- $cmd {
+        initialize {
+	    set store($handle) {}
+            return {initialize finalize read drain}
+        }
+        finalize {
+	    unset store($handle)
+            return
+        }
+        read {
+            lassign $args buffer
+		set reply $store($handle)
+		set store($handle) $buffer
+            return $reply
+        }
+	drain {
+	    delay2xform read $handle {}
+	}
+      }
+    }
+
+test iortrans-4.12 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delay2xform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+    rename delay2xform {}
+    rename driver {}
+
+
+# --- === *** ###########################
+# method write (via puts)
+
+test iortrans-5.1 {chan write, regular write} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return transformresult
+    }
+    set c [chan push [tempchan] foo]
+    puts -nonewline $c snarf
+    flush $c
+    close $c
+    lappend res [tempview]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarf} transformresult}
+test iortrans-5.2 {chan write, no write is ok, no change to file} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return
+    }
+    set c [chan push [tempchan] foo]
+    puts -nonewline $c snarfsnarfsnarf
+    flush $c
+    close $c
+    lappend res [tempview];	# This has to show the original data, as nothing was written
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} {test data}}
+test iortrans-5.3 {chan write, failed write} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code error FAIL!
+    }
+    set c [chan push [tempchan] foo]
+    puts -nonewline $c snarfsnarfsnarf
+    lappend res [catch {flush $c} msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 FAIL!}
+test iortrans-5.4 {chan write, non-writable channel} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args MUST_NOT_HAPPEN
+	return
+    }
+    set c [chan push [tempchan r] foo]
+    lappend res [catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg] $msg
+} -cleanup {
+    close $c
+    tempdone
+    rename foo {}
+} -result {1 {channel "file*" wasn't opened for writing}}
+test iortrans-5.5 {chan write, failed write, error return} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code error BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 BOOM!}
+test iortrans-5.6 {chan write, failed write, error return} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	error BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 BOOM!}
+test iortrans-5.7 {chan write, failed write, break return is error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code break BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
+test iortrans-5.8 {chan write, failed write, continue return is error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code continue BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
+test iortrans-5.9 {chan write, failed write, custom return is error} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg] $msg
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
+test iortrans-5.10 {chan write, failed write, level is ignored} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -level 55 -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [catch {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+    } msg opt] $msg
+    noteOpts $opt
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline * -errorinfo *bad code*subcommand "write"*}}
+test iortrans-5.11 {chan write, bug 2921116} -match glob -setup {
+    set res {}
+    set level 0
+} -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# pop - invokes flush - invokes 'foo write' - infinite recursion - stop it
+	global level
+	if {$level} {
+	    return
+	}
+	incr level
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    lappend res [puts -nonewline $c abcdef]
+    lappend res [flush $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{} {write rt* abcdef} {write rt* abcdef} {}}
+
+# --- === *** ###########################
+# method limit?, drain (via read)
+
+test iortrans-6.1 {chan read, read limits} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize limit?
+	handle.finalize
+	lappend ::res $args
+	handle.read
+	return 6
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [read $c 10]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{limit? rt*} {read rt* {test d}} {limit? rt*} {read rt* {ata
+}} {limit? rt*} @@}
+test iortrans-6.2 {chan read, read transform drain on eof} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize drain
+	handle.finalize
+	lappend ::res $args
+	handle.read
+	handle.drain
+	return
+    }
+    set c [chan push [tempchan] foo]
+    lappend res [read $c]
+    lappend res [close $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} {drain rt*} @<> {}}
+
+# --- === *** ###########################
+# method clear (via puts, seek)
+
+test iortrans-7.1 {chan write, write clears read buffers} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	handle.clear
+	return transformresult
+    }
+    set c [chan push [tempchan] foo]
+    puts -nonewline $c snarf
+    flush $c
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*} {write rt* snarf}}
+test iortrans-7.2 {seek clears read buffers} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	return
+    }
+    set c [chan push [tempchan] foo]
+    seek $c 2
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*}}
+test iortrans-7.3 {clear, any result is ignored} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	return -code error "X"
+    }
+    set c [chan push [tempchan] foo]
+    seek $c 2
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*}}
+test iortrans-7.4 {chan clear, bug 2921116} -match glob -setup {
+    set res {}
+} -body {
+    proc foo {fd args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    seek $c 2
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*}}
+
+# --- === *** ###########################
+# method flush (via seek, close)
+
+test iortrans-8.1 {seek flushes write buffers, ignores data} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize flush
+	handle.finalize
+	lappend ::res $args
+	return X
+    }
+    set c [chan push [tempchan] foo]
+    # Flush, no writing
+    seek $c 2
+    # The close flushes again, this modifies the file!
+    lappend res |
+    lappend res [close $c] | [tempview]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{flush rt*} | {flush rt*} {} | {teXt data}}
+test iortrans-8.2 {close flushes write buffers, writes data} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {args} {
+	handle.initialize flush
+	lappend ::res $args
+	handle.finalize
+	return .flushed.
+    }
+    set c [chan push [tempchan] foo]
+    close $c
+    lappend res [tempview]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{flush rt*} {finalize rt*} .flushed.}
+test iortrans-8.3 {chan flush, bug 2921116} -match glob -setup {
+    set res {}
+} -body {
+    proc foo {fd args} {
+	handle.initialize flush
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    seek $c 2
+    set res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{flush rt*}}
+
+# --- === *** ###########################
+# method watch - removed from TIP (rev 1.12+)
+
+# --- === *** ###########################
+# method event - removed from TIP (rev 1.12+)
+
+# --- === *** ###########################
+# 'Pull the rug' tests. Create channel in a interpreter A, move to other
+# interpreter B, destroy the origin interpreter (A) before or during access
+# from B. Must not crash, must return proper errors.
+test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
+    set ida [interp create];	#puts <<$ida>>
+    set idb [interp create];	#puts <<$idb>>
+    # Magic to get the test* commands in the slaves
+    load {} Tcltest $ida
+    load {} Tcltest $idb
+} -constraints {testchannel} -match glob -body {
+    # Set up channel and transform in interpreter
+    interp eval $ida $helperscript
+    interp eval $ida [list ::variable tempchan [tempchan]]
+    interp transfer {} $::tempchan $ida
+    set chan [interp eval $ida {
+	variable tempchan
+	proc foo {args} {
+	    handle.initialize clear drain flush limit? read write
+	    handle.finalize
+	    lappend ::res $args
+	    return
+	}
+	set chan [chan push $tempchan foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+    # Move channel to 2nd interpreter, transform goes with it.
+    interp eval $ida [list testchannel cut $chan]
+    interp eval $idb [list testchannel splice $chan]
+    # Kill origin interpreter, then access channel from 2nd interpreter.
+    interp delete $ida
+    set res {}
+    lappend res \
+	[catch {interp eval $idb [list puts $chan shoo]} msg] $msg \
+	[catch {interp eval $idb [list tell $chan]} msg] $msg \
+	[catch {interp eval $idb [list seek $chan 1]} msg] $msg \
+	[catch {interp eval $idb [list gets $chan]} msg] $msg \
+	[catch {interp eval $idb [list close $chan]} msg] $msg
+    #lappend res [interp eval $ida {set res}]
+    # actions: clear|write|clear|write|clear|flush|limit?|drain|flush
+    # The 'tell' is ok, as it passed through the transform to the base channel
+    # without invoking the transform handler.
+} -cleanup {
+    tempdone
+    interp delete $idb
+} -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
+test iortrans-11.1 {origin interpreter of moved transform destroyed during access} -setup {
+    set ida [interp create];	#puts <<$ida>>
+    set idb [interp create];	#puts <<$idb>>
+    # Magic to get the test* commands in the slaves
+    load {} Tcltest $ida
+    load {} Tcltest $idb
+} -constraints {testchannel} -match glob -body {
+    # Set up channel in thread
+    set chan [interp eval $ida $helperscript]
+    interp eval $ida [list ::variable tempchan [tempchan]]
+    interp transfer {} $::tempchan $ida
+    set chan [interp eval $ida {
+	proc foo {args} {
+	    handle.initialize clear drain flush limit? read write
+	    handle.finalize
+	    lappend ::res $args
+	    # Destroy interpreter during channel access.
+	    suicide
+	}
+	set chan [chan push $tempchan foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+    interp alias $ida suicide {} interp delete $ida
+    # Move channel to 2nd thread, transform goes with it.
+    interp eval $ida [list testchannel cut $chan]
+    interp eval $idb [list testchannel splice $chan]
+    # Run access from interpreter B, this will give us a synchronous response.
+    interp eval $idb [list set chan $chan]
+    interp eval $idb [list set mid $tcltest::mainThread]
+    set res [interp eval $idb {
+	# Wait a bit, give the main thread the time to start its event loop to
+	# wait for the response from B
+	after 50
+	catch { puts $chan shoo } res
+	set res
+    }]
+} -cleanup {
+    interp delete $idb
+    tempdone
+} -result {Owner lost}
+test iortrans-11.2 {delete interp of reflected transform} -setup {
+    interp create slave
+    # Magic to get the test* commands into the slave
+    load {} Tcltest slave
+} -constraints {testchannel} -body {
+    # Get base channel into the slave
+    set c [tempchan]
+    testchannel cut $c
+    interp eval slave [list testchannel splice $c]
+    interp eval slave [list set c $c]
+    slave eval {
+	proc no-op args {}
+	proc driver {c sub args} {
+	    return {initialize finalize read write}
+	}
+	set t [chan push $c [list driver $c]]
+	chan event $c readable no-op
+    }
+    interp delete slave
+} -cleanup {
+    tempdone
+} -result {}
+
+# ### ### ### ######### ######### #########
+## Same tests as above, but exercising the code forwarding and receiving
+## driver operations to the originator thread.
+
+# ### ### ### ######### ######### #########
+## Testing the reflected channel (Thread forwarding).
+#
+## The id numbers refer to the original test without thread forwarding, and
+## gaps due to tests not applicable to forwarding are left to keep this
+## association.
+
+# ### ### ### ######### ######### #########
+## Helper command. Runs a script in a separate thread and returns the result.
+## A channel is transfered into the thread as well, and a list of configuation
+## variables
+
+proc inthread {chan script args} {
+    # Test thread.
+    set tid [thread::create -preserved]
+    thread::send $tid {load {} Tcltest}
+
+    # Init thread configuration.
+    # - Listed variables
+    # - Id of main thread
+    # - A number of helper commands
+
+    foreach v $args {
+	upvar 1 $v x
+	thread::send $tid [list set $v $x]
+    }
+    thread::send $tid [list set mid [thread::id]]
+    thread::send $tid {
+	proc notes {} {
+	    return $::notes
+	}
+	proc noteOpts opts {
+	    lappend ::notes [dict merge {
+		-code !?! -level !?! -errorcode !?! -errorline !?!
+		-errorinfo !?! -errorstack !?!
+	    } $opts]
+	}
+    }
+    thread::send $tid [list proc s {} [list uplevel 1 $script]]; # (*)
+
+    # Transfer channel (cut/splice aka detach/attach)
+
+    testchannel cut $chan
+    thread::send $tid [list testchannel splice $chan]
+
+    # Run test script, also run local event loop!  The local event loop waits
+    # for the result to come back.  It is also necessary for the execution of
+    # forwarded channel operations.
+
+    set ::tres ""
+    thread::send -async $tid {	
+	after 50
+	catch {s} res;	# This runs the script, 's' was defined at (*)
+	thread::send -async $mid [list set ::tres $res]
+    }
+    vwait ::tres
+    # Remove test thread, and return the captured result.
+
+    thread::release $tid
+    return $::tres
+}
+
+# ### ### ### ######### ######### #########
+
+test iortrans.tf-3.2 {chan finalize, for close} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return {}
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res [inthread $c {
+	close $c
+	# Close the deleted the channel.
+	file channels rt*
+    } c]
+    # Channel destruction does not kill handler command!
+    lappend res [info command foo]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} {} foo}
+test iortrans.tf-3.3 {chan finalize, for close, error, close error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code error 5
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg] $msg
+	# Channel is gone despite error.
+	lappend notes [file channels rt*]
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 5 {}}
+test iortrans.tf-3.4 {chan finalize, for close, error, close errror} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	error FOO
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg] $msg
+	notes
+    } c]
+} -match glob -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 FOO}
+test iortrans.tf-3.5 {chan finalize, for close, arbitrary result} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return SOMETHING
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg] $msg
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 0 {}}
+test iortrans.tf-3.6 {chan finalize, for close, break, close error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code 3
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg] $msg
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
+test iortrans.tf-3.7 {chan finalize, for close, continue, close error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code 4
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg] $msg
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
+test iortrans.tf-3.8 {chan finalize, for close, custom code, close error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -code 777 BANG
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg] $msg
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code*}
+test iortrans.tf-3.9 {chan finalize, for close, ignore level, close error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	lappend ::res $args
+	handle.initialize
+	return -level 5 -code 777 BANG
+    }
+    lappend res [set c [chan push [tempchan] foo]]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {close $c} msg opt] $msg
+	noteOpts $opt
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{initialize rt* {read write}} file* {finalize rt*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}}
+
+# --- === *** ###########################
+# method read
+
+test iortrans.tf-4.1 {chan read, transform call and return} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return snarf
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [read $c 10]
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{read rt* {test data
+}} snarf}
+test iortrans.tf-4.2 {chan read, for non-readable channel} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args MUST_NOT_HAPPEN
+    }
+    set c [chan push [tempchan w] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {[read $c 2]} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {1 {channel "file*" wasn't opened for reading}}
+test iortrans.tf-4.3 {chan read, error return} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code error BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {read $c 2} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{read rt* {test data
+}} 1 BOOM!}
+test iortrans.tf-4.4 {chan read, break return is error} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code break BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {read $c 2} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{read rt* {test data
+}} 1 *bad code*}
+test iortrans.tf-4.5 {chan read, continue return is error} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code continue BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {read $c 2} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{read rt* {test data
+}} 1 *bad code*}
+test iortrans.tf-4.6 {chan read, custom return is error} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {read $c 2} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{read rt* {test data
+}} 1 *bad code*}
+test iortrans.tf-4.7 {chan read, level is squashed} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -level 55 -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {read $c 2} msg opt] $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{read rt* {test data
+}} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
+
+# --- === *** ###########################
+# method write
+
+test iortrans.tf-5.1 {chan write, regular write} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return transformresult
+    }
+    set c [chan push [tempchan] foo]
+    inthread $c {
+	puts -nonewline $c snarf
+	flush $c
+	close $c
+    } c
+    lappend res [tempview]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarf} transformresult}
+test iortrans.tf-5.2 {chan write, no write is ok, no change to file} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return
+    }
+    set c [chan push [tempchan] foo]
+    inthread $c {
+	puts -nonewline $c snarfsnarfsnarf
+	flush $c
+	close $c
+    } c
+    lappend res [tempview];	# This has to show the original data, as nothing was written
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} {test data}}
+test iortrans.tf-5.3 {chan write, failed write} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code error FAIL!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	puts -nonewline $c snarfsnarfsnarf
+	lappend notes [catch {flush $c} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 FAIL!}
+test iortrans.tf-5.4 {chan write, non-writable channel} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args MUST_NOT_HAPPEN
+	return
+    }
+    set c [chan push [tempchan r] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {1 {channel "file*" wasn't opened for writing}}
+test iortrans.tf-5.5 {chan write, failed write, error return} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code error BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 BOOM!}
+test iortrans.tf-5.6 {chan write, failed write, error return} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	error BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 BOOM!}
+test iortrans.tf-5.7 {chan write, failed write, break return is error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code break BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
+test iortrans.tf-5.8 {chan write, failed write, continue return is error} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code continue BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
+test iortrans.tf-5.9 {chan write, failed write, custom return is error} -setup {
+    set res {}
+} -constraints {testchannel thread} -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg] $msg
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -match glob -result {{write rt* snarfsnarfsnarf} 1 *bad code*}
+test iortrans.tf-5.10 {chan write, failed write, level is ignored} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	return -level 55 -code 777 BOOM!
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [catch {
+	    puts -nonewline $c snarfsnarfsnarf
+	    flush $c
+	} msg opt] $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{write rt* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline * -errorinfo *bad code*subcommand "write"*}}
+
+# --- === *** ###########################
+# method limit?, drain (via read)
+
+test iortrans.tf-6.1 {chan read, read limits} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize limit?
+	handle.finalize
+	lappend ::res $args
+	handle.read
+	return 6
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [read $c 10]
+	close $c
+	notes
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{limit? rt*} {read rt* {test d}} {limit? rt*} {read rt* {ata
+}} {limit? rt*} @@}
+test iortrans.tf-6.2 {chan read, read transform drain on eof} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize drain
+	handle.finalize
+	lappend ::res $args
+	handle.read
+	handle.drain
+	return
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	lappend notes [read $c]
+	lappend notes [close $c]
+    } c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} {drain rt*} @<> {}}
+
+# --- === *** ###########################
+# method clear (via puts, seek)
+
+test iortrans.tf-7.1 {chan write, write clears read buffers} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	handle.clear
+	return transformresult
+    }
+    set c [chan push [tempchan] foo]
+    inthread $c {
+	puts -nonewline $c snarf
+	flush $c
+	close $c
+    } c
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*} {write rt* snarf}}
+test iortrans.tf-7.2 {seek clears read buffers} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	return
+    }
+    set c [chan push [tempchan] foo]
+    inthread $c {
+	seek $c 2
+	close $c
+    } c
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*}}
+test iortrans.tf-7.3 {clear, any result is ignored} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize clear
+	handle.finalize
+	lappend ::res $args
+	return -code error "X"
+    }
+    set c [chan push [tempchan] foo]
+    inthread $c {
+	seek $c 2
+	close $c
+    } c
+    return $res
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{clear rt*}}
+
+# --- === *** ###########################
+# method flush (via seek, close)
+
+test iortrans.tf-8.1 {seek flushes write buffers, ignores data} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize flush
+	handle.finalize
+	lappend ::res $args
+	return X
+    }
+    set c [chan push [tempchan] foo]
+    lappend res {*}[inthread $c {
+	# Flush, no writing
+	seek $c 2
+	# The close flushes again, this modifies the file!
+	lappend notes | [close $c] |
+	# NOTE: The flush generated by the close is recorded immediately, the
+	# other note's here are defered until after the thread is done. This
+	# changes the order of the result a bit from the non-threaded case
+	# (The first | moves one to the right). This is an artifact of the
+	# 'inthread' framework, not of the transformation itself.
+	notes
+    } c]
+    lappend res [tempview]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{flush rt*} {flush rt*} | {} | {teXt data}}
+test iortrans.tf-8.2 {close flushes write buffers, writes data} -setup {
+    set res {}
+} -constraints {testchannel thread} -match glob -body {
+    proc foo {args} {
+	handle.initialize flush
+	lappend ::res $args
+	handle.finalize
+	return .flushed.
+    }
+    set c [chan push [tempchan] foo]
+    inthread $c {
+	close $c
+    } c
+    lappend res [tempview]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{flush rt*} {finalize rt*} .flushed.}
+
+# --- === *** ###########################
+# method watch - removed from TIP (rev 1.12+)
+
+# --- === *** ###########################
+# method event - removed from TIP (rev 1.12+)
+
+# --- === *** ###########################
+# 'Pull the rug' tests. Create channel in a thread A, move to other thread B,
+# destroy the origin thread (A) before or during access from B. Must not
+# crash, must return proper errors.
+
+test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
+    #puts <<$tcltest::mainThread>>main
+    set tida [thread::create -preserved];	#puts <<$tida>>
+    thread::send $tida {load {} Tcltest}
+    set tidb [thread::create -preserved];	#puts <<$tida>>
+    thread::send $tidb {load {} Tcltest}
+} -constraints {testchannel thread} -match glob -body {
+    # Set up channel in thread
+    thread::send $tida $helperscript
+    thread::send $tidb $helperscript
+    set chan [thread::send $tida {
+	proc foo {args} {
+	    handle.initialize clear drain flush limit? read write
+	    handle.finalize
+	    lappend ::res $args
+	    return
+	}
+	set chan [chan push [tempchan] foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+
+    # Move channel to 2nd thread, transform goes with it.
+    thread::send $tida [list testchannel cut $chan]
+    thread::send $tidb [list testchannel splice $chan]
+
+    # Kill origin thread, then access channel from 2nd thread.
+    thread::release -wait $tida
+
+    set res {}
+    lappend res [catch {thread::send $tidb [list puts $chan shoo]} msg] $msg
+    lappend res [catch {thread::send $tidb [list tell $chan]} msg] $msg
+    lappend res [catch {thread::send $tidb [list seek $chan 1]} msg] $msg
+    lappend res [catch {thread::send $tidb [list gets $chan]} msg] $msg
+    lappend res [catch {thread::send $tidb [list close $chan]} msg] $msg
+    # The 'tell' is ok, as it passed through the transform to the base
+    # channel without invoking the transform handler.
+} -cleanup {
+    thread::send $tidb tempdone
+    thread::release $tidb
+} -result {1 {Owner lost} 0 0 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
+
+testConstraint notValgrind [expr {![testConstraint valgrind]}]
+
+test iortrans.tf-11.1 {origin thread of moved transform destroyed during access} -setup {
+    #puts <<$tcltest::mainThread>>main
+    set tida [thread::create -preserved];	#puts <<$tida>>
+    thread::send $tida {load {} Tcltest}
+    set tidb [thread::create -preserved];	#puts <<$tidb>>
+    thread::send $tidb {load {} Tcltest}
+} -constraints {testchannel thread notValgrind} -match glob -body {
+    # Set up channel in thread
+    thread::send $tida $helperscript
+    thread::send $tidb $helperscript
+    set chan [thread::send $tida {
+	proc foo {args} {
+	    handle.initialize clear drain flush limit? read write
+	    handle.finalize
+	    lappend ::res $args
+	    # destroy thread during channel access
+	    thread::exit
+	}
+	set chan [chan push [tempchan] foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+
+    # Move channel to 2nd thread, transform goes with it.
+    thread::send $tida [list testchannel cut $chan]
+    thread::send $tidb [list testchannel splice $chan]
+
+    # Run access from thread B, wait for response from A (A is not using event
+    # loop at this point, so the event pile up in the queue.
+    thread::send $tidb [list set chan $chan]
+    thread::send $tidb [list set mid [thread::id]]
+    thread::send -async $tidb {
+	# Wait a bit, give the main thread the time to start its event loop to
+	# wait for the response from B
+	after 50
+	catch { puts $chan shoo } res
+	catch { close $chan }
+	thread::send -async $mid [list set ::res $res]
+    }
+    vwait ::res
+    set res
+} -cleanup {
+    thread::send $tidb tempdone
+    thread::release $tidb
+} -result {Owner lost}
+
+# ### ### ### ######### ######### #########
+
+cleanupTests
+return

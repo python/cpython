@@ -1,0 +1,41 @@
+'\"
+'\" Copyright (c) 2001 ActiveState Tool Corp.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_SignalId 3 8.3 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SignalId, Tcl_SignalMsg \- Convert signal codes
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+const char *
+\fBTcl_SignalId\fR(\fIsig\fR)
+.sp
+const char *
+\fBTcl_SignalMsg\fR(\fIsig\fR)
+.sp
+.SH ARGUMENTS
+.AS int sig
+.AP int sig in
+A POSIX signal number such as \fBSIGPIPE\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_SignalId\fR and \fBTcl_SignalMsg\fR return a string
+representation of the provided signal number (\fIsig\fR).
+\fBTcl_SignalId\fR returns a machine-readable textual identifier such
+as
+.QW SIGPIPE .
+\fBTcl_SignalMsg\fR returns a human-readable string such as
+.QW "bus error" .
+The strings returned by these functions are
+statically allocated and the caller must not free or modify them.
+
+.SH KEYWORDS
+signals, signal numbers

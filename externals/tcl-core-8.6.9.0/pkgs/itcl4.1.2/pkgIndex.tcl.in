@@ -1,0 +1,6 @@
+# Tcl package index file, version 1.0
+
+if {![package vsatisfies [package provide Tcl] 8.6-]} {return}
+
+package ifneeded itcl @PACKAGE_VERSION@ [list load [file join $dir "@PKG_LIB_FILE@"] itcl]
+package ifneeded Itcl @PACKAGE_VERSION@ [list load [file join $dir "@PKG_LIB_FILE@"] itcl]

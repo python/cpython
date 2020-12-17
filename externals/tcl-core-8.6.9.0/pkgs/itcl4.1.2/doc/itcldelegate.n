@@ -1,0 +1,202 @@
+'\"
+'\" Copyright (c) 2008 Arnulf Wiedemann
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH delegation n 4.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::delegation \- delegate methods, procs or options to other objects
+.PP
+Parts of this description are "borrowed" from Tcl extension [snit], as the functionality is mostly identical.
+.SH WARNING!
+This is new functionality in [incr Tcl] where the API can still change!!
+.SH SYNOPSIS
+.nf
+\fBdelegate method \fImethodName\fB to \fIcomponentName\fR ?\fBas \fItargetName\fR?
+\fBdelegate method \fImethodName\fR ?\fBto \fIcomponentName\fR? \fBusing \fIpattern\fR
+\fBdelegate method \fI* ?\fBto \fIcomponentName\fR? ?\fBusing \fIpattern\fR? ?\fBexcept \fImethodName methodName ...\fR?
+
+\fBdelegate proc \fIprocName\fB to \fIcomponentName\fR ?\fBas \fItargetName\fR?
+\fBdelegate proc \fIprocName\fR ?\fBto \fIcomponentName\fR? \fBusing \fIpattern\fR
+\fBdelegate proc \fI*\fR ?\fBto \fIcomponentName\fR? ?\fBusing \fIpattern\fR? ?\fBexcept \fIprocName procName ...\fR?
+
+\fBdelegate option \fIoptionSpec\fB to \fIcomponentName\fR
+\fBdelegate option \fIoptionSpec\fB to \fIcomponentName\fR \fBas \fItargetname\fR?
+\fBdelegate option \fI* \fBto \fIcomponentName\fR
+\fBdelegate option \fI* \fBto \fIcomponentName\fR \fBexcept \fIoptionName optionname ...\fR
+.fi
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBdelegate\fR command is used inside an \fB[incr\ Tcl]\fR
+extendedclass/widget/widgetadaptor definition to delegate
+methods/procs/options to other objects for handling.
+.TP
+\fBdelegate method \fImethodName\fB to \fIcomponentName\fR ?\fBas \fItargetName\fR?
+.
+This form of delegate method delegates method methodName to component
+componentName. That is, when method methdoNameame is called on an instance of
+this type, the method and its arguments will be passed to the named component's
+command instead. That is, the following statement
+.RS
+.PP
+.CS
+delegate method wag to tail
+.CE
+.PP
+is roughly equivalent to this explicitly defined method:
+.PP
+.CS
+method wag {args} {
+    uplevel $tail wag $args
+}
+.CE
+.PP
+The optional \fBas\fR clause allows you to specify the delegated method
+name and possibly add some arguments:
+.PP
+.CS
+delegate method wagtail to tail as "wag briskly"
+.CE
+.PP
+A method cannot be both locally defined and delegated. 
+.RE
+.TP
+\fBdelegate method \fImethodName\fR ?\fBto \fIcomponentName\fR? \fBusing \fIpattern\fR
+.
+In this form of the delegate statement, the \fBusing\fR clause is used to
+specify the precise form of the command to which method name name is delegated.
+The \fBto\fR clause is optional, since the chosen command might not involve
+any particular component.
+.RS
+.PP
+The value of the using clause is a list that may contain any or all of the
+following substitution codes; these codes are substituted with the described
+value to build the delegated command prefix. Note that the following two
+statements are equivalent:
+.PP
+.CS
+delegate method wag to tail
+delegate method wag to tail using "%c %m"
+.CE
+.PP
+Each element of the list becomes a single element of the delegated command 
+--it is never reparsed as a string.
+.PP
+Substitutions:
+.TP
+\fB%%\fR
+.
+This is replaced with a single "%". Thus, to pass the string "%c" to the
+command as an argument, you'd write "%%c".
+.TP
+\fB%c\fR
+.
+This is replaced with the named component's command. 
+.TP
+\fB%j\fR
+.
+This is replaced by the method name; if the name consists of multiple tokens,
+they are joined by underscores ("_").
+.TP
+\fB%m\fR
+.
+This is replaced with the final token of the method name; if the method name
+has one token, this is identical to \fB%M\fR.
+.TP
+\fB%M\fR
+.
+This is replaced by the method name; if the name consists of multiple tokens,
+they are joined by space characters.
+.TP
+\fB%n\fR
+.
+This is replaced with the name of the instance's private namespace.
+.TP
+\fB%s\fR
+.
+This is replaced with the name of the instance command. 
+.TP
+\fB%t\fR
+.
+This is replaced with the fully qualified type name. 
+.TP
+\fB%w\fR
+.
+This is replaced with the original name of the instance command; for Itcl
+widgets and widget adaptors, it will be the Tk window name. It remains
+constant, even if the instance command is renamed.
+.RE
+.TP
+\fBdelegate method \fI*\fR ?\fBto \fIcomponentName\fR? ?\fBusing \fIpattern\fR? ?\fBexcept \fImethodName methodName ...\fR?
+.
+In this form all unknown method names are delegeted to the specified
+component. The except clause can be used to specify a list of exceptions,
+i.e., method names that will not be so delegated. The using clause
+is defined as given above. In this form, the statement must
+contain the to clause, the using clause, or both.
+.RS
+.PP
+In fact, the "*" can be a list of two or more tokens whose last element
+is "*", as in the following example:
+.PP
+.CS
+delegate method {tail *} to tail
+.CE
+.PP
+This implicitly defines the method tail whose subcommands will be
+delegated to the tail component. 
+.PP
+The definitions for \fBdelegate proc\fR ... are the same as for method,
+the only difference being, that this is for procs.
+.RE
+.TP
+\fBdelegate option \fInamespec\fB to \fIcomp\fR
+.TP
+\fBdelegate option namespec to comp as target\fR
+.TP
+\fBdelegate option * to \fIcomp\fR
+.TP
+\fBdelegate option * to \fIcomp \fBexcept \fIexceptions\fR
+.
+Defines a delegated option; the namespec is defined as for the option
+statement. When the configure, configurelist, or cget instance method is
+used to set or retrieve the option's value, the equivalent configure or
+cget command will be applied to the component as though the option was
+defined with the following \fB-configuremethod\fR and \fB-cgetmethod\fR:
+.RS
+.PP
+.CS
+method ConfigureMethod {option value} {
+    $comp configure $option $value
+}
+
+method CgetMethod {option} {
+    return [$comp cget $option]
+}
+.CE
+.PP
+Note that delegated options never appear in the \fBitcl_options\fR array.
+If the as clause is specified, then the target option name is used in place
+of name.
+.RE
+.TP
+\fBdelegate \fIoption\fB *\fR ?\fBexcept\fI optionName optionName ...\fR?
+.
+This form delegates all unknown options to the specified component.
+The except clause can be used to specify a list of exceptions,
+i.e., option names that will not be so delegated.
+.RS
+.PP
+\fBWarning:\fR options can only be delegated to a component if it supports the
+\fBconfigure\fR and \fBcget\fR instance methods.
+.PP
+An option cannot be both locally defined and delegated. TBD: Continue from here.
+.RE
+.SH KEYWORDS
+delegation, option, method, proc

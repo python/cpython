@@ -1,0 +1,255 @@
+'\"
+'\" Copyright (c) 1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH place n "" Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+place \- Geometry manager for fixed or rubber-sheet placement
+.SH SYNOPSIS
+\fBplace \fIoption arg \fR?\fIarg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The placer is a geometry manager for Tk.
+It provides simple fixed placement of windows, where you specify
+the exact size and location of one window, called the \fIslave\fR,
+within another window, called the \fImaster\fR.
+The placer also provides rubber-sheet placement, where you specify the
+size and location of the slave in terms of the dimensions of
+the master, so that the slave changes size and location
+in response to changes in the size of the master.
+Lastly, the placer allows you to mix these styles of placement so
+that, for example, the slave has a fixed width and height but is
+centered inside the master.
+.PP
+.TP
+\fBplace \fIwindow option value \fR?\fIoption value ...\fR?
+Arrange for the placer to manage the geometry of a slave whose
+pathName is \fIwindow\fR.  The remaining arguments consist of one or
+more \fIoption\-value\fR pairs that specify the way in which
+\fIwindow\fR's geometry is managed.  \fIOption\fR may have any of the
+values accepted by the \fBplace configure\fR command.
+.TP
+\fBplace configure \fIwindow \fR?\fIoption\fR? ?\fIvalue option value ...\fR?
+Query or modify the geometry options of the slave given by
+\fIwindow\fR.  If no \fIoption\fR is specified, this command returns a
+list describing the available options (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given option(s) to have the given value(s); in this case
+the command returns an empty string.
+.RS
+.PP
+The following \fIoption\-value\fR pairs are supported:
+.TP
+\fB\-anchor \fIwhere\fR
+\fIWhere\fR specifies which point of \fIwindow\fR is to be positioned
+at the (x,y) location selected by the \fB\-x\fR, \fB\-y\fR,
+\fB\-relx\fR, and \fB\-rely\fR options.
+The anchor point is in terms of the outer area of \fIwindow\fR
+including its border, if any.
+Thus if \fIwhere\fR is \fBse\fR then the lower-right corner of
+\fIwindow\fR's border will appear at the given (x,y) location
+in the master.
+The anchor position defaults to \fBnw\fR.
+.TP
+\fB\-bordermode \fImode\fR
+\fIMode\fR determines the degree to which borders within the
+master are used in determining the placement of the slave.
+The default and most common value is \fBinside\fR.
+In this case the placer considers the area of the master to
+be the innermost area of the master, inside any border:
+an option of \fB\-x 0\fR corresponds to an x-coordinate just
+inside the border and an option of \fB\-relwidth 1.0\fR
+means \fIwindow\fR will fill the area inside the master's
+border.
+.RS
+.PP
+If \fImode\fR is \fBoutside\fR then the placer considers
+the area of the master to include its border;
+this mode is typically used when placing \fIwindow\fR
+outside its master, as with the options \fB\-x 0 \-y 0 \-anchor ne\fR.
+Lastly, \fImode\fR may be specified as \fBignore\fR, in which
+case borders are ignored:  the area of the master is considered
+to be its official X area, which includes any internal border but
+no external border.  A bordermode of \fBignore\fR is probably
+not very useful.
+.RE
+.TP
+\fB\-height \fIsize\fR
+\fISize\fR specifies the height for \fIwindow\fR in screen units
+(i.e. any of the forms accepted by \fBTk_GetPixels\fR).
+The height will be the outer dimension of \fIwindow\fR including its
+border, if any.
+If \fIsize\fR is an empty string, or if no \fB\-height\fR or
+\fB\-relheight\fR option is specified, then the height requested
+internally by the window will be used.
+.TP
+\fB\-in \fImaster\fR
+\fIMaster\fR specifies the path name of the window relative
+to which \fIwindow\fR is to be placed.
+\fIMaster\fR must either be \fIwindow\fR's parent or a descendant
+of \fIwindow\fR's parent.
+In addition, \fImaster\fR and \fIwindow\fR must both be descendants
+of the same top-level window.
+These restrictions are necessary to guarantee
+that \fIwindow\fR is visible whenever \fImaster\fR is visible.
+If this option is not specified then the master defaults to
+\fIwindow\fR's parent.
+.TP
+\fB\-relheight \fIsize\fR
+\fISize\fR specifies the height for \fIwindow\fR.
+In this case the height is specified as a floating-point number
+relative to the height of the master: 0.5 means \fIwindow\fR will
+be half as high as the master, 1.0 means \fIwindow\fR will have
+the same height as the master, and so on.
+If both \fB\-height\fR and \fB\-relheight\fR are specified for a slave,
+their values are summed.  For example, \fB\-relheight 1.0 \-height \-2\fR
+makes the slave 2 pixels shorter than the master.
+.TP
+\fB\-relwidth \fIsize\fR
+\fISize\fR specifies the width for \fIwindow\fR.
+In this case the width is specified as a floating-point number
+relative to the width of the master: 0.5 means \fIwindow\fR will
+be half as wide as the master, 1.0 means \fIwindow\fR will have
+the same width as the master, and so on.
+If both \fB\-width\fR and \fB\-relwidth\fR are specified for a slave,
+their values are summed.  For example, \fB\-relwidth 1.0 \-width 5\fR
+makes the slave 5 pixels wider than the master.
+.TP
+\fB\-relx \fIlocation\fR
+\fILocation\fR specifies the x-coordinate within the master window
+of the anchor point for \fIwindow\fR.
+In this case the location is specified in a relative fashion
+as a floating-point number:  0.0 corresponds to the left edge
+of the master and 1.0 corresponds to the right edge of the master.
+\fILocation\fR need not be in the range 0.0\-1.0.
+If both \fB\-x\fR and \fB\-relx\fR are specified for a slave
+then their values are summed.  For example, \fB\-relx 0.5 \-x \-2\fR
+positions the left edge of the slave 2 pixels to the left of the
+center of its master.
+.TP
+\fB\-rely \fIlocation\fR
+\fILocation\fR specifies the y-coordinate within the master window
+of the anchor point for \fIwindow\fR.
+In this case the value is specified in a relative fashion
+as a floating-point number:  0.0 corresponds to the top edge
+of the master and 1.0 corresponds to the bottom edge of the master.
+\fILocation\fR need not be in the range 0.0\-1.0.
+If both \fB\-y\fR and \fB\-rely\fR are specified for a slave
+then their values are summed.  For example, \fB\-rely 0.5 \-x 3\fR
+positions the top edge of the slave 3 pixels below the
+center of its master.
+.TP
+\fB\-width \fIsize\fR
+\fISize\fR specifies the width for \fIwindow\fR in screen units
+(i.e. any of the forms accepted by \fBTk_GetPixels\fR).
+The width will be the outer width of \fIwindow\fR including its
+border, if any.
+If \fIsize\fR is an empty string, or if no \fB\-width\fR
+or \fB\-relwidth\fR option is specified, then the width requested
+internally by the window will be used.
+.TP
+\fB\-x \fIlocation\fR
+\fILocation\fR specifies the x-coordinate within the master window
+of the anchor point for \fIwindow\fR.
+The location is specified in screen units (i.e. any of the forms
+accepted by \fBTk_GetPixels\fR) and need not lie within the bounds
+of the master window.
+.TP
+\fB\-y \fIlocation\fR
+\fILocation\fR specifies the y-coordinate within the master window
+of the anchor point for \fIwindow\fR.
+The location is specified in screen units (i.e. any of the forms
+accepted by \fBTk_GetPixels\fR) and need not lie within the bounds
+of the master window.
+.PP
+If the same value is specified separately with
+two different options, such as \fB\-x\fR and \fB\-relx\fR, then
+the most recent option is used and the older one is ignored.
+.RE
+.TP
+\fBplace forget \fIwindow\fR
+Causes the placer to stop managing the geometry of \fIwindow\fR.  As a
+side effect of this command \fIwindow\fR will be unmapped so that it
+does not appear on the screen.  If \fIwindow\fR is not currently managed
+by the placer then the command has no effect.  This command returns an
+empty string.
+.TP
+\fBplace info \fIwindow\fR
+Returns a list giving the current configuration of \fIwindow\fR.
+The list consists of \fIoption\-value\fR pairs in exactly the
+same form as might be specified to the \fBplace configure\fR
+command.
+.TP
+\fBplace slaves \fIwindow\fR
+Returns a list of all the slave windows for which \fIwindow\fR is the master.
+If there are no slaves for \fIwindow\fR then an empty string is returned.
+.PP
+If the configuration of a window has been retrieved with
+\fBplace info\fR, that configuration can be restored later by
+first using \fBplace forget\fR to erase any existing information
+for the window and then invoking \fBplace configure\fR with
+the saved information.
+.SH "FINE POINTS"
+.PP
+It is not necessary for the master window to be the parent
+of the slave window.
+This feature is useful in at least two situations.
+First, for complex window layouts it means you can create a
+hierarchy of subwindows whose only purpose
+is to assist in the layout of the parent.
+The
+.QW "real children"
+of the parent (i.e. the windows that
+are significant for the application's user interface) can be
+children of the parent yet be placed inside the windows
+of the geometry-management hierarchy.
+This means that the path names of the
+.QW "real children"
+do not reflect the geometry-management hierarchy and users
+can specify options for the real children
+without being aware of the structure of the geometry-management
+hierarchy.
+.PP
+A second reason for having a master different than the slave's
+parent is to tie two siblings together.
+For example, the placer can be used to force a window always to
+be positioned centered just below one of its
+siblings by specifying the configuration
+.CS
+\fB\-in \fIsibling\fB \-relx 0.5 \-rely 1.0 \-anchor n \-bordermode outside\fR
+.CE
+Whenever the sibling is repositioned in the future, the slave
+will be repositioned as well.
+.PP
+Unlike many other geometry managers (such as the packer)
+the placer does not make any attempt to manipulate the geometry of
+the master windows or the parents of slave windows (i.e. it does not
+set their requested sizes).
+To control the sizes of these windows, make them windows like
+frames and canvases that provide configuration options for this purpose.
+.SH EXAMPLE
+.PP
+Make the label occupy the middle bit of the toplevel, no matter how it
+is resized:
+.CS
+label .l \-text "In the\enMiddle!" \-bg black \-fg white
+\fBplace\fR .l \-relwidth .3 \-relx .35 \-relheight .3 \-rely .35
+.CE
+.SH "SEE ALSO"
+grid(n), pack(n)
+.SH KEYWORDS
+geometry manager, height, location, master, place, rubber sheet, slave, width
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,165 @@
+'\"
+'\" Copyright (c) 2003 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" Note that some of these functions do not seem to belong, but they
+'\" were all introduced with the same TIP (#139)
+'\" 
+.TH Tcl_Namespace 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_AppendExportList, Tcl_CreateNamespace, Tcl_DeleteNamespace, Tcl_Export, Tcl_FindCommand, Tcl_FindNamespace, Tcl_ForgetImport, Tcl_GetCurrentNamespace, Tcl_GetGlobalNamespace, Tcl_GetNamespaceUnknownHandler, Tcl_Import, Tcl_SetNamespaceUnknownHandler \- manipulate namespaces
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Namespace *
+\fBTcl_CreateNamespace\fR(\fIinterp, name, clientData, deleteProc\fR)
+.sp
+\fBTcl_DeleteNamespace\fR(\fInsPtr\fR)
+.sp
+int
+\fBTcl_AppendExportList\fR(\fIinterp, nsPtr, objPtr\fR)
+.sp
+int
+\fBTcl_Export\fR(\fIinterp, nsPtr, pattern, resetListFirst\fR)
+.sp
+int
+\fBTcl_Import\fR(\fIinterp, nsPtr, pattern, allowOverwrite\fR)
+.sp
+int
+\fBTcl_ForgetImport\fR(\fIinterp, nsPtr, pattern\fR)
+.sp
+Tcl_Namespace *
+\fBTcl_GetCurrentNamespace\fR(\fIinterp\fR)
+.sp
+Tcl_Namespace *
+\fBTcl_GetGlobalNamespace\fR(\fIinterp\fR)
+.sp
+Tcl_Namespace *
+\fBTcl_FindNamespace\fR(\fIinterp, name, contextNsPtr, flags\fR)
+.sp
+Tcl_Command
+\fBTcl_FindCommand\fR(\fIinterp, name, contextNsPtr, flags\fR)
+.sp
+Tcl_Obj *
+\fBTcl_GetNamespaceUnknownHandler(\fIinterp, nsPtr\fR)
+.sp
+int
+\fBTcl_SetNamespaceUnknownHandler(\fIinterp, nsPtr, handlerPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_NamespaceDeleteProc allowOverwrite in/out
+.AP Tcl_Interp *interp in/out
+The interpreter in which the namespace exists and where name lookups
+are performed. Also where error result messages are written.
+.AP "const char" *name in
+The name of the namespace or command to be created or accessed.
+.AP ClientData clientData in
+A context pointer by the creator of the namespace.  Not interpreted by
+Tcl at all.
+.AP Tcl_NamespaceDeleteProc *deleteProc in
+A pointer to function to call when the namespace is deleted, or NULL
+if no such callback is to be performed.
+.AP Tcl_Namespace *nsPtr in
+The namespace to be manipulated, or NULL (for other than
+\fBTcl_DeleteNamespace\fR) to manipulate the current namespace.
+.AP Tcl_Obj *objPtr out
+A reference to an unshared value to which the function output will be
+written.
+.AP "const char" *pattern in
+The glob-style pattern (see \fBTcl_StringMatch\fR) that describes the
+commands to be imported or exported.
+.AP int resetListFirst in
+Whether the list of export patterns should be reset before adding the
+current pattern to it.
+.AP int allowOverwrite in
+Whether new commands created by this import action can overwrite
+existing commands.
+.AP Tcl_Namespace *contextNsPtr in
+The location in the namespace hierarchy where the search for a
+namespace or command should be conducted relative to when the search
+term is not rooted at the global namespace.  NULL indicates the
+current namespace.
+.AP int flags in
+OR-ed combination of bits controlling how the search is to be
+performed.  The following flags are supported: \fBTCL_GLOBAL_ONLY\fR
+(indicates that the search is always to be conducted relative to the
+global namespace), \fBTCL_NAMESPACE_ONLY\fR (just for \fBTcl_FindCommand\fR;
+indicates that the search is always to be conducted relative to the
+context namespace), and \fBTCL_LEAVE_ERR_MSG\fR (indicates that an error
+message should be left in the interpreter if the search fails.)
+.AP Tcl_Obj *handlerPtr in
+A script fragment to be installed as the unknown command handler for the
+namespace, or NULL to reset the handler to its default.
+.BE
+.SH DESCRIPTION
+.PP
+Namespaces are hierarchic naming contexts that can contain commands
+and variables.  They also maintain a list of patterns that describes
+what commands are exported, and can import commands that have been
+exported by other namespaces.  Namespaces can also be manipulated
+through the Tcl command \fBnamespace\fR.
+.PP
+The \fITcl_Namespace\fR structure encapsulates a namespace, and is
+guaranteed to have the following fields in it: \fIname\fR (the local
+name of the namespace, with no namespace separator characters in it,
+with empty denoting the global namespace), \fIfullName\fR (the fully
+specified name of the namespace), \fIclientData\fR, \fIdeleteProc\fR
+(the values specified in the call to \fBTcl_CreateNamespace\fR), and
+\fIparentPtr\fR (a pointer to the containing namespace, or NULL for
+the global namespace.)
+.PP
+\fBTcl_CreateNamespace\fR creates a new namespace.  The
+\fIdeleteProc\fR will have the following type signature:
+.PP
+.CS
+typedef void \fBTcl_NamespaceDeleteProc\fR(
+        ClientData \fIclientData\fR);
+.CE
+.PP
+\fBTcl_DeleteNamespace\fR deletes a namespace, calling the
+\fIdeleteProc\fR defined for the namespace (if any).
+.PP
+\fBTcl_AppendExportList\fR retrieves the export patterns for a
+namespace given namespace and appends them (as list items) to
+\fIobjPtr\fR.
+.PP
+\fBTcl_Export\fR sets and appends to the export patterns for a
+namespace.  Patterns are appended unless the \fIresetListFirst\fR flag
+is true.
+.PP
+\fBTcl_Import\fR imports commands matching a pattern into a
+namespace.  Note that the pattern must include the name of the
+namespace to import from.  This function returns an error if
+an attempt to import a command over an existing command is made,
+unless the \fIallowOverwrite\fR flag has been set.
+.PP
+\fBTcl_ForgetImport\fR removes imports matching a pattern.
+.PP
+\fBTcl_GetCurrentNamespace\fR returns the current namespace for an
+interpreter.
+.PP
+\fBTcl_GetGlobalNamespace\fR returns the global namespace for an
+interpreter.
+.PP
+\fBTcl_FindNamespace\fR searches for a namespace named \fIname\fR
+within the context of the namespace \fIcontextNsPtr\fR.  If the
+namespace cannot be found, NULL is returned.
+.PP
+\fBTcl_FindCommand\fR searches for a command named \fIname\fR within
+the context of the namespace \fIcontextNsPtr\fR.  If the command
+cannot be found, NULL is returned.
+.PP
+\fBTcl_GetNamespaceUnknownHandler\fR returns the unknown command handler
+for the namespace, or NULL if none is set.
+.PP
+\fBTcl_SetNamespaceUnknownHandler\fR sets the unknown command handler for
+the namespace. If \fIhandlerPtr\fR is NULL, then the handler is reset to
+its default.
+.SH "SEE ALSO"
+Tcl_CreateCommand(3), Tcl_ListObjAppendList(3), Tcl_SetVar(3)
+.SH KEYWORDS
+namespace, command

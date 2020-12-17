@@ -1,0 +1,70 @@
+#
+# Tests for "local" command for creating objects local to a proc
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Test "local" to create objects that only exist within a proc
+# ----------------------------------------------------------------------
+test local-1.1 {define a class to use for testing} {
+    itcl::class test_local {
+        common status ""
+        constructor {} {
+            lappend status "created $this"
+        }
+        destructor {
+            lappend status "deleted $this"
+        }
+        proc clear {} {
+            set status ""
+        }
+        proc check {} {
+            return $status
+        }
+        proc test {} {
+            itcl::local test_local #auto
+            lappend status "processing"
+        }
+        proc test2 {} {
+            itcl::local test_local #auto
+            lappend status "call test..."
+            test
+            lappend status "...back"
+        }
+    }
+    test_local #auto
+} {test_local0}
+
+test local-1.2 {} {
+    test_local::clear
+    test_local::test
+    test_local::check
+} {{created ::test_local::test_local1} processing {deleted ::test_local::test_local1}}
+
+test local-1.3 {} {
+    test_local::clear
+    test_local::test2
+    test_local::check
+} {{created ::test_local::test_local2} {call test...} {created ::test_local::test_local3} processing {deleted ::test_local::test_local3} ...back {deleted ::test_local::test_local2}}
+
+test local-1.4 {} {
+    itcl::find objects -isa test_local
+} {test_local0}
+
+itcl::delete class test_local
+
+::tcltest::cleanupTests
+return

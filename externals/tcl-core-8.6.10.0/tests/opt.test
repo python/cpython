@@ -1,0 +1,245 @@
+# Package covered:  opt1.0/optparse.tcl
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# the package we are going to test
+package require opt 0.4.6
+
+# we are using implementation specifics to test the package
+
+
+#### functions tests #####
+
+set n $::tcl::OptDescN
+
+test opt-1.1 {OptKeyRegister / check that auto allocation is skipping existing keys} {
+    list [::tcl::OptKeyRegister {} $n] [::tcl::OptKeyRegister {} [expr $n+1]] [::tcl::OptKeyRegister {}]
+} "$n [expr $n+1] [expr $n+2]"
+
+test opt-2.1 {OptKeyDelete} {
+    list [::tcl::OptKeyRegister {} testkey] \
+	    [info exists ::tcl::OptDesc(testkey)] \
+	    [::tcl::OptKeyDelete testkey] \
+	    [info exists ::tcl::OptDesc(testkey)]
+} {testkey 1 {} 0}
+
+test opt-3.1 {OptParse / temp key is removed} {
+    set n $::tcl::OptDescN
+    set prev [array names ::tcl::OptDesc]
+    ::tcl::OptKeyRegister {} $n
+    list [info exists ::tcl::OptDesc($n)]\
+	    [::tcl::OptKeyDelete $n]\
+	    [::tcl::OptParse {{-foo}} {}]\
+	    [info exists ::tcl::OptDesc($n)]\
+	    [expr {"[lsort $prev]"=="[lsort [array names ::tcl::OptDesc]]"}]
+} {1 {} {} 0 1}
+test opt-3.2 {OptParse / temp key is removed even on errors} {
+    set n $::tcl::OptDescN
+    catch {::tcl::OptKeyDelete $n}
+    list [catch {::tcl::OptParse {{-foo}} {-blah}}] \
+	    [info exists ::tcl::OptDesc($n)]
+} {1 0}
+
+test opt-4.1 {OptProc} {
+    ::tcl::OptProc optTest {} {}
+    optTest
+    ::tcl::OptKeyDelete optTest
+} {}
+
+test opt-5.1 {OptProcArgGiven} {
+    ::tcl::OptProc optTest {{-foo}} {
+	if {[::tcl::OptProcArgGiven "-foo"]} {
+	    return 1
+	} else {
+	    return 0
+	}
+    }
+    list [optTest] [optTest -f] [optTest -F] [optTest -fOO]
+} {0 1 1 1}
+
+test opt-6.1 {OptKeyParse} {
+    ::tcl::OptKeyRegister {} test
+    list [catch {::tcl::OptKeyParse test {-help}} msg] $msg
+} {1 {Usage information:
+    Var/FlagName Type Value Help
+    ------------ ---- ----- ----
+    (-help                  gives this help)}}
+
+test opt-7.1 {OptCheckType} {
+    list \
+	    [::tcl::OptCheckType 23 int] \
+	    [::tcl::OptCheckType 23 float] \
+	    [::tcl::OptCheckType true boolean] \
+	    [::tcl::OptCheckType "-blah" any] \
+	    [::tcl::OptCheckType {a b c} list] \
+	    [::tcl::OptCheckType maYbe choice {yes maYbe no}] \
+	    [catch {::tcl::OptCheckType "-blah" string}] \
+	    [catch {::tcl::OptCheckType 6 boolean}] \
+	    [catch {::tcl::OptCheckType x float}] \
+	    [catch {::tcl::OptCheckType "a \{ c" list}] \
+	    [catch {::tcl::OptCheckType 2.3 int}] \
+	    [catch {::tcl::OptCheckType foo choice {x y Foo z}}]
+} {23 23.0 1 -blah {a b c} maYbe 1 1 1 1 1 1}
+
+test opt-8.1 {List utilities} {
+    ::tcl::Lempty {}
+} 1
+test opt-8.2 {List utilities} {
+    ::tcl::Lempty {a b c}
+} 0
+test opt-8.3 {List utilities} {
+    ::tcl::Lget {a {b c d} e} {1 2}
+} d
+test opt-8.4 {List utilities} {
+    set l {a {b c d e} f}
+    ::tcl::Lvarset l {1 2} D
+    set l
+} {a {b c D e} f}
+test opt-8.5 {List utilities} {
+    set l {a b c}
+    ::tcl::Lvarset1 l 6 X
+    set l
+} {a b c {} {} {} X}
+test opt-8.6 {List utilities} {
+    set l {a {b c 7 e} f}
+    ::tcl::Lvarincr l {1 2}
+    set l
+} {a {b c 8 e} f}
+test opt-8.7 {List utilities} {
+    set l {a {b c 7 e} f}
+    ::tcl::Lvarincr l {1 2} -9
+    set l
+} {a {b c -2 e} f}
+# 8.8 and 8.9 missing?
+test opt-8.10 {List utilities} {
+    set l {a {b c 7 e} f}
+    ::tcl::Lvarpop l
+    set l
+} {{b c 7 e} f}
+test opt-8.11 {List utilities} {
+    catch {unset x}
+    set l {a {b c 7 e} f}
+    list [::tcl::Lassign $l u v w x] \
+	    $u $v $w [info exists x]
+} {3 a {b c 7 e} f 0}
+
+test opt-9.1 {Misc utilities} {
+    catch {unset v}
+    ::tcl::SetMax v 3
+    ::tcl::SetMax v 7
+    ::tcl::SetMax v 6
+    set v
+} 7
+test opt-9.2 {Misc utilities} {
+    catch {unset v}
+    ::tcl::SetMin v 3
+    ::tcl::SetMin v -7
+    ::tcl::SetMin v 1
+    set v
+} -7
+
+#### behaviour tests #####
+
+test opt-10.1 {ambigous flags} {
+    ::tcl::OptProc optTest {{-fla} {-other} {-flag2xyz} {-flag3xyz}} {}
+    catch {optTest -fL} msg
+    set msg
+} {ambigous option "-fL", choose from:
+    -fla      boolflag (false)
+    -flag2xyz boolflag (false)
+    -flag3xyz boolflag (false)}
+test opt-10.2 {non ambigous flags} {
+    ::tcl::OptProc optTest {{-flag1xyz} {-other} {-flag2xyz} {-flag3xyz}} {
+	return $flag2xyz
+    }
+    optTest -fLaG2
+} 1
+test opt-10.3 {non ambigous flags because of exact match} {
+    ::tcl::OptProc optTest {{-flag1x} {-other} {-flag1} {-flag1xy}} {
+	return $flag1
+    }
+    optTest -flAg1
+} 1
+test opt-10.4 {ambigous flags, not exact match} {
+    ::tcl::OptProc optTest {{-flag1xy} {-other} {-flag1} {-flag1xyz}} {
+	return $flag1
+    }
+    catch {optTest -fLag1X} msg
+    set msg
+} {ambigous option "-fLag1X", choose from:
+    -flag1xy  boolflag (false)
+    -flag1xyz boolflag (false)}
+
+# medium size overall test example: (defined once)
+::tcl::OptProc optTest {
+    {cmd -choice {print save delete} "sub command to choose"}
+    {-allowBoing -boolean true}
+    {arg2 -string "this is help"}
+    {?arg3? 7 "optional number"}
+    {-moreflags}
+} {
+    list $cmd $allowBoing $arg2 $arg3 $moreflags
+}
+
+test opt-10.5 {medium size overall test} {
+    list [catch {optTest} msg] $msg
+} {1 {no value given for parameter "cmd" (use -help for full usage) :
+    cmd choice (print save delete) sub command to choose}}
+test opt-10.6 {medium size overall test} {
+    list [catch {optTest -help} msg] $msg
+} {1 {Usage information:
+    Var/FlagName Type     Value   Help
+    ------------ ----     -----   ----
+    (-help                        gives this help)
+    cmd          choice   (print save delete) sub command to choose
+    -allowBoing  boolean  (true)
+    arg2         string   ()      this is help
+    ?arg3?       int      (7)     optional number
+    -moreflags   boolflag (false)}}
+test opt-10.7 {medium size overall test} {
+    optTest save tst
+} {save 1 tst 7 0}
+test opt-10.8 {medium size overall test} {
+    optTest save -allowBoing false -- 8
+} {save 0 8 7 0}
+test opt-10.9 {medium size overall test} {
+    optTest save tst -m --
+} {save 1 tst 7 1}
+test opt-10.10 {medium size overall test} {
+    list [catch {optTest save tst foo} msg] [lindex [split $msg "\n"] 0]
+} {1 {too many arguments (unexpected argument(s): foo), usage:}}
+
+test opt-11.1 {too many args test 2} {
+    set key [::tcl::OptKeyRegister {-foo}]
+    list [catch {::tcl::OptKeyParse $key {-foo blah}} msg] $msg\
+	    [::tcl::OptKeyDelete $key]
+} {1 {too many arguments (unexpected argument(s): blah), usage:
+    Var/FlagName Type     Value   Help
+    ------------ ----     -----   ----
+    (-help                        gives this help)
+    -foo         boolflag (false)} {}}
+test opt-11.2 {default value for args} {
+    set args {}
+    set key [::tcl::OptKeyRegister {{args -list {a b c} "args..."}}]
+    ::tcl::OptKeyParse $key {}
+    ::tcl::OptKeyDelete $key
+    set args
+} {a b c}
+
+# cleanup
+::tcltest::cleanupTests
+return

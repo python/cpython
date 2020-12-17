@@ -1,0 +1,77 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH find n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::find \- search for classes and objects
+.SH SYNOPSIS
+\fBitcl::find \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBfind\fR command is used to find classes and objects
+that are available in the current interpreter.  Classes and objects
+are reported first in the active namespace, then in all other
+namespaces in the interpreter.
+.PP
+The \fIoption\fR argument determines what action is carried out
+by the command.  The legal \fIoptions\fR (which may be abbreviated)
+are:
+.TP
+\fBfind classes ?\fIpattern\fR?
+.
+Returns a list of [incr Tcl] classes.  Classes in the current
+namespace are listed first, followed by classes in all other
+namespaces in the interpreter.  If the optional \fIpattern\fR
+is specified, then the reported names are compared using the rules
+of the "\fBstring match\fR" command, and only matching names are
+reported.
+.RS
+.PP
+If a class resides in the current namespace context, this command
+reports its simple name--without any qualifiers.  However, if the
+\fIpattern\fR contains \fB::\fR qualifiers, or if the class resides
+in another context, this command reports its fully-qualified name.
+Therefore, you can use the following command to obtain a list where
+all names are fully-qualified:
+.PP
+.CS
+itcl::find classes ::*
+.CE
+.RE
+.TP
+\fBfind objects ?\fIpattern\fR? ?\fB-class \fIclassName\fR? ?\fB-isa \fIclassName\fR?
+.
+Returns a list of [incr Tcl] objects.  Objects in the current
+namespace are listed first, followed by objects in all other
+namespaces in the interpreter.  If the optional \fIpattern\fR is
+specified, then the reported names are compared using the rules
+of the "\fBstring match\fR" command, and only matching names are
+reported.
+If the optional "\fB-class\fR" parameter is specified, this list is
+restricted to objects whose most-specific class is \fIclassName\fR.
+If the optional "\fB-isa\fR" parameter is specified, this list is
+further restricted to objects having the given \fIclassName\fR
+anywhere in their heritage.
+.RS
+.PP
+If an object resides in the current namespace context, this command
+reports its simple name--without any qualifiers.  However, if the
+\fIpattern\fR contains \fB::\fR qualifiers, or if the object resides
+in another context, this command reports its fully-qualified name.
+Therefore, you can use the following command to obtain a list where
+all names are fully-qualified:
+.PP
+.CS
+itcl::find objects ::*
+.CE
+.RE
+.SH KEYWORDS
+class, object, search, import

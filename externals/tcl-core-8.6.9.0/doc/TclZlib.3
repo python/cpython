@@ -1,0 +1,276 @@
+'\"
+'\" Copyright (c) 2008 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH TclZlib 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_ZlibAdler32, Tcl_ZlibCRC32, Tcl_ZlibDeflate, Tcl_ZlibInflate, Tcl_ZlibStreamChecksum, Tcl_ZlibStreamClose, Tcl_ZlibStreamEof, Tcl_ZlibStreamGet, Tcl_ZlibStreamGetCommandName, Tcl_ZlibStreamInit, Tcl_ZlibStreamPut \- compression and decompression functions
+.SH SYNOPSIS
+.nf
+#include <tcl.h>
+.sp
+int
+\fBTcl_ZlibDeflate\fR(\fIinterp, format, dataObj, level, dictObj\fR)
+.sp
+int
+\fBTcl_ZlibInflate\fR(\fIinterp, format, dataObj, dictObj\fR)
+.sp
+unsigned int
+\fBTcl_ZlibCRC32\fR(\fIinitValue, bytes, length\fR)
+.sp
+unsigned int
+\fBTcl_ZlibAdler32\fR(\fIinitValue, bytes, length\fR)
+.sp
+int
+\fBTcl_ZlibStreamInit\fR(\fIinterp, mode, format, level, dictObj, zshandlePtr\fR)
+.sp
+Tcl_Obj *
+\fBTcl_ZlibStreamGetCommandName\fR(\fIzshandle\fR)
+.sp
+int
+\fBTcl_ZlibStreamEof\fR(\fIzshandle\fR)
+.sp
+int
+\fBTcl_ZlibStreamClose\fR(\fIzshandle\fR)
+.sp
+int
+\fBTcl_ZlibStreamReset\fR(\fIzshandle\fR)
+.sp
+int
+\fBTcl_ZlibStreamChecksum\fR(\fIzshandle\fR)
+.sp
+int
+\fBTcl_ZlibStreamPut\fR(\fIzshandle, dataObj, flush\fR)
+.sp
+int
+\fBTcl_ZlibStreamGet\fR(\fIzshandle, dataObj, count\fR)
+.sp
+\fBTcl_ZlibStreamSetCompressionDictionary\fR(\fIzshandle, compDict\fR)
+.fi
+.SH ARGUMENTS
+.AS Tcl_ZlibStream zshandle in
+.AP Tcl_Interp *interp in
+The interpreter to store resulting compressed or uncompressed data in. Also
+where any error messages are written. For \fBTcl_ZlibStreamInit\fR, this can
+be NULL to create a stream that is not bound to a command.
+.AP int format in
+What format of compressed data to work with. Must be one of
+\fBTCL_ZLIB_FORMAT_ZLIB\fR for zlib-format data, \fBTCL_ZLIB_FORMAT_GZIP\fR
+for gzip-format data, or \fBTCL_ZLIB_FORMAT_RAW\fR for raw compressed data. In
+addition, for decompression only, \fBTCL_ZLIB_FORMAT_AUTO\fR may also be
+chosen which can automatically detect whether the compressed data was in zlib
+or gzip format.
+.AP Tcl_Obj *dataObj in/out
+A byte-array value containing the data to be compressed or decompressed, or
+to which the data extracted from the stream is appended when passed to
+\fBTcl_ZlibStreamGet\fR.
+.AP int level in
+What level of compression to use. Should be a number from 0 to 9 or one of the
+following: \fBTCL_ZLIB_COMPRESS_NONE\fR for no compression,
+\fBTCL_ZLIB_COMPRESS_FAST\fR for fast but inefficient compression,
+\fBTCL_ZLIB_COMPRESS_BEST\fR for slow but maximal compression, or
+\fBTCL_ZLIB_COMPRESS_DEFAULT\fR for the level recommended by the zlib library.
+.AP Tcl_Obj *dictObj in/out
+A dictionary that contains, or which will be updated to contain, a description
+of the gzip header associated with the compressed data. Only useful when the
+\fIformat\fR is \fBTCL_ZLIB_FORMAT_GZIP\fR or \fBTCL_ZLIB_FORMAT_AUTO\fR. If
+a NULL is passed, a default header will be used on compression and the header
+will be ignored (apart from integrity checks) on decompression. See the
+section \fBGZIP OPTIONS DICTIONARY\fR for details about the contents of this
+dictionary.
+.AP "unsigned int" initValue in
+The initial value for the checksum algorithm.
+.AP "unsigned char" *bytes in
+An array of bytes to run the checksum algorithm over, or NULL to get the
+recommended initial value for the checksum algorithm.
+.AP int length in
+The number of bytes in the array.
+.AP int mode in
+What mode to operate the stream in. Should be either
+\fBTCL_ZLIB_STREAM_DEFLATE\fR for a compressing stream or
+\fBTCL_ZLIB_STREAM_INFLATE\fR for a decompressing stream.
+.AP Tcl_ZlibStream *zshandlePtr out
+A pointer to a variable in which to write the abstract token for the stream
+upon successful creation.
+.AP Tcl_ZlibStream zshandle in
+The abstract token for the stream to operate on.
+.AP int flush in
+Whether and how to flush the stream after writing the data to it. Must be one
+of: \fBTCL_ZLIB_NO_FLUSH\fR if no flushing is to be done, \fBTCL_ZLIB_FLUSH\fR
+if the currently compressed data must be made available for access using
+\fBTcl_ZlibStreamGet\fR, \fBTCL_ZLIB_FULLFLUSH\fR if the stream must be put
+into a state where the decompressor can recover from on corruption, or
+\fBTCL_ZLIB_FINALIZE\fR to ensure that the stream is finished and that any
+trailer demanded by the format is written.
+.AP int count in
+The maximum number of bytes to get from the stream, or -1 to get all remaining
+bytes from the stream's buffers.
+.AP Tcl_Obj *compDict in
+A byte array value that is the compression dictionary to use with the stream.
+Note that this is \fInot a Tcl dictionary\fR, and it is recommended that this
+only ever be used with streams that were created with their \fIformat\fR set
+to \fBTCL_ZLIB_FORMAT_ZLIB\fR because the other formats have no mechanism to
+indicate whether a compression dictionary was present other than to fail on
+decompression.
+.BE
+.SH DESCRIPTION
+These functions form the interface from the Tcl library to the Zlib
+library by Jean-loup Gailly and Mark Adler.
+.PP
+\fBTcl_ZlibDeflate\fR and \fBTcl_ZlibInflate\fR respectively compress and
+decompress the data contained in the \fIdataObj\fR argument, according to the
+\fIformat\fR and, for compression, \fIlevel\fR arguments. The dictionary in
+the \fIdictObj\fR parameter is used to convey additional header information
+about the compressed data when the compression format supports it; currently,
+the dictionary is only used when the \fIformat\fR parameter is
+\fBTCL_ZLIB_FORMAT_GZIP\fR or \fBTCL_ZLIB_FORMAT_AUTO\fR. For details of the
+contents of the dictionary, see the \fBGZIP OPTIONS DICTIONARY\fR section
+below. Upon success, both functions leave the resulting compressed or
+decompressed data in a byte-array value that is the Tcl interpreter's result;
+the returned value is a standard Tcl result code.
+.PP
+\fBTcl_ZlibAdler32\fR and \fBTcl_ZlibCRC32\fR compute checksums on arrays of
+bytes, returning the computed checksum. Checksums are computed incrementally,
+allowing data to be processed one block at a time, but this requires the
+caller to maintain the current checksum and pass it in as the \fIinitValue\fR
+parameter; the initial value to use for this can be obtained by using NULL for
+the \fIbytes\fR parameter instead of a pointer to the array of bytes to
+compute the checksum over. Thus, typical usage in the single data block case
+is like this:
+.PP
+.CS
+checksum = \fBTcl_ZlibCRC32\fR(\fBTcl_ZlibCRC32\fR(0,NULL,0), data, length);
+.CE
+.PP
+Note that the Adler-32 algorithm is not a real checksum, but instead is a
+related type of hash that works best on longer data.
+.SS "ZLIB STREAMS"
+.PP
+\fBTcl_ZlibStreamInit\fR creates a compressing or decompressing stream that is
+linked to a Tcl command, according to its arguments, and provides an abstract
+token for the stream and returns a normal Tcl result code;
+\fBTcl_ZlibStreamGetCommandName\fR returns the name of that command given the
+stream token, or NULL if the stream has no command. Streams are not designed
+to be thread-safe; each stream should only ever be used from the thread that
+created it. When working with gzip streams, a dictionary (fields as given in
+the \fBGZIP OPTIONS DICTIONARY\fR section below) can be given via the
+\fIdictObj\fR parameter that on compression allows control over the generated
+headers, and on decompression allows discovery of the existing headers. Note
+that the dictionary will be written to on decompression once sufficient data
+has been read to have a complete header. This means that the dictionary must
+be an unshared value in that case; a blank value created with
+\fBTcl_NewObj\fR is suggested.
+.PP
+Once a stream has been constructed, \fBTcl_ZlibStreamPut\fR is used to add
+data to the stream and \fBTcl_ZlibStreamGet\fR is used to retrieve data from
+the stream after processing. Both return normal Tcl result codes and leave an
+error message in the result of the interpreter that the stream is registered
+with in the error case (if such a registration has been performed). With
+\fBTcl_ZlibStreamPut\fR, the data buffer value passed to it should not be
+modified afterwards. With \fBTcl_ZlibStreamGet\fR, the data buffer value
+passed to it will have the data bytes appended to it. Internally to the
+stream, data is kept compressed so as to minimize the cost of buffer space.
+.PP
+\fBTcl_ZlibStreamChecksum\fR returns the checksum computed over the
+uncompressed data according to the format, and \fBTcl_ZlibStreamEof\fR returns
+a boolean value indicating whether the end of the uncompressed data has been
+reached.
+.PP
+\fBTcl_ZlibStreamSetCompressionDictionary\fR is used to control the
+compression dictionary used with the stream, a compression dictionary being an
+array of bytes (such as might be created with \fBTcl_NewByteArrayObj\fR) that
+is used to initialize the compression engine rather than leaving it to create
+it on the fly from the data being compressed. Setting a compression dictionary
+allows for more efficient compression in the case where the start of the data
+is highly regular, but it does require both the compressor and the
+decompressor to agreee on the value to use. Compression dictionaries are only
+fully supported for zlib-format data; on compression, they must be set before
+any data is sent in with \fBTcl_ZlibStreamPut\fR, and on decompression they
+should be set when \fBTcl_ZlibStreamGet\fR produces an \fBerror\fR with its
+\fB\-errorcode\fR set to
+.QW "\fBZLIB NEED_DICT\fI code\fR" ;
+the \fIcode\fR will be the Adler-32 checksum (see \fBTcl_ZlibAdler32\fR) of
+the compression dictionary sought. (Note that this is only true for
+zlib-format streams; gzip streams ignore compression dictionaries as the
+format specification doesn't permit them, and raw streams just produce a data
+error if the compression dictionary is missing or incorrect.)
+.PP
+If you wish to clear a stream and reuse it for a new compression or
+decompression action, \fBTcl_ZlibStreamReset\fR will do this and return a
+normal Tcl result code to indicate whether it was successful; if the stream is
+registered with an interpreter, an error message will be left in the
+interpreter result when this function returns TCL_ERROR.
+Finally, \fBTcl_ZlibStreamClose\fR will clean up the stream and delete the
+associated command: using \fBTcl_DeleteCommand\fR on the stream's command is
+equivalent (when such a command exists).
+.SH "GZIP OPTIONS DICTIONARY"
+.PP
+The \fIdictObj\fR parameter to \fBTcl_ZlibDeflate\fR, \fBTcl_ZlibInflate\fR
+and \fBTcl_ZlibStreamInit\fR is used to pass a dictionary of options about
+that is used to describe the gzip header in the compressed data. When creating
+compressed data, the dictionary is read and when unpacking compressed data the
+dictionary is written (in which case the \fIdictObj\fR parameter must refer to
+an unshared dictionary value).
+.PP
+The following fields in the dictionary value are understood. All other fields
+are ignored. No field is required when creating a gzip-format stream.
+.TP
+\fBcomment\fR
+.
+This holds the comment field of the header, if present. If absent, no comment
+was supplied (on decompression) or will be created (on compression).
+.TP
+\fBcrc\fR
+.
+A boolean value describing whether a CRC of the header is computed. Note that
+the \fBgzip\fR program does \fInot\fR use or allow a CRC on the header.
+.TP
+\fBfilename\fR
+.
+The name of the file that held the uncompressed data. This should not contain
+any directory separators, and should be sanitized before use on decompression
+with \fBfile tail\fR.
+.TP
+\fBos\fR
+.
+The operating system type code field from the header (if not the
+.QW unknown
+value). See RFC 1952 for the meaning of these codes. On compression, if this
+is absent then the field will be set to the
+.QW unknown
+value.
+.TP
+\fBsize\fR
+.
+The size of the uncompressed data. This is ignored on compression; the size
+of the data compressed depends on how much data is supplied to the
+compression engine.
+.TP
+\fBtime\fR
+.
+The time field from the header if non-zero, expected to be the time that the
+file named by the \fBfilename\fR field was modified. Suitable for use with
+\fBclock format\fR. On creation, the right value to use is that from
+\fBclock seconds\fR or \fBfile mtime\fR.
+.TP
+\fBtype\fR
+.
+The type of the uncompressed data (either \fBbinary\fR or \fBtext\fR) if
+known.
+.SH "PORTABILITY NOTES"
+These functions will fail gracefully if Tcl is not linked with the zlib
+library.
+.SH "SEE ALSO"
+Tcl_NewByteArrayObj(3), zlib(n)
+'\"Tcl_StackChannel(3)
+.SH "KEYWORDS"
+compress, decompress, deflate, gzip, inflate
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

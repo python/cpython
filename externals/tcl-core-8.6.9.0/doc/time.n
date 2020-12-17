@@ -1,0 +1,47 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH time n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+time \- Time the execution of a script
+.SH SYNOPSIS
+\fBtime \fIscript\fR ?\fIcount\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command will call the Tcl interpreter \fIcount\fR
+times to evaluate \fIscript\fR (or once if \fIcount\fR is not
+specified).  It will then return a string of the form
+.PP
+.CS
+\fB503.2 microseconds per iteration\fR
+.CE
+.PP
+which indicates the average amount of time required per iteration,
+in microseconds.
+Time is measured in elapsed time, not CPU time.
+.SH EXAMPLE
+Estimate how long it takes for a simple Tcl \fBfor\fR loop to count to
+a thousand:
+.PP
+.CS
+time {
+    for {set i 0} {$i<1000} {incr i} {
+        # empty body
+    }
+}
+.CE
+.SH "SEE ALSO"
+clock(n)
+.SH KEYWORDS
+script, time
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

@@ -1,0 +1,31 @@
+# Commands covered:  pwd
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test pwd-1.1 {simple pwd} {
+    catch pwd
+} 0
+test pwd-1.2 {simple pwd} {
+    expr [string length pwd]>0
+} 1
+test pwd-1.3 {pwd takes no args} -body {
+    pwd foobar
+} -returnCodes error -result "wrong \# args: should be \"pwd\""
+
+# cleanup
+::tcltest::cleanupTests
+return

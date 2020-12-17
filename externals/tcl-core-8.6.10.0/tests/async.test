@@ -1,0 +1,235 @@
+# Commands covered:  none
+#
+# This file contains a collection of tests for Tcl_AsyncCreate and related
+# library procedures.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testasync [llength [info commands testasync]]
+testConstraint threaded [::tcl::pkgconfig get threaded]
+testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+
+proc async1 {result code} {
+    global aresult acode
+    set aresult $result
+    set acode $code
+    return "new result"
+}
+proc async2 {result code} {
+    global aresult acode
+    set aresult $result
+    set acode $code
+    return -code error "xyzzy"
+}
+proc async3 {result code} {
+    global aresult
+    set aresult "test pattern"
+    return -code $code $result
+}
+proc \# {result code} {
+    global aresult acode
+    set aresult $result
+    set acode $code
+    return "comment quoting"
+}
+
+if {[testConstraint testasync]} {
+    set handler1 [testasync create async1]
+    set handler2 [testasync create async2]
+    set handler3 [testasync create async3]
+    set handler4 [testasync create \#]
+}
+test async-1.1 {basic async handlers} testasync {
+    set aresult xxx
+    set acode yyy
+    list [catch {testasync mark $handler1 "original" 0} msg] $msg \
+	   $acode $aresult
+} {0 {new result} 0 original}
+test async-1.2 {basic async handlers} testasync {
+    set aresult xxx
+    set acode yyy
+    list [catch {testasync mark $handler1 "original" 1} msg] $msg \
+	   $acode $aresult
+} {0 {new result} 1 original}
+test async-1.3 {basic async handlers} testasync {
+    set aresult xxx
+    set acode yyy
+    list [catch {testasync mark $handler2 "old" 0} msg] $msg \
+	   $acode $aresult
+} {1 xyzzy 0 old}
+test async-1.4 {basic async handlers} testasync {
+    set aresult xxx
+    set acode yyy
+    list [catch {testasync mark $handler2 "old" 3} msg] $msg \
+	   $acode $aresult
+} {1 xyzzy 3 old}
+test async-1.5 {basic async handlers} testasync {
+    set aresult xxx
+    list [catch {testasync mark $handler3 "foobar" 0} msg] $msg $aresult
+} {0 foobar {test pattern}}
+test async-1.6 {basic async handlers} testasync {
+    set aresult xxx
+    list [catch {testasync mark $handler3 "foobar" 1} msg] $msg $aresult
+} {1 foobar {test pattern}}
+test async-1.7 {basic async handlers} testasync {
+    set aresult xxx
+    set acode yyy
+    list [catch {testasync mark $handler4 "original" 0} msg] $msg \
+	   $acode $aresult
+} {0 {comment quoting} 0 original}
+
+proc mult1 {result code} {
+    global x
+    lappend x mult1
+    return -code 7 mult1
+}
+proc mult2 {result code} {
+    global x
+    lappend x mult2
+    return -code 9 mult2
+}
+proc mult3 {result code} {
+    global x hm1 hm2
+    lappend x [catch {testasync mark $hm2 serial2 0}]
+    lappend x [catch {testasync mark $hm1 serial1 0}]
+    lappend x mult3
+    return -code 11 mult3
+}
+if {[testConstraint testasync]} {
+    set hm1 [testasync create mult1]
+    set hm2 [testasync create mult2]
+    set hm3 [testasync create mult3]
+}
+test async-2.1 {multiple handlers} testasync {
+    set x {}
+    list [catch {testasync mark $hm3 "foobar" 5} msg] $msg $x
+} {9 mult2 {0 0 mult3 mult1 mult2}}
+
+proc del1 {result code} {
+    global x hm1 hm2 hm3 hm4
+    lappend x [catch {testasync mark $hm3 serial2 0}]
+    lappend x [catch {testasync mark $hm1 serial1 0}]
+    lappend x [catch {testasync mark $hm4 serial1 0}]
+    testasync delete $hm1
+    testasync delete $hm2
+    testasync delete $hm3
+    lappend x del1
+    return -code 13 del1
+}
+proc del2 {result code} {
+    global x
+    lappend x del2
+    return -code 3 del2
+}
+if {[testConstraint testasync]} {
+    testasync delete $handler1
+    testasync delete $hm2
+    testasync delete $hm3
+    set hm2 [testasync create del1]
+    set hm3 [testasync create mult2]
+    set hm4 [testasync create del2]
+}
+
+test async-3.1 {deleting handlers} testasync {
+    set x {}
+    list [catch {testasync mark $hm2 "foobar" 5} msg] $msg $x
+} {3 del2 {0 0 0 del1 del2}}
+
+test async-4.1 {async interrupting bytecode sequence} -constraints {
+    testasync threaded
+} -setup {
+    set hm [testasync create async3]
+    proc nothing {} {
+	# empty proc
+    }
+} -body {
+    apply {{handle} {
+    global aresult
+    set aresult {Async event not delivered}
+    testasync marklater $handle
+    # allow plenty of time to pass in case valgrind is running
+    set start [clock seconds]
+    while {
+	[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+    } {
+	# be less busy
+	after 100
+	nothing
+    }
+	return $aresult
+    }} $hm
+} -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
+    testasync delete $hm
+}
+test async-4.2 {async interrupting straight bytecode sequence} -constraints {
+    testasync threaded
+} -setup {
+    set hm [testasync create async3]
+} -body {
+    apply {{handle} {
+	global aresult
+	set aresult {Async event not delivered}
+	testasync marklater $handle
+	# allow plenty of time to pass in case valgrind is running
+	set start [clock seconds]
+	while {
+		[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+	} {
+		# be less busy
+	    after 100
+	}
+	return $aresult
+    }} $hm
+} -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
+    testasync delete $hm
+}
+test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
+    testasync threaded knownMsvcBug
+} -setup {
+    set hm [testasync create async3]
+} -body {
+    apply [list {handle} [concat {
+	global aresult
+	set aresult {Async event not delivered}
+	testasync marklater $handle
+	set i 0
+    } "[string repeat {;incr i;} 1500000]after 10;" {
+	return $aresult
+    }]] $hm
+} -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
+    testasync delete $hm
+}
+
+# cleanup
+if {[testConstraint testasync]} {
+    testasync delete
+}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

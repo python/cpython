@@ -1,0 +1,583 @@
+'\"
+'\" $Id: tixTList.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixTList n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixTList \- Create and manipulate Tix Tabular List widgets
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixTList \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SO
+'\"
+\-background	\-borderWidth	\-cursor	\-foreground
+\-font	\-height	\-highlightColor \-highlightThickness	
+\-relief	\-selectBackground	\-selectForeground
+\-xScrollCommand	\-yScrollCommand	\-width
+.SE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-browsecmd browsecmd BrowseCmd
+Specifies a TCL command to be executed when the user browses through the
+entries in the TList widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies the TCL command to be executed when the user invokes a list
+entry in the TList widget. Normally the user invokes a list
+entry by double-clicking it or pressing the Return key.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP -foreground foreground Foreground
+Specifies the default foreground color for the list entries.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-height height Height
+Specifies the desired height for the window in number of characters.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-itemtype itemType ItemType
+Specifies the default type of display item for this TList widget. When
+you call the \fBinsert\fR widget commands, display items of this
+type will be created if the \fB\-itemtype\fR option is not specified .
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-orient orient Orient
+Specifies the order of tabularizing the list entries. When set to
+"\fBvertical\fR", the entries are arranged in a column, from top to
+bottom. If the entries cannot be contained in one column, the
+remaining entries will go to the next column, and so on. When set to
+"\fBhorizontal\fR", the entries are arranged in a row, from left to
+right. If the entries cannot be contained in one row, the remaining
+entries will go to the next row, and so on.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-padx padX Pad
+The default horizontal padding for list entries.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-padx padY Pad
+The default vertical padding for list entries.
+'\"----------END
+'\"----------BEGIN
+.OP \-selectbackground selectBackground SelectBackground
+Specifies the background color for the selected list entries.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selectborderwidth selectBorderWidth BorderWidth
+Specifies a non-negative value indicating the width of the 3-D border
+to draw around selected items.  The value may have any of the forms
+acceptable to \fBTk_GetPixels\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selectforeground selectForeground SelectForeground
+Specifies the foreground color for the selected list entries.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-selectmode selectMode SelectMode
+Specifies one of several styles for manipulating the selection.  The
+value of the option may be arbitrary, but the default bindings expect
+it to be either \fBsingle\fR, \fBbrowse\fR, \fBmultiple\fR, or
+\fBextended\fR; the default value is \fBsingle\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-sizecmd sizeCmd SizeCmd
+Specifies a TCL script to be called whenever the TList widget
+changes its size. This command can be useful to implement "user scroll
+bars when needed" features.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies whether the TList command should react to user actions. When
+set to "\fBnormal\fR", the TList reacts to user actions in the normal
+way. When set to "\fBdisabled\fR", the TList can only be scrolled, but
+its entries cannot be selected or activated.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-width width Width
+Specifies the desired width for the window in characters.
+'\"----------END
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixTList\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a TList widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+TList widget such as its cursor and relief.
+'\"
+.PP
+The TList widget can be used to display data in a tabular format. The
+list entries of a TList widget are similar to the entries in the Tk
+listbox widget. The main differences are (1) the TList widget can
+display the list entries in a two dimensional format and (2) you can
+use graphical images as well as multiple colors and fonts for 
+the list entries.
+'\"
+.PP
+Each list entry is identified by an \fBindex\fR, which can be in the
+following forms:
+.RS
+.TP
+\fInumber\fR
+'\"
+An integer that indicates the position of the entry in the list. 0
+means the first position, 1 means the second position, and so on.
+'\"
+.TP
+\fBend\fR
+'\"
+Indicates the end of the listbox. For some commands this means just
+after the last entry; for other commands it means the last entry.
+'\"
+.TP
+\fB@\fR\fIx\fR,\fIy\fR
+'\"
+Indicates the element that covers the point in the listbox window
+specified by x and y (in pixel coordinates). If no element covers that
+point, then the closest element to that point is used.
+'\"
+.RE
+'\"
+.SH "DISPLAY ITEMS"
+.PP
+Each list entry in an TList widget is associated with a \fBdisplay
+item\fR.  The display item determines what visual information should
+be displayed for this list entry. Please see the \fBtixDisplayStyle\fR manual
+page for a list of all display items.
+'\"
+.PP
+When a list entry is created by the \fBinsert\fR command, the type of
+its display item is determined by the \fB\-itemtype\fR option passed
+to these commands. If the \fB\-itemtype\fR is omitted, then by default
+the type specified by this TList widget's \fB\-itemtype\fR option is
+used.
+'\"----------------------------------------------------------------------
+.SH "WIDGET COMMAND"
+.PP
+'\"
+The \fBtixTList\fR command creates a new Tcl command whose name is the
+same as the path name of the TList widget's window.  This command
+may be used to invoke various operations on the widget.  It has the
+following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as
+the TList widget's path name.  \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for TList widgets:
+'\"
+.TP
+\fIpathName \fBanchor set \fIindex\fR
+'\"
+Sets the anchor to the list entry identified by \fIindex\fR. The
+anchor is the end of the selection that is fixed while dragging out a
+selection with the mouse.
+'\"
+.TP
+\fIpathName \fBanchor clear\fR
+'\"
+Removes the anchor, if any, from this TList widget. This only removes
+the surrounding highlights of the anchor entry and does not affect its
+selection status.
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixTList\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixTList\fR command.
+'\"
+.TP
+\fIpathName \fBdelete\fR \fIfrom\fR ?\fIto\fR?
+Deletes one or more list entries between the two entries specified by
+the indices \fIfrom\fR and \fIto\fR. If \fIto\fR is not specified, deletes
+the single entry specified by \fIfrom\fR.
+'\"
+.TP
+\fIpathName \fBdragsite set \fIindex\fR
+'\"
+Sets the dragsite to the list entry identified by
+\fIindex\fR. The dragsite is used to indicate the source of a
+drag-and-drop action. Currently drag-and-drop functionality has not
+been implemented in Tix yet.
+'\"
+.TP
+\fIpathName \fBdragsite clear\fR
+Remove the dragsite, if any, from the this TList widget. This only
+removes the surrounding highlights of the dragsite entry and does not
+affect its selection status.
+'\"
+'\"
+.TP
+\fIpathName \fBdropsite set \fIindex\fR
+'\"
+Sets the dropsite to the list entry identified by \fIindex\fR. The
+dropsite is used to indicate the target of a grag-and-drop
+action. Currently drag-and-drop functionality has not been implemented
+in Tix yet.
+'\"
+.TP
+\fIpathName \fBdropsite clear\fR
+'\"
+Remove the dropsite, if any, from the this TList widget. This only
+removes the surrounding highlights of the dropsite entry and does not
+affect its selection status.
+'\"
+.TP
+\fIpathName \fBentrycget\fR \fIindex option\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR for the entry indentfied by \fIindex\fR. \fIOption\fR may
+have any of the values accepted by the \fBinsert\fR widget command.
+'\"
+.TP
+\fIpathName \fBentryconfigure\fI index \fR?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the list entry indentfied
+by \fIindex\fR. If no \fIoption\fR is specified, returns a list
+describing all of the available options for \fIindex\fR (see
+\fBTk_ConfigureInfo\fR for information on the format of this list). If
+\fIoption\fR is specified with no \fIvalue\fR, then the command
+returns a list describing the one named option (this list will be
+identical to the corresponding sublist of the value returned if no
+\fIoption\fR is specified). If one or more \fIoption\-value\fR pairs
+are specified, then the command modifies the given option(s) to have
+the given value(s); in this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBinsert\fR
+widget command. The exact set of options depends on the
+value of the \fB\-itemtype\fR option passed to the the \fBinsert\fR
+widget command when this list entry is created.
+'\"
+.TP
+\fIpathName \fBinsert\fI index \fR?\fIoption value ...\fR?
+'\"
+Creates a new list entry at the position indicated by \fIindex\fR. The
+following configuration options can be given to configure the list
+entry:
+'\"
+.RS
+'\"
+.TP
+\fB\-itemtype\fI type\fR
+'\"
+Specifies the type of display item to be display for the new list
+entry. \fItype\fR must be a valid display item type. Currently the
+available display item types are \fBimage\fR, \fBimagetext\fR,
+\fBtext\fR, and \fBwindow\fR. If this option is not specified, then by
+default the type specified by this TList widget's \fB\-itemtype\fR
+option is used.
+'\"
+.TP
+\fB\-state\fR
+'\"
+Specifies whether this entry can be selected or invoked by the user.
+Must be either \fBnormal\fR or \fBdisabled\fR.
+'\"
+.RE
+'\"
+The \fBinsert\fR widget command accepts additional configuration options
+to configure the display item associated with this list entry. The set
+of additional configuration options depends on the type of the display
+item given by the \fB\-itemtype\fR option. Please see the
+\fBtixDisplayStyle\fR manual page for a list of the configuration options for
+each of the display item types.
+'\"
+.TP
+\fIpathName \fBinfo \fIoption\fR \fIarg ...\fR
+'\"
+Query information about the TList widget. \fIoption\fR can be one
+of the following:
+.RS
+.TP
+\fIpathName \fBinfo anchor\fR \fIindex\fR
+;
+Returns the index of the current anchor, if any, of the TList
+widget. If the anchor is not set, returns the empty string.
+'\"
+.TP
+\fIpathName \fBinfo dragsite\fR \fIindex\fR
+Returns the index of the current dragsite, if any, of the TList
+widget. If the dragsite is not set, returns the empty string.
+'\"
+.TP
+\fIpathName \fBinfo dropsite\fR \fIindex\fR
+Returns the index of the current dropsite, if any, of the TList
+widget. If the dropsite is not set, returns the empty string.
+'\"
+.TP
+\fIpathName \fBinfo selection\fR
+'\"
+Returns a list of selected elements in the TList widget. If no entries
+are selectd, returns an empty string.
+.RE
+'\"
+.TP
+\fIpathName \fBnearest \fIx y\fR
+'\"
+Given an (x,y) coordinate within the TList window, this command
+returns the index of the TList element nearest to that coordinate.
+'\"
+'\"
+.TP
+\fIpathName \fBsee \fIindex\fR
+'\"
+Adjust the view in the TList so that the entry given by \fIindex\fR is
+visible. If the entry is already visible then the command has no
+effect; if the entry is near one edge of the window then the TList
+scrolls to bring the element into view at the edge; otherwise the
+TList widget scrolls to center the entry.
+'\"
+.TP
+\fIpathName \fBselection \fIoption\fR \fIarg ...\fR
+'\"
+This command is used to adjust the selection within a TList widget. It
+has several forms, depending on \fIoption\fR:
+.RS
+'\"
+.TP
+\fIpathName \fBselection clear \fR?\fIfrom\fR? ?\fIto\fR?
+'\"
+When no extra arguments are given, deselects all of the list entrie(s)
+in this TList widget. When only \fIfrom\fR is given, only the list
+entry identified by \fIfrom\fR is deselected. When both \fIfrom\fR and
+\fIto\fR are given, deselects all of the list entrie(s) between
+between \fIfrom\fR and \fIto\fR, inclusive, without affecting the
+selection state of entries outside that range.
+'\"
+.TP
+\fIpathName \fBselection includes \fIindex\fR
+'\"
+Returns 1 if the list entry indicated by \fIindex\fR is currently
+selected; returns 0 otherwise.
+'\"
+.TP
+\fIpathName \fBselection set \fIfrom\fR ?\fIto\fR?
+'\"
+Selects all of the list entrie(s) between between \fIfrom\fR and
+\fIto\fR, inclusive, without affecting the selection state of entries
+outside that range. When only \fIfrom\fR is given, only the list entry
+identified by \fIfrom\fR is selected.
+.RE
+'\"
+.TP
+\fIpathName \fBxview \fIargs\fR
+This command is used to query and change the horizontal position of the
+information in the widget's window. It can take any of the following
+forms:
+.RS
+.TP
+\fIpathName \fBxview\fR
+'\"
+Returns a list containing two elements.  Each element is a real
+fraction between 0 and 1; together they describe the horizontal span
+that is visible in the window.  For example, if the first element is .2
+and the second element is .6, 20% of the TList entry is
+off-screen to the left, the middle 40% is visible in the window, and
+40% of the entry is off-screen to the right. These are the same values
+passed to scrollbars via the \fB\-xscrollcommand\fR option.
+.TP
+\fIpathName \fBxview\fR \fIindex\fR
+'\"
+Adjusts the view in the window so that the list entry identified by
+\fIindex\fR is aligned to the left edge of the window.
+.TP
+\fIpathName \fBxview moveto\fI fraction\fR
+'\"
+Adjusts the view in the window so that \fIfraction\fR of the total
+width of the TList is off-screen to the left. \fIfraction\fR must be
+a fraction between 0 and 1.
+'\"
+.TP
+\fIpathName \fBxview scroll \fInumber what\fR
+'\"
+This command shifts the view in the window left or right according to
+\fInumber\fR and \fIwhat\fR. \fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR or an
+abbreviation of one of these. If \fIwhat\fR is \fBunits\fR, the view
+adjusts left or right by \fInumber\fR character units (the width of
+the \fB0\fR character) on the display; if it is \fBpages\fR then the
+view adjusts by \fInumber\fR screenfuls. If \fInumber\fR is negative
+then characters farther to the left become visible; if it is positive
+then characters farther to the right become visible.
+'\"
+.RE
+'\"
+.TP
+\fIpathName \fByview \fI?args\fR?
+'\"
+This command is used to query and change the vertical position of the
+entries in the widget's window. It can take any of the following forms:
+'\"
+.RS
+.TP
+\fIpathName \fByview\fR
+'\"
+Returns a list containing two elements, both of which are real
+fractions between 0 and 1.  The first element gives the position of
+the list element at the top of the window, relative to the TList as a
+whole (0.5 means it is halfway through the TList, for example).  The
+second element gives the position of the list entry just after the
+last one in the window, relative to the TList as a whole.  These are
+the same values passed to scrollbars via the \fB\-yscrollcommand\fR
+option.
+'\"
+.TP
+\fIpathName \fByview\fR \fIindex\fR
+'\"
+Adjusts the view in the window so that the list entry given by
+\fIindex\fR is displayed at the top of the window.
+'\"
+.TP
+\fIpathName \fByview moveto\fI fraction\fR
+'\"
+Adjusts the view in the window so that the list entry given by
+\fIfraction\fR appears at the top of the window. \fIFraction\fR is a
+fraction between 0 and 1; 0 indicates the first entry in the TList,
+0.33 indicates the entry one-third the way through the TList, and so
+on.
+.TP
+\fIpathName \fByview scroll \fInumber what\fR
+'\"
+This command adjust the view in the window up or down according to
+\fInumber\fR and \fIwhat\fR.  \fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR.  If \fIwhat\fR
+is \fBunits\fR, the view adjusts up or down by \fInumber\fR lines; if
+it is \fBpages\fR then the view adjusts by \fInumber\fR screenfuls.
+If \fInumber\fR is negative then earlier entries become visible; if
+it is positive then later entries become visible.
+.RE
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+.IP [1]
+If the \fB\-selectmode\fR is "browse", when the user drags the mouse
+pointer over the list entries, the entry under the pointer will be
+highlighted and the \fB\-browsecmd\fR procedure will be called with
+one parameter, the index of the highlighted entry. Only one entry
+can be highlighted at a time. The \fB\-command\fR procedure will be
+called when the user double-clicks on a list entry.
+'\"
+.IP [2]
+If the \fB\-selectmode\fR is "single", the entries will only be
+highlighted by mouse <ButtonRelease-1> events. When a new list entry
+is highlighted, the \fB\-browsecmd\fR procedure will be called with
+one parameter indicating the highlighted list entry. The
+\fB\-command\fR procedure will be called when the user double-clicks
+on a list entry.
+'\"
+'\"
+.IP [3]
+If the \fB\-selectmode\fR is "multiple", when the user drags the mouse
+pointer over the list entries, all the entries under the pointer will
+be highlighted. However, only a contiguous region of list entries can
+be selected. When the highlighted area is changed, the
+\fB\-browsecmd\fR procedure will be called with an undefined
+parameter. It is the responsibility of the \fB\-browsecmd\fR procedure
+to find out the exact highlighted selection in the TList. The
+\fB\-command\fR procedure will be called when the user double-clicks
+on a list entry.
+'\"
+.IP [4]
+'\"
+If the \fB\-selectmode\fR is "extended", when the user drags the mouse
+pointer over the list entries, all the entries under the pointer will
+be highlighted. The user can also make disjointed selections using
+<Control-ButtonPress-1>. When the highlighted area is changed, the
+\fB\-browsecmd\fR procedure will be called with an undefined
+parameter. It is the responsibility of the \fB\-browsecmd\fR procedure
+to find out the exact highlighted selection in the TList. The
+\fB\-command\fR procedure will be called when the user double-clicks
+on a list entry.
+'\"
+'\"----------------------------------------------------------------------
+.SH EXAMPLE
+.PP
+This example demonstrates how to use an TList to store a list of
+numbers:
+.PP
+.CS
+set image [tix getimage folder]
+set t [tixTList .t -orient vertical]
+$t insert end -itemtype imagetext -image $image -text one
+$t insert end -itemtype imagetext -image $image -text two
+$t insert end -itemtype imagetext -image $image -text three
+$t insert end -itemtype imagetext -image $image -text four
+$t insert end -itemtype imagetext -image $image -text five
+$t insert end -itemtype imagetext -image $image -text six
+pack $t -expand yes -fill both
+.CE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n), Tabular Listbox, Display Items
+
+
+

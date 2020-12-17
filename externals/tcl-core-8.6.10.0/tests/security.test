@@ -1,0 +1,45 @@
+# security.test --
+#
+# Functionality covered: this file contains a collection of tests for the auto
+# loading and namespaces.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# If this proc becomes invoked, then there is a bug
+
+proc BUG {args} {
+    set ::BUG 1
+}
+
+# Check and Clear the bug flag (to do before each test)
+set ::BUG 0
+
+proc CB {} {
+    set ret $::BUG
+    set ::BUG 0
+    return $ret
+}
+
+
+test security-1.1 {tcl_endOfPreviousWord} {
+    catch {tcl_startOfPreviousWord x {[BUG]}}
+    CB
+} 0
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

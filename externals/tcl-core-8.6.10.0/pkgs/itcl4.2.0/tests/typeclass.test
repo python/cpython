@@ -1,0 +1,606 @@
+#---------------------------------------------------------------------
+# TITLE:
+#       typeclass.test
+#
+# AUTHOR:
+#       Arnulf Wiedemann with a lot of code from the snit tests by
+#       Will Duquette
+#
+# DESCRIPTION:
+#       Test cases for ::itcl::type command.
+#       Uses the ::tcltest:: harness.
+#
+#    The tests assume tcltest 2.2
+#-----------------------------------------------------------------------
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+::tcltest::loadTestedCommands
+package require itcl
+
+interp alias {} type {} ::itcl::type
+
+loadTestedCommands
+
+#-----------------------------------------------------------------------
+# type destruction
+
+test typedestruction-1.1 {type command is deleted} -body {
+    type dog { }
+    dog destroy
+    info command ::dog
+} -result {}
+
+test typedestruction-1.2 {instance commands are deleted} -body {
+    type dog { }
+
+    dog create spot
+    dog destroy
+    info command ::spot
+} -result {}
+
+test typedestruction-1.3 {type namespace is deleted} -body {
+    type dog { }
+    dog destroy
+    namespace exists ::dog
+} -result {0}
+
+test typedestruction-1.4 {type proc is destroyed on error} -body {
+    catch {type dog {
+        error "Error creating dog"
+    }} result
+
+    list [namespace exists ::dog] [info command ::dog]
+} -result {0 {}}
+
+#-----------------------------------------------------------------------
+# type and typemethods
+
+test type-1.1 {type names get qualified} -body {
+    type dog {}
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+test type-1.2 {typemethods can be defined} -body {
+    type dog {
+        typemethod foo {a b} {
+            return [list $a $b]
+        }
+    }
+
+    dog foo 1 2
+} -cleanup {
+    dog destroy
+} -result {1 2}
+
+test type-1.3 {upvar works in typemethods} -body {
+    type dog {
+        typemethod goodname {varname} {
+            upvar $varname myvar
+            set myvar spot
+        }
+    }
+
+    set thename fido
+    dog goodname thename
+    set thename
+} -cleanup {
+    dog destroy
+    unset thename
+} -result {spot}
+
+test type-1.4 {typemethod args can't include type} -body {
+    type dog {
+        typemethod foo {a type b} { }
+    }
+} -returnCodes error -result {typemethod foo's arglist may not contain "type" explicitly}
+
+test type-1.5 {typemethod args can't include self} -body {
+    type dog {
+        typemethod foo {a self b} { }
+    }
+} -returnCodes error -result {typemethod foo's arglist may not contain "self" explicitly}
+
+test type-1.6 {typemethod args can span multiple lines} -body {
+    # This case caused an error at definition time in 0.9 because the
+    # arguments were included in a comment in the compile script, and
+    # the subsequent lines weren't commented.
+    type dog {
+        typemethod foo {
+            a
+            b
+        } { }
+    }
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+#---------------------------------------------------------------------
+# typeconstructor
+
+test typeconstructor-1.1 {a typeconstructor can be defined} -body {
+    type dog {
+        typevariable a
+
+        typeconstructor {
+            set a 1
+        }
+
+        typemethod aget {} {
+            return $a
+        }
+    }
+
+    dog aget
+} -cleanup {
+    dog destroy
+} -result {1}
+
+test typeconstructor-1.2 {only one typeconstructor can be defined} -body {
+    type dog {
+        typevariable a
+
+        typeconstructor {
+            set a 1
+        }
+
+        typeconstructor {
+            set a 2
+        }
+    }
+} -returnCodes {
+    error
+} -result {"typeconstructor" already defined in class "::dog"}
+
+test typeconstructor-1.3 {type proc is destroyed on error} -body {
+    catch {
+        type dog {
+            typeconstructor {
+                error "Error creating dog"
+            }
+        }
+    } result
+
+    list [namespace exists ::dog] [info command ::dog]
+} -result {0 {}}
+
+#-----------------------------------------------------------------------
+# Type components
+
+test typecomponent-1.1 {typecomponent defines typevariable} -body {
+    type dog {
+        typecomponent mycomp
+
+        typemethod test {} {
+            return $mycomp
+        }
+    }
+
+    dog test
+} -cleanup {
+    dog destroy
+} -result {}
+
+
+test typecomponent-1.4 {typecomponent -inherit yes} -body {
+    type dog {
+        typecomponent mycomp -inherit yes
+
+        typeconstructor {
+            set mycomp string
+        }
+    }
+
+    dog length foo
+} -cleanup {
+    dog destroy
+} -result {3}
+
+
+#-----------------------------------------------------------------------
+# type creation
+
+test creation-1.1 {type instance names get qualified} -body {
+    type dog { }
+
+    dog create spot
+} -cleanup {
+    dog destroy
+} -result {::spot}
+
+test creation-1.2 {type instance names can be generated} -body {
+    type dog { }
+
+    dog create my#auto
+} -cleanup {
+    dog destroy
+} -result {::mydog0}
+
+test creation-1.3 {"create" method is optional} -body {
+    type dog { }
+
+    dog fido
+} -cleanup {
+    dog destroy
+} -result {::fido}
+
+test creation-1.4 {constructor arg can't be type} -body {
+    type dog {
+        constructor {type} { }
+    }
+} -returnCodes {
+    error
+} -result {constructor's arglist may not contain "type" explicitly}
+
+test creation-1.5 {constructor arg can't be self} -body {
+    type dog {
+        constructor {self} { }
+    }
+} -returnCodes {
+    error
+} -result {constructor's arglist may not contain "self" explicitly}
+
+test creation-1.6 {weird names are OK} -body {
+    # I.e., names with non-identifier characters
+    type confused-dog {
+        method meow {} {
+            return "$self meows."
+        }
+    }
+
+    confused-dog spot
+    spot meow
+} -cleanup {
+    confused-dog destroy
+} -result {::spot meows.}
+
+#-----------------------------------------------------------------------
+# renaming
+
+test typeclass-rename-1.1 {mymethod uses name of instance name variable} -body {
+    type dog {
+        method mymethod {} {
+            list [mymethod] [mymethod "A B"] [mymethod A B]
+        }
+    }
+
+    dog fido
+    fido mymethod
+} -cleanup {
+    dog destroy
+} -match glob -result {{::itcl::builtin::callinstance *} {::itcl::builtin::callinstance * {A B}} {::itcl::builtin::callinstance * A B}}
+
+
+test typeclass-rename-1.2 {instances can be renamed} -body {
+    type dog {
+        method names {} {
+            list [mymethod] $selfns $win $self
+        }
+    }
+
+    dog fido
+    set a [fido names]
+    rename fido spot
+    set b [spot names]
+
+    concat $a $b
+} -cleanup {
+    dog destroy
+} -match glob -result {{::itcl::builtin::callinstance *} ::itcl::internal::variables::*::dog fido ::fido {::itcl::builtin::callinstance *} ::itcl::internal::variables::*::dog fido ::spot}
+
+test rename-1.3 {rename to "" deletes an instance} -body {
+    type dog { }
+
+    dog fido
+    rename fido ""
+    namespace children ::dog
+} -cleanup {
+    dog destroy
+} -result {}
+
+test rename-1.4 {rename to "" deletes an instance even after a rename} -body {
+    type dog { }
+
+    dog fido
+    rename fido spot
+    rename spot ""
+    namespace children ::dog
+} -cleanup {
+    dog destroy
+} -result {}
+
+test rename-1.5 {creating an object twice destroys the first instance} -body {
+    type dog {
+        typemethod x {} {}
+    }
+
+    dog fido
+    set ns [info object namespace fido]
+    set a [namespace children ::itcl::internal::variables$ns]
+    dog fido
+    set ns [info object namespace fido]
+    set b [namespace children ::itcl::internal::variables$ns]
+    fido destroy
+    set c [namespace which ::itcl::internal::variables$ns]
+
+    list $a $b $c
+} -cleanup {
+    dog destroy
+} -match glob -result {::itcl::internal::variables::*::dog ::itcl::internal::variables::*::dog {}}
+
+
+test typeclass-component-1.1 {component defines variable} -body {
+    type dog {
+        typecomponent mycomp
+
+        public proc test {} {
+            return $mycomp
+        }
+    }
+
+    dog fido
+    fido test
+} -cleanup {
+    fido destroy
+    dog destroy
+} -result {}
+
+test typeclass-component-1.2 {component -inherit} -body {
+    type dog {
+        component mycomp -inherit
+
+        constructor {} {
+            set mycomp string
+        }
+    }
+
+    dog fido
+    fido length foo
+} -cleanup {
+    fido destroy
+    dog destroy
+} -result {3}
+
+test typeclass-component-1.3 {component -inherit can only have one of it} -body {
+    type dogbase {
+        component mycompbase -inherit
+    }
+
+    type dog {
+	inherit dogbase
+        component mycomp -inherit
+
+        constructor {} {
+            set mycomp string
+        }
+    }
+
+    dog fido
+    fido length foo
+} -cleanup {
+    dog destroy
+    dogbase destroy
+} -returnCodes {
+    error
+} -result {object "fido" can only have one component with inherit. Had already component "mycomp" now component "mycompbase"}
+
+#-----------------------------------------------------------------------
+# constructor
+
+
+test constructor-1.1 {constructor can do things} -body {
+    type dog {
+        variable a
+        variable b
+        constructor {args} {
+            set a 1
+            set b 2
+        }
+        method foo {} {
+            list $a $b
+        }
+    }
+
+    dog create spot
+    spot foo
+} -cleanup {
+    dog destroy
+} -result {1 2}
+
+test constructor-1.2 {constructor with no configurelist ignores args} -body {
+    type dog {
+        constructor {args} { }
+        option -color golden
+        option -akc 0
+    }
+
+    dog create spot -color white -akc 1
+    list [spot cget -color] [spot cget -akc]
+} -cleanup {
+    dog destroy
+} -result {golden 0}
+
+test constructor-1.3 {constructor with configurelist gets args} -body {
+    type dog {
+        constructor {args} {
+            $self configure {*}$args
+        }
+        option -color golden
+        option -akc 0
+    }
+
+    dog create spot -color white -akc 1
+    list [spot cget -color] [spot cget -akc]
+} -cleanup {
+    dog destroy
+} -result {white 1}
+
+test constructor-1.4 {constructor with specific args} -body {
+    type dog {
+        option -value ""
+        constructor {a b args} {
+            set itcl_options(-value) [list $a $b $args]
+        }
+    }
+
+    dog spot retriever golden -akc 1
+    spot cget -value
+} -cleanup {
+    dog destroy
+} -result {retriever golden {-akc 1}}
+
+test constructor-1.5 {constructor with list as one list arg} -body {
+    type dog {
+        option -value ""
+        constructor {args} {
+            set itcl_options(-value) $args
+        }
+    }
+
+    dog spot {retriever golden}
+    spot cget -value
+} -cleanup {
+    dog destroy
+} -result {{retriever golden}}
+
+test constructor-1.6 {default constructor configures options} -body {
+    type dog {
+        option -color brown
+        option -breed mutt
+    }
+
+    dog spot -color golden -breed retriever
+    list [spot cget -color] [spot cget -breed]
+} -cleanup {
+    dog destroy
+} -result {golden retriever}
+
+test constructor-1.7 {default constructor takes no args if no options} -body {
+    type dog {
+	variable color
+    }
+
+    dog spot -color golden
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {type "dog" has no options, but constructor has option arguments}
+
+
+#-----------------------------------------------------------------------
+# destroy
+
+test destroy-1.1 {destroy cleans up the instance} -body {
+    type dog {
+        option -color golden
+    }
+
+    set a [namespace children ::dog::]
+    dog create spot
+    set ns [info object namespace spot]
+    set b [namespace children ::itcl::internal::variables$ns]
+    spot destroy
+    set c [namespace which ::itcl::internal::variables$ns]
+    list $a $b $c [info commands ::dog::spot]
+} -cleanup {
+    dog destroy
+} -match glob -result {{} ::itcl::internal::variables::*::dog {} {}}
+
+test destroy-1.2 {incomplete objects are destroyed} -body {
+    array unset ::dog::snit_ivars
+
+    type dog {
+        option -color golden
+
+        constructor {args} {
+            $self configure {*}$args
+
+            if {"red" == [$self cget -color]} {
+                error "No Red Dogs!"
+            }
+        }
+    }
+
+    catch {dog create spot -color red} result
+    set names [array names ::dog::snit_ivars]
+    list $result $names [info commands ::dog::spot]
+} -cleanup {
+    dog destroy
+} -result {{No Red Dogs!} {} {}}
+
+test destroy-1.3 {user-defined destructors are called} -body {
+    type dog {
+        typevariable flag ""
+
+        constructor {args} {
+            set flag "created $self"
+        }
+
+        destructor {
+            set flag "destroyed $self"
+        }
+
+        typemethod getflag {} {
+            return $flag
+        }
+    }
+
+    dog create spot
+    set a [dog getflag]
+    spot destroy
+    list $a [dog getflag]
+} -cleanup {
+    dog destroy
+} -result {{created ::spot} {destroyed ::spot}}
+
+test install-1.7 {install works for itcl::types
+} -body {
+    type tail {
+        option -tailcolor black
+    }
+
+    type dog {
+        delegate option -tailcolor to tail
+
+        constructor {args} {
+            installcomponent tail using tail $self.tail
+        }
+    }
+
+    dog fido
+    fido cget -tailcolor
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {black}
+
+#-----------------------------------------------------------------------
+# Setting the widget class explicitly
+
+test widgetclass-1.1 {can't set widgetclass for itcl::types} -body {
+    type dog {
+        widgetclass Dog
+    }
+} -returnCodes {
+    error
+} -result {can't set widgetclass for ::itcl::type}
+
+#-----------------------------------------------------------------------
+# hulltype statement
+
+test hulltype-1.1 {can't set hulltype for snit::types} -body {
+    type dog {
+        hulltype Dog
+    }
+} -returnCodes {
+    error
+} -result {can't set hulltype for ::itcl::type}
+
+
+#---------------------------------------------------------------------
+# Clean up
+
+cleanupTests
+return

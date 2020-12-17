@@ -1,0 +1,514 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test notebook-1.0 "Setup" -body {
+    ttk::notebook .nb
+} -result .nb
+
+#
+# Error handling tests:
+#
+test notebook-1.1 "Cannot add ancestor" -body {
+    .nb add .
+} -returnCodes error -result "*" -match glob
+
+proc inoperative {args} {}
+
+inoperative test notebook-1.2 "Cannot add siblings" -body {
+    # This is legal now
+    .nb add [frame .sibling]
+} -returnCodes error -result "*" -match glob
+
+test notebook-1.3 "Cannot add toplevel" -body {
+    .nb add [toplevel .nb.t]
+} -cleanup {
+    destroy .t.nb
+} -returnCodes 1 -match glob -result "can't add .nb.t*"
+
+test notebook-1.4 "Try to select bad tab" -body {
+    .nb select @6000,6000
+} -returnCodes 1 -match glob -result "* not found"
+
+#
+# Now add stuff:
+#
+test notebook-2.0 "Add children" -body {
+    pack .nb -expand true -fill both
+    .nb add [frame .nb.foo] -text "Foo"
+    pack [label .nb.foo.l -text "Foo"]
+
+    .nb add [frame .nb.bar -relief raised -borderwidth 2] -text "Bar"
+    pack [label .nb.bar.l -text "Bar"]
+
+    .nb tabs
+} -result [list .nb.foo .nb.bar]
+
+test notebook-2.1 "select pane" -body {
+    .nb select .nb.foo
+    update
+    list [winfo viewable .nb.foo] [winfo viewable .nb.bar] [.nb index current]
+} -result [list 1 0 0]
+
+test notebook-2.2 "select another pane" -body {
+    .nb select 1
+    update
+    list [winfo viewable .nb.foo] [winfo viewable .nb.bar] [.nb index current]
+} -result [list 0 1 1]
+
+test notebook-2.3 "tab - get value" -body {
+    .nb tab .nb.foo -text
+} -result "Foo"
+
+test notebook-2.4 "tab - set value" -body {
+    .nb tab .nb.foo -text "Changed Foo"
+    .nb tab .nb.foo -text
+} -result "Changed Foo"
+
+test notebook-2.5 "tab - get all options" -body {
+    .nb tab .nb.foo
+} -result [list \
+    -padding 0 -sticky nsew \
+    -state normal -text "Changed Foo" -image "" -compound {} -underline -1]
+
+test notebook-4.1 "Test .nb index end" -body {
+    .nb index end
+} -result 2
+
+test notebook-4.2 "'end' is not a selectable index" -body {
+    .nb select end
+} -returnCodes error -result "*" -match glob
+
+test notebook-4.3 "Select index out of range" -body {
+    .nb select 2
+} -returnCodes error -result "*" -match glob
+
+test notebook-4.4 "-padding option" -body {
+    .nb configure -padding "5 5 5 5"
+}
+
+test notebook-4.end "Cleanup test suite 1-4.*" -body { destroy .nb }
+
+test notebook-5.1 "Virtual events" -body {
+    toplevel .t
+    set ::events [list]
+    bind .t <<NotebookTabChanged>> { lappend events changed %W }
+
+    pack [set nb [ttk::notebook .t.nb]] -expand true -fill both; update
+    $nb add [frame $nb.f1]
+    $nb add [frame $nb.f2]
+    $nb add [frame $nb.f3]
+
+    $nb select $nb.f1
+    update; set events
+} -result [list changed .t.nb]
+
+test notebook-5.2 "Virtual events, continued" -body {
+    set events [list]
+    $nb select $nb.f3
+    update ; set events
+} -result [list changed .t.nb]
+# OR: [list deselected .t.nb.f1 selected .t.nb.f3 changed .t.nb]
+
+test notebook-5.3 "Disabled tabs" -body {
+    set events [list]
+    $nb tab $nb.f2 -state disabled
+    $nb select $nb.f2
+    update
+    list $events [$nb index current]
+} -result [list [list] 2]
+
+test notebook-5.4 "Reenable tab" -body {
+    set events [list]
+    $nb tab $nb.f2 -state normal
+    $nb select $nb.f2
+    update
+    list $events [$nb index current]
+} -result [list [list changed .t.nb] 1]
+
+test notebook-5.end "Virtual events, cleanup" -body { destroy .t }
+
+test notebook-6.0 "Select hidden tab" -setup {
+    set nb [ttk::notebook .nb]
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    $nb tab $nb.f1 -state hidden
+    lappend result [$nb tab $nb.f1 -state]
+    $nb select $nb.f1
+    lappend result [$nb tab $nb.f1 -state]
+} -result [list hidden normal]
+
+test notebook-6.1 "Hide selected tab" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb hide $nb.f2
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    update idletasks; lappend result [winfo ismapped $nb.f3]
+} -result [list 1 1 2 0 1]
+
+# See 1370833
+test notebook-6.2 "Forget selected tab" -setup {
+    ttk::notebook .n
+    pack .n
+    label .n.l -text abc
+    .n add .n.l
+} -body {
+    update
+    after 100
+    .n forget .n.l
+    update		;# Yowch!
+} -cleanup {
+    destroy .n
+} -result {}
+
+test notebook-6.3 "Hide first tab when it's the current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f1
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f1]
+    $nb hide $nb.f1
+    lappend result [$nb index current] [winfo ismapped $nb.f1]
+} -result [list 0 1 1 0]
+
+test notebook-6.4 "Forget first tab when it's the current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f1
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f1]
+    $nb forget $nb.f1
+    lappend result [$nb index current] [winfo ismapped $nb.f1]
+} -result [list 0 1 0 0]
+
+test notebook-6.5 "Hide last tab when it's the current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f3
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f3]
+    $nb hide $nb.f3
+    lappend result [$nb index current] [winfo ismapped $nb.f3]
+} -result [list 2 1 1 0]
+
+test notebook-6.6 "Forget a middle tab when it's the current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb forget $nb.f2
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+} -result [list 1 1 1 0]
+
+test notebook-6.7 "Hide a middle tab when it's the current" -setup {
+    pack [set nb [ttk::notebook .nb]]; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb hide $nb.f2
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+} -result [list 1 1 2 0]
+
+test notebook-6.8 "Forget a non-current tab < current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb forget $nb.f1
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+} -result [list 1 1 0 1]
+
+test notebook-6.9 "Hide a non-current tab < current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb hide $nb.f1
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+} -result [list 1 1 1 1]
+
+test notebook-6.10 "Forget a non-current tab > current" -setup {
+    pack [set nb [ttk::notebook .nb]] ; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb forget $nb.f3
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+} -result [list 1 1 1 1]
+
+test notebook-6.11 "Hide a non-current tab > current" -setup {
+    pack [set nb [ttk::notebook .nb]]; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+    $nb hide $nb.f3
+    lappend result [$nb index current] [winfo ismapped $nb.f2]
+} -result [list 1 1 1 1]
+
+test notebook-6.12 "Hide and re-add a tab" -setup {
+    pack [set nb [ttk::notebook .nb]]; update
+    $nb add [ttk::frame $nb.f1]
+    $nb add [ttk::frame $nb.f2]
+    $nb add [ttk::frame $nb.f3]
+    $nb select $nb.f2
+} -cleanup  {
+    destroy $nb
+} -body {
+    set result [list]
+    lappend result [$nb index current] [$nb tab $nb.f2 -state]
+    $nb hide $nb.f2
+    lappend result [$nb index current] [$nb tab $nb.f2 -state]
+    $nb add $nb.f2
+    lappend result [$nb index current] [$nb tab $nb.f2 -state]
+} -result [list 1 normal 2 hidden 2 normal]
+
+#
+# Insert:
+#
+unset nb
+test notebook-7.0 "insert - setup" -body {
+    pack [ttk::notebook .nb]
+    for {set i 0} {$i < 5} {incr i} {
+	.nb add [ttk::frame .nb.f$i] -text "$i"
+    }
+    .nb select .nb.f1
+    list [.nb index current] [.nb tabs]
+} -result [list 1 [list .nb.f0 .nb.f1 .nb.f2 .nb.f3 .nb.f4]]
+
+test notebook-7.1 "insert - move backwards" -body {
+    .nb insert 1 3
+    list [.nb index current] [.nb tabs]
+} -result [list 2 [list .nb.f0 .nb.f3 .nb.f1 .nb.f2 .nb.f4]]
+
+test notebook-7.2 "insert - move backwards again" -body {
+    .nb insert 1 3
+    list [.nb index current] [.nb tabs]
+} -result [list 3 [list .nb.f0 .nb.f2 .nb.f3 .nb.f1 .nb.f4]]
+
+test notebook-7.3 "insert - move backwards again" -body {
+    .nb insert 1 3
+    list [.nb index current] [.nb tabs]
+} -result [list 1 [list .nb.f0 .nb.f1 .nb.f2 .nb.f3 .nb.f4]]
+
+test notebook-7.4 "insert - move forwards" -body {
+    .nb insert 3 1
+    list [.nb index current] [.nb tabs]
+} -result [list 3 [list .nb.f0 .nb.f2 .nb.f3 .nb.f1 .nb.f4]]
+
+test notebook-7.5 "insert - move forwards again" -body {
+    .nb insert 3 1
+    list [.nb index current] [.nb tabs]
+} -result [list 2 [list .nb.f0 .nb.f3 .nb.f1 .nb.f2 .nb.f4]]
+
+test notebook-7.6 "insert - move forwards again" -body {
+    .nb insert 3 1
+    list [.nb index current] [.nb tabs]
+} -result [list 1 [list .nb.f0 .nb.f1 .nb.f2 .nb.f3 .nb.f4]]
+
+test notebook-7.7a "insert - current tab undisturbed" -body {
+    .nb select 0
+    .nb insert 3 1
+    .nb index current
+} -result 0
+
+test notebook-7.7b "insert - current tab undisturbed" -body {
+    .nb select 0
+    .nb insert 1 3
+    .nb index current
+} -result 0
+
+test notebook-7.7c "insert - current tab undisturbed" -body {
+    .nb select 4
+    .nb insert 3 1
+    .nb index current
+} -result 4
+
+test notebook-7.7d "insert - current tab undisturbed" -body {
+    .nb select 4
+    .nb insert 1 3
+    .nb index current
+} -result 4
+
+test notebook-7.8a "move tabs - current tab undisturbed - exhaustive" -body {
+    .nb select .nb.f0
+    foreach i {0 1 2 3 4} {
+    	.nb insert $i .nb.f$i
+    }
+
+    foreach i {0 1 2 3 4} {
+	.nb select .nb.f$i
+	foreach j {0 1 2 3 4} {
+	    foreach k {0 1 2 3 4} {
+		.nb insert $j $k
+		set current [lindex [.nb tabs] [.nb index current]]
+		if {$current != ".nb.f$i"} {
+		    error "($i,$j,$k) current = $current"
+		}
+		.nb insert $k $j
+		if {[.nb tabs] ne [list .nb.f0 .nb.f1 .nb.f2 .nb.f3 .nb.f4]} {
+		    error "swap $j $k; swap $k $j => [.nb tabs]"
+		}
+	    }
+	}
+    }
+    .nb tabs
+} -result [list .nb.f0 .nb.f1 .nb.f2 .nb.f3 .nb.f4]
+
+test notebook-7.8b "insert new - current tab undisturbed - exhaustive" -body {
+    foreach i {0 1 2 3 4} {
+	.nb select .nb.f$i
+	foreach j {0 1 2 3 4} {
+.nb select .nb.f$i
+	    .nb insert $j [frame .nb.newf]
+	    set current [lindex [.nb tabs] [.nb index current]]
+	    if {$current != ".nb.f$i"} {
+		puts stderr "new tab at $j, current = $current, expect .nb.f$i"
+	    }
+	    destroy .nb.newf
+	    if {[.nb tabs] ne [list .nb.f0 .nb.f1 .nb.f2 .nb.f3 .nb.f4]} {
+		error "tabs disturbed"
+	    }
+	}
+    }
+}
+
+test notebook-7.end "insert - cleanup" -body {
+    destroy .nb
+}
+
+test notebook-1817596-1 "insert should autoselect first tab" -body {
+    pack [ttk::notebook .nb]
+    list \
+	[.nb insert end [ttk::label .nb.l1 -text One] -text One] \
+	[.nb select] \
+	;
+} -result [list "" .nb.l1] -cleanup { destroy .nb }
+
+test notebook-1817596-2 "error in insert should have no effect" -body {
+    pack [ttk::notebook .nb]
+    .nb insert end [ttk::label .nb.l1]
+    .nb insert end [ttk::label .nb.l2]
+    list \
+    	[catch { .nb insert .l2 0 -badoption badvalue } err] \
+	[.nb tabs] \
+} -result [list 1 [list .nb.l1 .nb.l2]] -cleanup { destroy .nb }
+
+test notebook-1817596-3 "insert/configure" -body {
+    pack [ttk::notebook .nb]
+    .nb insert end [ttk::label .nb.l0] -text "L0"
+    .nb insert end [ttk::label .nb.l1] -text "L1"
+    .nb insert end [ttk::label .nb.l2] -text "XX"
+    .nb insert 0 2 -text "L2"
+
+    list [.nb tabs] [.nb tab 0 -text] [.nb tab 1 -text] [.nb tab 2 -text]
+
+} -result [list [list .nb.l2 .nb.l0 .nb.l1] L2 L0 L1] -cleanup { destroy .nb }
+
+test notebook-readd-1 "add same widget twice" -body {
+    pack [ttk::notebook .nb]
+    .nb add [ttk::button .nb.b1] -text "Button"
+    .nb add .nb.b1
+    .nb tabs
+} -result [list .nb.b1] -cleanup { destroy .nb }
+
+test notebook-readd-2 "add same widget twice, with options" -body {
+    pack [ttk::notebook .nb]
+    .nb add [ttk::button .nb.b1] -text "Tab label"
+    .nb add .nb.b1 -text "Changed tab label"
+    .nb tabs
+} -result [list .nb.b1] -cleanup { destroy .nb }
+
+test notebook-readd-3 "insert same widget twice, with options" -body {
+    pack [ttk::notebook .nb]
+    .nb insert end [ttk::button .nb.b1] -text "Tab label"
+    .nb insert end .nb.b1 -text "Changed tab label"
+    .nb tabs
+} -result [list .nb.b1] -cleanup { destroy .nb }
+
+
+# See #1343984
+test notebook-1343984-1 "don't autoselect on destroy - setup" -body {
+    ttk::notebook .nb
+    set ::history [list]
+    bind TestFrame <Map> { lappend history MAP %W }
+    bind TestFrame <Destroy> { lappend history DESTROY %W }
+    .nb add [ttk::frame .nb.frame1 -class TestFrame] -text "Frame 1"
+    .nb add [ttk::frame .nb.frame2 -class TestFrame] -text "Frame 2"
+    .nb add [ttk::frame .nb.frame3 -class TestFrame] -text "Frame 3"
+    pack .nb -fill both -expand 1
+    update
+    set ::history
+} -result [list MAP .nb.frame1]
+
+test notebook-1343984-2 "don't autoselect on destroy" -body {
+    set ::history [list]
+    destroy .nb
+    update
+    set ::history
+} -result [list DESTROY .nb.frame1 DESTROY .nb.frame2 DESTROY .nb.frame3]
+
+tcltest::cleanupTests

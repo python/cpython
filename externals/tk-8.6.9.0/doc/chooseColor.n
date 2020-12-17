@@ -1,0 +1,48 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_chooseColor n 4.2 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_chooseColor \- pops up a dialog box for the user to select a color.
+.SH SYNOPSIS
+\fBtk_chooseColor \fR?\fIoption value ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The procedure \fBtk_chooseColor\fR pops up a dialog box for the
+user to select a color. The following \fIoption\-value\fR pairs are
+possible as command line arguments:
+.TP
+\fB\-initialcolor\fR \fIcolor\fR
+Specifies the color to display in the color dialog when it pops
+up. \fIcolor\fR must be in a form acceptable to the \fBTk_GetColor\fR
+function.
+.TP
+\fB\-parent\fR \fIwindow\fR
+Makes \fIwindow\fR the logical parent of the color dialog. The color
+dialog is displayed on top of its parent window.
+.TP
+\fB\-title\fR \fItitleString\fR
+Specifies a string to display as the title of the dialog box. If this
+option is not specified, then a default title will be displayed.
+.LP
+If the user selects a color, \fBtk_chooseColor\fR will return the
+name of the color in a form acceptable to \fBTk_GetColor\fR.  If the
+user cancels the operation, both commands will return the empty
+string.
+.SH EXAMPLE
+.PP
+.CS
+button .b \-bg [tk_chooseColor \-initialcolor gray \-title "Choose color"]
+.CE
+.SH KEYWORDS
+color, color selection, dialog
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

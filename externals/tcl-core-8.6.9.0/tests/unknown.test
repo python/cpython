@@ -1,0 +1,65 @@
+# Commands covered:  unknown
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+unset -nocomplain x
+catch {rename unknown unknown.old}
+
+test unknown-1.1 {non-existent "unknown" command} {
+    list [catch {_non-existent_ foo bar} msg] $msg
+} {1 {invalid command name "_non-existent_"}}
+
+proc unknown {args} {
+    global x
+    set x $args
+}
+test unknown-2.1 {calling "unknown" command} {
+    foobar x y z
+    set x
+} {foobar x y z}
+test unknown-2.2 {calling "unknown" command with lots of args} {
+    foobar 1 2 3 4 5 6 7
+    set x
+} {foobar 1 2 3 4 5 6 7}
+test unknown-2.3 {calling "unknown" command with lots of args} {
+    foobar 1 2 3 4 5 6 7 8
+    set x
+} {foobar 1 2 3 4 5 6 7 8}
+test unknown-2.4 {calling "unknown" command with lots of args} {
+    foobar 1 2 3 4 5 6 7 8 9
+    set x
+} {foobar 1 2 3 4 5 6 7 8 9}
+
+test unknown-3.1 {argument quoting in calls to "unknown"} {
+    foobar \{ \} a\{b \; "\\" \$a a\[b \]
+    set x
+} "foobar \\{ \\} a\\{b {;} \\\\ {\$a} {a\[b} \\]"
+
+proc unknown args {
+    error "unknown failed"
+}
+test unknown-4.1 {errors in "unknown" procedure} {
+    list [catch {non-existent a b} msg] $msg $errorCode
+} {1 {unknown failed} NONE}
+
+# cleanup
+catch {rename unknown {}}
+catch {rename unknown.old unknown}
+cleanupTests
+return 
+
+# Local Variables:
+# mode: tcl
+# End:

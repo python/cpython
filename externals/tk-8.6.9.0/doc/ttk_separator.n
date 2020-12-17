@@ -1,0 +1,52 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::separator n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::separator \- Separator bar
+.SH SYNOPSIS
+\fBttk::separator\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::separator\fR widget displays a horizontal or vertical separator
+bar.
+.SO ttk_widget
+\-class	\-cursor
+\-style	\-takefocus
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-orient orient Orient
+One of \fBhorizontal\fR or \fBvertical\fR.
+Specifies the orientation of the separator.
+.SH "WIDGET COMMAND"
+.PP
+Separator widgets support the standard
+\fBcget\fR, \fBconfigure\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR
+methods.  No other widget methods are used.
+.PP
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::separator\fP is \fBTSeparator\fP.
+.PP
+\fBTSeparator\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n)
+.SH "KEYWORDS"
+widget, separator
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

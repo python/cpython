@@ -1,0 +1,624 @@
+Microsoft (R) Macro Assembler Version 14.00.24210.0	    10/18/20 10:26:12
+match686.asm						     Page 1 - 1
+
+
+				; match686.asm -- Asm portion of the optimized longest_match for 32 bits x86
+				; Copyright (C) 1995-1996 Jean-loup Gailly, Brian Raiter and Gilles Vollant.
+				; File written by Gilles Vollant, by converting match686.S from Brian Raiter
+				; for MASM. This is as assembly version of longest_match
+				;  from Jean-loup Gailly in deflate.c
+				;
+				;         http://www.zlib.net
+				;         http://www.winimage.com/zLibDll
+				;         http://www.muppetlabs.com/~breadbox/software/assembly.html
+				;
+				; For Visual C++ 4.x and higher and ML 6.x and higher
+				;   ml.exe is distributed in
+				;  http://www.microsoft.com/downloads/details.aspx?FamilyID=7a1c9da0-0510-44a2-b042-7ef370530c64
+				;
+				; this file contain two implementation of longest_match
+				;
+				;  this longest_match was written by Brian raiter (1998), optimized for Pentium Pro
+				;   (and the faster known version of match_init on modern Core 2 Duo and AMD Phenom)
+				;
+				;  for using an assembly version of longest_match, you need define ASMV in project
+				;
+				;    compile the asm file running
+				;           ml /coff /Zi /c /Flmatch686.lst match686.asm
+				;    and do not include match686.obj in your project
+				;
+				; note: contrib of zLib 1.2.3 and earlier contained both a deprecated version for
+				;  Pentium (prior Pentium Pro) and this version for Pentium Pro and modern processor
+				;  with autoselect (with cpu detection code)
+				;  if you want support the old pentium optimization, you can still use these version
+				;
+				; this file is not optimized for old pentium, but it compatible with all x86 32 bits
+				; processor (starting 80386)
+				;
+				;
+				; see below : zlib1222add must be adjuster if you use a zlib version < 1.2.2.2
+
+				;uInt longest_match(s, cur_match)
+				;    deflate_state *s;
+				;    IPos cur_match;                             /* current match */
+
+ = 0000004C			    NbStack         equ     76
+ = dword ptr[esp+NbStack-0]	    cur_match       equ     dword ptr[esp+NbStack-0]
+ = dword ptr[esp+NbStack-4]	    str_s           equ     dword ptr[esp+NbStack-4]
+				; 5 dword on top (ret,ebp,esi,edi,ebx)
+ = dword ptr[esp+NbStack-8]	    adrret          equ     dword ptr[esp+NbStack-8]
+ = dword ptr[esp+NbStack-12	    pushebp         equ     dword ptr[esp+NbStack-12]
+   ]
+ = dword ptr[esp+NbStack-16	    pushedi         equ     dword ptr[esp+NbStack-16]
+   ]
+ = dword ptr[esp+NbStack-20	    pushesi         equ     dword ptr[esp+NbStack-20]
+   ]
+ = dword ptr[esp+NbStack-24	    pushebx         equ     dword ptr[esp+NbStack-24]
+   ]
+
+ = dword ptr [esp+NbStack-2	    chain_length    equ     dword ptr [esp+NbStack-28]
+   8]
+ = dword ptr [esp+NbStack-3	    limit           equ     dword ptr [esp+NbStack-32]
+   2]
+ = dword ptr [esp+NbStack-3	    best_len        equ     dword ptr [esp+NbStack-36]
+   6]
+ = dword ptr [esp+NbStack-4	    window          equ     dword ptr [esp+NbStack-40]
+   0]
+ = dword ptr [esp+NbStack-4	    prev            equ     dword ptr [esp+NbStack-44]
+   4]
+ = word ptr [esp+NbStack-48	    scan_start      equ      word ptr [esp+NbStack-48]
+   ]
+ = dword ptr [esp+NbStack-5	    wmask           equ     dword ptr [esp+NbStack-52]
+   2]
+ = dword ptr [esp+NbStack-5	    match_start_ptr equ     dword ptr [esp+NbStack-56]
+   6]
+ = dword ptr [esp+NbStack-6	    nice_match      equ     dword ptr [esp+NbStack-60]
+   0]
+ = dword ptr [esp+NbStack-6	    scan            equ     dword ptr [esp+NbStack-64]
+   4]
+
+ = dword ptr [esp+NbStack-6	    windowlen       equ     dword ptr [esp+NbStack-68]
+   8]
+ = dword ptr [esp+NbStack-7	    match_start     equ     dword ptr [esp+NbStack-72]
+   2]
+ = dword ptr [esp+NbStack-7	    strend          equ     dword ptr [esp+NbStack-76]
+   6]
+ = 00000034			    NbStackAdd      equ     (NbStack-24)
+
+				    .386p
+
+				    name    gvmatch
+				    .MODEL  FLAT
+
+
+
+				;  all the +zlib1222add offsets are due to the addition of fields
+				;  in zlib in the deflate_state structure since the asm code was first written
+				;  (if you compile with zlib 1.0.4 or older, use "zlib1222add equ (-4)").
+				;  (if you compile with zlib between 1.0.5 and 1.2.2.1, use "zlib1222add equ 0").
+				;  if you compile with zlib 1.2.2.2 or later , use "zlib1222add equ 8").
+
+ = 00000008			    zlib1222add         equ     8
+
+				;  Note : these value are good with a 8 bytes boundary pack structure
+ = 0000007C			    dep_chain_length    equ     74h+zlib1222add
+ = 00000038			    dep_window          equ     30h+zlib1222add
+ = 0000006C			    dep_strstart        equ     64h+zlib1222add
+ = 00000078			    dep_prev_length     equ     70h+zlib1222add
+ = 00000090			    dep_nice_match      equ     88h+zlib1222add
+ = 0000002C			    dep_w_size          equ     24h+zlib1222add
+ = 00000040			    dep_prev            equ     38h+zlib1222add
+ = 00000034			    dep_w_mask          equ     2ch+zlib1222add
+ = 0000008C			    dep_good_match      equ     84h+zlib1222add
+ = 00000070			    dep_match_start     equ     68h+zlib1222add
+ = 00000074			    dep_lookahead       equ     6ch+zlib1222add
+
+
+ 00000000			_TEXT                   segment
+
+				IFDEF NOUNDERLINE
+				ELSE
+				            public  _longest_match
+				            public  _match_init
+				ENDIF
+
+ = 00000102			    MAX_MATCH           equ     258
+ = 00000003			    MIN_MATCH           equ     3
+ = 00000106			    MIN_LOOKAHEAD       equ     (MAX_MATCH+MIN_MATCH+1)
+
+
+
+ = 00000102			MAX_MATCH       equ     258
+ = 00000003			MIN_MATCH       equ     3
+ = 00000106			MIN_LOOKAHEAD   equ     (MAX_MATCH + MIN_MATCH + 1)
+ = 00000100			MAX_MATCH_8_     equ     ((MAX_MATCH + 7) AND 0FFF0h)
+
+
+				;;; stack frame offsets
+
+ = esp + 0			chainlenwmask   equ  esp + 0    ; high word: current chain len
+				                    ; low word: s->wmask
+ = esp + 4			window      equ  esp + 4    ; local copy of s->window
+ = esp + 8			windowbestlen   equ  esp + 8    ; s->window + bestlen
+ = esp + 16			scanstart   equ  esp + 16   ; first two bytes of string
+ = esp + 12			scanend     equ  esp + 12   ; last two bytes of string
+ = esp + 20			scanalign   equ  esp + 20   ; dword-misalignment of string
+ = esp + 24			nicematch   equ  esp + 24   ; a good enough match size
+ = esp + 28			bestlen     equ  esp + 28   ; size of best match so far
+ = esp + 32			scan        equ  esp + 32   ; ptr to string wanting match
+
+ = 00000024			LocalVarsSize   equ 36
+				;   saved ebx   byte esp + 36
+				;   saved edi   byte esp + 40
+				;   saved esi   byte esp + 44
+				;   saved ebp   byte esp + 48
+				;   return address  byte esp + 52
+ = esp + 56			deflatestate    equ  esp + 56   ; the function arguments
+ = esp + 60			curmatch    equ  esp + 60
+
+				;;; Offsets for fields in the deflate_state structure. These numbers
+				;;; are calculated from the definition of deflate_state, with the
+				;;; assumption that the compiler will dword-align the fields. (Thus,
+				;;; changing the definition of deflate_state could easily cause this
+				;;; program to crash horribly, without so much as a warning at
+				;;; compile time. Sigh.)
+
+ = 0000002C			dsWSize     equ 36+zlib1222add
+ = 00000034			dsWMask     equ 44+zlib1222add
+ = 00000038			dsWindow    equ 48+zlib1222add
+ = 00000040			dsPrev      equ 56+zlib1222add
+ = 00000060			dsMatchLen  equ 88+zlib1222add
+ = 00000064			dsPrevMatch equ 92+zlib1222add
+ = 0000006C			dsStrStart  equ 100+zlib1222add
+ = 00000070			dsMatchStart    equ 104+zlib1222add
+ = 00000074			dsLookahead equ 108+zlib1222add
+ = 00000078			dsPrevLen   equ 112+zlib1222add
+ = 0000007C			dsMaxChainLen   equ 116+zlib1222add
+ = 0000008C			dsGoodMatch equ 132+zlib1222add
+ = 00000090			dsNiceMatch equ 136+zlib1222add
+
+
+				;;; match686.asm -- Pentium-Pro-optimized version of longest_match()
+				;;; Written for zlib 1.1.2
+				;;; Copyright (C) 1998 Brian Raiter <breadbox@muppetlabs.com>
+				;;; You can look at http://www.muppetlabs.com/~breadbox/software/assembly.html
+				;;;
+				;;
+				;;  This software is provided 'as-is', without any express or implied
+				;;  warranty.  In no event will the authors be held liable for any damages
+				;;  arising from the use of this software.
+				;;
+				;;  Permission is granted to anyone to use this software for any purpose,
+				;;  including commercial applications, and to alter it and redistribute it
+				;;  freely, subject to the following restrictions:
+				;;
+				;;  1. The origin of this software must not be misrepresented; you must not
+				;;     claim that you wrote the original software. If you use this software
+				;;     in a product, an acknowledgment in the product documentation would be
+				;;     appreciated but is not required.
+				;;  2. Altered source versions must be plainly marked as such, and must not be
+				;;     misrepresented as being the original software
+				;;  3. This notice may not be removed or altered from any source distribution.
+				;;
+
+				;GLOBAL _longest_match, _match_init
+
+
+				;SECTION    .text
+
+				;;; uInt longest_match(deflate_state *deflatestate, IPos curmatch)
+
+				;_longest_match:
+				    IFDEF NOUNDERLINE
+				    ELSE
+ 00000000			    _longest_match      proc near
+				    ENDIF
+ 00000000			.FPO (9, 4, 0, 0, 1, 0)
+
+				;;; Save registers that the compiler may be using, and adjust esp to
+				;;; make room for our stack frame.
+
+ 00000000  55			        push    ebp
+ 00000001  57			        push    edi
+ 00000002  56			        push    esi
+ 00000003  53			        push    ebx
+ 00000004  83 EC 24		        sub esp, LocalVarsSize
+
+				;;; Retrieve the function arguments. ecx will hold cur_match
+				;;; throughout the entire function. edx will hold the pointer to the
+				;;; deflate_state structure during the function's setup (before
+				;;; entering the main loop.
+
+ 00000007  8B 54 24 38		        mov edx, [deflatestate]
+ 0000000B  8B 4C 24 3C		        mov ecx, [curmatch]
+
+				;;; uInt wmask = s->w_mask;
+				;;; unsigned chain_length = s->max_chain_length;
+				;;; if (s->prev_length >= s->good_match) {
+				;;;     chain_length >>= 2;
+				;;; }
+
+ 0000000F  8B 42 78		        mov eax, [edx + dsPrevLen]
+ 00000012  8B 9A 0000008C	        mov ebx, [edx + dsGoodMatch]
+ 00000018  3B C3		        cmp eax, ebx
+ 0000001A  8B 42 34		        mov eax, [edx + dsWMask]
+ 0000001D  8B 5A 7C		        mov ebx, [edx + dsMaxChainLen]
+ 00000020  7C 03		        jl  LastMatchGood
+ 00000022  C1 EB 02		        shr ebx, 2
+ 00000025			LastMatchGood:
+
+				;;; chainlen is decremented once beforehand so that the function can
+				;;; use the sign flag instead of the zero flag for the exit test.
+				;;; It is then shifted into the high word, to make room for the wmask
+				;;; value, which it will always accompany.
+
+ 00000025  4B			        dec ebx
+ 00000026  C1 E3 10		        shl ebx, 16
+ 00000029  0B D8		        or  ebx, eax
+ 0000002B  89 1C 24		        mov [chainlenwmask], ebx
+
+				;;; if ((uInt)nice_match > s->lookahead) nice_match = s->lookahead;
+
+ 0000002E  8B 82 00000090	        mov eax, [edx + dsNiceMatch]
+ 00000034  8B 5A 74		        mov ebx, [edx + dsLookahead]
+ 00000037  3B D8		        cmp ebx, eax
+ 00000039  7C 02		        jl  LookaheadLess
+ 0000003B  8B D8		        mov ebx, eax
+ 0000003D  89 5C 24 18		LookaheadLess:  mov [nicematch], ebx
+
+				;;; register Bytef *scan = s->window + s->strstart;
+
+ 00000041  8B 72 38		        mov esi, [edx + dsWindow]
+ 00000044  89 74 24 04		        mov [window], esi
+ 00000048  8B 6A 6C		        mov ebp, [edx + dsStrStart]
+ 0000004B  8D 7C 35 00		        lea edi, [esi + ebp]
+ 0000004F  89 7C 24 20		        mov [scan], edi
+
+				;;; Determine how many bytes the scan ptr is off from being
+				;;; dword-aligned.
+
+ 00000053  8B C7		        mov eax, edi
+ 00000055  F7 D8		        neg eax
+ 00000057  83 E0 03		        and eax, 3
+ 0000005A  89 44 24 14		        mov [scanalign], eax
+
+				;;; IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
+				;;;     s->strstart - (IPos)MAX_DIST(s) : NIL;
+
+ 0000005E  8B 42 2C		        mov eax, [edx + dsWSize]
+ 00000061  2D 00000106		        sub eax, MIN_LOOKAHEAD
+ 00000066  2B E8		        sub ebp, eax
+ 00000068  7F 02		        jg  LimitPositive
+ 0000006A  33 ED		        xor ebp, ebp
+ 0000006C			LimitPositive:
+
+				;;; int best_len = s->prev_length;
+
+ 0000006C  8B 42 78		        mov eax, [edx + dsPrevLen]
+ 0000006F  89 44 24 1C		        mov [bestlen], eax
+
+				;;; Store the sum of s->window + best_len in esi locally, and in esi.
+
+ 00000073  03 F0		        add esi, eax
+ 00000075  89 74 24 08		        mov [windowbestlen], esi
+
+				;;; register ush scan_start = *(ushf*)scan;
+				;;; register ush scan_end   = *(ushf*)(scan+best_len-1);
+				;;; Posf *prev = s->prev;
+
+ 00000079  0F B7 1F		        movzx   ebx, word ptr [edi]
+ 0000007C  89 5C 24 10		        mov [scanstart], ebx
+ 00000080  0F B7 5C 38 FF	        movzx   ebx, word ptr [edi + eax - 1]
+ 00000085  89 5C 24 0C		        mov [scanend], ebx
+ 00000089  8B 7A 40		        mov edi, [edx + dsPrev]
+
+				;;; Jump into the main loop.
+
+ 0000008C  8B 14 24		        mov edx, [chainlenwmask]
+ 0000008F  EB 1D		        jmp short LoopEntry
+
+				align 4
+
+				;;; do {
+				;;;     match = s->window + cur_match;
+				;;;     if (*(ushf*)(match+best_len-1) != scan_end ||
+				;;;         *(ushf*)match != scan_start) continue;
+				;;;     [...]
+				;;; } while ((cur_match = prev[cur_match & wmask]) > limit
+				;;;          && --chain_length != 0);
+				;;;
+				;;; Here is the inner loop of the function. The function will spend the
+				;;; majority of its time in this loop, and majority of that time will
+				;;; be spent in the first ten instructions.
+				;;;
+				;;; Within this loop:
+				;;; ebx = scanend
+				;;; ecx = curmatch
+				;;; edx = chainlenwmask - i.e., ((chainlen << 16) | wmask)
+				;;; esi = windowbestlen - i.e., (window + bestlen)
+				;;; edi = prev
+				;;; ebp = limit
+
+ 00000094			LookupLoop:
+ 00000094  23 CA		        and ecx, edx
+ 00000096  0F B7 0C 4F		        movzx   ecx, word ptr [edi + ecx*2]
+ 0000009A  3B CD		        cmp ecx, ebp
+ 0000009C  0F 86 000000E0	        jbe LeaveNow
+ 000000A2  81 EA 00010000	        sub edx, 00010000h
+ 000000A8  0F 88 000000D4	        js  LeaveNow
+ 000000AE  0F B7 44 31 FF	LoopEntry:  movzx   eax, word ptr [esi + ecx - 1]
+ 000000B3  3B C3		        cmp eax, ebx
+ 000000B5  75 DD		        jnz LookupLoop
+ 000000B7  8B 44 24 04		        mov eax, [window]
+ 000000BB  0F B7 04 01		        movzx   eax, word ptr [eax + ecx]
+ 000000BF  3B 44 24 10		        cmp eax, [scanstart]
+ 000000C3  75 CF		        jnz LookupLoop
+
+				;;; Store the current value of chainlen.
+
+ 000000C5  89 14 24		        mov [chainlenwmask], edx
+
+				;;; Point edi to the string under scrutiny, and esi to the string we
+				;;; are hoping to match it up with. In actuality, esi and edi are
+				;;; both pointed (MAX_MATCH_8 - scanalign) bytes ahead, and edx is
+				;;; initialized to -(MAX_MATCH_8 - scanalign).
+
+ 000000C8  8B 74 24 04		        mov esi, [window]
+ 000000CC  8B 7C 24 20		        mov edi, [scan]
+ 000000D0  03 F1		        add esi, ecx
+ 000000D2  8B 44 24 14		        mov eax, [scanalign]
+ 000000D6  BA FFFFFEF8		        mov edx, 0fffffef8h; -(MAX_MATCH_8)
+ 000000DB  8D BC 38		        lea edi, [edi + eax + 0108h] ;MAX_MATCH_8]
+	   00000108
+ 000000E2  8D B4 30		        lea esi, [esi + eax + 0108h] ;MAX_MATCH_8]
+	   00000108
+
+				;;; Test the strings for equality, 8 bytes at a time. At the end,
+				;;; adjust edx so that it is offset to the exact byte that mismatched.
+				;;;
+				;;; We already know at this point that the first three bytes of the
+				;;; strings match each other, and they can be safely passed over before
+				;;; starting the compare loop. So what this code does is skip over 0-3
+				;;; bytes, as much as necessary in order to dword-align the edi
+				;;; pointer. (esi will still be misaligned three times out of four.)
+				;;;
+				;;; It should be confessed that this loop usually does not represent
+				;;; much of the total running time. Replacing it with a more
+				;;; straightforward "rep cmpsb" would not drastically degrade
+				;;; performance.
+
+ 000000E9			LoopCmps:
+ 000000E9  8B 04 32		        mov eax, [esi + edx]
+ 000000EC  33 04 3A		        xor eax, [edi + edx]
+ 000000EF  75 14		        jnz LeaveLoopCmps
+ 000000F1  8B 44 32 04		        mov eax, [esi + edx + 4]
+ 000000F5  33 44 3A 04		        xor eax, [edi + edx + 4]
+ 000000F9  75 07		        jnz LeaveLoopCmps4
+ 000000FB  83 C2 08		        add edx, 8
+ 000000FE  75 E9		        jnz LoopCmps
+ 00000100  EB 71		        jmp short LenMaximum
+ 00000102  83 C2 04		LeaveLoopCmps4: add edx, 4
+ 00000105  A9 0000FFFF		LeaveLoopCmps:  test    eax, 0000FFFFh
+ 0000010A  75 06		        jnz LenLower
+ 0000010C  83 C2 02		        add edx,  2
+ 0000010F  C1 E8 10		        shr eax, 16
+ 00000112  2C 01		LenLower:   sub al, 1
+ 00000114  83 D2 00		        adc edx, 0
+
+				;;; Calculate the length of the match. If it is longer than MAX_MATCH,
+				;;; then automatically accept it as the best possible match and leave.
+
+ 00000117  8D 04 3A		        lea eax, [edi + edx]
+ 0000011A  8B 7C 24 20		        mov edi, [scan]
+ 0000011E  2B C7		        sub eax, edi
+ 00000120  3D 00000102		        cmp eax, MAX_MATCH
+ 00000125  7D 4C		        jge LenMaximum
+
+				;;; If the length of the match is not longer than the best match we
+				;;; have so far, then forget it and return to the lookup loop.
+
+ 00000127  8B 54 24 38		        mov edx, [deflatestate]
+ 0000012B  8B 5C 24 1C		        mov ebx, [bestlen]
+ 0000012F  3B C3		        cmp eax, ebx
+ 00000131  7F 13		        jg  LongerMatch
+ 00000133  8B 74 24 08		        mov esi, [windowbestlen]
+ 00000137  8B 7A 40		        mov edi, [edx + dsPrev]
+ 0000013A  8B 5C 24 0C		        mov ebx, [scanend]
+ 0000013E  8B 14 24		        mov edx, [chainlenwmask]
+ 00000141  E9 FFFFFF4E		        jmp LookupLoop
+
+				;;;         s->match_start = cur_match;
+				;;;         best_len = len;
+				;;;         if (len >= nice_match) break;
+				;;;         scan_end = *(ushf*)(scan+best_len-1);
+
+ 00000146  8B 5C 24 18		LongerMatch:    mov ebx, [nicematch]
+ 0000014A  89 44 24 1C		        mov [bestlen], eax
+ 0000014E  89 4A 70		        mov [edx + dsMatchStart], ecx
+ 00000151  3B C3		        cmp eax, ebx
+ 00000153  7D 2D		        jge LeaveNow
+ 00000155  8B 74 24 04		        mov esi, [window]
+ 00000159  03 F0		        add esi, eax
+ 0000015B  89 74 24 08		        mov [windowbestlen], esi
+ 0000015F  0F B7 5C 38 FF	        movzx   ebx, word ptr [edi + eax - 1]
+ 00000164  8B 7A 40		        mov edi, [edx + dsPrev]
+ 00000167  89 5C 24 0C		        mov [scanend], ebx
+ 0000016B  8B 14 24		        mov edx, [chainlenwmask]
+ 0000016E  E9 FFFFFF21		        jmp LookupLoop
+
+				;;; Accept the current string, with the maximum possible length.
+
+ 00000173  8B 54 24 38		LenMaximum: mov edx, [deflatestate]
+ 00000177  C7 44 24 1C		        mov dword ptr [bestlen], MAX_MATCH
+	   00000102
+ 0000017F  89 4A 70		        mov [edx + dsMatchStart], ecx
+
+				;;; if ((uInt)best_len <= s->lookahead) return (uInt)best_len;
+				;;; return s->lookahead;
+
+ 00000182			LeaveNow:
+ 00000182  8B 54 24 38		        mov edx, [deflatestate]
+ 00000186  8B 5C 24 1C		        mov ebx, [bestlen]
+ 0000018A  8B 42 74		        mov eax, [edx + dsLookahead]
+ 0000018D  3B D8		        cmp ebx, eax
+ 0000018F  7F 02		        jg  LookaheadRet
+ 00000191  8B C3		        mov eax, ebx
+ 00000193			LookaheadRet:
+
+				;;; Restore the stack and return from whence we came.
+
+ 00000193  83 C4 24		        add esp, LocalVarsSize
+ 00000196  5B			        pop ebx
+ 00000197  5E			        pop esi
+ 00000198  5F			        pop edi
+ 00000199  5D			        pop ebp
+
+ 0000019A  C3			        ret
+				; please don't remove this string !
+				; Your can freely use match686 in any free or commercial app if you don't remove the string in the binary!
+ 0000019B  0D 0A 61 73 6D	    db     0dh,0ah,"asm686 with masm, optimised assembly code from Brian Raiter, written 1998",0dh,0ah
+	   36 38 36 20 77
+	   69 74 68 20 6D
+	   61 73 6D 2C 20
+	   6F 70 74 69 6D
+	   69 73 65 64 20
+	   61 73 73 65 6D
+	   62 6C 79 20 63
+	   6F 64 65 20 66
+	   72 6F 6D 20 42
+	   72 69 61 6E 20
+	   52 61 69 74 65
+	   72 2C 20 77 72
+	   69 74 74 65 6E
+	   20 31 39 39 38
+	   0D 0A
+
+
+				    IFDEF NOUNDERLINE
+				    ELSE
+ 000001E8			    _longest_match      endp
+				    ENDIF
+
+				    IFDEF NOUNDERLINE
+				    ELSE
+ 000001E8			    _match_init     proc near
+ 000001E8  C3			                    ret
+ 000001E9			    _match_init     endp
+				    ENDIF
+
+
+ 000001E9			_TEXT   ends
+				end
+Microsoft (R) Macro Assembler Version 14.00.24210.0	    10/18/20 10:26:12
+match686.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000000 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000001E9 Para	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+_longest_match . . . . . . . . .	P Near	 00000000 _TEXT	Length= 000001E8 Public
+  LastMatchGood  . . . . . . . .	L Near	 00000025 _TEXT	
+  LookaheadLess  . . . . . . . .	L Near	 0000003D _TEXT	
+  LimitPositive  . . . . . . . .	L Near	 0000006C _TEXT	
+  LookupLoop . . . . . . . . . .	L Near	 00000094 _TEXT	
+  LoopEntry  . . . . . . . . . .	L Near	 000000AE _TEXT	
+  LoopCmps . . . . . . . . . . .	L Near	 000000E9 _TEXT	
+  LeaveLoopCmps4 . . . . . . . .	L Near	 00000102 _TEXT	
+  LeaveLoopCmps  . . . . . . . .	L Near	 00000105 _TEXT	
+  LenLower . . . . . . . . . . .	L Near	 00000112 _TEXT	
+  LongerMatch  . . . . . . . . .	L Near	 00000146 _TEXT	
+  LenMaximum . . . . . . . . . .	L Near	 00000173 _TEXT	
+  LeaveNow . . . . . . . . . . .	L Near	 00000182 _TEXT	
+  LookaheadRet . . . . . . . . .	L Near	 00000193 _TEXT	
+_match_init  . . . . . . . . . .	P Near	 000001E8 _TEXT	Length= 00000001 Public
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+LocalVarsSize  . . . . . . . . .	Number	 00000024h   
+MAX_MATCH_8_ . . . . . . . . . .	Number	 00000100h   
+MAX_MATCH  . . . . . . . . . . .	Number	 00000102h   
+MIN_LOOKAHEAD  . . . . . . . . .	Number	 00000106h   
+MIN_MATCH  . . . . . . . . . . .	Number	 00000003h   
+NbStackAdd . . . . . . . . . . .	Number	 00000034h   
+NbStack  . . . . . . . . . . . .	Number	 0000004Ch   
+adrret . . . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-8]
+best_len . . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-36]
+bestlen  . . . . . . . . . . . .	Text   	 esp + 28
+chain_length . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-28]
+chainlenwmask  . . . . . . . . .	Text   	 esp + 0
+cur_match  . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-0]
+curmatch . . . . . . . . . . . .	Text   	 esp + 60
+deflatestate . . . . . . . . . .	Text   	 esp + 56
+dep_chain_length . . . . . . . .	Number	 0000007Ch   
+dep_good_match . . . . . . . . .	Number	 0000008Ch   
+dep_lookahead  . . . . . . . . .	Number	 00000074h   
+dep_match_start  . . . . . . . .	Number	 00000070h   
+dep_nice_match . . . . . . . . .	Number	 00000090h   
+dep_prev_length  . . . . . . . .	Number	 00000078h   
+dep_prev . . . . . . . . . . . .	Number	 00000040h   
+dep_strstart . . . . . . . . . .	Number	 0000006Ch   
+dep_w_mask . . . . . . . . . . .	Number	 00000034h   
+dep_w_size . . . . . . . . . . .	Number	 0000002Ch   
+dep_window . . . . . . . . . . .	Number	 00000038h   
+dsGoodMatch  . . . . . . . . . .	Number	 0000008Ch   
+dsLookahead  . . . . . . . . . .	Number	 00000074h   
+dsMatchLen . . . . . . . . . . .	Number	 00000060h   
+dsMatchStart . . . . . . . . . .	Number	 00000070h   
+dsMaxChainLen  . . . . . . . . .	Number	 0000007Ch   
+dsNiceMatch  . . . . . . . . . .	Number	 00000090h   
+dsPrevLen  . . . . . . . . . . .	Number	 00000078h   
+dsPrevMatch  . . . . . . . . . .	Number	 00000064h   
+dsPrev . . . . . . . . . . . . .	Number	 00000040h   
+dsStrStart . . . . . . . . . . .	Number	 0000006Ch   
+dsWMask  . . . . . . . . . . . .	Number	 00000034h   
+dsWSize  . . . . . . . . . . . .	Number	 0000002Ch   
+dsWindow . . . . . . . . . . . .	Number	 00000038h   
+limit  . . . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-32]
+match_start_ptr  . . . . . . . .	Text   	 dword ptr [esp+NbStack-56]
+match_start  . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-72]
+nice_match . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-60]
+nicematch  . . . . . . . . . . .	Text   	 esp + 24
+prev . . . . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-44]
+pushebp  . . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-12]
+pushebx  . . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-24]
+pushedi  . . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-16]
+pushesi  . . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-20]
+scan_start . . . . . . . . . . .	Text   	 word ptr [esp+NbStack-48]
+scanalign  . . . . . . . . . . .	Text   	 esp + 20
+scanend  . . . . . . . . . . . .	Text   	 esp + 12
+scanstart  . . . . . . . . . . .	Text   	 esp + 16
+scan . . . . . . . . . . . . . .	Text   	 esp + 32
+str_s  . . . . . . . . . . . . .	Text   	 dword ptr[esp+NbStack-4]
+strend . . . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-76]
+windowbestlen  . . . . . . . . .	Text   	 esp + 8
+windowlen  . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-68]
+window . . . . . . . . . . . . .	Text   	 esp + 4
+wmask  . . . . . . . . . . . . .	Text   	 dword ptr [esp+NbStack-52]
+zlib1222add  . . . . . . . . . .	Number	 00000008h   
+
+	   0 Warnings
+	   0 Errors

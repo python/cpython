@@ -1,0 +1,625 @@
+2015-01-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tdbc.h: Advance version number to 1.0.3
+	* configure.in:
+	* README:
+	* configure:    autoconf-2.69
+
+2014-10-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tdbc.h: Advance version number to 1.0.2
+	* configure.in:
+	* README:
+	* configure:    autoconf-2.59
+
+	* doc/*.[3n]: [Bug 00b792] OpenBSD friendly docs.
+
+2014-08-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tdbc.h: Advance version number to 1.0.1
+	* configure.in:
+	* README:
+	* configure:	autoconf-2.59
+
+2012-12-05  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* win/Makefile.vc: Install headers, stub file and fixed tdbcConfig.sh.
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tdbc.h: Advance version number to 1.0.0
+	* configure.in:
+	* README:
+	* configure:	autoconf-2.59
+
+2012-08-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/nmakehlp.c: Add "-V<num>" option, in order to be able
+	to detect partial version numbers.
+
+2012-07-26  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* tclconfig/install-sh:  Update to latest TEA
+	* tclconfig/tcl.m4:	
+	* configure:		autoconf-2.59
+
+2012-07-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/makefile.vc: [Bug 3544932]: Visual studio compiler check fails
+
+2012-07-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbc.h:
+	* generic/tdbc.c:  Restored Unix buildability for 'tdbc', and
+			   removed code that swizzles TCL_STORAGE_CLASS
+		           in favour of avoiding Tcl's EXTERN macro.
+
+2012-06-10  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* configure.in:0
+	* generic/tdbc.decls:
+	* generic/tdbc.h:
+	* tdbcConfig.sh.in:
+	* tools/genStubs.tcl: FRQ-b4029dc351: make all TDBC API functions
+	                      MODULE_SCOPE
+
+	* generic/tdbcDecls.h:
+	* generic/tdbcStubInit.c:
+	* generic/tdbcStubLib.c:  Regen
+
+	* configure:	autoconf-2.59
+
+2012-06-08  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* tclconfig/ChangeLog:
+	* tclconfig/tcl.m4: Update to latest TEA
+	* configure: 	autoconf-2.59
+
+2011-08-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/rules.vc: Extend support to MSVC10.  Thanks to Twylite.
+
+2011-07-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbc.h: Advance version number to 1.0b17
+	* configure.in:
+	* README:
+	* configure:	autoconf-2.59
+
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:	Update to latest TEA 3.9 revisions.
+	* Makefile.in:
+	* tclconfig/*:
+
+	* configure:	autoconf-2.59
+
+2011-04-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcTokenize.c (Tdbc_Tokenize):
+		Added a special case for PostgreSQL's typecast syntax
+		:var::type. (Allows us to do things like 'select :var::type'
+		without tripping over 'cannot determine data type' errors.
+	* tests/tokenize.test (tokenize-2.1):
+		Added a test case for the above.
+
+2011-02-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl (tdbc::connection transaction):
+		Modified the 'transaction' method to attempt to rollback
+		if a commit fails, in order to clear out a failed
+		transaction.
+	* doc/tdbc_connection.n:
+		Modified the 'tdbc_connection' manual page to reflect the
+		above behaviour. (Bug [d7dd97c402])
+
+2011-02-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl:
+			Changed 'foreach' method on the connection, statement
+			and result set objects so that 'foreach' and 'allrows'
+			will iterate over multiple result sets.  Added
+			default 'nextresults' method (does nothing, reports
+			that no further results are available) and
+			'outputparams' method (does nothing, reports no
+			output parameters) to the base 'resultset' class so
+			that drivers that lack multiple-results functionality
+			need not implement these.
+	* doc/tdbc_resultset.n:
+			Added description of the 'nextresults' method,
+			and its effect on 'allrows' and 'foreach'
+
+2011-01-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc.n, doc/tdbc_connection.n, doc/tdbc_mapSqlState.n:
+	* doc/tdbc_resultset.n, doc/tdbc_statement.n, doc/tdbc_tokenize.n:
+	Added empty comment at the start of each manpage because 'man'
+	interprets comments there as directives. Thanks to Konstantin
+	Kohmoutov for reporting and diagnosing this error.
+
+2011-01-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Changed to put the absolute path name of the
+	                source directory in tdbc_INCLUDE_PATH so that
+	                drivers will build correctly against an uninstalled
+	                tdbc. Thanks to Konstantin Khomoutov for reporting
+	                this error.
+	* configure:    autoconf2.59
+
+2010-09-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc_connection.n:
+			Added description of the new 'primarykeys' and
+			'foreignkeys' methods to the manual.
+
+	* library/tdbc.tcl:
+			Revised the 'keySequence' column in 'foreignkeys'
+			to be 'ordinalPosition' instead, for consistency
+			with 'primarykeys'
+
+	* configure.in:
+	* Makefile.in:
+	* pkgIndex.tcl.in (new file):
+	* README:
+	* tdbcConfig.sh.in:
+	* generic/tdbc.h:
+	* tclconfig/:	Upgraded the build to use TEA 3.9. Changed the
+			approach to pkgIndex.tcl generation. (It's now built
+			at configure time, rather than from the Makefile.)
+			Advanced version number to 1.0b16.
+	* configure: 	autoconf 2.59
+
+2010-06-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:			Revised the code at the suggestion
+	* generic/tdbc.c (Tdbc_Init):	of Andreas Kupries to avoid using
+	* tests/all.tcl:		'tcl_findLibrary' and instead execute
+	* tests/tdbc.test:		both 'source' and 'load' commands from
+	* tests/tokenize.test:		'pkgIndex.tcl'. Revised the 'make test'
+					rule, and the test scripts, to
+					test successfully under the new regime.
+					Thanks to Andreas for providing the
+					original patch, and to Joe English
+					for providing ideas for simplifying
+					and repairing 'make test' under the
+					new regime.
+
+2010-05-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl: Add methods 'primarykeys' and 'foreignkeys'
+			    on the 'tdbc::connection' object
+	                    to inspect database structure, and methods
+			    'BuildPrimaryKeysStatement' and
+	                    'BuildForeignKeysStatement' to initialize the
+	                    'statement' objects that the methods use.
+
+2010-05-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* aclocal.m4:	Add a TEAX_PATH_LINE rule to simplify emitting the
+			stub library paths in tdbcConfig.sh.
+	* tools/genExtStubs.tcl (ParseImports, writeStubDeclarations):
+			Add a new '* CONVENTION:' declaration to the
+			stub declarations that specifies the linkage
+			convention (e.g., __stdcall, WINAPI) that is
+			used in an imported library.
+	* configure.in: Add code to put the stub library path (build and
+			(install) in the tdbcConfig.sh file so that extensions
+			that import TDBC stubs can find it.
+	* generic/tdbc.h:
+	* README:	Advance release to 1.0b15
+
+2010-04-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in: Updated 'make dist' to include the tools that
+	               generate Stubs for external libs to support
+	               run-time loading.
+	* configure.in: Removed a stray backslash that caused a shell
+	                error message while configuring (and otherwise
+	                appeared harmless).
+	* tools/genExtStubs.tcl: Adjusted to generate the Stubs files in
+	                         Unix format only to avoid DOS-formatted files
+	                         sneaking into the repository.
+	
+2010-04-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tools/genStubs.tcl: Revised 'genStubs' to write files in Unix
+			      format (-translation lf) so that 'make genstubs'
+	                      generates the same output on Unix and Windows.
+	* tdbcDecls.h:
+	* tdbcStubInit.h:     make genstubs
+	* README:
+	* configure.in:
+	* generic/tdbc.h:     Advance patchlevel to 1.0b14.1
+	* configure:          autoconf-2.59
+	
+	
+2010-04-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in:     Advance release to 1.0b14
+	* generic/tdbc.h:
+	* README:
+	* configure:        autoconf-2.59
+	
+2010-04-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in:
+	* tdbcConfig.sh.in: Modified to pass the build-time and run-time
+	                    Tcl script library directories in tdbcConfig.sh,
+	                    so that driver tests can be run before tdbc itself
+	                    is installed.
+	* configure: autoconf 2.59
+	
+2010-04-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: 
+	* tdbcConfig.sh.in:  Revised names starting with TDBC_ to start
+	with tdbc_ in order to conform with the expectations of
+	TEA_LOAD_CONFIG. Added tdbc_BUILD_STUB_LIB_SPEC and
+	tdbc_BUILD_INCLUDE_SPEC to the generated tdbcConfig.sh so that
+	the Stubs library and include files for tdbc can be found in
+	the build directory as well as the install directory.
+
+	* configure: autoconf 2.59
+	
+2010-04-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/Tdbc_Init.3:
+	* doc/tdbc.n:
+	* doc/tdbc_connection.n:
+	* doc/tdbc_mapSqlState.n:
+	* doc/tdbc_connection.n:
+	* doc/tdbc_resultset.n:
+	* doc/tdbc_statement.n:
+	* doc/tdbc_tokenize.n: Merged changes from the trunk of the 
+	Tcl source tree that make the documentation fit better with the
+	Tcl manuals. (Tickets [fcc8231b9e], [02c0131ba1] and [18c90402fb]).
+
+	* Makefile.in: Corrected a misinstallation of the manual
+	pages in the case where $(MANDIR)/man3 doesn't exist.
+	(Ticket [99e97fb098])
+
+	* generic/tdbc.c:
+	* generic/tdbcDecls.h:
+	* generic/tdbcStubInit.c:
+	* generic/tdbcStubLib.c:
+	* tools/genStubs.tcl: Made the Stubs tables (and a few other constants
+	formally 'const'. (Ticket [cf7bc364cc])
+	
+2010-03-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tools/genExtStubs.tcl (new file): Added a tool so that
+	drivers can resolve imports into Stubs tables at run time, allowing
+	them to avoid compile-dependencies on the respective databases'
+	build systems. 
+	
+2010-03-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tools/tdbc-man2html.tcl: Added SourceForge logo to the HTML
+	documentation, to comply with requirements for hosting the
+	documentation at SourceForge.
+
+2009-09-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tools/tdbc-man2html.tcl: Added tdbcpostgres to the documentation set.
+	* generic/tdbc.h:
+	* configure.in:
+	* README:		Advance version number to 1.0b13
+	* configure:		autoconf-2.59
+	
+2009-07-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbc.h:
+	* configure.in:
+	* README:		Advance version number to 1.0b12
+	* configure:		autoconf-2.59
+	
+	
+2009-05-29  Kevin B. Kenny  <kennykb@acm.org>
+	
+	* generic/tdbc.h:
+	* configure.in:
+	* README:		Advance version number to 1.0b11
+	* configure:		autoconf-2.59
+	
+2009-04-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in (dist): Rename Tdbc.3 to Tdbc_Init.3 to avoid
+	a file naming conflict in HTML documentation.
+	* doc/Tdbc_Init.3: Renamed from Tdbc.3. Added IGNORE arond macros
+	* doc/tbdc.n:
+	* doc/tdbc_connection.n:
+	* doc/tdbc_mapSqlState.n:
+	* doc/tdbc_resultset.n:
+	* doc/tdbc_statement.n:
+	* doc/tdbc_tokenize.n: Added IGNORE / END IGNORE around macros.
+	* tdbc_mapSqlState.n: Moved the .BS comment to where it belongs.
+	* tools/tdbc-man2html.tcl: Added .3 man pages to the build. Added a
+	    '\" IGNORE ... \'" END IGNORE directive so that *roff macros
+	    can be skipped reliably (needed in order to handle the .AS and
+	    .AP macros)
+	Retagged 1.0b10 with these changes.
+	
+2009-04-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in (dist): Added new man pages to the 'dist' rule.
+	Retagged 1.0b10 with these changes.
+	
+2009-04-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in (install-doc): Added missing commands to install
+	                             section 3 man pages
+	
+2009-04-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/Tdbc.3: Added manual page for C API to TDBC
+	* doc/tdbc.n:
+	* doc/tdbc_connection.n: Changed 'starttransaction' to
+				 'begintransaction'. Corrected the 'foreach'
+				 syntax
+	* doc/tdbc_statement.n: Corrected the 'foreach' syntax.
+	* doc/tdbc_resultset.n:
+	* doc/tdbc_tokenize.n: Corrected tabs, margins, etc. to Tcl standard.
+	* doc/tdbc_mapSqlState.n: Added documentation for tdbc::mapSqlState.
+	
+2009-04-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbc.h:
+	* configure.in:
+	* README:		Advance version number to 1.0b10
+	* configure:		autoconf-2.59
+	
+2009-03-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tdbc.tcl: Replaced the 'statementClass' and 'resultSetClass'
+	instance variables with 'statementCreate and 'resultSetCreate'
+	methods (expected to forward to the appropriate constructors).
+	Replaced 'my variable' usage with 'variable' declarations at
+	class level. Removed various bits of debugging output.
+	
+2009-02-16  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbc.h:
+	* configure.in:
+	* README:		Advance version number to 1.0b9
+	* configure:		autoconf-2.59
+	
+2009-02-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README: Fix several editorial details. Thanks to Larry Virden
+	for the patch. [Ticket e33df9041f]
+	
+2009-02-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tools/tdbc-man2html.tcl (new file):
+		First cut at automating HTML generation for the manual
+		pages.
+	* doc/tdbc.n: 
+	* doc/tdbc_connection.n:
+	* doc/tdbc_resultset.n:
+	* doc/tdbc_statement.n:
+	* doc/tdbc_tokenize.n:	Formatting changes to the man pages so that
+				man2html works.
+	
+	* generic/tdbc.h:
+	* configure.in:
+	* README:		Advance version number to 1.0b8
+	* configure:		autoconf-2.59
+	
+2009-02-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:		Modified 'pkgIndex.tcl' rule to allow for
+				requiring the TclOO package in 8.5, and not
+				in 8.6, while allowing both versions.
+				Modified 'clean' to clean up 'pkgIndex.tcl',
+				and added the version dependencies as
+				TCL_VERSION_REQ, TCL_VERSION_DESIRED,
+				and TCLOO_VERSION_REQ. Added the new
+				'tests/tdbc.test' to 'make dist'.
+	* tests/tdbc.test:	Removed explicit check for {TCL WRONGARGS}
+				in ::errorCode, to restore 8.5 compatibility.
+	
+2009-01-31  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:
+	* configure.in:
+	* generic/tdbc.h:	Advanced version to 1.0b7
+	* configure:		autoconf-2.59
+	* generic/tdbc.c:	Added a 'tdbc::mapSqlState' command that
+				makes a key suitable for 'errorCode' from
+				a SQLSTATE.
+	* generic/tdbc.decls:	Added Tdbc_MapSqlState, C API to 'mapSqlState'
+	* generic/tdbcDecls.h:
+	* generic/tdbcStubInit.c:  Regenerated
+	* library/tdbc.tcl:	Modified so that all errors return a proper
+				errorCode
+	* tests/tdbc.test:	Added tests for tdbc::mapSqlState
+	
+2009-01-07  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: Needed quotes around	$(SCRIPT_INSTALL_DIR)
+	in the install-libraries target else directory with spaces
+	in it failed.
+
+2009-01-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:		  Advanced version to 1.0b6
+	* configure.in:
+	* generic/tdbc.h:	
+
+	* configure:		  autoconf-2.59
+	
+2009-01-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:		  Advanced version to 1.0b5
+	* configure.in:
+	* generic/tdbc.h:	
+
+	* configure:		  autoconf-2.59
+	
+2008-12-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* README:		  Advanced version to 1.0b4
+	* configure.in:
+	* generic/tdbc.h:	
+
+	* configure:		  autoconf-2.59
+
+	* Makefile.in:		Changes to 'make dist' to include all files
+				explicitly - avoids distributing Emacs backups,
+				cores, etc.  D'oh!
+	
+	* Makefile.in:
+	* README:
+	* configure.in:
+	* generic/tdbc.c:
+	* generic/tdbc.decls:
+	* generic/tdbc.h:
+	* generic/tdbcDecls.h:
+	* generic/tdbcInt.h:
+	* generic/tdbcStubInit.c:
+	* generic/tdbcStubLib.c:
+	* generic/tdbcTokenize.c:
+	* library/tdbc.tcl:
+	* tdbcConfig.sh.in:
+	* tests/all.tcl:
+	* win/makefile.vc:
+	* win/nmakehlp.c:
+	* win/rules.vc:		Many trivial changes (e.g. RCS ID strings)
+				to avoid merge conflicts when importing to
+				Tcl's vendor branch.
+
+	* generic/tdbcStubInit.c: Added MODULE_SCOPE to the tdbcStubs 
+	                          declaration to correct a linkera error on
+	                          linux-x64.
+	* generic/tdbcTokenize.c: Added explicit casts to the 'ctype' macros
+	                          to guard against possible signed characters.
+	
+2008-12-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/makefile.vc:	Added files for a MSVC build system.
+	* win/rules.vc:		Thanks to Pat Thoyts <patthoyts@users.sf.net>
+	* win/versions.vc:	for developing these files.n
+	* win/tdbc.rc:		
+
+2008-12-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	sign manifest
+	
+2008-12-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* Makefile.in: use INSTALL_LIBRARY instead of INSTALL_PROGRAM to
+	install libraries, avoids breakage from tcl's install-strip when
+	built as a bundled package.
+
+	* tclconfig/ChangeLog:	update to latest TEA from tcl CVS, which has
+	* tclconfig/tcl.m4:	Jan's 2008-12-19 changes (tcl.m4 r1.127)
+
+	* configure.in:		update TEA_INIT for TEA 3.7
+	* configure:		autoconf-2.59
+
+2008-12-19  Kevin Kenny  <kennykb@acm.org>
+
+	* aclocal.m4: Changed to make ADD_MANIFEST default to ':'
+	rather than an empty string, to silence a warning on BSD compiles.
+	Thanks to Stu Cassoff for reporting this bug.
+	* configure: autoconf-2.59
+	
+2008-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tclconfig/tcl.m4: fix odbc build on mingw32
+	* configure:	autoconf-2.59
+
+2008-12-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:	New file.
+	* configure:	autoconf-2.59
+
+2008-12-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc.n: Added a file omitted from the 2008-11-30 commit.
+	* configure.in:
+	* generic/tdbc.h: Advanced version number to 1.0b1 in preparation
+	for release.
+	* configure: Autoconf 2.61
+	
+2008-11-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in: Removed nagging reminder about documentation.
+	* configure.in: Advanced revision to 0.2
+	* configure: Autoconf 2.61
+	* doc/tdbc.n:			First cut at a set of man
+	* doc/tdbc_connection.n:	pages for TDBC. Redactors
+	* doc/tdbc_resultSet.n:		and proofreaders are
+	* doc/tdbc_statement.n:		welcome to submit
+	* doc/tdbc_tokenize.n:		improvements.
+	* generic/tdbc.c: Lowercased the package name 'tdbc'
+	* generic/tdbc.h: Advanced patchlevel to 0.2a1
+	* generic/tdbcDecls.h: Lowercased the package name 'tdbc'
+	* generic/tdbcStubLib.c: Lowercased the package name 'tdbc'
+	* tests/tokenize.test: Lowercased the package name 'tdbc'
+	
+	
+2008-11-22  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Changed to make TDBC buildable on 8.6 without
+	needing to install a dummy tclooConfig.sh.
+	* configure: Autoconf 2.61.
+	
+2008-10-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl: Fixed the constructor of tdbc::resultset
+	to *not* have an empty constructor (which is interpreted by
+	tcloo as deleting the constructor!). Attempted to sign the commit
+	with a key that *isn't* about to expire. ;)
+	
+2008-06-11  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl: Split [$resultset nextrow] into two primitive
+	methods: [$resultset nextlist] and [$resultset nextdict]. Added
+	a [$resultset nextrow] method that delegates to one or the other
+	of these.
+	
+2008-05-24  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Changed configuration to use TEA_PATH_CONFIG to
+	* aclocal.m4:   locate tcloo.  Removed the local code that did it
+	                from aclocal.m4.
+	* configure:    Autoconf 2.61
+	
+2008-05-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl: Silenced tracing.
+	
+2008-05-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tdbc.tcl: Simplified processing of several callbacks
+	by eliminating a useless [namespace code my] in favor of [self].
+	Added tracing to attempt to track down a bug in oo's method
+	resolution.
+	
+2008-04-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* aclocal.m4:
+	* configure:
+	* configure.in:
+	* license.terms:
+	* Makefile.in:
+	* tdbcConfig.sh.in:
+	* generic/tdbc.c:
+	* generic/tdbc.decls:
+	* generic/tdbc.h:
+	* generic/tdbcDecls.h:
+	* generic/tdbcInt.h:
+	* generic/tdbcStubInit.c:
+	* generic/tdbcStubLib.c:
+	* generic/tdbcTokenize.c:
+	* library/tdbc.tcl:
+	* tclconfig/ChangeLog:
+	* tclconfig/install-sh:
+	* tclconfig/README.txt:
+	* tclconfig/tcl.m4:
+	* tests/all.tcl:
+	* tests/tokenize.test:
+	* tools/genStubs.tcl:
+	Initial commit of the "tdbc" package - the generic base class support
+	for Tcl Data Base Connectivity (TDBC) - TIP #308.

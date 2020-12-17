@@ -1,0 +1,1210 @@
+#---------------------------------------------------------------------
+# TITLE:
+#       typeoption.test
+#
+# AUTHOR:
+#       Arnulf Wiedemann with a lot of code form the snit tests by
+#       Will Duquette
+#
+# DESCRIPTION:
+#       Test cases for ::itcl::type proc, method, typemethod commands.
+#       Uses the ::tcltest:: harness.
+#
+#    The tests assume tcltest 2.2
+#-----------------------------------------------------------------------
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+::tcltest::loadTestedCommands
+package require itcl
+
+interp alias {} type {} ::itcl::type
+
+loadTestedCommands
+
+#-----------------------------------------------------------------------
+# Instance Introspection
+
+test iinfo-1.2 {object info too few args} -body {
+    type dog { }
+
+    dog create spot
+
+    spot info
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {wrong # args: should be one of...
+  info args procname
+  info body procname
+  info component ?name? ?-inherit? ?-value?
+  info components ?pattern?
+  info default method aname varname
+  info delegated ?name? ?-inherit? ?-value?
+  info instances ?pattern?
+  info method ?name? ?-protection? ?-type? ?-name? ?-args? ?-body?
+  info methods ?pattern?
+  info options ?pattern?
+  info type
+  info typemethod ?name? ?-protection? ?-type? ?-name? ?-args? ?-body?
+  info typemethods ?pattern?
+  info types ?pattern?
+  info typevariable ?name? ?-protection? ?-type? ?-name? ?-init? ?-value?
+  info typevars ?pattern?
+  info variable ?name? ?-protection? ?-type? ?-name? ?-init? ?-value? ?-config?
+  info variables ?pattern?
+...and others described on the man page}
+
+test iinfo-1.3 {object info too many args} -body {
+    type dog { }
+
+    dog create spot
+
+    spot info type foo
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info type"}
+
+test iinfo-2.1 {object info type} -body {
+    type dog { }
+
+    dog create spot
+    spot info type
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+test iinfo-3.1 {object info typevars} -body {
+    type dog {
+        typevariable thisvar 1
+        typevariable thatvar 2
+
+        constructor {args} {
+        }
+    }
+
+    dog create spot
+    lsort [spot info typevars]
+} -cleanup {
+    dog destroy
+} -result {::dog::thatvar ::dog::thisvar}
+
+test iinfo-3.2 {object info typevars with pattern} -body {
+    type dog {
+        typevariable thisvar 1
+        typevariable thatvar 2
+
+        constructor {args} {
+        }
+    }
+
+    dog create spot
+    spot info typevars *this*
+} -cleanup {
+    dog destroy
+} -result {::dog::thisvar}
+
+test iinfo-3.1a {object info typevarable} -body {
+    type dog {
+        typevariable thisvar 1
+        typevariable thatvar 2
+
+        constructor {args} {
+        }
+    }
+
+    dog create spot
+    spot info typevariable thatvar -name -protection -type -init -value
+} -cleanup {
+    dog destroy
+} -result {::dog::thatvar public common 2 2}
+
+test iinfo-4.1 {object info vars} -body {
+    type dog {
+        variable hisvar 1
+
+        constructor {args} {
+            variable hervar
+            set hervar 2
+        }
+    }
+
+    dog create spot
+    lsort [spot info vars]
+} -cleanup {
+    dog destroy
+} -result {hisvar itcl_options}
+
+test iinfo-4.2 {object info vars with pattern} -body {
+    type dog {
+        variable hisvar 1
+
+        constructor {args} {
+            variable hervar
+            set hervar 2
+        }
+    }
+
+    dog create spot
+    spot info vars "*his*"
+} -cleanup {
+    dog destroy
+} -result {hisvar itcl_options}
+
+test iinfo-5.1 {object info no vars defined besides itcl_options} -body {
+    type dog { }
+
+    dog create spot
+    list [spot info vars] [spot info typevars]
+} -cleanup {
+    dog destroy
+} -result {itcl_options {}}
+
+test iinfo-6.1 {info options with no options} -body {
+    type dog { }
+    dog create spot
+
+    llength [spot info options]
+} -cleanup {
+    dog destroy
+} -result {0}
+
+test iinfo-6.2 {info options with only local options} -body {
+    type dog {
+        option -foo a
+        option -bar b
+    }
+    dog create spot
+
+    lsort [spot info options]
+} -cleanup {
+    dog destroy
+} -result {-bar -foo}
+
+test iinfo-6.3 {info options with local and delegated options} -body {
+    type dog {
+        option -foo a
+        option -bar b
+        delegate option -quux to sibling
+    }
+    dog create spot
+
+    lsort [spot info options]
+} -cleanup {
+    dog destroy
+} -result {-bar -foo -quux}
+
+test iinfo-6.3a {info option} -body {
+    type dog {
+        option -foo a
+        option -bar b
+        delegate option -quux to sibling
+    }
+    dog create spot
+
+    lsort [spot info option]
+} -cleanup {
+    dog destroy
+} -result {-bar -foo}
+
+test iinfo-6.3b {info option with options} -body {
+    type dog {
+        option -foo -cgetmethod xx -configuremethodvar yy -default a
+        option -bar b
+        delegate option -quux to sibling
+    }
+    dog create spot
+
+    spot info option -foo
+} -cleanup {
+    dog destroy
+} -result {protected ::dog::-foo foo Foo a xx {} {} yy}
+
+test iinfo-7.1 {info typemethods, simple case} -body {
+    type dog { }
+
+    dog spot
+
+    lsort [spot info typemethods]
+} -cleanup {
+    dog destroy
+} -result {create destroy info}
+
+test iinfo-7.2 {info typemethods, with pattern} -body {
+    type dog { }
+
+    dog spot
+
+    spot info typemethods i*
+} -cleanup {
+    dog destroy
+} -result {info}
+
+test iinfo-7.3 {info typemethods, with explicit typemethods} -body {
+    type dog {
+        typemethod foo {} {}
+        typeconstructor {
+            set comp string
+        }
+        delegate typemethod bar to comp
+    }
+
+    dog spot
+
+    lsort [spot info typemethods]
+} -cleanup {
+    dog destroy
+} -result {bar create destroy foo info}
+
+test iinfo-7.4 {info typemethods, with implicit typemethods} -body {
+    type dog {
+        delegate typemethod * to comp
+
+        typeconstructor {
+            set comp string
+        }
+    }
+
+    dog create spot
+
+    set a [lsort [spot info typemethods]]
+
+    dog length foo
+    dog is boolean yes
+
+    set b [lsort [spot info typemethods]]
+
+    set c [spot info typemethods len*]
+
+    list $a $b $c
+} -cleanup {
+    dog destroy
+} -result {{create destroy info} {create destroy info is length} length}
+
+test iinfo-7.5 {info typemethods, with hierarchical typemethods} -body {
+    type dog {
+        delegate typemethod {comp foo} to comp
+
+        typeconstructor {
+            set comp string
+        }
+        typemethod {comp bar} {} {}
+    }
+
+    dog create spot
+
+    lsort [spot info typemethods]
+} -cleanup {
+    dog destroy
+} -result {{comp bar} {comp foo} create destroy info}
+
+test iinfo-7.5a {info typemethod} -body {
+    type dog {
+        typemethod tail {args} { set a b }
+    }
+
+    dog create spot
+
+    lsort [spot info typemethod]
+} -cleanup {
+    dog destroy
+} -result {::dog::tail}
+
+test iinfo-7.5b {info typemethod with options} -body {
+    type dog {
+        typemethod tail {args} { set a b }
+    }
+
+    dog create spot
+
+    spot info typemethod tail -name -protection -args -body -type
+} -cleanup {
+    dog destroy
+} -result {::dog::tail public {?arg arg ...?} { set a b } typemethod}
+
+
+test iinfo-8.1 {info methods, simple case} -body {
+    type dog { }
+
+    dog spot
+
+    lsort [spot info methods]
+} -cleanup {
+    dog destroy
+} -result {destroy info}
+
+test iinfo-8.2 {info methods, with pattern} -body {
+    type dog { }
+
+    dog spot
+
+    spot info methods i*
+} -cleanup {
+    dog destroy
+} -result {info}
+
+test iinfo-8.1a {info method} -body {
+    type dog {
+        method tail {args} { set a b }
+    }
+
+    dog spot
+
+    lsort [spot info method]
+} -cleanup {
+    dog destroy
+} -result {::dog::callinstance ::dog::cget ::dog::configure ::dog::destroy ::dog::getinstancevar ::dog::info ::dog::isa ::dog::mymethod ::dog::myproc ::dog::mytypemethod ::dog::mytypevar ::dog::myvar ::dog::tail ::dog::unknown}
+
+test iinfo-8.1b {info method with options} -body {
+    type dog {
+        method tail {args} { set a b }
+    }
+
+    dog spot
+
+    spot info method tail -name -protection -args -body -type
+} -cleanup {
+    dog destroy
+} -result {::dog::tail public {?arg arg ...?} { set a b } method}
+
+test iinfo-8.3 {info methods, with explicit methods} -body {
+    type dog {
+        method foo {} {}
+        typeconstructor {
+            set comp string
+        }
+        delegate method bar to comp
+    }
+
+    dog spot
+
+    lsort [spot info methods]
+} -cleanup {
+    dog destroy
+} -result {bar destroy foo info}
+
+test iinfo-8.4 {info methods, with implicit methods} -body {
+    type dog {
+        delegate method * to comp
+
+        constructor {args} {
+            set comp string
+        }
+    }
+
+    dog create spot
+
+    set a [lsort [spot info methods]]
+
+    spot length foo
+    spot is boolean yes
+
+    set b [lsort [spot info methods]]
+
+    set c [spot info methods len*]
+
+    list $a $b $c
+} -cleanup {
+    dog destroy
+} -result {{destroy info} {destroy info is length} length}
+
+test iinfo-8.5 {info methods, with hierarchical methods} -body {
+    type dog {
+        delegate method {comp foo} to comp
+
+        constructor {args} {
+            set comp string
+        }
+        method {comp bar} {} {}
+    }
+
+    dog create spot
+
+    lsort [spot info methods]
+} -cleanup {
+    dog destroy
+} -result {{comp bar} {comp foo} destroy info}
+
+test iinfo-9.1 {info args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info args bark
+} -cleanup {
+    dog destroy
+} -result {volume}
+
+test iinfo-9.2 {info args, too few args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info args
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info args method"}
+
+test iinfo-9.3 {info args, too many args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info args bark wag
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info args method"}
+
+test iinfo-9.4 {info args, unknown method} -body {
+    type dog {
+    }
+
+    dog spot
+
+    spot info args bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {"bark" isn't a method}
+
+test iinfo-9.5 {info args, delegated method} -body {
+    type dog {
+	component x
+        typeconstructor {
+	    set x string
+        }
+	delegate method bark to x
+    }
+
+    dog spot
+
+    spot info args bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {delegated method "bark"}
+
+test iinfo-10.1 {info default} -body {
+    type dog {
+	method bark {{volume 50}} {}
+    }
+
+    dog spot
+
+    list [spot info default bark volume def] $def
+} -cleanup {
+    dog destroy
+} -result {1 50}
+
+test iinfo-10.2 {info default, too few args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info default
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args, should be info default <method> <argName> <varName>}
+
+test iinfo-10.3 {info default, too many args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info default bark wag def foo
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args, should be info default <method> <argName> <varName>}
+
+test iinfo-10.4 {info default, unknown method} -body {
+    type dog {
+    }
+
+    dog spot
+
+    spot info default bark x var
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {unknown method "bark"}
+
+test iinfo-10.5 {info default, delegated method} -body {
+    type dog {
+	component x
+	typeconstructor {
+	    set x string
+	}
+	delegate method bark to x
+    }
+
+    dog spot
+
+    spot info default bark x var
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {delegated method "bark"}
+
+test iinfo-11.1 {info body} -body {
+    type dog {
+	typevariable x
+	variable y
+	method bark {volume} {
+	    speaker on
+	    speaker play bark.snd
+	    speaker off
+	}
+    }
+
+    dog spot
+
+    spot info body bark
+} -cleanup {
+    dog destroy
+} -result {
+	    speaker on
+	    speaker play bark.snd
+	    speaker off
+	}
+
+test iinfo-11.2 {info body, too few args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info body
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info body method"}
+
+test iinfo-11.3 {info body, too many args} -body {
+    type dog {
+	method bark {volume} {}
+    }
+
+    dog spot
+
+    spot info body bark wag
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info body method"}
+
+test iinfo-11.4 {info body, unknown method} -body {
+    type dog {
+    }
+
+    dog spot
+
+    spot info body bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {"bark" isn't a method}
+
+test iinfo-11.5 {info body, delegated method} -body {
+    type dog {
+	component x
+	typeconstructor {
+	    set x string
+	}
+	delegate method bark to x
+    }
+
+    dog spot
+
+    spot info body bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {delegated method "bark"}
+
+#-----------------------------------------------------------------------
+# Type Introspection
+
+test tinfo-1.2 {type info too few args} -body {
+    type dog { }
+
+    dog info
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {wrong # args: should be one of...
+  info args procname
+  info body procname
+  info component ?name? ?-inherit? ?-value?
+  info components ?pattern?
+  info default method aname varname
+  info delegated ?name? ?-inherit? ?-value?
+  info instances ?pattern?
+  info method ?name? ?-protection? ?-type? ?-name? ?-args? ?-body?
+  info methods ?pattern?
+  info options ?pattern?
+  info type
+  info typemethod ?name? ?-protection? ?-type? ?-name? ?-args? ?-body?
+  info typemethods ?pattern?
+  info types ?pattern?
+  info typevariable ?name? ?-protection? ?-type? ?-name? ?-init? ?-value?
+  info typevars ?pattern?
+  info variable ?name? ?-protection? ?-type? ?-name? ?-init? ?-value? ?-config?
+  info variables ?pattern?
+...and others described on the man page}
+
+
+test tinfo-1.3 {type info too many args} -body {
+    type dog { }
+
+    dog info instances foo bar
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {wrong # args should be: info instances ?pattern?}
+
+test tinfo-2.1 {type info typevars} -body {
+    type dog {
+        typevariable thisvar 1
+        typevariable thatvar 2
+
+        constructor {args} {
+        }
+    }
+
+    dog create spot
+    lsort [dog info typevars]
+} -cleanup {
+    dog destroy
+} -result {::dog::thatvar ::dog::thisvar}
+
+test tinfo-3.1 {type info instances} -body {
+    type dog { }
+
+    dog create spot
+    dog create fido
+
+    lsort [dog info instances]
+} -cleanup {
+    dog destroy
+} -result {::fido ::spot}
+
+test tinfo-3.3 {type info instances with non-global namespaces} -body {
+    type dog { }
+
+    dog create ::spot
+
+    namespace eval ::dogs:: {
+        set ::qname [dog create fido]
+    }
+
+    list $qname [lsort [dog info instances]]
+} -cleanup {
+    dog destroy
+} -result {::dogs::fido {::dogs::fido ::spot}}
+
+test tinfo-3.4 {type info instances with pattern} -body {
+    type dog { }
+
+    dog create spot
+    dog create fido
+
+    dog info instances "*f*"
+} -cleanup {
+    dog destroy
+} -result {::fido}
+
+test tinfo-4.1 {type info typevars with pattern} -body {
+    type dog {
+        typevariable thisvar 1
+        typevariable thatvar 2
+
+        constructor {args} {
+        }
+    }
+
+    dog create spot
+    dog info typevars *this*
+} -cleanup {
+    dog destroy
+} -result {::dog::thisvar}
+
+test tinfo-5.1 {type info typemethods, simple case} -body {
+    type dog { }
+
+    lsort [dog info typemethods]
+} -cleanup {
+    dog destroy
+} -result {create destroy info}
+
+test tinfo-5.2 {type info typemethods, with pattern} -body {
+    type dog { }
+
+    dog info typemethods i*
+} -cleanup {
+    dog destroy
+} -result {info}
+
+test tinfo-5.3 {type info typemethods, with explicit typemethods} -body {
+    type dog {
+        typemethod foo {} {}
+        typeconstructor {
+	    set comp string
+	}
+        delegate typemethod bar to comp
+    }
+
+    lsort [dog info typemethods]
+} -cleanup {
+    dog destroy
+} -result {bar create destroy foo info}
+
+test tinfo-5.4 {type info typemethods, with implicit typemethods} -body {
+    type dog {
+        delegate typemethod * to comp
+
+        typeconstructor {
+            set comp string
+        }
+    }
+
+    set a [lsort [dog info typemethods]]
+
+    dog length foo
+    dog is boolean yes
+
+    set b [lsort [dog info typemethods]]
+
+    set c [dog info typemethods len*]
+
+    list $a $b $c
+} -cleanup {
+    dog destroy
+} -result {{create destroy info} {create destroy info is length} length}
+
+test tinfo-5.5 {info typemethods, with hierarchical typemethods} -body {
+    type dog {
+        delegate typemethod {comp foo} to comp
+
+        typeconstructor {
+            set comp string
+        }
+        typemethod {comp bar} {} {}
+    }
+
+    lsort [dog info typemethods]
+} -cleanup {
+    dog destroy
+} -result {{comp bar} {comp foo} create destroy info}
+
+test tinfo-6.1 {type info args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info args bark
+} -cleanup {
+    dog destroy
+} -result {volume}
+
+test tinfo-6.2 {type info args, too few args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info args
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info args method"}
+
+test tinfo-6.3 {type info args, too many args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info args bark wag
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info args method"}
+
+test tinfo-6.4 {type info args, unknown method} -body {
+    type dog {
+    }
+
+    dog info args bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {"bark" isn't a method}
+
+test tinfo-6.5 {type info args, delegated method} -body {
+    type dog {
+        typeconstructor {
+            set x string
+        }
+	delegate typemethod bark to x
+    }
+
+    dog info args bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {delegated typemethod "bark"}
+
+test tinfo-7.1 {type info default} -body {
+    type dog {
+	typemethod bark {{volume 50}} {}
+    }
+
+    list [dog info default bark volume def] $def
+} -cleanup {
+    dog destroy
+} -result {1 50}
+
+test tinfo-7.2 {type info default, too few args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info default
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args, should be info default <method> <argName> <varName>}
+
+test tinfo-7.3 {type info default, too many args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info default bark wag def foo
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args, should be info default <method> <argName> <varName>}
+
+test tinfo-7.4 {type info default, unknown method} -body {
+    type dog {
+    }
+
+    dog info default bark x var
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {unknown method "bark"}
+
+test tinfo-7.5 {type info default, delegated method} -body {
+    type dog {
+        typeconstructor {
+            set x string
+        }
+	delegate typemethod bark to x
+    }
+
+    dog info default bark x var
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {delegated typemethod "bark"}
+
+test tinfo-8.1 {type info body} -body {
+    type dog {
+	typevariable x
+	variable y
+	typemethod bark {volume} {
+	    speaker on
+	    speaker play bark.snd
+	    speaker off
+	}
+    }
+
+    dog info body bark
+} -cleanup {
+    dog destroy
+} -result {
+	    speaker on
+	    speaker play bark.snd
+	    speaker off
+	}
+
+test tinfo-8.2 {type info body, too few args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info body
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info body method"}
+
+test tinfo-8.3 {type info body, too many args} -body {
+    type dog {
+	typemethod bark {volume} {}
+    }
+
+    dog info body bark wag
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {wrong # args: should be "info body method"}
+
+test tinfo-8.4 {type info body, unknown method} -body {
+    type dog {
+    }
+
+    dog info body bark
+} -returnCodes error -cleanup {
+    dog destroy
+} -result {"bark" isn't a method}
+
+test tinfo-8.5 {type info body, delegated method} -body {
+    type dog {
+        typeconstructor {
+            set x string
+        }
+	delegate typemethod bark to x
+    }
+
+    dog info body bark
+} -returnCodes {
+    error
+}  -cleanup {
+    dog destroy
+} -result {delegated typemethod "bark"}
+
+test tinfo-10.1 {type info types} -body {
+    type dog {
+    }
+
+    type cat {
+    }
+
+    lsort [dog info types]
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {cat dog}
+
+test tinfo-10.2 {type info components} -body {
+    type dog {
+        component comp1
+        component comp2
+    }
+
+    type cat {
+        component comp1
+        component comp1a
+    }
+
+    set a [lsort [dog info components]]
+    set b [lsort [cat info components]]
+    list $a $b
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {{comp1 comp2} {comp1 comp1a}}
+
+test tinfo-10.2a {type info component} -body {
+    type dog {
+        component comp1
+        component comp2
+    }
+
+    type cat {
+        component comp1
+        component comp1a
+    }
+
+    set a [lsort [dog info component]]
+    set b [lsort [cat info component]]
+    list $a $b
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {{::dog::comp1 ::dog::comp2} {::cat::comp1 ::cat::comp1a}}
+
+test tinfo-10.2b {type info component with options} -body {
+    type dog {
+        component comp1
+        component comp2
+    }
+
+    dog info component comp1 -name -inherit
+} -cleanup {
+    dog destroy
+} -result {::dog::comp1 0}
+
+test tinfo-10.4 {type info delegated methods} -body {
+    type dog {
+    }
+
+
+    dog info delegated xxx
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {wrong # args: should be one of...
+  info methods ?pattern?
+  info typemethods ?pattern?
+  info options ?pattern?
+...and others described on the man page}
+
+test tinfo-10.5 {type info delegated methods} -body {
+    type dog {
+        component comp1
+        component comp2
+        delegate method wag to comp1
+        delegate method tail to comp2
+        delegate typemethod typewag to comp1
+        delegate typemethod typetail to comp2
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+        }
+    }
+
+
+    lsort [dog info delegated methods]
+} -cleanup {
+    dog destroy
+} -result {{tail comp2} {wag comp1}}
+
+test tinfo-10.5a {type info delegated method} -body {
+    type dog {
+        component comp1
+        component comp2
+        delegate method wag to comp1
+        delegate method tail to comp2
+        delegate typemethod typewag to comp1
+        delegate typemethod typetail to comp2
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+        }
+    }
+
+
+    lsort [dog info delegated method]
+} -cleanup {
+    dog destroy
+} -result {tail wag}
+
+test tinfo-10.5b {type info delegated method with options} -body {
+    type dog {
+        component comp1
+        component comp2
+        delegate method wag to comp1
+        delegate method tail to comp2
+        delegate typemethod typewag to comp1
+        delegate typemethod typetail to comp2
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+        }
+    }
+
+
+    dog info delegated method wag -name -component -using -as -exceptions
+} -cleanup {
+    dog destroy
+} -result {wag comp1 {} {} {}}
+
+test tinfo-10.5c {type info delegated typemethod} -body {
+    type dog {
+        component comp1
+        component comp2
+        delegate method wag to comp1
+        delegate method tail to comp2
+        delegate typemethod typewag to comp1
+        delegate typemethod typetail to comp2
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+        }
+    }
+
+
+    lsort [dog info delegated typemethod]
+} -cleanup {
+    dog destroy
+} -result {typetail typewag}
+
+test tinfo-10.5d {type info delegated typemethod with options} -body {
+    type dog {
+        component comp1
+        component comp2
+        delegate method wag to comp1
+        delegate method tail to comp2
+        delegate typemethod typewag to comp1
+        delegate typemethod typetail to comp2
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+        }
+    }
+
+
+    dog info delegated typemethod typewag -name -component -using -as -exceptions
+} -cleanup {
+    dog destroy
+} -result {typewag comp1 {} {} {}}
+
+test tinfo-10.6 {type info delegated typemethods} -body {
+    type dog {
+        component comp1
+        component comp2
+        delegate method wag to comp1
+        delegate method tail to comp2
+        delegate typemethod typewag to comp1
+        delegate typemethod typetail to comp2
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+        }
+    }
+
+
+    lsort [dog info delegated typemethods]
+} -cleanup {
+    dog destroy
+} -result {{typetail comp2} {typewag comp1}}
+
+test tinfo-10.7 {type info delegated options} -body {
+    type dog {
+        component comp1
+        component comp2
+        component comp3
+        delegate option -foo to comp1
+        delegate option -bar to comp2
+        delegate option * to comp3
+        typeconstructor {
+	    set comp1 string
+	    set comp2 string
+	    set comp3 string
+        }
+    }
+
+
+    lsort [dog info delegated options]
+} -cleanup {
+    dog destroy
+} -result {{* comp3} {-bar comp2} {-foo comp1}}
+
+test tinfo-11.1 {type info type} -body {
+    type dog {
+        typeconstructor {
+        }
+    }
+
+    dog info type
+} -cleanup {
+    dog destroy
+} -result {::dog}
+
+
+#---------------------------------------------------------------------
+# Clean up
+
+cleanupTests
+return

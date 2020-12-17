@@ -1,0 +1,352 @@
+'\"
+'\" Copyright (c) 1996-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Obj 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_NewObj, Tcl_DuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_IsShared, Tcl_InvalidateStringRep \- manipulate Tcl values
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_NewObj\fR()
+.sp
+Tcl_Obj *
+\fBTcl_DuplicateObj\fR(\fIobjPtr\fR)
+.sp
+\fBTcl_IncrRefCount\fR(\fIobjPtr\fR)
+.sp
+\fBTcl_DecrRefCount\fR(\fIobjPtr\fR)
+.sp
+int
+\fBTcl_IsShared\fR(\fIobjPtr\fR)
+.sp
+\fBTcl_InvalidateStringRep\fR(\fIobjPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_Obj *objPtr
+.AP Tcl_Obj *objPtr in
+Points to a value;
+must have been the result of a previous call to \fBTcl_NewObj\fR.
+.BE
+.SH INTRODUCTION
+.PP
+This man page presents an overview of Tcl values (called \fBTcl_Obj\fRs for
+historical reasons) and how they are used.
+It also describes generic procedures for managing Tcl values.
+These procedures are used to create and copy values,
+and increment and decrement the count of references (pointers) to values.
+The procedures are used in conjunction with ones
+that operate on specific types of values such as
+\fBTcl_GetIntFromObj\fR and \fBTcl_ListObjAppendElement\fR.
+The individual procedures are described along with the data structures
+they manipulate.
+.PP
+Tcl's \fIdual-ported\fR values provide a general-purpose mechanism
+for storing and exchanging Tcl values.
+They largely replace the use of strings in Tcl.
+For example, they are used to store variable values,
+command arguments, command results, and scripts.
+Tcl values behave like strings but also hold an internal representation
+that can be manipulated more efficiently.
+For example, a Tcl list is now represented as a value
+that holds the list's string representation
+as well as an array of pointers to the values for each list element.
+Dual-ported values avoid most runtime type conversions.
+They also improve the speed of many operations
+since an appropriate representation is immediately available.
+The compiler itself uses Tcl values to
+cache the instruction bytecodes resulting from compiling scripts.
+.PP
+The two representations are a cache of each other and are computed lazily.
+That is, each representation is only computed when necessary,
+it is computed from the other representation,
+and, once computed, it is saved.
+In addition, a change in one representation invalidates the other one.
+As an example, a Tcl program doing integer calculations can
+operate directly on a variable's internal machine integer
+representation without having to constantly convert
+between integers and strings.
+Only when it needs a string representing the variable's value,
+say to print it,
+will the program regenerate the string representation from the integer.
+Although values contain an internal representation,
+their semantics are defined in terms of strings:
+an up-to-date string can always be obtained,
+and any change to the value will be reflected in that string
+when the value's string representation is fetched.
+Because of this representation invalidation and regeneration,
+it is dangerous for extension writers to access
+\fBTcl_Obj\fR fields directly.
+It is better to access Tcl_Obj information using
+procedures like \fBTcl_GetStringFromObj\fR and \fBTcl_GetString\fR.
+.PP
+Values are allocated on the heap
+and are referenced using a pointer to their \fBTcl_Obj\fR structure.
+Values are shared as much as possible.
+This significantly reduces storage requirements
+because some values such as long lists are very large.
+Also, most Tcl values are only read and never modified.
+This is especially true for procedure arguments,
+which can be shared between the caller and the called procedure.
+Assignment and argument binding is done by
+simply assigning a pointer to the value.
+Reference counting is used to determine when it is safe to
+reclaim a value's storage.
+.PP
+Tcl values are typed.
+A value's internal representation is controlled by its type.
+Several types are predefined in the Tcl core
+including integer, double, list, and bytecode.
+Extension writers can extend the set of types
+by defining their own \fBTcl_ObjType\fR structs.
+.SH "THE TCL_OBJ STRUCTURE"
+.PP
+Each Tcl value is represented by a \fBTcl_Obj\fR structure
+which is defined as follows.
+.PP
+.CS
+typedef struct Tcl_Obj {
+    int \fIrefCount\fR;
+    char *\fIbytes\fR;
+    int \fIlength\fR;
+    const Tcl_ObjType *\fItypePtr\fR;
+    union {
+        long \fIlongValue\fR;
+        double \fIdoubleValue\fR;
+        void *\fIotherValuePtr\fR;
+        Tcl_WideInt \fIwideValue\fR;
+        struct {
+            void *\fIptr1\fR;
+            void *\fIptr2\fR;
+        } \fItwoPtrValue\fR;
+        struct {
+            void *\fIptr\fR;
+            unsigned long \fIvalue\fR;
+        } \fIptrAndLongRep\fR;
+    } \fIinternalRep\fR;
+} \fBTcl_Obj\fR;
+.CE
+.PP
+The \fIbytes\fR and the \fIlength\fR members together hold
+a value's UTF-8 string representation,
+which is a \fIcounted string\fR not containing null bytes (UTF-8 null
+characters should be encoded as a two byte sequence: 192, 128.)
+\fIbytes\fR points to the first byte of the string representation.
+The \fIlength\fR member gives the number of bytes.
+The byte array must always have a null byte after the last data byte,
+at offset \fIlength\fR;
+this allows string representations
+to be treated as conventional null-terminated C strings.
+C programs use \fBTcl_GetStringFromObj\fR and \fBTcl_GetString\fR to get
+a value's string representation.
+If \fIbytes\fR is NULL,
+the string representation is invalid.
+.PP
+A value's type manages its internal representation.
+The member \fItypePtr\fR points to the Tcl_ObjType structure
+that describes the type.
+If \fItypePtr\fR is NULL,
+the internal representation is invalid.
+.PP
+The \fIinternalRep\fR union member holds
+a value's internal representation.
+This is either a (long) integer, a double-precision floating-point number,
+a pointer to a value containing additional information
+needed by the value's type to represent the value, a Tcl_WideInt
+integer, two arbitrary pointers, or a pair made up of an unsigned long
+integer and a pointer.
+.PP
+The \fIrefCount\fR member is used to tell when it is safe to free
+a value's storage.
+It holds the count of active references to the value.
+Maintaining the correct reference count is a key responsibility
+of extension writers.
+Reference counting is discussed below
+in the section \fBSTORAGE MANAGEMENT OF VALUES\fR.
+.PP
+Although extension writers can directly access
+the members of a Tcl_Obj structure,
+it is much better to use the appropriate procedures and macros.
+For example, extension writers should never
+read or update \fIrefCount\fR directly;
+they should use macros such as
+\fBTcl_IncrRefCount\fR and \fBTcl_IsShared\fR instead.
+.PP
+A key property of Tcl values is that they hold two representations.
+A value typically starts out containing only a string representation:
+it is untyped and has a NULL \fItypePtr\fR.
+A value containing an empty string or a copy of a specified string
+is created using \fBTcl_NewObj\fR or \fBTcl_NewStringObj\fR respectively.
+A value's string value is gotten with
+\fBTcl_GetStringFromObj\fR or \fBTcl_GetString\fR
+and changed with \fBTcl_SetStringObj\fR.
+If the value is later passed to a procedure like \fBTcl_GetIntFromObj\fR
+that requires a specific internal representation,
+the procedure will create one and set the value's \fItypePtr\fR.
+The internal representation is computed from the string representation.
+A value's two representations are duals of each other:
+changes made to one are reflected in the other.
+For example, \fBTcl_ListObjReplace\fR will modify a value's
+internal representation and the next call to \fBTcl_GetStringFromObj\fR
+or \fBTcl_GetString\fR will reflect that change.
+.PP
+Representations are recomputed lazily for efficiency.
+A change to one representation made by a procedure
+such as \fBTcl_ListObjReplace\fR is not reflected immediately
+in the other representation.
+Instead, the other representation is marked invalid
+so that it is only regenerated if it is needed later.
+Most C programmers never have to be concerned with how this is done
+and simply use procedures such as \fBTcl_GetBooleanFromObj\fR or
+\fBTcl_ListObjIndex\fR.
+Programmers that implement their own value types
+must check for invalid representations
+and mark representations invalid when necessary.
+The procedure \fBTcl_InvalidateStringRep\fR is used
+to mark a value's string representation invalid and to
+free any storage associated with the old string representation.
+.PP
+Values usually remain one type over their life,
+but occasionally a value must be converted from one type to another.
+For example, a C program might build up a string in a value
+with repeated calls to \fBTcl_AppendToObj\fR,
+and then call \fBTcl_ListObjIndex\fR to extract a list element from
+the value.
+The same value holding the same string value
+can have several different internal representations
+at different times.
+Extension writers can also force a value to be converted from one type
+to another using the \fBTcl_ConvertToType\fR procedure.
+Only programmers that create new value types need to be concerned
+about how this is done.
+A procedure defined as part of the value type's implementation
+creates a new internal representation for a value
+and changes its \fItypePtr\fR.
+See the man page for \fBTcl_RegisterObjType\fR
+to see how to create a new value type.
+.SH "EXAMPLE OF THE LIFETIME OF A VALUE"
+.PP
+As an example of the lifetime of a value,
+consider the following sequence of commands:
+.PP
+.CS
+\fBset x 123\fR
+.CE
+.PP
+This assigns to \fIx\fR an untyped value whose
+\fIbytes\fR member points to \fB123\fR and \fIlength\fR member contains 3.
+The value's \fItypePtr\fR member is NULL.
+.PP
+.CS
+\fBputs "x is $x"\fR
+.CE
+.PP
+\fIx\fR's string representation is valid (since \fIbytes\fR is non-NULL)
+and is fetched for the command.
+.PP
+.CS
+\fBincr x\fR
+.CE
+.PP
+The \fBincr\fR command first gets an integer from \fIx\fR's value
+by calling \fBTcl_GetIntFromObj\fR.
+This procedure checks whether the value is already an integer value.
+Since it is not, it converts the value
+by setting the value's internal representation
+to the integer \fB123\fR
+and setting the value's \fItypePtr\fR
+to point to the integer Tcl_ObjType structure.
+Both representations are now valid.
+\fBincr\fR increments the value's integer internal representation
+then invalidates its string representation
+(by calling \fBTcl_InvalidateStringRep\fR)
+since the string representation
+no longer corresponds to the internal representation.
+.PP
+.CS
+\fBputs "x is now $x"\fR
+.CE
+.PP
+The string representation of \fIx\fR's value is needed
+and is recomputed.
+The string representation is now \fB124\fR
+and both representations are again valid.
+.SH "STORAGE MANAGEMENT OF VALUES"
+.PP
+Tcl values are allocated on the heap and are shared as much as possible
+to reduce storage requirements.
+Reference counting is used to determine when a value is
+no longer needed and can safely be freed.
+A value just created by \fBTcl_NewObj\fR or \fBTcl_NewStringObj\fR
+has \fIrefCount\fR 0.
+The macro \fBTcl_IncrRefCount\fR increments the reference count
+when a new reference to the value is created.
+The macro \fBTcl_DecrRefCount\fR decrements the count
+when a reference is no longer needed and,
+if the value's reference count drops to zero, frees its storage.
+A value shared by different code or data structures has
+\fIrefCount\fR greater than 1.
+Incrementing a value's reference count ensures that
+it will not be freed too early or have its value change accidentally.
+.PP
+As an example, the bytecode interpreter shares argument values
+between calling and called Tcl procedures to avoid having to copy values.
+It assigns the call's argument values to the procedure's
+formal parameter variables.
+In doing so, it calls \fBTcl_IncrRefCount\fR to increment
+the reference count of each argument since there is now a new
+reference to it from the formal parameter.
+When the called procedure returns,
+the interpreter calls \fBTcl_DecrRefCount\fR to decrement
+each argument's reference count.
+When a value's reference count drops less than or equal to zero,
+\fBTcl_DecrRefCount\fR reclaims its storage.
+Most command procedures do not have to be concerned about
+reference counting since they use a value's value immediately
+and do not retain a pointer to the value after they return.
+However, if they do retain a pointer to a value in a data structure,
+they must be careful to increment its reference count
+since the retained pointer is a new reference.
+.PP
+Command procedures that directly modify values
+such as those for \fBlappend\fR and \fBlinsert\fR must be careful to
+copy a shared value before changing it.
+They must first check whether the value is shared
+by calling \fBTcl_IsShared\fR.
+If the value is shared they must copy the value
+by using \fBTcl_DuplicateObj\fR;
+this returns a new duplicate of the original value
+that has \fIrefCount\fR 0.
+If the value is not shared,
+the command procedure
+.QW "owns"
+the value and can safely modify it directly.
+For example, the following code appears in the command procedure
+that implements \fBlinsert\fR.
+This procedure modifies the list value passed to it in \fIobjv[1]\fR
+by inserting \fIobjc-3\fR new elements before \fIindex\fR.
+.PP
+.CS
+listPtr = objv[1];
+if (\fBTcl_IsShared\fR(listPtr)) {
+    listPtr = \fBTcl_DuplicateObj\fR(listPtr);
+}
+result = Tcl_ListObjReplace(interp, listPtr, index, 0,
+        (objc-3), &(objv[3]));
+.CE
+.PP
+As another example, \fBincr\fR's command procedure
+must check whether the variable's value is shared before
+incrementing the integer in its internal representation.
+If it is shared, it needs to duplicate the value
+in order to avoid accidentally changing values in other data structures.
+.SH "SEE ALSO"
+Tcl_ConvertToType(3), Tcl_GetIntFromObj(3), Tcl_ListObjAppendElement(3), Tcl_ListObjIndex(3), Tcl_ListObjReplace(3), Tcl_RegisterObjType(3)
+.SH KEYWORDS
+internal representation, value, value creation, value type,
+reference counting, string representation, type conversion

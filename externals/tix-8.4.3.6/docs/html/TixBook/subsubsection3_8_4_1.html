@@ -1,0 +1,34 @@
+<HEAD>
+<TITLE> The InitWidgetRec Method<A NAME=641>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1223 HREF=subsubsectionstar3_8_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1221 HREF=subsection3_8_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1215 HREF=subsection3_8_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1225 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1224 HREF=subsubsectionstar3_8_4_2.html>  Chaining Methods</A>
+<B>Up:</B> <A NAME=tex2html1222 HREF=subsection3_8_4.html> Standard Initialization Methods</A>
+<B> Previous:</B> <A NAME=tex2html1216 HREF=subsection3_8_4.html> Standard Initialization Methods</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00084100000000000000> The InitWidgetRec Method<A NAME=641>&nbsp;</A></A></H3>
+<P>
+The purpose of the <tt>InitWidgetRec</tt> method is to initialize the
+  variables of the widget instance. For example, the following
+  implementation of <tt>tixArrowButton:InitWidgetRec</tt> sets the <tt>count</tt> variable of each newly created instance to zero.
+<P>
+<blockquote> <P><tt> proc tixArrowButton:InitWidgetRec {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    set data(count) 0<BR>
+}</tt>
+<P></blockquote>
+<P>Earlier, we showed how each widget you create is associated with an
+  array of the same name.  Within the methods, you always refer to
+  this array through the name <tt>data</tt> -the method then works
+  properly in each instance of the widget.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,477 @@
+# Tests for the tk busy command.
+#
+# This file contains a collection of tests for one or more of the Tk built-in
+# commands. Sourcing this file runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Jos Decoster. All rights reserved.
+
+package require tcltest 2.1
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+# There's currently no way to test the actual grab effect, per se, in an
+# automated test. Therefore, this test suite only covers the interface to the
+# grab command (ie, error messages, etc.)
+
+test busy-1.1 {Tk_BusyObjCmd} -returnCodes error -body {
+    tk busy
+} -result {wrong # args: should be "tk busy options ?arg arg ...?"}
+
+test busy-2.1 {tk busy hold} -returnCodes error -body {
+    tk busy hold
+} -result {wrong # args: should be "tk busy hold window ?option value ...?"}
+test busy-2.2 {tk busy hold root window} -body {
+    tk busy hold .
+    update
+} -cleanup {
+    tk busy forget .
+} -result {}
+test busy-2.3 {tk busy hold root window with shortcut} -body {
+    tk busy .
+    update
+} -cleanup {
+    tk busy forget .
+} -result {}
+test busy-2.4 {tk busy hold nested window} -setup {
+    pack [frame .f]
+} -body {
+    tk busy hold .f
+    update
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {}
+test busy-2.5 {tk busy hold nested window with shortcut} -setup {
+    pack [frame .f]
+} -body {
+    tk busy .f
+    update
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {}
+test busy-2.6 {tk busy hold toplevel window} -setup {
+    toplevel .f
+} -body {
+    tk busy hold .f
+    update
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {}
+test busy-2.7 {tk busy hold toplevel window with shortcut} -setup {
+    toplevel .f
+} -body {
+    tk busy .f
+    update
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {}
+test busy-2.8 {tk busy hold non existing window} -body {
+    tk busy hold .f
+    update
+} -returnCodes error -result {bad window path name ".f"}
+test busy-2.9 {tk busy hold (shortcut) non existing window} -body {
+    tk busy .f
+    update
+} -returnCodes {error} -result {bad window path name ".f"}
+test busy-2.10 {tk busy hold root window with cursor} -body {
+    tk busy hold . -cursor arrow
+    update
+} -cleanup {
+    tk busy forget .
+} -result {}
+test busy-2.11 {tk busy hold (shortcut) root window, cursor} -body {
+    tk busy . -cursor arrow
+    update
+} -cleanup {
+    tk busy forget .
+} -result {}
+test busy-2.12 {tk busy hold root window, invalid cursor} -body {
+    tk busy hold . -cursor nonExistingCursor
+    update
+} -returnCodes error -cleanup {
+    tk busy forget .
+} -result {bad cursor spec "nonExistingCursor"}
+test busy-2.13 {tk busy hold (shortcut) root window, invalid cursor} -body {
+    tk busy . -cursor nonExistingCursor
+    update
+} -returnCodes error -cleanup {
+    tk busy forget .
+} -result {bad cursor spec "nonExistingCursor"}
+test busy-2.14 {tk busy hold root window, invalid option} -body {
+    tk busy hold . -invalidOption 1
+    update
+} -returnCodes error -cleanup {
+    tk busy forget .
+} -result {unknown option "-invalidOption"}
+test busy-2.15 {tk busy hold (shortcut) root window, invalid option} -body {
+    tk busy . -invalidOption 1
+    update
+} -returnCodes error -cleanup {
+    tk busy forget .
+} -result {unknown option "-invalidOption"}
+
+test busy-3.1 {tk busy cget no window} -returnCodes error -body {
+    tk busy cget
+} -result {wrong # args: should be "tk busy cget window option"}
+test busy-3.2 {tk busy cget no option} -returnCodes error -body {
+    tk busy cget
+} -result {wrong # args: should be "tk busy cget window option"}
+test busy-3.3 {tk busy cget invalid window} -returnCodes error -body {
+    tk busy cget .f -cursor
+} -result {bad window path name ".f"}
+test busy-3.4 {tk busy cget non-busy window} -setup {
+    pack [frame .f]
+} -body {
+    tk busy cget .f -cursor
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {can't find busy window ".f"}
+test busy-3.5 {tk busy cget invalid option} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy cget .f -invalidOption
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -returnCodes error -result {unknown option "-invalidOption"}
+test busy-3.6unix {tk busy cget unix} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy cget .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {watch} -constraints unix
+test busy-3.6win {tk busy cget win} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy cget .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {wait} -constraints win
+test busy-3.7 {tk busy cget unix} -setup {
+    pack [frame .f]
+    tk busy hold .f -cursor hand1
+    update
+} -body {
+    tk busy cget .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {hand1}
+
+test busy-4.1 {tk busy configure no window} -returnCodes error -body {
+    tk busy configure
+} -result {wrong # args: should be "tk busy configure window ?option? ?value ...?"}
+
+test busy-4.2 {tk busy configure invalid window} -body {
+    tk busy configure .f
+} -returnCodes error -result {bad window path name ".f"}
+
+test busy-4.3 {tk busy configure non-busy window} -setup {
+    pack [frame .f]
+} -body {
+    tk busy configure .f
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {can't find busy window ".f"}
+
+test busy-4.4 {tk busy configure} -constraints {nonwin} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {{-cursor cursor Cursor watch watch}}
+
+test busy-4.4-win {tk busy configure} -constraints {win} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {{-cursor cursor Cursor wait wait}}
+
+test busy-4.5 {tk busy configure} -constraints {nonwin} -setup {
+    pack [frame .f]
+    tk busy hold .f -cursor hand2
+    update
+} -body {
+    tk busy configure .f
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {{-cursor cursor Cursor watch hand2}}
+
+test busy-4.5-win {tk busy configure} -constraints win -setup {
+    pack [frame .f]
+    tk busy hold .f -cursor hand2
+    update
+} -body {
+    tk busy configure .f
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {{-cursor cursor Cursor wait hand2}}
+
+test busy-4.6 {tk busy configure invalid option} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f -invalidOption
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -returnCodes error -result {unknown option "-invalidOption"}
+
+test busy-4.7 {tk busy configure valid option} -constraints {nonwin} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {-cursor cursor Cursor watch watch}
+
+test busy-4.7-win {tk busy configure valid option} -constraints {win} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {-cursor cursor Cursor wait wait}
+
+test busy-4.8 {tk busy configure valid option} -constraints {
+    nonwin
+} -setup {
+    pack [frame .f]
+    tk busy hold .f -cursor circle
+    update
+} -body {
+    tk busy configure .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {-cursor cursor Cursor watch circle}
+
+test busy-4.8-win {tk busy configure valid option} -constraints win -setup {
+    pack [frame .f]
+    tk busy hold .f -cursor circle
+    update
+} -body {
+    tk busy configure .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {-cursor cursor Cursor wait circle}
+
+test busy-4.9 {tk busy configure valid option with value} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f -cursor pencil
+    tk busy cget .f -cursor
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {pencil}
+
+test busy-4.10 {tk busy configure valid option with invalid value} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy configure .f -cursor nonExistingCursor
+} -returnCodes error -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {bad cursor spec "nonExistingCursor"}
+
+test busy-5.1 {tk busy forget} -returnCodes error -body {
+    tk busy forget
+} -result {wrong # args: should be "tk busy forget window"}
+test busy-5.2 {tk busy forget non existing window} -body {
+    tk busy forget .f
+} -returnCodes error -result {bad window path name ".f"}
+test busy-5.3 {tk busy forget non busy window} -setup {
+    pack [frame .f]
+} -body {
+    tk busy forget .f
+} -cleanup {
+    destroy .f
+} -returnCodes error -result {can't find busy window ".f"}
+test busy-5.4 {tk busy forget window} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    set r [tk busy status .f]
+    tk busy forget .f
+    lappend r [tk busy status .f]
+} -cleanup {
+    destroy .f
+} -result {1 0}
+
+test busy-6.1 {tk busy status} -returnCodes error -body {
+    tk busy status
+} -result {wrong # args: should be "tk busy status window"}
+test busy-6.2 {tk busy status non existing window} -body {
+    tk busy status .f
+} -result {0}
+test busy-6.3 {tk busy status non busy window} -setup {
+    pack [frame .f]
+} -body {
+    tk busy status .f
+} -cleanup {
+    destroy .f
+} -result {0}
+test busy-6.4 {tk busy status busy window} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy status .f
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {1}
+test busy-6.5 {tk busy status forgotten busy window} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+    tk busy forget .f
+} -body {
+    tk busy status .f
+} -cleanup {
+    destroy .f
+} -result {0}
+
+test busy-7.1 {tk busy current no busy} -body {
+    tk busy current
+} -result {}
+test busy-7.2 {tk busy current 1 busy} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+} -body {
+    tk busy current
+} -cleanup {
+    tk busy forget .f
+    destroy .f
+} -result {.f}
+test busy-7.3 {tk busy current 2 busy} -setup {
+    pack [frame .f1]
+    pack [frame .f2]
+    tk busy hold .f1
+    tk busy hold .f2
+    update
+} -body {
+    lsort [tk busy current]
+} -cleanup {
+    tk busy forget .f1
+    tk busy forget .f2
+    destroy .f1 .f2
+} -result {.f1 .f2}
+test busy-7.4 {tk busy current 2 busy with matching filter} -setup {
+    pack [frame .f1]
+    pack [frame .f2]
+    tk busy hold .f1
+    tk busy hold .f2
+    update
+} -body {
+    lsort [tk busy current *2*]
+} -cleanup {
+    tk busy forget .f1
+    tk busy forget .f2
+    destroy .f1 .f2
+} -result {.f2}
+test busy-7.5 {tk busy current 2 busy with non matching filter} -setup {
+    pack [frame .f1]
+    pack [frame .f2]
+    tk busy hold .f1
+    tk busy hold .f2
+    update
+} -body {
+    lsort [tk busy current *3*]
+} -cleanup {
+    tk busy forget .f1
+    tk busy forget .f2
+    destroy .f1 .f2
+} -result {}
+test busy-7.6 {tk busy current 1 busy after forget} -setup {
+    pack [frame .f]
+    tk busy hold .f
+    update
+    tk busy forget .f
+} -body {
+    tk busy current
+} -cleanup {
+    destroy .f
+} -result {}
+test busy-7.7 {tk busy current 2 busy after forget} -setup {
+    pack [frame .f1]
+    pack [frame .f2]
+    tk busy hold .f1
+    tk busy hold .f2
+    update
+    tk busy forget .f1
+} -body {
+    lsort [tk busy current]
+} -cleanup {
+    tk busy forget .f2
+    destroy .f1 .f2
+} -result {.f2}
+test busy-7.8 {tk busy current 2 busy with matching filter after forget} -setup {
+    pack [frame .f1]
+    pack [frame .f2]
+    tk busy hold .f1
+    tk busy hold .f2
+    update
+    tk busy forget .f1
+} -body {
+    lsort [tk busy current *2*]
+} -cleanup {
+    tk busy forget .f2
+    destroy .f1 .f2
+} -result {.f2}
+test busy-7.9 {tk busy current 2 busy with non matching filter after forget} -setup {
+    pack [frame .f1]
+    pack [frame .f2]
+    tk busy hold .f1
+    tk busy hold .f2
+    update
+    tk busy forget .f1
+} -body {
+    lsort [tk busy current *3*]
+} -cleanup {
+    tk busy forget .f2
+    destroy .f1 .f2
+} -result {}
+
+::tcltest::cleanupTests
+return

@@ -1,0 +1,206 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH selection n 8.1 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+selection \- Manipulate the X selection
+.SH SYNOPSIS
+\fBselection \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command provides a Tcl interface to the X selection mechanism and
+implements the full selection functionality described in the
+X Inter-Client Communication Conventions Manual (ICCCM).
+.PP
+Note that for management of the \fBCLIPBOARD\fR selection (see below), the
+\fBclipboard\fR command may also be used.
+.PP
+The first argument to \fBselection\fR determines the format of the
+rest of the arguments and the behavior of the command.  The following
+forms are currently supported:
+.TP
+\fBselection clear\fR ?\fB\-displayof\fR \fIwindow\fR? ?\fB\-selection\fR \fIselection\fR?
+.
+If \fIselection\fR exists anywhere on \fIwindow\fR's display, clear it
+so that no window owns the selection anymore.  \fISelection\fR
+specifies the X selection that should be cleared, and should be an
+atom name such as \fBPRIMARY\fR or \fBCLIPBOARD\fR; see the Inter-Client
+Communication Conventions Manual for complete details.
+\fISelection\fR defaults to \fBPRIMARY\fR and \fIwindow\fR defaults to
+.QW . .
+Returns an empty string.
+.TP
+\fBselection get\fR ?\fB\-displayof\fR \fIwindow\fR? ?\fB\-selection\fR \fIselection\fR? ?\fB\-type\fR \fItype\fR?
+.
+Retrieves the value of \fIselection\fR from \fIwindow\fR's display and
+returns it as a result.  \fISelection\fR defaults to \fBPRIMARY\fR and
+\fIwindow\fR defaults to
+.QW . .
+\fIType\fR specifies the form in which the selection is to be returned
+(the desired
+.QW target
+for conversion, in ICCCM terminology), and
+should be an atom name such as \fBSTRING\fR or \fBFILE_NAME\fR; see the
+Inter-Client Communication Conventions Manual for complete details.
+\fIType\fR defaults to \fBSTRING\fR.  The selection owner may choose to
+return the selection in any of several different representation
+formats, such as \fBSTRING\fR, \fBUTF8_STRING\fR, \fBATOM\fR,
+\fBINTEGER\fR, etc. (this format is different
+than the selection type; see the ICCCM for all the confusing details).
+If the selection is returned in a non-string format, such as \fBINTEGER\fR
+or \fBATOM\fR, the \fBselection\fR command converts it to string format as a
+collection of fields separated by spaces: atoms are converted to their
+textual names, and anything else is converted to hexadecimal integers.
+Note that \fBselection get\fR does not retrieve the selection in the
+\fBUTF8_STRING\fR format unless told to.
+.TP
+\fBselection handle\fR ?\fB\-selection\fR \fIs\fR? ?\fB\-type\fR \fIt\fR? ?\fB\-format\fR \fIf\fR? \fIwindow command\fR
+.
+Creates a handler for selection requests, such that \fIcommand\fR will
+be executed whenever selection \fIs\fR is owned by \fIwindow\fR and
+someone attempts to retrieve it in the form given by type \fIt\fR
+(e.g. \fIt\fR is specified in the \fBselection get\fR command).
+\fIS\fR defaults to \fBPRIMARY\fR, \fIt\fR defaults to \fBSTRING\fR, and
+\fIf\fR defaults to \fBSTRING\fR.  If \fIcommand\fR is an empty string
+then any existing handler for \fIwindow\fR, \fIt\fR, and
+\fIs\fR is removed.
+Note that when the selection is handled as type \fBSTRING\fR it is also
+automatically handled as type \fBUTF8_STRING\fR as well.
+.RS
+.PP
+When \fIselection\fR is requested, \fIwindow\fR is the selection owner,
+and \fItype\fR is the requested type, \fIcommand\fR will be executed
+as a Tcl command with two additional numbers appended to it
+(with space separators).
+The two additional numbers
+are \fIoffset\fR and \fImaxChars\fR:  \fIoffset\fR specifies a starting
+character position in the selection and \fImaxChars\fR gives the maximum
+number of characters to retrieve.  The command should return a value consisting
+of at most \fImaxChars\fR of the selection, starting at position
+\fIoffset\fR.  For very large selections (larger than \fImaxChars\fR)
+the selection will be retrieved using several invocations of \fIcommand\fR
+with increasing \fIoffset\fR values.  If \fIcommand\fR returns a string
+whose length is less than \fImaxChars\fR, the return value is assumed to
+include all of the remainder of the selection;  if the length of
+\fIcommand\fR's result is equal to \fImaxChars\fR then
+\fIcommand\fR will be invoked again, until it eventually
+returns a result shorter than \fImaxChars\fR.  The value of \fImaxChars\fR
+will always be relatively large (thousands of characters).
+.PP
+If \fIcommand\fR returns an error then the selection retrieval is rejected
+just as if the selection did not exist at all.
+.PP
+The \fIformat\fR argument specifies the representation that should be
+used to transmit the selection to the requester (the second column of
+Table 2 of the ICCCM), and defaults to \fBSTRING\fR.  If \fIformat\fR is
+\fBSTRING\fR, the selection is transmitted as 8-bit ASCII characters (i.e.
+just in the form returned by \fIcommand\fR, in the system \fBencoding\fR;
+the \fBUTF8_STRING\fR format always uses UTF-8 as its encoding).
+If \fIformat\fR is
+\fBATOM\fR, then the return value from \fIcommand\fR is divided into fields
+separated by white space;  each field is converted to its atom value,
+and the 32-bit atom value is transmitted instead of the atom name.
+For any other \fIformat\fR, the return value from \fIcommand\fR is
+divided into fields separated by white space and each field is
+converted to a 32-bit integer;  an array of integers is transmitted
+to the selection requester.
+.PP
+The \fIformat\fR argument is needed only for compatibility with
+selection requesters that do not use Tk.  If Tk is being
+used to retrieve the selection then the value is converted back to
+a string at the requesting end, so \fIformat\fR is
+irrelevant.
+.RE
+.TP
+\fBselection own\fR ?\fB\-displayof\fR \fIwindow\fR? ?\fB\-selection\fR \fIselection\fR?
+.TP
+\fBselection own\fR ?\fB\-command\fR \fIcommand\fR? ?\fB\-selection\fR \fIselection\fR? \fIwindow\fR
+.
+The first form of \fBselection own\fR returns the path name of the
+window in this application that owns \fIselection\fR on the display
+containing \fIwindow\fR, or an empty string if no window in this
+application owns the selection.  \fISelection\fR defaults to \fBPRIMARY\fR and
+\fIwindow\fR defaults to
+.QW . .
+.RS
+.PP
+The second form of \fBselection own\fR causes \fIwindow\fR to become
+the new owner of \fIselection\fR on \fIwindow\fR's display, returning
+an empty string as result. The existing owner, if any, is notified
+that it has lost the selection.
+If \fIcommand\fR is specified, it is a Tcl script to execute when
+some other window claims ownership of the selection away from
+\fIwindow\fR.  \fISelection\fR defaults to PRIMARY.
+.RE
+.SH WIDGET FACILITIES
+.PP
+The \fBtext\fR, \fBentry\fR, \fBttk::entry\fR, \fBlistbox\fR, \fBspinbox\fR and \fBttk::spinbox\fR widgets have the option \fB\-exportselection\fR.  If a widget has this option set to boolean \fBtrue\fR, then (in an unsafe interpreter) a selection made in the widget is automatically written to the \fBPRIMARY\fR selection.
+.PP
+A GUI event, for example \fB<<PasteSelection>>\fR, can copy the \fBPRIMARY\fR selection to certain widgets.  This copy is implemented by a widget binding to the event.  The binding script makes appropriate calls to the \fBselection\fR command.
+.PP
+.SH PORTABILITY ISSUES
+.PP
+On X11, the \fBPRIMARY\fR selection is a system-wide feature of the X server, allowing communication between different processes that are X11 clients.
+.PP
+On Windows, the \fBPRIMARY\fR selection is not provided by the system, but only by Tk, and so it is shared only between windows of a master interpreter and its unsafe slave interpreters.  It is not shared between interpreters in different processes or different threads.  Each master interpreter has a separate \fBPRIMARY\fR selection that is shared only with its unsafe slaves.
+.PP
+.SH SECURITY
+.PP
+A safe interpreter cannot read from the \fBPRIMARY\fR selection because its \fBselection\fR command is hidden.  For this reason the \fBPRIMARY\fR selection cannot be written to the Tk widgets of a safe interpreter.
+.PP
+A Tk widget can have its option \fB\-exportselection\fR set to boolean \fBtrue\fR, but in a safe interpreter this option has no effect: writing from the widget to the \fBPRIMARY\fR selection is disabled.
+.PP
+These are security features.  A safe interpreter may run untrusted code, and it is a security risk if this untrusted code can read or write the \fBPRIMARY\fR selection used by other interpreters.
+.PP
+.SH EXAMPLES
+.PP
+On X11 platforms, one of the standard selections available is the
+\fBSECONDARY\fR selection. Hardly anything uses it, but here is how to read
+it using Tk:
+.PP
+.CS
+set selContents [\fBselection get\fR \-selection SECONDARY]
+.CE
+.PP
+Many different types of data may be available for a selection; the
+special type \fBTARGETS\fR allows you to get a list of available types:
+.PP
+.CS
+foreach type [\fBselection get\fR \-type TARGETS] {
+   puts "Selection PRIMARY supports type $type"
+}
+.CE
+.PP
+To claim the selection, you must first set up a handler to supply the
+data for the selection. Then you have to claim the selection...
+.CS
+# Set up the data handler ready for incoming requests
+set foo "This is a string with some data in it... blah blah"
+\fBselection handle\fR \-selection SECONDARY . getData
+proc getData {offset maxChars} {
+   puts "Retrieving selection starting at $offset"
+   return [string range $::foo $offset [expr {$offset+$maxChars-1}]]
+}
+
+# Now we grab the selection itself
+puts "Claiming selection"
+\fBselection own\fR \-command lost \-selection SECONDARY .
+proc lost {} {
+   puts "Lost selection"
+}
+.CE
+.SH "SEE ALSO"
+clipboard(n)
+.SH KEYWORDS
+clear, format, handler, ICCCM, own, selection, target, type
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

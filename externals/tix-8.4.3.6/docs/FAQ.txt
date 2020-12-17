@@ -1,0 +1,342 @@
+$Id: FAQ.txt,v 1.4 2004/12/24 01:27:22 hobbs Exp $
+
+
+                        TIX FREQUENTLY ASKED QUESTIONS
+
+  TABLE OF CONTENTS
+
+   Legal Issues 
+
+          + [L.1] Is Tix free software?
+
+   General Questions About Using The Tix Library 
+
+          + [G.1] What does the "-disablecallback" option do?
+          + [G.2] How do I set the width of the entry subwidget inside
+            the tixControl widget?
+          + [G.3] What is the "setslient" method?
+          + [G.4] Is there a Tix interface builder in the works?
+          + [G.5] Can you tell me about the syntax of tixForm
+          + [G.6] I am not using the tixForm geometry manager, but it is
+            giving me errors about TixForm. What happened?
+          + [G.7] How do I generate the tclIndex file for Tix?
+          + [G.8] Can I ignore the default arguments passed by the
+            various -command and -broeswcmd options?
+          + [G.9] What does tixWidgetDoWhenIdle do?
+          + [G.10] Why isn't such a feature in Tix? Will it be
+            implemented?
+          + [G.11] Who are using Tix in their software?
+          + [G.12] I am using a DirList widget. When the user clicks on
+            an item, the procedure of my -browsecmd gets called twice.
+            However, I just want it to be called once.
+          + [G.13] I get an error "can't read data(-value): no such
+            element in array" when I use the tixExFileSelectDialog.
+
+   Question About Porting to Specific Platforms/Software 
+
+          + [P.1] The configure script gave me strange errors.
+
+     _________________________________________________________________
+
+  LEGAL ISSUES 
+
+   [L.1] Is Tix free software? 
+
+          ANSWER: Tix is distributed under the same license as Tcl/Tk
+          (a.k.a. BSD style license). Application developers can freely
+          redistribute Tix along with their products.
+
+     _________________________________________________________________
+
+  GENERAL QUESTIONS ABOUT USING THE TIX LIBRARY 
+
+   [G.1] What does the "-disablecallback" option do? 
+
+          ANSWER: Many Tix widgets have both a -value option and a
+          -command option. Any modification of the -value will cause the
+          -command callback to be executed. Sometimes this is
+          undesirable. For example, calling "config -value" inside the
+          callback procedure will cause the callback to be re-entered and
+          thus an infinite recursion.
+
+          The -disablecallback can be used to advoid this problem. When
+          this option is set, the -command callback will not be executed
+          even if the -value of a widget is changed. Therefore, if you
+          need to modify the -value of a widget inside its callback, do
+          this:
+
+    proc my_callback {w} {
+        $w config -disablecallback true
+        $w config value blah
+        $w config -disablecallback false
+    }
+
+   If you find this too troublesome, you can call the command
+          tixSetSilent:
+
+    proc my_callback {w} {
+        tixSetSilent $w blah
+    }
+
+   [G.2] How do I set the width of the entry subwidget inside the
+          tixControl widget? 
+
+          ANSWER: You can use the option database or the -options flag to
+          set the configuration options of the subwidgets. E.g:
+
+option add *TixControl*entry.width 10
+
+   OR
+
+tixControl .c -options {
+   entry.width  10
+}
+
+   [G.3] What is the "setslient" method? 
+
+          ANSWER: This is an obsolete method. You could use it to achieve
+          the same effect as the -disablecallback option. selsilent used
+          to be a widget command for the ComboBox, Control, etc. It has
+          been removed since Tix 4.0a4 and replaced by the tixSetSilent
+          command. Please note that tixSetSilent is not a widget command
+          but an external procedure.
+
+   [G.4] Is there a Tix interface builder in the works? 
+
+          ANSWER: Yes. But I don't know when it will be finished.
+          (probably in 96).
+
+   [G.5] Can you tell me about the syntax of tixForm 
+
+          ANSWER: Please see the file man/Form.html or man/Form.n.
+
+   [G.6] I am not using the tixForm geometry manager, but it is giving me
+          errors about TixForm. What happened? 
+
+          ANSWER: When you get error messages like this:
+
+ (TixForm) Error:Trying to use more than one geometry
+           manager for the same master window.
+           Giving up after 50 iterations.
+
+   Most likely, the problem is when using tixLabelFrame widgets, you
+          packed to the wrong frame:
+
+          This is WRONG:
+
+   tixLabelFrame .d
+        button .d.b
+        pack .d.b
+
+   This is the correct way:
+
+   tixLabelFrame .d
+        set f [.d subwidget frame]
+        button $f.b
+        pack $f.b
+        pack .d
+
+   Remember you don't pack directly into a TixLabelFrame widget. Instead,
+          you should pack into its frame subwidget.
+
+   [G.7] How do I generate the tclIndex file for Tix? 
+
+          ANSWER: Tix tclIndex files cannot be generated using the
+          standard auto_mkindex procedure. You must use the tixindex
+          program in the tools/ subdirectory in the Tix distribution. The
+          syntax is
+
+ tixindex *.tcl
+
+   [G.8] Can I ignore the default arguments passed by the various
+          -command and -broeswcmd options? 
+
+          ANSWER: You can use the tixBreak command. For example:
+
+ tixFileSelectDialog .c -command "puts foo; tixBreak"
+
+   [G.9] What does tixWidgetDoWhenIdle do? 
+
+          ANSWER: It does the same thing as tixDoWhileIdle (and "after
+          -idle"). The difference is it takes its second argument as the
+          name of a widget and executes this command only if the widget
+          exists: i.e.:
+
+  tixWidgetDoWhenIdle tixComboBox::Update $w blah blah ..
+
+   will execute tixComboBox::Update only if $w exists. $w may be
+          destroyed after tixWidgetDoWhenIdle is called but before an
+          idle event happens.
+
+   [G.10] Why isn't such a feature in Tix? Will it be implemented? 
+
+          ANSWER: Generally requests for new features are welcomed. You
+          can submit your requests to http://tix.sourceforge.net forums
+	  and we'll be happy to hear from you.
+
+          We can't guarantee to implement the requested features
+          immediately. Usually it depends on how important the features.
+          If the feature is requested by more people, it will usually get
+          done faster. However, some frequently requested features
+          probably won't be imlemented. Usually these features are
+          cosmetic changes and:
+
+          + they do not add new capability to the widgets
+          + they are not universally liked
+          + they confuse the user.
+
+          Some examples are:
+
+          + Different foreground and background colors for the NoteBook
+            tabs: having a lot of colors may antagonize the users that
+            are "color haters"; also, the different colors don't make it
+            easier for the user to locate the desired tab.
+          + Ring-binder metaphore for the NoteBook widget: a waste of
+            screen real estate.
+          + Rows of tabs for the NoteBook widget: the user may be
+            confused when the rows of tabs are switched. If you need to
+            have a lot of tabs for the notebook, use the ListNoteBook
+            widget instead.
+
+   [G.11] Who are using Tix in their software? 
+
+          ANSWER: See http://tix.sourceforge.net
+
+   [G.12] I am using a DirList widget. When the user clicks on an item,
+          the procedure of my -browsecmd gets called twice. However, I
+          just want it to be called once. 
+
+          ANSWER: The -browsecmd procedure is triggered by three types of
+          events: <1>, <ButtonRelease-1>, and <B1-Motion>. When the user
+          clicks on an entry, a <1> and a <ButtonRelease-1> event will
+          happen in rapid session, which causes your -browsecmd procedure
+          to be called twice.
+
+          A crude fix for this problem is to ignore all the
+          <ButtonRelease-1> events. You can find out the event that
+          triggers the -browsecmd procedure by the tixEvent command. Here
+          is an example:
+
+    tixDirList .c -browsecmd Browse
+
+    proc Browse {args} {
+        if {[tixEvent type] == "<ButtonRelease-1>"} {
+            return
+        }
+        # ....
+    }
+
+   However, the above solution is not perfect. For example, if the user
+          clicks down the button at entry one, drags it over entries two
+          and three and release it on top of entry three, the following
+          events may be caused:
+
+         1. <1> on entry one.
+         2. <B1-Motion> on entry two.
+         3. <ButtonRelease-1> on entry three.
+
+          Therefore, if you use the above method, the browse event on
+          entry three will be lost!
+
+          To devise a better solution, it's better to understand the
+          basic design conventions of a Tix-based GUI. Suppose we have a
+          list of entries displayed in a listbox (or DirList, or HList).
+          When the user clicks on an entry, the GUI usually responds by
+          displaying a "detailed view" of the entry. For example, if we
+          put a list of file names in a listbox, when the user clicks on
+          a file name, we display the contents of the file in a text
+          window. If the user then clicks on another file name, the text
+          window will load in the contents of the new file.
+
+          Now what happens if the user clicks on the same entry twice? Do
+          we reload the contents of the file into the text window? This
+          is usually unnecessary, inefficient and probably not what the
+          user wants to do. The Tix convention is, when the user clicks
+          on the same entry again, the detail view is not updated. If the
+          user wants to force an update (e.g, the user knows the file's
+          contents has been changed and wants to see the new version), he
+          or she can double-click on the entry and the application will
+          respond by redisplaying the detail view (reloading the file).
+
+          To implement this policy, the Browse procedure should be
+          modified as the following:
+
+    proc Browse {args} {
+        global currentView
+
+        set ent [tixEvent value]
+        if {$ent == $currentView} {
+            # We have already displayed the detailed view of $ent.
+            #
+            return
+        } else {
+            set currentView $ent
+            DisplayDetail $ent
+        }
+    }
+
+   [G.13] I get an error "can't read data(-value): no such element in
+          array" when I use the tixExFileSelectDialog. 
+
+          ANSWER: If you use tixExFileSelectDialog like this:
+
+        tixExFileSelectDialog .f -command foo
+
+        foo {filename} {
+            destroy .f
+            do some other stuff ...
+        }
+
+   it will cause a Tcl error because the dialog assumes that it still
+          exists after calling your command. This usually result in
+          errors like this:
+
+        can't read "data(-value)": no such element in array
+            while executing
+        "set data(-selection) $data(-value)..."
+            (procedure "tixComboBox::SetValue" line 30)
+
+   This "feature" is built into many Tix widgets and can't be fixed
+          easily. To work around the problem, never destroy widgets
+          inside -command calls. Usually you should unmap toplevel
+          windows instead. If you must destroy widgets, do it with an
+          "after" command. For example, the foo procedure should be
+          rewritten as:
+
+        foo {filename} {
+            wm withdraw .f
+            do some other stuff ...
+
+            after idle {if [winfo exists .f] {destroy .f}}
+        }
+
+   Execute the "after" command at the very end of the -command. Otherwise
+          the idle handler may be activated by some "update" calls.
+
+     _________________________________________________________________
+
+  QUESTION ABOUT PORTING TO SPECIFIC PLATFORMS/SOFTWARE 
+
+   [P.1] The configure script gave me strange errors. 
+
+          ANSWER: The problem may be you have several operating systems
+          sharing the same file system. Some people encounter error
+          messages like this:
+
+# ./configure --prefix=/usr/vendor/tcl
+loading cache ./config.cache
+checking for a BSD compatible install... /usr/bin/installbsd -c
+checking for ranlib... ranlib
+checking how to run the C preprocessor... cc -E
+checking for unistd.h... ./configure[603]: "${ac_cv_header_$ac_safe+set}": bad
+substitution
+
+   The problem is at line 2, configure loaded in ./config.cache, which
+          may have been created by a different operating system, with
+          settings only usuable for that operating system. To get around
+          this, you should type
+
+make distclean
+./configure
+make all
+

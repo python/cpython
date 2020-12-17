@@ -1,0 +1,261 @@
+'\"
+'\" $Id: tixListNoteBook.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixListNoteBook n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixListNoteBook - Create and manipulate tixListNoteBook widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixListNoteBook \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The ListNoteBook widget supports all the standard options of a frame widget.
+See the options(n) manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-dynamicgeometry dynamicGeometry DynamicGeometry
+If set to false, the size of the ListNotebook will match the size of the
+largest page. If set to true, the size of the ListNotebook will match the
+size of the current page (therefore, the size may change when the user
+selects different pages). The default value is false. A setting of true
+is discouraged.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-ipadx ipadX Pad
+The amount of internal horizontal paddings around the sides of the
+page subwidgets.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-ipady ipadY Pad
+The amount of internal vertical paddings around the sides of the
+page subwidgets.
+'\"----------END
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+.LP
+.nf
+Name:		\fBhlist\fR
+Class:		\fBTixHList\fR
+.fi
+.IP
+The HList widget that displays the names of the pages.
+'\"
+'\"----------END
+'\"
+.LP
+In addition, all the page subwidgets created as a result of the
+\fBadd\fR command can be accessed by the \fBsubwidget\fR command. They
+are identified by the \fBpageName\fR parameter to the \fBadd\fR
+command.
+'\"
+'\"
+.BE
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixListNoteBook\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a ListNoteBook widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+ListNoteBook widget such as its cursor and relief.
+
+The ListNoteBook widget is very similar to the TixNoteBook widget: it
+can be used to display many windows in a limited space using a
+"notebook" metaphore. The notebook is divided into a stack of pages
+(windows). At one time only one of these pages can be shown. The user
+can navigate through these pages by choosing the name of the desired
+page in the \fBhlist\fR subwidget.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixListNoteBook\fR command creates a new Tcl command whose name is
+the same as the path name of the ListNoteBook widget's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+ListNoteBook widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for ListNoteBook widgets:
+'\"
+'\"
+.TP 
+\fIpathName \fBadd\fI pageName \fR?\fIoption value ...\fR?
+'\"
+Adds a new ListNotebook page subwidget into the ListNoteBook widget.
+\fIpageName\fR must be the name of an existing entry of the
+\fBhlist\fR subwidget. You must create the entry before calling the
+\fBadd\fR command. Please refer to the \fBtixHList(n)\fR manual entry
+for adding entries in an HList widget. 
+Additional parameters may be supplied to configure this page
+subwidget. Possible options are:
+'\"
+.RS
+.TP
+\fB\-createcmd\fR
+Specifies a TCL command to be called the first time a page is shown on
+the screen. This option can be used to delay the creation of the
+contents of a page until necessary. Therefore, it can be used to speed
+up interface creation process especially when there are a large number
+of pages in a ListNoteBook widget.
+'\"
+.TP
+\fB\-raisecmd\fR
+Specifies a TCL command to be called whenever this page is raised by
+the user.
+'\"
+.RE
+'\"
+When successful, this command returns the pathname of the newly
+created page.
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR.\fIOption\fR may have any of the values accepted by the
+\fBtixListNoteBook\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixListNoteBook\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBdelete\fI pageName\fR?
+'\"
+Deletes the page identified by \fIpageName\fR.
+'\"
+.TP
+\fIpathName \fBpagecget\fR \fIpageName option\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR in the page given by \fIpageName\fR. \fIOption\fR may
+have any of the values accepted by the \fBadd\fR widget command.
+'\"
+'\"
+.TP
+\fIpathName \fBpageconfigure\fI pageName \fR?\fIoption\fR? ?\fIvalue ...\fR?
+'\"
+When no option is given, prints out the values of all options of this
+page. If \fIoption\fR is specified with no \fIvalue\fR, then the
+command returns the current value of that option. If one or more
+\fIoption\-value\fR pairs are specified, then the command modifies the
+given page's option(s) to have the given value(s); in this case the
+command returns an empty string. \fIOption\fR may be any of options
+accepted by the \fBadd\fR widget command.
+'\"
+.TP
+\fIpathName \fBpages\fR 
+'\"
+Returns a list of the names of all the pages.
+'\"
+.TP
+\fIpathName \fBraise \fIpageName\fR 
+'\"
+Raise the page identified by \fIpageName\fR.
+'\"
+.TP
+\fIpathName \fBraised\fR 
+'\"
+Returns the name of the currently raised page.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH EXAMPLE
+'\"
+.CS
+set n [tixListNoteBook .n]; pack $n
+$n subwidget hlist add page1 -text "Page 1"
+$n subwidget hlist add page2 -text "Page 2"
+
+set page1 [$n add page1]
+set page2 [$n add page2]
+
+button $page1.b -text "On page1"
+button $page2.b -text "On page2"
+
+pack $page1.b
+pack $page2.b
+
+$n raise page2
+.CE
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+When the user activates an entry in the \fBhlist\fR subwidget, the
+page associated with that entry will be raised to the front.  This can
+be done by using the mouse or keyboard. The \fIhlist\fR subwidget
+operates with its \fB\-selectmode\fR option set to single. See the
+event bindings of the HList widget for more details.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n), tixHList(n)
+
+
+

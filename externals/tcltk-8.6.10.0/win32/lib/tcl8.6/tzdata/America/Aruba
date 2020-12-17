@@ -1,0 +1,5 @@
+# created by tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Curacao)]} {
+    LoadTimeZoneFile America/Curacao
+}
+set TZData(:America/Aruba) $TZData(:America/Curacao)

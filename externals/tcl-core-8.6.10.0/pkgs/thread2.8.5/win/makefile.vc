@@ -1,0 +1,62 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+# Makefile for thread extension
+#
+# Basic build, test and install
+#   nmake /f makefile.vc INSTALLDIR=c:\tcl
+#   nmake /f makefile.vc INSTALLDIR=c:\tcl test
+#   nmake /f makefile.vc INSTALLDIR=c:\tcl install
+#
+# For other build options (debug, static etc.),
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
+#
+# In addition to the command line macros described there the following
+# may also be defined.
+#  ADDOPTDEFINES - addition compiler options
+#  ADDLINKOPTS - addition link options
+# E.g.
+#   nmake -nologo -f makefile.vc TCLDIR=%TCLDIR% ... ADDOPTDEFINES="-I%LMDBDIR%" ADDLINKOPTS="%LMDBDIR%\Release\lmdb.lib"
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#------------------------------------------------------------------------------
+
+PROJECT = thread
+RCFILE = thread.rc
+DOCDIR          = $(ROOT)\doc\html
+
+PRJ_DEFINES = -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+PRJ_DEFINES = $(PRJ_DEFINES) -DTCL_TIP143 -DTCL_TIP285 -DTCL_NO_DEPRECATED=1 $(ADDOPTDEFINES)
+PRJ_LIBS = $(ADDLINKOPTS)
+
+!include "rules-ext.vc"
+
+PRJ_OBJS = \
+	$(TMP_DIR)\threadNs.obj \
+	$(TMP_DIR)\threadCmd.obj \
+	$(TMP_DIR)\threadSvCmd.obj \
+	$(TMP_DIR)\threadSpCmd.obj \
+	$(TMP_DIR)\threadPoolCmd.obj \
+	$(TMP_DIR)\psGdbm.obj \
+	$(TMP_DIR)\psLmdb.obj \
+	$(TMP_DIR)\threadSvListCmd.obj \
+	$(TMP_DIR)\threadSvKeylistCmd.obj \
+	$(TMP_DIR)\tclXkeylist.obj
+
+!include "$(_RULESDIR)\targets.vc"
+
+install:    default-install-docs-html
+pkgindex:   default-pkgindex-tea
+
+# Explicit dependency rules
+$(GENERICDIR)\psGdbm.c: $(GENERICDIR)\psGdbm.h
+$(GENERICDIR)\psLmdb.c: $(GENERICDIR)\psLmdb.h
+$(GENERICDIR)\threadCmd.c : $(GENERICDIR)\tclThreadInt.h
+$(GENERICDIR)\threadSpCmd.c : $(GENERICDIR)\tclThreadInt.h
+$(GENERICDIR)\threadSvCmd.c : $(GENERICDIR)\tclThreadInt.h
+$(GENERICDIR)\threadPoolCmd.c : $(GENERICDIR)\tclThreadInt.h
+$(GENERICDIR)\threadSvListCmd.c : $(GENERICDIR)\tclThreadInt.h
+$(GENERICDIR)\threadSvKeylistCmd.c : $(GENERICDIR)\tclThreadInt.h
+

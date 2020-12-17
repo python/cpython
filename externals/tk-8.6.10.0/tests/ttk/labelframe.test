@@ -1,0 +1,130 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+test labelframe-1.0 "Setup" -body {
+    pack [ttk::labelframe .lf] -expand true -fill both
+}
+
+test labelframe-2.1 "Can't use indirect descendant as labelwidget" -body {
+    ttk::frame .lf.t
+    ttk::checkbutton .lf.t.cb
+    .lf configure -labelwidget .lf.t.cb
+} -returnCodes 1 -result "can't *" -match glob \
+  -cleanup { destroy .lf.t } ;
+
+test labelframe-2.2 "Can't use toplevel as labelwidget" -body {
+    toplevel .lf.t
+    .lf configure -labelwidget .lf.t
+} -returnCodes 1 -result "can't *" -match glob \
+  -cleanup { destroy .lf.t } ;
+
+test labelframe-2.3 "Can't use non-windows as -labelwidget" -body {
+    .lf configure -labelwidget BogusWindowName
+} -returnCodes 1 -result {bad window path name "BogusWindowName"}
+
+test labelframe-2.4 "Can't use nonexistent-windows as -labelwidget" -body {
+    .lf configure -labelwidget .nosuchwindow
+} -returnCodes 1 -result {bad window path name ".nosuchwindow"}
+
+
+###
+# See also series labelframe-4.x
+#
+test labelframe-3.1 "Add child slave" -body {
+    checkbutton .lf.cb -text "abcde"
+    .lf configure -labelwidget .lf.cb
+    list [update; winfo viewable .lf.cb] [winfo manager .lf.cb]
+} -result [list 1 labelframe]
+
+test labelframe-3.2 "Remove child slave" -body {
+    .lf configure -labelwidget {}
+    list [update; winfo viewable .lf.cb] [winfo manager .lf.cb]
+} -result [list 0 {}]
+
+test labelframe-3.3 "Re-add child slave" -body {
+    .lf configure -labelwidget .lf.cb
+    list [update; winfo viewable .lf.cb] [winfo manager .lf.cb]
+} -result [list 1 labelframe]
+
+test labelframe-3.4 "Re-manage child slave" -body {
+    pack .lf.cb -side right
+    list [update; winfo viewable .lf.cb] [winfo manager .lf.cb] [.lf cget -labelwidget]
+} -result [list 1 pack {}]
+
+test labelframe-3.5 "Re-add child slave" -body {
+    .lf configure -labelwidget .lf.cb
+    list [update; winfo viewable .lf.cb] [winfo manager .lf.cb]
+} -result [list 1 labelframe]
+
+test labelframe-3.6 "Destroy child slave" -body {
+    destroy .lf.cb
+    .lf cget -labelwidget
+} -result {}
+
+###
+# Re-run series labelframe-3.x with nonchild slaves.
+#
+# @@@ ODDITY, 14 Nov 2005:
+# @@@ labelframe-4.1 fails if .cb is a [checkbutton],
+# @@@ but seems to succeed if it's some other widget class.
+# @@@ I suspect a race condition; unable to track it down ATM.
+#
+# @@@ FOLLOWUP: This *may* have been caused by a bug in ManagerIdleProc 
+# @@@ (see manager.c r1.11). There's still probably a race condition in here.
+#
+test labelframe-4.1 "Add nonchild slave" -body {
+    checkbutton .cb -text "abcde"
+    .lf configure -labelwidget .cb
+    update
+    list [winfo ismapped .cb] [winfo viewable .cb] [winfo manager .cb]
+
+} -result [list 1 1 labelframe]
+
+test labelframe-4.2 "Remove nonchild slave" -body {
+    .lf configure -labelwidget {}
+    update;
+    list [winfo ismapped .cb] [winfo viewable .cb] [winfo manager .cb]
+} -result [list 0 0 {}]
+
+test labelframe-4.3 "Re-add nonchild slave" -body {
+    .lf configure -labelwidget .cb
+    list [update; winfo viewable .cb] [winfo manager .cb]
+} -result [list 1 labelframe]
+
+test labelframe-4.4 "Re-manage nonchild slave" -body {
+    pack .cb -side right
+    list [update; winfo viewable .cb] \
+    	[winfo manager .cb] \
+	[.lf cget -labelwidget]
+} -result [list 1 pack {}]
+
+test labelframe-4.5 "Re-add nonchild slave" -body {
+    .lf configure -labelwidget .cb
+    list [update; winfo viewable .cb] \
+    	[winfo manager .cb] \
+	[.lf cget -labelwidget]
+} -result [list 1 labelframe .cb]
+
+test labelframe-4.6 "Destroy nonchild slave" -body {
+    destroy .cb
+    .lf cget -labelwidget
+} -result {}
+
+test labelframe-5.0 "Cleanup" -body {
+    destroy .lf
+}
+
+# 1342876 -- labelframe should raise sibling -labelwidget above self.
+#
+test labelframe-6.1 "Stacking order" -body {
+    toplevel .t
+    pack [ttk::checkbutton .t.x1]
+    pack [ttk::labelframe .t.lf -labelwidget [ttk::label .t.lb]]
+    pack [ttk::checkbutton .t.x2]
+    winfo children .t
+} -cleanup {
+    destroy .t
+} -result [list .t.x1 .t.lf .t.lb .t.x2]
+
+tcltest::cleanupTests

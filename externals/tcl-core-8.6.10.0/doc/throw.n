@@ -1,0 +1,48 @@
+'\"
+'\" Copyright (c) 2008 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH throw n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+throw \- Generate a machine-readable error
+.SH SYNOPSIS
+\fBthrow\fI type message\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command causes the current evaluation to be unwound with an error. The
+error created is described by the \fItype\fR and \fImessage\fR arguments:
+\fItype\fR must contain a list of words describing the error in a form that is
+machine-readable (and which will form the error-code part of the result
+dictionary), and \fImessage\fR should contain text that is intended for
+display to a human being.
+.PP
+The stack will be unwound until the error is trapped by a suitable \fBcatch\fR
+or \fBtry\fR command. If it reaches the event loop without being trapped, it
+will be reported through the \fBbgerror\fR mechanism. If it reaches the top
+level of script evaluation in \fBtclsh\fR, it will be printed on the console
+before, in the non-interactive case, causing an exit (the behavior in other
+programs will depend on the details of how Tcl is embedded and used).
+.PP
+By convention, the words in the \fItype\fR argument should go from most
+general to most specific.
+.SH EXAMPLES
+.PP
+The following produces an error that is identical to that produced by
+\fBexpr\fR when trying to divide a value by zero.
+.PP
+.CS
+\fBthrow\fR {ARITH DIVZERO {divide by zero}} {divide by zero}
+.CE
+.SH "SEE ALSO"
+catch(n), error(n), errorCode(n), errorInfo(n), return(n), try(n)
+.SH "KEYWORDS"
+error, exception
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,321 @@
+'\"
+'\" $Id: tixSelect.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixSelect n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixSelect \- Create and manipulate tixSelect widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixSelect \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixSelect\fR class is derived from the \fBTixLabelWidget\fR
+class and inherits all the commands, options and
+subwidgets of its super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The Select widget supports all the standard options of a frame widget.
+See the \fBoptions(n)\fR manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-allowzero allowZero AllowZero
+A boolean value that specifies whether the selection can be empty.
+When set to false, at least one button subwidget must be selected at
+any time.
+
+\fBNote\fR: When the Select widget is first constructed, the default
+selection is always empty, even if \fB\-allowzero\fR is set to
+\fBfalse\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-buttontype buttonType ButtonType
+The type of buttons to be used as subwidgets inside the Select widget.
+By default, the standard Tk \fBbutton\fR widget class is used.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies the TCL command to be executed when the \fB\-value\fR of the
+Select widget is changed. This command will be invoked with
+two arguments. The first is the name of the button subwidget that has
+toggled. The second is a boolean value indicating whether the button
+subwidget is selected. This command is executed only when the
+\fB\-disableCallback\fR option is set to false.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disablecallback disableCallback DisableCallback
+A boolean value indicating whether callbacks should be disabled. When
+set to true, the TCL command specified by the \fB\-command\fR option
+is not executed when the \fB\-value\fR of the Select widget
+changes.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBorientation\fR
+Class:		\fBOrientation\fR
+Switch:		\fB\-orientation\fR
+Alias:		\fB\-orient\fR
+.fi
+.IP
+Specifies the orientation of the button subwidgets. Only the values
+\fBhorizontal\fR and \fBvertical\fR are recognized. This is a
+\fIstatic option\fR and it can only be assigned during the creation of
+the widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-label label Label
+Specifies the string to display as the label of this Select widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-labelside labelSide LabelSide
+Specifies where the label should be displayed relative to the Select
+widget. Valid options are: \fBtop\fR, \fBleft\fR, \fBright\fR,
+\fBbottom\fR, \fBnone\fR or \fBacrosstop\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-padx padX Pad
+Specifies the horizontal padding between two neighboring button
+subwidgets. This is a \fIstatic option\fR and it can only be assigned
+during the creation of the widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-padx padY Pad
+Specifies the vertical padding between two neighboring button
+subwidgets. This is a \fIstatic option\fR and it can only be assigned
+during the creation of the widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-radio radio Radio
+A boolean value that specifies whether the Select widget
+should act as a radio-box. When set to true, at most one button
+subwidget can be selected at any time. This is a \fIstatic option\fR
+and it can only be assigned during the creation of the widget.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-selectedbg selectedBg SelectedBg
+Specifies the background color of all the selected button subwidgets.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies the state of all the buttons inside the Select widget.  Only
+the values \fBnormal\fR and \fBdisabled\fR are recognized. When the
+state is set to \fBdisabled\fR, all user actions on this Select widget
+are ignore.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-validatecmd validateCmd ValidateCmd
+Specifies a TCL command to be called when the -value of the
+Select widget is about to change. This command is called with
+one parameter -- the new \fB\-value\fR entered by the user. This
+command is to validate this new value by returning a value it deems
+valid.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-value value Value
+The value of a Select widget is a list of the names of the
+button subwidgets that have been selected by the user.
+
+When you assign the value of a Select widget using the "config -value"
+widget command, the TCL command specified by the \fB\-command\fR
+option will be invoked if some button subwidgets are toggled.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-variable variable Variable
+Specifies the global variable in which the value of the Select widget
+should be stored. The value of a Select widget is stored as a list of
+the names of the button subwidgets that have been selected by the
+user. The value of the Select widget will be automatically updated
+when this variable is changed.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+.PP
+'\"
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBlabel\fR
+Class:		\fBLabel\fR
+.fi
+.IP
+The label subwidget.
+'\"----------END
+.PP
+In addition, all the button subwidgets created as a result of the
+\fBadd\fR widget command can be accessed by the \fBsubwidget\fR
+command. They are identified by the \fIbuttonName\fR parameter to the
+\fBadd\fR widget command. Here is an example:
+.PP
+.CS
+set s [tixSelect .s]
+pack $s
+$s add eat   -text Eat
+$s add sleep -text Sleep
+$s subwidget eat   config -fg green
+$s subwidget sleep config -fg red
+.CE
+'\"
+'\"
+.BE
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixSelect\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a Select widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+Select widget such as its cursor and relief.
+
+The Select widget is a container of button subwidgets. It can
+be used to provide radio-box or check-box style of selection options
+for the user.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixSelect\fR command creates a new Tcl command whose name is
+the same as the path name of the Select widget's window.  This
+command may be used to invoke various operations on the widget.  It
+has the following general form:
+'\"
+.RS
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+Select widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following commands
+are possible for Select widgets:
+'\"
+.TP
+\fIpathName \fBadd\fI buttonName \fR?\fIoption value ... \fR?
+'\"
+Adds a new button subwidget with the name \fIbuttonName\fR into the
+Select widget. Additional configuration options can be given
+to configure the new button subwidget.
+'\"
+.TP
+\fIpathName \fBcget \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixSelect\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR? 
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixSelect\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBinvoke\fI buttonName\fR
+'\"
+Invokes the button subwidget with the name \fIbuttonName\fR.
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget\fI name ?args?\fR 
+'\"
+When no options are given, returns the pathname of the subwidget of
+the specified name.
+
+When options are given, the widget command of the specified subwidget will
+be called with these options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+'\"
+When the user presses the left mouse button over the a button
+subwidget, it will be toggled and the \fB\-value\fR option of the
+tixSelect widget will be changed.
+'\"
+'\"----------------------------------------------------------------------
+.SH EXAMPLE
+.PP
+'\"
+The following example creates a radio-box style iconbar for the user
+to choose one value among \fBeat\fR, \fBwork\fR or \fBsleep\fR.
+.PP
+.CS
+set s [tixSelect .s \-radio true \-allowzero false]
+$s add eat   \-bitmap [tix getbitmap eat]
+$s add work  \-bitmap [tix getbitmap work]
+$s add sleep \-bitmap [tix getbitmap sleep]
+.CE
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n), Container Widget
+
+
+

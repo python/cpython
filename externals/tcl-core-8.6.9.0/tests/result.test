@@ -1,0 +1,147 @@
+# This file tests the routines in tclResult.c.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Some tests require the testsaveresult command
+
+testConstraint testsaveresult      [llength [info commands testsaveresult]]
+testConstraint testsetobjerrorcode [llength [info commands testsetobjerrorcode]]
+testConstraint testseterrorcode    [llength [info commands testseterrorcode]]
+testConstraint testreturn          [llength [info commands testreturn]]
+
+test result-1.1 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult small {set x 42} 0
+} {small result}
+test result-1.2 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult append {set x 42} 0
+} {append result}
+test result-1.3 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult dynamic {set x 42} 0
+} {dynamic result notCalled present}
+test result-1.4 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult object {set x 42} 0
+} {object result same}
+test result-1.5 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult small {set x 42} 1
+} {42}
+test result-1.6 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult append {set x 42} 1
+} {42}
+test result-1.7 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult dynamic {set x 42} 1
+} {42 called missing}
+test result-1.8 {Tcl_SaveInterpResult} {testsaveresult} {
+    testsaveresult object {set x 42} 1
+} {42 different}
+
+# Tcl_RestoreInterpResult is mostly tested by the previous tests except
+# for the following case
+
+test result-2.1 {Tcl_RestoreInterpResult} {testsaveresult} {
+    testsaveresult append {cd _foobar} 0
+} {append result}
+
+# Tcl_DiscardInterpResult is mostly tested by the previous tests except
+# for the following cases
+
+test result-3.1 {Tcl_DiscardInterpResult} -constraints testsaveresult -body {
+    testsaveresult append {cd _foobar} 1
+} -returnCodes error -result {couldn't change working directory to "_foobar": no such file or directory}
+test result-3.2 {Tcl_DiscardInterpResult} {testsaveresult} {
+    testsaveresult free {set x 42} 1
+} {42}
+
+test result-4.1 {Tcl_SetObjErrorCode - one arg} {testsetobjerrorcode} {
+    catch {testsetobjerrorcode 1}
+    list [set errorCode]
+} {1}
+test result-4.2 {Tcl_SetObjErrorCode - two args} {testsetobjerrorcode} {
+    catch {testsetobjerrorcode 1 2}
+    list [set errorCode]
+} {{1 2}}
+test result-4.3 {Tcl_SetObjErrorCode - three args} {testsetobjerrorcode} {
+    catch {testsetobjerrorcode 1 2 3}
+    list [set errorCode]
+} {{1 2 3}}
+test result-4.4 {Tcl_SetObjErrorCode - four args} {testsetobjerrorcode} {
+    catch {testsetobjerrorcode 1 2 3 4}
+    list [set errorCode]
+} {{1 2 3 4}}
+test result-4.5 {Tcl_SetObjErrorCode - five args} {testsetobjerrorcode} {
+    catch {testsetobjerrorcode 1 2 3 4 5}
+    list [set errorCode]
+} {{1 2 3 4 5}}
+
+test result-5.1 {Tcl_SetErrorCode - one arg} testseterrorcode {
+    catch {testseterrorcode 1}
+    set errorCode
+} 1
+test result-5.2 {Tcl_SetErrorCode - one arg, list quoting} testseterrorcode {
+    catch {testseterrorcode {a b}}
+    set errorCode
+} {{a b}}
+test result-5.3 {Tcl_SetErrorCode - one arg, list quoting} testseterrorcode {
+    catch {testseterrorcode \{}
+    llength $errorCode
+} 1
+test result-5.4 {Tcl_SetErrorCode - two args, list quoting} testseterrorcode {
+    catch {testseterrorcode {a b} c}
+    set errorCode
+} {{a b} c}
+
+test result-6.0 {Bug 1209759} -constraints testreturn -body {
+    # Might panic if bug is not fixed.
+    proc foo {} {testreturn}
+    foo
+} -returnCodes ok  -result {}
+test result-6.1 {Bug 1209759} -constraints testreturn -body {
+    # Might panic if bug is not fixed.
+    proc foo {} {catch {return -level 2}; testreturn}
+    foo
+} -cleanup {
+    rename foo {}
+} -returnCodes ok -result {}
+test result-6.2 {Bug 1649062} -setup {
+    proc foo {} {
+        if {[catch {
+            return -code error -errorinfo custom -errorcode CUSTOM foo
+        } err]} {
+            return [list $err $::errorCode $::errorInfo]
+        }
+    }
+    set ::errorInfo {}
+    set ::errorCode {}
+} -body {
+    foo
+} -cleanup {
+    rename foo {}
+} -result {foo {} {}}
+test result-6.3 {Bug 2383005} {
+     catch {return -code error -errorcode {{}a} eek} m
+     set m
+} {bad -errorcode value: expected a list but got "{}a"}
+test result-6.4 {non-list -errorstack} -body {
+     catch {return -code error -errorstack {{}a} eek} m o
+     list $m [dict get $o -errorcode] [dict get $o -errorstack]
+} -match glob -result {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {INNER * UP 1}}
+test result-6.5 {odd-sized-list -errorstack} -body {
+     catch {return -code error -errorstack a eek} m o
+     list $m [dict get $o -errorcode] [dict get $o -errorstack]
+} -match glob -result {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {INNER * UP 1}}
+# cleanup
+cleanupTests
+return

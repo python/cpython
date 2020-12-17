@@ -1,0 +1,552 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.Deployment.Compression.Zip</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Deployment.Compression.Zip.ConcatStream">
+            <summary>
+            Used to trick a DeflateStream into reading from or writing to
+            a series of (chunked) streams instead of a single steream.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Zip.CrcStream">
+            <summary>
+            Wraps a source stream and calcaluates a CRC over all bytes that are read or written.
+            </summary>
+            <remarks>
+            The CRC algorithm matches that used in the standard ZIP file format.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.#ctor(System.IO.Stream)">
+            <summary>
+            Creates a new CrcStream instance from a source stream.
+            </summary>
+            <param name="source">Underlying stream where bytes will be read from or written to.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.Crc">
+            <summary>
+            Gets the current CRC over all bytes that have been read or written
+            since this instance was created.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.Source">
+            <summary>
+            Gets the underlying stream that this stream reads from or writes to.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.CanRead">
+            <summary>
+            Gets a value indicating whether the source stream supports reading.
+            </summary>
+            <value>true if the stream supports reading; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.CanWrite">
+            <summary>
+            Gets a value indicating whether the source stream supports writing.
+            </summary>
+            <value>true if the stream supports writing; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.CanSeek">
+            <summary>
+            Gets a value indicating whether the source stream supports seeking.
+            </summary>
+            <value>true if the stream supports seeking; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.Length">
+            <summary>
+            Gets the length of the source stream.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.CrcStream.Position">
+            <summary>
+            Gets or sets the position of the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.Seek(System.Int64,System.IO.SeekOrigin)">
+            <summary>
+            Sets the position within the source stream.
+            </summary>
+            <param name="offset">A byte offset relative to the origin parameter.</param>
+            <param name="origin">A value of type SeekOrigin indicating
+            the reference point used to obtain the new position.</param>
+            <returns>The new position within the source stream.</returns>
+            <remarks>
+            Note the CRC is only calculated over bytes that are actually read or
+            written, so any bytes skipped by seeking will not contribute to the CRC.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.SetLength(System.Int64)">
+            <summary>
+            Sets the length of the source stream.
+            </summary>
+            <param name="value">The desired length of the
+            stream in bytes.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.Read(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads a sequence of bytes from the source stream and advances
+            the position within the stream by the number of bytes read.
+            </summary>
+            <param name="buffer">An array of bytes. When this method returns, the buffer
+            contains the specified byte array with the values between offset and
+            (offset + count - 1) replaced by the bytes read from the current source.</param>
+            <param name="offset">The zero-based byte offset in buffer at which to begin
+            storing the data read from the current stream.</param>
+            <param name="count">The maximum number of bytes to be read from the current stream.</param>
+            <returns>The total number of bytes read into the buffer. This can be less
+            than the number of bytes requested if that many bytes are not currently available,
+            or zero (0) if the end of the stream has been reached.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.Write(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Writes a sequence of bytes to the source stream and advances the
+            current position within this stream by the number of bytes written.
+            </summary>
+            <param name="buffer">An array of bytes. This method copies count
+            bytes from buffer to the current stream.</param>
+            <param name="offset">The zero-based byte offset in buffer at which
+            to begin copying bytes to the current stream.</param>
+            <param name="count">The number of bytes to be written to the
+            current stream.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.Flush">
+            <summary>
+            Flushes the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.Close">
+            <summary>
+            Closes the underlying stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.UpdateCrc(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Updates the CRC with a range of bytes that were read or written.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.MakeCrcTable">
+            <summary>
+            Computes a table that speeds up calculation of the CRC.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.CrcStream.Reflect(System.UInt32,System.Int32)">
+            <summary>
+            Reflects the ordering of certain number of bits. For exmample when reflecting
+            one byte, bit one is swapped with bit eight, bit two with bit seven, etc.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod">
+            <summary>
+            Identifies the compression method or &quot;algorithm&quot;
+            used for a single file within a zip archive.
+            </summary>
+            <remarks>
+            Proprietary zip implementations may define additional compression
+            methods outside of those included here.
+            </remarks>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Store">
+            <summary>
+            The file is stored (no compression)
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Shrink">
+            <summary>
+            The file is Shrunk
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Reduce1">
+            <summary>
+            The file is Reduced with compression factor 1
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Reduce2">
+            <summary>
+            The file is Reduced with compression factor 2
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Reduce3">
+            <summary>
+            The file is Reduced with compression factor 3
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Reduce4">
+            <summary>
+            The file is Reduced with compression factor 4
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Implode">
+            <summary>
+            The file is Imploded
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Deflate">
+            <summary>
+            The file is Deflated;
+            the most common and widely-compatible form of zip compression.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Deflate64">
+            <summary>
+            The file is Deflated using the enhanced Deflate64 method.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.BZip2">
+            <summary>
+            The file is compressed using the BZIP2 algorithm.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Lzma">
+            <summary>
+            The file is compressed using the LZMA algorithm.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Zip.ZipCompressionMethod.Ppmd">
+            <summary>
+            The file is compressed using the PPMd algorithm.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Zip.ZipException">
+            <summary>
+            Exception class for zip operations.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipException.#ctor(System.String,System.Exception)">
+            <summary>
+            Creates a new ZipException with a specified error message and a reference to the
+            inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+            <param name="innerException">The exception that is the cause of the current exception. If the
+            innerException parameter is not a null reference (Nothing in Visual Basic), the current exception
+            is raised in a catch block that handles the inner exception.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipException.#ctor(System.String)">
+            <summary>
+            Creates a new ZipException with a specified error message.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipException.#ctor">
+            <summary>
+            Creates a new ZipException.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the ZipException class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipException.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the SerializationInfo with information about the exception.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Zip.ZipEngine">
+            <summary>
+            Engine capable of packing and unpacking archives in the zip format.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.RegisterCompressionStreamCreator(Microsoft.Deployment.Compression.Zip.ZipCompressionMethod,System.IO.Compression.CompressionMode,System.Converter{System.IO.Stream,System.IO.Stream})">
+            <summary>
+            Registers a delegate that can create a warpper stream for
+            compressing or uncompressing the data of a source stream.
+            </summary>
+            <param name="compressionMethod">Compression method being registered.</param>
+            <param name="compressionMode">Indicates registration for ether
+            compress or decompress mode.</param>
+            <param name="creator">Delegate being registered.</param>
+            <remarks>
+            For compression, the delegate accepts a stream that writes to the archive
+            and returns a wrapper stream that compresses bytes as they are written.
+            For decompression, the delegate accepts a stream that reads from the archive
+            and returns a wrapper stream that decompresses bytes as they are read.
+            This wrapper stream model follows the design used by
+            System.IO.Compression.DeflateStream, and indeed that class is used
+            to implement the Deflate compression method by default.
+            <para>To unregister a delegate, call this method again and pass
+            null for the delegate parameter.</para>
+            </remarks>
+            <example>
+            When the ZipEngine class is initialized, the Deflate compression method
+            is automatically registered like this:
+            <code>
+                   ZipEngine.RegisterCompressionStreamCreator(
+                       ZipCompressionMethod.Deflate,
+                       CompressionMode.Compress,
+                       delegate(Stream stream) {
+                           return new DeflateStream(stream, CompressionMode.Compress, true);
+                       });
+                   ZipEngine.RegisterCompressionStreamCreator(
+                       ZipCompressionMethod.Deflate,
+                       CompressionMode.Decompress,
+                       delegate(Stream stream) {
+                           return new DeflateStream(stream, CompressionMode.Decompress, true);
+                       });
+            </code></example>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.#ctor">
+            <summary>
+            Creates a new instance of the zip engine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.ZipEngine.ArchiveComment">
+            <summary>
+            Gets the comment from the last-examined archive,
+            or sets the comment to be added to any created archives.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.IsArchive(System.IO.Stream)">
+            <summary>
+            Checks whether a Stream begins with a header that indicates
+            it is a valid archive file.
+            </summary>
+            <param name="stream">Stream for reading the archive file.</param>
+            <returns>True if the stream is a valid zip archive
+            (with no offset); false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.FindArchiveOffset(System.IO.Stream)">
+            <summary>
+            Gets the offset of an archive that is positioned 0 or more bytes
+            from the start of the Stream.
+            </summary>
+            <param name="stream">A stream for reading the archive.</param>
+            <returns>The offset in bytes of the archive,
+            or -1 if no archive is found in the Stream.</returns>
+            <remarks>The archive must begin on a 4-byte boundary.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.GetFileInfo(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Gets information about files in a zip archive or archive chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="fileFilter">A predicate that can determine
+            which files to process, optional.</param>
+            <returns>Information about files in the archive stream.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.GetCentralDirectory(Microsoft.Deployment.Compression.IUnpackStreamContext)">
+            <summary>
+            Reads all the file headers from the central directory in the main archive.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.GetEOCD(Microsoft.Deployment.Compression.IUnpackStreamContext,System.IO.Stream)">
+            <summary>
+            Locates and reads the end of central directory record near the
+            end of the archive.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.Pack(Microsoft.Deployment.Compression.IPackStreamContext,System.Collections.Generic.IEnumerable{System.String},System.Int64)">
+            <summary>
+            Creates a zip archive or chain of zip archives.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="files">An array of file lists.  Each list is
+            compressed into one stream in the archive.</param>
+            <param name="maxArchiveSize">The maximum number of bytes for one archive
+            before the contents are chained to the next archive, or zero for unlimited
+            archive size.</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive could not be
+            created.</exception>
+            <remarks>
+            The stream context implementation may provide a mapping from the file
+            paths within the archive to the external file paths.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.CheckArchiveWriteStream(Microsoft.Deployment.Compression.IPackStreamContext,System.Int64,System.Int64,System.IO.Stream@)">
+            <summary>
+            Moves to the next archive in the sequence if necessary.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.PackOneFile(Microsoft.Deployment.Compression.IPackStreamContext,System.String,System.Int64,System.Boolean,System.IO.Stream@)">
+            <summary>
+            Adds one file to a zip archive in the process of being created.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.PackFileBytes(Microsoft.Deployment.Compression.IPackStreamContext,System.IO.Stream,System.Int64,System.Converter{System.IO.Stream,System.IO.Stream},System.IO.Stream@,System.UInt32@)">
+            <summary>
+            Writes compressed bytes of one file to the archive,
+            keeping track of the CRC and number of bytes written.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.Unpack(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Extracts files from a zip archive or archive chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="fileFilter">An optional predicate that can determine
+            which files to process.</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.UnpackOneFile(Microsoft.Deployment.Compression.IUnpackStreamContext,Microsoft.Deployment.Compression.Zip.ZipFileHeader,System.IO.Stream@)">
+            <summary>
+            Unpacks a single file from an archive or archive chain.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.AreFilePathsEqual(System.String,System.String)">
+            <summary>
+            Compares two internal file paths while ignoring case and slash differences.
+            </summary>
+            <param name="path1">The first path to compare.</param>
+            <param name="path2">The second path to compare.</param>
+            <returns>True if the paths are equivalent.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipEngine.UnpackFileBytes(Microsoft.Deployment.Compression.IUnpackStreamContext,System.String,System.Int64,System.Int64,System.UInt32,System.IO.Stream,System.Converter{System.IO.Stream,System.IO.Stream},System.IO.Stream@)">
+            <summary>
+            Decompresses bytes for one file from an archive or archive chain,
+            checking the crc at the end.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Zip.ZipFileInfo">
+            <summary>
+            Object representing a compressed file within a zip package; provides operations for getting
+            the file properties and extracting the file.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipFileInfo.#ctor(Microsoft.Deployment.Compression.Zip.ZipInfo,System.String)">
+            <summary>
+            Creates a new ZipFileInfo object representing a file within a zip in a specified path.
+            </summary>
+            <param name="zipInfo">An object representing the zip archive containing the file.</param>
+            <param name="filePath">The path to the file within the zip archive. Usually, this is a simple file
+            name, but if the zip archive contains a directory structure this may include the directory.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipFileInfo.#ctor(System.String,System.Int32,System.IO.FileAttributes,System.DateTime,System.Int64,System.Int64,Microsoft.Deployment.Compression.Zip.ZipCompressionMethod)">
+            <summary>
+            Creates a new ZipFileInfo object with all parameters specified,
+            used internally when reading the metadata out of a zip archive.
+            </summary>
+            <param name="filePath">The internal path and name of the file in the zip archive.</param>
+            <param name="zipNumber">The zip archive number where the file starts.</param>
+            <param name="attributes">The stored attributes of the file.</param>
+            <param name="lastWriteTime">The stored last write time of the file.</param>
+            <param name="length">The uncompressed size of the file.</param>
+            <param name="compressedLength">The compressed size of the file.</param>
+            <param name="compressionMethod">Compression algorithm used for this file.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipFileInfo.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the ZipFileInfo class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.ZipFileInfo.CompressedLength">
+            <summary>
+            Gets the compressed size of the file in bytes.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Zip.ZipFileInfo.CompressionMethod">
+            <summary>
+            Gets the method used to compress this file.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipFileInfo.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the SerializationInfo with information about the archive.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data.</param>
+            <param name="context">The StreamingContext that contains contextual information
+            about the source or destination.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Zip.ZipInfo">
+            <summary>
+            Object representing a zip file on disk; provides access to
+            file-based operations on the zip file.
+            </summary>
+            <remarks>
+            Generally, the methods on this class are much easier to use than the
+            stream-based interfaces provided by the <see cref="T:Microsoft.Deployment.Compression.Zip.ZipEngine"/> class.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipInfo.#ctor(System.String)">
+            <summary>
+            Creates a new CabinetInfo object representing a zip file in a specified path.
+            </summary>
+            <param name="path">The path to the zip file. When creating a zip file, this file does not
+            necessarily exist yet.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipInfo.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the CabinetInfo class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipInfo.CreateCompressionEngine">
+            <summary>
+            Creates a compression engine that does the low-level work for
+            this object.
+            </summary>
+            <returns>A new <see cref="T:Microsoft.Deployment.Compression.Zip.ZipEngine"/> instance.</returns>
+            <remarks>
+            Each instance will be <see cref="M:Microsoft.Deployment.Compression.CompressionEngine.Dispose"/>d
+            immediately after use.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipInfo.GetFiles">
+            <summary>
+            Gets information about the files contained in the archive.
+            </summary>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.Zip.ZipFileInfo"/> objects, each
+            containing information about a file in the archive.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Zip.ZipInfo.GetFiles(System.String)">
+            <summary>
+            Gets information about the certain files contained in the archive file.
+            </summary>
+            <param name="searchPattern">The search string, such as
+            &quot;*.txt&quot;.</param>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.Zip.ZipFileInfo"/> objects, each containing
+            information about a file in the archive.</returns>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.WixDistribution">
+            <summary>
+            Distribution specific strings.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.NewsUrl">
+            <summary>
+            News URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.ShortProduct">
+            <summary>
+            Short product name for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.SupportUrl">
+            <summary>
+            Support URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.TelemetryUrlFormat">
+            <summary>
+            Telemetry URL format for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.VSExtensionsLandingUrl">
+            <summary>
+            VS Extensions Landing page Url for the distribution.
+            </summary>
+        </member>
+    </members>
+</doc>

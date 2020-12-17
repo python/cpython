@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+    targetNamespace="http://schemas.microsoft.com/wix/VSExtension"
+              xmlns="http://schemas.microsoft.com/wix/VSExtension">
+    <xs:annotation>
+        <xs:documentation>
+            The source code schema for the Windows Installer XML Toolset Visual Studio Extension.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="HelpCollection">
+        <xs:annotation>
+            <xs:documentation>
+                Help Namespace for a help collection.  The parent file is the key for the HxC (Collection) file.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="HelpFileRef" />
+                <xs:element ref="HelpFilterRef" />
+                <xs:element ref="PlugCollectionInto" />
+            </xs:choice>
+            <xs:attribute name="Id" type="xs:string" use="required">
+                <xs:annotation><xs:documentation>Primary Key for HelpNamespace.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Description" type="xs:string">
+                <xs:annotation><xs:documentation>Friendly name for Namespace.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Internal Microsoft Help ID for this Namespace.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressCustomActions" type="YesNoType">
+                <xs:annotation><xs:documentation>Suppress linking Help registration custom actions.  Help redistributable merge modules will be required.  Use this when building a merge module.</xs:documentation></xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="HelpFilter">
+        <xs:annotation>
+            <xs:documentation>
+                Filter for Help Namespace.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Primary Key for HelpFilter.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="FilterDefinition" type="xs:string">
+                <xs:annotation><xs:documentation>Query String for Help Filter.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Friendly name for Filter.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressCustomActions" type="YesNoType">
+                <xs:annotation><xs:documentation>Suppress linking Help registration custom actions.  Help redistributable merge modules will be required.  Use this when building a merge module.</xs:documentation></xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="HelpFile">
+        <xs:annotation>
+            <xs:documentation>
+                File for Help Namespace.  The parent file is the key for HxS (Title) file.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Primary Key for HelpFile Table.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AttributeIndex" type="xs:string">
+                <xs:annotation><xs:documentation>Key for HxR (Attributes) file.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Index" type="xs:string">
+                <xs:annotation><xs:documentation>Key for HxI (Index) file.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Language" use="required" type="xs:integer">
+                <xs:annotation><xs:documentation>Language ID for content file.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Internal Microsoft Help ID for this HelpFile.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SampleLocation" type="xs:string">
+                <xs:annotation><xs:documentation>Key for a file that is in the "root" of the samples directory for this HelpFile.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Search" type="xs:string">
+                <xs:annotation><xs:documentation>Key for HxQ (Query) file.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressCustomActions" type="YesNoType">
+                <xs:annotation><xs:documentation>Suppress linking Help registration custom actions.  Help redistributable merge modules will be required.  Use this when building a merge module.</xs:documentation></xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="PlugCollectionInto">
+        <xs:annotation><xs:documentation>Plugin for Help Namespace.</xs:documentation></xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Attributes" type="xs:string">
+                <xs:annotation><xs:documentation>Key for HxA (Attributes) file of child namespace.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="TableOfContents" type="xs:string">
+                <xs:annotation><xs:documentation>Key for HxT  file of child namespace.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="TargetCollection" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>
+                    Foriegn Key into HelpNamespace table for the parent namespace into which the child will be inserted.
+                    The following special keys can be used to plug into external namespaces defined outside of the installer.
+                      MS_VSIPCC_v80 : Visual Studio 2005
+                      MS.VSIPCC.v90 : Visual Studio 2008
+                </xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="TargetTableOfContents" type="xs:string">
+                <xs:annotation><xs:documentation>Key for HxT  file of parent namespace that now includes the new child namespace.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="TargetFeature" type="xs:string">
+                <xs:annotation><xs:documentation>Key for the feature parent of this help collection.  Required only when plugging into external namespaces.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressExternalNamespaces" type="YesNoType">
+                <xs:annotation><xs:documentation>Suppress linking Visual Studio Help namespaces.  Help redistributable merge modules will be required.  Use this when building a merge module.</xs:documentation></xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="HelpFileRef">
+        <xs:annotation><xs:documentation>Create a reference to a HelpFile element in another Fragment.</xs:documentation></xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Primary Key for HelpFile Table.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:anyAttribute namespace="##other" processContents="lax">
+                <xs:annotation><xs:documentation>
+                    Extensibility point in the WiX XML Schema.  Schema extensions can register additional
+                    attributes at this point in the schema.
+                </xs:documentation></xs:annotation>
+            </xs:anyAttribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="HelpFilterRef">
+        <xs:annotation><xs:documentation>Create a reference to a HelpFile element in another Fragment.</xs:documentation></xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Primary Key for HelpFilter.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:anyAttribute namespace="##other" processContents="lax">
+                <xs:annotation><xs:documentation>
+                    Extensibility point in the WiX XML Schema.  Schema extensions can register additional
+                    attributes at this point in the schema.
+                </xs:documentation></xs:annotation>
+            </xs:anyAttribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="HelpCollectionRef">
+        <xs:annotation>
+            <xs:documentation>Create a reference to a HelpCollection element in another Fragment.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="HelpFileRef" />
+            </xs:choice>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation><xs:documentation>Primary Key for HelpNamespace Table.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:anyAttribute namespace="##other" processContents="lax">
+                <xs:annotation><xs:documentation>
+                    Extensibility point in the WiX XML Schema.  Schema extensions can register additional
+                    attributes at this point in the schema.
+                </xs:documentation></xs:annotation>
+            </xs:anyAttribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="VsixPackage">
+        <xs:annotation>
+            <xs:documentation>
+                This element provides the metdata required to install/uninstall a file as
+                a VSIX Package. The VSIX package file will be installed as part of the MSI
+                then passed to the VSIX installer to install the VSIX package. To avoid the
+                duplication, simply use the MSI to install the VSIX package itself.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="File" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                    Reference to file identifer. This attribute is required when the element is not a
+                    child of a File element and is invalid when the element is a child of the File element.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PackageId" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>
+                    Identity of the VSIX package per its internal manifest. If this value is not correct
+                    the VSIX package will not correctly uninstall.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Permanent" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                    Indicates whether the VSIX package is uninstalled when the parent Component is uninstalled.
+                    The default is 'no'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Target" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                    Specifies the SKU of Visual Studio in which to register the extension. If no target
+                    is specified the extension is registered with all installed SKUs. If the Target
+                    attribute is specified the TargetVersion attribute must also be specified. The 
+                    following is a list of known Visual Studio targets: integratedShell, professional,
+                    premium, ultimate, vbExpress, vcExpress, vcsExpress, vwdExpress
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="TargetVersion" type="VersionType">
+                <xs:annotation>
+                    <xs:documentation>
+                    Specifies the version of Visual Studio in which to register the extension. This attribute
+                    is required if the Target attribute is specified.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Vital" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                    Indicates whether failure to install the VSIX package causes the installation to rollback.
+                    The default is 'yes'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="VsixInstallerPathProperty" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                    Optional reference to a Property element that contains the path to the VsixInstaller.exe.
+                    By default, the latest VsixInstaller.exe on the machine will be used to install the VSIX
+                    package. It is highly recommended that this attribute is *not* used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:anyAttribute namespace="##other" processContents="lax">
+                <xs:annotation><xs:documentation>
+                    Extensibility point in the WiX XML Schema.  Schema extensions can register additional
+                    attributes at this point in the schema.
+                </xs:documentation></xs:annotation>
+            </xs:anyAttribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="VersionType">
+        <xs:annotation><xs:documentation>Values of this type will look like: "x.x.x.x" where x is an integer from 0 to 65534.</xs:documentation></xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(\d{1,5}\.){0,3}\d{1,5}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="YesNoType">
+        <xs:annotation>
+            <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base='xs:NMTOKEN'>
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

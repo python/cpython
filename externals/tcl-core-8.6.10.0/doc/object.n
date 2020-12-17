@@ -1,0 +1,128 @@
+'\"
+'\" Copyright (c) 2007-2008 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH object n 0.1 TclOO "TclOO Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+oo::object \- root class of the class hierarchy
+.SH SYNOPSIS
+.nf
+package require TclOO
+
+\fBoo::object\fI method \fR?\fIarg ...\fR?
+.fi
+.SH "CLASS HIERARCHY"
+.nf
+\fBoo::object\fR
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBoo::object\fR class is the root class of the object hierarchy; every
+object is an instance of this class. Since classes are themselves objects,
+they are instances of this class too. Objects are always referred to by their
+name, and may be \fBrename\fRd while maintaining their identity.
+.PP
+Instances of objects may be made with either the \fBcreate\fR or \fBnew\fR
+methods of the \fBoo::object\fR object itself, or by invoking those methods on
+any of the subclass objects; see \fBoo::class\fR for more details. The
+configuration of individual objects (i.e., instance-specific methods, mixed-in
+classes, etc.) may be controlled with the \fBoo::objdefine\fR command.
+.PP
+Each object has a unique namespace associated with it, the instance namespace.
+This namespace holds all the instance variables of the object, and will be the
+current namespace whenever a method of the object is invoked (including a
+method of the class of the object). When the object is destroyed, its instance
+namespace is deleted. The instance namespace contains the object's \fBmy\fR
+command, which may be used to invoke non-exported methods of the object or to
+create a reference to the object for the purpose of invocation which persists
+across renamings of the object.
+.SS CONSTRUCTOR
+The \fBoo::object\fR class does not define an explicit constructor.
+.SS DESTRUCTOR
+The \fBoo::object\fR class does not define an explicit destructor.
+.SS "EXPORTED METHODS"
+The \fBoo::object\fR class supports the following exported methods:
+.TP
+\fIobj \fBdestroy\fR
+.
+This method destroys the object, \fIobj\fR, that it is invoked upon, invoking
+any destructors on the object's class in the process. It is equivalent to
+using \fBrename\fR to delete the object command. The result of this method is
+always the empty string.
+.SS "NON-EXPORTED METHODS"
+.PP
+The \fBoo::object\fR class supports the following non-exported methods:
+.TP
+\fIobj \fBeval\fR ?\fIarg ...\fR?
+.
+This method concatenates the arguments, \fIarg\fR, as if with \fBconcat\fR,
+and then evaluates the resulting script in the namespace that is uniquely
+associated with \fIobj\fR, returning the result of the evaluation.
+.TP
+\fIobj \fBunknown ?\fImethodName\fR? ?\fIarg ...\fR?
+.
+This method is called when an attempt to invoke the method \fImethodName\fR on
+object \fIobj\fR fails. The arguments that the user supplied to the method are
+given as \fIarg\fR arguments.
+.VS
+If \fImethodName\fR is absent, the object was invoked with no method name at
+all (or any other arguments).
+.VE
+The default implementation (i.e., the one defined by the \fBoo::object\fR
+class) generates a suitable error, detailing what methods the object supports
+given whether the object was invoked by its public name or through the
+\fBmy\fR command.
+.TP
+\fIobj \fBvariable \fR?\fIvarName ...\fR?
+.
+This method arranges for each variable called \fIvarName\fR to be linked from
+the object \fIobj\fR's unique namespace into the caller's context. Thus, if it
+is invoked from inside a procedure then the namespace variable in the object
+is linked to the local variable in the procedure. Each \fIvarName\fR argument
+must not have any namespace separators in it. The result is the empty string.
+.TP
+\fIobj \fBvarname \fIvarName\fR
+.
+This method returns the globally qualified name of the variable \fIvarName\fR
+in the unique namespace for the object \fIobj\fR.
+.TP
+\fIobj \fB<cloned> \fIsourceObjectName\fR
+.VS
+This method is used by the \fBoo::object\fR command to copy the state of one
+object to another. It is responsible for copying the procedures and variables
+of the namespace of the source object (\fIsourceObjectName\fR) to the current
+object. It does not copy any other types of commands or any traces on the
+variables; that can be added if desired by overriding this method in a
+subclass.
+.VE
+.SH EXAMPLES
+.PP
+This example demonstrates basic use of an object.
+.PP
+.CS
+set obj [\fBoo::object\fR new]
+$obj foo             \fI\(-> error "unknown method foo"\fR
+oo::objdefine $obj method foo {} {
+    my \fBvariable\fR count
+    puts "bar[incr count]"
+}
+$obj foo             \fI\(-> prints "bar1"\fR
+$obj foo             \fI\(-> prints "bar2"\fR
+$obj variable count  \fI\(-> error "unknown method variable"\fR
+$obj \fBdestroy\fR
+$obj foo             \fI\(-> error "unknown command obj"\fR
+.CE
+.SH "SEE ALSO"
+my(n), oo::class(n)
+.SH KEYWORDS
+base class, class, object, root class
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

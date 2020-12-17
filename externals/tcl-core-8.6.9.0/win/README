@@ -1,0 +1,99 @@
+Tcl 8.6 for Windows
+
+1. Introduction
+---------------
+
+This is the directory where you configure and compile the Windows
+version of Tcl.  This directory also contains source files for Tcl
+that are specific to Microsoft Windows.
+
+The information in this file is maintained on the web at:
+
+	http://www.tcl.tk/doc/howto/compile.html#win
+
+2. Compiling Tcl
+----------------
+
+In order to compile Tcl for Windows, you need the following:
+
+	Tcl 8.6 Source Distribution (plus any patches)
+
+	and
+
+	Visual C++ 6 or newer
+
+	or
+
+	Linux + MinGW-w64 [http://mingw-w64.sourceforge.net/]
+	    (win32 or win64)
+
+	or
+
+	Cygwin + MinGW-w64 [http://cygwin.com/install.html]
+	    (win32 or win64)
+
+	or
+
+	Darwin + MinGW-w64 [http://mingw-w64.sourceforge.net/]
+	    (win32 or win64)
+
+	or
+
+	Msys + MinGW-w64 [http://mingw-w64.sourceforge.net/]
+	    (win32 or win64)
+
+	or
+
+	Msys + MinGW [http://www.mingw.org/download.shtml]
+	    (win32 only)
+
+
+In practice, this release is built with Visual C++ 6.0 and the TEA
+Makefile.
+
+If you are building with Visual C++, in the "win" subdirectory of the
+source release, you will find "makefile.vc".  This is the makefile for the
+Visual C++ compiler and uses the stock NMAKE tool.  Detailed directions for
+using it, are in the comments of "makefile.vc".  A quick example would be:
+
+	C:\tcl_source\win\>nmake -f makefile.vc
+
+There is also a Developer Studio workspace and project file, too, if you
+would like to use them.
+
+If you are building with Linux, Cygwin or Msys, you can use the configure
+script that lives in the win subdirectory. The Linux/Cygwin/Msys based
+configure/build process works just like the UNIX one, so you will want
+to refer to ../unix/README for available configure options.
+
+If you want 64-bit executables (x86_64), you need to configure using
+the --enable-64bit option. Make sure that the x86_64-w64-mingw32
+compiler is present. For Cygwin this compiler can be found in the
+"mingw64-x86_64-gcc-core" package, which can be installed through
+the normal Cygwin install process. If you only want 32-bit executables,
+the "mingw64-i686-gcc-core" package is what you need. For Linux, Darwin
+and Msys, you can download a suitable win32 or win64 compiler from
+[https://sourceforge.net/projects/mingw-w64/files/]
+
+Use the Makefile "install" target to install Tcl.  It will install it
+according to the prefix options you provided in the correct directory
+structure.
+
+Note that in order to run tclsh86.exe, you must ensure that tcl86.dll is
+on your path, in the system directory, or in the directory containing
+tclsh86.exe.
+
+Note: Tcl no longer provides support for Win32s.
+
+3. Test suite
+-------------
+
+This distribution contains an extensive test suite for Tcl.  Some of the
+tests are timing dependent and will fail from time to time.  If a test is
+failing consistently, please send us a bug report with as much detail as
+you can manage to our tracker:
+
+	http://core.tcl.tk/tcl/reportlist
+
+In order to run the test suite, you build the "test" target using the
+appropriate makefile for your compiler.

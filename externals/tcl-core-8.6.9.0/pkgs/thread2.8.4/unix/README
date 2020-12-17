@@ -1,0 +1,70 @@
+
+I. Building the Tcl thread extension for Unix
+=============================================
+
+Extension can be compiled on several Unix derivates including various
+distributions of Linux. Build process is pretty straightforward. I've
+checked some versions of Solaris, Linux and Darwin, but the extension
+should compile without problems on any Unix-like operating system
+with a proper pthreads library implementation.
+
+To build on Unix-like operating systems, start with the CONFIG script
+and see if there is already a combination of the "configure" options
+which may satisfy your needs. If not, you can run the configure script
+located in the root of the distribution directory with a choice of
+supported options yourself.  If yes, you can uncomment corresponding
+lines from the CONFIG script and do:
+
+    % sh CONFIG
+
+Either way, this will create a Makefile which you use to run "make" and
+"make install".
+You can use "make clean" to clean the directory from temporary compilation
+files and/or "make distclean" to additionaly remove local config files.
+You might want to do "make test" before doing the "make install" in order
+to run the regression tests on the package.
+
+To explore other building options, look into the CONFIG file for more
+information.
+
+
+Note for NaviServer/AOLserver users
+------------------------
+
+The extension can be compiled as a loadable module for the
+NaviServer/AOLserver  version 4.0 or higher. In order to do this,
+use "--with-naviserver" configure option to specify the directory
+containing the NaviServer/AOLserver distribution. The CONFIG script
+has an example how to invoke configure in order to build the
+extension as NaviServer/AOLserver module. Note, however, that
+"make install" and "make test" targets are still not supported for
+NaviServer/AOLserver builds. This will be corrected in one of
+the future releases.
+
+To fine-tune, you might also want to make the tsv::* commands replace
+the NaviServer/AOLserver built-in nsv_* family of commands, since
+they are API  compatible and provide richer command set plus advanced
+shared-object storage of shared data. Go to the generic/threadSvCmd.h
+file and look at the beginning of the file for the:
+
+/* #define NSV_COMPAT 1 */
+
+So, uncomment the line, recompile and there you go.
+
+
+II. Building optional support libraries
+=======================================
+
+As of 2.6 release, this extension supports persistent shared variables.
+To use this functionality, you might need to download and compile some
+other supporting libraries. Currently, there is a simple implementation
+of shared variable persistency built atop of popular GNU Gdbm package.
+You can obtain the latest version of the Gdbm package from the GNU
+website at: http://www.gnu.org/software/gdbm/gdbm.html
+To compile with GNU Gdbm support you must configure with --with-gdbm
+switch. This option, if used, will try to locate the Gdbm library on
+your system at couple of standard locations. You might override this
+behaviour by giving --with-gdbm=/some/dir. Note that both library file
+and the include file must then reside in this directory.
+
+-EOF-

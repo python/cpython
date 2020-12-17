@@ -1,0 +1,169 @@
+Tcl UNIX README
+---------------
+
+This is the directory where you configure, compile, test, and install UNIX
+versions of Tcl. This directory also contains source files for Tcl that are
+specific to UNIX. Some of the files in this directory are used on the PC or
+MacOSX platform too, but they all depend on UNIX (POSIX/ANSI C) interfaces and
+some of them only make sense under UNIX.
+
+Updated forms of the information found in this file is available at:
+	http://www.tcl.tk/doc/howto/compile.html#unix
+
+For information on platforms where Tcl is known to compile, along with any
+porting notes for getting it to work on those platforms, see:
+	http://www.tcl.tk/software/tcltk/platforms.html
+
+The rest of this file contains instructions on how to do this. The release
+should compile and run either "out of the box" or with trivial changes on any
+UNIX-like system that approximates POSIX, BSD, or System V. We know that it
+runs on workstations from Sun, H-P, DEC, IBM, and SGI, as well as PCs running
+Linux, BSDI, and SCO UNIX. To compile for a PC running Windows, see the README
+file in the directory ../win. To compile for MacOSX, see the README file in
+the directory ../macosx.
+
+How To Compile And Install Tcl:
+-------------------------------
+
+(a) If you have already compiled Tcl once in this directory and are now
+    preparing to compile again in the same directory but for a different
+    platform, or if you have applied patches, type "make distclean" to discard
+    all the configuration information computed previously.
+
+(b) If you need to reconfigure because you changed any of the .in or .m4
+    files, you will need to run autoconf to create a new ./configure script.
+    Most users will NOT need to do this since a configure script is already
+    provided.
+
+    (in the tcl/unix directory)
+    autoconf
+
+(c) Type "./configure". This runs a configuration script created by GNU
+    autoconf, which configures Tcl for your system and creates a Makefile. The
+    configure script allows you to customize the Tcl configuration for your
+    site; for details on how you can do this, type "./configure --help" or
+    refer to the autoconf documentation (not included here). Tcl's "configure"
+    supports the following special switches in addition to the standard ones:
+
+	--enable-threads	If this switch is set, Tcl will compile itself
+				with multithreading support.
+	--disable-load		If this switch is specified then Tcl will
+				configure itself not to allow dynamic loading,
+				even if your system appears to support it.
+				Normally you can leave this switch out and Tcl
+				will build itself for dynamic loading if your
+				system supports it.
+	--disable-dll-unloading	Disables support for the [unload] command even
+				on platforms that can support it. Meaningless
+				when Tcl is compiled with --disable-load.
+	--enable-shared		If this switch is specified, Tcl will compile
+				itself as a shared library if it can figure
+				out how to do that on this platform. This is
+				the default on platforms where we know how to
+				build shared libraries.
+	--disable-shared	If this switch is specified, Tcl will compile
+				itself as a static library.
+	--enable-symbols	Build with debugging symbols. By default
+				standard debugging symbols are used. You can
+				specify the value "mem" to include
+				TCL_MEM_DEBUG memory debugging, "compile" to
+				include TCL_COMPILE_DEBUG debugging, or "all"
+				to enable all internal debugging.
+	--disable-symbols	Build without debugging symbols
+	--enable-64bit		Enable 64bit support (where applicable)
+	--disable-64bit		Disable 64bit support (where applicable)
+	--enable-64bit-vis	Enable 64bit Sparc VIS support
+	--disable-64bit-vis	Disable 64bit Sparc VIS support
+	--enable-langinfo	Allows use of modern nl_langinfo check for
+				better localization support. This is on by
+				default on platforms where nl_langinfo is
+				found.
+	--disable-langinfo	Specifically disables use of nl_langinfo.
+	--enable-man-symlinks	Use symlinks for linking the manpages that
+				should be reachable under several names.
+	--enable-man-suffix[=STRING]
+				Append STRING to the names of installed manual
+				pages (prior to applying compression, if that
+				is also enabled). If STRING is omitted,
+				defaults to 'tcl'.
+	--enable-man-compression=PROG
+				Compress the manpages using PROG.
+	--enable-dtrace		Enable tcl DTrace provider (if DTrace is
+				available on the platform), c.f. tclDTrace.d
+				for descriptions of the probes made available,
+				see http://wiki.tcl.tk/DTrace for more details
+	--with-encoding=ENCODING Specifies the encoding for compile-time
+				configuration values. Defaults to iso8859-1,
+				which is also sufficient for ASCII.
+	--with-tzdata=FLAG	Specifies whether to install timezone data. By
+				default, the configure script tries to detect
+				whether a usable timezone database is present
+				on the system already.
+
+    Mac OS X only (i.e. completely unsupported on other platforms):
+
+	--enable-framework	Package Tcl as a framework.
+	--disable-corefoundation Disable use of CoreFoundation API and revert
+				to standard select based notifier, required
+				when using naked fork (i.e. not followed by
+				execve).
+
+    Note: by default gcc will be used if it can be located on the PATH. If you
+    want to use cc instead of gcc, set the CC environment variable to "cc"
+    before running configure. It is not safe to edit the Makefile to use gcc
+    after configure is run. Also note that you should use the same compiler
+    when building extensions.
+
+    Note: be sure to use only absolute path names (those starting with "/") in
+    the --prefix and --exec-prefix options.
+
+(d) Type "make". This will create a library archive called "libtcl<version>.a"
+    or "libtcl<version>.so" and an interpreter application called "tclsh" that
+    allows you to type Tcl commands interactively or execute script files. It
+    will also create a stub library archive "libtclstub<version>.a" that
+    developers may link against other C code to produce loadable extensions
+    for Tcl.
+
+(e) If the make fails then you'll have to personalize the Makefile for your
+    site or possibly modify the distribution in other ways. First check the
+    porting Web page above to see if there are hints for compiling on your
+    system. If you need to modify Makefile, there are comments at the
+    beginning of it that describe the things you might want to change and how
+    to change them.
+
+(f) Type "make install" to install Tcl binaries and script files in standard
+    places. You'll need write permission on the installation directories to do
+    this. The installation directories are determined by the "configure"
+    script and may be specified with the standard --prefix and --exec-prefix
+    options to "configure". See the Makefile for information on what
+    directories were chosen; you can override these choices by modifying the
+    "prefix" and "exec_prefix" variables in the Makefile. The installed
+    binaries have embedded within them path values relative to the install
+    directory. If you change your mind about where Tcl should be installed,
+    start this procedure over again from step (a) so that the path embedded in
+    the binaries agrees with the install location.
+
+(g) At this point you can play with Tcl by running the installed "tclsh"
+    executable, or via the "make shell" target, and typing Tcl commands at the
+    interactive prompt.
+
+If you have trouble compiling Tcl, see the URL noted above about working
+platforms. It contains information that people have provided about changes
+they had to make to compile Tcl in various environments. We're also interested
+in hearing how to change the configuration setup so that Tcl compiles on
+additional platforms "out of the box".
+
+Test suite
+----------
+
+There is a relatively complete test suite for all of the Tcl core in the
+subdirectory "tests". To use it just type "make test" in this directory. You
+should then see a printout of the test files processed. If any errors occur,
+you'll see a much more substantial printout for each error. See the README
+file in the "tests" directory for more information on the test suite. Note:
+don't run the tests as superuser: this will cause several of them to fail. If
+a test is failing consistently, please send us a bug report with as much
+detail as you can manage to our tracker:
+
+	http://core.tcl.tk/tcl/reportlist
+

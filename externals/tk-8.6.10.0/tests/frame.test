@@ -1,0 +1,1527 @@
+# This file is a Tcl script to test out the "frame" and "toplevel"
+# commands of Tk.  It is organized in the standard fashion for Tcl
+# tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# eatColors --
+# Creates a toplevel window and allocates enough colors in it to
+# use up all the slots in the colormap.
+#
+# Arguments:
+# w -		Name of toplevel window to create.
+
+proc eatColors {w} {
+    catch {destroy $w}
+    toplevel $w
+    wm geom $w +0+0
+    canvas $w.c -width 400 -height 200 -bd 0
+    pack $w.c
+    for {set y 0} {$y < 8} {incr y} {
+	for {set x 0} {$x < 40} {incr x} {
+	    set color [format #%02x%02x%02x [expr $x*6] [expr $y*30] 0]
+	    $w.c create rectangle [expr 10*$x] [expr 20*$y] \
+		    [expr 10*$x + 10] [expr 20*$y + 20] -outline {} \
+		    -fill $color
+	}
+    }
+    update
+}
+
+# colorsFree --
+#
+# Returns 1 if there appear to be free colormap entries in a window,
+# 0 otherwise.
+#
+# Arguments:
+# w -			Name of window in which to check.
+# red, green, blue -	Intensities to use in a trial color allocation
+#			to see if there are colormap entries free.
+
+proc colorsFree {w {red 31} {green 245} {blue 192}} {
+    set vals [winfo rgb $w [format #%02x%02x%02x $red $green $blue]]
+    expr ([lindex $vals 0]/256 == $red) && ([lindex $vals 1]/256 == $green) \
+	    && ([lindex $vals 2]/256 == $blue)
+}
+
+
+test frame-1.1 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f -class NewFrame
+    .f configure -class
+} -cleanup {
+    deleteWindows
+} -result {-class class Class Frame NewFrame}
+test frame-1.2 {frame configuration options} -setup {
+    deleteWindows
+} -body {
+    frame .f -class NewFrame
+    .f configure -class Different
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -class option after widget is created}
+
+test frame-1.3 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f -colormap new
+    .f configure -colormap
+} -cleanup {
+    deleteWindows
+} -result {-colormap colormap Colormap {} new}
+test frame-1.4 {frame configuration options} -setup {
+    deleteWindows
+} -body {
+    frame .f -colormap new
+    .f configure -colormap .
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -colormap option after widget is created}
+
+test frame-1.5 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f -visual default
+    .f configure -visual
+} -cleanup {
+    deleteWindows
+} -result {-visual visual Visual {} default}
+test frame-1.6 {frame configuration options} -setup {
+    deleteWindows
+} -body {
+    frame .f -visual default
+    .f configure -visual best
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -visual option after widget is created}
+
+test frame-1.7 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f -screen bogus
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {unknown option "-screen"}
+test frame-1.8 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f -container true
+} -cleanup {
+    deleteWindows
+} -result {.f}
+test frame-1.9 {frame configuration options} -setup {
+    deleteWindows
+} -body {
+    frame .f -container true
+    .f configure -container
+} -cleanup {
+    deleteWindows
+} -result {-container container Container 0 1}
+test frame-1.10 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f -container bogus
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {expected boolean value but got "bogus"}
+test frame-1.11 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    frame .f
+    .f configure -container 1
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -container option after widget is created}
+test frame-1.12 {frame configuration options} -setup {
+	deleteWindows
+} -body {
+    # Make sure all options can be set to the default value
+    frame .f
+    set opts {}
+    foreach opt [.f configure] {
+        if {[llength $opt] == 5} {
+            lappend opts [lindex $opt 0] [lindex $opt 4]
+        }
+    }
+    eval frame .g $opts
+    destroy .f .g
+} -cleanup {
+    deleteWindows
+} -result {}
+
+destroy .f
+frame .f
+test frame-1.13 {frame configuration options} -body {
+    .f configure -background #ff0000
+    lindex [.f configure -background] 4
+} -cleanup {
+    .f configure -background [lindex [.f configure -background] 3]
+} -result {#ff0000}
+test frame-1.14 {frame configuration options} -body {
+    .f configure -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-1.15 {frame configuration options} -body {
+    .f configure -bd 4
+    lindex [.f configure -bd] 4
+} -cleanup {
+    .f configure -bd [lindex [.f configure -bd] 3]
+} -result {4}
+test frame-1.16 {frame configuration options} -body {
+    .f configure -bd badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-1.17 {frame configuration options} -body {
+    .f configure -bg #00ff00
+    lindex [.f configure -bg] 4
+} -cleanup {
+    .f configure -bg [lindex [.f configure -bg] 3]
+} -result {#00ff00}
+test frame-1.18 {frame configuration options} -body {
+    .f configure -bg non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-1.19 {frame configuration options} -body {
+    .f configure -borderwidth 1.3
+    lindex [.f configure -borderwidth] 4
+} -cleanup {
+    .f configure -borderwidth [lindex [.f configure -borderwidth] 3]
+} -result {1}
+test frame-1.20 {frame configuration options} -body {
+    .f configure -borderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-1.21 {frame configuration options} -body {
+    .f configure -cursor arrow
+    lindex [.f configure -cursor] 4
+} -cleanup {
+    .f configure -cursor [lindex [.f configure -cursor] 3]
+} -result {arrow}
+test frame-1.22 {frame configuration options} -body {
+    .f configure -cursor badValue
+} -returnCodes error -result {bad cursor spec "badValue"}
+test frame-1.23 {frame configuration options} -body {
+    .f configure -height 100
+    lindex [.f configure -height] 4
+} -cleanup {
+    .f configure -height [lindex [.f configure -height] 3]
+} -result {100}
+test frame-1.24 {frame configuration options} -body {
+    .f configure -height not_a_number
+} -returnCodes error -result {bad screen distance "not_a_number"}
+test frame-1.25 {frame configuration options} -body {
+    .f configure -highlightbackground #112233
+    lindex [.f configure -highlightbackground] 4
+} -cleanup {
+    .f configure -highlightbackground [lindex [.f configure -highlightbackground] 3]
+} -result {#112233}
+test frame-1.26 {frame configuration options} -body {
+    .f configure -highlightbackground ugly
+} -returnCodes error -result {unknown color name "ugly"}
+test frame-1.27 {frame configuration options} -body {
+    .f configure -highlightcolor #123456
+    lindex [.f configure -highlightcolor] 4
+} -cleanup {
+    .f configure -highlightcolor [lindex [.f configure -highlightcolor] 3]
+} -result {#123456}
+test frame-1.28 {frame configuration options} -body {
+    .f configure -highlightcolor non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-1.29 {frame configuration options} -body {
+    .f configure -highlightthickness 6
+    lindex [.f configure -highlightthickness] 4
+} -cleanup {
+    .f configure -highlightthickness [lindex [.f configure -highlightthickness] 3]
+} -result {6}
+test frame-1.30 {frame configuration options} -body {
+    .f configure -highlightthickness badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-1.31 {frame configuration options} -body {
+    .f configure -padx 3
+    lindex [.f configure -padx] 4
+} -cleanup {
+    .f configure -padx [lindex [.f configure -padx] 3]
+} -result {3}
+test frame-1.32 {frame configuration options} -body {
+    .f configure -padx badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-1.33 {frame configuration options} -body {
+    .f configure -pady 4
+    lindex [.f configure -pady] 4
+} -cleanup {
+    .f configure -pady [lindex [.f configure -pady] 3]
+} -result {4}
+test frame-1.34 {frame configuration options} -body {
+    .f configure -pady badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-1.35 {frame configuration options} -body {
+    .f configure -relief ridge
+    lindex [.f configure -relief] 4
+} -cleanup {
+    .f configure -relief [lindex [.f configure -relief] 3]
+} -result {ridge}
+test frame-1.36 {frame configuration options} -body {
+    .f configure -relief badValue
+} -returnCodes error -result {bad relief "badValue": must be flat, groove, raised, ridge, solid, or sunken}
+test frame-1.37 {frame configuration options} -body {
+    .f configure -takefocus {any string}
+    lindex [.f configure -takefocus] 4
+} -cleanup {
+    .f configure -takefocus [lindex [.f configure -takefocus] 3]
+} -result {any string}
+test frame-1.38 {frame configuration options} -body {
+    .f configure -width 32
+    lindex [.f configure -width] 4
+} -cleanup {
+    .f configure -width [lindex [.f configure -width] 3]
+} -result {32}
+test frame-1.39 {frame configuration options} -body {
+    .f configure -width badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+destroy .f
+
+
+test frame-2.1 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -class NewClass
+    wm geometry .t +0+0
+    .t configure -class
+} -cleanup {
+    deleteWindows
+} -result {-class class Class Toplevel NewClass}
+test frame-2.2 {toplevel configuration options} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -class NewClass
+    wm geometry .t +0+0
+    .t configure -class Another
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -class option after widget is created}
+
+test frame-2.3 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -colormap new
+    wm geometry .t +0+0
+    .t configure -colormap
+} -cleanup {
+    deleteWindows
+} -result {-colormap colormap Colormap {} new}
+test frame-2.4 {toplevel configuration options} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -colormap new
+    wm geometry .t +0+0
+    .t configure -colormap .
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -colormap option after widget is created}
+
+test frame-2.5 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100
+    wm geometry .t +0+0
+    .t configure -container 1
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -container option after widget is created}
+test frame-2.6 {toplevel configuration options} -setup {
+    deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100
+    wm geometry .t +0+0
+    catch {.t configure -container 1}
+    .t configure -container
+} -cleanup {
+    deleteWindows
+} -result {-container container Container 0 0}
+
+test frame-2.7 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -colormap bogus
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {bad window path name "bogus"}
+
+
+test frame-2.8 {toplevel configuration options} -constraints {
+    win
+} -setup {
+	deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100
+    wm geometry .t +0+0
+    .t configure -use 0x44022
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {window "0x44022" doesn't exist}
+test frame-2.9 {toplevel configuration options} -constraints {
+    win
+} -setup {
+    deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100
+    wm geometry .t +0+0
+    catch {.t configure -use 0x44022}
+    .t configure -use
+} -cleanup {
+    deleteWindows
+} -result {-use use Use {} {}}
+
+test frame-2.10 {toplevel configuration options} -constraints {
+    nonwin
+} -setup {
+    deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100
+    wm geometry .t +0+0
+    .t configure -use 0x44022
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -use option after widget is created}
+test frame-2.11 {toplevel configuration options} -constraints {
+    nonwin
+} -setup {
+	deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100
+    wm geometry .t +0+0
+    catch {.t configure -use 0x44022}
+    .t configure -use
+} -cleanup {
+    deleteWindows
+} -result {-use use Use {} {}}
+
+test frame-2.12 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100 -visual default
+    wm geometry .t +0+0
+    .t configure -visual
+} -cleanup {
+    deleteWindows
+} -result {-visual visual Visual {} default}
+test frame-2.13 {toplevel configuration options} -setup {
+    deleteWindows
+} -body {
+    catch {destroy .t}
+    toplevel .t -width 200 -height 100 -visual default
+    wm geometry .t +0+0
+    .t configure -visual best
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -visual option after widget is created}
+
+test frame-2.14 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -visual who_knows?
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {unknown or ambiguous visual name "who_knows?": class must be best, directcolor, grayscale, greyscale, pseudocolor, staticcolor, staticgray, staticgrey, truecolor, or default}
+test frame-2.15 {toplevel configuration options} -constraints haveDISPLAY -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -screen $env(DISPLAY)
+    wm geometry .t +0+0
+    string compare [.t configure -screen] "-screen screen Screen {} $env(DISPLAY)"
+} -cleanup {
+    deleteWindows
+} -result {0}
+test frame-2.16 {toplevel configuration options} -constraints haveDISPLAY -setup {
+    deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -screen $env(DISPLAY)
+    wm geometry .t +0+0
+    .t configure -screen another
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -screen option after widget is created}
+
+test frame-2.17 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 200 -height 100 -screen bogus
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {couldn't connect to display "bogus"}
+test frame-2.18 {toplevel configuration options} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -container 1 -width 300 -height 120
+    wm geometry .t +0+0
+    toplevel .x -container 1 -use [winfo id .t]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {windows cannot have both the -use and the -container option set}
+test frame-2.19 {toplevel configuration options} -setup {
+	deleteWindows
+    set opts {}
+} -body {
+    # Make sure all options can be set to the default value
+    toplevel .f
+    foreach opt [.f configure] {
+        if {[llength $opt] == 5} {
+            lappend opts [lindex $opt 0] [lindex $opt 4]
+        }
+    }
+    eval toplevel .g $opts
+    destroy .f .g
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+destroy .t
+toplevel .t -width 300 -height 150
+wm geometry .t +0+0
+update
+test frame-2.20 {toplevel configuration options} -body {
+    .t configure -background #ff0000
+    lindex [.t configure -background] 4
+} -result {#ff0000}
+test frame-2.21 {toplevel configuration options} -body {
+    .t configure -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-2.22 {toplevel configuration options} -body {
+    .t configure -bd 4
+    lindex [.t configure -bd] 4
+} -result {4}
+test frame-2.23 {toplevel configuration options} -body {
+    .t configure -bd badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-2.24 {toplevel configuration options} -body {
+    .t configure -bg #00ff00
+    lindex [.t configure -bg] 4
+} -result {#00ff00}
+test frame-2.25 {toplevel configuration options} -body {
+    .t configure -bg non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-2.26 {toplevel configuration options} -body {
+    .t configure -borderwidth 1.3
+    lindex [.t configure -borderwidth] 4
+} -result {1}
+test frame-2.27 {toplevel configuration options} -body {
+    .t configure -borderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-2.28 {toplevel configuration options} -body {
+    .t configure -cursor arrow
+    lindex [.t configure -cursor] 4
+} -result {arrow}
+test frame-2.29 {toplevel configuration options} -body {
+    .t configure -cursor badValue
+} -returnCodes error -result {bad cursor spec "badValue"}
+test frame-2.30 {toplevel configuration options} -body {
+    .t configure -height 100
+    lindex [.t configure -height] 4
+} -result {100}
+test frame-2.31 {toplevel configuration options} -body {
+    .t configure -height not_a_number
+} -returnCodes error -result {bad screen distance "not_a_number"}
+test frame-2.32 {toplevel configuration options} -body {
+    .t configure -highlightcolor #123456
+    lindex [.t configure -highlightcolor] 4
+} -result {#123456}
+test frame-2.33 {toplevel configuration options} -body {
+    .t configure -highlightcolor non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-2.34 {toplevel configuration options} -body {
+    .t configure -highlightthickness 3
+    lindex [.t configure -highlightthickness] 4
+} -result {3}
+test frame-2.35 {toplevel configuration options} -body {
+    .t configure -highlightthickness badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-2.36 {toplevel configuration options} -body {
+    .t configure -padx 3
+    lindex [.t configure -padx] 4
+} -result {3}
+test frame-2.37 {toplevel configuration options} -body {
+    .t configure -padx badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-2.38 {toplevel configuration options} -body {
+    .t configure -pady 4
+    lindex [.t configure -pady] 4
+} -result {4}
+test frame-2.39 {toplevel configuration options} -body {
+    .t configure -pady badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-2.40 {toplevel configuration options} -body {
+    .t configure -relief ridge
+    lindex [.t configure -relief] 4
+} -result {ridge}
+test frame-2.41 {toplevel configuration options} -body {
+    .t configure -relief badValue
+} -returnCodes error -result {bad relief "badValue": must be flat, groove, raised, ridge, solid, or sunken}
+test frame-2.42 {toplevel configuration options} -body {
+    .t configure -width 32
+    lindex [.t configure -width] 4
+} -result {32}
+test frame-2.43 {toplevel configuration options} -body {
+    .t configure -width badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+destroy .t
+
+
+test frame-3.1 {TkCreateFrame procedure} -body {
+    frame
+} -returnCodes error -result {wrong # args: should be "frame pathName ?-option value ...?"}
+test frame-3.2 {TkCreateFrame procedure} -setup {
+	deleteWindows
+    frame .f
+} -body {
+    .f configure -class
+} -cleanup {
+    deleteWindows
+} -result {-class class Class Frame Frame}
+test frame-3.3 {TkCreateFrame procedure} -setup {
+	deleteWindows
+    toplevel .t
+    wm geometry .t +0+0
+} -body {
+    .t configure -class
+} -cleanup {
+    deleteWindows
+} -result {-class class Class Toplevel Toplevel}
+test frame-3.4 {TkCreateFrame procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 350 -class NewClass -bg black -visual default -height 90
+    wm geometry .t +0+0
+    update
+    list [lindex [.t configure -width] 4] \
+	    [lindex [.t configure -background] 4] \
+	    [lindex [.t configure -height] 4]
+} -cleanup {
+    deleteWindows
+} -result {350 black 90}
+
+# Be sure that the -class, -colormap, and -visual options are processed
+# before configuring the widget.
+test frame-3.5 {TkCreateFrame procedure} -setup {
+	deleteWindows
+} -body {
+    option add *NewFrame.background #123456
+    frame .f -class NewFrame
+    lindex [.f configure -background] 4
+} -cleanup {
+    deleteWindows
+    option clear
+} -result {#123456}
+test frame-3.7 {TkCreateFrame procedure} -setup {
+	deleteWindows
+} -body {
+    option add *NewFrame.background #332211
+    option add *f.class NewFrame
+    frame .f
+    list [lindex [.f configure -class] 4] [lindex [.f configure -background] 4]
+} -cleanup {
+    deleteWindows
+    option clear
+} -result {NewFrame #332211}
+test frame-3.8 {TkCreateFrame procedure} -setup {
+	deleteWindows
+} -body {
+    option add *Silly.background #122334
+    option add *f.Class Silly
+    frame .f
+    list [lindex [.f configure -class] 4] [lindex [.f configure -background] 4]
+} -cleanup {
+    deleteWindows
+    option clear
+} -result {Silly #122334}
+test frame-3.9 {TkCreateFrame procedure, -use option} -constraints {
+    unix
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -container 1 -width 300 -height 120
+    wm geometry .t +0+0
+    toplevel .x -width 140 -height 300 -use [winfo id .t] -bg green
+    tkwait visibility .x
+    list [expr {[winfo rootx .x] - [winfo rootx .t]}] \
+	    [expr {[winfo rooty .x] - [winfo rooty .t]}] \
+	    [winfo width .t] [winfo height .t]
+} -cleanup {
+# This call to update idletasks was added to prevent a crash that was
+# observed on OSX 10.12 (Sierra) only.  Any change, such as using the
+# Development version to make debugging symbols available, adding a print
+# statement, or calling update idletasks here, would make the test pass
+# with no segfault.
+    update idletasks
+    deleteWindows
+} -result {0 0 140 300}
+test frame-3.10 {TkCreateFrame procedure, -use option} -constraints {
+    unix
+} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -container 1 -width 300 -height 120
+    wm geometry .t +0+0
+    option add *x.use [winfo id .t]
+    update
+    toplevel .x -width 140 -height 300 -bg green
+    tkwait visibility .x
+    update
+    list [expr {[winfo rootx .x] - [winfo rootx .t]}] \
+	    [expr {[winfo rooty .x] - [winfo rooty .t]}] \
+	    [winfo width .t] [winfo height .t]
+} -cleanup {
+    destroy .t
+    option clear
+} -result {0 0 140 300}
+
+# The tests below require specific display characteristics (i.e. that
+# they are run on a pseudocolor display of depth 8).  Even so, they
+# are non-portable: some machines don't seem to ever run out of
+# colors.
+if {[testConstraint defaultPseudocolor8]} {
+    eatColors .t1
+}
+test frame-3.11 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 300 -height 200 -bg #475601
+    wm geometry .t +0+0
+    update
+    colorsFree .t
+} -cleanup {
+    deleteWindows
+} -result {0}
+test frame-3.12 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 300 -height 200 -bg #475601 -colormap new
+    wm geometry .t +0+0
+    update
+    colorsFree .t
+} -cleanup {
+    deleteWindows
+} -result {1}
+test frame-3.13 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    option add *t.class Toplevel2
+    option add *Toplevel2.colormap new
+    toplevel .t -width 300 -height 200 -bg #475601
+    wm geometry .t +0+0
+    update
+    option clear
+    colorsFree .t
+} -cleanup {
+    deleteWindows
+} -result {1}
+test frame-3.14 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    option add *t.class Toplevel3
+    option add *Toplevel3.Colormap new
+    toplevel .t -width 300 -height 200 -bg #475601 -colormap new
+    wm geometry .t +0+0
+    update
+    option clear
+    colorsFree .t
+} -cleanup {
+    deleteWindows
+} -result {1}
+test frame-3.15 {TkCreateFrame procedure, -use and -colormap} -constraints {
+    defaultPseudocolor8 unix nonPortable
+} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -container 1 -width 300 -height 120
+    wm geometry .t +0+0
+    toplevel .x -width 140 -height 300 -use [winfo id .t] -bg green -colormap new
+    tkwait visibility .x
+    list [colorsFree .t] [colorsFree .x]
+} -cleanup {
+    destroy .t
+} -result {0 1}
+test frame-3.16 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 300 -height 200 -bg #475601 -visual default
+    wm geometry .t +0+0
+    update
+    colorsFree .t
+} -cleanup {
+    deleteWindows
+} -result {0}
+test frame-3.17 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 300 -height 200 -bg #475601 -visual default \
+	    -colormap new
+    wm geometry .t +0+0
+    update
+    colorsFree .t
+} -cleanup {
+    deleteWindows
+} -result {1}
+test frame-3.18 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 haveGrayscale8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -visual {grayscale 8} -width 300 -height 200 -bg #434343
+    wm geometry .t +0+0
+    update
+    colorsFree .t 131 131 131
+} -cleanup {
+    deleteWindows
+} -result {1}
+test frame-3.19 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 haveGrayscale8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    option add *t.class T4
+    option add *T4.visual {grayscale 8}
+    toplevel .t -width 300 -height 200 -bg #434343
+    wm geometry .t +0+0
+    update
+    option clear
+    list [colorsFree .t 131 131 131] [lindex [.t configure -visual] 4]
+} -cleanup {
+    deleteWindows
+} -result {1 {grayscale 8}}
+test frame-3.20 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 haveGrayscale8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    set x ok
+    option add *t.class T5
+    option add *T5.Visual {grayscale 8}
+    toplevel .t -width 300 -height 200 -bg #434343
+    wm geometry .t +0+0
+    update
+    option clear
+    list [colorsFree .t 131 131 131] [lindex [.t configure -visual] 4]
+} -cleanup {
+    deleteWindows
+} -result {1 {grayscale 8}}
+test frame-3.21 {TkCreateFrame procedure} -constraints {
+	defaultPseudocolor8 haveGrayscale8 nonPortable
+} -setup {
+	deleteWindows
+} -body {
+    set x ok
+    toplevel .t -visual {grayscale 8} -width 300 -height 200 -bg #434343
+    wm geometry .t +0+0
+    update
+    colorsFree .t 131 131 131
+} -cleanup {
+    deleteWindows
+} -result {1}
+if {[testConstraint defaultPseudocolor8]} {
+    destroy .t1
+}
+
+test frame-3.22 {TkCreateFrame procedure, default dimensions} -setup {
+	deleteWindows
+} -body {
+    toplevel .t
+    wm geometry .t +0+0
+    update
+    set result "[winfo reqwidth .t] [winfo reqheight .t]"
+    frame .t.f -bg red
+    pack .t.f
+    update
+    lappend result [winfo reqwidth .t.f] [winfo reqheight .t.f]
+} -cleanup {
+    deleteWindows
+} -result {200 200 1 1}
+test frame-3.23 {TkCreateFrame procedure} -setup {
+    deleteWindows
+} -body {
+    frame .f -gorp glob
+} -returnCodes error -result {unknown option "-gorp"}
+test frame-3.24 {TkCreateFrame procedure} -setup {
+    deleteWindows
+} -body {
+    toplevel .t -width 300 -height 200 -colormap new -bogus option
+    wm geometry .t +0+0
+} -returnCodes error -result {unknown option "-bogus"}
+
+
+test frame-4.1 {TkCreateFrame procedure} -setup {
+	deleteWindows
+} -body {
+    catch {frame .f -gorp glob}
+    winfo exists .f
+} -result 0
+test frame-4.2 {TkCreateFrame procedure} -setup {
+	deleteWindows
+} -body {
+    list [frame .f -width 200 -height 100] [winfo exists .f]
+} -cleanup {
+    deleteWindows
+} -result {.f 1}
+
+
+frame .f -highlightcolor black
+test frame-5.1 {FrameWidgetCommand procedure} -body {
+    .f
+} -returnCodes error -result {wrong # args: should be ".f option ?arg ...?"}
+test frame-5.2 {FrameWidgetCommand procedure, cget option} -body {
+    .f cget
+} -returnCodes error -result {wrong # args: should be ".f cget option"}
+test frame-5.3 {FrameWidgetCommand procedure, cget option} -body {
+    .f cget a b
+} -returnCodes error -result {wrong # args: should be ".f cget option"}
+test frame-5.4 {FrameWidgetCommand procedure, cget option} -body {
+    .f cget -gorp
+} -returnCodes error -result {unknown option "-gorp"}
+test frame-5.5 {FrameWidgetCommand procedure, cget option} -body {
+    .f cget -highlightcolor
+} -result {black}
+test frame-5.6 {FrameWidgetCommand procedure, cget option} -body {
+    .f cget -screen
+} -returnCodes error -result {unknown option "-screen"}
+test frame-5.7 {FrameWidgetCommand procedure, cget option} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    .t cget -screen
+} -cleanup {
+    destroy .t
+} -returnCodes ok -match glob -result *
+
+test frame-5.8 {FrameWidgetCommand procedure, configure option} -body {
+    llength [.f configure]
+} -result {18}
+test frame-5.9 {FrameWidgetCommand procedure, configure option} -body {
+    .f configure -gorp
+} -returnCodes error -result {unknown option "-gorp"}
+test frame-5.10 {FrameWidgetCommand procedure, configure option} -body {
+    .f configure -gorp bogus
+} -returnCodes error -result {unknown option "-gorp"}
+test frame-5.11 {FrameWidgetCommand procedure, configure option} -body {
+    .f configure -width 200 -height
+} -returnCodes error -result {value for "-height" missing}
+test frame-5.12 {FrameWidgetCommand procedure} -body {
+    .f swizzle
+} -returnCodes error -result {bad option "swizzle": must be cget or configure}
+test frame-5.13 {FrameWidgetCommand procedure, configure option} -body {
+    llength [. configure]
+} -result {21}
+destroy .f
+
+test frame-6.1 {ConfigureFrame procedure} -setup {
+	deleteWindows
+} -body {
+    frame .f -width 150
+    list [winfo reqwidth .f] [winfo reqheight .f]
+} -cleanup {
+    deleteWindows
+} -result {150 1}
+test frame-6.2 {ConfigureFrame procedure} -setup {
+	deleteWindows
+} -body {
+    frame .f -height 97
+    list [winfo reqwidth .f] [winfo reqheight .f]
+} -cleanup {
+    deleteWindows
+} -result {1 97}
+test frame-6.3 {ConfigureFrame procedure} -setup {
+	deleteWindows
+} -body {
+    frame .f
+    set result {}
+    lappend result [winfo reqwidth .f] [winfo reqheight .f]
+    .f configure -width 100 -height 180
+    lappend result [winfo reqwidth .f] [winfo reqheight .f]
+    .f configure -width 0 -height 0
+    lappend result [winfo reqwidth .f] [winfo reqheight .f]
+} -cleanup {
+    deleteWindows
+} -result {1 1 100 180 100 180}
+
+test frame-7.1 {FrameEventProc procedure} -setup {
+	deleteWindows
+} -body {
+    frame .frame2
+    set result [info commands .frame2]
+    destroy .frame2
+    lappend result [info commands .frame2]
+} -result {.frame2 {}}
+test frame-7.2 {FrameEventProc procedure} -setup {
+	deleteWindows
+    set x {}
+} -body {
+    frame .f1 -bg #543210
+    rename .f1 .f2
+    lappend x [winfo children .]
+    lappend x [.f2 cget -bg]
+    destroy .f1
+    lappend x [info command .f*] [winfo children .]
+} -cleanup {
+    deleteWindows
+} -result {.f1 #543210 {} {}}
+
+test frame-8.1 {FrameCmdDeletedProc procedure} -setup {
+	deleteWindows
+} -body {
+    frame .f1
+    rename .f1 {}
+    list [info command .f*] [winfo children .]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+test frame-8.2 {FrameCmdDeletedProc procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .f1 -menu .m
+    wm geometry .f1 +0+0
+    update
+    rename .f1 {}
+    update
+    list [info command .f*] [winfo children .]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+#
+# This one fails with the dash-patch!!!! Still don't know why  :-(
+#
+#test frame-8.3 {FrameCmdDeletedProc procedure} -setup {
+#    eval destroy [winfo children .]
+#    deleteWindows
+#} -body {
+#    toplevel .f1 -menu .m
+#    wm geometry .f1 +0+0
+#    menu .m
+#    update
+#    rename .f1 {}
+#    update
+#    list [info command .f*] [winfo children .]
+#} -cleanup {
+#    eval destroy [winfo children .]
+#    deleteWindows
+#} -result {{} .m}
+
+test frame-9.1 {MapFrame procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 100 -height 400
+    wm geometry .t +0+0
+    set result [winfo ismapped .t]
+    update idletasks
+    lappend result [winfo ismapped .t]
+} -cleanup {
+    deleteWindows
+} -result {0 1}
+test frame-9.2 {MapFrame procedure} -setup {
+	deleteWindows
+} -body {
+    toplevel .t -width 100 -height 400
+    wm geometry .t +0+0
+    destroy .t
+    update
+    winfo exists .t
+} -result {0}
+test frame-9.3 {MapFrame procedure, window deleted while mapping} -setup {
+	deleteWindows
+} -body {
+    toplevel .t2 -width 200 -height 200
+    wm geometry .t2 +0+0
+    tkwait visibility .t2
+    toplevel .t -width 100 -height 400
+    wm geometry .t +0+0
+    frame .t2.f -width 50 -height 50
+    bind .t2.f <Configure> {destroy .t}
+    pack .t2.f -side top
+    update idletasks
+    winfo exists .t
+} -cleanup {
+    deleteWindows
+} -result {0}
+
+
+test frame-10.1 {frame widget vs hidden commands} -setup {
+	deleteWindows
+} -body {
+    set l [interp hidden]
+    frame .t
+    interp hide {} .t
+    destroy .t
+    set res1 [list [winfo children .] [interp hidden]]
+    set res2 [list {} $l]
+    expr {$res1 eq $res2}
+} -result 1
+
+
+test frame-11.1 {TkInstallFrameMenu} -setup {
+	deleteWindows
+} -body {
+    menu .m1
+    .m1 add cascade -menu .m1.system
+    menu .m1.system -tearoff 0
+    .m1.system add command -label foo
+    toplevel .t -menu .m1
+} -cleanup {
+    deleteWindows
+} -result {.t}
+test frame-11.2 {TkInstallFrameMenu - frame renamed} -setup {
+	deleteWindows
+} -body {
+    catch {rename foo {}}
+    menu .m1
+    .m1 add cascade -menu .m1.system
+    menu .m1.system -tearoff 0
+    .m1.system add command -label foo
+    toplevel .t
+    rename .t foo
+} -cleanup {
+    deleteWindows
+} -result {}
+
+
+test frame-12.1 {FrameWorldChanged procedure} -setup {
+	deleteWindows
+} -body {
+    # Test -bd -padx and -pady
+    frame .f -borderwidth 2 -padx 3 -pady 4
+    place .f -x 0 -y 0 -width 40 -height 40
+    pack [frame .f.f] -fill both -expand 1
+    update
+    list [winfo x .f.f] [winfo y .f.f] [winfo width .f.f] [winfo height .f.f]
+} -cleanup {
+    deleteWindows
+} -result {5 6 30 28}
+test frame-12.2 {FrameWorldChanged procedure} -setup {
+	deleteWindows
+} -body {
+    # Test all -labelanchor positions
+    set font {helvetica 12}
+    labelframe .f -highlightthickness 1 -bd 3 -padx 1 -pady 2 -font $font \
+            -text "Mupp"
+    set fh [expr {[font metrics $font -linespace] + 2 - 3}]
+    set fw [expr {[font measure $font "Mupp"] + 2 - 3}]
+    if {$fw < 0} {set fw 0}
+    if {$fh < 0} {set fh 0}
+    place .f -x 0 -y 0 -width 100 -height 100
+    pack [frame .f.f] -fill both -expand 1
+
+    set result {}
+    foreach lp {nw n ne en e es se s sw ws w wn} {
+        .f configure -labelanchor $lp
+        update
+        set expx 5
+        set expy 6
+        set expw 90
+        set exph 88
+        switch -glob $lp {
+            n* {incr expy $fh ; incr exph -$fh}
+            s* {incr exph -$fh}
+            w* {incr expx $fw ; incr expw -$fw}
+            e* {incr expw -$fw}
+        }
+        lappend result [expr {\
+                [winfo x .f.f] == $expx && [winfo y .f.f] == $expy &&\
+                [winfo width .f.f] == $expw && [winfo height .f.f] == $exph}]
+    }
+    return $result
+} -cleanup {
+    deleteWindows
+} -result {1 1 1 1 1 1 1 1 1 1 1 1}
+test frame-12.3 {FrameWorldChanged procedure} -setup {
+	deleteWindows
+} -body {
+    # Check reaction on font change
+    font create myfont -family courier -size 10
+    labelframe .f -font myfont -text Mupp
+    place .f -x 0 -y 0 -width 40 -height 40
+    pack [frame .f.f] -fill both -expand 1
+    update
+    set h1 [font metrics myfont -linespace]
+    set y1 [winfo y .f.f]
+    font configure myfont -size 20
+    update
+    set h2 [font metrics myfont -linespace]
+    set y2 [winfo y .f.f]
+    expr {($h2 - $h1) - ($y2 - $y1)}
+} -cleanup {
+    deleteWindows
+    font delete myfont
+} -result {0}
+
+
+test frame-13.1 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+    labelframe .f -class NewFrame
+    .f configure -class
+} -cleanup {
+    deleteWindows
+} -result {-class class Class Labelframe NewFrame}
+test frame-13.2 {labelframe configuration options} -setup {
+    deleteWindows
+} -body {
+    labelframe .f -class NewFrame
+    .f configure -class Different
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -class option after widget is created}
+test frame-13.3 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+    labelframe .f -colormap new
+} -cleanup {
+    deleteWindows
+} -result {.f}
+test frame-13.4 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+    labelframe .f -visual default
+} -cleanup {
+    deleteWindows
+} -result {.f}
+test frame-13.5 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+    labelframe .f -screen bogus
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {unknown option "-screen"}
+test frame-13.6 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+    labelframe .f -container true
+} -cleanup {
+    deleteWindows
+} -result {.f}
+test frame-13.7 {labelframe configuration options} -setup {
+    deleteWindows
+} -body {
+    labelframe .f -container true
+    .f configure -container
+} -cleanup {
+    deleteWindows
+} -result {-container container Container 0 1}
+test frame-13.8 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+     labelframe .f -container bogus
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {expected boolean value but got "bogus"}
+test frame-13.9 {labelframe configuration options} -setup {
+	deleteWindows
+} -body {
+    labelframe .f
+    .f configure -container 1
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {can't modify -container option after widget is created}
+
+destroy .f
+labelframe .f
+test frame-13.10 {labelframe configuration options} -body {
+    .f configure -background #ff0000
+    lindex [.f configure -background] 4
+} -cleanup {
+    .f configure -background [lindex [.f configure -background] 3]
+} -result {#ff0000}
+test frame-13.11 {labelframe configuration options} -body {
+        .f configure -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-13.12 {labelframe configuration options} -body {
+    .f configure -bd 4
+    lindex [.f configure -bd] 4
+} -cleanup {
+    .f configure -bd [lindex [.f configure -bd] 3]
+} -result {4}
+test frame-13.13 {labelframe configuration options} -body {
+        .f configure -bd badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-13.14 {labelframe configuration options} -body {
+    .f configure -bg #00ff00
+    lindex [.f configure -bg] 4
+} -cleanup {
+    .f configure -bg [lindex [.f configure -bg] 3]
+} -result {#00ff00}
+test frame-13.15 {labelframe configuration options} -body {
+        .f configure -bg non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-13.16 {labelframe configuration options} -body {
+    .f configure -borderwidth 1.3
+    lindex [.f configure -borderwidth] 4
+} -cleanup {
+    .f configure -borderwidth [lindex [.f configure -borderwidth] 3]
+} -result {1}
+test frame-13.17 {labelframe configuration options} -body {
+        .f configure -borderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-13.18 {labelframe configuration options} -body {
+    .f configure -cursor arrow
+    lindex [.f configure -cursor] 4
+} -cleanup {
+    .f configure -cursor [lindex [.f configure -cursor] 3]
+} -result {arrow}
+test frame-13.19 {labelframe configuration options} -body {
+        .f configure -cursor badValue
+} -returnCodes error -result {bad cursor spec "badValue"}
+test frame-13.20 {labelframe configuration options} -body {
+    .f configure -fg #0000ff
+    lindex [.f configure -fg] 4
+} -cleanup {
+    .f configure -fg [lindex [.f configure -fg] 3]
+} -result {#0000ff}
+test frame-13.21 {labelframe configuration options} -body {
+        .f configure -fg non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-13.22 {labelframe configuration options} -body {
+    .f configure -font {courier 8}
+    lindex [.f configure -font] 4
+} -cleanup {
+    .f configure -font [lindex [.f configure -font] 3]
+} -result {courier 8}
+test frame-13.23 {labelframe configuration options} -body {
+    .f configure -foreground #ff0000
+    lindex [.f configure -foreground] 4
+} -cleanup {
+    .f configure -foreground [lindex [.f configure -foreground] 3]
+} -result {#ff0000}
+test frame-13.24 {labelframe configuration options} -body {
+        .f configure -foreground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-13.25 {labelframe configuration options} -body {
+    .f configure -height 100
+    lindex [.f configure -height] 4
+} -cleanup {
+    .f configure -height [lindex [.f configure -height] 3]
+} -result {100}
+test frame-13.26 {labelframe configuration options} -body {
+        .f configure -height not_a_number
+} -returnCodes error -result {bad screen distance "not_a_number"}
+test frame-13.27 {labelframe configuration options} -body {
+    .f configure -highlightbackground #112233
+    lindex [.f configure -highlightbackground] 4
+} -cleanup {
+    .f configure -highlightbackground [lindex [.f configure -highlightbackground] 3]
+} -result {#112233}
+test frame-13.28 {labelframe configuration options} -body {
+        .f configure -highlightbackground ugly
+} -returnCodes error -result {unknown color name "ugly"}
+test frame-13.29 {labelframe configuration options} -body {
+    .f configure -highlightcolor #123456
+    lindex [.f configure -highlightcolor] 4
+} -cleanup {
+    .f configure -highlightcolor [lindex [.f configure -highlightcolor] 3]
+} -result {#123456}
+test frame-13.30 {labelframe configuration options} -body {
+        .f configure -highlightcolor non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test frame-13.31 {labelframe configuration options} -body {
+    .f configure -highlightthickness 6
+    lindex [.f configure -highlightthickness] 4
+} -cleanup {
+    .f configure -highlightthickness [lindex [.f configure -highlightthickness] 3]
+} -result {6}
+test frame-13.32 {labelframe configuration options} -body {
+        .f configure -highlightthickness badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-13.33 {labelframe configuration options} -body {
+    .f configure -labelanchor se
+    lindex [.f configure -labelanchor] 4
+} -cleanup {
+    .f configure -labelanchor [lindex [.f configure -labelanchor] 3]
+} -result {se}
+test frame-13.34 {labelframe configuration options} -body {
+        .f configure -labelanchor badValue
+} -returnCodes error -result {bad labelanchor "badValue": must be e, en, es, n, ne, nw, s, se, sw, w, wn, or ws}
+test frame-13.35 {labelframe configuration options} -body {
+    .f configure -padx 3
+    lindex [.f configure -padx] 4
+} -cleanup {
+    .f configure -padx [lindex [.f configure -padx] 3]
+} -result {3}
+test frame-13.36 {labelframe configuration options} -body {
+        .f configure -padx badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-13.37 {labelframe configuration options} -body {
+    .f configure -pady 4
+    lindex [.f configure -pady] 4
+} -cleanup {
+    .f configure -pady [lindex [.f configure -pady] 3]
+} -result {4}
+test frame-13.38 {labelframe configuration options} -body {
+        .f configure -pady badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test frame-13.39 {labelframe configuration options} -body {
+    .f configure -relief ridge
+    lindex [.f configure -relief] 4
+} -cleanup {
+    .f configure -relief [lindex [.f configure -relief] 3]
+} -result {ridge}
+test frame-13.40 {labelframe configuration options} -body {
+        .f configure -relief badValue
+} -returnCodes error -result {bad relief "badValue": must be flat, groove, raised, ridge, solid, or sunken}
+test frame-13.41 {labelframe configuration options} -body {
+    .f configure -takefocus {any string}
+    lindex [.f configure -takefocus] 4
+} -cleanup {
+    .f configure -takefocus [lindex [.f configure -takefocus] 3]
+} -result {any string}
+test frame-13.42 {labelframe configuration options} -body {
+    .f configure -text {any string}
+    lindex [.f configure -text] 4
+} -cleanup {
+    .f configure -text [lindex [.f configure -text] 3]
+} -result {any string}
+test frame-13.43 {labelframe configuration options} -body {
+    .f configure -width 32
+    lindex [.f configure -width] 4
+} -cleanup {
+    .f configure -width [lindex [.f configure -width] 3]
+} -result {32}
+test frame-13.44 {labelframe configuration options} -body {
+        .f configure -width badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+destroy .f
+
+
+test frame-14.1 {labelframe labelwidget option} -setup {
+	deleteWindows
+} -body {
+    # Test that label is moved in stacking order
+    label .l -text Mupp -font {helvetica 8}
+    labelframe .f -labelwidget .l
+    pack .f
+    frame .f.f -width 50 -height 50
+    pack .f.f
+    update
+    list [winfo children .] [winfo width .f] \
+        [expr {[winfo height .f] - [winfo height .l]}]
+} -cleanup {
+    deleteWindows
+} -result {{.f .l} 54 52}
+test frame-14.2 {labelframe labelwidget option} -setup {
+	deleteWindows
+} -body {
+    # Test the labelframe's reaction if the label is destroyed
+    label .l -text Aratherlonglabel
+    labelframe .f -labelwidget .l
+    pack .f
+    label .f.l -text Mupp
+    pack .f.l
+    update
+    set res [list [.f cget -labelwidget]]
+    lappend res [expr {[winfo width .f] - [winfo width .l]}]
+    destroy .l
+    lappend res [.f cget -labelwidget]
+    update
+    lappend res [expr {[winfo width .f] - [winfo width .f.l]}]
+} -cleanup {
+    deleteWindows
+} -result {.l 12 {} 4}
+test frame-14.3 {labelframe labelwidget option} -setup {
+	deleteWindows
+} -body {
+    # Test the labelframe's reaction if the label is stolen
+    label .l -text Aratherlonglabel
+    labelframe .f -labelwidget .l
+    pack .f
+    label .f.l -text Mupp
+    pack .f.l
+    update
+    set res [list [.f cget -labelwidget]]
+    lappend res [expr {[winfo width .f] - [winfo width .l]}]
+    pack .l
+    lappend res [.f cget -labelwidget]
+    update
+    lappend res [expr {[winfo width .f] - [winfo width .f.l]}]
+} -cleanup {
+    deleteWindows
+} -result {.l 12 {} 4}
+test frame-14.4 {labelframe labelwidget option} -setup {
+	deleteWindows
+} -body {
+    # Test the label's reaction if the labelframe is destroyed
+    label .l -text Mupp
+    labelframe .f -labelwidget .l
+    pack .f
+    update
+    set res [list [winfo manager .l]]
+    destroy .f
+    lappend res [winfo manager .l]
+} -cleanup {
+    deleteWindows
+} -result {labelframe {}}
+test frame-14.5 {labelframe labelwidget option} -setup {
+	deleteWindows
+} -body {
+    # Test that the labelframe reacts on changes in label
+    label .l -text Aratherlonglabel
+    labelframe .f -labelwidget .l
+    pack .f
+    label .f.l -text Mupp
+    pack .f.l
+    update
+    set first [winfo width .f]
+    set res [expr {[winfo width .f] - [winfo width .l]}]
+    .l configure -text Shorter
+    update
+    lappend res [expr {[winfo width .f] - [winfo width .l]}]
+    lappend res [expr {[winfo width .f] < $first}]
+    .l configure -text Alotlongerthananytimebefore
+    update
+    lappend res [expr {[winfo width .f] - [winfo width .l]}]
+    lappend res [expr {[winfo width .f] > $first}]
+} -cleanup {
+    deleteWindows
+} -result {12 12 1 12 1}
+test frame-14.6 {labelframe labelwidget option} -setup {
+	deleteWindows
+} -body {
+    # Destroying a labelframe with a child label caused a crash
+    # when not handling mapping of the label correctly.
+    # This test does not test anything directly, it's just ment
+    # to catch if the same mistake is made again.
+    labelframe .f
+    pack .f
+    label .f.l -text Mupp
+    .f configure -labelwidget .f.l
+    update
+} -cleanup {
+    deleteWindows
+} -result {}
+deleteWindows
+rename eatColors {}
+rename colorsFree {}
+
+# cleanup
+cleanupTests
+return
+
+
+
+

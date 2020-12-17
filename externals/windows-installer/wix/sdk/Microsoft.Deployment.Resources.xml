@@ -1,0 +1,541 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.Deployment.Resources</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Deployment.Resources.BitmapResource">
+            <summary>
+            A subclass of Resource which provides specific methods for manipulating the resource data.
+            </summary>
+            <remarks>
+            The resource is of type <see cref="P:Microsoft.Deployment.Resources.ResourceType.Bitmap"/> (RT_GROUPICON).
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.BitmapResource.#ctor(System.String,System.Int32)">
+            <summary>
+            Creates a new BitmapResource object without any data. The data can be later loaded from a file.
+            </summary>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.BitmapResource.#ctor(System.String,System.Int32,System.Byte[])">
+            <summary>
+            Creates a new BitmapResource object with data. The data can be later saved to a file.
+            </summary>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+            <param name="data">Raw resource data</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.BitmapResource.ReadFromFile(System.String)">
+            <summary>
+            Reads the bitmap from a .bmp file.
+            </summary>
+            <param name="path">Path to a bitmap file (.bmp).</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.GroupIconResource">
+            <summary>
+            A subclass of Resource which provides specific methods for manipulating the resource data.
+            </summary>
+            <remarks>
+            The resource is of type <see cref="P:Microsoft.Deployment.Resources.ResourceType.GroupIcon"/> (RT_GROUPICON).
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.GroupIconResource.#ctor(System.String,System.Int32)">
+            <summary>
+            Creates a new GroupIconResource object without any data. The data can be later loaded from a file.
+            </summary>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.GroupIconResource.#ctor(System.String,System.Int32,System.Byte[])">
+            <summary>
+            Creates a new GroupIconResource object with data. The data can be later saved to a file.
+            </summary>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+            <param name="data">Raw resource data</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.GroupIconResource.Data">
+            <summary>
+            Gets or sets the raw data of the resource.  The data is in the format of the RT_GROUPICON resource structure.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.GroupIconResource.Icons">
+            <summary>
+            Enumerates the the icons in the icon group.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.GroupIconResource.ReadFromFile(System.String)">
+            <summary>
+            Reads the icon group from a .ico file.
+            </summary>
+            <param name="path">Path to an icon file (.ico).</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.Resource">
+            <summary>
+            Represents a Win32 resource which can be loaded from and saved to a PE file.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.Resource.#ctor(Microsoft.Deployment.Resources.ResourceType,System.String,System.Int32)">
+            <summary>
+            Creates a new Resource object without any data. The data can be later loaded from a file.
+            </summary>
+            <param name="type">Type of the resource; may be one of the ResourceType constants or a user-defined type.</param>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.Resource.#ctor(Microsoft.Deployment.Resources.ResourceType,System.String,System.Int32,System.Byte[])">
+            <summary>
+            Creates a new Resource object with data. The data can be later saved to a file.
+            </summary>
+            <param name="type">Type of the resource; may be one of the ResourceType constants or a user-defined type.</param>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+            <param name="data">Raw resource data</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.Resource.ResourceType">
+            <summary>
+            Gets or sets the type of the resource.  This may be one of the ResourceType constants
+            or a user-defined type name.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.Resource.Name">
+            <summary>
+            Gets or sets the name of the resource.  For a numeric resource identifier, the decimal number is prefixed with a "#".
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.Resource.Locale">
+            <summary>
+            Gets or sets the locale of the resource.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.Resource.Data">
+            <summary>
+            Gets or sets the raw data of the resource.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.Resource.Load(System.String)">
+            <summary>
+            Loads the resource data from a file.  The file is searched for a resource with matching type, name, and locale.
+            </summary>
+            <param name="file">Win32 PE file containing the resource</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.Resource.Save(System.String)">
+            <summary>
+            Saves the resource to a file.  Any existing resource data with matching type, name, and locale is overwritten.
+            </summary>
+            <param name="file">Win32 PE file to contain the resource</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.Resource.Equals(System.Object)">
+            <summary>
+            Tests if type, name, and locale of this Resource object match another Resource object.
+            </summary>
+            <param name="obj">Resource object to be compared</param>
+            <returns>True if the objects represent the same resource; false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.Resource.GetHashCode">
+            <summary>
+            Gets a hash code for this Resource object.
+            </summary>
+            <returns>Hash code generated from the resource type, name, and locale.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.ResourceCollection">
+            <summary>
+            Allows reading and editing of resource data in a Win32 PE file.
+            </summary>
+            <remarks>
+            To use this class:<list type="number">
+            <item>Create a new ResourceCollection</item>
+            <item>Locate resources for the collection by calling one of the <see cref="M:Microsoft.Deployment.Resources.ResourceCollection.Find(System.String)"/> methods</item>
+            <item>Load data of one or more <see cref="T:Microsoft.Deployment.Resources.Resource"/>s from a file by calling the <see cref="M:Microsoft.Deployment.Resources.ResourceCollection.Load(System.String)"/> method of the
+            Resource class, or load them all at once (more efficient) with the <see cref="M:Microsoft.Deployment.Resources.ResourceCollection.Load(System.String)"/> method of the ResourceCollection.</item>
+            <item>Read and/or edit data of the individual Resource objects using the methods on that class.</item>
+            <item>Save data of one or more <see cref="T:Microsoft.Deployment.Resources.Resource"/>s to a file by calling the <see cref="M:Microsoft.Deployment.Resources.ResourceCollection.Save(System.String)"/> method of the
+            Resource class, or save them all at once (more efficient) with the <see cref="M:Microsoft.Deployment.Resources.ResourceCollection.Save(System.String)"/> method of the ResourceCollection.</item>
+            </list>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.#ctor">
+            <summary>
+            Creates a new, empty ResourceCollection.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Find(System.String)">
+            <summary>
+            Locates all resources in a file, including all resource types and languages.  For each located resource,
+            a <see cref="T:Microsoft.Deployment.Resources.Resource"/> instance (or subclass) is added to the collection.
+            </summary>
+            <param name="resFile">The file to be searched for resources.</param>
+            <exception cref="T:System.IO.IOException">resources could not be read from the file</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Find(System.String,Microsoft.Deployment.Resources.ResourceType)">
+            <summary>
+            Locates all resources in a file of a given type, including all languages.  For each located resource,
+            a <see cref="T:Microsoft.Deployment.Resources.Resource"/> instance (or subclass) is added to the collection.
+            </summary>
+            <param name="resFile">The file to be searched for resources.</param>
+            <param name="type">The type of resource to search for; may be one of the ResourceType constants or a user-defined type.</param>
+            <exception cref="T:System.IO.IOException">resources could not be read from the file</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Find(System.String,Microsoft.Deployment.Resources.ResourceType,System.String)">
+            <summary>
+            Locates all resources in a file of a given type and language.  For each located resource,
+            a <see cref="T:Microsoft.Deployment.Resources.Resource"/> instance (or subclass) is added to the collection.
+            </summary>
+            <param name="resFile">The file to be searched for resources.</param>
+            <param name="type">The type of resource to search for; may be one of the ResourceType constants or a user-defined type.</param>
+            <param name="name">The name of the resource to search for.</param>
+            <exception cref="T:System.IO.IOException">resources could not be read from the file</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Load(System.String)">
+            <summary>
+            For all resources in the collection, loads their data from a resource file.
+            </summary>
+            <param name="file">The file from which resources are loaded.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Save(System.String)">
+            <summary>
+            For all resources in the collection, saves their data to a resource file.
+            </summary>
+            <param name="file">The file to which resources are saved.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.ResourceCollection.Item(System.Int32)">
+            <summary>
+            Gets or sets the element at the specified index.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Add(Microsoft.Deployment.Resources.Resource)">
+            <summary>
+            Adds a new item to the collection.
+            </summary>
+            <param name="item">The Resource to add.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Remove(Microsoft.Deployment.Resources.Resource)">
+            <summary>
+            Removes an item to the collection.
+            </summary>
+            <param name="item">The Resource to remove.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.IndexOf(Microsoft.Deployment.Resources.Resource)">
+            <summary>
+            Gets the index of an item in the collection.
+            </summary>
+            <param name="item">The Resource to search for.</param>
+            <returns>The index of the item, or -1 if not found.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Insert(System.Int32,Microsoft.Deployment.Resources.Resource)">
+            <summary>
+            Inserts a item into the collection.
+            </summary>
+            <param name="index">The insertion index.</param>
+            <param name="item">The Resource to insert.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Contains(Microsoft.Deployment.Resources.Resource)">
+            <summary>
+            Tests if the collection contains an item.
+            </summary>
+            <param name="item">The Resource to search for.</param>
+            <returns>true if the item is found; false otherwise</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.CopyTo(Microsoft.Deployment.Resources.Resource[],System.Int32)">
+            <summary>
+            Copies the collection into an array.
+            </summary>
+            <param name="array">The array to copy into.</param>
+            <param name="arrayIndex">The starting index in the destination array.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.Clear">
+            <summary>
+            Removes all resources from the collection.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.ResourceCollection.Count">
+            <summary>
+            Gets the number of resources in the collection.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceCollection.GetEnumerator">
+            <summary>
+            Gets an enumerator over all resources in the collection.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.ResourceType">
+            <summary>
+            Represents either a standard integer resource type or a custom resource type name.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.#ctor(System.String)">
+            <summary>
+            Creates a new resource type from a string resource name.
+            </summary>
+            <param name="resourceType">String resource name,
+            or an integer resource type prefixed by a #.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.#ctor(System.Int32)">
+            <summary>
+            Creates a new integer resource type.
+            </summary>
+            <param name="resourceType">Integer value of a well-known resource type.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.ResourceType.IsInteger">
+            <summary>
+            Gets a flag indicating whether the resource type is an integer type.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.ResourceType.IntegerValue">
+            <summary>
+            Gets the integer value of the resource type, or -1 if the resource type is not an integer.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.ToString">
+            <summary>
+            Gets a string representation of the resource type.
+            </summary>
+            <returns>The custom resource name, or the name of a well-known resource type.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.Equals(System.Object)">
+            <summary>
+            Tests whether one resource type equals another object.
+            </summary>
+            <param name="obj">Other object.</param>
+            <returns>True if equal, else false.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.Equals(Microsoft.Deployment.Resources.ResourceType)">
+            <summary>
+            Tests whether one resource type equals another.
+            </summary>
+            <param name="otherType">Other resource type.</param>
+            <returns>True if equal, else false.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.GetHashCode">
+            <summary>
+            Gets a hash code suitable for using the resource type as a dictionary key.
+            </summary>
+            <returns>Hash code based on the resource type string.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.op_Implicit(System.String)~Microsoft.Deployment.Resources.ResourceType">
+            <summary>
+            Implicitly converts a string to a ResourceType.
+            </summary>
+            <param name="resourceType">String resource type to convert.</param>
+            <returns>ResourceType object.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.ResourceType.op_Explicit(Microsoft.Deployment.Resources.ResourceType)~System.String">
+            <summary>
+            Explicitly converts a ResourceType to a string.
+            </summary>
+            <param name="resourceType">ResourceType object to convert.</param>
+            <returns>The resource type string.</returns>
+            <remarks>
+            Unlike <see cref="M:Microsoft.Deployment.Resources.ResourceType.ToString" />, this conversion does not return
+            the common name of well-known integer resource types. Therefore,
+            the returned string is suitable for passing directly to Win32
+            resource APIs that accept resource type strings.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.VersionBuildTypes">
+            <summary>
+            Identifies build types of a versioned file.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.VersionFileType">
+            <summary>
+            Identifies the type of a versioned file.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.VersionFileSubtype">
+            <summary>
+            Identifies the sub-type of a versioned file.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.VersionResource">
+            <summary>
+            A subclass of Resource which provides specific methods for manipulating the resource data.
+            </summary>
+            <remarks>
+            The resource is of type <see cref="P:Microsoft.Deployment.Resources.ResourceType.Version"/> (RT_VERSION).
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.#ctor(System.String,System.Int32)">
+            <summary>
+            Creates a new VersionResource object without any data. The data can be later loaded from a file.
+            </summary>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.#ctor(System.String,System.Int32,System.Byte[])">
+            <summary>
+            Creates a new VersionResource object with data. The data can be later saved to a file.
+            </summary>
+            <param name="name">Name of the resource. For a numeric resource identifier, prefix the decimal number with a "#".</param>
+            <param name="locale">Locale of the resource</param>
+            <param name="data">Raw resource data</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.Data">
+            <summary>
+            Gets or sets the raw data of the resource.  The data is in the format of the VS_VERSIONINFO structure.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.FileVersion">
+            <summary>
+            Gets or sets the binary locale-independent file version of the version resource.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.ProductVersion">
+            <summary>
+            Gets or sets the binary locale-independent product version of the version resource.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.BuildTypes">
+            <summary>
+            Gets or sets a bitmask that specifies the build types of the file.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.FileType">
+            <summary>
+            Gets or sets the general type of the file.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.FileSubtype">
+            <summary>
+            Gets or sets the specific type of the file.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.Timestamp">
+            <summary>
+            Gets or sets the binary creation date and time.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.Item(System.Int32)">
+            <summary>
+            Gets the string table for a specific locale, or null if there is no table for that locale.
+            </summary>
+            <seealso cref="M:Microsoft.Deployment.Resources.VersionResource.Add(System.Int32)"/>
+            <seealso cref="M:Microsoft.Deployment.Resources.VersionResource.Remove(System.Int32)"/>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.Add(System.Int32)">
+            <summary>
+            Adds a new version string table for a locale.
+            </summary>
+            <param name="locale">Locale of the table</param>
+            <returns>The new string table, or the existing table if the locale already existed.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.Remove(System.Int32)">
+            <summary>
+            Removes a version string table for a locale.
+            </summary>
+            <param name="locale">Locale of the table</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.Contains(System.Int32)">
+            <summary>
+            Checks if a version string table exists for a given locale.
+            </summary>
+            <param name="locale">Locale to search for</param>
+            <returns>True if a string table was found for the locale; false otherwise.</returns>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionResource.Count">
+            <summary>
+            Gets the number string tables in the version resource.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.Clear">
+            <summary>
+            Removes all string tables from the version resource.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.CopyTo(Microsoft.Deployment.Resources.VersionStringTable[],System.Int32)">
+            <summary>
+            Copies the version string tables to an array, starting at a particular array index.
+            </summary>
+            <param name="array">The one-dimensional Array that is the destination of the elements copied
+            from the collection. The Array must have zero-based indexing.</param>
+            <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.GetEnumerator">
+            <summary>
+            Gets an enumerator that can iterate over the version string tables in the collection.
+            </summary>
+            <returns>An enumerator that returns <see cref="T:Microsoft.Deployment.Resources.VersionStringTable"/> objects.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionResource.System#Collections#IEnumerable#GetEnumerator">
+            <summary>
+            Gets an enumerator that can iterate over the version string tables in the collection.
+            </summary>
+            <returns>An enumerator that returns <see cref="T:Microsoft.Deployment.Resources.VersionStringTable"/> objects.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Resources.VersionStringTable">
+            <summary>
+            Represents a string table of a file version resource.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionStringTable.Locale">
+            <summary>
+            Gets the locale (LCID) of the string table.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionStringTable.Item(System.String)">
+            <summary>
+            Gets or sets a string value.
+            </summary>
+            <param name="key">Name of the string.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionStringTable.Clear">
+            <summary>
+            Removes all strings from the string table.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionStringTable.Keys">
+            <summary>
+            Gets a collection of all the names of the strings in the table.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionStringTable.Values">
+            <summary>
+            Gets a collection of all the values in the table.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Resources.VersionStringTable.Count">
+            <summary>
+            Gets the number of strings in the table.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Resources.VersionStringTable.GetEnumerator">
+            <summary>
+            Gets an enumeration over all strings in the table.
+            </summary>
+            <returns>Enumeration of string name and value pairs</returns>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.WixDistribution">
+            <summary>
+            Distribution specific strings.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.NewsUrl">
+            <summary>
+            News URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.ShortProduct">
+            <summary>
+            Short product name for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.SupportUrl">
+            <summary>
+            Support URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.TelemetryUrlFormat">
+            <summary>
+            Telemetry URL format for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.VSExtensionsLandingUrl">
+            <summary>
+            VS Extensions Landing page Url for the distribution.
+            </summary>
+        </member>
+    </members>
+</doc>

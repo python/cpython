@@ -1,0 +1,131 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::style n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::style \- Manipulate style database
+.SH SYNOPSIS
+\fBttk::style\fR \fIoption\fR ?\fIargs\fR?
+.BE
+.SH NOTES
+.PP
+See also the Tcl'2004 conference presentation,
+available at https://tktable.sourceforge.net/tile/tile-tcl2004.pdf
+.SH DEFINITIONS
+.PP
+Each widget is assigned a \fIstyle\fR,
+which specifies the set of elements making up the widget
+and how they are arranged, along with dynamic and default
+settings for element options.
+By default, the style name is the same as the widget's class;
+this may be overridden by the \fB\-style\fR option.
+.PP
+A \fItheme\fR is a collection of elements and styles
+which controls the overall look and feel of an application.
+.SH DESCRIPTION
+.PP
+The \fBttk::style\fR command takes the following arguments:
+.TP
+\fBttk::style configure \fIstyle\fR ?\fI\-option\fR ?\fIvalue option value...\fR? ?
+Sets the default value of the specified option(s) in \fIstyle\fR.
+.TP
+\fBttk::style map \fIstyle\fR ?\fI\-option\fB { \fIstatespec value...\fB }\fR?
+Sets dynamic values of the specified option(s) in \fIstyle\fR.
+Each \fIstatespec / value\fR pair is examined in order;
+the value corresponding to the first matching \fIstatespec\fR
+is used.
+.TP
+\fBttk::style lookup \fIstyle\fR \fI\-option \fR?\fIstate \fR?\fIdefault\fR??
+Returns the value specified for \fI\-option\fR in style \fIstyle\fR
+in state \fIstate\fR, using the standard lookup rules for element options.
+\fIstate\fR is a list of state names; if omitted,
+it defaults to all bits off (the
+.QW normal
+state).
+If the \fIdefault\fR argument is present, it is used as a fallback
+value in case no specification for \fI\-option\fR is found.
+.\" Otherwise -- signal error? return empty string? Leave unspecified for now.
+.TP
+\fBttk::style layout \fIstyle\fR ?\fIlayoutSpec\fR?
+Define the widget layout for style \fIstyle\fR.
+See \fBLAYOUTS\fR below for the format of \fIlayoutSpec\fR.
+If \fIlayoutSpec\fR is omitted, return the layout specification
+for style \fIstyle\fR.
+.TP
+\fBttk::style element create\fR \fIelementName\fR \fItype\fR ?\fIargs...\fR?
+Creates a new element in the current theme of type \fItype\fR.
+The only cross-platform built-in element type is \fIimage\fR
+(see \fBttk_image\fR(n)) but themes may define other element types
+(see \fBTtk_RegisterElementFactory\fR). On suitable versions of Windows
+an element factory is registered to create Windows theme elements
+(see \fBttk_vsapi\fR(n)).
+.TP
+\fBttk::style element names\fR
+Returns the list of elements defined in the current theme.
+.TP
+\fBttk::style element options \fIelement\fR
+Returns the list of \fIelement\fR's options.
+.TP
+\fBttk::style theme create\fR \fIthemeName\fR ?\fB\-parent \fIbasedon\fR? ?\fB\-settings \fIscript...\fR ?
+Creates a new theme.  It is an error if \fIthemeName\fR already exists.
+If \fB\-parent\fR is specified, the new theme will inherit
+styles, elements, and layouts from the parent theme \fIbasedon\fR.
+If \fB\-settings\fR is present, \fIscript\fR is evaluated in the
+context of the new theme as per \fBttk::style theme settings\fR.
+.TP
+\fBttk::style theme settings \fIthemeName\fR \fIscript\fR
+Temporarily sets the current theme to \fIthemeName\fR,
+evaluate \fIscript\fR, then restore the previous theme.
+Typically \fIscript\fR simply defines styles and elements,
+though arbitrary Tcl code may appear.
+.TP
+\fBttk::style theme names\fR
+Returns a list of all known themes.
+.TP
+\fBttk::style theme use\fR ?\fIthemeName\fR?
+Without an argument the result is the name of the current theme.
+Otherwise this command sets the current theme to \fIthemeName\fR,
+and refreshes all widgets.
+.SH LAYOUTS
+.PP
+A \fIlayout\fR specifies a list of elements, each followed
+by one or more options specifying how to arrange the element.
+The layout mechanism uses a simplified version of the \fBpack\fR
+geometry manager: given an initial cavity,
+each element is allocated a parcel.
+Valid options are:
+.TP
+\fB\-side \fIside\fR
+Specifies which side of the cavity to place the element;
+one of \fBleft\fR, \fBright\fR, \fBtop\fR, or \fBbottom\fR.
+If omitted, the element occupies the entire cavity.
+.TP
+\fB\-sticky\fR \fB[\fInswe\fB]\fR
+Specifies where the element is placed inside its allocated parcel.
+.TP
+\fB\-children { \fIsublayout... \fB}\fR
+Specifies a list of elements to place inside the element.
+.\" Also: -border, -unit, -expand: may go away.
+.PP
+For example:
+.CS
+ttk::style layout Horizontal.TScrollbar {
+    Scrollbar.trough \-children {
+        Scrollbar.leftarrow \-side left
+        Scrollbar.rightarrow \-side right
+        Horizontal.Scrollbar.thumb \-side left \-sticky ew
+    }
+}
+.CE
+.SH "SEE ALSO"
+ttk::intro(n), ttk::widget(n), photo(n), ttk_image(n)
+.SH KEYWORDS
+style, theme, appearance
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

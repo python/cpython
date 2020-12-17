@@ -1,0 +1,50 @@
+'\"
+'\" Copyright (c) 1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_SetWindowVisual 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_SetWindowVisual \- change visual characteristics of window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_SetWindowVisual\fR(\fItkwin, visual, depth, colormap\fR)
+.SH ARGUMENTS
+.AS "Tk_Window int" colormap
+.AP Tk_Window tkwin in
+Token for window.
+.AP Visual *visual in
+New visual type to use for \fItkwin\fR.
+.AP "int" depth in
+Number of bits per pixel desired for \fItkwin\fR.
+.AP Colormap colormap in
+New colormap for \fItkwin\fR, which must be compatible with
+\fIvisual\fR and \fIdepth\fR.
+.BE
+.SH DESCRIPTION
+.PP
+When Tk creates a new window it assigns it the default visual
+characteristics (visual, depth, and colormap) for its screen.
+\fBTk_SetWindowVisual\fR may be called to change them.
+\fBTk_SetWindowVisual\fR must be called before the window has
+actually been created in X (e.g. before \fBTk_MapWindow\fR or
+\fBTk_MakeWindowExist\fR has been invoked for the window).
+The safest thing is to call \fBTk_SetWindowVisual\fR immediately
+after calling \fBTk_CreateWindow\fR.
+If \fItkwin\fR has already been created before \fBTk_SetWindowVisual\fR
+is called then it returns 0 and does not make any changes;  otherwise
+it returns 1 to signify that the operation
+completed successfully.
+.PP
+Note:  \fBTk_SetWindowVisual\fR should not be called if you just want
+to change a window's colormap without changing its visual or depth;
+call \fBTk_SetWindowColormap\fR instead.
+.SH KEYWORDS
+colormap, depth, visual

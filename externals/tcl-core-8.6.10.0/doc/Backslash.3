@@ -1,0 +1,47 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Backslash 3 "8.1" Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_Backslash \- parse a backslash sequence
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+char
+\fBTcl_Backslash\fR(\fIsrc, countPtr\fR)
+.SH ARGUMENTS
+.AS char *countPtr out
+.AP char *src in
+Pointer to a string starting with a backslash.
+.AP int *countPtr out
+If \fIcountPtr\fR is not NULL, \fI*countPtr\fR gets filled
+in with number of characters in the backslash sequence, including
+the backslash character.
+.BE
+
+.SH DESCRIPTION
+.PP
+The use of \fBTcl_Backslash\fR is deprecated in favor of
+\fBTcl_UtfBackslash\fR.
+.PP
+This is a utility procedure provided for backwards compatibility with
+non-internationalized Tcl extensions.  It parses a backslash sequence and
+returns the low byte of the Unicode character corresponding to the sequence.
+\fBTcl_Backslash\fR modifies \fI*countPtr\fR to contain the number of
+characters in the backslash sequence.
+.PP
+See the Tcl manual entry for information on the valid backslash sequences.
+All of the sequences described in the Tcl manual entry are supported by
+\fBTcl_Backslash\fR.
+.SH "SEE ALSO"
+Tcl(n), Tcl_UtfBackslash(3)
+
+.SH KEYWORDS
+backslash, parse

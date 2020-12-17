@@ -1,0 +1,877 @@
+# Commands covered:  scan
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands.  Sourcing this file into Tcl runs the tests and generates output
+# for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# procedure that returns the range of integers
+
+proc int_range {} {
+    for { set MIN_INT 1 } { int($MIN_INT) > 0 } {} {
+	set MIN_INT [expr { $MIN_INT << 1 }]
+    }
+    set MIN_INT [expr {int($MIN_INT)}]
+    set MAX_INT [expr { ~ $MIN_INT }]
+    return [list $MIN_INT $MAX_INT]
+}
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+
+testConstraint ieeeFloatingPoint [testIEEE]
+testConstraint wideIs64bit \
+	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+
+test scan-1.1 {BuildCharSet, CharInSet} {
+    list [scan foo {%[^o]} x] $x
+} {1 f}
+test scan-1.2 {BuildCharSet, CharInSet} {
+    list [scan \]foo {%[]f]} x] $x
+} {1 \]f}
+test scan-1.3 {BuildCharSet, CharInSet} {
+    list [scan abc-def {%[a-c]} x] $x
+} {1 abc}
+test scan-1.4 {BuildCharSet, CharInSet} {
+    list [scan abc-def {%[a-c]} x] $x
+} {1 abc}
+test scan-1.5 {BuildCharSet, CharInSet} {
+    list [scan -abc-def {%[-ac]} x] $x
+} {1 -a}
+test scan-1.6 {BuildCharSet, CharInSet} {
+    list [scan -abc-def {%[ac-]} x] $x
+} {1 -a}
+test scan-1.7 {BuildCharSet, CharInSet} {
+    list [scan abc-def {%[c-a]} x] $x
+} {1 abc}
+test scan-1.8 {BuildCharSet, CharInSet} {
+    list [scan def-abc {%[^c-a]} x] $x
+} {1 def-}
+test scan-1.9 {BuildCharSet, CharInSet no match} -setup {
+    unset -nocomplain x
+} -body {
+    list [scan {= f} {= %[TF]} x] [info exists x]
+} -result {0 0}
+
+test scan-2.1 {ReleaseCharSet} {
+    list [scan abcde {%[abc]} x] $x
+} {1 abc}
+test scan-2.2 {ReleaseCharSet} {
+    list [scan abcde {%[a-c]} x] $x
+} {1 abc}
+
+test scan-3.1 {ValidateFormat} -returnCodes error -body {
+    scan {} {%d%1$d} x
+} -result {cannot mix "%" and "%n$" conversion specifiers}
+test scan-3.2 {ValidateFormat} -returnCodes error -body {
+    scan {} {%d%1$d} x
+} -result {cannot mix "%" and "%n$" conversion specifiers}
+test scan-3.3 {ValidateFormat} -returnCodes error -body {
+    scan {} {%2$d%d} x
+} -result {"%n$" argument index out of range}
+test scan-3.4 {ValidateFormat} {
+    # degenerate case, before changed from 8.2 to 8.3
+    list [catch {scan {} %d} msg] $msg
+} {0 {}}
+test scan-3.5 {ValidateFormat} -returnCodes error -body {
+    scan {} {%10c} a
+} -result {field width may not be specified in %c conversion}
+test scan-3.6 {ValidateFormat} -returnCodes error -body {
+    scan {} {%*1$d} a
+} -result {bad scan conversion character "$"}
+test scan-3.7 {ValidateFormat} -returnCodes error -body {
+    scan {} {%1$d%1$d} a
+} -result {variable is assigned by multiple "%n$" conversion specifiers}
+test scan-3.8 {ValidateFormat} -returnCodes error -body {
+    scan {} a x
+} -result {variable is not assigned by any conversion specifiers}
+test scan-3.9 {ValidateFormat} -returnCodes error -body {
+    scan {} {%2$s} x y
+} -result {variable is not assigned by any conversion specifiers}
+test scan-3.10 {ValidateFormat} -returnCodes error -body {
+    scan {} {%[a} x
+} -result {unmatched [ in format string}
+test scan-3.11 {ValidateFormat} -returnCodes error -body {
+    scan {} {%[^a} x
+} -result {unmatched [ in format string}
+test scan-3.12 {ValidateFormat} -returnCodes error -body {
+    scan {} {%[]a} x
+} -result {unmatched [ in format string}
+test scan-3.13 {ValidateFormat} -returnCodes error -body {
+    scan {} {%[^]a} x
+} -result {unmatched [ in format string}
+
+test scan-4.1 {Tcl_ScanObjCmd, argument checks} -returnCodes error -body {
+    scan
+} -result {wrong # args: should be "scan string format ?varName ...?"}
+test scan-4.2 {Tcl_ScanObjCmd, argument checks} -returnCodes error -body {
+    scan string
+} -result {wrong # args: should be "scan string format ?varName ...?"}
+test scan-4.3 {Tcl_ScanObjCmd, argument checks} {
+    # degenerate case, before changed from 8.2 to 8.3
+    list [catch {scan string format} msg] $msg
+} {0 {}}
+test scan-4.4 {Tcl_ScanObjCmd, whitespace} {
+    list [scan {   abc   def   } {%s%s} x y] $x $y
+} {2 abc def}
+test scan-4.5 {Tcl_ScanObjCmd, whitespace} {
+    list [scan {   abc   def   } { %s %s } x y] $x $y
+} {2 abc def}
+test scan-4.6 {Tcl_ScanObjCmd, whitespace} {
+    list [scan {   abc   def   } { %s %s } x y] $x $y
+} {2 abc def}
+test scan-4.7 {Tcl_ScanObjCmd, literals} {
+    # degenerate case, before changed from 8.2 to 8.3
+    scan {   abc   def   } { abc def }
+} {}
+test scan-4.8 {Tcl_ScanObjCmd, literals} {
+    set x {}
+    list [scan {   abcg} { abc def %1s} x] $x
+} {0 {}}
+test scan-4.9 {Tcl_ScanObjCmd, literals} {
+    list [scan {   abc%defghi} { abc %% def%n } x] $x
+} {1 10}
+test scan-4.10 {Tcl_ScanObjCmd, assignment suppression} {
+    list [scan {   abc   def   } { %*c%s def } x] $x
+} {1 bc}
+test scan-4.11 {Tcl_ScanObjCmd, XPG3-style} {
+    list [scan {   abc   def   } {%2$s %1$s} x y] $x $y
+} {2 def abc}
+test scan-4.12 {Tcl_ScanObjCmd, width specifiers} {
+    list [scan {abc123456789012} {%3s%3d%3f%3[0-9]%s} a b c d e] $a $b $c $d $e
+} {5 abc 123 456.0 789 012}
+test scan-4.13 {Tcl_ScanObjCmd, width specifiers} {
+    list [scan {abc123456789012} {%3s%3d%3f%3[0-9]%s} a b c d e] $a $b $c $d $e
+} {5 abc 123 456.0 789 012}
+test scan-4.14 {Tcl_ScanObjCmd, underflow} {
+    set x {}
+    list [scan {a} {a%d} x] $x
+} {-1 {}}
+test scan-4.15 {Tcl_ScanObjCmd, underflow} {
+    set x {}
+    list [scan {} {a%d} x] $x
+} {-1 {}}
+test scan-4.16 {Tcl_ScanObjCmd, underflow} {
+    set x {}
+    list [scan {ab} {a%d} x] $x
+} {0 {}}
+test scan-4.17 {Tcl_ScanObjCmd, underflow} {
+    set x {}
+    list [scan {a   } {a%d} x] $x
+} {-1 {}}
+test scan-4.18 {Tcl_ScanObjCmd, skipping whitespace} {
+    list [scan {  b} {%c%s} x y] $x $y
+} {2 32 b}
+test scan-4.19 {Tcl_ScanObjCmd, skipping whitespace} {
+    list [scan {  b} {%[^b]%s} x y] $x $y
+} {2 {  } b}
+test scan-4.20 {Tcl_ScanObjCmd, string scanning} {
+    list [scan {abc def} {%s} x] $x
+} {1 abc}
+test scan-4.21 {Tcl_ScanObjCmd, string scanning} {
+    list [scan {abc def} {%0s} x] $x
+} {1 abc}
+test scan-4.22 {Tcl_ScanObjCmd, string scanning} {
+    list [scan {abc def} {%2s} x] $x
+} {1 ab}
+test scan-4.23 {Tcl_ScanObjCmd, string scanning} {
+    list [scan {abc def} {%*s%n} x] $x
+} {1 3}
+test scan-4.24 {Tcl_ScanObjCmd, charset scanning} {
+    list [scan {abcdef} {%[a-c]} x] $x
+} {1 abc}
+test scan-4.25 {Tcl_ScanObjCmd, charset scanning} {
+    list [scan {abcdef} {%0[a-c]} x] $x
+} {1 abc}
+test scan-4.26 {Tcl_ScanObjCmd, charset scanning} {
+    list [scan {abcdef} {%2[a-c]} x] $x
+} {1 ab}
+test scan-4.27 {Tcl_ScanObjCmd, charset scanning} {
+    list [scan {abcdef} {%*[a-c]%n} x] $x
+} {1 3}
+test scan-4.28 {Tcl_ScanObjCmd, character scanning} {
+    list [scan {abcdef} {%c} x] $x
+} {1 97}
+test scan-4.29 {Tcl_ScanObjCmd, character scanning} {
+    list [scan {abcdef} {%*c%n} x] $x
+} {1 1}
+
+test scan-4.30 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {1234567890a} {%3d} x] $x
+} -result {1 123}
+test scan-4.31 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {1234567890a} {%d} x] $x
+} -result {1 1234567890}
+test scan-4.32 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {01234567890a} {%d} x] $x
+} -result {1 1234567890}
+test scan-4.33 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {+01234} {%d} x] $x
+} -result {1 1234}
+test scan-4.34 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {-01234} {%d} x] $x
+} -result {1 -1234}
+test scan-4.35 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {a01234} {%d} x] $x
+} -result {0 {}}
+test scan-4.36 {Tcl_ScanObjCmd, base-10 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {0x10} {%d} x] $x
+} -result {1 0}
+test scan-4.37 {Tcl_ScanObjCmd, base-8 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {012345678} {%o} x] $x
+} -result {1 342391}
+test scan-4.38 {Tcl_ScanObjCmd, base-8 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {+1238 -1239 123a} {%o%*s%o%*s%o} x y z] $x $y $z
+} -result {3 83 -83 83}
+test scan-4.39 {Tcl_ScanObjCmd, base-16 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {+1238 -123a 0123} {%x%x%x} x y z] $x $y $z
+} -result {3 4664 -4666 291}
+test scan-4.40 {Tcl_ScanObjCmd, base-16 integer scanning} -setup {
+    set x {}
+} -body {
+    # The behavior changed in 8.4a4/8.3.4cvs (6 Feb) to correctly
+    # return '1' for 0x1 scanned via %x, to comply with 8.0 and C scanf.
+    # Bug #495213
+    list [scan {aBcDeF AbCdEf 0x1} {%x%x%x} x y z] $x $y $z
+} -result {3 11259375 11259375 1}
+test scan-4.40.1 {Tcl_ScanObjCmd, base-16 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {0xF 0x00A0B 0X0XF} {%x %x %x} x y z] $x $y $z
+} -result {3 15 2571 0}
+test scan-4.40.2 {Tcl_ScanObjCmd, base-16 integer scanning} -setup {
+    unset -nocomplain x
+} -body {
+    list [scan {xF} {%x} x] [info exists x]
+} -result {0 0}
+test scan-4.40.3 {Tcl_ScanObjCmd, base-2 integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {1001 0b101 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000} {%b %b %llb} x y z] $x $y $z
+} -result {3 9 5 340282366920938463463374607431768211456}
+test scan-4.41 {Tcl_ScanObjCmd, base-unknown integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {10 010 0x10 0b10} {%i%i%i%i} x y z t] $x $y $z $t
+} -result {4 10 8 16 0}
+test scan-4.42 {Tcl_ScanObjCmd, base-unknown integer scanning} -setup {
+    set x {}
+} -body {
+    list [scan {10 010 0X10} {%i%i%i} x y z] $x $y $z
+} -result {3 10 8 16}
+test scan-4.43 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {+ } {%i} x] $x
+} -result {0 {}}
+test scan-4.44 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {+} {%i} x] $x
+} -result {-1 {}}
+test scan-4.45 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {0x} {%i%s} x y] $x $y
+} -result {2 0 x}
+test scan-4.46 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {0X} {%i%s} x y] $x $y
+} -result {2 0 X}
+test scan-4.47 {Tcl_ScanObjCmd, integer scanning, suppressed} -setup {
+    set x {}
+} -body {
+    list [scan {123def} {%*i%s} x] $x
+} -result {1 def}
+test scan-4.48 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {1 2 3} {%e %f %g} x y z] $x $y $z
+} {3 1.0 2.0 3.0}
+test scan-4.49 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {.1 0.2 3.} {%e %f %g} x y z] $x $y $z
+} {3 0.1 0.2 3.0}
+test scan-4.49-uc-1 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {0.5*0.75} {%E%c%G} x y z] $x $y $z
+} {3 0.5 42 0.75}
+test scan-4.49-uc-2 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {5e-1*75E-2} {%E%c%G} x y z] $x $y $z
+} {3 0.5 42 0.75}
+test scan-4.50 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {1234567890a} %f x] $x
+} {1 1234567890.0}
+test scan-4.51 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {+123+45} %f x] $x
+} {1 123.0}
+test scan-4.52 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {-123+45} %f x] $x
+} {1 -123.0}
+test scan-4.53 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {1.0e1} %f x] $x
+} {1 10.0}
+test scan-4.54 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {1.0e-1} %f x] $x
+} {1 0.1}
+test scan-4.55 {Tcl_ScanObjCmd, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {+} %f x] $x
+} -result {-1 {}}
+test scan-4.56 {Tcl_ScanObjCmd, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {1.0e} %f%s x y] $x $y
+} -result {2 1.0 e}
+test scan-4.57 {Tcl_ScanObjCmd, odd cases} -setup {
+    set x {}
+} -body {
+    list [scan {1.0e+} %f%s x y] $x $y
+} -result {2 1.0 e+}
+test scan-4.58 {Tcl_ScanObjCmd, odd cases} -setup {
+    set x {}
+    set y {}
+} -body {
+    list [scan {e1} %f%s x y] $x $y
+} -result {0 {} {}}
+test scan-4.59 {Tcl_ScanObjCmd, float scanning} {
+    list [scan {1.0e-1x} %*f%n x] $x
+} {1 6}
+
+test scan-4.60 {Tcl_ScanObjCmd, set errors} -setup {
+    set x {}
+    set y {}
+    unset -nocomplain z
+} -body {
+    array set z {}
+    list [catch {scan {abc def ghi} {%s%s%s} x z y} msg] $msg $x $y
+} -cleanup {
+    unset -nocomplain z
+} -result {1 {can't set "z": variable is array} abc ghi}
+test scan-4.61 {Tcl_ScanObjCmd, set errors} -setup {
+    set x {}
+    unset -nocomplain y
+    unset -nocomplain z
+} -body {
+    array set y {}
+    array set z {}
+    list [catch {scan {abc def ghi} {%s%s%s} x z y} msg] $msg $x
+} -cleanup {
+    unset -nocomplain y
+    unset -nocomplain z
+} -result {1 {can't set "z": variable is array} abc}
+
+test scan-4.62 {scanning of large and negative octal integers} {
+    lassign [int_range] MIN_INT MAX_INT
+    set scanstring [format {%o %o %o} -1 $MIN_INT $MAX_INT]
+    list [scan $scanstring {%o %o %o} a b c] \
+	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
+} {3 1 1 1}
+test scan-4.63 {scanning of large and negative hex integers} {
+    lassign [int_range] MIN_INT MAX_INT
+    set scanstring [format {%x %x %x} -1 $MIN_INT $MAX_INT]
+    list [scan $scanstring {%x %x %x} a b c] \
+	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
+} {3 1 1 1}
+test scan-4.64 {scanning of hex with %X} {
+    scan "123 abc f78" %X%X%X
+} {291 2748 3960}
+
+test scan-5.1 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "-20 1476 \n33 0" "%d %d %d %d" a b c d] $a $b $c $d
+} -result {4 -20 1476 33 0}
+test scan-5.2 {integer scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "-45 16 7890 +10" "%2d %*d %10d %d" a b c] $a $b $c
+} -result {3 -4 16 7890}
+test scan-5.3 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "-45 16 +10 987" "%ld %d %ld %d" a b c d] $a $b $c $d
+} -result {4 -45 16 10 987}
+test scan-5.4 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "14 1ab 62 10" "%d %x %lo %x" a b c d] $a $b $c $d
+} -result {4 14 427 50 16}
+test scan-5.5 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "12345670 1234567890ab cdefg" "%o	 %o %x %lx" a b c d] \
+	    $a $b $c $d
+} -result {4 2739128 342391 561323 52719}
+test scan-5.6 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "ab123-24642" "%2x %3x %3o %2o" a b c d] $a $b $c $d
+} -result {4 171 291 -20 52}
+test scan-5.7 {integer scanning} -setup {
+    set a {}; set b {}
+} -body {
+    list [scan "1234567 234 567  " "%*3x %x %*o %4o" a b] $a $b
+} -result {2 17767 375}
+test scan-5.8 {integer scanning} -setup {
+    set a {}; set b {}
+} -body {
+    list [scan "a	1234" "%d %d" a b] $a $b
+} -result {0 {} {}}
+test scan-5.9 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "12345678" "%2d %2d %2ld %2d" a b c d] $a $b $c $d
+} -result {4 12 34 56 78}
+test scan-5.10 {integer scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "1 2 " "%hd %d %d %d" a b c d] $a $b $c $d
+} -result {2 1 2 {} {}}
+#
+# The behavior for scaning intergers larger than MAX_INT is not defined by the
+# ANSI spec.  Some implementations wrap the input (-16) some return MAX_INT.
+#
+test scan-5.11 {integer scanning} -constraints {nonPortable} -setup {
+    set a {}; set b {}
+} -body {
+    list [scan "4294967280 4294967280" "%u %d" a b] $a \
+	    [expr {$b == -16 || $b == 0x7fffffff}]
+} -result {2 4294967280 1}
+test scan-5.12 {integer scanning} -constraints {wideIs64bit} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "7810179016327718216,6c63546f6c6c6548,661432506755433062510" \
+	    %ld,%lx,%lo a b c] $a $b $c
+} -result {3 7810179016327718216 7810179016327718216 7810179016327718216}
+test scan-5.13 {integer scanning and overflow} {
+    # This test used to fail on some 64-bit systems. [Bug 1011860]
+    scan {300000000 3000000000 30000000000} {%ld %ld %ld}
+} {300000000 3000000000 30000000000}
+
+test scan-5.14 {integer scanning} {
+    scan 0xff %u
+} 0
+test scan-5.15 {Bug be003d570f} {
+    scan 0x40 %o
+} 0
+test scan-5.16 {Bug be003d570f} {
+    scan 0x40 %b
+} 0
+test scan-5.17 {bigint scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "207698809136909011942886895,abcdef0123456789abcdef,125715736004432126361152746757" \
+	    %lld,%llx,%llo a b c] $a $b $c
+} -result {3 207698809136909011942886895 207698809136909011942886895 207698809136909011942886895}
+test scan-5.18 {bigint scanning underflow} -setup {
+    set a {};
+} -body {
+    list [scan "-207698809136909011942886895" \
+	    %llu a] $a
+} -returnCodes 1 -result {unsigned bignum scans are invalid}
+test scan-5.19 {bigint scanning invalid} -setup {
+    set a {};
+} -body {
+    list [scan "207698809136909011942886895" \
+	    %llu a] $a
+} -returnCodes 1 -result {unsigned bignum scans are invalid}
+
+test scan-6.1 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "2.1 -3.0e8 .99962 a" "%f%g%e%f" a b c d] $a $b $c $d
+} -result {3 2.1 -300000000.0 0.99962 {}}
+test scan-6.2 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "-1.2345 +8.2 9" "%3e %3lf %f %f" a b c d] $a $b $c $d
+} -result {4 -1.0 234.0 5.0 8.2}
+test scan-6.3 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "1e00004 332E-4 3e+4" "%Lf %*2e %f %f" a b c] $a $c
+} -result {3 10000.0 30000.0}
+#
+# Some libc implementations consider 3.e- bad input.  The ANSI spec states
+# that digits must follow the - sign.
+#
+test scan-6.4 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "1. 47.6 2.e2 3.e-" "%f %*f %f %f" a b c] $a $b $c
+} -result {3 1.0 200.0 3.0}
+test scan-6.5 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "4.6 99999.7 876.43e-1 118" "%f %f %f %e" a b c d] $a $b $c $d
+} -result {4 4.6 99999.7 87.643 118.0}
+test scan-6.6 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "1.2345 697.0e-3 124 .00005" "%f %e %f %e" a b c d] $a $b $c $d
+} -result {4 1.2345 0.697 124.0 5e-5}
+test scan-6.7 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "4.6abc" "%f %f %f %f" a b c d] $a $b $c $d
+} -result {1 4.6 {} {} {}}
+test scan-6.8 {floating-point scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "4.6 5.2" "%f %f %f %f" a b c d] $a $b $c $d
+} -result {2 4.6 5.2 {} {}}
+
+test scan-7.1 {string and character scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "abc defghijk dum " "%s %3s %20s %s" a b c d] $a $b $c $d
+} -result {4 abc def ghijk dum}
+test scan-7.2 {string and character scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "a       bcdef" "%c%c%1s %s" a b c d] $a $b $c $d
+} -result {4 97 32 b cdef}
+test scan-7.3 {string and character scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "123456 test " "%*c%*s %s %s %s" a b c] $a $b $c
+} -result {1 test {} {}}
+test scan-7.4 {string and character scanning} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "ababcd01234  f 123450" {%4[abcd] %4[abcd] %[^abcdef] %[^0]} a b c d] $a $b $c $d
+} -result {4 abab cd {01234  } {f 12345}}
+test scan-7.5 {string and character scanning} -setup {
+    set a {}; set b {}; set c {}
+} -body {
+    list [scan "aaaaaabc aaabcdefg  + +  XYZQR" {%*4[a] %s %*4[a]%s%*4[ +]%c} a b c] $a $b $c
+} -result {3 aabc bcdefg 43}
+test scan-7.6 {string and character scanning, unicode} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "abc d\u00c7fghijk dum " "%s %3s %20s %s" a b c d] $a $b $c $d
+} -result "4 abc d\u00c7f ghijk dum"
+test scan-7.7 {string and character scanning, unicode} -setup {
+    set a {}; set b {}
+} -body {
+    list [scan "ab\u00c7cdef" "ab%c%c" a b] $a $b
+} -result "2 199 99"
+test scan-7.8 {string and character scanning, unicode} -setup {
+    set a {}; set b {}
+} -body {
+    list [scan "ab\ufeffdef" "%\[ab\ufeff\]" a] $a
+} -result "1 ab\ufeff"
+
+test scan-8.1 {error conditions} -body {
+    scan a
+} -returnCodes error -match glob -result *
+test scan-8.2 {error conditions} -returnCodes error -body {
+    scan a
+} -result {wrong # args: should be "scan string format ?varName ...?"}
+test scan-8.3 {error conditions} -returnCodes error -body {
+    scan a %D x
+} -result {bad scan conversion character "D"}
+test scan-8.4 {error conditions} -returnCodes error -body {
+    scan a %O x
+} -result {bad scan conversion character "O"}
+test scan-8.5 {error conditions} -returnCodes error -body {
+    scan a %B x
+} -result {bad scan conversion character "B"}
+test scan-8.6 {error conditions} -returnCodes error -body {
+    scan a %F x
+} -result {bad scan conversion character "F"}
+test scan-8.7 {error conditions} -returnCodes error -body {
+    scan a %p x
+} -result {bad scan conversion character "p"}
+test scan-8.8 {error conditions} -returnCodes error -body {
+    scan a "%d %d" a
+} -result {different numbers of variable names and field specifiers}
+test scan-8.9 {error conditions} -returnCodes error -body {
+    scan a "%d %d" a b c
+} -result {variable is not assigned by any conversion specifiers}
+test scan-8.10 {error conditions} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [expr {[scan "  a" " a %d %d %d %d" a b c d] <= 0}] $a $b $c $d
+} -result {1 {} {} {} {}}
+test scan-8.11 {error conditions} -setup {
+    set a {}; set b {}; set c {}; set d {}
+} -body {
+    list [scan "1 2" "%d %d %d %d" a b c d] $a $b $c $d
+} -result {2 1 2 {} {}}
+test scan-8.12 {error conditions} -setup {
+    unset -nocomplain a
+} -body {
+    set a(0) 44
+    scan 44 %d a
+} -returnCodes error -cleanup {
+    unset -nocomplain a
+} -result {can't set "a": variable is array}
+test scan-8.13 {error conditions} -setup {
+    unset -nocomplain a
+} -body {
+    set a(0) 44
+    scan 44 %c a
+} -returnCodes error -cleanup {
+    unset -nocomplain a
+} -result {can't set "a": variable is array}
+test scan-8.14 {error conditions} -setup {
+    unset -nocomplain a
+} -body {
+    set a(0) 44
+    scan 44 %s a
+} -returnCodes error -cleanup {
+    unset -nocomplain a
+} -result {can't set "a": variable is array}
+test scan-8.15 {error conditions} -setup {
+    unset -nocomplain a
+} -body {
+    set a(0) 44
+    scan 44 %f a
+} -returnCodes error -cleanup {
+    unset -nocomplain a
+} -result {can't set "a": variable is array}
+test scan-8.16 {error conditions} -setup {
+    unset -nocomplain a
+} -body {
+    set a(0) 44
+    scan 44 %f a
+} -returnCodes error -cleanup {
+    unset -nocomplain a
+} -result {can't set "a": variable is array}
+test scan-8.17 {error conditions} -returnCodes error -body {
+    scan 44 %2c a
+} -result {field width may not be specified in %c conversion}
+test scan-8.18 {error conditions} -returnCodes error -body {
+    scan abc {%[} x
+} -result {unmatched [ in format string}
+test scan-8.19 {error conditions} -returnCodes error -body {
+    scan abc {%[^a} x
+} -result {unmatched [ in format string}
+test scan-8.20 {error conditions} -returnCodes error -body {
+    scan abc {%[^]a} x
+} -result {unmatched [ in format string}
+test scan-8.21 {error conditions} -returnCodes error -body {
+    scan abc {%[]a} x
+} -result {unmatched [ in format string}
+
+test scan-9.1 {lots of arguments} {
+    scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200" "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d" a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20
+} 20
+test scan-9.2 {lots of arguments} {
+    scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200" "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d" a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20
+    set a20
+} 200
+
+test scan-10.1 {miscellaneous tests} -setup {
+    set a {}
+} -body {
+    list [scan ab16c ab%dc a] $a
+} -result {1 16}
+test scan-10.2 {miscellaneous tests} -setup {
+    set a {}
+} -body {
+    list [scan ax16c ab%dc a] $a
+} -result {0 {}}
+test scan-10.3 {miscellaneous tests} -setup {
+    set a {}
+} -body {
+    list [catch {scan ab%c114 ab%%c%d a} msg] $msg $a
+} -result {0 1 114}
+test scan-10.4 {miscellaneous tests} -setup {
+    set a {}
+} -body {
+    list [catch {scan ab%c14 ab%%c%d a} msg] $msg $a
+} -result {0 1 14}
+test scan-10.5 {miscellaneous tests} -setup {
+    unset -nocomplain arr
+} -body {
+    set arr(2) {}
+    list [catch {scan ab%c14 ab%%c%d arr(2)} msg] $msg $arr(2)
+} -result {0 1 14}
+test scan-10.6 {miscellaneous tests} {
+    scan 5a {%i%[a]}
+} {5 a}
+test scan-10.7 {miscellaneous tests} {
+    scan {5 a} {%i%[a]}
+} {5 {}}
+
+test scan-11.1 {alignment in results array (TCL_ALIGN)} {
+    scan "123 13.6" "%s %f" a b
+    set b
+} 13.6
+test scan-11.2 {alignment in results array (TCL_ALIGN)} {
+    scan "1234567 13.6" "%s %f" a b
+    set b
+} 13.6
+test scan-11.3 {alignment in results array (TCL_ALIGN)} {
+    scan "12345678901 13.6" "%s %f" a b
+    set b
+} 13.6
+test scan-11.4 {alignment in results array (TCL_ALIGN)} {
+    scan "123456789012345 13.6" "%s %f" a b
+    set b
+} 13.6
+test scan-11.5 {alignment in results array (TCL_ALIGN)} {
+    scan "1234567890123456789 13.6" "%s %f" a b
+    set b
+} 13.6
+
+test scan-12.1 {Tcl_ScanObjCmd, inline case} {
+    scan a %c
+} 97
+test scan-12.2 {Tcl_ScanObjCmd, inline case} {
+    scan abc %c%c%c%c
+} {97 98 99 {}}
+test scan-12.3 {Tcl_ScanObjCmd, inline case} {
+    scan abc %s%c
+} {abc {}}
+test scan-12.4 {Tcl_ScanObjCmd, inline case, underflow} {
+    scan abc abc%c
+} {}
+test scan-12.5 {Tcl_ScanObjCmd, inline case} {
+    scan abc bogus%c%c%c
+} {{} {} {}}
+test scan-12.6 {Tcl_ScanObjCmd, inline case} {
+    # degenerate case, behavior changed from 8.2 to 8.3
+    list [catch {scan foo foobar} msg] $msg
+} {0 {}}
+test scan-12.7 {Tcl_ScanObjCmd, inline case lots of arguments} {
+    scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140\
+	    150 160 170 180 190 200" \
+	    "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d"
+} {10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200 {}}
+
+test scan-13.1 {Tcl_ScanObjCmd, inline XPG case} {
+    scan a {%1$c}
+} 97
+test scan-13.2 {Tcl_ScanObjCmd, inline XPG case} {
+    scan abc {%1$c%2$c%3$c%4$c}
+} {97 98 99 {}}
+test scan-13.3 {Tcl_ScanObjCmd, inline XPG case} -returnCodes error -body {
+    scan abc {%1$c%1$c}
+} -result {variable is assigned by multiple "%n$" conversion specifiers}
+test scan-13.4 {Tcl_ScanObjCmd, inline XPG case} {
+    scan abc {%2$s%1$c}
+} {{} abc}
+test scan-13.5 {Tcl_ScanObjCmd, inline XPG case, underflow} {
+    scan abc {abc%5$c}
+} {}
+test scan-13.6 {Tcl_ScanObjCmd, inline XPG case} {
+    catch {scan abc {bogus%1$c%5$c%10$c}} msg
+    list [llength $msg] $msg
+} {10 {{} {} {} {} {} {} {} {} {} {}}}
+test scan-13.7 {Tcl_ScanObjCmd, inline XPG case lots of arguments} {
+    scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200" {%20$d %18$d %17$d %16$d %15$d %14$d %13$d %12$d %11$d %10$d %9$d %8$d %7$d %6$d %5$d %4$d %3$d %2$d %1$d}
+} {190 180 170 160 150 140 130 120 110 100 90 80 70 60 50 40 30 20 {} 10}
+test scan-13.8 {Tcl_ScanObjCmd, inline XPG case lots of arguments} {
+    set msg [scan "10 20 30" {%100$d %5$d %200$d}]
+    list [llength $msg] [lindex $msg 99] [lindex $msg 4] [lindex $msg 199]
+} {200 10 20 30}
+
+# scan infinities - not working
+
+test scan-14.1 {positive infinity} {
+    scan Inf %g d
+    return $d
+} Inf
+test scan-14.2 {negative infinity} {
+    scan -Inf %g d
+    return $d
+} -Inf
+
+# TODO - also need to scan NaN's
+
+catch {rename int_range {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

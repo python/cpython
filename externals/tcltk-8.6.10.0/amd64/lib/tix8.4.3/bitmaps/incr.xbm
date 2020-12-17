@@ -1,0 +1,4 @@
+#define incr_width 7
+#define incr_height 4
+static char incr_bits[] = {
+   0x08, 0x1c, 0x3e, 0x7f};

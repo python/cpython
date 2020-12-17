@@ -1,0 +1,2 @@
+#TargetFrameworkVersion=v4.0:PlatformToolSet=v140:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit:WindowsTargetPlatformVersion=8.1
+ReleaseWithoutAsm|x64|C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc14\|

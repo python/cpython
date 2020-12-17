@@ -1,0 +1,120 @@
+'\"
+'\" Copyright (c) 1997 by Sun Microsystems, Inc.
+'\" Contributions from Don Porter, NIST, 2004. (not subject to US copyright)
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_SaveResult 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SaveInterpState, Tcl_RestoreInterpState, Tcl_DiscardInterpState, Tcl_SaveResult, Tcl_RestoreResult, Tcl_DiscardResult \- save and restore an interpreter's state
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_InterpState
+\fBTcl_SaveInterpState\fR(\fIinterp, status\fR)
+.sp
+int
+\fBTcl_RestoreInterpState\fR(\fIinterp, state\fR)
+.sp
+\fBTcl_DiscardInterpState\fR(\fIstate\fR)
+.sp
+\fBTcl_SaveResult\fR(\fIinterp, savedPtr\fR)
+.sp
+\fBTcl_RestoreResult\fR(\fIinterp, savedPtr\fR)
+.sp
+\fBTcl_DiscardResult\fR(\fIsavedPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_InterpState savedPtr
+.AP Tcl_Interp *interp in
+Interpreter for which state should be saved.
+.AP int status in
+Return code value to save as part of interpreter state.
+.AP Tcl_InterpState state in
+Saved state token to be restored or discarded.
+.AP Tcl_SavedResult *savedPtr in
+Pointer to location where interpreter result should be saved or restored.
+.BE
+.SH DESCRIPTION
+.PP
+These routines allows a C procedure to take a snapshot of the current
+state of an interpreter so that it can be restored after a call
+to \fBTcl_Eval\fR or some other routine that modifies the interpreter
+state.  There are two triplets of routines meant to work together.
+.PP
+The first triplet stores the snapshot of interpreter state in
+an opaque token returned by \fBTcl_SaveInterpState\fR.  That token
+value may then be passed back to one of \fBTcl_RestoreInterpState\fR
+or \fBTcl_DiscardInterpState\fR, depending on whether the interp
+state is to be restored.  So long as one of the latter two routines
+is called, Tcl will take care of memory management.
+.PP
+The second triplet stores the snapshot of only the interpreter
+result (not its complete state) in memory allocated by the caller.
+These routines are passed a pointer to \fBTcl_SavedResult\fR
+that is used to store enough information to restore the interpreter result.
+\fBTcl_SavedResult\fR can be allocated on the stack of the calling
+procedure.  These routines do not save the state of any error
+information in the interpreter (e.g. the \fB\-errorcode\fR or
+\fB\-errorinfo\fR return options, when an error is in progress).
+.PP
+Because the routines \fBTcl_SaveInterpState\fR,
+\fBTcl_RestoreInterpState\fR, and \fBTcl_DiscardInterpState\fR perform
+a superset of the functions provided by the other routines,
+any new code should only make use of the more powerful routines.
+The older, weaker routines \fBTcl_SaveResult\fR, \fBTcl_RestoreResult\fR,
+and \fBTcl_DiscardResult\fR continue to exist only for the sake
+of existing programs that may already be using them.
+.PP
+\fBTcl_SaveInterpState\fR takes a snapshot of those portions of
+interpreter state that make up the full result of script evaluation.
+This include the interpreter result, the return code (passed in
+as the \fIstatus\fR argument, and any return options, including
+\fB\-errorinfo\fR and \fB\-errorcode\fR when an error is in progress.
+This snapshot is returned as an opaque token of type \fBTcl_InterpState\fR.
+The call to \fBTcl_SaveInterpState\fR does not itself change the
+state of the interpreter.  Unlike \fBTcl_SaveResult\fR, it does
+not reset the interpreter.
+.PP
+\fBTcl_RestoreInterpState\fR accepts a \fBTcl_InterpState\fR token
+previously returned by \fBTcl_SaveInterpState\fR and restores the
+state of the interp to the state held in that snapshot.  The return
+value of \fBTcl_RestoreInterpState\fR is the status value originally
+passed to \fBTcl_SaveInterpState\fR when the snapshot token was
+created.
+.PP
+\fBTcl_DiscardInterpState\fR is called to release a \fBTcl_InterpState\fR
+token previously returned by \fBTcl_SaveInterpState\fR when that
+snapshot is not to be restored to an interp.
+.PP
+The \fBTcl_InterpState\fR token returned by \fBTcl_SaveInterpState\fR
+must eventually be passed to either \fBTcl_RestoreInterpState\fR
+or \fBTcl_DiscardInterpState\fR to avoid a memory leak.  Once
+the \fBTcl_InterpState\fR token is passed to one of them, the
+token is no longer valid and should not be used anymore.
+.PP
+\fBTcl_SaveResult\fR moves the string and value results
+of \fIinterp\fR into the location specified by \fIstatePtr\fR.
+\fBTcl_SaveResult\fR clears the result for \fIinterp\fR and
+leaves the result in its normal empty initialized state.
+.PP
+\fBTcl_RestoreResult\fR moves the string and value results from
+\fIstatePtr\fR back into \fIinterp\fR.  Any result or error that was
+already in the interpreter will be cleared.  The \fIstatePtr\fR is left
+in an uninitialized state and cannot be used until another call to
+\fBTcl_SaveResult\fR.
+.PP
+\fBTcl_DiscardResult\fR releases the saved interpreter state
+stored at \fBstatePtr\fR.  The state structure is left in an
+uninitialized state and cannot be used until another call to
+\fBTcl_SaveResult\fR.
+.PP
+Once \fBTcl_SaveResult\fR is called to save the interpreter
+result, either \fBTcl_RestoreResult\fR or
+\fBTcl_DiscardResult\fR must be called to properly clean up the
+memory associated with the saved state.
+.SH KEYWORDS
+result, state, interp

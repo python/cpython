@@ -1,0 +1,944 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:html="http://www.w3.org/1999/xhtml"
+            xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+      targetNamespace="http://schemas.microsoft.com/wix/ComPlusExtension"
+                xmlns="http://schemas.microsoft.com/wix/ComPlusExtension">
+  <xs:annotation>
+    <xs:documentation>
+      The source code schema for the Windows Installer XML Toolset COM+ Extension.
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+  <xs:element name="ComPlusPartition">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+      <xs:documentation>
+        Defines a COM+ partition. If this element is a child of a
+        Component element, the partition will be created in association with this
+        component. If the element is a child of any of the Fragment, Module or Product
+        elements it is considered to be a locater, referencing an existing partition.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusPartitionRole" />
+          <xs:element ref="ComPlusPartitionUser" />
+          <xs:element ref="ComPlusApplication" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PartitionId" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Id for the partition. This attribute can be omitted, in
+          which case an id will be generated on install. If the element is a locater,
+          this attribute can be omitted if a value is provided for the Name attribute.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Name of the partition. This attribute can be omitted if
+          the element is a locater, and a value is provided for the PartitionId
+          attribute.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Changeable" use="optional" type="YesNoType" />
+      <xs:attribute name="Deleteable" use="optional" type="YesNoType" />
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusPartitionRole">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+      <xs:documentation>
+        Defines a COM+ partition role. Partition roles can not be
+        created; this element can only be used as a locater to reference an existing
+        role.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusUserInPartitionRole" />
+          <xs:element ref="ComPlusGroupInPartitionRole" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Partition" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          The id of a ComPlusPartition element representing the partition
+          the role belongs to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Name of the partition role.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusUserInPartitionRole">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        This element represents a user membership in a partition
+        role. When the parent component of this element is installed, the user will be
+        added to the associated partition role.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PartitionRole" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          The id of a ComPlusPartitionRole element representing the
+          partition the user should be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="User" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Foreign key into the User table.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusGroupInPartitionRole">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        This element represents a security group membership in a
+        partition role. When the parent component of this element is installed, the
+        security group will be added to the associated partition role.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PartitionRole" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          The id of a ComPlusPartitionRole element representing the
+          partition the user should be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Group" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Foreign key into the Group table.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusPartitionUser">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        Represents a default partition definition for a user. When
+        the parent component of this element is installed, the default partition of the
+        user will be set to the referenced partition.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Partition" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          The id of a ComPlusPartition element representing the
+          partition that will be the default partition for the user.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="User" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Foreign key into the User table.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusApplication">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+      <xs:documentation>
+        Defines a COM+ application. If this element is a descendent
+        of a Component element, the application will be created in association with
+        this component. If the element is a child of any of the Fragment, Module or
+        Product elements it is considered to be a locater, referencing an existing
+        application.
+
+        If the element is a child of a ComPlusPartition element,
+        or have its Partition attribute set, the application will be installed under
+        the referenced partition.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusApplicationRole" />
+          <xs:element ref="ComPlusAssembly" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Partition" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusPartition
+          element, this attribute can be provided with the id of a ComPlusPartition
+          element representing the partition the application belongs to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ApplicationId" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Id for the application. This attribute can be omitted, in
+          which case an id will be generated on install. If the element is a locater,
+          this attribute can be omitted if a value is provided for the Name attribute.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Name of the application. This attribute can be omitted if
+          the element is a locater, and a value is provided for the PartitionId
+          attribute.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ThreeGigSupportEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="AccessChecksLevel" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="applicationLevel" />
+            <xs:enumeration value="applicationComponentLevel" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Activation" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="inproc" />
+            <xs:enumeration value="local" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="ApplicationAccessChecksEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="ApplicationDirectory" use="optional" type="xs:string" />
+      <xs:attribute name="Authentication" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="default" />
+            <xs:enumeration value="none" />
+            <xs:enumeration value="connect" />
+            <xs:enumeration value="call" />
+            <xs:enumeration value="packet" />
+            <xs:enumeration value="integrity" />
+            <xs:enumeration value="privacy" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="AuthenticationCapability" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="none" />
+            <xs:enumeration value="secureReference" />
+            <xs:enumeration value="staticCloaking" />
+            <xs:enumeration value="dynamicCloaking" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Changeable" use="optional" type="YesNoType" />
+      <xs:attribute name="CommandLine" use="optional" type="xs:string" />
+      <xs:attribute name="ConcurrentApps" use="optional" type="xs:int" />
+      <xs:attribute name="CreatedBy" use="optional" type="xs:string" />
+      <xs:attribute name="CRMEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="CRMLogFile" use="optional" type="xs:string" />
+      <xs:attribute name="Deleteable" use="optional" type="YesNoType" />
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+      <xs:attribute name="DumpEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="DumpOnException" use="optional" type="YesNoType" />
+      <xs:attribute name="DumpOnFailfast" use="optional" type="YesNoType" />
+      <xs:attribute name="DumpPath" use="optional" type="xs:string" />
+      <xs:attribute name="EventsEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="Identity" use="optional" type="xs:string" />
+      <xs:attribute name="ImpersonationLevel" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="anonymous" />
+            <xs:enumeration value="identify" />
+            <xs:enumeration value="impersonate" />
+            <xs:enumeration value="delegate" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="IsEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="MaxDumpCount" use="optional" type="xs:int" />
+      <xs:attribute name="Password" use="optional" type="xs:string" />
+      <xs:attribute name="QCAuthenticateMsgs" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="secureApps" />
+            <xs:enumeration value="off" />
+            <xs:enumeration value="on" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="QCListenerMaxThreads" use="optional" type="xs:int" />
+      <xs:attribute name="QueueListenerEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="QueuingEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="RecycleActivationLimit" use="optional" type="xs:int" />
+      <xs:attribute name="RecycleCallLimit" use="optional" type="xs:int" />
+      <xs:attribute name="RecycleExpirationTimeout" use="optional" type="xs:int" />
+      <xs:attribute name="RecycleLifetimeLimit" use="optional" type="xs:int" />
+      <xs:attribute name="RecycleMemoryLimit" use="optional" type="xs:int" />
+      <xs:attribute name="Replicable" use="optional" type="YesNoType" />
+      <xs:attribute name="RunForever" use="optional" type="YesNoType" />
+      <xs:attribute name="ShutdownAfter" use="optional" type="xs:int" />
+      <xs:attribute name="SoapActivated" use="optional" type="YesNoType" />
+      <xs:attribute name="SoapBaseUrl" use="optional" type="xs:string" />
+      <xs:attribute name="SoapMailTo" use="optional" type="xs:string" />
+      <xs:attribute name="SoapVRoot" use="optional" type="xs:string" />
+      <xs:attribute name="SRPEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="SRPTrustLevel" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="disallowed" />
+            <xs:enumeration value="fullyTrusted" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusApplicationRole">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+      <xs:documentation>
+        Defines an application role. If this element is a descendent
+        of a Component element, the application role will be created in association
+        with this component. If the element is a child of any of the Fragment, Module
+        or Product elements it is considered to be a locater, referencing an existing
+        application role.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusUserInApplicationRole" />
+          <xs:element ref="ComPlusGroupInApplicationRole" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Application" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusApplication
+          element, this attribute should be provided with the id of a
+          ComPlusApplication element representing the application the role belongs to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Name of the application role.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusUserInApplicationRole">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        This element represents a user membership in an
+        application role. When the parent component of this element is installed, the
+        user will be added to the associated application role. This element must be a descendent
+        of a Component element; it can not be a child of a ComPlusApplicationRole
+        locater element. To reference a locater element use the ApplicationRole
+        attribute.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ApplicationRole" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusApplicationRole
+          element, this attribute should be provided with the id of a
+          ComPlusApplicationRole element representing the application role the user is
+          to be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="User" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Foreign key into the User table.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusGroupInApplicationRole">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        This element represents a security group membership in an
+        application role. When the parent component of this element is installed, the
+        user will be added to the associated application role. This element must be a
+        descendent of a Component element; it can not be a child of a
+        ComPlusApplicationRole locater element. To reference a locater element use the
+        ApplicationRole attribute.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ApplicationRole" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusApplicationRole
+          element, this attribute should be provided with the id of a
+          ComPlusApplicationRole element representing the application role the user is
+          to be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Group" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Foreign key into the Group table.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusAssembly">
+    <xs:annotation>
+      <xs:documentation>
+        Represents a DLL or assembly to be registered with COM+. If
+        this element is a child of a ComPlusApplication element, the assembly will be
+        registered in this application. Other ways the Application attribute must be
+        set to an application. The element must be a descendent of a Component element,
+        it can not be a child of a ComPlusApplication locator element.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:remarks>
+          <html:p>
+            When installing a native assembly, all components
+            contained in the assembly must be represented as ComPlusComponent elements
+            under this element. Any component not listed will not be removed during
+            uninstall.
+          </html:p>
+
+          <html:p>
+            The fields DllPath, TlbPath and PSDllPath are formatted
+            fields that should contain file paths to there respective file types. A typical
+            value for DllPath for example, should be something like “[#MyAssembly_dll]”,
+            where “MyAssembly_dll” is the key of the dll file in the File table.
+          </html:p>
+
+          <html:p>
+            <html:b>Warning</html:b>: The assembly name provided in the AssemblyName
+            attribute must be a fully specified assembly name, if a partial name is
+            provided a random assembly matching the partial name will be selected.
+          </html:p>
+        </xse:remarks>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusAssemblyDependency" />
+          <xs:element ref="ComPlusComponent" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Application" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusApplication
+          element, this attribute should be provided with the id of a ComPlusApplication
+          element representing the application the assembly is to be registered in.
+          This attribute can be omitted for a .NET assembly even if the application is
+          not a child of a ComPlusApplication element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="AssemblyName" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          The name of the assembly used to identify the assembly in
+          the GAC. This attribute can be provided only if DllPathFromGAC is set to
+          “yes”.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DllPath" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          The path to locate the assembly DLL during registration.
+          This attribute should be provided if DllPathFromGAC is not set to “yes”.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="TlbPath" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          An optional path to an external type lib for the assembly.
+          This attribute must be provided if the Type attribute is set to “.net”.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PSDllPath" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          An optional path to an external proxy/stub DLL for the assembly.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Type" use="required">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="native" />
+            <xs:enumeration value=".net" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="EventClass" use="optional" type="YesNoType">
+        <xs:annotation><xs:documentation>
+          Indicates that the assembly is to be installed as an event
+          class DLL. This attribute is only valid for native assemblies. The assembly
+          will be installed with the COM+ catalog’s InstallEventClass() function.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DllPathFromGAC" use="optional" type="YesNoType">
+        <xs:annotation><xs:documentation>
+          Indicates that the DLL path should be extracted from the
+          GAC instead for being provided in the DllPath attribute. If this attribute is
+          set to “yes”, the name of the assembly can be provided using the AssemblyName
+          attribute. Or, if this AssemblyName attribute is missing, the name will be
+          extracted from the MsiAssemblyName table using the id of the parent Component
+          element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="RegisterInCommit" use="optional" type="YesNoType">
+        <xs:annotation><xs:documentation>
+          Indicates that the assembly should be installed in the
+          commit custom action instead of the normal deferred custom action. This is
+          necessary when installing .NET assemblies to the GAC in the same
+          installation, as the assemblies are not visible in the GAC until after the
+          InstallFinalize action has run.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusAssemblyDependency">
+    <xs:annotation>
+      <xs:documentation>
+        Defines a dependency between two assemblies. This element
+        affects the order in which assembles are registered. Any assemblies referenced
+        by this element are guarantied to be registered before, and unregistered after,
+        the assembly referenced by the parent ComPlusAssembly element.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:remarks>
+          It is only necessary to explicitly specify dependencies between
+          assemblies contained in the same package (MSI or MSM). Assemblies merged in to a
+          package from a merge module will always be installed before any assemblies
+          specified in the base package. Assemblies merged in from different merge
+          modules are sequenced using the ModuleDependency MSI table. It is not possible
+          to have cross dependencies between merge modules or have an assembly in a merge
+          module depend on an assembly in the base package.
+        </xse:remarks>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="RequiredAssembly" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Reference to the id of the assembly required by the parent
+          ComPlusAssembly element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusComponent">
+    <xs:annotation><xs:documentation>
+      Represents a COM+ component in an assembly.
+    </xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusRoleForComponent" />
+          <xs:element ref="ComPlusInterface" />
+          <xs:element ref="ComPlusSubscription" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CLSID" use="required" type="uuid">
+        <xs:annotation><xs:documentation>
+          CLSID of the component.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="AllowInprocSubscribers" use="optional" type="YesNoType" />
+      <xs:attribute name="ComponentAccessChecksEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="ComponentTransactionTimeout" use="optional" type="xs:int" />
+      <xs:attribute name="ComponentTransactionTimeoutEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="COMTIIntrinsics" use="optional" type="YesNoType" />
+      <xs:attribute name="ConstructionEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="ConstructorString" use="optional" type="xs:string" />
+      <xs:attribute name="CreationTimeout" use="optional" type="xs:int" />
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+      <xs:attribute name="EventTrackingEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="ExceptionClass" use="optional" type="xs:string" />
+      <xs:attribute name="FireInParallel" use="optional" type="YesNoType" />
+      <xs:attribute name="IISIntrinsics" use="optional" type="YesNoType" />
+      <xs:attribute name="InitializesServerApplication" use="optional" type="YesNoType" />
+      <xs:attribute name="IsEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="IsPrivateComponent" use="optional" type="YesNoType" />
+      <xs:attribute name="JustInTimeActivation" use="optional" type="YesNoType" />
+      <xs:attribute name="LoadBalancingSupported" use="optional" type="YesNoType" />
+      <xs:attribute name="MaxPoolSize" use="optional" type="xs:int" />
+      <xs:attribute name="MinPoolSize" use="optional" type="xs:int" />
+      <xs:attribute name="MultiInterfacePublisherFilterCLSID" use="optional" type="xs:string" />
+      <xs:attribute name="MustRunInClientContext" use="optional" type="YesNoType" />
+      <xs:attribute name="MustRunInDefaultContext" use="optional" type="YesNoType" />
+      <xs:attribute name="ObjectPoolingEnabled" use="optional" type="YesNoType" />
+      <xs:attribute name="PublisherID" use="optional" type="xs:string" />
+      <xs:attribute name="SoapAssemblyName" use="optional" type="xs:string" />
+      <xs:attribute name="SoapTypeName" use="optional" type="xs:string" />
+      <xs:attribute name="Synchronization" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="ignored" />
+            <xs:enumeration value="none" />
+            <xs:enumeration value="supported" />
+            <xs:enumeration value="required" />
+            <xs:enumeration value="requiresNew" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Transaction" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="ignored" />
+            <xs:enumeration value="none" />
+            <xs:enumeration value="supported" />
+            <xs:enumeration value="required" />
+            <xs:enumeration value="requiresNew" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="TxIsolationLevel" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="any" />
+            <xs:enumeration value="readUnCommitted" />
+            <xs:enumeration value="readCommitted" />
+            <xs:enumeration value="repeatableRead" />
+            <xs:enumeration value="serializable" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusRoleForComponent">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        Represents a role assignment to a COM+ component.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Component" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusComponent
+          element, this attribute should be provided with the id of a ComPlusComponent
+          element representing the component the role is to be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ApplicationRole" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Id of the ComPlusApplicationRole element representing the
+          role that shall be granted access to the component.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusInterface">
+    <xs:annotation><xs:documentation>
+      Represents an interface for a COM+ component.
+    </xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="ComPlusRoleForInterface" />
+          <xs:element ref="ComPlusMethod" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="IID" use="required" type="uuid">
+        <xs:annotation><xs:documentation>
+          IID of the interface.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+      <xs:attribute name="QueuingEnabled" use="optional" type="YesNoType" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusRoleForInterface">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        Represents a role assignment to an interface.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Interface" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusInterface
+          element, this attribute should be provided with the id of a ComPlusInterface
+          element representing the interface the role is to be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ApplicationRole" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Id of the ComPlusApplicationRole element representing the
+          role that shall be granted access to the interface.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusMethod">
+    <xs:annotation>
+      <xs:documentation>
+        Represents a method for an interface.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ComPlusRoleForMethod" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Identifier for the element.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Index" use="optional" type="xs:int">
+        <xs:annotation>
+          <xs:documentation>
+            Dispatch id of the method. If this attribute is not set a
+            value must be provided for the Name attribute.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" use="optional" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Name of the method. If this attribute is not set a value
+            must be provided for the Index attribute.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="AutoComplete" use="optional" type="YesNoType" />
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusRoleForMethod">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        Represents a role assignment to a COM+ method.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Method" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusMethod element,
+          this attribute should be provided with the id of a ComPlusMethod element
+          representing the method the role is to be added to.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ApplicationRole" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Id of the ComPlusApplicationRole element representing the
+          role that shall be granted access to the method.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="ComPlusSubscription">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>
+        Defines an event subscription for a COM+ component.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Identifier for the element.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Component" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          If the element is not a child of a ComPlusComponent
+          element, this attribute should be provided with the id of a ComPlusComponent
+          element representing the component the subscription is to be created for.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SubscriptionId" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Id of the subscription. If a value is not provided for
+          this attribute, an id will be generated during installation.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Name of the subscription.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="EventCLSID" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          CLSID of the event class for the subscription. If a value
+          for this attribute is not provided, a value for the PublisherID attribute
+          must be provided.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PublisherID" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+          Publisher id for the subscription. If a value for this
+          attribute is not provided, a value for the EventCLSID attribute must be
+          provided.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Description" use="optional" type="xs:string" />
+      <xs:attribute name="Enabled" use="optional" type="YesNoType" />
+      <xs:attribute name="EventClassPartitionID" use="optional" type="xs:string" />
+      <xs:attribute name="FilterCriteria" use="optional" type="xs:string" />
+      <xs:attribute name="InterfaceID" use="optional" type="xs:string" />
+      <xs:attribute name="MachineName" use="optional" type="xs:string" />
+      <xs:attribute name="MethodName" use="optional" type="xs:string" />
+      <xs:attribute name="PerUser" use="optional" type="YesNoType" />
+      <xs:attribute name="Queued" use="optional" type="YesNoType" />
+      <xs:attribute name="SubscriberMoniker" use="optional" type="xs:string" />
+      <xs:attribute name="UserName" use="optional" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="YesNoType">
+    <xs:annotation>
+      <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="no" />
+      <xs:enumeration value="yes" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="uuid">
+    <xs:annotation>
+      <xs:documentation>Values of this type will look like: "01234567-89AB-CDEF-0123-456789ABCDEF".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9A-Fa-f]{8}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{12}" />
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

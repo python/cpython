@@ -1,0 +1,380 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_TraceVar, Tcl_TraceVar2, Tcl_UntraceVar, Tcl_UntraceVar2, Tcl_VarTraceInfo, Tcl_VarTraceInfo2 \- monitor accesses to a variable
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_TraceVar(\fIinterp, varName, flags, proc, clientData\fB)\fR
+.sp
+int
+\fBTcl_TraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
+.sp
+\fBTcl_UntraceVar(\fIinterp, varName, flags, proc, clientData\fB)\fR
+.sp
+\fBTcl_UntraceVar2(\fIinterp, name1, name2, flags, proc, clientData\fB)\fR
+.sp
+ClientData
+\fBTcl_VarTraceInfo(\fIinterp, varName, flags, proc, prevClientData\fB)\fR
+.sp
+ClientData
+\fBTcl_VarTraceInfo2(\fIinterp, name1, name2, flags, proc, prevClientData\fB)\fR
+.SH ARGUMENTS
+.AS Tcl_VarTraceProc prevClientData
+.AP Tcl_Interp *interp in
+Interpreter containing variable.
+.AP "const char" *varName in
+Name of variable.  May refer to a scalar variable, to
+an array variable with no index, or to an array variable
+with a parenthesized index.
+.AP int flags in
+OR-ed combination of the values \fBTCL_TRACE_READS\fR,
+\fBTCL_TRACE_WRITES\fR, \fBTCL_TRACE_UNSETS\fR, \fBTCL_TRACE_ARRAY\fR,
+\fBTCL_GLOBAL_ONLY\fR, \fBTCL_NAMESPACE_ONLY\fR,
+\fBTCL_TRACE_RESULT_DYNAMIC\fR and \fBTCL_TRACE_RESULT_OBJECT\fR.
+Not all flags are used by all
+procedures.  See below for more information.
+.AP Tcl_VarTraceProc *proc in
+Procedure to invoke whenever one of the traced operations occurs.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.AP "const char" *name1 in
+Name of scalar or array variable (without array index).
+.AP "const char" *name2 in
+For a trace on an element of an array, gives the index of the
+element.  For traces on scalar variables or on whole arrays,
+is NULL.
+.AP ClientData prevClientData in
+If non-NULL, gives last value returned by \fBTcl_VarTraceInfo\fR or
+\fBTcl_VarTraceInfo2\fR, so this call will return information about
+next trace.  If NULL, this call will return information about first
+trace.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_TraceVar\fR allows a C procedure to monitor and control
+access to a Tcl variable, so that the C procedure is invoked
+whenever the variable is read or written or unset.
+If the trace is created successfully then \fBTcl_TraceVar\fR returns
+\fBTCL_OK\fR.  If an error occurred (e.g. \fIvarName\fR specifies an element
+of an array, but the actual variable is not an array) then \fBTCL_ERROR\fR
+is returned and an error message is left in the interpreter's result.
+.PP
+The \fIflags\fR argument to \fBTcl_TraceVar\fR indicates when the
+trace procedure is to be invoked and provides information
+for setting up the trace.  It consists of an OR-ed combination
+of any of the following values:
+.TP
+\fBTCL_GLOBAL_ONLY\fR
+Normally, the variable will be looked up at the current level of
+procedure call;  if this bit is set then the variable will be looked
+up at global level, ignoring any active procedures.
+.TP
+\fBTCL_NAMESPACE_ONLY\fR
+Normally, the variable will be looked up at the current level of
+procedure call;  if this bit is set then the variable will be looked
+up in the current namespace, ignoring any active procedures.
+.TP
+\fBTCL_TRACE_READS\fR
+Invoke \fIproc\fR whenever an attempt is made to read the variable.
+.TP
+\fBTCL_TRACE_WRITES\fR
+Invoke \fIproc\fR whenever an attempt is made to modify the variable.
+.TP
+\fBTCL_TRACE_UNSETS\fR
+Invoke \fIproc\fR whenever the variable is unset.
+A variable may be unset either explicitly by an \fBunset\fR command,
+or implicitly when a procedure returns (its local variables are
+automatically unset) or when the interpreter is deleted (all
+variables are automatically unset).
+.TP
+\fBTCL_TRACE_ARRAY\fR
+Invoke \fIproc\fR whenever the array command is invoked.
+This gives the trace procedure a chance to update the array before
+array names or array get is called.  Note that this is called
+before an array set, but that will trigger write traces.
+.TP
+\fBTCL_TRACE_RESULT_DYNAMIC\fR
+The result of invoking the \fIproc\fR is a dynamically allocated
+string that will be released by the Tcl library via a call to
+\fBckfree\fR.  Must not be specified at the same time as
+\fBTCL_TRACE_RESULT_OBJECT\fR.
+.TP
+\fBTCL_TRACE_RESULT_OBJECT\fR
+The result of invoking the \fIproc\fR is a Tcl_Obj* (cast to a char*)
+with a reference count of at least one.  The ownership of that
+reference will be transferred to the Tcl core for release (when the
+core has finished with it) via a call to \fBTcl_DecrRefCount\fR.  Must
+not be specified at the same time as \fBTCL_TRACE_RESULT_DYNAMIC\fR.
+.PP
+Whenever one of the specified operations occurs on the variable,
+\fIproc\fR will be invoked.
+It should have arguments and result that match the type
+\fBTcl_VarTraceProc\fR:
+.PP
+.CS
+typedef char *\fBTcl_VarTraceProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        char *\fIname1\fR,
+        char *\fIname2\fR,
+        int \fIflags\fR);
+.CE
+.PP
+The \fIclientData\fR and \fIinterp\fR parameters will
+have the same values as those passed to \fBTcl_TraceVar\fR when the
+trace was created.
+\fIClientData\fR typically points to an application-specific
+data structure that describes what to do when \fIproc\fR
+is invoked.
+\fIName1\fR and \fIname2\fR give the name of the traced variable
+in the normal two-part form (see the description of \fBTcl_TraceVar2\fR
+below for details).
+\fIFlags\fR is an OR-ed combination of bits providing several
+pieces of information.
+One of the bits \fBTCL_TRACE_READS\fR, \fBTCL_TRACE_WRITES\fR,
+\fBTCL_TRACE_ARRAY\fR, or \fBTCL_TRACE_UNSETS\fR
+will be set in \fIflags\fR to indicate which operation is being performed
+on the variable.
+The bit \fBTCL_GLOBAL_ONLY\fR will be set whenever the variable being
+accessed is a global one not accessible from the current level of
+procedure call:  the trace procedure will need to pass this flag
+back to variable-related procedures like \fBTcl_GetVar\fR if it
+attempts to access the variable.
+The bit \fBTCL_NAMESPACE_ONLY\fR will be set whenever the variable being
+accessed is a namespace one not accessible from the current level of
+procedure call:  the trace procedure will need to pass this flag
+back to variable-related procedures like \fBTcl_GetVar\fR if it
+attempts to access the variable.
+The bit \fBTCL_TRACE_DESTROYED\fR will be set in \fIflags\fR if the trace is
+about to be destroyed;  this information may be useful to \fIproc\fR
+so that it can clean up its own internal data structures (see
+the section \fBTCL_TRACE_DESTROYED\fR below for more details).
+Lastly, the bit \fBTCL_INTERP_DESTROYED\fR will be set if the entire
+interpreter is being destroyed.
+When this bit is set, \fIproc\fR must be especially careful in
+the things it does (see the section \fBTCL_INTERP_DESTROYED\fR below).
+The trace procedure's return value should normally be NULL;  see
+\fBERROR RETURNS\fR below for information on other possibilities.
+.PP
+\fBTcl_UntraceVar\fR may be used to remove a trace.
+If the variable specified by \fIinterp\fR, \fIvarName\fR, and \fIflags\fR
+has a trace set with \fIflags\fR, \fIproc\fR, and
+\fIclientData\fR, then the corresponding trace is removed.
+If no such trace exists, then the call to \fBTcl_UntraceVar\fR
+has no effect.
+The same bits are valid for \fIflags\fR as for calls to \fBTcl_TraceVar\fR.
+.PP
+\fBTcl_VarTraceInfo\fR may be used to retrieve information about
+traces set on a given variable.
+The return value from \fBTcl_VarTraceInfo\fR is the \fIclientData\fR
+associated with a particular trace.
+The trace must be on the variable specified by the \fIinterp\fR,
+\fIvarName\fR, and \fIflags\fR arguments (only the \fBTCL_GLOBAL_ONLY\fR and
+\fBTCL_NAMESPACE_ONLY\fR bits from \fIflags\fR is used;  other bits are
+ignored) and its trace procedure must the same as the \fIproc\fR
+argument.
+If the \fIprevClientData\fR argument is NULL then the return
+value corresponds to the first (most recently created) matching
+trace, or NULL if there are no matching traces.
+If the \fIprevClientData\fR argument is not NULL, then it should
+be the return value from a previous call to \fBTcl_VarTraceInfo\fR.
+In this case, the new return value will correspond to the next
+matching trace after the one whose \fIclientData\fR matches
+\fIprevClientData\fR, or NULL if no trace matches \fIprevClientData\fR
+or if there are no more matching traces after it.
+This mechanism makes it possible to step through all of the
+traces for a given variable that have the same \fIproc\fR.
+.SH "TWO-PART NAMES"
+.PP
+The procedures \fBTcl_TraceVar2\fR, \fBTcl_UntraceVar2\fR, and
+\fBTcl_VarTraceInfo2\fR are identical to \fBTcl_TraceVar\fR,
+\fBTcl_UntraceVar\fR, and \fBTcl_VarTraceInfo\fR, respectively,
+except that the name of the variable consists of two parts.
+\fIName1\fR gives the name of a scalar variable or array,
+and \fIname2\fR gives the name of an element within an array.
+When \fIname2\fR is NULL,
+\fIname1\fR may contain both an array and an element name:
+if the name contains an open parenthesis and ends with a
+close parenthesis, then the value between the parentheses is
+treated as an element name (which can have any string value) and
+the characters before the first open
+parenthesis are treated as the name of an array variable.
+If \fIname2\fR is NULL and \fIname1\fR does not refer
+to an array element it means that either the variable is
+a scalar or the trace is to be set on the entire array rather
+than an individual element (see WHOLE-ARRAY TRACES below for
+more information).
+.SH "ACCESSING VARIABLES DURING TRACES"
+.PP
+During read, write, and array traces, the
+trace procedure can read, write, or unset the traced
+variable using \fBTcl_GetVar2\fR, \fBTcl_SetVar2\fR, and
+other procedures.
+While \fIproc\fR is executing, traces are temporarily disabled
+for the variable, so that calls to \fBTcl_GetVar2\fR and
+\fBTcl_SetVar2\fR will not cause \fIproc\fR or other trace procedures
+to be invoked again.
+Disabling only occurs for the variable whose trace procedure
+is active;  accesses to other variables will still be traced.
+However, if a variable is unset during a read or write trace then unset
+traces will be invoked.
+.PP
+During unset traces the variable has already been completely
+expunged.
+It is possible for the trace procedure to read or write the
+variable, but this will be a new version of the variable.
+Traces are not disabled during unset traces as they are for
+read and write traces, but existing traces have been removed
+from the variable before any trace procedures are invoked.
+If new traces are set by unset trace procedures, these traces
+will be invoked on accesses to the variable by the trace
+procedures.
+.SH "CALLBACK TIMING"
+.PP
+When read tracing has been specified for a variable, the trace
+procedure will be invoked whenever the variable's value is
+read.  This includes \fBset\fR Tcl commands, \fB$\fR-notation
+in Tcl commands, and invocations of the \fBTcl_GetVar\fR
+and \fBTcl_GetVar2\fR procedures.
+\fIProc\fR is invoked just before the variable's value is
+returned.
+It may modify the value of the variable to affect what
+is returned by the traced access.
+If it unsets the variable then the access will return an error
+just as if the variable never existed.
+.PP
+When write tracing has been specified for a variable, the
+trace procedure will be invoked whenever the variable's value
+is modified.  This includes \fBset\fR commands,
+commands that modify variables as side effects (such as
+\fBcatch\fR and \fBscan\fR), and calls to the \fBTcl_SetVar\fR
+and \fBTcl_SetVar2\fR procedures).
+\fIProc\fR will be invoked after the variable's value has been
+modified, but before the new value of the variable has been
+returned.
+It may modify the value of the variable to override the change
+and to determine the value actually returned by the traced
+access.
+If it deletes the variable then the traced access will return
+an empty string.
+.PP
+When array tracing has been specified, the trace procedure
+will be invoked at the beginning of the array command implementation,
+before any of the operations like get, set, or names have been invoked.
+The trace procedure can modify the array elements with \fBTcl_SetVar\fR
+and \fBTcl_SetVar2\fR.
+.PP
+When unset tracing has been specified, the trace procedure
+will be invoked whenever the variable is destroyed.
+The traces will be called after the variable has been
+completely unset.
+.SH "WHOLE-ARRAY TRACES"
+.PP
+If a call to \fBTcl_TraceVar\fR or \fBTcl_TraceVar2\fR specifies
+the name of an array variable without an index into the array,
+then the trace will be set on the array as a whole.
+This means that \fIproc\fR will be invoked whenever any
+element of the array is accessed in the ways specified by
+\fIflags\fR.
+When an array is unset, a whole-array trace will be invoked
+just once, with \fIname1\fR equal to the name of the array
+and \fIname2\fR NULL;  it will not be invoked once for each
+element.
+.SH "MULTIPLE TRACES"
+.PP
+It is possible for multiple traces to exist on the same variable.
+When this happens, all of the trace procedures will be invoked on each
+access, in order from most-recently-created to least-recently-created.
+When there exist whole-array traces for an array as well as
+traces on individual elements, the whole-array traces are invoked
+before the individual-element traces.
+If a read or write trace unsets the variable then all of the unset
+traces will be invoked but the remainder of the read and write traces
+will be skipped.
+.SH "ERROR RETURNS"
+.PP
+Under normal conditions trace procedures should return NULL, indicating
+successful completion.
+If \fIproc\fR returns a non-NULL value it signifies that an
+error occurred.
+The return value must be a pointer to a static character string
+containing an error message,
+unless (\fIexactly\fR one of) the \fBTCL_TRACE_RESULT_DYNAMIC\fR and
+\fBTCL_TRACE_RESULT_OBJECT\fR flags is set, which specify that the result is
+either a dynamic string (to be released with \fBckfree\fR) or a
+Tcl_Obj* (cast to char* and to be released with
+\fBTcl_DecrRefCount\fR) containing the error message.
+If a trace procedure returns an error, no further traces are
+invoked for the access and the traced access aborts with the
+given message.
+Trace procedures can use this facility to make variables
+read-only, for example (but note that the value of the variable
+will already have been modified before the trace procedure is
+called, so the trace procedure will have to restore the correct
+value).
+.PP
+The return value from \fIproc\fR is only used during read and
+write tracing.
+During unset traces, the return value is ignored and all relevant
+trace procedures will always be invoked.
+.SH "RESTRICTIONS"
+.PP
+A trace procedure can be called at any time, even when there
+are partially formed results stored in the interpreter.  If
+the trace procedure does anything that could damage this result (such
+as calling \fBTcl_Eval\fR) then it must use the \fBTcl_SaveInterpState\fR
+and related routines to save and restore the original state of
+the interpreter before it returns.
+.SH "UNDEFINED VARIABLES"
+.PP
+It is legal to set a trace on an undefined variable.
+The variable will still appear to be undefined until the
+first time its value is set.
+If an undefined variable is traced and then unset, the unset will fail
+with an error
+.PQ "no such variable" "" ,
+but the trace procedure will still be invoked.
+.SH "TCL_TRACE_DESTROYED FLAG"
+.PP
+In an unset callback to \fIproc\fR, the \fBTCL_TRACE_DESTROYED\fR bit
+is set in \fIflags\fR if the trace is being removed as part
+of the deletion.
+Traces on a variable are always removed whenever the variable
+is deleted;  the only time \fBTCL_TRACE_DESTROYED\fR is not set is for
+a whole-array trace invoked when only a single element of an
+array is unset.
+.SH "TCL_INTERP_DESTROYED"
+.PP
+When an interpreter is destroyed, unset traces are called for
+all of its variables.
+The \fBTCL_INTERP_DESTROYED\fR bit will be set in the \fIflags\fR
+argument passed to the trace procedures.
+Trace procedures must be extremely careful in what they do if
+the \fBTCL_INTERP_DESTROYED\fR bit is set.
+It is not safe for the procedures to invoke any Tcl procedures
+on the interpreter, since its state is partially deleted.
+All that trace procedures should do under these circumstances is
+to clean up and free their own internal data structures.
+.SH BUGS
+.PP
+Tcl does not do any error checking to prevent trace procedures
+from misusing the interpreter during traces with \fBTCL_INTERP_DESTROYED\fR
+set.
+.PP
+Array traces are not yet integrated with the Tcl \fBinfo exists\fR command,
+nor is there Tcl-level access to array traces.
+.SH "SEE ALSO"
+trace(n)
+.SH KEYWORDS
+clientData, trace, variable

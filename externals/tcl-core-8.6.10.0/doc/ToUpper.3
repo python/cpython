@@ -1,0 +1,89 @@
+'\"
+'\" Copyright (c) 1997 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_UtfToUpper 3 "8.1" Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_UniCharToUpper, Tcl_UniCharToLower, Tcl_UniCharToTitle, Tcl_UtfToUpper, Tcl_UtfToLower, Tcl_UtfToTitle \- routines for manipulating the case of Unicode characters and UTF-8 strings
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_UniChar
+\fBTcl_UniCharToUpper\fR(\fIch\fR)
+.sp
+Tcl_UniChar
+\fBTcl_UniCharToLower\fR(\fIch\fR)
+.sp
+Tcl_UniChar
+\fBTcl_UniCharToTitle\fR(\fIch\fR)
+.sp
+int
+\fBTcl_UtfToUpper\fR(\fIstr\fR)
+.sp
+int
+\fBTcl_UtfToLower\fR(\fIstr\fR)
+.sp
+int
+\fBTcl_UtfToTitle\fR(\fIstr\fR)
+.SH ARGUMENTS
+.AS char *str in/out
+.AP int ch in
+The Unicode character to be converted.
+.AP char *str in/out
+Pointer to UTF-8 string to be converted in place.
+.BE
+
+.SH DESCRIPTION
+.PP
+The first three routines convert the case of individual Unicode characters:
+.PP
+If \fIch\fR represents a lower-case character,
+\fBTcl_UniCharToUpper\fR returns the corresponding upper-case
+character.  If no upper-case character is defined, it returns the
+character unchanged.
+.PP
+If \fIch\fR represents an upper-case character,
+\fBTcl_UniCharToLower\fR returns the corresponding lower-case
+character.  If no lower-case character is defined, it returns the
+character unchanged.
+.PP
+If \fIch\fR represents a lower-case character,
+\fBTcl_UniCharToTitle\fR returns the corresponding title-case
+character.  If no title-case character is defined, it returns the
+corresponding upper-case character.  If no upper-case character is
+defined, it returns the character unchanged.  Title-case is defined
+for a small number of characters that have a different appearance when
+they are at the beginning of a capitalized word.
+.PP
+The next three routines convert the case of UTF-8 strings in place in
+memory:
+.PP
+\fBTcl_UtfToUpper\fR changes every UTF-8 character in \fIstr\fR to
+upper-case.  Because changing the case of a character may change its
+size, the byte offset of each character in the resulting string may
+differ from its original location.  \fBTcl_UtfToUpper\fR writes a null
+byte at the end of the converted string.  \fBTcl_UtfToUpper\fR returns
+the new length of the string in bytes.  This new length is guaranteed
+to be no longer than the original string length.
+.PP
+\fBTcl_UtfToLower\fR is the same as \fBTcl_UtfToUpper\fR except it
+turns each character in the string into its lower-case equivalent.
+.PP
+\fBTcl_UtfToTitle\fR is the same as \fBTcl_UtfToUpper\fR except it
+turns the first character in the string into its title-case equivalent
+and all following characters into their lower-case equivalents.
+
+.SH BUGS
+.PP
+At this time, the case conversions are only defined for the Unicode
+plane 0 characters.  The result for Unicode characters above 0xffff
+is undefined, but - actually - only the lower 16 bits of the
+character value is handled.
+
+.SH KEYWORDS
+utf, unicode, toupper, tolower, totitle, case

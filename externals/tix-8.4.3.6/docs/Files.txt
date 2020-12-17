@@ -1,0 +1,192 @@
+$Id: Files.txt,v 1.3 2004/12/24 01:54:03 hobbs Exp $
+
+This document describes the operating system independent file handling
+capability in Tix.  This is pertinent up to Tix 8.2, but isn't 100%
+correct for Tix 8.4, where the FS handling was simplified using more
+Tcl core file routines.  In general, this should all no longer be
+relevant for Tix 8.4 users.  Use Tcl core routines instead.
+
+1. The problem:
+
+   (A) Handling user inputs. In various Tix widgets, the user may enter
+   a text string to refer to a file, a directory or a file pattern.
+
+   File:
+	tixFileEntry
+	tixFileSelectBox, the Selection part
+
+   Directory:
+	tixDirBox
+	tixExFileSelectBox, the "Directory" part
+
+   Pattern:
+	tixFileSelectBox, the "Pattern" part
+	tixExFileSelectBox, the "File" part
+
+   (B) Interfacing with application
+
+   These widgets support a -directory option
+
+	tixDirList
+	tixDirTree
+	tixFileSelectBox
+	tixExFileSelectBox
+
+   These widgets support a -pattern option
+	tixFileSelectBox
+	tixExFileSelectBox
+
+   (C) Displaying the file system in a single hierarchy
+
+	tixDirList
+	tixDirTree
+
+2. Issues:
+
+   (A) Unix:
+	Tilde expansion
+
+   (B) Windows:
+	No single file system  hierarchy.
+
+   (C) Both:
+	Need to translate relative pathnames, "." and ".."
+ 
+3. Reusuability:
+
+   Many widgets need to list directory, glob, display hierarchy. We
+   don't want to rewrite the same code again and again.
+
+
+4. API.
+
+   (A) Types of API
+
+   External interface: Takes an input from the user or from the
+   application and translate it to a canonical form.
+
+   Internal interface: operate on filenames that are in canonical
+   forms. There are run-time checking whether the filenames arein
+   canonical forms.
+
+   We have the two types of interfaces so that we don't need to
+   perform needless translations from "user form" to "canonical
+   form".
+
+
+   (B) API Consistency
+
+   External API always takes a filename in the native format and
+   return file names in the native format.
+
+
+   (C) Errors
+
+   User errors are reported in an error dialog. Application errors
+   triggers a TCL error return code.
+
+   There should be in-line comments stating whether an input is from
+   user or application.
+
+5. VPATH: virtual hierarchical path
+
+   Unix:
+
+     In Unix, a VPATH is the same as a file pathname.
+
+   Windows:
+
+     In Windows 3.1, a VPATH is "xx\" followed by a normalized DOS
+     file pathname. "xx" by itself is "My computer" and refers to the
+     root directory of the C: drive.
+
+     In Windows 95, a VPATH is "xx\xx\" followed by a normalized DOS
+     file pathname. "xx" by itself is "Desktop" and refers to
+     "C:\Windows\Desktop". "xx\xx" by itself is "My computer" and
+     refers to the root directory of the C: drive.
+
+     Normalization do not go into the virtual prefix. E.g.: the VPATH for
+     "C:\Windows\..\..\" is "xx\xx\C:", not "xx\xx".
+
+
+6. Normalization:
+
+   tixFSNorm context text defFile flagsVar errorMsgVar
+
+	This is the main function that translate a user input to
+	normalized (canonical) form.
+
+   Parameters:
+        context:VPATH
+	    The "current directory" under which the translation
+	    occurs. It is used only if text refers to a relative
+	    pathname.
+
+	    if context is the empty string, then text must refer to an
+	    absolute path.
+
+	text:string
+	    The (user/application) input that needs to be
+	    normalized. The exact mode of translation depends on the
+	    flags
+
+	defFile:string
+	    If the input is a directory, append this to the directory.
+
+	flagsVar: ref to array
+	    flag(noPattern): we don't want patterns. Treat all wild
+	    card characters as normal file names
+
+   Return value:
+	No error occurs: errorMsg is not set and a list of three
+	elements is returned:
+
+	index 0: the normalized path of the input
+	index 1: the VPATH of the directory.
+	index 2: file(s) in the directory.
+	index 3: pattern(s) in the directory.
+
+	Either index 1 or 2, or both, are empty strings. They cannot
+	be both non-empty.
+
+   A Normalized path:
+
+   1) is absolute
+   2) has no double slashes
+   3) has no trailing slashes
+   4) has no relative pathnames
+   5) has no tildes
+
+
+   file normalize directory
+
+	This is mainly used to check the validity of -directory option
+	of the widgets.
+
+   Parameter:
+	directory:
+	    Must be an existing absolute path.
+
+   Return value:
+	Returns normalized path. Error given when directory is not an
+	existing absolute path
+
+
+7. VPATH translation:
+
+   tixFSVPath pathname:		returns the VPATH of pathname
+   tixFSPath VPATH:		returns the pathname of VPATH
+
+
+8. Valid file names:
+
+   Should prompt to user about invalid filenames (E.g. In Windows,
+   names cannot contain "*")
+
+9. Creation prompt:
+
+   If user enters a file or directory that doesn't exist, promt to ask
+   whether he wants to create it.
+
+
+10. 

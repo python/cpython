@@ -1,0 +1,47 @@
+<HEAD>
+<TITLE> Choosing the Orientation and Number of Rows or Columns<A NAME=334>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html854 HREF=subsubsection3_5_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html852 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html846 HREF=subsubsection3_5_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html856 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html855 HREF=subsubsection3_5_3_5.html> Event Handling</A>
+<B>Up:</B> <A NAME=tex2html853 HREF=subsection3_5_3.html> Creating Display Items </A>
+<B> Previous:</B> <A NAME=tex2html847 HREF=subsubsection3_5_3_3.html> Configuring and Deleting </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00053400000000000000> Choosing the Orientation and Number of Rows or Columns<A NAME=334>&nbsp;</A></A></H3>
+<P>
+There are three options that controls the layout of the items in the
+  TixTList widget. The <tt>-orientation</tt> option can be set to either
+  vertical or horizontal. When <tt>-orientation</tt> is set to <tt>vertical</tt>,
+  the items are laid out vertically from top down and wrapped to the next
+  column when the bottom is reached (see figure 3-6). The opposite layout
+  policy is chosen if <tt>-orientation</tt> is set to <tt>horizontal</tt> (see
+  figure 3-6).
+<P>
+   When the <tt>-orientation</tt> option is set to <tt>vertical</tt>, normally
+  the number of columns displayed depends on the number of items in the
+  TixTList widget: the more items there are, the more columns will there
+  be. However, we can use the <tt>-columns</tt> option to control the number
+  of columns: the items will be wrapped in a way so that the number of
+  columns produced will be exactly as dicated by the <tt>-columns</tt> option.
+<P>
+   One use of the <tt>-columns</tt> option is to specify the same layout
+  policy as that of the standard Tk listbox widget. We can do this by
+  setting <tt>-orientation</tt> to vertical and <tt>-columns</tt> to <tt>1</tt>. This way we can get a replacement listbox widget that can
+  display multiple fonts and colors and graphics!
+<P>
+   The counterpart of the <tt>-columns</tt> option is the <tt>-rows</tt> option,
+  which is used for the same purpose when the <tt>-orientation</tt> option is
+  set to <tt>horizontal</tt>.
+<P>
+<blockquote> <P><CENTER><P><IMG ALIGN="LEFT" SRC="../gif/tix/tlist/vertical.gif"> <IMG ALIGN="LEFT" SRC="../gif/tix/tlist/horizontal.gif"><BR CLEAR=LEFT><CENTER>(Figure 3-6) The <tt>-orientation</tt> option of the TixSelect Widget<A NAME=36>&nbsp;</A></CENTER><P>
+  </CENTER>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

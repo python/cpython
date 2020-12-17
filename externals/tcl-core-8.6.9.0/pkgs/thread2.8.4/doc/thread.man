@@ -1,0 +1,611 @@
+[comment {-*- tcl -*- doctools manpage}]
+[manpage_begin thread n 2.8]
+[moddesc {Tcl Threading}]
+[titledesc {Extension for script access to Tcl threading}]
+[require Tcl 8.4]
+[require Thread [opt 2.8]]
+
+[description]
+The [package thread] extension creates threads that contain Tcl
+interpreters, and it lets you send scripts to those threads for
+evaluation.
+
+Additionally, it provides script-level access to basic thread
+synchronization primitives, like mutexes and condition variables.
+
+[section COMMANDS]
+This section describes commands for creating and destroying threads
+and sending scripts to threads for evaluation.
+
+
+
+[list_begin definitions]
+
+[call [cmd thread::create] [opt -joinable] [opt -preserved] [opt script]]
+
+This command creates a thread that contains a Tcl interpreter.
+The Tcl interpreter either evaluates the optional [option script], if
+specified, or it waits in the event loop for scripts that arrive via
+the [cmd thread::send] command. The result, if any, of the
+optional [option script] is never returned to the caller.
+The result of [cmd thread::create] is the ID of the thread. This is
+the opaque handle which identifies the newly created thread for
+all other package commands. The handle of the thread goes out of scope
+automatically when thread is marked for exit
+(see the [cmd thread::release] command below).
+
+[para]
+
+If the optional [option script] argument contains the [cmd thread::wait]
+command the thread will enter into the event loop. If such command is not
+found  in the [option script] the thread will run the [option script] to
+the end and exit. In that case, the handle may be safely ignored since it
+refers to a thread which does not exists any more at the time when the
+command returns.
+
+[para]
+
+Using flag [option -joinable] it is possible to create a joinable
+thread, i.e. one upon whose exit can be waited upon by using
+[cmd thread::join] command.
+Note that failure to join a thread created with [option -joinable] flag
+results in resource and memory leaks.
+
+
+[para]
+
+Threads created by the [cmd thread::create] cannot be destroyed
+forcefully. Consequently, there is no corresponding thread destroy
+command. A thread may only be released using the [cmd thread::release]
+and if its internal reference count drops to zero, the thread is
+marked for exit. This kicks the thread out of the event loop
+servicing and the thread continues to execute commands passed in
+the [option script] argument, following the [cmd thread::wait]
+command. If this was the last command in the script, as usually the
+case, the thread will exit.
+
+[para]
+
+It is possible to create a situation in which it may be impossible
+to terminate the thread, for example by putting some endless loop
+after the [cmd thread::wait] or entering the event loop again by
+doing an vwait-type of command. In such cases, the thread may never
+exit. This is considered to be a bad practice and should be avoided
+if possible. This is best illustrated by the example below:
+
+[example {
+    # You should never do ...
+    set tid [thread::create {
+        package require Http
+        thread::wait
+        vwait forever ; # <-- this!
+    }]
+}]
+
+The thread created in the above example will never be able to exit.
+After it has been released with the last matching [cmd thread::release]
+call, the thread will jump out of the [cmd thread::wait] and continue
+to execute commands following. It will enter [cmd vwait] command and
+wait endlessly for events. There is no way one can terminate such thread,
+so you wouldn't want to do this!
+
+[para]
+
+Each newly created has its internal reference counter set to 0 (zero),
+i.e. it is unreserved. This counter gets incremented by a call to
+[cmd thread::preserve] and decremented by a call to [cmd thread::release]
+command. These two commands implement simple but effective thread
+reservation system and offer predictable and controllable thread
+termination capabilities. It is however possible to create initially
+preserved threads by using flag [option -preserved] of the
+[cmd thread::create] command. Threads created with this flag have the
+initial value of the reference counter of 1 (one), and are thus
+initially marked reserved.
+
+
+[call [cmd thread::preserve] [opt id]]
+
+This command increments the thread reference counter. Each call
+to this command increments the reference counter by one (1).
+Command returns the value of the reference counter after the increment.
+If called with the optional thread [option id], the command preserves
+the given thread. Otherwise the current thread is preserved.
+
+[para]
+
+With reference counting, one can implement controlled access to a
+shared Tcl thread. By incrementing the reference counter, the
+caller signalizes that he/she wishes to use the thread for a longer
+period of time. By decrementing the counter, caller signalizes that
+he/she has finished using the thread.
+
+[call [cmd thread::release] [opt -wait] [opt id]]
+
+This command decrements the thread reference counter. Each call to
+this command decrements the reference counter by one (1).
+If called with the optional thread [option id], the command releases
+the given thread. Otherwise, the current thread is released.
+Command returns the value of the reference counter after the decrement.
+When the reference counter reaches zero (0), the target thread is
+marked for termination. You should not reference the thread after the
+[cmd thread::release] command returns zero or negative integer.
+The handle of the thread goes out of scope and should not be used any
+more. Any following reference to the same thread handle will result
+in Tcl error.
+
+[para]
+
+Optional flag [option -wait] instructs the caller thread to wait for
+the target thread to exit, if the effect of the command would result
+in termination of the target thread, i.e. if the return result would
+be zero (0). Without the flag, the caller thread does not wait for
+the target thread to exit. Care must be taken when using the
+[option -wait], since this may block the caller thread indefinitely.
+This option has been implemented for some special uses of the extension
+and is deprecated for regular use. Regular users should create joinable
+threads by using the [option -joinable] option of the [cmd thread::create]
+command and the [cmd thread::join] to wait for thread to exit.
+
+[call [cmd thread::id]]
+
+This command returns the ID of the current thread.
+
+[call [cmd thread::errorproc] [opt procname]]
+
+This command sets a handler for errors that occur in scripts sent
+asynchronously, using the [option -async] flag of the
+[cmd thread::send] command, to other threads. If no handler
+is specified, the current handler is returned. The empty string
+resets the handler to default (unspecified) value.
+An uncaught error in a thread causes an error message to be sent
+to the standard error channel. This default reporting scheme can
+be changed by registering a procedure which is called to report
+the error. The [arg procname] is called in the interpreter that
+invoked the [cmd thread::errorproc] command. The [arg procname]
+is called like this:
+
+[example {
+    myerrorproc thread_id errorInfo
+}]
+
+[call [cmd thread::cancel] [opt -unwind] [arg id] [opt result]]
+
+This command requires Tcl version 8.6 or higher.
+
+[para]
+
+Cancels the script being evaluated in the thread given by the [arg id]
+parameter. Without the [option -unwind] switch the evaluation stack for
+the interpreter is unwound until an enclosing catch command is found or
+there are no further invocations of the interpreter left on the call
+stack. With the [option -unwind] switch the evaluation stack for the
+interpreter is unwound without regard to any intervening catch command
+until there are no further invocations of the interpreter left on the
+call stack. If [arg result] is present, it will be used as the error
+message string; otherwise, a default error message string will be used.
+
+[call [cmd thread::unwind]]
+
+Use of this command is deprecated in favour of more advanced thread
+reservation system implemented with [cmd thread::preserve] and
+[cmd thread::release] commands. Support for [cmd thread::unwind]
+command will disappear in some future major release of the extension.
+[para]
+This command stops a prior [cmd thread::wait] command. Execution of
+the script passed to newly created thread will continue from the
+[cmd thread::wait] command. If [cmd thread::wait] was the last command
+in the script, the thread will exit. The command returns empty result
+but may trigger Tcl error with the message "target thread died" in some
+situations.
+
+
+[call [cmd thread::exit] [opt status]]
+
+Use of this command is deprecated in favour of more advanced thread
+reservation system implemented with [cmd thread::preserve] and
+[cmd thread::release] commands. Support for [cmd thread::exit]
+command will disappear in some future major release of the extension.
+[para]
+This command forces a thread stuck in the [cmd thread::wait] command to
+unconditionally exit. The thread's exit status defaults to 666 and can be
+specified using the optional [arg status] argument. The execution of
+[cmd thread::exit] command is guaranteed to leave the program memory in the
+inconsistent state, produce memory leaks and otherwise affect other subsystem(s)
+of the Tcl application in an unpredictable manner. The command returns empty
+result but may trigger Tcl error with the message "target thread died" in some
+situations.
+
+[call [cmd thread::names]]
+
+This command returns a list of thread IDs. These are only for
+threads that have been created via [cmd thread::create] command.
+If your application creates other threads at the C level, they
+are not reported by this command.
+
+
+[call [cmd thread::exists] [arg id]]
+
+Returns true (1) if thread given by the [arg id] parameter exists,
+false (0) otherwise. This applies only for threads that have
+been created via [cmd thread::create] command.
+
+
+[call [cmd thread::send] [opt -async] [opt -head] [arg id] [arg script] [opt varname]]
+
+This command passes a [arg script] to another thread and, optionally,
+waits for the result. If the [option -async] flag is specified, the
+command does not wait for the result and it returns empty string.
+The target thread must enter it's event loop in order to receive
+scripts sent via this command. This is done by default for threads
+created without a startup script. Threads can enter the event loop
+explicitly by calling [cmd thread::wait] or any other relevant Tcl/Tk
+command, like [cmd update], [cmd vwait], etc.
+
+[para]
+
+Optional [option varname] specifies name of the variable to store
+the result of the [arg script]. Without the [option -async] flag,
+the command returns the evaluation code, similarly to the standard
+Tcl [cmd catch] command. If, however, the [option -async] flag is
+specified, the command returns immediately and caller can later
+[cmd vwait] on [opt varname] to get the result of the passed [arg script]
+
+[example {
+    set t1 [thread::create]
+    set t2 [thread::create]
+    thread::send -async $t1 "set a 1" result
+    thread::send -async $t2 "set b 2" result
+    for {set i 0} {$i < 2} {incr i} {
+        vwait result
+    }
+}]
+
+In the above example, two threads were fed work and both of them were
+instructed to signalize the same variable "result" in the calling thread.
+The caller entered the event loop twice to get both results. Note,
+however, that the order of the received results may vary, depending on
+the current system load, type of work done, etc, etc.
+
+[para]
+
+Many threads can simultaneously send scripts to the target thread for
+execution. All of them are entered into the event queue of the target
+thread and executed on the FIFO basis, intermingled with optional other
+events pending in the event queue of the target thread.
+Using the optional [opt -head] switch, scripts posted to the thread's
+event queue can be placed on the head, instead on the tail of the queue,
+thus being executed in the LIFO fashion.
+
+
+[call [cmd thread::broadcast] [arg script]]
+
+This command passes a [arg script] to all threads created by the
+package for execution. It does not wait for response from any of
+the threads.
+
+[call [cmd thread::wait]]
+
+This enters the event loop so a thread can receive messages from
+the [cmd thread::send] command. This command should only be used
+within the script passed to the [cmd thread::create]. It should
+be the very last command in the script. If this is not the case,
+the exiting thread will continue executing the script lines past
+the [cmd thread::wait] which is usually not what you want and/or
+expect.
+
+[example {
+    set t1 [thread::create {
+        #
+        # Do some initialization work here
+        #
+        thread::wait ; # Enter the event loop
+    }]
+}]
+
+[call [cmd thread::eval] [opt {-lock mutex}] [arg arg] [opt {arg ...}]]
+
+This command concatenates passed arguments and evaluates the
+resulting script under the mutex protection. If no mutex is
+specified by using the [opt {-lock mutex}] optional argument,
+the internal static mutex is used.
+
+
+[call [cmd thread::join] [arg id]]
+
+This command waits for the thread with ID [arg id] to exit and
+then returns it's exit code. Errors will be returned for threads
+which are not joinable or already waited upon by another thread.
+Upon the join the handle of the thread has gone out of scope and
+should not be used any more.
+
+
+[call [cmd thread::configure] [arg id] [opt option] [opt value] [opt ...]]
+
+This command configures various low-level aspects of the thread with
+ID [arg id] in the similar way as the standard Tcl command
+[cmd fconfigure] configures some Tcl channel options. Options currently
+supported are: [option -eventmark] and [option -unwindonerror].
+
+[para]
+
+The [option -eventmark] option, when set, limits the number of
+asynchronously posted scripts to the thread event loop.
+The [cmd {thread::send -async}] command will block until the number
+of pending scripts in the event loop does not drop below the value
+configured with [option -eventmark]. Default value for the
+[option -eventmark] is 0 (zero) which effectively disables the checking,
+i.e. allows for unlimited number of posted scripts.
+
+[para]
+
+The [option -unwindonerror] option, when set, causes the
+target thread to unwind if the result of the script processing
+resulted in error. Default value for the [option -unwindonerror]
+is 0 (false), i.e. thread continues to process scripts after one
+of the posted scripts fails.
+
+
+[call [cmd thread::transfer] [arg id] [arg channel]]
+
+This moves the specified [arg channel] from the current thread
+and interpreter to the main interpreter of the thread with the
+given [arg id]. After the move the current interpreter has no
+access to the channel any more, but the main interpreter of the
+target thread will be able to use it from now on.
+The command waits until the other thread has incorporated the
+channel. Because of this it is possible to deadlock the
+participating threads by commanding the other through a
+synchronous [cmd thread::send] to transfer a channel to us.
+This easily extends into longer loops of threads waiting for
+each other. Other restrictions: the channel in question must
+not be shared among multiple interpreters running in the
+sending thread. This automatically excludes the special channels
+for standard input, output and error.
+
+[para]
+
+Due to the internal Tcl core implementation and the restriction on
+transferring shared channels, one has to take extra measures when
+transferring socket channels created by accepting the connection
+out of the [cmd socket] commands callback procedures:
+
+[example {
+    socket -server _Accept 2200
+    proc _Accept {s ipaddr port} {
+        after idle [list Accept $s $ipaddr $port]
+    }
+    proc Accept {s ipaddr port} {
+        set tid [thread::create]
+        thread::transfer $tid $s
+    }
+}]
+
+[call [cmd thread::detach] [arg channel]]
+
+This detaches the specified [arg channel] from the current thread and
+interpreter. After that, the current interpreter has no access to the
+channel any more. The channel is in the parked state until some other
+(or the same) thread attaches the channel again with [cmd thread::attach].
+Restrictions: same as for transferring shared channels with the
+[cmd thread::transfer] command.
+
+[call [cmd thread::attach] [arg channel]]
+
+This attaches the previously detached [arg channel] in the
+current thread/interpreter. For already existing channels,
+the command does nothing, i.e. it is not an error to attach the
+same channel more than once. The first operation will actually
+perform the operation, while all subsequent operation will just
+do nothing. Command throws error if the [arg channel] cannot be
+found in the list of detached channels and/or in the current
+interpreter.
+
+[call [cmd thread::mutex]]
+
+Mutexes are most common thread synchronization primitives.
+They are used to synchronize access from two or more threads to one or
+more shared resources. This command provides script-level access to
+exclusive and/or recursive mutexes. Exclusive mutexes can be locked
+only once by one thread, while recursive mutexes can be locked many
+times by the same thread. For recursive mutexes, number of lock and
+unlock operations must match, otherwise, the mutex will never be
+released, which would lead to various deadlock situations.
+[para]
+Care has to be taken when using mutexes in an multithreading program.
+Improper use of mutexes may lead to various deadlock situations,
+especially when using exclusive mutexes.
+
+[para]
+
+The [cmd thread::mutex] command supports following subcommands and options:
+
+[list_begin definitions]
+
+[call [cmd thread::mutex] [method create] [opt -recursive]]
+
+Creates the mutex and returns it's opaque handle. This handle
+should be used for any future reference to the newly created mutex.
+If no optional [opt -recursive] argument was specified, the command
+creates the exclusive mutex. With the [opt -recursive] argument,
+the command creates a recursive mutex.
+
+[call [cmd thread::mutex] [method destroy] [arg mutex]]
+
+Destroys the [arg mutex]. Mutex should be in unlocked state before
+the destroy attempt. If the mutex is locked, the command will throw
+Tcl error.
+
+[call [cmd thread::mutex] [method lock] [arg mutex]]
+
+Locks the [arg mutex]. Locking the exclusive mutex may throw Tcl
+error if on attempt to lock the same mutex twice from the same
+thread. If your program logic forces you to lock the same mutex
+twice or more from the same thread (this may happen in recursive
+procedure invocations) you should consider using the recursive mutexes.
+
+[call [cmd thread::mutex] [method unlock] [arg mutex]]
+
+Unlocks the [arg mutex] so some other thread may lock it again.
+Attempt to unlock the already unlocked mutex will throw Tcl error.
+
+[list_end]
+
+[para]
+
+[call [cmd thread::rwmutex]]
+
+This command creates many-readers/single-writer mutexes. Reader/writer
+mutexes allow you to serialize access to a shared resource more optimally.
+In situations where a shared resource gets mostly read and seldom modified,
+you might gain some performance by using reader/writer mutexes instead of
+exclusive or recursive mutexes.
+[para]
+For reading the resource, thread should obtain a read lock on the resource.
+Read lock is non-exclusive, meaning that more than one thread can
+obtain a read lock to the same resource, without waiting on other readers.
+For changing the resource, however, a thread must obtain a exclusive
+write lock. This lock effectively blocks all threads from gaining the
+read-lock while the resource is been modified by the writer thread.
+Only after the write lock has been released, the resource may be read-locked
+again.
+
+[para]
+
+The [cmd thread::rwmutex] command supports following subcommands and options:
+
+[list_begin definitions]
+
+[call [cmd thread::rwmutex] [method create]]
+
+Creates the reader/writer mutex and returns it's opaque handle.
+This handle should be used for any future reference to the newly
+created mutex.
+
+[call [cmd thread::rwmutex] [method destroy] [arg mutex]]
+
+Destroys the reader/writer [arg mutex]. If the mutex is already locked,
+attempt to destroy it will throw Tcl error.
+
+[call [cmd thread::rwmutex] [method rlock] [arg mutex]]
+
+Locks the [arg mutex] for reading. More than one thread may read-lock
+the same [arg mutex] at the same time.
+
+[call [cmd thread::rwmutex] [method wlock] [arg mutex]]
+
+Locks the [arg mutex] for writing. Only one thread may write-lock
+the same [arg mutex] at the same time. Attempt to write-lock same
+[arg mutex] twice from the same thread will throw Tcl error.
+
+[call [cmd thread::rwmutex] [method unlock] [arg mutex]]
+
+Unlocks the [arg mutex] so some other thread may lock it again.
+Attempt to unlock already unlocked [arg mutex] will throw Tcl error.
+
+[list_end]
+
+[para]
+
+[call [cmd thread::cond]]
+
+This command provides script-level access to condition variables.
+A condition variable creates a safe environment for the program
+to test some condition, sleep on it when false and be awakened
+when it might have become true. A condition variable is always
+used in the conjunction with an exclusive mutex. If you attempt
+to use other type of mutex in conjunction with the condition
+variable, a Tcl error will be thrown.
+
+[para]
+
+The command supports following subcommands and options:
+
+[list_begin definitions]
+
+[call [cmd thread::cond] [method create]]
+
+Creates the condition variable and returns it's opaque handle.
+This handle should be used for any future reference to newly
+created condition variable.
+
+[call [cmd thread::cond] [method destroy] [arg cond]]
+
+Destroys condition variable [arg cond]. Extreme care has to be taken
+that nobody is using (i.e. waiting on) the condition variable,
+otherwise unexpected errors may happen.
+
+[call [cmd thread::cond] [method notify] [arg cond]]
+
+Wakes up all threads waiting on the condition variable [arg cond].
+
+[call [cmd thread::cond] [method wait] [arg cond] [arg mutex] [opt ms]]
+
+This command is used to suspend program execution until the condition
+variable [arg cond] has been signalled or the optional timer has expired.
+The exclusive [arg mutex] must be locked by the calling thread on entrance
+to this command. If the mutex is not locked, Tcl error is thrown.
+While waiting on the [arg cond], the command releases [arg mutex].
+Before returning to the calling thread, the command re-acquires the
+[arg mutex] again. Unlocking the [arg mutex] and waiting on the
+condition variable [arg cond] is done atomically.
+
+[para]
+
+The [option ms] command option, if given, must be an integer specifying
+time interval in milliseconds the command waits to be signalled.
+Otherwise the command waits on condition notify forever.
+
+[para]
+
+In multithreading programs, there are many situations where a thread has
+to wait for some event to happen until it is allowed to proceed.
+This is usually accomplished by repeatedly testing a condition under the
+mutex protection and waiting on the condition variable until the condition
+evaluates to true:
+
+[example {
+    set mutex [thread::mutex create]
+    set cond  [thread::cond  create]
+
+    thread::mutex lock $mutex
+    while {<some_condition_is_true>} {
+        thread::cond wait $cond $mutex
+    }
+    # Do some work under mutex protection
+    thread::mutex unlock $mutex
+}]
+
+Repeated testing of the condition is needed since the condition variable
+may get signalled without the condition being actually changed (spurious
+thread wake-ups, for example).
+
+[list_end]
+
+[list_end]
+
+[section DISCUSSION]
+The fundamental threading model in Tcl is that there can be one or
+more Tcl interpreters per thread, but each Tcl interpreter should
+only be used by a single thread which created it.
+A "shared memory" abstraction is awkward to provide in Tcl because
+Tcl makes assumptions about variable and data ownership. Therefore
+this extension supports a simple form of threading where the main
+thread can manage several background, or "worker" threads.
+For example, an event-driven server can pass requests to worker
+threads, and then await responses from worker threads or new client
+requests. Everything goes through the common Tcl event loop, so
+message passing between threads works naturally with event-driven I/O,
+[cmd vwait] on variables, and so forth. For the transfer of bulk
+information it is possible to move channels between the threads.
+
+[para]
+
+For advanced multithreading scripts, script-level access to two
+basic synchronization primitives, mutex and condition variables,
+is also supported.
+
+[see_also tsv tpool ttrace [uri http://www.tcl.tk/doc/howto/thread_model.html]]
+
+[keywords thread events {message passing} synchronization mutex]
+
+[manpage_end]

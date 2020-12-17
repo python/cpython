@@ -1,0 +1,94 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_FontId 3 8.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_FontId, Tk_GetFontMetrics, Tk_PostscriptFontName \- accessor functions for
+fonts
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Font
+\fBTk_FontId(\fItkfont\fB)\fR
+.sp
+\fBTk_GetFontMetrics(\fItkfont, fmPtr\fB)\fR
+.sp
+int
+\fBTk_PostscriptFontName(\fItkfont, dsPtr\fB)\fR
+.SH ARGUMENTS
+.AS Tk_FontMetrics *dsPtr
+.AP Tk_Font tkfont in
+Opaque font token being queried.  Must have been returned by a previous
+call to \fBTk_GetFont\fR.
+.AP Tk_FontMetrics *fmPtr out
+Pointer to structure in which the font metrics for \fItkfont\fR will
+be stored. See \fBDATA STRUCTURES\fR below for details.
+.AP Tcl_DString *dsPtr out
+Pointer to an initialized \fBTcl_DString\fR to which the name of the
+Postscript font that corresponds to \fItkfont\fR will be appended.
+.BE
+.SH DESCRIPTION
+.PP
+Given a \fItkfont\fR, \fBTk_FontId\fR returns the token that should be
+selected into an XGCValues structure in order to construct a graphics
+context that can be used to draw text in the specified font.
+.PP
+\fBTk_GetFontMetrics\fR computes the ascent, descent, and linespace of the
+\fItkfont\fR in pixels and stores those values in the structure pointer to by
+\fIfmPtr\fR.  These values can be used in computations such as to space
+multiple lines of text, to align the baselines of text in different
+fonts, and to vertically align text in a given region.  See the
+documentation for the \fBfont\fR command for definitions of the terms
+ascent, descent, and linespace, used in font metrics.
+.PP
+\fBTk_PostscriptFontName\fR maps a \fItkfont\fR to the corresponding
+Postscript font name that should be used when printing.  The return value
+is the size in points of the \fItkfont\fR and the Postscript font name is
+appended to \fIdsPtr\fR.  \fIDsPtr\fR must refer to an initialized
+\fBTcl_DString\fR.  Given a
+.QW reasonable
+Postscript printer, the
+following screen font families should print correctly:
+.IP
+\fBAvant Garde\fR, \fBArial\fR, \fBBookman\fR, \fBCourier\fR,
+\fBCourier New\fR, \fBGeneva\fR, \fBHelvetica\fR, \fBMonaco\fR,
+\fBNew Century Schoolbook\fR, \fBNew York\fR, \fBPalatino\fR, \fBSymbol\fR,
+\fBTimes\fR, \fBTimes New Roman\fR, \fBZapf Chancery\fR, and
+\fBZapf Dingbats\fR.
+.PP
+Any other font families may not print correctly because the computed
+Postscript font name may be incorrect or not exist on the printer.
+.SH "DATA STRUCTURES"
+.PP
+The \fBTk_FontMetrics\fR data structure is used by \fBTk_GetFontMetrics\fR to
+return information about a font and is defined as follows:
+.CS
+typedef struct Tk_FontMetrics {
+    int \fIascent\fR;
+    int \fIdescent\fR;
+    int \fIlinespace\fR;
+} \fBTk_FontMetrics\fR;
+.CE
+.PP
+The \fIascent\fR field is the amount in pixels that the tallest
+letter sticks up above the baseline, plus any extra blank space added
+by the designer of the font.
+.PP
+The \fIdescent\fR is the largest amount in pixels that any letter
+sticks below the baseline, plus any extra blank space added by the
+designer of the font.
+.PP
+The \fIlinespace\fR is the sum of the ascent and descent.  How far
+apart two lines of text in the same font should be placed so that none
+of the characters in one line overlap any of the characters in the
+other line.
+.SH "SEE ALSO"
+font(n), MeasureChar(3)
+.SH KEYWORDS
+font, measurement, Postscript

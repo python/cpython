@@ -1,0 +1,145 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH itcl n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl \- object-oriented extensions to Tcl
+.BE
+
+.SH DESCRIPTION
+.PP
+\fB[incr\ Tcl]\fR provides object-oriented extensions to Tcl, much as
+C++ provides object-oriented extensions to C.  The emphasis of this
+work, however, is not to create a whiz-bang object-oriented
+programming environment.  Rather, it is to support more structured
+programming practices in Tcl without changing the flavor of the language.
+More than anything else, \fB[incr\ Tcl]\fR provides a means of
+encapsulating related procedures together with their shared data
+in a namespace that is hidden from the outside world.
+It encourages better programming by promoting the object-oriented
+"library" mindset.  It also allows for code re-use through inheritance.
+
+.SH CLASSES
+.PP
+The fundamental construct in \fB[incr\ Tcl]\fR is the class definition.
+Each class acts as a template for actual objects that can be created.
+Each object has its own unique bundle of data, which contains instances
+of the "variables" defined in the class.  Special procedures called
+"methods" are used to manipulate individual objects.  Methods are just
+like the operations that are used to manipulate Tk widgets.  The
+"\fBbutton\fR" widget, for example, has methods such as "flash" and
+"invoke" that cause a particular button to blink and invoke its command.
+.PP
+Within the body of a method, the "variables" defined in the class
+are automatically available.  They need not be declared with anything
+like the \fBglobal\fR command.  Within another class method, a method
+can be invoked like any other command\-simply by using its name.
+From any other context, the method name must be prefaced by an object
+name, which provides a context for the data that the method can access.
+.PP
+Each class has its own namespace containing things that are common
+to all objects which belong to the class.  For example, "common" data
+members are shared by all objects in the class.  They are global
+variables that exist in the class namespace, but since they are
+included in the class definition, they need not be declared using
+the \fBglobal\fR command; they are automatically available to any
+code executing in the class context.  A class can also create
+ordinary global variables, but these must be declared using the
+\fBglobal\fR command each time they are used.
+.PP
+Classes can also have ordinary procedures declared as "procs".
+Within another class method or proc, a proc can be invoked like
+any other command\-simply by using its name.  From any other context,
+the procedure name should be qualified with the class namespace
+like "\fIclassName\fB::\fIproc\fR".  Class procs execute in the
+class context, and therefore have automatic access to all "common"
+data members.  However, they cannot access object-specific "variables",
+since they are invoked without reference to any specific object.
+They are usually used to perform generic operations which affect
+all objects belonging to the class.
+.PP
+Each of the elements in a class can be declared "public", "protected"
+or "private".  Public elements can be accessed by the class, by
+derived classes (other classes that inherit this class), and by
+external clients that use the class.  Protected elements can be
+accessed by the class, and by derived classes.  Private elements
+are only accessible in the class where they are defined.
+.PP
+The "public" elements within a class define its interface to the
+external world.  Public methods define the operations that can
+be used to manipulate an object.  Public variables are recognized
+as configuration options by the "configure" and "cget" methods
+that are built into each class.  The public interface says
+\fIwhat\fR an object will do but not \fIhow\fR it will do it.
+Protected and private members, along with the bodies of class
+methods and procs, provide the implementation details.  Insulating
+the application developer from these details leaves the class designer
+free to change them at any time, without warning, and without affecting
+programs that rely on the class.  It is precisely this encapsulation
+that makes object-oriented programs easier to understand and maintain.
+.PP
+The fact that \fB[incr\ Tcl]\fR objects look like Tk widgets is
+no accident.  \fB[incr\ Tcl]\fR was designed this way, to blend
+naturally into a Tcl/Tk application.  But \fB[incr\ Tcl]\fR
+extends the Tk paradigm from being merely object-based to being
+fully object-oriented.  An object-oriented system supports
+inheritance, allowing classes to share common behaviors by
+inheriting them from an ancestor or base class.  Having a base
+class as a common abstraction allows a programmer to treat
+related classes in a similar manner.  For example, a toaster
+and a blender perform different (specialized) functions, but
+both share the abstraction of being appliances.  By abstracting
+common behaviors into a base class, code can be \fIshared\fR rather
+than \fIcopied\fR.  The resulting application is easier to
+understand and maintain, and derived classes (e.g., specialized
+appliances) can be added or removed more easily.
+.PP
+This description was merely a brief overview of object-oriented
+programming and \fB[incr\ Tcl]\fR.  A more tutorial introduction is
+presented in the paper included with this distribution.  See the
+\fBclass\fR command for more details on creating and using classes.
+
+.SH NAMESPACES
+.PP
+\fB[incr\ Tcl]\fR now includes a complete namespace facility.
+A namespace is a collection of commands and global variables that
+is kept apart from the usual global scope.  This allows Tcl code
+libraries to be packaged in a well-defined manner, and prevents
+unwanted interactions with other libraries.  A namespace can also
+have child namespaces within it, so one library can contain its
+own private copy of many other libraries.  A namespace can also
+be used to wrap up a group of related classes.  The global scope
+(named "\fC::\fR") is the root namespace for an interpreter; all
+other namespaces are contained within it.
+.PP
+See the \fBnamespace\fR command for details on creating and
+using namespaces.
+
+.SH MEGA-WIDGETS
+.PP
+Mega-widgets are high-level widgets that are constructed using
+Tk widgets as component parts, usually without any C code.  A
+fileselectionbox, for example, may have a few listboxes, some
+entry widgets and some control buttons.  These individual widgets
+are put together in a way that makes them act like one big
+widget.
+.PP
+\fB[incr\ Tk]\fR is a framework for building mega-widgets.  It
+uses \fB[incr\ Tcl]\fR to support the object paradigm, and adds
+base classes which provide default widget behaviors.  See the
+\fBitk\fR man page for more details.
+.PP
+\fB[incr\ Widgets]\fR is a library of mega-widgets built using
+\fB[incr\ Tk]\fR.  It contains more than 30 different widget
+classes that can be used right out of the box to build Tcl/Tk
+applications.  Each widget class has its own man page describing
+the features available.
+
+.SH KEYWORDS
+class, object, object-oriented, namespace, mega-widget

@@ -1,0 +1,74 @@
+# Commands covered:  various
+#
+# This file contains a collection of miscellaneous Tcl tests that
+# don't fit naturally in any of the other test files.  Many of these
+# tests are pathological cases that caused bugs in earlier Tcl
+# releases.
+#
+# Copyright (c) 1992-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testhashsystemhash [llength [info commands testhashsystemhash]]
+
+test misc-1.1 {error in variable ref. in command in array reference} {
+    proc tstProc {} {
+	global a
+    
+	set tst $a([winfo name $zz])
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+    }
+    set msg {}
+    list [catch tstProc msg] $msg
+} {1 {can't read "zz": no such variable}}
+test misc-1.2 {error in variable ref. in command in array reference} {
+    proc tstProc {} "
+	global a
+    
+	set tst \$a(\[winfo name \$\{zz)
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+	# this is a bogus comment
+    "
+    set msg {}
+    join [list [catch tstProc msg] $msg $::errorInfo] \n
+} [subst -novariables -nocommands {1
+missing close-brace for variable name
+missing close-brace for variable name
+    while executing
+"set tst $a([winfo name $\{"
+    (procedure "tstProc" line 4)
+    invoked from within
+"tstProc"}]
+
+for {set i 1} {$i<300} {incr i} {
+    test misc-2.$i {hash table with sys-alloc} testhashsystemhash \
+	    "testhashsystemhash $i" OK
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

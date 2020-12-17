@@ -1,0 +1,73 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_setPalette n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_setPalette, tk_bisque \- Modify the Tk color palette
+.SH SYNOPSIS
+\fBtk_setPalette \fIbackground\fR
+.sp
+\fBtk_setPalette \fIname value \fR?\fIname value ...\fR?
+.sp
+\fBtk_bisque\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtk_setPalette\fR procedure changes the color scheme for Tk.
+It does this by modifying the colors of existing widgets and by changing
+the option database so that future widgets will use the new color scheme.
+If \fBtk_setPalette\fR is invoked with a single argument, the
+argument is the name of a color to use as the normal background
+color;  \fBtk_setPalette\fR will compute a complete color palette
+from this background color.
+Alternatively, the arguments to \fBtk_setPalette\fR may consist of any number
+of \fIname\fR\-\fIvalue\fR pairs, where the first argument of the pair
+is the name of an option in the Tk option database and the second
+argument is the new value to use for that option.  The following
+database names are currently supported:
+.DS
+.ta 4c 8c
+\fBactiveBackground\fR	\fBforeground\fR	\fBselectColor\fR
+\fBactiveForeground\fR	\fBhighlightBackground\fR	\fBselectBackground\fR
+\fBbackground\fR	\fBhighlightColor\fR	\fBselectForeground\fR
+\fBdisabledForeground\fR	\fBinsertBackground\fR	\fBtroughColor\fR
+.DE
+\fBtk_setPalette\fR tries to compute reasonable defaults for any
+options that you do not specify.  You can specify options other
+than the above ones and Tk will change those options on widgets as
+well.  This feature may be useful if you are using custom widgets with
+additional color options.
+.PP
+Once it has computed the new value to use for each of the color options,
+\fBtk_setPalette\fR scans the widget hierarchy to modify the options
+of all existing widgets.  For each widget, it checks to see if any
+of the above options is defined for the widget.  If so, and if the
+option's current value is the default, then the value is changed;  if
+the option has a value other than the default, \fBtk_setPalette\fR
+will not change it.  The default for an option is the one provided by
+the widget (\fB[lindex [$w configure $option] 3]\fR) unless
+\fBtk_setPalette\fR has been run previously, in which case it is the
+value specified in the previous invocation of \fBtk_setPalette\fR.
+.PP
+After modifying all the widgets in the application, \fBtk_setPalette\fR
+adds options to the option database to change the defaults for
+widgets created in the future.  The new options are added at
+priority \fBwidgetDefault\fR, so they will be overridden by options
+from the .Xdefaults file or options specified on the command-line
+that creates a widget.
+.PP
+The procedure \fBtk_bisque\fR is provided for backward compatibility:
+it restores the application's colors to the light brown
+.PQ bisque
+color scheme used in Tk 3.6 and earlier versions.
+.SH KEYWORDS
+bisque, color, palette
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,383 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 1998-1999 Scriptics Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_RegExpMatch, Tcl_RegExpCompile, Tcl_RegExpExec, Tcl_RegExpRange, Tcl_GetRegExpFromObj, Tcl_RegExpMatchObj, Tcl_RegExpExecObj, Tcl_RegExpGetInfo \- Pattern matching with regular expressions
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_RegExpMatchObj\fR(\fIinterp\fR, \fItextObj\fR, \fIpatObj\fR)
+.sp
+int
+\fBTcl_RegExpMatch\fR(\fIinterp\fR, \fItext\fR, \fIpattern\fR)
+.sp
+Tcl_RegExp
+\fBTcl_RegExpCompile\fR(\fIinterp\fR, \fIpattern\fR)
+.sp
+int
+\fBTcl_RegExpExec\fR(\fIinterp\fR, \fIregexp\fR, \fItext\fR, \fIstart\fR)
+.sp
+void
+\fBTcl_RegExpRange\fR(\fIregexp\fR, \fIindex\fR, \fIstartPtr\fR, \fIendPtr\fR)
+.sp
+Tcl_RegExp
+\fBTcl_GetRegExpFromObj\fR(\fIinterp\fR, \fIpatObj\fR, \fIcflags\fR)
+.sp
+int
+\fBTcl_RegExpExecObj\fR(\fIinterp\fR, \fIregexp\fR, \fItextObj\fR, \fIoffset\fR, \fInmatches\fR, \fIeflags\fR)
+.sp
+void
+\fBTcl_RegExpGetInfo\fR(\fIregexp\fR, \fIinfoPtr\fR)
+.fi
+.SH ARGUMENTS
+.AS Tcl_RegExpInfo *interp in/out
+.AP Tcl_Interp *interp in
+Tcl interpreter to use for error reporting.  The interpreter may be
+NULL if no error reporting is desired.
+.AP Tcl_Obj *textObj in/out
+Refers to the value from which to get the text to search.  The
+internal representation of the value may be converted to a form that
+can be efficiently searched.
+.AP Tcl_Obj *patObj in/out
+Refers to the value from which to get a regular expression. The
+compiled regular expression is cached in the value.
+.AP char *text in
+Text to search for a match with a regular expression.
+.AP "const char" *pattern in
+String in the form of a regular expression pattern.
+.AP Tcl_RegExp regexp in
+Compiled regular expression.  Must have been returned previously
+by \fBTcl_GetRegExpFromObj\fR or \fBTcl_RegExpCompile\fR.
+.AP char *start in
+If \fItext\fR is just a portion of some other string, this argument
+identifies the beginning of the larger string.
+If it is not the same as \fItext\fR, then no
+.QW \fB^\fR
+matches will be allowed.
+.AP int index in
+Specifies which range is desired:  0 means the range of the entire
+match, 1 or greater means the range that matched a parenthesized
+sub-expression.
+.AP "const char" **startPtr out
+The address of the first character in the range is stored here, or
+NULL if there is no such range.
+.AP "const char" **endPtr out
+The address of the character just after the last one in the range
+is stored here, or NULL if there is no such range.
+.AP int cflags in
+OR-ed combination of the compilation flags \fBTCL_REG_ADVANCED\fR,
+\fBTCL_REG_EXTENDED\fR, \fBTCL_REG_BASIC\fR, \fBTCL_REG_EXPANDED\fR,
+\fBTCL_REG_QUOTE\fR, \fBTCL_REG_NOCASE\fR, \fBTCL_REG_NEWLINE\fR,
+\fBTCL_REG_NLSTOP\fR, \fBTCL_REG_NLANCH\fR, \fBTCL_REG_NOSUB\fR, and
+\fBTCL_REG_CANMATCH\fR. See below for more information.
+.AP int offset in
+The character offset into the text where matching should begin.
+The value of the offset has no impact on \fB^\fR matches.  This
+behavior is controlled by \fIeflags\fR.
+.AP int nmatches in
+The number of matching subexpressions that should be remembered for
+later use.  If this value is 0, then no subexpression match
+information will be computed.  If the value is \-1, then
+all of the matching subexpressions will be remembered.  Any other
+value will be taken as the maximum number of subexpressions to
+remember.
+.AP int eflags in
+OR-ed combination of the execution flags \fBTCL_REG_NOTBOL\fR and
+\fBTCL_REG_NOTEOL\fR. See below for more information.
+.AP Tcl_RegExpInfo *infoPtr out
+The address of the location where information about a previous match
+should be stored by \fBTcl_RegExpGetInfo\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_RegExpMatch\fR determines whether its \fIpattern\fR argument
+matches \fIregexp\fR, where \fIregexp\fR is interpreted
+as a regular expression using the rules in the \fBre_syntax\fR
+reference page.
+If there is a match then \fBTcl_RegExpMatch\fR returns 1.
+If there is no match then \fBTcl_RegExpMatch\fR returns 0.
+If an error occurs in the matching process (e.g. \fIpattern\fR
+is not a valid regular expression) then \fBTcl_RegExpMatch\fR
+returns \-1 and leaves an error message in the interpreter result.
+\fBTcl_RegExpMatchObj\fR is similar to \fBTcl_RegExpMatch\fR except it
+operates on the Tcl values \fItextObj\fR and \fIpatObj\fR instead of
+UTF strings.
+\fBTcl_RegExpMatchObj\fR is generally more efficient than
+\fBTcl_RegExpMatch\fR, so it is the preferred interface.
+.PP
+\fBTcl_RegExpCompile\fR, \fBTcl_RegExpExec\fR, and \fBTcl_RegExpRange\fR
+provide lower-level access to the regular expression pattern matcher.
+\fBTcl_RegExpCompile\fR compiles a regular expression string into
+the internal form used for efficient pattern matching.
+The return value is a token for this compiled form, which can be
+used in subsequent calls to \fBTcl_RegExpExec\fR or \fBTcl_RegExpRange\fR.
+If an error occurs while compiling the regular expression then
+\fBTcl_RegExpCompile\fR returns NULL and leaves an error message
+in the interpreter result.
+Note:  the return value from \fBTcl_RegExpCompile\fR is only valid
+up to the next call to \fBTcl_RegExpCompile\fR;  it is not safe to
+retain these values for long periods of time.
+.PP
+\fBTcl_RegExpExec\fR executes the regular expression pattern matcher.
+It returns 1 if \fItext\fR contains a range of characters that
+match \fIregexp\fR, 0 if no match is found, and
+\-1 if an error occurs.
+In the case of an error, \fBTcl_RegExpExec\fR leaves an error
+message in the interpreter result.
+When searching a string for multiple matches of a pattern,
+it is important to distinguish between the start of the original
+string and the start of the current search.
+For example, when searching for the second occurrence of a
+match, the \fItext\fR argument might point to the character
+just after the first match;  however, it is important for the
+pattern matcher to know that this is not the start of the entire string,
+so that it does not allow
+.QW \fB^\fR
+atoms in the pattern to match.
+The \fIstart\fR argument provides this information by pointing
+to the start of the overall string containing \fItext\fR.
+\fIStart\fR will be less than or equal to \fItext\fR;  if it
+is less than \fItext\fR then no \fB^\fR matches will be allowed.
+.PP
+\fBTcl_RegExpRange\fR may be invoked after \fBTcl_RegExpExec\fR
+returns;  it provides detailed information about what ranges of
+the string matched what parts of the pattern.
+\fBTcl_RegExpRange\fR returns a pair of pointers in \fI*startPtr\fR
+and \fI*endPtr\fR that identify a range of characters in
+the source string for the most recent call to \fBTcl_RegExpExec\fR.
+\fIIndex\fR indicates which of several ranges is desired:
+if \fIindex\fR is 0, information is returned about the overall range
+of characters that matched the entire pattern;  otherwise,
+information is returned about the range of characters that matched the
+\fIindex\fR'th parenthesized subexpression within the pattern.
+If there is no range corresponding to \fIindex\fR then NULL
+is stored in \fI*startPtr\fR and \fI*endPtr\fR.
+.PP
+\fBTcl_GetRegExpFromObj\fR, \fBTcl_RegExpExecObj\fR, and
+\fBTcl_RegExpGetInfo\fR are value interfaces that provide the most
+direct control of Henry Spencer's regular expression library.  For
+users that need to modify compilation and execution options directly,
+it is recommended that you use these interfaces instead of calling the
+internal regexp functions.  These interfaces handle the details of UTF
+to Unicode translations as well as providing improved performance
+through caching in the pattern and string values.
+.PP
+\fBTcl_GetRegExpFromObj\fR attempts to return a compiled regular
+expression from the \fIpatObj\fR.  If the value does not already
+contain a compiled regular expression it will attempt to create one
+from the string in the value and assign it to the internal
+representation of the \fIpatObj\fR.  The return value of this function
+is of type \fBTcl_RegExp\fR.  The return value is a token for this
+compiled form, which can be used in subsequent calls to
+\fBTcl_RegExpExecObj\fR or \fBTcl_RegExpGetInfo\fR.  If an error
+occurs while compiling the regular expression then
+\fBTcl_GetRegExpFromObj\fR returns NULL and leaves an error message in
+the interpreter result.  The regular expression token can be used as
+long as the internal representation of \fIpatObj\fR refers to the
+compiled form.  The \fIcflags\fR argument is a bit-wise OR of
+zero or more of the following flags that control the compilation of
+\fIpatObj\fR:
+.RS 2
+.TP
+\fBTCL_REG_ADVANCED\fR
+Compile advanced regular expressions
+.PQ ARE s .
+This mode corresponds to
+the normal regular expression syntax accepted by the Tcl \fBregexp\fR and
+\fBregsub\fR commands.
+.TP
+\fBTCL_REG_EXTENDED\fR
+Compile extended regular expressions
+.PQ ERE s .
+This mode corresponds
+to the regular expression syntax recognized by Tcl 8.0 and earlier
+versions.
+.TP
+\fBTCL_REG_BASIC\fR
+Compile basic regular expressions
+.PQ BRE s .
+This mode corresponds
+to the regular expression syntax recognized by common Unix utilities
+like \fBsed\fR and \fBgrep\fR.  This is the default if no flags are
+specified.
+.TP
+\fBTCL_REG_EXPANDED\fR
+Compile the regular expression (basic, extended, or advanced) using an
+expanded syntax that allows comments and whitespace.  This mode causes
+non-backslashed non-bracket-expression white
+space and #-to-end-of-line comments to be ignored.
+.TP
+\fBTCL_REG_QUOTE\fR
+Compile a literal string, with all characters treated as ordinary characters.
+.TP
+\fBTCL_REG_NOCASE\fR
+Compile for matching that ignores upper/lower case distinctions.
+.TP
+\fBTCL_REG_NEWLINE\fR
+Compile for newline-sensitive matching.  By default, newline is a
+completely ordinary character with no special meaning in either
+regular expressions or strings.  With this flag,
+.QW [^
+bracket expressions and
+.QW .
+never match newline,
+.QW ^
+matches an empty string
+after any newline in addition to its normal function, and
+.QW $
+matches
+an empty string before any newline in addition to its normal function.
+\fBREG_NEWLINE\fR is the bit-wise OR of \fBREG_NLSTOP\fR and
+\fBREG_NLANCH\fR.
+.TP
+\fBTCL_REG_NLSTOP\fR
+Compile for partial newline-sensitive matching,
+with the behavior of
+.QW [^
+bracket expressions and
+.QW .
+affected, but not the behavior of
+.QW ^
+and
+.QW $ .
+In this mode,
+.QW [^
+bracket expressions and
+.QW .
+never match newline.
+.TP
+\fBTCL_REG_NLANCH\fR
+Compile for inverse partial newline-sensitive matching,
+with the behavior of
+.QW ^
+and
+.QW $
+(the
+.QW anchors )
+affected, but not the behavior of
+.QW [^
+bracket expressions and
+.QW . .
+In this mode
+.QW ^
+matches an empty string
+after any newline in addition to its normal function, and
+.QW $
+matches
+an empty string before any newline in addition to its normal function.
+.TP
+\fBTCL_REG_NOSUB\fR
+Compile for matching that reports only success or failure,
+not what was matched.  This reduces compile overhead and may improve
+performance.  Subsequent calls to \fBTcl_RegExpGetInfo\fR or
+\fBTcl_RegExpRange\fR will not report any match information.
+.TP
+\fBTCL_REG_CANMATCH\fR
+Compile for matching that reports the potential to complete a partial
+match given more text (see below).
+.RE
+.PP
+Only one of
+\fBTCL_REG_EXTENDED\fR,
+\fBTCL_REG_ADVANCED\fR,
+\fBTCL_REG_BASIC\fR, and
+\fBTCL_REG_QUOTE\fR may be specified.
+.PP
+\fBTcl_RegExpExecObj\fR executes the regular expression pattern
+matcher.  It returns 1 if \fIobjPtr\fR contains a range of characters
+that match \fIregexp\fR, 0 if no match is found, and \-1 if an error
+occurs.  In the case of an error, \fBTcl_RegExpExecObj\fR leaves an
+error message in the interpreter result.  The \fInmatches\fR value
+indicates to the matcher how many subexpressions are of interest.  If
+\fInmatches\fR is 0, then no subexpression match information is
+recorded, which may allow the matcher to make various optimizations.
+If the value is \-1, then all of the subexpressions in the pattern are
+remembered.  If the value is a positive integer, then only that number
+of subexpressions will be remembered.  Matching begins at the
+specified Unicode character index given by \fIoffset\fR.  Unlike
+\fBTcl_RegExpExec\fR, the behavior of anchors is not affected by the
+offset value.  Instead the behavior of the anchors is explicitly
+controlled by the \fIeflags\fR argument, which is a bit-wise OR of
+zero or more of the following flags:
+.RS 2
+.TP
+\fBTCL_REG_NOTBOL\fR
+The starting character will not be treated as the beginning of a
+line or the beginning of the string, so
+.QW ^
+will not match there.
+Note that this flag has no effect on how
+.QW \fB\eA\fR
+matches.
+.TP
+\fBTCL_REG_NOTEOL\fR
+The last character in the string will not be treated as the end of a
+line or the end of the string, so
+.QW $
+will not match there.
+Note that this flag has no effect on how
+.QW \fB\eZ\fR
+matches.
+.RE
+.PP
+\fBTcl_RegExpGetInfo\fR retrieves information about the last match
+performed with a given regular expression \fIregexp\fR.  The
+\fIinfoPtr\fR argument contains a pointer to a structure that is
+defined as follows:
+.PP
+.CS
+typedef struct Tcl_RegExpInfo {
+    int \fInsubs\fR;
+    Tcl_RegExpIndices *\fImatches\fR;
+    long \fIextendStart\fR;
+} \fBTcl_RegExpInfo\fR;
+.CE
+.PP
+The \fInsubs\fR field contains a count of the number of parenthesized
+subexpressions within the regular expression.  If the \fBTCL_REG_NOSUB\fR
+was used, then this value will be zero.  The \fImatches\fR field
+points to an array of \fInsubs\fR+1 values that indicate the bounds of each
+subexpression matched.  The first element in the array refers to the
+range matched by the entire regular expression, and subsequent elements
+refer to the parenthesized subexpressions in the order that they
+appear in the pattern.  Each element is a structure that is defined as
+follows:
+.PP
+.CS
+typedef struct Tcl_RegExpIndices {
+    long \fIstart\fR;
+    long \fIend\fR;
+} \fBTcl_RegExpIndices\fR;
+.CE
+.PP
+The \fIstart\fR and \fIend\fR values are Unicode character indices
+relative to the offset location within \fIobjPtr\fR where matching began.
+The \fIstart\fR index identifies the first character of the matched
+subexpression.  The \fIend\fR index identifies the first character
+after the matched subexpression.  If the subexpression matched the
+empty string, then \fIstart\fR and \fIend\fR will be equal.  If the
+subexpression did not participate in the match, then \fIstart\fR and
+\fIend\fR will be set to \-1.
+.PP
+The \fIextendStart\fR field in \fBTcl_RegExpInfo\fR is only set if the
+\fBTCL_REG_CANMATCH\fR flag was used.  It indicates the first
+character in the string where a match could occur.  If a match was
+found, this will be the same as the beginning of the current match.
+If no match was found, then it indicates the earliest point at which a
+match might occur if additional text is appended to the string.  If it
+is no match is possible even with further text, this field will be set
+to \-1.
+.SH "SEE ALSO"
+re_syntax(n)
+.SH KEYWORDS
+match, pattern, regular expression, string, subexpression, Tcl_RegExpIndices, Tcl_RegExpInfo

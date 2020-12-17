@@ -1,0 +1,17 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  infback.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  testzlib.c
+  trees.c
+  uncompr.c
+  zutil.c
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 71 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  testzlib.vcxproj -> C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc12\x86\TestZlibReleaseWithoutAsm\testzlib.exe

@@ -1,0 +1,174 @@
+Tcl Mac OS X README
+-------------------
+
+This is the README file for the Mac OS X/Darwin version of Tcl.
+
+
+1. Where to go for support
+--------------------------
+
+- The tcl-mac mailing list on sourceforge is the best place to ask questions
+specific to Tcl & Tk on Mac OS X:
+	http://lists.sourceforge.net/lists/listinfo/tcl-mac
+(this page also has a link to searchable archives of the list, please check them
+before asking on the list, many questions have already been answered).
+
+- For general Tcl/Tk questions, the newsgroup comp.lang.tcl is your best bet:
+	http://groups.google.com/group/comp.lang.tcl/
+
+- The Tcl'ers Wiki also has many pages dealing with Tcl & Tk on Mac OS X, see
+	http://wiki.tcl.tk/_/ref?N=3753
+	http://wiki.tcl.tk/_/ref?N=8361
+
+- Please report bugs with Tcl on Mac OS X to the tracker:
+	http://core.tcl.tk/tcl/reportlist
+
+2. Using Tcl on Mac OS X
+------------------------
+
+- At a minimum, Mac OS X 10.3 is required to run Tcl.
+
+- Unless weak-linking is used, Tcl built on Mac OS X 10.x will not run on 10.y
+with y < x; on the other hand Tcl built on 10.y will always run on 10.x with
+y <= x (but without any of the fixes and optimizations that would be available
+in a binary built on 10.x).
+Weak-linking is available on OS X 10.2 or later, it additionally allows Tcl
+built on 10.x to run on any 10.y with x > y >= z (for a chosen z >= 2).
+
+- Tcl extensions can be installed in any of:
+	$HOME/Library/Tcl /Library/Tcl /System/Library/Tcl
+	$HOME/Library/Frameworks /Library/Frameworks /System/Library/Frameworks
+	(searched in that order).
+Given a potential package directory $pkg, Tcl on OSX checks for the file
+$pkg/Resources/Scripts/pkgIndex.tcl as well as the usual $pkg/pkgIndex.tcl.
+This allows building extensions as frameworks with all script files contained in
+the Resources/Scripts directory of the framework.
+
+- [load]able binary extensions can linked as either ordinary shared libraries
+(.dylib) or as MachO bundles (since 8.4.10/8.5a3); bundles have the advantage
+that they are [load]ed more efficiently from a tcl VFS (no temporary copy to the
+native filesystem required), and prior to Mac OS X 10.5, only bundles can be
+[unload]ed.
+
+- The 'deploy' target of macosx/GNUmakefile installs the html manpages into the
+standard documentation location in the Tcl framework:
+	Tcl.framework/Resources/Documentation/Reference/Tcl
+No nroff manpages are installed by default by the GNUmakefile.
+
+- The Tcl framework can be installed in any of the system's standard
+framework directories:
+	$HOME/Library/Frameworks /Library/Frameworks /System/Library/Frameworks
+
+
+3. Building Tcl on Mac OS X
+---------------------------
+
+- At least Mac OS X 10.3 is required to build Tcl.
+Apple's Xcode Developer Tools need to be installed (only the most recent version
+matching your OS release is supported), the Xcode installer is available on Mac
+OS X install media or may be present in /Applications/Installers on Macs that
+came with OS X preinstalled. The most recent version can always be downloaded
+from the ADC website http://connect.apple.com (free ADC membership required).
+
+- Tcl is most easily built as a Mac OS X framework via GNUmakefile in tcl/macosx
+(see below for details), but can also be built with the standard unix configure
+and make buildsystem in tcl/unix as on any other unix platform (indeed, the
+GNUmakefile is just a wrapper around the unix buildsystem).
+The Mac OS X specific configure flags are --enable-framework and
+--disable-corefoundation (which disables CF and notably reverts to the standard
+select based notifier).
+
+- It is also possible to build with the Xcode IDE via the projects in
+tcl/macosx, take care to use the project matching your DevTools and OS version:
+	Tcl.xcode: 		    for Xcode 3.1 on 10.5
+	Tcl.xcodeproj:		    for Xcode 3.2 on 10.6
+These have the following targets:
+	Tcl:			    calls through to tcl/macosx/GNUMakefile.
+	tcltest:		    static build of tcltest for debugging.
+	tests:			    build tcltest target and run tcl testsuite.
+The following build configurations are available:
+	Debug:			    debug build for the active architecture,
+				    with Fix & Continue enabled.
+	Debug clang:		    use clang compiler.
+	Debug llvm-gcc:		    use llvm-gcc compiler.
+	Debug gcc40:		    use gcc 4.0 compiler.
+	DebugNoFixAndContinue:      disable Fix & Continue.
+	DebugUnthreaded:	    disable threading.
+	DebugNoCF:		    disable corefoundation.
+	DebugNoCFUnthreaded:	    disable corefoundation an threading.
+	DebugMemCompile:	    enable memory and bytecode debugging.
+	DebugLeaks:		    define PURIFY.
+	DebugGCov:		    enable generation of gcov data files.
+	Debug64bit:		    configure with --enable-64bit (requires
+				    building on a 64bit capable processor).
+	Release:		    release build for the active architecture.
+	ReleaseUniversal:	    32/64-bit universal build.
+	ReleaseUniversal clang:	    use clang compiler.
+	ReleaseUniversal llvm-gcc:  use llvm-gcc compiler.
+	ReleaseUniversal gcc40:	    use gcc 4.0 compiler.
+	ReleaseUniversal10.5SDK:    build against the 10.5 SDK (with 10.5
+				    deployment target).
+	Note that the non-SDK configurations have their deployment target set to
+	10.5 (Tcl.xcode) resp. 10.6 (Tcl.xcodeproj).
+The Xcode projects refer to the toplevel tcl source directory via the
+TCL_SRCROOT user build setting, by default this is set to the project-relative
+path '../../tcl', if your tcl source directory is named differently, e.g.
+'../../tcl8.6', you need to manually change the TCL_SRCROOT setting by editing
+your ${USER}.pbxuser file (located inside the Tcl.xcodeproj bundle directory)
+with a text editor.
+
+- To build universal binaries outside of the Xcode IDE, set CFLAGS as follows:
+	export CFLAGS="-arch i386 -arch x86_64 -arch ppc"
+This requires Mac OS X 10.4 and Xcode 2.4 (or Xcode 2.2 if -arch x86_64 is
+omitted, but _not_ Xcode 2.1) and will work on any architecture (on PowerPC
+Tiger you need to add "-isysroot /Developer/SDKs/MacOSX10.4u.sdk").
+Note that configure requires CFLAGS to contain a least one architecture that can
+be run on the build machine (i.e. ppc on G3/G4, ppc or ppc64 on G5, ppc or i386
+on Core and ppc, i386 or x86_64 on Core2/Xeon).
+Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
+above, they will be [load]able by universal as well as thin binaries of Tcl.
+
+- To enable weak-linking, set the MACOSX_DEPLOYMENT_TARGET environment variable
+to the minimal OS version the binaries should be able to run on, e.g:
+	export MACOSX_DEPLOYMENT_TARGET=10.4
+This requires at least gcc 3.1; with gcc 4 or later, set/add to CFLAGS instead:
+	export CFLAGS="-mmacosx-version-min=10.4"
+Support for weak-linking was added with 8.4.14/8.5a5.
+
+Detailed Instructions for building with macosx/GNUmakefile
+----------------------------------------------------------
+
+- Unpack the Tcl source release archive.
+
+- The following instructions assume the Tcl source tree is named "tcl${ver}",
+(where ${ver} is a shell variable containing the Tcl version number e.g. '8.6').
+Setup this shell variable as follows:
+	ver="8.6"
+If you are building from CVS, omit this step (CVS source tree names usually do
+not contain a version number).
+
+- Setup environment variables as desired, e.g. for a universal build on 10.5:
+	CFLAGS="-arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.5"
+	export CFLAGS
+
+- Change to the directory containing the Tcl source tree and build:
+	make -C tcl${ver}/macosx
+
+- Install Tcl onto the root volume (admin password required):
+	sudo make -C tcl${ver}/macosx install
+if you don't have an admin password, you can install into your home directory
+instead by passing an INSTALL_ROOT argument to make:
+	make -C tcl${ver}/macosx install INSTALL_ROOT="${HOME}/"
+
+- The default GNUmakefile targets will build _both_ debug and optimized versions
+of the Tcl framework with the standard convention of naming the debug library
+Tcl.framework/Tcl_debug.
+This allows switching to the debug libraries at runtime by setting
+	export DYLD_IMAGE_SUFFIX=_debug
+(c.f. man dyld for more details)
+
+If you only want to build and install the debug or optimized build, use the
+'develop' or 'deploy' target variants of the GNUmakefile, respectively.
+For example, to build and install only the optimized versions:
+	make -C tcl${ver}/macosx deploy
+	sudo make -C tcl${ver}/macosx install-deploy

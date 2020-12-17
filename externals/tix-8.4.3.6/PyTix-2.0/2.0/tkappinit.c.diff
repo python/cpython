@@ -1,0 +1,36 @@
+*** tkappinit.c.dist	Mon Oct 16 14:49:34 2000
+--- tkappinit.c	Wed Nov 22 02:00:13 2000
+***************
+*** 25,32 ****
+--- 25,34 ----
+  	if (Tk_Init (interp) == TCL_ERROR)
+  		return TCL_ERROR;
+  
++ 
+          main_window = Tk_MainWindow(interp);
+  
++    
+  #ifdef WITH_MOREBUTTONS
+  	{
+  		extern Tcl_CmdProc studButtonCmd;
+***************
+*** 60,66 ****
+          {
+                  extern int Tix_Init(Tcl_Interp *interp);
+                  extern int Tix_SafeInit(Tcl_Interp *interp);
+!                 Tcl_StaticPackage(NULL, "Tix", Tix_Init, Tix_SafeInit);
+          }
+  #endif
+  
+--- 62,72 ----
+          {
+                  extern int Tix_Init(Tcl_Interp *interp);
+                  extern int Tix_SafeInit(Tcl_Interp *interp);
+! 
+! 	        if (Tix_Init(interp) == TCL_ERROR) {
+! 	            return TCL_ERROR;
+! 		}
+! 	        Tcl_StaticPackage(interp, "Tix", Tix_Init, Tix_SafeInit);
+          }
+  #endif
+  

@@ -1,0 +1,106 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH itclvars n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itclvars \- variables used by [incr\ Tcl]
+.BE
+
+.SH DESCRIPTION
+.PP
+The following global variables are created and managed automatically
+by the \fB[incr\ Tcl]\fR library.  Except where noted below, these
+variables should normally be treated as read-only by application-specific
+code and by users.
+.TP
+\fBitcl::library\fR
+.
+When an interpreter is created, \fB[incr\ Tcl]\fR initializes this variable
+to hold the name of a directory containing the system library of
+\fB[incr\ Tcl]\fR scripts.  The initial value of \fBitcl::library\fR
+is set from the ITCL_LIBRARY environment variable if it exists,
+or from a compiled-in value otherwise.
+.TP
+\fBitcl::patchLevel\fR
+.
+When an interpreter is created, \fB[incr\ Tcl]\fR initializes this
+variable to hold the current patch level for \fB[incr\ Tcl]\fR.
+For example, the value "\fB2.0p1\fR" indicates \fB[incr\ Tcl]\fR
+version 2.0 with the first set of patches applied.
+.TP
+\fBitcl::purist\fR
+.
+When an interpreter is created containing Tcl/Tk and the
+\fB[incr\ Tcl]\fR namespace facility, this variable controls
+a "backward-compatibility" mode for widget access.
+.RS
+.PP
+In vanilla Tcl/Tk, there is a single pool of commands, so the
+access command for a widget is the same as the window name.
+When a widget is created within a namespace, however, its access
+command is installed in that namespace, and should be accessed
+outside of the namespace using a qualified name.  For example,
+.PP
+.CS
+namespace foo {
+    namespace bar {
+        button .b -text "Testing"
+    }
+}
+foo::bar::.b configure -background red
+pack .b
+.CE
+.PP
+Note that the window name "\fC.b\fR" is still used in conjunction
+with commands like \fBpack\fR and \fBdestroy\fR.  However, the
+access command for the widget (i.e., name that appears as the
+\fIfirst\fR argument on a command line) must be more specific.
+.PP
+The "\fBwinfo command\fR" command can be used to query the
+fully-qualified access command for any widget, so one can write:
+.PP
+.CS
+[winfo command .b] configure -background red
+.CE
+.PP
+and this is good practice when writing library procedures.  Also,
+in conjunction with the \fBbind\fR command, the "%q" field can be
+used in place of "%W" as the access command:
+.PP
+.CS
+bind Button <Key-Return> {%q flash; %q invoke}
+.CE
+.PP
+While this behavior makes sense from the standpoint of encapsulation,
+it causes problems with existing Tcl/Tk applications.  Many existing
+applications are written with bindings that use "%W".  Many
+library procedures assume that the window name is the access
+command.
+.PP
+The \fBitcl::purist\fR variable controls a backward-compatibility
+mode.  By default, this variable is "0", and the window name
+can be used as an access command in any context.  Whenever the
+\fBunknown\fR procedure stumbles across a widget name, it simply
+uses "\fBwinfo command\fR" to determine the appropriate command
+name.  If this variable is set to "1", this backward-compatibility
+mode is disabled.  This gives better encapsulation, but using the
+window name as the access command may lead to "invalid command"
+errors.
+.RE
+.TP
+\fBitcl::version\fR
+.
+When an interpreter is created, \fB[incr\ Tcl]\fR initializes this
+variable to hold the version number of the form \fIx.y\fR.
+Changes to \fIx\fR represent major changes with probable
+incompatibilities and changes to \fIy\fR represent small enhancements
+and bug fixes that retain backward compatibility.
+
+.SH KEYWORDS
+itcl, variables

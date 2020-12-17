@@ -1,0 +1,33 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  gzclose.c
+  gzlib.c
+  gzread.c
+..\..\..\gzread.c(319): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzread.c(400): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzread.c(472): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  gzwrite.c
+..\..\..\gzwrite.c(212): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzwrite.c(232): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzwrite.c(371): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  infback.c
+  inffas8664.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  ioapi.c
+  iowin32.c
+..\..\minizip\iowin32.c(31): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  trees.c
+  uncompr.c
+  unzip.c
+  zip.c
+  zutil.c
+     Creating library x64\ZlibDllReleaseWithoutAsm\zlibwapi.lib and object x64\ZlibDllReleaseWithoutAsm\zlibwapi.exp
+  Generating code
+  All 265 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  zlibvc.vcxproj -> C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc14\x64\ZlibDllReleaseWithoutAsm\zlibwapi.dll
+  zlibvc.vcxproj -> x64\ZlibDllReleaseWithoutAsm\zlibwapi.pdb (Full PDB)

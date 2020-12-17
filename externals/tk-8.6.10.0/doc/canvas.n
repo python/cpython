@@ -1,0 +1,1922 @@
+'\"
+'\" Copyright (c) 1992-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 1997-1999 Scriptics Corporation.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH canvas n 8.3 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+canvas \- Create and manipulate 'canvas' hypergraphics drawing surface widgets
+.SH SYNOPSIS
+\fBcanvas\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-background	\-borderwidth	\-cursor
+\-highlightbackground	\-highlightcolor	\-highlightthickness
+\-insertbackground	\-insertborderwidth	\-insertofftime
+\-insertontime	\-insertwidth	\-relief
+\-selectbackground	\-selectborderwidth	\-selectforeground
+\-takefocus	\-xscrollcommand	\-yscrollcommand
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-closeenough closeEnough CloseEnough
+Specifies a floating-point value indicating how close the mouse cursor
+must be to an item before it is considered to be
+.QW inside
+the item. Defaults to 1.0.
+.OP \-confine confine Confine
+Specifies a boolean value that indicates whether or not it should be
+allowable to set the canvas's view outside the region defined by the
+\fBscrollRegion\fR argument.
+Defaults to true, which means that the view will
+be constrained within the scroll region.
+.OP \-height height Height
+Specifies a desired window height that the canvas widget should request from
+its geometry manager. The value may be specified in any
+of the forms described in the \fBCOORDINATES\fR section below.
+.OP \-scrollregion scrollRegion ScrollRegion
+Specifies a list with four coordinates describing the left, top, right, and
+bottom coordinates of a rectangular region.
+This region is used for scrolling purposes and is considered to be
+the boundary of the information in the canvas.
+Each of the coordinates may be specified
+in any of the forms given in the \fBCOORDINATES\fR section below.
+.OP \-state state State
+Modifies the default state of the canvas where \fIstate\fR may be set to
+one of: \fBnormal\fR, \fBdisabled\fR, or \fBhidden\fR. Individual canvas
+objects all have their own state option which may override the default
+state. Many options can take separate specifications such that the
+appearance of the item can be different in different situations. The
+options that start with \fBactive\fR control the appearance when the mouse
+pointer is over it, while the option starting with \fBdisabled\fR controls
+the appearance when the state is disabled. Canvas items which are
+\fBdisabled\fR will not react to canvas bindings.
+.OP \-width width width
+Specifies a desired window width that the canvas widget should request from
+its geometry manager. The value may be specified in any
+of the forms described in the \fBCOORDINATES\fR section below.
+.OP \-xscrollincrement xScrollIncrement ScrollIncrement
+Specifies an increment for horizontal scrolling, in any of the usual forms
+permitted for screen distances. If the value of this option is greater
+than zero, the horizontal view in the window will be constrained so that
+the canvas x coordinate at the left edge of the window is always an even
+multiple of \fBxScrollIncrement\fR; furthermore, the units for scrolling
+(e.g., the change in view when the left and right arrows of a scrollbar
+are selected) will also be \fBxScrollIncrement\fR. If the value of
+this option is less than or equal to zero, then horizontal scrolling
+is unconstrained.
+.OP \-yscrollincrement yScrollIncrement ScrollIncrement
+Specifies an increment for vertical scrolling, in any of the usual forms
+permitted for screen distances. If the value of this option is greater
+than zero, the vertical view in the window will be constrained so that
+the canvas y coordinate at the top edge of the window is always an even
+multiple of \fByScrollIncrement\fR; furthermore, the units for scrolling
+(e.g., the change in view when the top and bottom arrows of a scrollbar
+are selected) will also be \fByScrollIncrement\fR. If the value of
+this option is less than or equal to zero, then vertical scrolling
+is unconstrained.
+.BE
+.SH INTRODUCTION
+.PP
+The \fBcanvas\fR command creates a new window (given
+by the \fIpathName\fR argument) and makes it into a canvas widget.
+Additional options, described above, may be specified on the
+command line or in the option database
+to configure aspects of the canvas such as its colors and 3-D relief.
+The \fBcanvas\fR command returns its
+\fIpathName\fR argument. At the time this command is invoked,
+there must not exist a window named \fIpathName\fR, but
+\fIpathName\fR's parent must exist.
+.PP
+Canvas widgets implement structured graphics.
+A canvas displays any number of \fIitems\fR, which may be things like
+rectangles, circles, lines, and text.
+Items may be manipulated (e.g. moved or re-colored) and commands may
+be associated with items in much the same way that the \fBbind\fR
+command allows commands to be bound to widgets. For example,
+a particular command may be associated with the <Button-1> event
+so that the command is invoked whenever button 1 is pressed with
+the mouse cursor over an item.
+This means that items in a canvas can have behaviors defined by
+the Tcl scripts bound to them.
+.SH "DISPLAY LIST"
+.PP
+The items in a canvas are ordered for purposes of display,
+with the first item in the display list being displayed
+first, followed by the next item in the list, and so on.
+Items later in the display list obscure those that are
+earlier in the display list and are sometimes referred to as being
+.QW "on top"
+of earlier items.
+When a new item is created it is placed at the end of the
+display list, on top of everything else.
+Widget commands may be used to re-arrange the order of the
+display list.
+.PP
+Window items are an exception to the above rules. The underlying
+window systems require them always to be drawn on top of other items.
+In addition, the stacking order of window items
+is not affected by any of the canvas widget commands; you must use
+the Tk \fBraise\fR command and \fBlower\fR command instead.
+.SH "ITEM IDS AND TAGS"
+.PP
+Items in a canvas widget may be named in either of two ways:
+by id or by tag.
+Each item has a unique identifying number, which is assigned to
+that item when it is created. The id of an item never changes
+and id numbers are never re-used within the lifetime of a
+canvas widget.
+.PP
+Each item may also have any number of \fItags\fR associated
+with it. A tag is just a string of characters, and it may
+take any form except that of an integer.
+For example,
+.QW x123
+is OK but
+.QW 123
+is not.
+The same tag may be associated with many different items.
+This is commonly done to group items in various interesting
+ways; for example, all selected items might be given the tag
+.QW selected .
+.PP
+The tag \fBall\fR is implicitly associated with every item
+in the canvas; it may be used to invoke operations on
+all the items in the canvas.
+.PP
+The tag \fBcurrent\fR is managed automatically by Tk;
+it applies to the \fIcurrent item\fR, which is the
+topmost item whose drawn area covers the position of
+the mouse cursor (different item types interpret this in varying ways; see the
+individual item type documentation for details).
+If the mouse is not in the canvas widget or is not over
+an item, then no item has the \fBcurrent\fR tag.
+.PP
+When specifying items in canvas widget commands, if the
+specifier is an integer then it is assumed to refer to
+the single item with that id.
+If the specifier is not an integer, then it is assumed to
+refer to all of the items in the canvas that have a tag
+matching the specifier.
+The symbol \fItagOrId\fR is used below to indicate that
+an argument specifies either an id that selects a single
+item or a tag that selects zero or more items.
+.PP
+\fItagOrId\fR may contain a logical expressions of
+tags by using operators:
+.QW \fB&&\fR ,
+.QW \fB||\fR ,
+.QW \fB^\fR ,
+.QW \fB!\fR ,
+and parenthesized subexpressions. For example:
+.CS
+      .c find withtag {(a&&!b)||(!a&&b)}
+.CE
+or equivalently:
+.CS
+      .c find withtag {a^b}
+.CE
+will find only those items with either
+.QW a
+or
+.QW b
+tags, but not both.
+.PP
+Some widget commands only operate on a single item at a
+time; if \fItagOrId\fR is specified in a way that
+names multiple items, then the normal behavior is for
+the command to use the first (lowest) of these items in
+the display list that is suitable for the command.
+Exceptions are noted in the widget command descriptions
+below.
+.SH "COORDINATES"
+.PP
+All coordinates related to canvases are stored as floating-point
+numbers.
+Coordinates and distances are specified in screen units,
+which are floating-point numbers optionally followed
+by one of several letters.
+If no letter is supplied then the distance is in pixels.
+If the letter is \fBm\fR then the distance is in millimeters on
+the screen; if it is \fBc\fR then the distance is in centimeters;
+\fBi\fR means inches, and \fBp\fR means printers points (1/72 inch).
+Larger y-coordinates refer to points lower on the screen; larger
+x-coordinates refer to points farther to the right.
+Coordinates can be specified either as an even number of parameters,
+or as a single list parameter containing an even number of x and y
+coordinate values.
+.SS TRANSFORMATIONS
+.PP
+Normally the origin of the canvas coordinate system is at the
+upper-left corner of the window containing the canvas.
+It is possible to adjust the origin of the canvas
+coordinate system relative to the origin of the window using the
+\fBxview\fR and \fByview\fR widget commands; this is typically used
+for scrolling.
+Canvases do not support scaling or rotation of the canvas coordinate
+system relative to the window coordinate system.
+.PP
+Individual items may be moved or scaled using widget commands
+described below, but they may not be rotated.
+.PP
+Note that the default origin of the canvas's visible area is
+coincident with the origin for the whole window as that makes bindings
+using the mouse position easier to work with; you only need to use the
+\fBcanvasx\fR and \fBcanvasy\fR widget commands if you adjust the
+origin of the visible area. However, this also means that any focus
+ring (as controlled by the \fB\-highlightthickness\fR option) and
+window border (as controlled by the \fB\-borderwidth\fR option) must
+be taken into account before you get to the visible area of the
+canvas.
+.SH "INDICES"
+.PP
+Text items support the notion of an \fIindex\fR for identifying
+particular positions within the item.
+In a similar fashion, line and polygon items support \fIindex\fR for
+identifying, inserting and deleting subsets of their coordinates.
+Indices are used for commands such as inserting or deleting
+a range of characters or coordinates, and setting the insertion
+cursor position. An index may be specified in any of a number
+of ways, and different types of items may support different forms
+for specifying indices.
+Text items support the following forms for an index; if you
+define new types of text-like items, it would be advisable to
+support as many of these forms as practical.
+Note that it is possible to refer to the character just after
+the last one in the text item; this is necessary for such
+tasks as inserting new text at the end of the item.
+Lines and Polygons do not support the insertion cursor
+and the selection. Their indices are supposed to be even
+always, because coordinates always appear in pairs.
+.TP 10
+\fInumber\fR
+.
+A decimal number giving the position of the desired character
+within the text item.
+0 refers to the first character, 1 to the next character, and
+so on. If indexes are odd for lines and polygons, they will be
+automatically decremented by one.
+A number less than 0 is treated as if it were zero, and a
+number greater than the length of the text item is treated
+as if it were equal to the length of the text item. For
+polygons, numbers less than 0 or greater than the length
+of the coordinate list will be adjusted by adding or subtracting
+the length until the result is between zero and the length,
+inclusive.
+.TP 10
+\fBend\fR
+.
+Refers to the character or coordinate just after the last one
+in the item (same as the number of characters or coordinates
+in the item).
+.TP 10
+\fBinsert\fR
+.
+Refers to the character just before which the insertion cursor
+is drawn in this item. Not valid for lines and polygons.
+.TP 10
+\fBsel.first\fR
+.
+Refers to the first selected character in the item.
+If the selection is not in this item then this form is illegal.
+.TP 10
+\fBsel.last\fR
+.
+Refers to the last selected character in the item.
+If the selection is not in this item then this form is illegal.
+.TP 10
+\fB@\fIx,y\fR
+.
+Refers to the character or coordinate at the point given by \fIx\fR and
+\fIy\fR, where \fIx\fR and \fIy\fR are specified in the coordinate
+system of the canvas.
+If \fIx\fR and \fIy\fR lie outside the coordinates covered by the
+text item, then they refer to the first or last character in the
+line that is closest to the given point.
+.SH "DASH PATTERNS"
+.PP
+Many items support the notion of a dash pattern for outlines.
+.PP
+The first possible syntax is a list of integers. Each element
+represents the number of pixels of a line segment. Only the odd
+segments are drawn using the
+.QW outline
+color. The other segments are drawn transparent.
+.PP
+The second possible syntax is a character list containing only
+5 possible characters
+.QW "\fB.,-_ \fR" .
+The space can be used
+to enlarge the space between other line elements, and cannot
+occur as the first position in the string. Some examples:
+.CS
+\-dash .     \(-> \-dash {2 4}
+\-dash -     \(-> \-dash {6 4}
+\-dash -.    \(-> \-dash {6 4 2 4}
+\-dash -..   \(-> \-dash {6 4 2 4 2 4}
+\-dash {. }  \(-> \-dash {2 8}
+\-dash ,     \(-> \-dash {4 4}
+.CE
+.PP
+The main difference of this syntax with the previous is that it
+is shape-conserving. This means that all values in the dash
+list will be multiplied by the line width before display. This
+assures that
+.QW .
+will always be displayed as a dot and
+.QW -
+always as a dash regardless of the line width.
+.PP
+On systems which support only a limited set of dash patterns, the dash
+pattern will be displayed as the closest dash pattern that is available.
+For example, on Windows only the first 4 of the above examples are
+available. The last 2 examples will be displayed identically to the first
+one.
+.SH "WIDGET COMMAND"
+.PP
+The \fBcanvas\fR command creates a new Tcl command whose
+name is \fIpathName\fR. This
+command may be used to invoke various
+operations on the widget. It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.
+The following widget commands are possible for canvas widgets:
+.TP
+\fIpathName \fBaddtag \fItag searchSpec \fR?\fIarg arg ...\fR?
+.
+For each item that meets the constraints specified by
+\fIsearchSpec\fR and the \fIarg\fRs, add
+\fItag\fR to the list of tags associated with the item if it
+is not already present on that list.
+It is possible that no items will satisfy the constraints
+given by \fIsearchSpec\fR and \fIarg\fRs, in which case the
+command has no effect.
+This command returns an empty string as result.
+\fISearchSpec\fR and \fIarg\fR's may take any of the following
+forms:
+.RS
+.TP
+\fBabove \fItagOrId\fR
+.
+Selects the item just after (above) the one given by \fItagOrId\fR
+in the display list.
+If \fItagOrId\fR denotes more than one item, then the last (topmost)
+of these items in the display list is used.
+.TP
+\fBall\fR
+.
+Selects all the items in the canvas.
+.TP
+\fBbelow \fItagOrId\fR
+.
+Selects the item just before (below) the one given by \fItagOrId\fR
+in the display list.
+If \fItagOrId\fR denotes more than one item, then the first (lowest)
+of these items in the display list is used.
+.TP
+\fBclosest \fIx y \fR?\fIhalo\fR? ?\fIstart\fR?
+.
+Selects the item closest to the point given by \fIx\fR and \fIy\fR.
+If more than one item is at the same closest distance (e.g. two
+items overlap the point), then the top-most of these items (the
+last one in the display list) is used.
+If \fIhalo\fR is specified, then it must be a non-negative
+value.
+Any item closer than \fIhalo\fR to the point is considered to
+overlap it.
+The \fIstart\fR argument may be used to step circularly through
+all the closest items.
+If \fIstart\fR is specified, it names an item using a tag or id
+(if by tag, it selects the first item in the display list with
+the given tag).
+Instead of selecting the topmost closest item, this form will
+select the topmost closest item that is below \fIstart\fR in
+the display list; if no such item exists, then the selection
+behaves as if the \fIstart\fR argument had not been specified.
+.TP
+\fBenclosed\fR \fIx1\fR \fIy1\fR \fIx2\fR \fIy2\fR
+.
+Selects all the items completely enclosed within the rectangular
+region given by \fIx1\fR, \fIy1\fR, \fIx2\fR, and \fIy2\fR.
+\fIX1\fR must be no greater than \fIx2\fR and \fIy1\fR must be
+no greater than \fIy2\fR.
+.TP
+\fBoverlapping\fR \fIx1\fR \fIy1\fR \fIx2\fR \fIy2\fR
+.
+Selects all the items that overlap or are enclosed within the
+rectangular region given by \fIx1\fR, \fIy1\fR, \fIx2\fR,
+and \fIy2\fR.
+\fIX1\fR must be no greater than \fIx2\fR and \fIy1\fR must be
+no greater than \fIy2\fR.
+.TP
+\fBwithtag \fItagOrId\fR
+.
+Selects all the items given by \fItagOrId\fR.
+.RE
+.TP
+\fIpathName \fBbbox \fItagOrId\fR ?\fItagOrId tagOrId ...\fR?
+.
+Returns a list with four elements giving an approximate bounding box
+for all the items named by the \fItagOrId\fR arguments.
+The list has the form
+.QW "\fIx1 y1 x2 y2\fR"
+such that the drawn
+areas of all the named elements are within the region bounded by
+\fIx1\fR on the left, \fIx2\fR on the right, \fIy1\fR on the top,
+and \fIy2\fR on the bottom.
+The return value may overestimate the actual bounding box by
+a few pixels.
+If no items match any of the \fItagOrId\fR arguments or if the
+matching items have empty bounding boxes (i.e. they have nothing
+to display)
+then an empty string is returned.
+.TP
+\fIpathName \fBbind \fItagOrId\fR ?\fIsequence\fR? ?\fIcommand\fR?
+.
+This command associates \fIcommand\fR with all the items given by
+\fItagOrId\fR such that whenever the event sequence given by
+\fIsequence\fR occurs for one of the items the command will
+be invoked.
+This widget command is similar to the \fBbind\fR command except that
+it operates on items in a canvas rather than entire widgets.
+See the \fBbind\fR manual entry for complete details
+on the syntax of \fIsequence\fR and the substitutions performed
+on \fIcommand\fR before invoking it.
+If all arguments are specified then a new binding is created, replacing
+any existing binding for the same \fIsequence\fR and \fItagOrId\fR
+(if the first character of \fIcommand\fR is
+.QW +
+then \fIcommand\fR augments an existing binding rather than replacing it).
+In this case the return value is an empty string.
+If \fIcommand\fR is omitted then the command returns the \fIcommand\fR
+associated with \fItagOrId\fR and \fIsequence\fR (an error occurs
+if there is no such binding).
+If both \fIcommand\fR and \fIsequence\fR are omitted then the command
+returns a list of all the sequences for which bindings have been
+defined for \fItagOrId\fR.
+.RS
+.PP
+The only events for which bindings may be specified are those related to
+the mouse and keyboard (such as \fBEnter\fR, \fBLeave\fR,
+\fBButtonPress\fR, \fBMotion\fR, and \fBKeyPress\fR) or virtual events.
+The handling of events in canvases uses the current item defined in
+\fBITEM IDS AND TAGS\fR above. \fBEnter\fR and \fBLeave\fR events
+trigger for an
+item when it becomes the current item or ceases to be the current item;
+note that these events are different than \fBEnter\fR and \fBLeave\fR
+events for windows. Mouse-related events are directed to the current
+item, if any. Keyboard-related events are directed to the focus item, if
+any (see the \fBfocus\fR widget command below for more on this). If a
+virtual event is used in a binding, that binding can trigger only if the
+virtual event is defined by an underlying mouse-related or
+keyboard-related event.
+.PP
+It is possible for multiple bindings to match a particular event.
+This could occur, for example, if one binding is associated with the
+item's id and another is associated with one of the item's tags.
+When this occurs, all of the matching bindings are invoked.
+A binding associated with the \fBall\fR tag is invoked first,
+followed by one binding for each of the item's tags (in order),
+followed by a binding associated with the item's id.
+If there are multiple matching bindings for a single tag,
+then only the most specific binding is invoked.
+A \fBcontinue\fR command in a binding script terminates that
+script, and a \fBbreak\fR command terminates that script
+and skips any remaining scripts for the event, just as for the
+\fBbind\fR command.
+.PP
+If bindings have been created for a canvas window using the \fBbind\fR
+command, then they are invoked in addition to bindings created for
+the canvas's items using the \fBbind\fR widget command.
+The bindings for items will be invoked before any of the bindings
+for the window as a whole.
+.RE
+.TP
+\fIpathName \fBcanvasx \fIscreenx\fR ?\fIgridspacing\fR?
+.
+Given a window x-coordinate in the canvas \fIscreenx\fR, this command returns
+the canvas x-coordinate that is displayed at that location.
+If \fIgridspacing\fR is specified, then the canvas coordinate is
+rounded to the nearest multiple of \fIgridspacing\fR units.
+.TP
+\fIpathName \fBcanvasy \fIscreeny\fR ?\fIgridspacing\fR?
+.
+Given a window y-coordinate in the canvas \fIscreeny\fR this command returns
+the canvas y-coordinate that is displayed at that location.
+If \fIgridspacing\fR is specified, then the canvas coordinate is
+rounded to the nearest multiple of \fIgridspacing\fR units.
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBcanvas\fR
+command.
+.TP
+\fIpathName \fBconfigure ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified). If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBcanvas\fR
+command.
+.TP
+\fIpathName\fR \fBcoords \fItagOrId \fR?\fIx0 y0 ...\fR?
+.TP
+\fIpathName\fR \fBcoords \fItagOrId \fR?\fIcoordList\fR?
+.
+Query or modify the coordinates that define an item.
+If no coordinates are specified, this command returns a list
+whose elements are the coordinates of the item named by
+\fItagOrId\fR.
+If coordinates are specified, then they replace the current
+coordinates for the named item.
+If \fItagOrId\fR refers to multiple items, then
+the first one in the display list is used.
+.RS
+.PP
+Note that for rectangles, ovals and arcs the returned list of coordinates
+has a fixed order, namely the left, top, right and bottom coordinates,
+which may not be the order originally given. Also the coordinates are always
+returned in screen units with no units (that is, in pixels). So if the
+original coordinates were specified for instance in centimeters or inches,
+the returned values will nevertheless be in pixels.
+.RE
+.TP
+\fIpathName \fBcreate \fItype x y \fR?\fIx y ...\fR? ?\fIoption value ...\fR?
+.TP
+\fIpathName \fBcreate \fItype coordList \fR?\fIoption value ...\fR?
+.
+Create a new item in \fIpathName\fR of type \fItype\fR.
+The exact format of the arguments after \fItype\fR depends
+on \fItype\fR, but usually they consist of the coordinates for
+one or more points, followed by specifications for zero or
+more item options.
+See the subsections on individual item types below for more
+on the syntax of this command.
+This command returns the id for the new item.
+.TP
+\fIpathName \fBdchars \fItagOrId first \fR?\fIlast\fR?
+.
+For each item given by \fItagOrId\fR, delete the characters, or coordinates,
+in the range given by \fIfirst\fR and \fIlast\fR, inclusive.
+If some of the items given by \fItagOrId\fR do not support
+indexing operations then they ignore this operation.
+Text items interpret \fIfirst\fR and \fIlast\fR as indices to a character,
+line and polygon items interpret them as indices to a coordinate (an x,y pair).
+Indices are described in \fBINDICES\fR above.
+If \fIlast\fR is omitted, it defaults to \fIfirst\fR.
+This command returns an empty string.
+.TP
+\fIpathName \fBdelete \fR?\fItagOrId tagOrId ...\fR?
+.
+Delete each of the items given by each \fItagOrId\fR, and return
+an empty string.
+.TP
+\fIpathName \fBdtag \fItagOrId \fR?\fItagToDelete\fR?
+.
+For each of the items given by \fItagOrId\fR, delete the
+tag given by \fItagToDelete\fR from the list of those
+associated with the item.
+If an item does not have the tag \fItagToDelete\fR then
+the item is unaffected by the command.
+If \fItagToDelete\fR is omitted then it defaults to \fItagOrId\fR.
+This command returns an empty string.
+.TP
+\fIpathName \fBfind \fIsearchCommand \fR?\fIarg arg ...\fR?
+.
+This command returns a list consisting of all the items that
+meet the constraints specified by \fIsearchCommand\fR and
+\fIarg\fR's.
+\fISearchCommand\fR and \fIargs\fR have any of the forms
+accepted by the \fBaddtag\fR command.
+The items are returned in stacking order, with the lowest item first.
+.TP
+\fIpathName \fBfocus \fR?\fItagOrId\fR?
+.
+Set the keyboard focus for the canvas widget to the item given by
+\fItagOrId\fR.
+If \fItagOrId\fR refers to several items, then the focus is set
+to the first such item in the display list that supports the
+insertion cursor.
+If \fItagOrId\fR does not refer to any items, or if none of them
+support the insertion cursor, then the focus is not changed.
+If \fItagOrId\fR is an empty
+string, then the focus item is reset so that no item has the focus.
+If \fItagOrId\fR is not specified then the command returns the
+id for the item that currently has the focus, or an empty string
+if no item has the focus.
+.RS
+.PP
+Once the focus has been set to an item, the item will display
+the insertion cursor and all keyboard events will be directed
+to that item.
+The focus item within a canvas and the focus window on the
+screen (set with the \fBfocus\fR command) are totally independent:
+a given item does not actually have the input focus unless (a)
+its canvas is the focus window and (b) the item is the focus item
+within the canvas.
+In most cases it is advisable to follow the \fBfocus\fR widget
+command with the \fBfocus\fR command to set the focus window to
+the canvas (if it was not there already).
+.RE
+.TP
+\fIpathName \fBgettags\fR \fItagOrId\fR
+.
+Return a list whose elements are the tags associated with the
+item given by \fItagOrId\fR.
+If \fItagOrId\fR refers to more than one item, then the tags
+are returned from the first such item in the display list.
+If \fItagOrId\fR does not refer to any items, or if the item
+contains no tags, then an empty string is returned.
+.TP
+\fIpathName \fBicursor \fItagOrId index\fR
+.
+Set the position of the insertion cursor for the item(s) given by \fItagOrId\fR
+to just before the character whose position is given by \fIindex\fR.
+If some or all of the items given by \fItagOrId\fR do not support
+an insertion cursor then this command has no effect on them.
+See \fBINDICES\fR above for a description of the
+legal forms for \fIindex\fR.
+Note: the insertion cursor is only displayed in an item if
+that item currently has the keyboard focus (see the \fBfocus\fR widget
+command, above), but the cursor position may
+be set even when the item does not have the focus.
+This command returns an empty string.
+.TP
+\fIpathName \fBimove \fItagOrId index x y\fR
+.VS 8.6
+This command causes the \fIindex\fR'th coordinate of each of the items
+indicated by \fItagOrId\fR to be relocated to the location (\fIx\fR,\fIy\fR).
+Each item interprets \fIindex\fR independently according to the rules
+described in \fBINDICES\fR above. Out of the standard set of items, only line
+and polygon items may have their coordinates relocated this way.
+.VE 8.6
+.TP
+\fIpathName \fBindex \fItagOrId index\fR
+.
+This command returns a decimal string giving the numerical index
+within \fItagOrId\fR corresponding to \fIindex\fR.
+\fIIndex\fR gives a textual description of the desired position
+as described in \fBINDICES\fR above.
+Text items interpret \fIindex\fR as an index to a character,
+line and polygon items interpret it as an index to a coordinate (an x,y pair).
+The return value is guaranteed to lie between 0 and the number
+of characters, or coordinates, within the item, inclusive.
+If \fItagOrId\fR refers to multiple items, then the index
+is processed in the first of these items that supports indexing
+operations (in display list order).
+.TP
+\fIpathName \fBinsert \fItagOrId beforeThis string\fR
+.
+For each of the items given by \fItagOrId\fR, if the item supports
+text or coordinate, insertion then \fIstring\fR is inserted into the item's
+text just before the character, or coordinate, whose index is \fIbeforeThis\fR.
+Text items interpret \fIbeforeThis\fR as an index to a character,
+line and polygon items interpret it as an index to a coordinate (an x,y pair).
+For lines and polygons the \fIstring\fR must be a valid coordinate
+sequence.
+See \fBINDICES\fR above for information about the forms allowed
+for \fIbeforeThis\fR.
+This command returns an empty string.
+.TP
+\fIpathName \fBitemcget\fR \fItagOrId\fR \fIoption\fR
+.
+Returns the current value of the configuration option for the
+item given by \fItagOrId\fR whose name is \fIoption\fR.
+This command is similar to the \fBcget\fR widget command except that
+it applies to a particular item rather than the widget as a whole.
+\fIOption\fR may have any of the values accepted by the \fBcreate\fR
+widget command when the item was created.
+If \fItagOrId\fR is a tag that refers to more than one item,
+the first (lowest) such item is used.
+.TP
+\fIpathName \fBitemconfigure \fItagOrId\fR ?\fIoption\fR? ?\fIvalue\fR? ?\fIoption value ...\fR?
+.
+This command is similar to the \fBconfigure\fR widget command except
+that it modifies item-specific options for the items given by
+\fItagOrId\fR instead of modifying options for the overall
+canvas widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for the first item given by \fItagOrId\fR
+(see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified). If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s) in
+each of the items given by \fItagOrId\fR; in
+this case the command returns an empty string.
+The \fIoption\fRs and \fIvalue\fRs are the same as those permissible
+in the \fBcreate\fR widget command when the item(s) were created;
+see the sections describing individual item types below for details
+on the legal options.
+.TP
+\fIpathName \fBlower \fItagOrId \fR?\fIbelowThis\fR?
+.
+Move all of the items given by \fItagOrId\fR to a new position
+in the display list just before the item given by \fIbelowThis\fR.
+If \fItagOrId\fR refers to more than one item then all are moved
+but the relative order of the moved items will not be changed.
+\fIBelowThis\fR is a tag or id; if it refers to more than one
+item then the first (lowest) of these items in the display list is used
+as the destination location for the moved items.
+Note: this command has no effect on window items. Window items always
+obscure other item types, and the stacking order of window items is
+determined by the \fBraise\fR command and \fBlower\fR command, not the
+\fBraise\fR widget command and \fBlower\fR widget command for canvases.
+This command returns an empty string.
+.TP
+\fIpathName \fBmove \fItagOrId xAmount yAmount\fR
+.
+Move each of the items given by \fItagOrId\fR in the canvas coordinate
+space by adding \fIxAmount\fR to the x-coordinate of each point
+associated with the item and \fIyAmount\fR to the y-coordinate of
+each point associated with the item.
+This command returns an empty string.
+.TP
+\fIpathName \fBmoveto \fItagOrId xPos yPos\fR
+.VS 8.6
+Move the items given by \fItagOrId\fR in the canvas coordinate
+space so that the first coordinate pair of the bottommost item with
+tag \fItagOrId\fR is located at
+position (\fIxPos\fR,\fIyPos\fR). \fIxPos\fR and \fIyPos\fR may be
+the empty string, in which case the corresponding coordinate
+will be unchanged. All items matching
+\fItagOrId\fR remain in the same positions relative to each other.
+This command returns an empty string.
+.VE 8.6
+.TP
+\fIpathName \fBpostscript \fR?\fIoption value option value ...\fR?
+.
+Generate a Postscript representation for part or all of the canvas.
+If the \fB\-file\fR option is specified then the Postscript is written
+to a file and an empty string is returned; otherwise the Postscript
+is returned as the result of the command.
+If the interpreter that owns the canvas is marked as safe, the operation
+will fail because safe interpreters are not allowed to write files.
+If the \fB\-channel\fR option is specified, the argument denotes the name
+of a channel already opened for writing. The Postscript is written to
+that channel, and the channel is left open for further writing at the end
+of the operation.
+The Postscript is created in Encapsulated Postscript form using
+version 3.0 of the Document Structuring Conventions.
+Note: by default Postscript is only generated for information that
+appears in the canvas's window on the screen. If the canvas is
+freshly created it may still have its initial size of 1x1 pixel
+so nothing will appear in the Postscript. To get around this problem
+either invoke the \fBupdate\fR command to wait for the canvas window
+to reach its final size, or else use the \fB\-width\fR and \fB\-height\fR
+options to specify the area of the canvas to print.
+The \fIoption\fR\-\fIvalue\fR argument pairs provide additional
+information to control the generation of Postscript. The following
+options are supported:
+.RS
+.TP
+\fB\-channel \fIchannelName\fR
+.
+Specifies the name of the channel to which to write the Postscript.
+If this option and the \fB\-file\fR option are
+not specified then the Postscript is returned as the
+result of the command.
+.TP
+\fB\-colormap \fIvarName\fR
+.
+\fIVarName\fR must be the name of an array variable
+that specifies a color mapping to use in the Postscript.
+Each element of \fIvarName\fR must consist of Postscript
+code to set a particular color value (e.g.
+.QW "\fB1.0 1.0 0.0 setrgbcolor\fR" ).
+When outputting color information in the Postscript, Tk checks
+to see if there is an element of \fIvarName\fR with the same
+name as the color.
+If so, Tk uses the value of the element as the Postscript command
+to set the color.
+If this option has not been specified, or if there is no entry
+in \fIvarName\fR for a given color, then Tk uses the red, green,
+and blue intensities from the X color.
+.TP
+\fB\-colormode \fImode\fR
+.
+Specifies how to output color information. \fIMode\fR must be either
+\fBcolor\fR (for full color output), \fBgray\fR (convert all colors
+to their gray-scale equivalents) or \fBmono\fR (convert all colors
+to black or white).
+.TP
+\fB\-file \fIfileName\fR
+.
+Specifies the name of the file in which to write the Postscript.
+If this option and the \fB\-channel\fR option are
+not specified then the Postscript is returned as the
+result of the command.
+.TP
+\fB\-fontmap \fIvarName\fR
+.
+\fIVarName\fR must be the name of an array variable
+that specifies a font mapping to use in the Postscript.
+Each element of \fIvarName\fR must consist of a Tcl list with
+two elements, which are the name and point size of a Postscript font.
+When outputting Postscript commands for a particular font, Tk
+checks to see if \fIvarName\fR contains an element with the same
+name as the font.
+If there is such an element, then the font information contained in
+that element is used in the Postscript.
+Otherwise Tk attempts to guess what Postscript font to use.
+Tk's guesses generally only work for well-known fonts such as
+Times and Helvetica and Courier, and only if the X font name does not
+omit any dashes up through the point size.
+For example, \fB\-*\-Courier\-Bold\-R\-Normal\-\-*\-120\-*\fR will work but
+\fB*Courier\-Bold\-R\-Normal*120*\fR will not; Tk needs the dashes to
+parse the font name).
+.TP
+\fB\-height \fIsize\fR
+.
+Specifies the height of the area of the canvas to print.
+Defaults to the height of the canvas window.
+.TP
+\fB\-pageanchor \fIanchor\fR
+.
+Specifies which point of the printed area of the canvas should appear over
+the positioning point on the page (which is given by the \fB\-pagex\fR
+and \fB\-pagey\fR options).
+For example, \fB\-pageanchor n\fR means that the top center of the
+area of the canvas being printed (as it appears in the canvas window)
+should be over the positioning point. Defaults to \fBcenter\fR.
+.TP
+\fB\-pageheight \fIsize\fR
+.
+Specifies that the Postscript should be scaled in both x and y so
+that the printed area is \fIsize\fR high on the Postscript page.
+\fISize\fR consists of a floating-point number followed by
+\fBc\fR for centimeters, \fBi\fR for inches, \fBm\fR for millimeters,
+or \fBp\fR or nothing for printer's points (1/72 inch).
+Defaults to the height of the printed area on the screen.
+If both \fB\-pageheight\fR and \fB\-pagewidth\fR are specified then
+the scale factor from \fB\-pagewidth\fR is used (non-uniform scaling
+is not implemented).
+.TP
+\fB\-pagewidth \fIsize\fR
+.
+Specifies that the Postscript should be scaled in both x and y so
+that the printed area is \fIsize\fR wide on the Postscript page.
+\fISize\fR has the same form as for \fB\-pageheight\fR.
+Defaults to the width of the printed area on the screen.
+If both \fB\-pageheight\fR and \fB\-pagewidth\fR are specified then
+the scale factor from \fB\-pagewidth\fR is used (non-uniform scaling
+is not implemented).
+.TP
+\fB\-pagex \fIposition\fR
+.
+\fIPosition\fR gives the x-coordinate of the positioning point on
+the Postscript page, using any of the forms allowed for \fB\-pageheight\fR.
+Used in conjunction with the \fB\-pagey\fR and \fB\-pageanchor\fR options
+to determine where the printed area appears on the Postscript page.
+Defaults to the center of the page.
+.TP
+\fB\-pagey \fIposition\fR
+.
+\fIPosition\fR gives the y-coordinate of the positioning point on
+the Postscript page, using any of the forms allowed for \fB\-pageheight\fR.
+Used in conjunction with the \fB\-pagex\fR and \fB\-pageanchor\fR options
+to determine where the printed area appears on the Postscript page.
+Defaults to the center of the page.
+.TP
+\fB\-rotate \fIboolean\fR
+.
+\fIBoolean\fR specifies whether the printed area is to be rotated 90
+degrees.
+In non-rotated output the x-axis of the printed area runs along
+the short dimension of the page
+.PQ portrait " orientation" ;
+in rotated output the x-axis runs along the long dimension of the page
+.PQ landscape " orientation" .
+Defaults to non-rotated.
+.TP
+\fB\-width \fIsize\fR
+.
+Specifies the width of the area of the canvas to print.
+Defaults to the width of the canvas window.
+.TP
+\fB\-x \fIposition\fR
+.
+Specifies the x-coordinate of the left edge of the area of the
+canvas that is to be printed, in canvas coordinates, not window
+coordinates.
+Defaults to the coordinate of the left edge of the window.
+.TP
+\fB\-y \fIposition\fR
+.
+Specifies the y-coordinate of the top edge of the area of the
+canvas that is to be printed, in canvas coordinates, not window
+coordinates.
+Defaults to the coordinate of the top edge of the window.
+.RE
+.TP
+\fIpathName \fBraise \fItagOrId \fR?\fIaboveThis\fR?
+.
+Move all of the items given by \fItagOrId\fR to a new position
+in the display list just after the item given by \fIaboveThis\fR.
+If \fItagOrId\fR refers to more than one item then all are moved
+but the relative order of the moved items will not be changed.
+\fIAboveThis\fR is a tag or id; if it refers to more than one
+item then the last (topmost) of these items in the display list is used
+as the destination location for the moved items.
+This command returns an empty string.
+.RS
+.PP
+Note: this command has no effect on window items. Window items always
+obscure other item types, and the stacking order of window items is
+determined by the \fBraise\fR command and \fBlower\fR command, not the
+\fBraise\fR widget command and \fBlower\fR widget command for canvases.
+.RE
+.TP
+\fIpathName \fBrchars \fItagOrId first last string\fR
+.VS 8.6
+This command causes the text or coordinates between \fIfirst\fR and \fIlast\fR
+for each of the items indicated by \fItagOrId\fR to be replaced by
+\fIstring\fR. Each item interprets \fIfirst\fR and \fIlast\fR independently
+according to the rules described in \fBINDICES\fR above. Out of the standard
+set of items, text items support this operation by altering their text as
+directed, and line and polygon items support this operation by altering their
+coordinate list (in which case \fIstring\fR should be a list of coordinates to
+use as a replacement). The other items ignore this operation.
+.VE 8.6
+.TP
+\fIpathName \fBscale \fItagOrId xOrigin yOrigin xScale yScale\fR
+.
+Rescale the coordinates of all of the items given by \fItagOrId\fR in canvas
+coordinate space.
+\fIXOrigin\fR and \fIyOrigin\fR identify the origin for the scaling
+operation and \fIxScale\fR and \fIyScale\fR identify the scale
+factors for x- and y-coordinates, respectively (a scale factor of
+1.0 implies no change to that coordinate).
+For each of the points defining each item, the x-coordinate is
+adjusted to change the distance from \fIxOrigin\fR by a factor
+of \fIxScale\fR.
+Similarly, each y-coordinate is adjusted to change the distance
+from \fIyOrigin\fR by a factor of \fIyScale\fR.
+This command returns an empty string.
+.RS
+.PP
+Note that some items have only a single pair of coordinates (e.g., text,
+images and windows) and so scaling of them by this command can only move them
+around.
+.RE
+.TP
+\fIpathName \fBscan\fR \fIoption args\fR
+.
+This command is used to implement scanning on canvases. It has
+two forms, depending on \fIoption\fR:
+.RS
+.TP
+\fIpathName \fBscan mark \fIx y\fR
+.
+Records \fIx\fR and \fIy\fR and the canvas's current view; used
+in conjunction with later \fBscan dragto\fR commands.
+Typically this command is associated with a mouse button press in
+the widget and \fIx\fR and \fIy\fR are the coordinates of the
+mouse. It returns an empty string.
+.TP
+\fIpathName \fBscan dragto \fIx y ?gain?\fR
+.
+This command computes the difference between its \fIx\fR and \fIy\fR
+arguments (which are typically mouse coordinates) and the \fIx\fR and
+\fIy\fR arguments to the last \fBscan mark\fR command for the widget.
+It then adjusts the view by \fIgain\fR times the
+difference in coordinates, where \fIgain\fR defaults to 10.
+This command is typically associated
+with mouse motion events in the widget, to produce the effect of
+dragging the canvas at high speed through its window. The return
+value is an empty string.
+.RE
+.TP
+\fIpathName \fBselect \fIoption\fR ?\fItagOrId arg\fR?
+.
+Manipulates the selection in one of several ways, depending on
+\fIoption\fR.
+The command may take any of the forms described below.
+In all of the descriptions below, \fItagOrId\fR must refer to
+an item that supports indexing and selection; if it refers to
+multiple items then the first of
+these that supports indexing and the selection is used.
+\fIIndex\fR gives a textual description of a position
+within \fItagOrId\fR, as described in \fBINDICES\fR above.
+.RS
+.TP
+\fIpathName \fBselect adjust \fItagOrId index\fR
+.
+Locate the end of the selection in \fItagOrId\fR nearest
+to the character given by \fIindex\fR, and adjust that
+end of the selection to be at \fIindex\fR (i.e. including
+but not going beyond \fIindex\fR).
+The other end of the selection is made the anchor point
+for future \fBselect to\fR commands.
+If the selection is not currently in \fItagOrId\fR then
+this command behaves the same as the \fBselect to\fR widget
+command.
+Returns an empty string.
+.TP
+\fIpathName \fBselect clear\fR
+.
+Clear the selection if it is in this widget.
+If the selection is not in this widget then the command
+has no effect.
+Returns an empty string.
+.TP
+\fIpathName \fBselect from \fItagOrId index\fR
+.
+Set the selection anchor point for the widget to be just
+before the character
+given by \fIindex\fR in the item given by \fItagOrId\fR.
+This command does not change the selection; it just sets
+the fixed end of the selection for future \fBselect to\fR
+commands.
+Returns an empty string.
+.TP
+\fIpathName \fBselect item\fR
+.
+Returns the id of the selected item, if the selection is in an
+item in this canvas.
+If the selection is not in this canvas then an empty string
+is returned.
+.TP
+\fIpathName \fBselect to \fItagOrId index\fR
+.
+Set the selection to consist of those characters of \fItagOrId\fR
+between the selection anchor point and
+\fIindex\fR.
+The new selection will include the character given by \fIindex\fR;
+it will include the character given by the anchor point only if
+\fIindex\fR is greater than or equal to the anchor point.
+The anchor point is determined by the most recent \fBselect adjust\fR
+or \fBselect from\fR command for this widget.
+If the selection anchor point for the widget is not currently in
+\fItagOrId\fR, then it is set to the same character given
+by \fIindex\fR.
+Returns an empty string.
+.RE
+.TP
+\fIpathName \fBtype\fI tagOrId\fR
+.
+Returns the type of the item given by \fItagOrId\fR, such as
+\fBrectangle\fR or \fBtext\fR.
+If \fItagOrId\fR refers to more than one item, then the type
+of the first item in the display list is returned.
+If \fItagOrId\fR does not refer to any items at all then
+an empty string is returned.
+.TP
+\fIpathName \fBxview \fR?\fIargs\fR?
+.
+This command is used to query and change the horizontal position of the
+information displayed in the canvas's window.
+It can take any of the following forms:
+.RS
+.TP
+\fIpathName \fBxview\fR
+.
+Returns a list containing two elements.
+Each element is a real fraction between 0 and 1; together they describe
+the horizontal span that is visible in the window.
+For example, if the first element is .2 and the second element is .6,
+20% of the canvas's area (as defined by the \fB\-scrollregion\fR option)
+is off-screen to the left, the middle 40% is visible
+in the window, and 40% of the canvas is off-screen to the right.
+These are the same values passed to scrollbars via the \fB\-xscrollcommand\fR
+option.
+.TP
+\fIpathName \fBxview moveto\fI fraction\fR
+.
+Adjusts the view in the window so that \fIfraction\fR of the
+total width of the canvas is off-screen to the left.
+\fIFraction\fR must be a fraction between 0 and 1.
+.TP
+\fIpathName \fBxview scroll \fInumber what\fR
+.
+This command shifts the view in the window left or right according to
+\fInumber\fR and \fIwhat\fR.
+\fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR or an abbreviation
+of one of these.
+If \fIwhat\fR is \fBunits\fR, the view adjusts left or right in units
+of the \fBxScrollIncrement\fR option, if it is greater than zero,
+or in units of one-tenth the window's width otherwise.
+If \fIwhat is \fBpages\fR then the view
+adjusts in units of nine-tenths the window's width.
+If \fInumber\fR is negative then information farther to the left
+becomes visible; if it is positive then information farther to the right
+becomes visible.
+.RE
+.TP
+\fIpathName \fByview \fI?args\fR?
+.
+This command is used to query and change the vertical position of the
+information displayed in the canvas's window.
+It can take any of the following forms:
+.RS
+.TP
+\fIpathName \fByview\fR
+.
+Returns a list containing two elements.
+Each element is a real fraction between 0 and 1; together they describe
+the vertical span that is visible in the window.
+For example, if the first element is .6 and the second element is 1.0,
+the lowest 40% of the canvas's area (as defined by the \fB\-scrollregion\fR
+option) is visible in the window.
+These are the same values passed to scrollbars via the \fB\-yscrollcommand\fR
+option.
+.TP
+\fIpathName \fByview moveto\fI fraction\fR
+.
+Adjusts the view in the window so that \fIfraction\fR of the canvas's
+area is off-screen to the top.
+\fIFraction\fR is a fraction between 0 and 1.
+.TP
+\fIpathName \fByview scroll \fInumber what\fR
+.
+This command adjusts the view in the window up or down according to
+\fInumber\fR and \fIwhat\fR.
+\fINumber\fR must be an integer.
+\fIWhat\fR must be either \fBunits\fR or \fBpages\fR.
+If \fIwhat\fR is \fBunits\fR, the view adjusts up or down in units
+of the \fByScrollIncrement\fR option, if it is greater than zero,
+or in units of one-tenth the window's height otherwise.
+If \fIwhat\fR is \fBpages\fR then
+the view adjusts in units of nine-tenths the window's height.
+If \fInumber\fR is negative then higher information becomes
+visible; if it is positive then lower information
+becomes visible.
+.RE
+.SH "OVERVIEW OF ITEM TYPES"
+.PP
+The sections below describe the various types of items supported
+by canvas widgets. Each item type is characterized by two things:
+first, the form of the \fBcreate\fR command used to create
+instances of the type; and second, a set of configuration options
+for items of that type, which may be used in the
+\fBcreate\fR and \fBitemconfigure\fR widget commands.
+Most items do not support indexing or selection or the commands
+related to them, such as \fBindex\fR and \fBinsert\fR.
+Where items do support these facilities, it is noted explicitly
+in the descriptions below.
+At present, text, line and polygon items provide this support.
+For lines and polygons the indexing facility is used to manipulate
+the coordinates of the item.
+.SS "COMMON ITEM OPTIONS"
+.PP
+Many items share a common set of options. These options are
+explained here, and then referred to be each widget type for brevity.
+.TP
+\fB\-anchor \fIanchorPos\fR
+.
+\fIAnchorPos\fR tells how to position the item relative to the
+positioning point for the item; it may have any of the forms
+accepted by \fBTk_GetAnchor\fR. For example, if \fIanchorPos\fR
+is \fBcenter\fR then the item is centered on the point; if
+\fIanchorPos\fR is \fBn\fR then the item will be drawn so that
+its top center point is at the positioning point.
+This option defaults to \fBcenter\fR.
+.TP
+\fB\-dash \fIpattern\fR
+.TP
+\fB\-activedash \fIpattern\fR
+.TP
+\fB\-disableddash \fIpattern\fR
+.
+This option specifies dash patterns for the normal, active
+state, and disabled state of an item.
+\fIpattern\fR may have any of the forms accepted by \fBTk_GetDash\fR.
+If the dash options are omitted then the default is a solid outline.
+See \fBDASH PATTERNS\fR for more information.
+.TP
+\fB\-dashoffset \fIoffset\fR
+.
+The starting \fIoffset\fR in pixels into the pattern provided by the
+\fB\-dash\fR option. \fB\-dashoffset\fR is ignored if there is no
+\fB\-dash\fR pattern. The \fIoffset\fR may have any of the forms described
+in the \fBCOORDINATES\fR section above.
+.TP
+\fB\-fill \fIcolor\fR
+.TP
+\fB\-activefill \fIcolor\fR
+.TP
+\fB\-disabledfill \fIcolor\fR
+.
+Specifies the color to be used to fill item's area.
+in its normal, active, and disabled states,
+\fIColor\fR may have any of the forms accepted by \fBTk_GetColor\fR.
+For the line item, it specifies the color of the line drawn.
+For the text item, it specifies the foreground color of the text.
+If \fIcolor\fR is an empty string (the default for all canvas items
+except line and text), then the item will not be filled.
+.TP
+\fB\-outline \fIcolor\fR
+.TP
+\fB\-activeoutline \fIcolor\fR
+.TP
+\fB\-disabledoutline \fIcolor\fR
+.
+This option specifies the color that should be used to draw the
+outline of the item in its normal, active and disabled states.
+\fIColor\fR may have any of the forms accepted by \fBTk_GetColor\fR.
+If \fIcolor\fR is specified as an empty string then no outline is drawn
+for the item.
+.TP
+\fB\-offset \fIoffset\fR
+.
+Specifies the offset of stipples. The offset value can be of the form
+\fBx,y\fR or \fIside\fR, where side can be \fBn\fR, \fBne\fR, \fBe\fR,
+\fBse\fR, \fBs\fR, \fBsw\fR, \fBw\fR, \fBnw\fR, or \fBcenter\fR. In the
+first case the origin is the origin of the toplevel of the current window.
+For the canvas itself and canvas objects the origin is the canvas origin,
+but putting \fB#\fR in front of the coordinate pair indicates using the
+toplevel origin instead. For canvas objects, the \fB\-offset\fR option is
+used for stippling as well. For the line and polygon canvas items you can
+also specify an index as argument, which connects the stipple origin to one
+of the coordinate points of the line/polygon. Note that stipple offsets are
+\fIonly supported on X11\fR; they are silently ignored on other platforms.
+.TP
+\fB\-outlinestipple \fIbitmap\fR
+.TP
+\fB\-activeoutlinestipple \fIbitmap\fR
+.TP
+\fB\-disabledoutlinestipple \fIbitmap\fR
+.
+This option specifies stipple patterns that should be used to draw the
+outline of the item in its normal, active and disabled states.
+Indicates that the outline for the item should be drawn with a stipple pattern;
+\fIbitmap\fR specifies the stipple pattern to use, in any of the
+forms accepted by \fBTk_GetBitmap\fR.
+If the \fB\-outline\fR option has not been specified then this option
+has no effect.
+If \fIbitmap\fR is an empty string (the default), then the outline is drawn
+in a solid fashion.
+\fINote that stipples are not well supported on platforms that do not
+use X11 as their drawing API.\fR
+.TP
+\fB\-outlineoffset \fIoffset\fR
+.
+Specifies the offset of the stipple pattern used for outlines, in the same way
+that the \fB\-outline\fR option controls fill stipples. (See the
+\fB\-outline\fR option for a description of the syntax of \fIoffset\fR.)
+.TP
+\fB\-stipple \fIbitmap\fR
+.TP
+\fB\-activestipple \fIbitmap\fR
+.TP
+\fB\-disabledstipple \fIbitmap\fR
+.
+This option specifies stipple patterns that should be used to fill
+the item in its normal, active and disabled states.
+\fIbitmap\fR specifies the stipple pattern to use, in any of the
+forms accepted by \fBTk_GetBitmap\fR.
+If the \fB\-fill\fR option has not been specified then this option
+has no effect.
+If \fIbitmap\fR is an empty string (the default), then filling is done
+in a solid fashion.
+For the text item, it affects the actual text.
+\fINote that stipples are not well supported on platforms that do not
+use X11 as their drawing API.\fR
+.TP
+\fB\-state \fIstate\fR
+.
+This allows an item to override the canvas widget's global \fIstate\fR
+option. It takes the same values:
+\fInormal\fR, \fIdisabled\fR or \fIhidden\fR.
+.TP
+\fB\-tags \fItagList\fR
+.
+Specifies a set of tags to apply to the item.
+\fITagList\fR consists of a list of tag names, which replace any
+existing tags for the item. \fITagList\fR may be an empty list.
+.TP
+\fB\-width \fIoutlineWidth\fR
+.TP
+\fB\-activewidth \fIoutlineWidth\fR
+.TP
+\fB\-disabledwidth \fIoutlineWidth\fR
+.
+Specifies the width of the outline to be drawn around
+the item's region, in its normal, active and disabled states.
+\fIoutlineWidth\fR may be in any of the forms described in the
+\fBCOORDINATES\fR section above.
+If the \fB\-outline\fR option has been specified as an empty string then
+this option has no effect. This option defaults to 1.0.
+For arcs, wide outlines will be drawn centered on the edges of the
+arc's region.
+.SH "STANDARD ITEM TYPES"
+.SS "ARC ITEMS"
+.PP
+Items of type \fBarc\fR appear on the display as arc-shaped regions.
+An arc is a section of an oval delimited by two angles (specified
+by the \fB\-start\fR and \fB\-extent\fR options) and displayed in
+one of several ways (specified by the \fB\-style\fR option).
+Arcs are created with widget commands of the following form:
+.CS
+\fIpathName \fBcreate arc \fIx1 y1 x2 y2 \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate arc \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx1\fR, \fIy1\fR, \fIx2\fR, and \fIy2\fR or \fIcoordList\fR give
+the coordinates of two diagonally opposite corners of a
+rectangular region enclosing the oval that defines the arc.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. An arc item becomes the current item when the mouse pointer is
+over any part that is painted or (when fully transparent) that would be
+painted if both the \fB\-fill\fR and \fB\-outline\fR options were non-empty.
+.PP
+The following standard options are supported by arcs:
+.DS
+.ta 3i
+\fB\-dash\fR	\fB\-activedash\fR
+\fB\-disableddash\fR	\fB\-dashoffset\fR
+\fB\-fill\fR	\fB\-activefill\fR
+\fB\-disabledfill\fR	\fB\-offset\fR
+\fB\-outline\fR	\fB\-activeoutline\fR
+\fB\-disabledoutline\fR	\fB\-outlineoffset\fR
+\fB\-outlinestipple\fR	\fB\-activeoutlinestipple\fR
+\fB\-disabledoutlinestipple\fR	\fB\-stipple\fR
+\fB\-activestipple\fR	\fB\-disabledstipple\fR
+\fB\-state\fR	\fB\-tags\fR
+\fB\-width\fR	\fB\-activewidth\fR
+\fB\-disabledwidth\fR
+.DE
+The following extra options are supported for arcs:
+.TP
+\fB\-extent \fIdegrees\fR
+Specifies the size of the angular range occupied by the arc.
+The arc's range extends for \fIdegrees\fR degrees counter-clockwise
+from the starting angle given by the \fB\-start\fR option.
+\fIDegrees\fR may be negative.
+If it is greater than 360 or less than \-360, then \fIdegrees\fR
+modulo 360 is used as the extent.
+.TP
+\fB\-start \fIdegrees\fR
+Specifies the beginning of the angular range occupied by the
+arc.
+\fIDegrees\fR is given in units of degrees measured counter-clockwise
+from the 3-o'clock position; it may be either positive or negative.
+.TP
+\fB\-style \fItype\fR
+Specifies how to draw the arc. If \fItype\fR is \fBpieslice\fR
+(the default) then the arc's region is defined by a section
+of the oval's perimeter plus two line segments, one between the center
+of the oval and each end of the perimeter section.
+If \fItype\fR is \fBchord\fR then the arc's region is defined
+by a section of the oval's perimeter plus a single line segment
+connecting the two end points of the perimeter section.
+If \fItype\fR is \fBarc\fR then the arc's region consists of
+a section of the perimeter alone.
+In this last case the \fB\-fill\fR option is ignored.
+.SS "BITMAP ITEMS"
+.PP
+Items of type \fBbitmap\fR appear on the display as images with
+two colors, foreground and background.
+Bitmaps are created with widget commands of the following form:
+.CS
+\fIpathName \fBcreate bitmap \fIx y \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate bitmap \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx\fR and \fIy\fR or \fIcoordList\fR (which must have two
+elements) specify the coordinates of a
+point used to position the bitmap on the display, as controlled by the
+\fB\-anchor\fR option.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. A bitmap item becomes the current item when the mouse pointer
+is over any part of its bounding box.
+.PP
+The following standard options are supported by bitmaps:
+.DS
+.ta 3i
+\fB\-anchor\fR	\fB\-state\fR
+\fB\-tags\fR
+.DE
+The following extra options are supported for bitmaps:
+.TP
+\fB\-background \fIcolor\fR
+.TP
+\fB\-activebackground \fIcolor\fR
+.TP
+\fB\-disabledbackground \fIcolor\fR
+Specifies the color to use for each of the bitmap's
+.QW 0
+valued pixels in its normal, active and disabled states.
+\fIColor\fR may have any of the forms accepted by \fBTk_GetColor\fR.
+If this option is not specified, or if it is specified as an empty
+string, then nothing is displayed where the bitmap pixels are 0; this
+produces a transparent effect.
+.TP
+\fB\-bitmap \fIbitmap\fR
+.TP
+\fB\-activebitmap \fIbitmap\fR
+.TP
+\fB\-disabledbitmap \fIbitmap\fR
+Specifies the bitmaps to display in the item in its normal, active and
+disabled states.
+\fIBitmap\fR may have any of the forms accepted by \fBTk_GetBitmap\fR.
+.TP
+\fB\-foreground \fIcolor\fR
+.TP
+\fB\-activeforeground \fIcolor\fR
+.TP
+\fB\-disabledforeground \fIcolor\fR
+Specifies the color to use for each of the bitmap's
+.QW 1
+valued pixels in its normal, active and disabled states.
+\fIColor\fR may have any of the forms accepted by \fBTk_GetColor\fR.
+.SS "IMAGE ITEMS"
+.PP
+Items of type \fBimage\fR are used to display images on a
+canvas.
+Images are created with widget commands of the following form:
+.CS
+\fIpathName \fBcreate image \fIx y \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate image \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx\fR and \fIy\fR or \fIcoordList\fR specify the coordinates of a
+point used to position the image on the display, as controlled by the
+\fB\-anchor\fR option.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. An image item becomes the current item when the mouse pointer
+is over any part of its bounding box.
+.PP
+The following standard options are supported by images:
+.DS
+.ta 3i
+\fB\-anchor\fR	\fB\-state\fR
+\fB\-tags\fR
+.DE
+The following extra options are supported for images:
+.TP
+\fB\-image \fIname\fR
+.TP
+\fB\-activeimage \fIname\fR
+.TP
+\fB\-disabledimage \fIname\fR
+Specifies the name of the images to display in the item in is normal,
+active and disabled states.
+This image must have been created previously with the
+\fBimage create\fR command.
+.SS "LINE ITEMS"
+.PP
+Items of type \fBline\fR appear on the display as one or more connected
+line segments or curves.
+Line items support coordinate indexing operations using the \fBdchars\fR,
+\fBindex\fR and \fBinsert\fR widget commands.
+Lines are created with widget commands of the following form:
+.CS
+\fIpathName \fBcreate line \fIx1 y1... xn yn \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate line \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx1\fR through \fIyn\fR or \fIcoordList\fR give
+the coordinates for a series of two or more points that describe
+a series of connected line segments.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. A line item is the current item whenever the mouse pointer is
+over any segment of the line, whether drawn or not and whether or not the line
+is smoothed.
+.PP
+The following standard options are supported by lines:
+.DS
+.ta 3i
+\fB\-dash\fR	\fB\-activedash\fR
+\fB\-disableddash\fR	\fB\-dashoffset\fR
+\fB\-fill\fR	\fB\-activefill\fR
+\fB\-disabledfill\fR	\fB\-stipple\fR
+\fB\-activestipple\fR	\fB\-disabledstipple\fR
+\fB\-state\fR	\fB\-tags\fR
+\fB\-width\fR	\fB\-activewidth\fR
+\fB\-disabledwidth\fR
+.DE
+The following extra options are supported for lines:
+.TP
+\fB\-arrow \fIwhere\fR
+Indicates whether or not arrowheads are to be drawn at one or both
+ends of the line.
+\fIWhere\fR must have one of the values \fBnone\fR (for no arrowheads),
+\fBfirst\fR (for an arrowhead at the first point of the line),
+\fBlast\fR (for an arrowhead at the last point of the line), or
+\fBboth\fR (for arrowheads at both ends).
+This option defaults to \fBnone\fR.
+.TP
+\fB\-arrowshape \fIshape\fR
+This option indicates how to draw arrowheads.
+The \fIshape\fR argument must be a list with three elements, each
+specifying a distance in any of the forms described in
+the \fBCOORDINATES\fR section above.
+The first element of the list gives the distance along the line
+from the neck of the arrowhead to its tip.
+The second element gives the distance along the line from the
+trailing points of the arrowhead to the tip, and the third
+element gives the distance from the outside edge of the line to the
+trailing points.
+If this option is not specified then Tk picks a
+.QW reasonable
+shape.
+.TP
+\fB\-capstyle \fIstyle\fR
+Specifies the ways in which caps are to be drawn at the endpoints
+of the line.
+\fIStyle\fR may have any of the forms accepted by \fBTk_GetCapStyle\fR
+(\fBbutt\fR, \fBprojecting\fR, or \fBround\fR).
+If this option is not specified then it defaults to \fBbutt\fR.
+Where arrowheads are drawn the cap style is ignored.
+.TP
+\fB\-joinstyle \fIstyle\fR
+Specifies the ways in which joints are to be drawn at the vertices
+of the line.
+\fIStyle\fR may have any of the forms accepted by \fBTk_GetJoinStyle\fR
+(\fBbevel\fR, \fBmiter\fR, or \fBround\fR).
+If this option is not specified then it defaults to \fBround\fR.
+If the line only contains two points then this option is
+irrelevant.
+.TP
+\fB\-smooth \fIsmoothMethod\fR
+\fIsmoothMethod\fR must have one of the forms accepted by
+\fBTcl_GetBoolean\fR or a line smoothing method.
+Only \fBtrue\fR and \fBraw\fR are
+supported in the core (with \fBbezier\fR being an alias for \fBtrue\fR), but more can be added at runtime. If a boolean
+false value or empty string is given, no smoothing is applied. A boolean
+truth value assumes \fBtrue\fR smoothing.
+If the smoothing method is \fBtrue\fR, this indicates that the line
+should be drawn as a curve, rendered as a set of quadratic splines: one spline
+is drawn for the first and second line segments, one for the second
+and third, and so on. Straight-line segments can be generated within
+a curve by duplicating the end-points of the desired line segment.
+If the smoothing method is \fBraw\fR, this indicates that the line
+should also be drawn as a curve but where the list of coordinates is
+such that the first coordinate pair (and every third coordinate pair
+thereafter) is a knot point on a cubic Bezier curve, and the other
+coordinates are control points on the cubic Bezier curve. Straight
+line segments can be generated within a curve by making control points
+equal to their neighbouring knot points. If the last point is a
+control point and not a knot point, the point is repeated (one or two
+times) so that it also becomes a knot point.
+.TP
+\fB\-splinesteps \fInumber\fR
+Specifies the degree of smoothness desired for curves: each spline
+will be approximated with \fInumber\fR line segments. This
+option is ignored unless the \fB\-smooth\fR option is true or \fBraw\fR.
+.SS "OVAL ITEMS"
+.PP
+Items of type \fBoval\fR appear as circular or oval regions on
+the display. Each oval may have an outline, a fill, or
+both. Ovals are created with widget commands of the
+following form:
+.CS
+\fIpathName \fBcreate oval \fIx1 y1 x2 y2 \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate oval \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx1\fR, \fIy1\fR, \fIx2\fR, and \fIy2\fR or \fIcoordList\fR give
+the coordinates of two diagonally opposite corners of a
+rectangular region enclosing the oval.
+The oval will include the top and left edges of the rectangle
+not the lower or right edges.
+If the region is square then the resulting oval is circular;
+otherwise it is elongated in shape.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. An oval item becomes the current item when the mouse pointer is
+over any part that is painted or (when fully transparent) that would be
+painted if both the \fB\-fill\fR and \fB\-outline\fR options were non-empty.
+.PP
+The following standard options are supported by ovals:
+.DS
+.ta 3i
+\fB\-dash\fR	\fB\-activedash\fR
+\fB\-disableddash\fR	\fB\-dashoffset\fR
+\fB\-fill\fR	\fB\-activefill\fR
+\fB\-disabledfill\fR	\fB\-offset\fR
+\fB\-outline\fR	\fB\-activeoutline\fR
+\fB\-disabledoutline\fR	\fB\-outlineoffset\fR
+\fB\-outlinestipple\fR	\fB\-activeoutlinestipple\fR
+\fB\-disabledoutlinestipple\fR	\fB\-stipple\fR
+\fB\-activestipple\fR	\fB\-disabledstipple\fR
+\fB\-state\fR	\fB\-tags\fR
+\fB\-width\fR	\fB\-activewidth\fR
+\fB\-disabledwidth\fR
+.DE
+There are no oval-specific options.
+.SS "POLYGON ITEMS"
+.PP
+Items of type \fBpolygon\fR appear as polygonal or curved filled regions
+on the display.
+Polygon items support coordinate indexing operations using the \fBdchars\fR,
+\fBindex\fR and \fBinsert\fR widget commands.
+Polygons are created with widget commands of the following form:
+.CS
+\fIpathName \fBcreate polygon \fIx1 y1 ... xn yn \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate polygon \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx1\fR through \fIyn\fR or \fIcoordList\fR specify the coordinates for
+three or more points that define a polygon.
+The first point should not be repeated as the last to
+close the shape; Tk will automatically close the periphery between
+the first and last points.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. A polygon item is the current item whenever the mouse pointer
+is over any part of the polygon, whether drawn or not and whether or not the
+outline is smoothed.
+.PP
+The following standard options are supported by polygons:
+.DS
+.ta 3i
+\fB\-dash\fR	\fB\-activedash\fR
+\fB\-disableddash\fR	\fB\-dashoffset\fR
+\fB\-fill\fR	\fB\-activefill\fR
+\fB\-disabledfill\fR	\fB\-offset\fR
+\fB\-outline\fR	\fB\-activeoutline\fR
+\fB\-disabledoutline\fR	\fB\-outlineoffset\fR
+\fB\-outlinestipple\fR	\fB\-activeoutlinestipple\fR
+\fB\-disabledoutlinestipple\fR	\fB\-stipple\fR
+\fB\-activestipple\fR	\fB\-disabledstipple\fR
+\fB\-state\fR	\fB\-tags\fR
+\fB\-width\fR	\fB\-activewidth\fR
+\fB\-disabledwidth\fR
+.DE
+The following extra options are supported for polygons:
+.TP
+\fB\-joinstyle \fIstyle\fR
+Specifies the ways in which joints are to be drawn at the vertices
+of the outline.
+\fIStyle\fR may have any of the forms accepted by \fBTk_GetJoinStyle\fR
+(\fBbevel\fR, \fBmiter\fR, or \fBround\fR).
+If this option is not specified then it defaults to \fBround\fR.
+.TP
+\fB\-smooth \fIboolean\fR
+\fIBoolean\fR must have one of the forms accepted by \fBTcl_GetBoolean\fR
+or a line smoothing method. Only \fBtrue\fR and \fBraw\fR are
+supported in the core (with \fBbezier\fR being an alias for \fBtrue\fR), but more can be added at runtime. If a boolean
+false value or empty string is given, no smoothing is applied. A boolean
+truth value assumes \fBtrue\fR smoothing.
+If the smoothing method is \fBtrue\fR, this indicates that the polygon
+should be drawn as a curve, rendered as a set of quadratic splines: one spline
+is drawn for the first and second line segments, one for the second
+and third, and so on. Straight-line segments can be generated within
+a curve by duplicating the end-points of the desired line segment.
+If the smoothing method is \fBraw\fR, this indicates that the polygon
+should also be drawn as a curve but where the list of coordinates is
+such that the first coordinate pair (and every third coordinate pair
+thereafter) is a knot point on a cubic Bezier curve, and the other
+coordinates are control points on the cubic Bezier curve. Straight
+line segments can be venerated within a curve by making control points
+equal to their neighbouring knot points. If the last point is not the
+second point of a pair of control points, the point is repeated (one or two
+times) so that it also becomes the second point of a pair of control
+points (the associated knot point will be the first control point).
+.TP
+\fB\-splinesteps \fInumber\fR
+Specifies the degree of smoothness desired for curves: each spline
+will be approximated with \fInumber\fR line segments. This
+option is ignored unless the \fB\-smooth\fR option is true or \fBraw\fR.
+.PP
+Polygon items are different from other items such as rectangles, ovals
+and arcs in that interior points are considered to be
+.QW inside
+a polygon (e.g. for purposes of the \fBfind closest\fR and
+\fBfind overlapping\fR widget commands) even if it is not filled.
+For most other item types, an
+interior point is considered to be inside the item only if the item
+is filled or if it has neither a fill nor an outline. If you would
+like an unfilled polygon whose interior points are not considered
+to be inside the polygon, use a line item instead.
+.SS "RECTANGLE ITEMS"
+.PP
+Items of type \fBrectangle\fR appear as rectangular regions on
+the display. Each rectangle may have an outline, a fill, or
+both. Rectangles are created with widget commands of the
+following form:
+.CS
+\fIpathName \fBcreate rectangle \fIx1 y1 x2 y2 \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate rectangle \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx1\fR, \fIy1\fR, \fIx2\fR, and \fIy2\fR or \fIcoordList\fR
+(which must have four elements) give
+the coordinates of two diagonally opposite corners of the rectangle
+(the rectangle will include its upper and left edges but not
+its lower or right edges).
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. A rectangle item becomes the current item when the mouse
+pointer is over any part that is painted or (when fully transparent) that
+would be painted if both the \fB\-fill\fR and \fB\-outline\fR options were
+non-empty.
+.PP
+The following standard options are supported by rectangles:
+.DS
+.ta 3i
+\fB\-dash\fR	\fB\-activedash\fR
+\fB\-disableddash\fR	\fB\-dashoffset\fR
+\fB\-fill\fR	\fB\-activefill\fR
+\fB\-disabledfill\fR	\fB\-offset\fR
+\fB\-outline\fR	\fB\-activeoutline\fR
+\fB\-disabledoutline\fR	\fB\-outlineoffset\fR
+\fB\-outlinestipple\fR	\fB\-activeoutlinestipple\fR
+\fB\-disabledoutlinestipple\fR	\fB\-stipple\fR
+\fB\-activestipple\fR	\fB\-disabledstipple\fR
+\fB\-state\fR	\fB\-tags\fR
+\fB\-width\fR	\fB\-activewidth\fR
+\fB\-disabledwidth\fR
+.DE
+There are no rectangle-specific options.
+.SS "TEXT ITEMS"
+.PP
+A text item displays a string of characters on the screen in one
+or more lines.
+Text items support indexing, editing and selection through the \fBdchars\fR
+widget command, the \fBfocus\fR widget command, the \fBicursor\fR widget
+command, the \fBindex\fR widget command, the \fBinsert\fR widget command, and
+the \fBselect\fR widget command.
+Text items are created with widget commands of the following
+form:
+.CS
+\fIpathName \fBcreate text \fIx y \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate text \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx\fR and \fIy\fR or \fIcoordList\fR (which must have two
+elements) specify the coordinates of a
+point used to position the text on the display (see the options
+below for more information on how text is displayed).
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. A text item becomes the current item when the mouse pointer
+is over any part of its bounding box.
+.PP
+The following standard options are supported by text items:
+.DS
+.ta 3i
+\fB\-anchor\fR	\fB\-fill\fR
+\fB\-activefill\fR	\fB\-disabledfill\fR
+\fB\-stipple\fR	\fB\-activestipple\fR
+\fB\-disabledstipple\fR	\fB\-state\fR
+\fB\-tags\fR
+.DE
+The following extra options are supported for text items:
+.TP
+\fB\-angle \fIrotationDegrees\fR
+.VS 8.6
+\fIRotationDegrees\fR tells how many degrees to rotate the text anticlockwise
+about the positioning point for the text; it may have any floating-point value
+from 0.0 to 360.0. For example, if \fIrotationDegrees\fR is \fB90\fR, then the
+text will be drawn vertically from bottom to top.
+This option defaults to \fB0.0\fR.
+.VE 8.6
+.TP
+\fB\-font \fIfontName\fR
+Specifies the font to use for the text item.
+\fIFontName\fR may be any string acceptable to \fBTk_GetFont\fR.
+If this option is not specified, it defaults to a system-dependent
+font.
+.TP
+\fB\-justify \fIhow\fR
+Specifies how to justify the text within its bounding region.
+\fIHow\fR must be one of the values \fBleft\fR, \fBright\fR,
+or \fBcenter\fR.
+This option will only matter if the text is displayed as multiple
+lines.
+If the option is omitted, it defaults to \fBleft\fR.
+.TP
+\fB\-text \fIstring\fR
+\fIString\fR specifies the characters to be displayed in the text item.
+Newline characters cause line breaks.
+The characters in the item may also be changed with the
+\fBinsert\fR and \fBdelete\fR widget commands.
+This option defaults to an empty string.
+.TP
+\fB\-underline \fI\fR
+Specifies the integer index of a character within the text to be
+underlined. 0 corresponds to the first character of the text
+displayed, 1 to the next character, and so on. \-1 means that no
+underline should be drawn (if the whole text item is to be underlined,
+the appropriate font should be used instead).
+.TP
+\fB\-width \fIlineLength\fR
+Specifies a maximum line length for the text, in any of the forms
+described in the \fBCOORDINATES\fR section above.
+If this option is zero (the default) the text is broken into
+lines only at newline characters.
+However, if this option is non-zero then any line that would
+be longer than \fIlineLength\fR is broken just before a space
+character to make the line shorter than \fIlineLength\fR; the
+space character is treated as if it were a newline
+character.
+.SS "WINDOW ITEMS"
+.PP
+Items of type \fBwindow\fR cause a particular window to be displayed
+at a given position on the canvas.
+Window items are created with widget commands of the following form:
+.CS
+\fIpathName \fBcreate window \fIx y \fR?\fIoption value ...\fR?
+\fIpathName \fBcreate window \fIcoordList\fR ?\fIoption value ...\fR?
+.CE
+The arguments \fIx\fR and \fIy\fR or \fIcoordList\fR (which must have two
+elements) specify the coordinates of a
+point used to position the window on the display, as controlled by the
+\fB\-anchor\fR option.
+After the coordinates there may be any number of \fIoption\fR\-\fIvalue\fR
+pairs, each of which sets one of the configuration options
+for the item. These same \fIoption\fR\-\fIvalue\fR pairs may be
+used in \fBitemconfigure\fR widget commands to change the item's
+configuration. Theoretically, a window item becomes the current item when the
+mouse pointer is over any part of its bounding box, but in practice this
+typically does not happen because the mouse pointer ceases to be over the
+canvas at that point.
+.PP
+The following standard options are supported by window items:
+.DS
+.ta 3i
+\fB\-anchor\fR	\fB\-state\fR
+\fB\-tags\fR
+.DE
+The following extra options are supported for window items:
+.TP
+\fB\-height \fIpixels\fR
+.
+Specifies the height to assign to the item's window.
+\fIPixels\fR may have any of the
+forms described in the \fBCOORDINATES\fR section above.
+If this option is not specified, or if it is specified as zero,
+then the window is given whatever height it requests internally.
+.TP
+\fB\-width \fIpixels\fR
+.
+Specifies the width to assign to the item's window.
+\fIPixels\fR may have any of the
+forms described in the \fBCOORDINATES\fR section above.
+If this option is not specified, or if it is specified as zero,
+then the window is given whatever width it requests internally.
+.TP
+\fB\-window \fIpathName\fR
+.
+Specifies the window to associate with this item.
+The window specified by \fIpathName\fR must either be a child of
+the canvas widget or a child of some ancestor of the canvas widget.
+\fIPathName\fR may not refer to a top-level window.
+.PP
+Note: due to restrictions in the ways that windows are managed, it is not
+possible to draw other graphical items (such as lines and images) on top
+of window items. A window item always obscures any graphics that
+overlap it, regardless of their order in the display list. Also note that
+window items, unlike other canvas items, are not clipped for display by their
+containing canvas's border, and are instead clipped by the parent widget of
+the window specified by the \fB\-window\fR option; when the parent widget is
+the canvas, this means that the window item can overlap the canvas's border.
+.SH "APPLICATION-DEFINED ITEM TYPES"
+.PP
+It is possible for individual applications to define new item
+types for canvas widgets using C code.
+See the documentation for \fBTk_CreateItemType\fR.
+.SH BINDINGS
+.PP
+In the current implementation, new canvases are not given any
+default behavior: you will have to execute explicit Tcl commands
+to give the canvas its behavior.
+.SH CREDITS
+.PP
+Tk's canvas widget is a blatant ripoff of ideas from Joel Bartlett's
+\fIezd\fR program. \fIEzd\fR provides structured graphics in a Scheme
+environment and preceded canvases by a year or two. Its simple
+mechanisms for placing and animating graphical objects inspired the
+functions of canvases.
+.SH "SEE ALSO"
+bind(n), font(n), image(n), scrollbar(n)
+.SH KEYWORDS
+canvas, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

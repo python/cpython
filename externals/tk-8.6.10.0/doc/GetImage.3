@@ -1,0 +1,130 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetImage 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetImage, Tk_RedrawImage, Tk_SizeOfImage, Tk_FreeImage \- use an image in a widget
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Image
+\fBTk_GetImage\fR(\fIinterp, tkwin, name, changeProc, clientData\fR)
+.sp
+\fBTk_RedrawImage\fR(\fIimage, imageX, imageY, width, height, drawable, drawableX, drawableY\fR)
+.sp
+\fBTk_SizeOfImage\fR(\fIimage, widthPtr, heightPtr\fR)
+.sp
+\fBTk_FreeImage\fR(\fIimage\fR)
+.SH ARGUMENTS
+.AS Tk_ImageChangedProc *changeProc
+.AP Tcl_Interp *interp in
+Place to leave error message.
+.AP Tk_Window tkwin in
+Window in which image will be used.
+.AP "const char" *name in
+Name of image.
+.AP Tk_ImageChangedProc *changeProc in
+Procedure for Tk to invoke whenever image content or size changes.
+.AP ClientData clientData in
+One-word value for Tk to pass to \fIchangeProc\fR.
+.AP Tk_Image image in
+Token for image instance;  must have been returned by a previous
+call to \fBTk_GetImage\fR.
+.AP int imageX in
+X-coordinate of upper-left corner of region of image to redisplay
+(measured in pixels from the image's upper-left corner).
+.AP int imageY in
+Y-coordinate of upper-left corner of region of image to redisplay
+(measured in pixels from the image's upper-left corner).
+.AP "int" width (in)
+Width of region of image to redisplay.
+.AP "int" height (in)
+Height of region of image to redisplay.
+.AP Drawable drawable in
+Where to display image.  Must either be window specified to
+\fBTk_GetImage\fR or a pixmap compatible with that window.
+.AP int drawableX in
+Where to display image in \fIdrawable\fR: this is the x-coordinate
+in \fIdrawable\fR where x-coordinate \fIimageX\fR of the image
+should be displayed.
+.AP int drawableY in
+Where to display image in \fIdrawable\fR: this is the y-coordinate
+in \fIdrawable\fR where y-coordinate \fIimageY\fR of the image
+should be displayed.
+.AP "int" widthPtr out
+Store width of \fIimage\fR (in pixels) here.
+.AP "int" heightPtr out
+Store height of \fIimage\fR (in pixels) here.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are invoked by widgets that wish to display images.
+\fBTk_GetImage\fR is invoked by a widget when it first decides to
+display an image.
+\fIname\fR gives the name of the desired image and \fItkwin\fR
+identifies the window where the image will be displayed.
+\fBTk_GetImage\fR looks up the image in the table of existing
+images and returns a token for a new instance of the image.
+If the image does not exist then \fBTk_GetImage\fR returns NULL
+and leaves an error message in interpreter \fIinterp\fR's result.
+.PP
+When a widget wishes to actually display an image it must
+call \fBTk_RedrawImage\fR, identifying the image (\fIimage\fR),
+a region within the image to redisplay (\fIimageX\fR, \fIimageY\fR,
+\fIwidth\fR, and \fIheight\fR), and a place to display the
+image (\fIdrawable\fR, \fIdrawableX\fR, and \fIdrawableY\fR).
+Tk will then invoke the appropriate image manager, which will
+display the requested portion of the image before returning.
+.PP
+A widget can find out the dimensions of an image by calling
+\fBTk_SizeOfImage\fR:  the width and height will be stored
+in the locations given by \fIwidthPtr\fR and \fIheightPtr\fR,
+respectively.
+.PP
+When a widget is finished with an image (e.g., the widget is
+being deleted or it is going to use a different image instead
+of the current one), it must call \fBTk_FreeImage\fR to
+release the image instance.
+The widget should never again use the image token after passing
+it to \fBTk_FreeImage\fR.
+There must be exactly one call to \fBTk_FreeImage\fR for each
+call to \fBTk_GetImage\fR.
+.PP
+If the contents or size of an image changes, then any widgets
+using the image will need to find out about the changes so that
+they can redisplay themselves.
+The \fIchangeProc\fR and \fIclientData\fR arguments to
+\fBTk_GetImage\fR are used for this purpose.
+\fIchangeProc\fR will be called by Tk whenever a change occurs
+in the image;  it must match the following prototype:
+.CS
+typedef void \fBTk_ImageChangedProc\fR(
+        ClientData \fIclientData\fR,
+        int \fIx\fR,
+        int \fIy\fR,
+        int \fIwidth\fR,
+        int \fIheight\fR,
+        int \fIimageWidth\fR,
+        int \fIimageHeight\fR);
+.CE
+The \fIclientData\fR argument to \fIchangeProc\fR is the same as the
+\fIclientData\fR argument to \fBTk_GetImage\fR.
+It is usually a pointer to the widget record for the widget or
+some other data structure managed by the widget.
+The arguments \fIx\fR, \fIy\fR, \fIwidth\fR, and \fIheight\fR
+identify a region within the image that must be redisplayed;
+they are specified in pixels measured from the upper-left
+corner of the image.
+The arguments \fIimageWidth\fR and \fIimageHeight\fR give
+the image's (new) size.
+.SH "SEE ALSO"
+Tk_CreateImageType
+.SH KEYWORDS
+images, redisplay

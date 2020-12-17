@@ -1,0 +1,29 @@
+# -*- mode: text; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+
+There are two set of tests in this directory:
+
+[1] The Tcltest-style tests (with the .test extension), which are not yet
+fully supported.
+[2] The old-style tests, which are invoked by the script Driver.tcl.
+
+The old-style tests will be rewritten to use the Tcltest-style. 
+
+To execute all of the tests, simply do a "make test" in the win/ or
+unix/ build directories.
+
+To execute an individual test file:
+
+[1] .test files: simply source the file. E.g.,
+
+    cd unix
+    tixwish ../tests/basic.test
+
+[2] Old-style tests:
+
+    ../unix/tixwish Driver.tcl general/select.tcl
+
+    - or -
+
+    ..\win\tixwish.exe Driver.tcl general/select.tcl
+
+

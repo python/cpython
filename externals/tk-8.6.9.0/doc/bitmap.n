@@ -1,0 +1,124 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH bitmap n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+bitmap \- Images that display two colors
+.SH SYNOPSIS
+.nf
+\fBimage create bitmap \fR?\fIname\fR? ?\fIoptions\fR?
+
+\fIimageName \fBcget\fR \fIoption\fR
+\fIimageName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+A bitmap is an image whose pixels can display either of two colors
+or be transparent.
+A bitmap image is defined by four things:  a background color,
+a foreground color, and two bitmaps, called the \fIsource\fR
+and the \fImask\fR.
+Each of the bitmaps specifies 0/1 values for a rectangular
+array of pixels, and the two bitmaps must have the same
+dimensions.
+For pixels where the mask is zero, the image displays nothing,
+producing a transparent effect.
+For other pixels, the image displays the foreground color if
+the source data is one and the background color if the source
+data is zero.
+.SH "CREATING BITMAPS"
+.PP
+Like all images, bitmaps are created using the \fBimage create\fR
+command.
+Bitmaps support the following \fIoptions\fR:
+.TP
+\fB\-background \fIcolor\fR
+.
+Specifies a background color for the image in any of the standard
+ways accepted by Tk.  If this option is set to an empty string
+then the background pixels will be transparent.  This effect
+is achieved by using the source bitmap as the mask bitmap, ignoring
+any \fB\-maskdata\fR or \fB\-maskfile\fR options.
+.TP
+\fB\-data \fIstring\fR
+.
+Specifies the contents of the source bitmap as a string.
+The string must adhere to X11 bitmap format (e.g., as generated
+by the \fBbitmap\fR program).
+If both the \fB\-data\fR and \fB\-file\fR options are specified,
+the \fB\-data\fR option takes precedence.
+.TP
+\fB\-file \fIname\fR
+.
+\fIname\fR gives the name of a file whose contents define the
+source bitmap.
+The file must adhere to X11 bitmap format (e.g., as generated
+by the \fBbitmap\fR program).
+.TP
+\fB\-foreground \fIcolor\fR
+.
+Specifies a foreground color for the image in any of the standard
+ways accepted by Tk.
+.TP
+\fB\-maskdata \fIstring\fR
+.
+Specifies the contents of the mask as a string.
+The string must adhere to X11 bitmap format (e.g., as generated
+by the \fBbitmap\fR program).
+If both the \fB\-maskdata\fR and \fB\-maskfile\fR options are specified,
+the \fB\-maskdata\fR option takes precedence.
+.TP
+\fB\-maskfile \fIname\fR
+.
+\fIname\fR gives the name of a file whose contents define the
+mask.
+The file must adhere to X11 bitmap format (e.g., as generated
+by the \fBbitmap\fR program).
+.SH "IMAGE COMMAND"
+.PP
+When a bitmap image is created, Tk also creates a new command
+whose name is the same as the image.
+This command may be used to invoke various operations
+on the image.
+It has the following general form:
+.CS
+\fIimageName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for bitmap images:
+.TP
+\fIimageName \fBcget\fR \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the
+\fBimage create\fR \fBbitmap\fR command.
+.TP
+\fIimageName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the configuration options for the image.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIimageName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the
+\fBimage create\fR \fBbitmap\fR command.
+.SH KEYWORDS
+bitmap, image
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

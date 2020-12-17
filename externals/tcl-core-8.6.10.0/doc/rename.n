@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH rename n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+rename \- Rename or delete a command
+.SH SYNOPSIS
+\fBrename \fIoldName newName\fR
+.BE
+.SH DESCRIPTION
+.PP
+Rename the command that used to be called \fIoldName\fR so that it
+is now called \fInewName\fR.
+If \fInewName\fR is an empty string then \fIoldName\fR is deleted.
+\fIoldName\fR and \fInewName\fR may include namespace qualifiers
+(names of containing namespaces).
+If a command is renamed into a different namespace,
+future invocations of it will execute in the new namespace.
+The \fBrename\fR command returns an empty string as result.
+.SH EXAMPLE
+.PP
+The \fBrename\fR command can be used to wrap the standard Tcl commands
+with your own monitoring machinery.  For example, you might wish to
+count how often the \fBsource\fR command is called:
+.PP
+.CS
+\fBrename\fR ::source ::theRealSource
+set sourceCount 0
+proc ::source args {
+    global sourceCount
+    puts "called source for the [incr sourceCount]'th time"
+    uplevel 1 ::theRealSource $args
+}
+.CE
+.SH "SEE ALSO"
+namespace(n), proc(n)
+.SH KEYWORDS
+command, delete, namespace, rename

@@ -1,0 +1,223 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+.TH Geometry 3 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+Ttk_MakeBox, Ttk_PadBox, Ttk_ExpandBox, Ttk_PackBox, Ttk_StickBox, Ttk_PlaceBox, Ttk_BoxContains, Ttk_MakePadding, Ttk_UniformPadding, Ttk_AddPadding, Ttk_RelievePadding, Ttk_GetPaddingFromObj, Ttk_GetBorderFromObj, Ttk_GetStickyFromObj \- Tk themed geometry utilities
+.SH SYNOPSIS
+.nf
+\fB#include <tkTheme.h>\fR
+
+Ttk_Box
+\fBTtk_MakeBox\fR(int \fIx\fR, int \fIy\fR, int \fIwidth\fR, int \fIheight\fR);
+
+Ttk_Box
+\fBTtk_PadBox\fR(Ttk_Box \fIparcel\fR, Ttk_Padding \fIpadding\fR);
+
+Ttk_Box
+\fBTtk_ExpandBox\fR(Ttk_Box \fIparcel\fR, Ttk_Padding \fIpadding\fR);
+
+Ttk_Box
+\fBTtk_PackBox\fR(Ttk_Box *\fIcavity\fR, int \fIwidth\fR, int \fIheight\fR, Ttk_Side \fIside\fR);
+
+Ttk_Box
+\fBTtk_StickBox\fR(Ttk_Box \fIparcel\fR, int \fIwidth\fR, int \fIheight\fR, unsigned \fIsticky\fR);
+
+Ttk_Box
+\fBTtk_PlaceBox\fR(Ttk_Box *\fIcavity\fR, int \fIwidth\fR, int \fIheight\fR, Ttk_Side \fIside\fR, unsigned \fIsticky\fR);
+
+Ttk_Box
+\fBTtk_AnchorBox\fR(Ttk_Box \fIparcel\fR, int \fIwidth\fR, int \fIheight\fR, Tk_Anchor \fIanchor\fR);
+
+Ttk_Padding
+\fBTtk_MakePadding\fR(short \fIleft\fR, short \fItop\fR, short \fIright\fR, short \fIbottom\fR);
+
+Ttk_Padding
+\fBTtk_UniformPadding\fR(short \fIborder\fR);
+
+Ttk_Padding
+\fBTtk_AddPadding\fR(Ttk_Padding \fIpadding1\fR, Ttk_Padding \fIpadding2\fR;
+
+Ttk_Padding
+\fBTtk_RelievePadding\fR(Ttk_Padding \fIpadding\fR, int \fIrelief\fR);
+
+int
+\fBTtk_BoxContains\fR(Ttk_Box \fIbox\fR, int \fIx\fR, int \fIy\fR);
+
+int
+\fBTtk_GetPaddingFromObj\fR(Tcl_Interp *\fIinterp\fR, Tk_Window \fItkwin\fR, Tcl_Obj *\fIobjPtr\fR, Ttk_Padding *\fIpadding_rtn\fR);
+
+int
+\fBTtk_GetBorderFromObj\fR(Tcl_Interp *\fIinterp\fR, Tcl_Obj *\fIobjPtr\fR, Ttk_Padding *\fIpadding_rtn\fR);
+
+int
+\fBTtk_GetStickyFromObj\fR(Tcl_Interp *\fIinterp\fR, Tcl_Obj *\fIobjPtr\fR, int *\fIsticky_rtn\fR);
+.fi
+.SH ARGUMENTS
+.AP Tk_Anchor anchor in
+One of the symbolic constants \fBTK_ANCHOR_N\fR, \fBTK_ANCHOR_NE\fR,
+etc.  See \fITk_GetAnchorFromObj(3)\fR.
+.AP "Ttk_Box *" cavity in/out
+A rectangular region from which a parcel is allocated.
+.AP short border in
+Extra padding (in pixels) to add uniformly to each side of a region.
+.AP short bottom in
+Extra padding (in pixels) to add to the bottom of a region.
+.AP Ttk_Box box in
+.AP "Ttk_Box *" box_rtn out
+Specifies a rectangular region.
+.AP int height in
+The height in pixels of a region.
+.AP "Tcl_Interp *" interp in
+Used to store error messages.
+.AP int left in
+Extra padding (in pixels) to add to the left side of a region.
+.AP "Tcl_Obj *" objPtr in
+String value contains a symbolic name
+to be converted to an enumerated value or bitmask.
+Internal rep may be be modified to cache corresponding value.
+.AP Ttk_Padding padding in
+.AP "Ttk_Padding *" padding_rtn out
+Extra padding to add on the inside of a region.
+.AP Ttk_Box parcel in
+A rectangular region, allocated from a cavity.
+.AP int relief in
+One of the standard Tk relief options
+(TK_RELIEF_RAISED, TK_RELIEF_SUNKEN, etc.).
+See \fBTk_GetReliefFromObj\fR.
+.AP short right in
+Extra padding (in pixels) to add to the right side of a region.
+.AP Ttk_Side side in
+One of \fBTTK_SIDE_LEFT\fR, \fBTTK_SIDE_TOP\fR,
+\fBTTK_SIDE_RIGHT\fR, or \fBTTK_SIDE_BOTTOM\fR.
+.AP unsigned sticky in
+A bitmask containing one or more of the bits
+\fBTTK_STICK_W\fR (west, or left),
+\fBTTK_STICK_E\fR (east, or right,
+\fBTTK_STICK_N\fR (north, or top), and
+\fBTTK_STICK_S\fR (south, or bottom).
+\fBTTK_FILL_X\fR is defined as a synonym for (TTK_STICK_W|TTK_STICK_E),
+\fBTTK_FILL_Y\fR is a synonym for (TTK_STICK_N|TTK_STICK_S),
+and  \fBTTK_FILL_BOTH\fR and \fBTTK_STICK_ALL\fR
+are synonyms for (TTK_FILL_X|TTK_FILL_Y).
+See also: \fIgrid(n)\fR.
+.AP Tk_Window tkwin in
+Window whose screen geometry determines
+the conversion between absolute units and pixels.
+.AP short top in
+Extra padding at the top of a region.
+.AP int width in
+The width in pixels of a region.
+.AP int x in
+X coordinate of upper-left corner of region.
+.AP int y in
+Y coordinate of upper-left corner of region.
+.BE
+.SH "BOXES"
+.PP
+The \fBTtk_Box\fR structure represents a rectangular region of a window:
+.CS
+typedef struct {
+    int \fIx\fR;
+    int \fIy\fR;
+    int \fIwidth\fR;
+    int \fIheight\fR;
+} \fBTtk_Box\fR;
+.CE
+All coordinates are relative to the window.
+.PP
+\fBTtk_MakeBox\fR is a convenience routine that constructs
+a \fBTtk_Box\fR structure representing a region \fIwidth\fR pixels
+wide, \fIheight\fR pixels tall, at the specified \fIx, y\fR coordinates.
+.PP
+\fBTtk_PadBox\fR returns a new box located inside the specified \fIparcel\fR,
+shrunken according to the left, top, right, and bottom margins
+specified by \fIpadding\fR.
+.PP
+\fBTtk_ExpandBox\fR is the inverse of \fBTtk_PadBox\fR:
+it returns a new box surrounding the specified \fIparcel\fR,
+expanded  according to the left, top, right, and bottom margins
+specified by \fIpadding\fR.
+.PP
+\fBTtk_PackBox\fR allocates a parcel \fIwidth\fR by \fIheight\fR
+pixels wide on the specified \fIside\fR of the \fIcavity\fR,
+and shrinks the \fIcavity\fR accordingly.
+.PP
+\fBTtk_StickBox\fR places a box with the requested \fIwidth\fR
+and \fIheight\fR inside the \fIparcel\fR according to the
+\fIsticky\fR bits.
+.PP
+\fBTtk_PlaceBox\fR combines \fBTtk_PackBox\fR and \fBTtk_StickBox\fR:
+it allocates a parcel on the specified \fIside\fR of the \fIcavity\fR,
+places a box of the requested size inside the parcel according to \fIsticky\fR,
+and shrinks the \fIcavity\fR.
+.PP
+\fBTtk_AnchorBox\fR places a box with the requested \fIwidth\fR
+and \fIheight\fR inside the \fIparcel\fR according to the
+specified \fIanchor\fR option.
+.PP
+\fBTtk_BoxContains\fR tests if the specified \fIx, y\fR coordinate
+lies within the rectangular region \fIbox\fR.
+.SH "PADDDING"
+.PP
+The \fBTtk_Padding\fR structure is used to represent
+borders, internal padding, and external margins:
+.CS
+typedef struct {
+    short \fIleft\fR;
+    short \fItop\fR;
+    short \fIright\fR;
+    short \fIbottom\fR;
+} \fBTtk_Padding\fR;
+.CE
+.PP
+\fBTtk_MakePadding\fR is a convenience routine that constructs
+a \fBTtk_Padding\fR structure with the specified left, top, right, and bottom
+components.
+.PP
+\fBTtk_UniformPadding\fR constructs a \fBTtk_Padding\fR structure
+with all components equal to the specified \fIborder\fR.
+.PP
+\fBTtk_AddPadding\fR adds two \fBTtk_Padding\fRs together
+and returns a combined padding containing the sum of the
+individual padding components.
+.PP
+\fBTtk_RelievePadding\fR
+adds an extra 2 pixels of padding to \fIpadding\fR
+according to the specified \fIrelief\fR.
+If \fIrelief\fR is \fBTK_RELIEF_SUNKEN\fR,
+adds two pixels at the top and left
+so the inner region is shifted down and to the left.
+If it is \fBTK_RELIEF_RAISED\fR, adds two pixels
+at the bottom and right so
+the inner region is shifted up and to the right.
+Otherwise, adds 1 pixel on all sides.
+This is typically used in element geometry procedures to simulate a
+.QW pressed-in
+look for pushbuttons.
+.SH "CONVERSION ROUTINES"
+.PP
+\fBTtk_GetPaddingFromObj\fR converts the string in \fIobjPtr\fR
+to a \fBTtk_Padding\fR structure.
+The string representation is a list of
+up to four length specifications
+.QW "\fIleft top right bottom\fR" .
+If fewer than four elements are specified,
+\fIbottom\fR defaults to \fItop\fR,
+\fIright\fR defaults to \fIleft\fR, and
+\fItop\fR defaults to \fIleft\fR.
+See \fBTk_GetPixelsFromObj(3)\fR for the syntax of length specifications.
+.PP
+\fBTtk_GetBorderFromObj\fR is the same as \fBTtk_GetPaddingFromObj\fR
+except that the lengths are specified as integers
+(i.e., resolution-dependent values like \fI3m\fR are not allowed).
+.PP
+\fBTtk_GetStickyFromObj\fR converts the string in \fIobjPtr\fR
+to a \fIsticky\fR bitmask.  The string contains zero or more
+of the characters \fBn\fR, \fBs\fR, \fBe\fR, or \fBw\fR.
+.SH "SEE ALSO"
+Tk_GetReliefFromObj(3), Tk_GetPixelsFromObj(3), Tk_GetAnchorFromObj(3)
+.SH "KEYWORDS"
+geometry, padding, margins, box, region, sticky, relief

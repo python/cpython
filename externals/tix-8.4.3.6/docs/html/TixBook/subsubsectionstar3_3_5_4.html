@@ -1,0 +1,47 @@
+<HEAD>
+<TITLE>  Accessing the Button Subwidgets<A NAME=1513>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html529 HREF=subsubsection3_3_5_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html527 HREF=subsection3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html521 HREF=subsubsectionstar3_3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html531 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html530 HREF=subsubsection3_3_5_5.html> Specifying Selection Rules</A>
+<B>Up:</B> <A NAME=tex2html528 HREF=subsection3_3_5.html> The TixSelect Widget</A>
+<B> Previous:</B> <A NAME=tex2html522 HREF=subsubsectionstar3_3_5_3.html>  Creating the Button </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00035400000000000000>  Accessing the Button Subwidgets<A NAME=1513>&nbsp;</A></A></H3>
+<P>
+We have already seen the concept of subwidgets and how they can be
+  accessed in section 1.3.1 - when we create a Tix
+  mega-widget, some subwidgets are created for us automatically. For
+  example, the label and entry subwidgets inside a TixControl widget.
+  We can access these subwidgets in a multitude of ways, including
+  using the subwidget method.
+<P>
+One thing about the subwidgets we saw in section 1.3.1 is
+that they are ``static'', meaning they are created when the mega-widget is
+created and they remain there for the whole lifetime of the mega-widget.
+<P>
+The TixSelect widget takes us to a new concept: <em>dynamic
+  subwidgets</em> are subwidgets that can be created on-the-fly. After we
+  add a new button into the TixSelect widget, we get a new
+  subwidget. The name of this new subwidget is given by the first
+  parameter passed to the <tt>add</tt> method. As the following code
+  demonstrates, we can access this new subwidget using the <tt>subwidget</tt> method:
+<P>
+<blockquote> <tt> tixSelect .s<BR>
+.s add apple  -text Apple<BR>
+.s add orange -text Orange<BR>
+#   Mmmm..., let's make the widget look more educated<BR>
+#   by using French words<BR>
+.s subwidget apple  config -text Pomme<BR>
+.s subwidget orange config -text Orange
+</tt>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

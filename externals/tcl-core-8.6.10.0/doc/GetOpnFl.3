@@ -1,0 +1,58 @@
+'\"
+'\" Copyright (c) 1996-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_GetOpenFile 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetOpenFile \- Return a FILE* for a channel registered in the given interpreter (Unix only)
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_GetOpenFile\fR(\fIinterp, chanID, write, checkUsage, filePtr\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_Interp checkUsage out
+.AP Tcl_Interp *interp in
+Tcl interpreter from which file handle is to be obtained.
+.AP "const char" *chanID in
+String identifying channel, such as \fBstdin\fR or \fBfile4\fR.
+.AP int write in
+Non-zero means the file will be used for writing, zero means it will
+be used for reading.
+.AP int checkUsage in
+If non-zero, then an error will be generated if the file was not opened
+for the access indicated by \fIwrite\fR.
+.AP ClientData *filePtr out
+Points to word in which to store pointer to FILE structure for
+the file given by \fIchanID\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_GetOpenFile\fR takes as argument a file identifier of the form
+returned by the \fBopen\fR command and
+returns at \fI*filePtr\fR a pointer to the FILE structure for
+the file.
+The \fIwrite\fR argument indicates whether the FILE pointer will
+be used for reading or writing.
+In some cases, such as a channel that connects to a pipeline of
+subprocesses, different FILE pointers will be returned for reading
+and writing.
+\fBTcl_GetOpenFile\fR normally returns \fBTCL_OK\fR.
+If an error occurs in \fBTcl_GetOpenFile\fR (e.g. \fIchanID\fR did not
+make any sense or \fIcheckUsage\fR was set and the file was not opened
+for the access specified by \fIwrite\fR) then \fBTCL_ERROR\fR is returned
+and the interpreter's result will contain an error message.
+In the current implementation \fIcheckUsage\fR is ignored and consistency
+checks are always performed.
+.PP
+Note that this interface is only supported on the Unix platform.
+
+.SH KEYWORDS
+channel, file handle, permissions, pipeline, read, write

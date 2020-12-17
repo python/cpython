@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_RestackWindow 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_RestackWindow \- Change a window's position in the stacking order
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_RestackWindow\fR(\fItkwin, aboveBelow, other\fR)
+.SH ARGUMENTS
+.AS Tk_Window aboveBelow
+.AP Tk_Window tkwin in
+Token for window to restack.
+.AP int aboveBelow in
+Indicates new position of \fItkwin\fR relative to \fIother\fR;
+must be \fBAbove\fR or \fBBelow\fR.
+.AP Tk_Window other in
+\fITkwin\fR will be repositioned just above or below this window.
+Must be a sibling of \fItkwin\fR or a descendant of a sibling.
+If NULL then \fItkwin\fR is restacked above or below all siblings.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_RestackWindow\fR changes the stacking order of \fIwindow\fR relative
+to its siblings.
+If \fIother\fR is specified as NULL then \fIwindow\fR is repositioned
+at the top or bottom of its stacking order, depending on whether
+\fIaboveBelow\fR is \fBAbove\fR or \fBBelow\fR.
+If \fIother\fR has a non-NULL value then \fIwindow\fR is repositioned
+just above or below \fIother\fR.
+.PP
+The \fIaboveBelow\fR argument must have one of the symbolic values
+\fBAbove\fR or \fBBelow\fR.
+Both of these values are defined by the include file <X11/Xlib.h>.
+.SH KEYWORDS
+above, below, obscure, stacking order

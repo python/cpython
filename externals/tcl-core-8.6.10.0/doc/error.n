@@ -1,0 +1,78 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH error n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+error \- Generate an error
+.SH SYNOPSIS
+\fBerror \fImessage\fR ?\fIinfo\fR? ?\fIcode\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+Returns a \fBTCL_ERROR\fR code, which causes command interpretation to be
+unwound.  \fIMessage\fR is a string that is returned to the application
+to indicate what went wrong.
+.PP
+The \fB\-errorinfo\fR return option of an interpreter is used
+to accumulate a stack trace of what was in progress when an
+error occurred; as nested commands unwind,
+the Tcl interpreter adds information to the \fB\-errorinfo\fR
+return option.  If the \fIinfo\fR argument is present, it is
+used to initialize the \fB\-errorinfo\fR return options and
+the first increment of unwind information
+will not be added by the Tcl interpreter.
+In other
+words, the command containing the \fBerror\fR command will not appear
+in the stack trace; in its place will be \fIinfo\fR.
+Historically, this feature had been most useful in conjunction
+with the \fBcatch\fR command:
+if a caught error cannot be handled successfully, \fIinfo\fR can be used
+to return a stack trace reflecting the original point of occurrence
+of the error:
+.PP
+.CS
+catch {...} errMsg
+set savedInfo $::errorInfo
+\&...
+\fBerror\fR $errMsg $savedInfo
+.CE
+.PP
+When working with Tcl 8.5 or later, the following code
+should be used instead:
+.PP
+.CS
+catch {...} errMsg options
+\&...
+return -options $options $errMsg
+.CE
+.PP
+If the \fIcode\fR argument is present, then its value is stored
+in the \fB\-errorcode\fR return option.  The \fB\-errorcode\fR
+return option is intended to hold a machine-readable description
+of the error in cases where such information is available; see
+the \fBreturn\fR manual page for information on the proper format
+for this option's value.
+.SH EXAMPLE
+.PP
+Generate an error if a basic mathematical operation fails:
+.PP
+.CS
+if {1+2 != 3} {
+    \fBerror\fR "something is very wrong with addition"
+}
+.CE
+.SH "SEE ALSO"
+catch(n), return(n)
+.SH KEYWORDS
+error, exception
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

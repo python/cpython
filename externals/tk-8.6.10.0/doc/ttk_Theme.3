@@ -1,0 +1,32 @@
+'\"
+'\" Copyright (c) 2003 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Ttk_CreateTheme 3 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+Ttk_CreateTheme, Ttk_GetTheme, Ttk_GetDefaultTheme, Ttk_GetCurrentTheme \- create and use Tk themes.
+.SH SYNOPSIS
+.nf
+Ttk_Theme Ttk_CreateTheme(\fIinterp\fR, \fIname\fR, \fIparentTheme\fR);
+Ttk_Theme Ttk_GetTheme(\fIinterp\fR, \fIname\fR);
+Ttk_Theme Ttk_GetDefaultTheme(\fIinterp\fR);
+Ttk_Theme Ttk_GetCurrentTheme(\fIinterp\fR);
+.fi
+.SH ARGUMENTS
+.AP "Tcl_Interp *" interp in
+The Tcl interpreter in which to register/query available themes.
+.AP "Ttk_Theme" parentTheme in
+Fallback or parent theme from which the new theme will
+inherit elements and layouts.
+.AP "const char *" name in
+The name of the theme.
+.BE
+.SH DESCRIPTION
+.\" TODO - Document these functions better!
+.SH "SEE ALSO"
+Ttk_RegisterLayout, Ttk_BuildLayout
+.\" .SH KEYWORDS

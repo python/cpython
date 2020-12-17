@@ -1,0 +1,31 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_DeleteImage 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_DeleteImage \- Destroy an image.
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_DeleteImage\fR(\fIinterp, name\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Interpreter for which the image was created.
+.AP "const char" *name in
+Name of the image.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_DeleteImage\fR deletes the image given by \fIinterp\fR
+and \fIname\fR, if there is one.  All instances of that image
+will redisplay as empty regions.  If the given image does not
+exist then the procedure has no effect.
+.SH KEYWORDS
+delete image, image manager

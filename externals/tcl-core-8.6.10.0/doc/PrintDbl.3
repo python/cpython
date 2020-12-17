@@ -1,0 +1,51 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_PrintDouble 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_PrintDouble \- Convert floating value to string
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_PrintDouble\fR(\fIinterp, value, dst\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp out
+.AP Tcl_Interp *interp in
+Before Tcl 8.0, the \fBtcl_precision\fR variable in this interpreter
+controlled the conversion.  As of Tcl 8.0, this argument is ignored and
+the conversion is controlled by the \fBtcl_precision\fR variable
+that is now shared by all interpreters.
+.AP double value in
+Floating-point value to be converted.
+.AP char *dst out
+Where to store the string representing \fIvalue\fR.  Must have at
+least \fBTCL_DOUBLE_SPACE\fR characters of storage.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_PrintDouble\fR generates a string that represents the value
+of \fIvalue\fR and stores it in memory at the location given by
+\fIdst\fR.  It uses \fB%g\fR format to generate the string, with one
+special twist: the string is guaranteed to contain either a
+.QW .
+or an
+.QW e
+so that it does not look like an integer.  Where \fB%g\fR would
+generate an integer with no decimal point, \fBTcl_PrintDouble\fR adds
+.QW .0 .
+.PP
+If the \fBtcl_precision\fR value is non-zero, the result will have
+precisely that many digits of significance.  If the value is zero
+(the default), the result will have the fewest digits needed to
+represent the number in such a way that \fBTcl_NewDoubleObj\fR
+will generate the same number when presented with the given string.
+IEEE semantics of rounding to even apply to the conversion.
+.SH KEYWORDS
+conversion, double-precision, floating-point, string

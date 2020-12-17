@@ -1,0 +1,5 @@
+﻿  _testcapimodule.c
+     Creating library C:\cpython\PCbuild\amd64\_testcapi.lib and object C:\cpython\PCbuild\amd64\_testcapi.exp
+  Generating code
+  Finished generating code
+  _testcapi.vcxproj -> C:\cpython\PCbuild\amd64\_testcapi.pyd

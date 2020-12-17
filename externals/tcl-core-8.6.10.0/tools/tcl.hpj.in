@@ -1,0 +1,19 @@
+; This file is maintained by HCW. Do not modify this file directly.
+
+[OPTIONS]
+HCW=0
+LCID=0x409 0x0 0x0 ;English (United States)
+REPORT=Yes
+TITLE=Tcl/Tk Reference Manual
+CNT=tcl86.cnt
+COPYRIGHT=Copyright © 2000 Ajuba Solutions
+HLP=tcl86.hlp
+
+[FILES]
+tcl.rtf
+
+[WINDOWS]
+main="Tcl/Tk Reference Manual",,0
+
+[CONFIG]
+BrowseButtons()

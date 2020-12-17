@@ -1,0 +1,64 @@
+'\"
+'\" Copyright (c) 2000 Ajuba Solutions.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CreateClientMessageHandler 3 "8.4" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateClientMessageHandler, Tk_DeleteClientMessageHandler \- associate procedure callback with ClientMessage type X events
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_CreateClientMessageHandler\fR(\fIproc\fR)
+.sp
+\fBTk_DeleteClientMessageHandler\fR(\fIproc\fR)
+.SH ARGUMENTS
+.AP Tk_ClientMessageProc *proc in
+Procedure to invoke whenever a ClientMessage X event occurs on any display.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_CreateClientMessageHandler\fR arranges for \fIproc\fR to be invoked
+in the future whenever a ClientMessage X event occurs that is not handled by
+\fBWM_PROTOCOL\fR.  \fBTk_CreateClientMessageHandler\fR is intended for use
+by applications which need to watch X ClientMessage events, such as drag and
+drop applications.
+.PP
+The callback to \fIproc\fR will be made by \fBTk_HandleEvent\fR;
+this mechanism only works in programs that dispatch events
+through \fBTk_HandleEvent\fR (or through other Tk procedures that
+call \fBTk_HandleEvent\fR, such as \fBTcl_DoOneEvent\fR or
+\fBTk_MainLoop\fR).
+.PP
+\fIProc\fR should have arguments and result that match the
+type \fBTk_ClientMessageProc\fR:
+.CS
+typedef int \fBTk_ClientMessageProc\fR(
+        Tk_Window \fItkwin\fR,
+        XEvent *\fIeventPtr\fR);
+.CE
+The \fItkwin\fR parameter to \fIproc\fR is the Tk window which is
+associated with this event.  \fIEventPtr\fR is a pointer to the X event.
+.PP
+Whenever an X ClientMessage event is processed by \fBTk_HandleEvent\fR,
+the \fIproc\fR is called if it was not handled as a \fBWM_PROTOCOL\fR.
+The return value from \fIproc\fR is normally 0.
+A non-zero return value indicates that the event is not to be handled
+further; that is, \fIproc\fR has done all processing that is to be
+allowed for the event.
+.PP
+If there are multiple ClientMessage event handlers, each one is called
+for each event, in the order in which they were established.
+.PP
+\fBTk_DeleteClientMessageHandler\fR may be called to delete a
+previously-created ClientMessage event handler: it deletes each handler it
+finds that matches the \fIproc\fR argument.  If no such handler exists,
+then \fBTk_DeleteClientMessageHandler\fR returns without doing anything.
+Although Tk supports it, it's probably a bad idea to have more than one
+callback with the same \fIproc\fR argument.
+.SH KEYWORDS
+bind, callback, event, handler

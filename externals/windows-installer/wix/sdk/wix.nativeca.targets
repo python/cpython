@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(CustomBeforeWixNativeCATargets)" Condition=" '$(CustomBeforeWixNativeCATargets)' != '' and Exists('$(CustomBeforeWixNativeCATargets)')" />
+
+  <PropertyGroup>
+    <WixNativeCATargetsImported>true</WixNativeCATargetsImported>
+
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v100' ">VS2010</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v110' ">VS2012</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v110_xp' ">VS2012</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v120' ">VS2013</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v120_xp' ">VS2013</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v140' ">VS2015</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v140_xp' ">VS2015</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v141' ">VS2017</WixPlatformToolset>
+    <WixPlatformToolset Condition=" '$(PlatformToolset)'=='v141_xp' ">VS2017</WixPlatformToolset>
+
+    <WixPlatformToolset Condition=" '$(WixPlatformToolset)'=='' ">VS2015</WixPlatformToolset>
+  </PropertyGroup>
+
+  <Import Project="$(CustomAfterWixNativeCATargets)" Condition=" '$(CustomAfterWixNativeCATargets)' != '' and Exists('$(CustomAfterWixNativeCATargets)')" />
+
+</Project>

@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1998-1999 Scriptics Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Access 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_Access, Tcl_Stat \- check file permissions and other attributes
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_Access\fR(\fIpath\fR, \fImode\fR)
+.sp
+int
+\fBTcl_Stat\fR(\fIpath\fR, \fIstatPtr\fR)
+.SH ARGUMENTS
+.AS "struct stat" *statPtr out
+.AP char *path in
+Native name of the file to check the attributes of.
+.AP int mode in
+Mask consisting of one or more of \fBR_OK\fR, \fBW_OK\fR, \fBX_OK\fR and
+\fBF_OK\fR. \fBR_OK\fR, \fBW_OK\fR and \fBX_OK\fR request checking whether the
+file exists and has read, write and execute permissions, respectively.
+\fBF_OK\fR just requests a check for the existence of the file.
+.AP "struct stat" *statPtr out
+The structure that contains the result.
+.BE
+.SH DESCRIPTION
+.PP
+As of Tcl 8.4, the object-based APIs \fBTcl_FSAccess\fR and \fBTcl_FSStat\fR
+should be used in preference to \fBTcl_Access\fR and \fBTcl_Stat\fR, wherever
+possible. Those functions also support Tcl's virtual filesystem layer, which
+these do not.
+.SS "OBSOLETE FUNCTIONS"
+.PP
+There are two reasons for calling \fBTcl_Access\fR and \fBTcl_Stat\fR rather
+than calling system level functions \fBaccess\fR and \fBstat\fR directly.
+First, the Windows implementation of both functions fixes some bugs in the
+system level calls. Second, both \fBTcl_Access\fR and \fBTcl_Stat\fR (as well
+as \fBTcl_OpenFileChannelProc\fR) hook into a linked list of functions. This
+allows the possibility to reroute file access to alternative media or access
+methods.
+.PP
+\fBTcl_Access\fR checks whether the process would be allowed to read, write or
+test for existence of the file (or other file system object) whose name is
+\fIpath\fR. If \fIpath\fR is a symbolic link on Unix, then permissions of the
+file referred by this symbolic link are tested.
+.PP
+On success (all requested permissions granted), zero is returned. On error (at
+least one bit in mode asked for a permission that is denied, or some other
+error occurred), -1 is returned.
+.PP
+\fBTcl_Stat\fR fills the stat structure \fIstatPtr\fR with information about
+the specified file. You do not need any access rights to the file to get this
+information but you need search rights to all directories named in the path
+leading to the file. The stat structure includes info regarding device, inode
+(always 0 on Windows), privilege mode, nlink (always 1 on Windows), user id
+(always 0 on Windows), group id (always 0 on Windows), rdev (same as device on
+Windows), size, last access time, last modification time, and creation time.
+.PP
+If \fIpath\fR exists, \fBTcl_Stat\fR returns 0 and the stat structure is
+filled with data. Otherwise, -1 is returned, and no stat info is given.
+.SH KEYWORDS
+stat, access
+.SH "SEE ALSO"
+Tcl_FSAccess(3), Tcl_FSStat(3)

@@ -1,0 +1,21 @@
+Tk 8.6 for Windows
+
+Originally by Scott Stanton while at Sun Microsystems Labs
+
+This is the directory where you configure and compile the Windows
+version of Tk.  This directory also contains source files for Tk
+that are specific to Microsoft Windows.  The rest of this file
+contains information specific to the Windows version of Tk.
+
+Please see the README and win/README files that come with the
+associated Tcl release for an extensive set of pointers to
+documentation.  You will need to obtain and compile the
+Tcl release before using the Tk source distrition.
+
+If you install the Tk sources next to the Tcl sources, then
+the Tk Makefiles (e.g., makefile.vc for VC++) will properly
+locate the necessary Tcl files.  Otherwise you may need to
+edit makefile.vc and adjust the path to Tcl accordingly.
+
+Information about compiling for windows is maintained at:
+    https://www.tcl-lang.org/doc/howto/compile.html

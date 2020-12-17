@@ -1,0 +1,54 @@
+# -*- mode: TCL; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# class.test --
+#
+#       This file is a Tcl script to test out tixClass.c.
+#       It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# $Id: class.test,v 1.4 2004/12/24 00:37:10 hobbs Exp $
+
+package require Tix
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+if {![info exists widgetTestClass1]} {
+    source [file join [pwd] [file dirname [info script]] widgetTestClass1.tcl]
+}
+
+test class-1.1 {Tix_InstanceCmd(): subwidget} {
+    widgetTestClass1 .test
+    set a [.test subwidget $longword]
+    destroy .test
+    list $a
+} [list .test.$longword]
+
+test class-2.1 {Tix_InstanceCmd(): subwidgets} {
+    widgetTestClass1 .test
+
+    set a [list [catch {
+        .test subwidgets
+    } msg] $msg]
+
+    destroy .test
+    set a
+} {1 {wrong # args: should be "tixPrimitive:subwidgets w type args"}}
+
+test class-2.2 {Tix_InstanceCmd(): subwidgets} {
+    widgetTestClass1 .test
+
+    set a [.test subwidgets -class Button]
+    destroy .test
+    expr {[lsearch  $a .test.$longword] >= 0}
+} {1}
+
+# todo: subwidgets -group, -all -
+
+# cleanup
+::tcltest::cleanupTests
+return

@@ -1,0 +1,6 @@
+﻿  _hashopenssl.c
+     Creating library C:\cpython\PCbuild\win32\_hashlib.lib and object C:\cpython\PCbuild\win32\_hashlib.exp
+  Generating code
+  Finished generating code
+  _hashlib.vcxproj -> C:\cpython\PCbuild\win32\_hashlib.pyd
+C:\cpython\PCbuild\openssl.props(24,5): warning MSB3026: Could not copy "C:\cpython\externals\openssl-bin-1.1.1g\win32\\libcrypto-1_1.dll" to "C:\cpython\PCbuild\win32\libcrypto-1_1.dll". Beginning retry 1 in 1000ms. The process cannot access the file 'C:\cpython\PCbuild\win32\libcrypto-1_1.dll' because it is being used by another process. 

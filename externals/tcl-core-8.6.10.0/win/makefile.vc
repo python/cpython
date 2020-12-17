@@ -1,0 +1,1001 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+#	Microsoft Visual C++ makefile for building Tcl with nmake
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 Ajuba Solutions.
+# Copyright (c) 2001-2005 ActiveState Corporation.
+# Copyright (c) 2001-2004 David Gravereaux.
+# Copyright (c) 2003-2008 Pat Thoyts.
+# Copyright (c) 2017 Ashok P. Nadkarni
+#------------------------------------------------------------------------------
+
+# General usage:
+#   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
+#
+# For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md)
+# or examine Sections 6-8 in rules.vc.
+#
+# Possible values of TARGET are:
+#	release  -- Builds the core, the shell and the dlls. (default)
+#	dlls     -- Just builds the windows extensions
+#	shell    -- Just builds the shell and the core.
+#	core     -- Only builds the core [tclXX.(dll|lib)].
+#	all      -- Builds everything.
+#	test     -- Builds and runs the test suite.
+#	tcltest  -- Just builds the test shell.
+#	install  -- Installs the built binaries and libraries to $(INSTALLDIR)
+#		    as the root of the install tree.
+#	tidy/clean/hose -- varying levels of cleaning.
+#	genstubs -- Rebuilds the Stubs table and support files (dev only).
+#	depend   -- Generates an accurate set of source dependancies for this
+#		    makefile.  Helpful to avoid problems when the sources are
+#		    refreshed and you rebuild, but can "overbuild" when common
+#		    headers like tclInt.h just get small changes.
+#	htmlhelp -- Builds a Windows .chm help file for Tcl and Tk from the
+#		    troff manual pages found in $(ROOT)\doc. You need to
+#		    have installed the HTML Help Compiler package from Microsoft
+#		    to produce the .chm file.
+#
+# The steps to setup a Visual C++ environment depend on which
+# version of Visual Studio and/or the Windows SDK you are building
+# against and are not described here. The simplest method is generally
+# to start a command shell using one of the short cuts installed by
+# Visual Studio/Windows SDK for the appropriate target architecture.
+#
+# NOTE: For older (Visual C++ 6 or the 2003 SDK), to use the Platform
+# SDK (not expressly needed), run setenv.bat after
+# vcvars32.bat according to the instructions for it.  This can also
+# turn on the 64-bit compiler, if your SDK has it.
+#
+# Basic macros and options usable on the commandline (see rules.vc for more info):
+#	OPTS=msvcrt,static,staticpkg,symbols,nothreads,profile,unchecked,time64bit,none
+#		Sets special options for the core.  The default is for none.
+#		Any combination of the above may be used (comma separated).
+#		'none' will over-ride everything to nothing.
+#
+#		msvcrt   = Affects the static option only to switch it from
+#			   using libcmt(d) as the C runtime [by default] to
+#			   msvcrt(d). This is useful for static embedding
+#			   support.
+#		static   = Builds a static library of the core instead of a
+#			   dll.  The shell will be static (and large), as well.
+#		staticpkg= Affects the static option only to switch
+#			   tclshXX.exe to have the dde and reg extension linked
+#			   inside it.
+#		nothreads  = Turns off full multithreading support (default on).
+#		thrdalloc = Use the thread allocator (shared global free pool).
+#		symbols =  Adds symbols for step debugging.
+#		profile =  Adds profiling hooks.  Map file is assumed.
+#		unchecked = Allows a symbols build to not use the debug
+#			   enabled runtime (msvcrt.dll not msvcrtd.dll
+#			   or libcmt.lib not libcmtd.lib).
+#		time64bit = Forces a build using 64-bit time_t for 32-bit build
+#			   (CRT library should support this).
+#
+#	STATS=compdbg,memdbg,none
+#		Sets optional memory and bytecode compiler debugging code added
+#		to the core.  The default is for none.  Any combination of the
+#		above may be used (comma separated).  'none' will over-ride
+#		everything to nothing.
+#
+#		compdbg  = Enables byte compilation logging.
+#		memdbg   = Enables the debugging memory allocator.
+#
+#	CHECKS=64bit,fullwarn,nodep,none
+#		Sets special macros for checking compatibility.
+#
+#		64bit    = Enable 64bit portability warnings (if available)
+#		fullwarn = Builds with full compiler and link warnings enabled.
+#			    Very verbose.
+#		nodep	 = Turns off compatibility macros to ensure the core
+#			    isn't being built with deprecated functions.
+#
+#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#		Set the machine type used for the compiler, linker, and
+#		resource compiler.  This hook is needed to tell the tools
+#		when alternate platforms are requested.  IX86 is the default
+#		when not specified. If the CPU environment variable has been
+#		set (ie: recent Platform SDK) then MACHINE is set from CPU.
+#
+#	TMP_DIR=<path>
+#	OUT_DIR=<path>
+#		Hooks to allow the intermediate and output directories to be
+#		changed.  $(OUT_DIR) is assumed to be
+#		$(BINROOT)\(Release|Debug) based on if symbols are requested.
+#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#
+#	TESTPAT=<file>
+#		Reads the tests requested to be run from this file.
+#
+#	CFG_ENCODING=encoding
+#		name of encoding for configuration information. Defaults
+#		to cp1252
+#
+# Examples:
+#       c:\tcl_src\win\>nmake -f makefile.vc release
+#       c:\tcl_src\win\>nmake -f makefile.vc test
+#       c:\tcl_src\win\>nmake -f makefile.vc install INSTALLDIR=c:\progra~1\tcl
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=pdbs
+#       c:\tcl_src\win\>nmake -f makefile.vc release OPTS=symbols
+#
+
+# NOTE:
+# Before modifying this file, check whether the modification is applicable
+# to building extensions as well and if so, modify rules.vc instead.
+
+# The PROJECT macro is used by rules.vc for generating appropriate
+# macros and rules.
+PROJECT = tcl
+
+# Default target to build if no target is specified. If unspecified, the
+# rules.vc file will set up "all" as the target.
+DEFAULT_BUILD_TARGET = release
+
+# We want to use our own resource file, not the standard template one.
+RCFILE = tcl.rc
+
+# The rules.vc file does most of the hard work in terms of defining
+# the build configuration, macros, output directories etc.
+!include "rules.vc"
+
+# Tcl version info based on macros set up by rules.vc
+DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
+
+# We need versions of various core packages to generate appropriate
+# file names during installation.
+!if [echo REM = This file is generated from makefile.vc > versions.vc]
+!endif
+!if [echo PKG_HTTP_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
+!endif
+!if [echo PKG_TCLTEST_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
+!endif
+!if [echo PKG_MSGCAT_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
+!endif
+!if [echo PKG_PLATFORM_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
+!endif
+!if [echo PKG_SHELL_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
+!endif
+!if [echo PKG_DDE_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
+!endif
+!if [echo PKG_REG_VER =\>> versions.vc] \
+   && [nmakehlp -V ..\library\reg\pkgIndex.tcl registry >> versions.vc]
+!endif
+
+!include versions.vc
+
+DDEDOTVERSION = 1.4
+DDEVERSION = $(DDEDOTVERSION:.=)
+
+REGDOTVERSION = 1.3
+REGVERSION = $(REGDOTVERSION:.=)
+
+TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
+TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
+
+TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
+TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
+
+TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
+CAT32		= $(OUT_DIR)\cat32.exe
+
+TCLSHOBJS = \
+	$(TMP_DIR)\tclAppInit.obj \
+!if !$(STATIC_BUILD)
+!if $(TCL_USE_STATIC_PACKAGES)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!endif
+!endif
+	$(TMP_DIR)\tclsh.res
+
+TCLTESTOBJS = \
+	$(TMP_DIR)\tclTest.obj \
+	$(TMP_DIR)\tclTestObj.obj \
+	$(TMP_DIR)\tclTestProcBodyObj.obj \
+	$(TMP_DIR)\tclThreadTest.obj \
+	$(TMP_DIR)\tclWinTest.obj \
+!if !$(STATIC_BUILD)
+!if $(TCL_USE_STATIC_PACKAGES)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!endif
+!endif
+	$(TMP_DIR)\testMain.obj
+
+COREOBJS = \
+	$(TMP_DIR)\regcomp.obj \
+	$(TMP_DIR)\regerror.obj \
+	$(TMP_DIR)\regexec.obj \
+	$(TMP_DIR)\regfree.obj \
+	$(TMP_DIR)\tclAlloc.obj \
+	$(TMP_DIR)\tclAssembly.obj \
+	$(TMP_DIR)\tclAsync.obj \
+	$(TMP_DIR)\tclBasic.obj \
+	$(TMP_DIR)\tclBinary.obj \
+	$(TMP_DIR)\tclCkalloc.obj \
+	$(TMP_DIR)\tclClock.obj \
+	$(TMP_DIR)\tclCmdAH.obj \
+	$(TMP_DIR)\tclCmdIL.obj \
+	$(TMP_DIR)\tclCmdMZ.obj \
+	$(TMP_DIR)\tclCompCmds.obj \
+	$(TMP_DIR)\tclCompCmdsGR.obj \
+	$(TMP_DIR)\tclCompCmdsSZ.obj \
+	$(TMP_DIR)\tclCompExpr.obj \
+	$(TMP_DIR)\tclCompile.obj \
+	$(TMP_DIR)\tclConfig.obj \
+	$(TMP_DIR)\tclDate.obj \
+	$(TMP_DIR)\tclDictObj.obj \
+	$(TMP_DIR)\tclDisassemble.obj \
+	$(TMP_DIR)\tclEncoding.obj \
+	$(TMP_DIR)\tclEnsemble.obj \
+	$(TMP_DIR)\tclEnv.obj \
+	$(TMP_DIR)\tclEvent.obj \
+	$(TMP_DIR)\tclExecute.obj \
+	$(TMP_DIR)\tclFCmd.obj \
+	$(TMP_DIR)\tclFileName.obj \
+	$(TMP_DIR)\tclGet.obj \
+	$(TMP_DIR)\tclHash.obj \
+	$(TMP_DIR)\tclHistory.obj \
+	$(TMP_DIR)\tclIndexObj.obj \
+	$(TMP_DIR)\tclInterp.obj \
+	$(TMP_DIR)\tclIO.obj \
+	$(TMP_DIR)\tclIOCmd.obj \
+	$(TMP_DIR)\tclIOGT.obj \
+	$(TMP_DIR)\tclIOSock.obj \
+	$(TMP_DIR)\tclIOUtil.obj \
+	$(TMP_DIR)\tclIORChan.obj \
+	$(TMP_DIR)\tclIORTrans.obj \
+	$(TMP_DIR)\tclLink.obj \
+	$(TMP_DIR)\tclListObj.obj \
+	$(TMP_DIR)\tclLiteral.obj \
+	$(TMP_DIR)\tclLoad.obj \
+	$(TMP_DIR)\tclMainW.obj \
+	$(TMP_DIR)\tclMain.obj \
+	$(TMP_DIR)\tclNamesp.obj \
+	$(TMP_DIR)\tclNotify.obj \
+	$(TMP_DIR)\tclOO.obj \
+	$(TMP_DIR)\tclOOBasic.obj \
+	$(TMP_DIR)\tclOOCall.obj \
+	$(TMP_DIR)\tclOODefineCmds.obj \
+	$(TMP_DIR)\tclOOInfo.obj \
+	$(TMP_DIR)\tclOOMethod.obj \
+	$(TMP_DIR)\tclOOStubInit.obj \
+	$(TMP_DIR)\tclObj.obj \
+	$(TMP_DIR)\tclOptimize.obj \
+	$(TMP_DIR)\tclPanic.obj \
+	$(TMP_DIR)\tclParse.obj \
+	$(TMP_DIR)\tclPathObj.obj \
+	$(TMP_DIR)\tclPipe.obj \
+	$(TMP_DIR)\tclPkg.obj \
+	$(TMP_DIR)\tclPkgConfig.obj \
+	$(TMP_DIR)\tclPosixStr.obj \
+	$(TMP_DIR)\tclPreserve.obj \
+	$(TMP_DIR)\tclProc.obj \
+	$(TMP_DIR)\tclRegexp.obj \
+	$(TMP_DIR)\tclResolve.obj \
+	$(TMP_DIR)\tclResult.obj \
+	$(TMP_DIR)\tclScan.obj \
+	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStrToD.obj \
+	$(TMP_DIR)\tclStubInit.obj \
+	$(TMP_DIR)\tclThread.obj \
+	$(TMP_DIR)\tclThreadAlloc.obj \
+	$(TMP_DIR)\tclThreadJoin.obj \
+	$(TMP_DIR)\tclThreadStorage.obj \
+	$(TMP_DIR)\tclTimer.obj \
+	$(TMP_DIR)\tclTomMathInterface.obj \
+	$(TMP_DIR)\tclTrace.obj \
+	$(TMP_DIR)\tclUtf.obj \
+	$(TMP_DIR)\tclUtil.obj \
+	$(TMP_DIR)\tclVar.obj \
+	$(TMP_DIR)\tclZlib.obj
+
+ZLIBOBJS = \
+	$(TMP_DIR)\adler32.obj \
+	$(TMP_DIR)\compress.obj \
+	$(TMP_DIR)\crc32.obj \
+	$(TMP_DIR)\deflate.obj \
+	$(TMP_DIR)\infback.obj \
+	$(TMP_DIR)\inffast.obj \
+	$(TMP_DIR)\inflate.obj \
+	$(TMP_DIR)\inftrees.obj \
+	$(TMP_DIR)\trees.obj \
+	$(TMP_DIR)\uncompr.obj \
+	$(TMP_DIR)\zutil.obj
+
+TOMMATHOBJS = \
+	$(TMP_DIR)\bn_mp_add.obj \
+	$(TMP_DIR)\bn_mp_add_d.obj \
+	$(TMP_DIR)\bn_mp_and.obj \
+	$(TMP_DIR)\bn_mp_clamp.obj \
+	$(TMP_DIR)\bn_mp_clear.obj \
+	$(TMP_DIR)\bn_mp_clear_multi.obj \
+	$(TMP_DIR)\bn_mp_cmp.obj \
+	$(TMP_DIR)\bn_mp_cmp_d.obj \
+	$(TMP_DIR)\bn_mp_cmp_mag.obj \
+	$(TMP_DIR)\bn_mp_cnt_lsb.obj \
+	$(TMP_DIR)\bn_mp_copy.obj \
+	$(TMP_DIR)\bn_mp_count_bits.obj \
+	$(TMP_DIR)\bn_mp_div.obj \
+	$(TMP_DIR)\bn_mp_div_d.obj \
+	$(TMP_DIR)\bn_mp_div_2.obj \
+	$(TMP_DIR)\bn_mp_div_2d.obj \
+	$(TMP_DIR)\bn_mp_div_3.obj \
+	$(TMP_DIR)\bn_mp_exch.obj \
+	$(TMP_DIR)\bn_mp_expt_u32.obj \
+	$(TMP_DIR)\bn_mp_grow.obj \
+	$(TMP_DIR)\bn_mp_init.obj \
+	$(TMP_DIR)\bn_mp_init_copy.obj \
+	$(TMP_DIR)\bn_mp_init_multi.obj \
+	$(TMP_DIR)\bn_mp_init_set.obj \
+	$(TMP_DIR)\bn_mp_init_size.obj \
+	$(TMP_DIR)\bn_mp_lshd.obj \
+	$(TMP_DIR)\bn_mp_mod.obj \
+	$(TMP_DIR)\bn_mp_mod_2d.obj \
+	$(TMP_DIR)\bn_mp_mul.obj \
+	$(TMP_DIR)\bn_mp_mul_2.obj \
+	$(TMP_DIR)\bn_mp_mul_2d.obj \
+	$(TMP_DIR)\bn_mp_mul_d.obj \
+	$(TMP_DIR)\bn_mp_neg.obj \
+	$(TMP_DIR)\bn_mp_or.obj \
+	$(TMP_DIR)\bn_mp_radix_size.obj \
+	$(TMP_DIR)\bn_mp_radix_smap.obj \
+	$(TMP_DIR)\bn_mp_read_radix.obj \
+	$(TMP_DIR)\bn_mp_rshd.obj \
+	$(TMP_DIR)\bn_mp_set.obj \
+	$(TMP_DIR)\bn_mp_shrink.obj \
+	$(TMP_DIR)\bn_mp_sqr.obj \
+	$(TMP_DIR)\bn_mp_sqrt.obj \
+	$(TMP_DIR)\bn_mp_sub.obj \
+	$(TMP_DIR)\bn_mp_sub_d.obj \
+	$(TMP_DIR)\bn_mp_signed_rsh.obj \
+	$(TMP_DIR)\bn_mp_to_ubin.obj \
+	$(TMP_DIR)\bn_mp_to_radix.obj \
+	$(TMP_DIR)\bn_mp_ubin_size.obj \
+	$(TMP_DIR)\bn_mp_xor.obj \
+	$(TMP_DIR)\bn_mp_zero.obj \
+	$(TMP_DIR)\bn_s_mp_add.obj \
+	$(TMP_DIR)\bn_s_mp_balance_mul.obj \
+	$(TMP_DIR)\bn_s_mp_karatsuba_mul.obj \
+	$(TMP_DIR)\bn_s_mp_karatsuba_sqr.obj \
+	$(TMP_DIR)\bn_s_mp_mul_digs.obj \
+	$(TMP_DIR)\bn_s_mp_mul_digs_fast.obj \
+	$(TMP_DIR)\bn_s_mp_reverse.obj \
+	$(TMP_DIR)\bn_s_mp_sqr.obj \
+	$(TMP_DIR)\bn_s_mp_sqr_fast.obj \
+	$(TMP_DIR)\bn_s_mp_sub.obj \
+	$(TMP_DIR)\bn_s_mp_toom_sqr.obj \
+	$(TMP_DIR)\bn_s_mp_toom_mul.obj
+
+PLATFORMOBJS = \
+	$(TMP_DIR)\tclWin32Dll.obj \
+	$(TMP_DIR)\tclWinChan.obj \
+	$(TMP_DIR)\tclWinConsole.obj \
+	$(TMP_DIR)\tclWinError.obj \
+	$(TMP_DIR)\tclWinFCmd.obj \
+	$(TMP_DIR)\tclWinFile.obj \
+	$(TMP_DIR)\tclWinInit.obj \
+	$(TMP_DIR)\tclWinLoad.obj \
+	$(TMP_DIR)\tclWinNotify.obj \
+	$(TMP_DIR)\tclWinPipe.obj \
+	$(TMP_DIR)\tclWinSerial.obj \
+	$(TMP_DIR)\tclWinSock.obj \
+	$(TMP_DIR)\tclWinThrd.obj \
+	$(TMP_DIR)\tclWinTime.obj \
+!if $(STATIC_BUILD)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!else
+	$(TMP_DIR)\tcl.res
+!endif
+
+TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
+
+TCLSTUBOBJS = \
+	$(TMP_DIR)\tclStubLib.obj \
+	$(TMP_DIR)\tclTomMathStubLib.obj \
+	$(TMP_DIR)\tclOOStubLib.obj
+
+### The following paths CANNOT have spaces in them as they appear on
+### the left side of implicit rules.
+TOMMATHDIR	= $(ROOT)\libtommath
+PKGSDIR		= $(ROOT)\pkgs
+
+# Additional include and C macro definitions for the implicit rules
+# defined in rules.vc
+PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
+PRJ_DEFINES	= /DTCL_TOMMATH /DMP_PREC=4 /Dinline=__inline /DHAVE_ZLIB=1 /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE /DMP_FIXED_CUTOFFS /DMP_NO_STDINT
+
+# Additional Link libraries needed beyond those in rules.vc
+PRJ_LIBS   = netapi32.lib user32.lib userenv.lib ws2_32.lib
+
+#---------------------------------------------------------------------
+# TclTest flags
+#---------------------------------------------------------------------
+
+!if "$(TESTPAT)" != ""
+TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
+!endif
+
+
+#---------------------------------------------------------------------
+# Project specific targets
+#---------------------------------------------------------------------
+
+release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+core:	    setup $(TCLLIB) $(TCLSTUBLIB)
+shell:	    setup $(TCLSH)
+dlls:	    setup $(TCLREGLIB) $(TCLDDELIB)
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
+tcltest:    setup $(TCLTEST) dlls $(CAT32)
+install:    install-binaries install-libraries install-docs install-pkgs
+!if $(SYMBOLS)
+install:    install-pdbs
+!endif
+setup:      default-setup
+
+test: test-core test-pkgs
+test-core: setup $(TCLTEST) dlls $(CAT32)
+	set TCL_LIBRARY=$(ROOT:\=/)/library
+	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+		package ifneeded dde 1.4.2 [list load "$(TCLDDELIB:\=/)" dde]
+		package ifneeded registry 1.3.4 [list load "$(TCLREGLIB:\=/)" registry]
+<<
+
+runtest: setup $(TCLTEST) dlls $(CAT32)
+	set TCL_LIBRARY=$(ROOT:\=/)/library
+	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
+
+runshell: setup $(TCLSH) dlls
+	set TCL_LIBRARY=$(ROOT:\=/)/library
+	$(DEBUGGER) $(TCLSH) $(SCRIPT)
+
+!if $(STATIC_BUILD)
+
+$(TCLLIB): $(TCLOBJS)
+	$(LIBCMD) @<<
+$**
+<<
+
+!else
+
+$(TCLLIB): $(TCLOBJS)
+	$(DLLCMD) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_DLL)
+
+$(TCLIMPLIB): $(TCLLIB)
+
+!endif # $(STATIC_BUILD)
+
+$(TCLSTUBLIB): $(TCLSTUBOBJS)
+	$(LIBCMD) -nodefaultlib $(TCLSTUBOBJS)
+
+$(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
+	$(CONEXECMD) -stack:2300000 $**
+	$(_VC_MANIFEST_EMBED_EXE)
+
+$(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
+	$(CONEXECMD) -stack:2300000 $**
+	$(_VC_MANIFEST_EMBED_EXE)
+
+!if $(STATIC_BUILD)
+$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
+	$(LIBCMD) $**
+!else
+$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
+	$(DLLCMD) $**
+	$(_VC_MANIFEST_EMBED_DLL)
+!endif
+
+!if $(STATIC_BUILD)
+$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
+	$(LIBCMD) $**
+!else
+$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
+	$(DLLCMD) $**
+	$(_VC_MANIFEST_EMBED_DLL)
+!endif
+
+pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) &\
+	    popd \
+	  )
+
+test-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) test &\
+	    popd \
+	  )
+
+install-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) install &\
+	    popd \
+	  )
+
+clean-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
+	    popd \
+	  )
+
+$(CAT32): $(WIN_DIR)\cat.c
+	$(cc32) $(cflags) $(crt) /D_CRT_NONSTDC_NO_DEPRECATE /DCONSOLE \
+	    /DUNICODE /D_UNICODE -Fo$(TMP_DIR)\ $?
+	$(CONEXECMD) -stack:16384 $(TMP_DIR)\cat.obj
+	$(_VC_MANIFEST_EMBED_EXE)
+
+#---------------------------------------------------------------------
+# Regenerate the stubs files.  [Development use only]
+#---------------------------------------------------------------------
+
+genstubs:
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls \
+		$(GENERICDIR:\=/)/tclTomMath.decls
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+		$(GENERICDIR:\=/)/tclOO.decls
+!endif
+
+
+#----------------------------------------------------------------------
+# The following target generates the file generic/tclTomMath.h.
+# It needs to be run (and the results checked) after updating
+# to a new release of libtommath.
+#----------------------------------------------------------------------
+
+gentommath_h:
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	$(TCLSH) "$(TOOLSDIR:\=/)/fix_tommath_h.tcl" \
+		"$(TOMMATHDIR:\=/)/tommath.h" \
+		> "$(GENERICDIR)\tclTomMath.h"
+!endif
+
+#---------------------------------------------------------------------
+# Build the Windows HTML help file.
+#---------------------------------------------------------------------
+
+# NOTE: you can define HHC on the command-line to override this.
+# nmake does not set macro values if already set on the command line.
+!if defined(PROCESSOR_ARCHITECTURE) && "$(PROCESSOR_ARCHITECTURE)" == "AMD64"
+HHC="%ProgramFiles(x86)%\HTML Help Workshop\hhc.exe"
+!else
+HHC="%ProgramFiles%\HTML Help Workshop\hhc.exe"
+!endif
+HTMLDIR=$(OUT_DIR)\html
+HTMLBASE=TclTk$(VERSION)
+HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
+CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
+
+htmlhelp: chmsetup $(CHMFILE)
+
+$(CHMFILE): $(DOCDIR)\*
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl "--htmldir=$(HTMLDIR)"
+	@echo Compiling HTML help project
+	-"$(HHC)" <<$(HHPFILE) >NUL
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=$(HTMLBASE).chm
+Default topic=contents.htm
+Display compile progress=no
+Error log file=$(HTMLBASE).log
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Tcl/Tk $(DOTVERSION) Help
+[FILES]
+contents.htm
+docs.css
+Keywords\*.htm
+TclCmd\*.htm
+TclLib\*.htm
+TkCmd\*.htm
+TkLib\*.htm
+UserCmd\*.htm
+<<
+
+chmsetup:
+	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
+
+install-docs:
+!if exist("$(CHMFILE)")
+	@echo Installing compiled HTML help
+	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
+!endif
+
+# "emacs font-lock highlighting fix
+
+#---------------------------------------------------------------------
+# Generate the tcl.nmake file which contains the options used to build
+# Tcl itself. This is used when building extensions.
+#---------------------------------------------------------------------
+tcl-nmake: $(OUT_DIR)\tcl.nmake
+$(OUT_DIR)\tcl.nmake:
+	@type << >$@
+CORE_MACHINE = $(MACHINE)
+CORE_DEBUG = $(DEBUG)
+CORE_TCL_THREADS = $(TCL_THREADS)
+CORE_USE_THREAD_ALLOC = $(USE_THREAD_ALLOC)
+<<
+
+#---------------------------------------------------------------------
+# Build tclConfig.sh for the TEA build system.
+#---------------------------------------------------------------------
+
+tclConfig: $(OUT_DIR)\tclConfig.sh
+
+# TBD - is this tclConfig.sh file ever used? The values are incorrect!
+$(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
+	@echo Creating tclConfig.sh
+        @nmakehlp -s << $** >$@
+@TCL_DLL_FILE@       $(TCLLIBNAME)
+@TCL_VERSION@        $(DOTVERSION)
+@TCL_MAJOR_VERSION@  $(TCL_MAJOR_VERSION)
+@TCL_MINOR_VERSION@  $(TCL_MINOR_VERSION)
+@TCL_PATCH_LEVEL@    $(TCL_PATCH_LEVEL)
+@CC@                 $(CC)
+@DEFS@               $(pkgcflags)
+@CFLAGS_DEBUG@       -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MDd
+@CFLAGS_OPTIMIZE@    -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MD
+@LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug -debugtype:cv
+@LDFLAGS_OPTIMIZE@   -nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3
+@TCL_DBGX@           $(SUFX)
+@TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
+@TCL_NEEDS_EXP_FILE@
+@LIBS@               $(baselibs) $(PRJ_LIBS)
+@prefix@             $(_INSTALLDIR)
+@exec_prefix@        $(BIN_INSTALL_DIR)
+@SHLIB_CFLAGS@
+@STLIB_CFLAGS@
+@CFLAGS_WARNING@     -W3
+@EXTRA_CFLAGS@       -YX
+@SHLIB_LD@           $(link32) $(dlllflags)
+@STLIB_LD@           $(lib32) -nologo
+@SHLIB_LD_LIBS@      $(baselibs) $(PRJ_LIBS)
+@SHLIB_SUFFIX@       .dll
+@DL_LIBS@
+@LDFLAGS@
+@TCL_CC_SEARCH_FLAGS@
+@TCL_LD_SEARCH_FLAGS@
+@LIBOBJS@
+@RANLIB@
+@TCL_LIB_FLAG@
+@TCL_BUILD_LIB_SPEC@
+@TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
+@TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
+@TCL_LIB_VERSIONS_OK@
+@TCL_SRC_DIR@        $(ROOT)
+@TCL_PACKAGE_PATH@
+@TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
+@TCL_STUB_LIB_FLAG@  $(TCLSTUBLIBNAME)
+@TCL_STUB_LIB_SPEC@  -L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)
+@TCL_THREADS@        $(TCL_THREADS)
+@TCL_BUILD_STUB_LIB_SPEC@ -L$(OUT_DIR) $(TCLSTUBLIBNAME)
+@TCL_BUILD_STUB_LIB_PATH@ $(TCLSTUBLIB)
+@TCL_STUB_LIB_PATH@  $(LIB_INSTALL_DIR)\$(TCLSTUBLIBNAME)
+@CFG_TCL_EXPORT_FILE_SUFFIX@  $(VERSION)$(SUFX).lib
+@CFG_TCL_SHARED_LIB_SUFFIX@   $(VERSION)$(SUFX).dll
+@CFG_TCL_UNSHARED_LIB_SUFFIX@ $(VERSION)$(SUFX).lib
+!if $(STATIC_BUILD)
+@TCL_SHARED_BUILD@   0
+!else
+@TCL_SHARED_BUILD@   1
+!endif
+<<
+
+
+#---------------------------------------------------------------------
+# The following target generates the file generic/tclDate.c
+# from the yacc grammar found in generic/tclGetDate.y.  This is
+# only run by hand as yacc is not available in all environments.
+# The name of the .c file is different than the name of the .y file
+# so that make doesn't try to automatically regenerate the .c file.
+#---------------------------------------------------------------------
+
+gendate:
+	bison --output-file=$(GENERICDIR)/tclDate.c \
+	--name-prefix=TclDate \
+	$(GENERICDIR)/tclGetDate.y
+
+#---------------------------------------------------------------------
+# Special case object file targets
+#---------------------------------------------------------------------
+
+$(TMP_DIR)\testMain.obj: $(WIN_DIR)\tclAppInit.c
+	$(cc32) $(appcflags) /DTCL_TEST /DUNICODE /D_UNICODE \
+	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
+	    -Fo$@ $?
+
+$(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
+	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
+	    -Fo$@ $?
+
+$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
+	$(cc32) $(appcflags) -Fo$@ $?
+
+$(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
+	$(cc32) $(appcflags) -Fo$@ $?
+
+$(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
+	$(CCAPPCMD) $?
+
+$(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
+	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
+
+$(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
+	$(cc32) $(pkgcflags) \
+	/DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	/DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+	/DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	/DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
+	/DCFG_INSTALL_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""	\
+	/DCFG_RUNTIME_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	/DCFG_RUNTIME_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+	/DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	/DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
+	/DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
+	-Fo$@ $?
+
+$(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
+	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
+	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
+	    -Fo$@ $?
+
+### The following objects should be built using the stub interfaces
+### *ALL* extensions need to built with /DTCL_THREADS=1
+
+$(TMP_DIR)\tclWinReg.obj: $(WIN_DIR)\tclWinReg.c
+	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
+
+
+$(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
+	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
+
+
+### The following objects are part of the stub library and should not
+### be built as DLL objects.  -Zl is used to avoid a dependency on any
+### specific C run-time.
+
+$(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
+	$(cc32) $(stubscflags) -Fo$@ $?
+
+$(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
+	$(cc32) $(stubscflags) -Fo$@ $?
+
+$(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
+	$(cc32) $(stubscflags) -Fo$@ $?
+
+$(TMP_DIR)\tclsh.exe.manifest: $(WIN_DIR)\tclsh.exe.manifest.in
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+@TCL_WIN_VERSION@  $(DOTVERSION).0.0
+<<
+
+#---------------------------------------------------------------------
+# Generate the source dependencies.  Having dependency rules will
+# improve incremental build accuracy without having to resort to a
+# full rebuild just because some non-global header file like
+# tclCompile.h was changed.  These rules aren't needed when building
+# from scratch.
+#---------------------------------------------------------------------
+
+depend:
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
+		-passthru:"/DBUILD_tcl $(TCL_INCLUDES) $(PRJ_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
+		$(COMPATDIR),$$(COMPATDIR) $(TOMMATHDIR),$$(TOMMATHDIR) $(WIN_DIR),$$(WIN_DIR) @<<
+$(TCLOBJS)
+<<
+!endif
+
+#---------------------------------------------------------------------
+# Dependency rules
+#---------------------------------------------------------------------
+
+!if exist("$(OUT_DIR)\depend.mk")
+!include "$(OUT_DIR)\depend.mk"
+!message *** Dependency rules in use.
+!else
+!message *** Dependency rules are not being used.
+!endif
+
+### add a spacer in the output
+!message
+
+
+#---------------------------------------------------------------------
+# Implicit rules that are not covered by the common ones defined in
+# rules.vc. A limitation exists with nmake that requires that
+# source directory can not contain spaces in the path.  This an
+# absolute.
+#---------------------------------------------------------------------
+
+{$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(pkgcflags) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+$(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest $(WIN_DIR)\tclsh.rc
+
+
+#---------------------------------------------------------------------
+# Installation.
+#---------------------------------------------------------------------
+
+install-binaries:
+	@echo Installing to '$(_INSTALLDIR)'
+	@echo Installing $(TCLLIBNAME)
+!if "$(TCLLIB)" != "$(TCLIMPLIB)"
+	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
+!endif
+	@$(CPY) "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
+!if exist($(TCLSH))
+	@echo Installing $(TCLSHNAME)
+	@$(CPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
+!endif
+	@echo Installing $(TCLSTUBLIBNAME)
+	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
+
+install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
+	@if not exist "$(SCRIPT_INSTALL_DIR)" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
+	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
+		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
+	@echo Installing header files
+	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclOO.h"           "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclOODecls.h"      "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h"    "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
+	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
+	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
+	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\tm.tcl"          "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\parray.tcl"      "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\safe.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\tclIndex"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\package.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\word.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
+	@$(CPY) "$(WIN_DIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
+	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
+	@echo Installing library http1.0 directory
+	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\http1.0\"
+	@echo Installing library opt0.4 directory
+	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
+	@$(COPY) "$(ROOT)\library\http\http.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
+	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
+	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\msgcat-$(PKG_MSGCAT_VER).tm"
+	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
+	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
+	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
+	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform-$(PKG_PLATFORM_VER).tm"
+	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
+	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform\shell-$(PKG_SHELL_VER).tm"
+	@echo Installing $(TCLDDELIBNAME)
+!if $(STATIC_BUILD)
+!if !$(TCL_USE_STATIC_PACKAGES)
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
+!endif
+!else
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+!endif
+	@echo Installing $(TCLREGLIBNAME)
+!if $(STATIC_BUILD)
+!if !$(TCL_USE_STATIC_PACKAGES)
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
+!endif
+!else
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+!endif
+	@echo Installing encodings
+	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
+		"$(SCRIPT_INSTALL_DIR)\encoding\"
+# "emacs font-lock highlighting fix
+
+install-tzdata:
+	@echo Installing time zone data
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
+	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
+	    "$(ROOT:\=/)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+
+install-msgs:
+	@echo Installing message catalogs
+	@set TCL_LIBRARY=$(ROOT:\=/)/library
+	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
+	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+
+install-pdbs:
+	@echo Installing debug symbols
+	@$(CPY) "$(OUT_DIR)\*.pdb" "$(BIN_INSTALL_DIR)\"
+# "emacs font-lock highlighting fix
+
+#---------------------------------------------------------------------
+# Clean up
+#---------------------------------------------------------------------
+
+tidy:
+!if "$(TCLLIB)" != "$(TCLIMPLIB)"
+	@echo Removing $(TCLLIB) ...
+	@if exist $(TCLLIB) del $(TCLLIB)
+!endif
+	@echo Removing $(TCLIMPLIB) ...
+	@if exist $(TCLIMPLIB) del $(TCLIMPLIB)
+	@echo Removing $(TCLSH) ...
+	@if exist $(TCLSH) del $(TCLSH)
+	@echo Removing $(TCLTEST) ...
+	@if exist $(TCLTEST) del $(TCLTEST)
+	@echo Removing $(TCLDDELIB) ...
+	@if exist $(TCLDDELIB) del $(TCLDDELIB)
+	@echo Removing $(TCLREGLIB) ...
+	@if exist $(TCLREGLIB) del $(TCLREGLIB)
+
+clean: default-clean clean-pkgs
+hose: default-hose
+realclean: hose
+
+# Local Variables:
+# mode: makefile
+# End:

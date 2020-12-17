@@ -1,0 +1,43 @@
+<HEAD>
+<TITLE> Widget Classes and Widget Instances<A NAME=611>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1112 HREF=subsubsection3_8_1_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1110 HREF=subsection3_8_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1104 HREF=subsection3_8_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1114 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1113 HREF=subsubsection3_8_1_2.html> What is in </A>
+<B>Up:</B> <A NAME=tex2html1111 HREF=subsection3_8_1.html> Introduction to Tix </A>
+<B> Previous:</B> <A NAME=tex2html1105 HREF=subsection3_8_1.html> Introduction to Tix </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00081100000000000000> Widget Classes and Widget Instances<A NAME=611>&nbsp;</A></A></H3>
+<P>
+All the mega-widget classes in Tix, such as TixComboBox and
+  TixControl, are implemented in the Tix Intrinsics framework. Also,
+  you can write new <em>widget classes</em> with the Tix Intrinsics. In
+  the next section, I'll go through all the steps of creating a new
+  widget class in Tix. I'll illustrate the idea using a new class
+  ``TixArrowButton'' as an example. TixArrowButton is essentially a
+  button that can display an arrow in one of the for directions
+  (see figure 6-1).
+<P>
+<blockquote> <P><CENTER><IMG SRC="../gif/tix/oop/arrows.gif">
+  </CENTER>
+</blockquote>
+<P>
+   Once you have defined your classes, you can create <em>widget
+  instances</em> of these classes. For example, the following code will
+  create four instances of your new TixArrowButton class:
+<P>
+<blockquote> <P><tt> tixArrowButton .up    -direction n<BR>
+tixArrowButton .left  -direction e<BR>
+tixArrowButton .right -direction w<BR>
+tixArrowButton .down  -direction s
+</tt>
+<P></blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

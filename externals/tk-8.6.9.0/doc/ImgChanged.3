@@ -1,0 +1,64 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_ImageChanged 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_ImageChanged \- notify widgets that image needs to be redrawn
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_ImageChanged\fR(\fIimageMaster, x, y, width, height, imageWidth, imageHeight\fR)
+.SH ARGUMENTS
+.AS Tk_ImageMaster imageHeight
+.AP Tk_ImageMaster imageMaster in
+Token for image, which was passed to image's \fIcreateProc\fR when
+the image was created.
+.AP int x in
+X-coordinate of upper-left corner of region that needs redisplay (measured
+from upper-left corner of image).
+.AP int y in
+Y-coordinate of upper-left corner of region that needs redisplay (measured
+from upper-left corner of image).
+.AP "int" width in
+Width of region that needs to be redrawn, in pixels.
+.AP "int" height in
+Height of region that needs to be redrawn, in pixels.
+.AP "int" imageWidth in
+Current width of image, in pixels.
+.AP "int" imageHeight in
+Current height of image, in pixels.
+.BE
+.SH DESCRIPTION
+.PP
+An image manager calls \fBTk_ImageChanged\fR for an image
+whenever anything happens that requires the image to be redrawn.
+As a result of calling \fBTk_ImageChanged\fR, any widgets using
+the image are notified so that they can redisplay themselves
+appropriately.
+The \fIimageMaster\fR argument identifies the image, and
+\fIx\fR, \fIy\fR, \fIwidth\fR, and \fIheight\fR
+specify a rectangular region within the image that needs to
+be redrawn.
+\fIimageWidth\fR and \fIimageHeight\fR specify the image's (new) size.
+.PP
+An image manager should call \fBTk_ImageChanged\fR during
+its \fIcreateProc\fR to specify the image's initial size and to
+force redisplay if there are existing instances for the image.
+If any of the pixel values in the image should change later on,
+\fBTk_ImageChanged\fR should be called again with \fIx\fR, \fIy\fR,
+\fIwidth\fR, and \fIheight\fR values that cover all the pixels
+that changed.
+If the size of the image should change, then \fBTk_ImageChanged\fR
+must be called to indicate the new size, even if no pixels
+need to be redisplayed.
+.SH "SEE ALSO"
+Tk_CreateImageType
+.SH KEYWORDS
+images, redisplay, image size changes

@@ -1,0 +1,300 @@
+# This file is a Tcl script to test the Windows specific message box
+#
+# Copyright (c) 2007 Pat Thoyts <patthoyts@users.sourceforge.net>
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+testConstraint getwindowinfo [expr {[llength [info command ::testgetwindowinfo]] > 0}]
+
+if {[testConstraint testwinevent]} {
+    catch {testwinevent debug 1}
+}
+
+proc Click {hwnd button} {
+    testwinevent $hwnd $button WM_COMMAND
+}
+
+proc GetWindowInfo {title button} {
+    global windowInfo
+    set windowInfo {}
+    set hwnd [testfindwindow $title "#32770"]
+    set windowInfo [testgetwindowinfo $hwnd]
+    array set a $windowInfo
+    set childinfo {} ; set childtext ""
+    foreach child $a(children) {
+        lappend childinfo $child [set info [testgetwindowinfo $child]]
+        array set ca $info
+        if {$ca(class) eq "Static"} {
+            append childtext $ca(text)
+        }
+    }
+    set a(children) $childinfo
+    set a(childtext) $childtext
+    set windowInfo [array get a]
+    testwinevent $hwnd $button WM_COMMAND
+}
+
+# -------------------------------------------------------------------------
+
+test winMsgbox-1.1 {tk_messageBox ok} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.0 [pid]"
+    after 100 [list GetWindowInfo $title 2]
+    tk_messageBox -icon info -type ok -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {ok}
+
+test winMsgbox-1.2 {tk_messageBox okcancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.1 [pid]"
+    after 100 [list GetWindowInfo $title 1]
+    tk_messageBox -icon info -type okcancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {ok}
+
+test winMsgbox-1.3 {tk_messageBox okcancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.2 [pid]"
+    after 100 [list GetWindowInfo $title 2]
+    tk_messageBox -icon info -type okcancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {cancel}
+
+test winMsgbox-1.4 {tk_messageBox yesno} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.3 [pid]"
+    after 100 [list GetWindowInfo $title 6]
+    tk_messageBox -icon info -type yesno -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {yes}
+
+test winMsgbox-1.5 {tk_messageBox yesno} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.4 [pid]"
+    after 100 [list GetWindowInfo $title 7]
+    tk_messageBox -icon info -type yesno -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {no}
+
+test winMsgbox-1.6 {tk_messageBox abortretryignore} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.5 [pid]"
+    after 100 [list GetWindowInfo $title 3]
+    tk_messageBox -icon info -type abortretryignore -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {abort}
+
+test winMsgbox-1.7 {tk_messageBox abortretryignore} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.6 [pid]"
+    after 100 [list GetWindowInfo $title 4]
+    tk_messageBox -icon info -type abortretryignore -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {retry}
+
+test winMsgbox-1.8 {tk_messageBox abortretryignore} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.7 [pid]"
+    after 100 [list GetWindowInfo $title 5]
+    tk_messageBox -icon info -type abortretryignore -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {ignore}
+
+test winMsgbox-1.9 {tk_messageBox retrycancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.8 [pid]"
+    after 100 [list GetWindowInfo $title 4]
+    tk_messageBox -icon info -type retrycancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {retry}
+
+test winMsgbox-1.10 {tk_messageBox retrycancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.9 [pid]"
+    after 100 [list GetWindowInfo $title 2]
+    tk_messageBox -icon info -type retrycancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {cancel}
+
+test winMsgbox-1.11 {tk_messageBox yesnocancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.10 [pid]"
+    after 100 [list GetWindowInfo $title 6]
+    tk_messageBox -icon info -type yesnocancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {yes}
+
+test winMsgbox-1.12 {tk_messageBox yesnocancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.11 [pid]"
+    after 100 [list GetWindowInfo $title 7]
+    tk_messageBox -icon info -type yesnocancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {no}
+
+test winMsgbox-1.13 {tk_messageBox yesnocancel} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+} -body {
+    global windowInfo
+    set title "winMsgbox-1.12 [pid]"
+    after 100 [list GetWindowInfo $title 2]
+    tk_messageBox -icon info -type yesnocancel -title $title -message Message
+} -cleanup {
+    wm deiconify .
+} -result {cancel}
+
+# -------------------------------------------------------------------------
+
+test winMsgbox-2.1 {tk_messageBox message} -constraints {win getwindowinfo} -setup {
+    wm iconify .
+    unset -nocomplain info
+} -body {
+    global windowInfo
+    set title "winMsgbox-2.0 [pid]"
+    set message "message"
+    after 100 [list GetWindowInfo $title 2]
+    set r [tk_messageBox -type ok -title $title -message $message]
+    array set info $windowInfo
+    lappend r $info(childtext)
+} -cleanup {
+    wm deiconify .
+} -result [list ok "message"]
+
+test winMsgbox-2.2 {tk_messageBox message (long)} -constraints {
+    win getwindowinfo
+} -setup {
+    wm iconify .
+    unset -nocomplain info
+} -body {
+    global windowInfo
+    set title "winMsgbox-2.1 [pid]"
+    set message [string repeat Ab 80]
+    after 100 [list GetWindowInfo $title 2]
+    set r [tk_messageBox -type ok -title $title -message $message]
+    array set info $windowInfo
+    lappend r $info(childtext)
+} -cleanup {
+    wm deiconify .
+} -result [list ok [string repeat Ab 80]]
+
+test winMsgbox-2.3 {tk_messageBox message (unicode)} -constraints {
+    win getwindowinfo
+} -setup {
+    wm iconify .
+    unset -nocomplain info
+} -body {
+    global windowInfo
+    set title "winMsgbox-2.2 [pid]"
+    set message "\u041f\u043e\u0438\u0441\u043a\u0020\u0441\u0442\u0440\u0430\u043d\u0438\u0446"
+    after 100 [list GetWindowInfo $title 2]
+    set r [tk_messageBox -type ok -title $title -message $message]
+    array set info $windowInfo
+    lappend r $info(childtext)
+} -cleanup {
+    wm deiconify .
+} -result [list ok "\u041f\u043e\u0438\u0441\u043a\u0020\u0441\u0442\u0440\u0430\u043d\u0438\u0446"]
+
+test winMsgbox-2.4 {tk_messageBox message (empty)} -constraints {
+    win getwindowinfo
+} -setup {
+    wm iconify .
+    unset -nocomplain info
+} -body {
+    global windowInfo
+    set title "winMsgbox-2.3 [pid]"
+    after 100 [list GetWindowInfo $title 2]
+    set r [tk_messageBox -type ok -title $title]
+    array set info $windowInfo
+    lappend r $info(childtext)
+} -cleanup {
+    wm deiconify .
+} -result [list ok ""]
+
+# -------------------------------------------------------------------------
+
+test winMsgbox-3.1 {tk_messageBox detail (sourceforge bug #1692927)} -constraints {
+    win getwindowinfo
+} -setup {
+    wm iconify .
+    unset -nocomplain info
+} -body {
+    global windowInfo
+    set title "winMsgbox-3.0 [pid]"
+    after 100 [list GetWindowInfo $title 2]
+    set r [tk_messageBox -type ok -title $title \
+               -message Hello -detail "Pleased to meet you"]
+    array set info $windowInfo
+    lappend r $info(childtext)
+} -cleanup {
+    wm deiconify .
+} -result [list ok "Hello\n\nPleased to meet you"]
+
+test winMsgbox-3.2 {tk_messageBox detail (unicode)} -constraints {
+    win getwindowinfo
+} -setup {
+    wm iconify .
+    unset -nocomplain info
+} -body {
+    global windowInfo
+    set title "winMsgbox-3.1 [pid]"
+    set message "\u041f\u043e\u0438\u0441\u043a"
+    set detail "\u0441\u0442\u0440\u0430\u043d\u0438\u0446"
+    after 100 [list GetWindowInfo $title 2]
+    set r [tk_messageBox -type ok -title $title -message $message -detail $detail]
+    array set info $windowInfo
+    lappend r $info(childtext)
+} -cleanup {
+    wm deiconify .
+} -result [list ok "\u041f\u043e\u0438\u0441\u043a\n\n\u0441\u0442\u0440\u0430\u043d\u0438\u0446"]
+
+# -------------------------------------------------------------------------
+
+if {[testConstraint testwinevent]} {
+    catch {testwinevent debug 0}
+}
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# indent-tabs-mode: nil
+# End:

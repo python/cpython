@@ -1,0 +1,92 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH seek n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+seek \- Change the access position for an open channel
+.SH SYNOPSIS
+\fBseek \fIchannelId offset \fR?\fIorigin\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Changes the current access position for \fIchannelId\fR.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
+the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
+the result of a channel creation command provided by a Tcl extension.
+.PP
+The \fIoffset\fR and \fIorigin\fR
+arguments specify the position at which the next read or write will occur
+for \fIchannelId\fR. \fIOffset\fR must be an integer (which may be
+negative) and \fIorigin\fR must be one of the following:
+.TP 10
+\fBstart\fR
+.
+The new access position will be \fIoffset\fR bytes from the start
+of the underlying file or device.
+.TP 10
+\fBcurrent\fR
+.
+The new access position will be \fIoffset\fR bytes from the current
+access position; a negative \fIoffset\fR moves the access position
+backwards in the underlying file or device.
+.TP 10
+\fBend\fR
+.
+The new access position will be \fIoffset\fR bytes from the end of
+the file or device.  A negative \fIoffset\fR places the access position
+before the end of file, and a positive \fIoffset\fR places the access
+position after the end of file.
+.PP
+The \fIorigin\fR argument defaults to \fBstart\fR.
+.PP
+The command flushes all buffered output for the channel before the command
+returns, even if the channel is in non-blocking mode.
+It also discards any buffered and unread input.
+This command returns an empty string.
+An error occurs if this command is applied to channels whose underlying
+file or device does not support seeking.
+.PP
+Note that \fIoffset\fR values are byte offsets, not character
+offsets.  Both \fBseek\fR and \fBtell\fR operate in terms of bytes,
+not characters, unlike \fBread\fR.
+.SH EXAMPLES
+.PP
+Read a file twice:
+.PP
+.CS
+set f [open file.txt]
+set data1 [read $f]
+\fBseek\fR $f 0
+set data2 [read $f]
+close $f
+# $data1 eq $data2 if the file wasn't updated
+.CE
+.PP
+Read the last 10 bytes from a file:
+.PP
+.CS
+set f [open file.data]
+# This is guaranteed to work with binary data but
+# may fail with other encodings...
+fconfigure $f -translation binary
+\fBseek\fR $f -10 end
+set data [read $f 10]
+close $f
+.CE
+.SH "SEE ALSO"
+file(n), open(n), close(n), gets(n), tell(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+access position, file, seek
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

@@ -1,0 +1,19 @@
+/* XPM */
+static char * tmp [] = {
+/* width height ncolors cpp [x_hot y_hot] */
+"10 10 2 1 -1 -1",
+/* colors */
+"       s iconColor1    m black c gray",
+"}      s iconColor2    m white c white",
+/* pixels */
+"          ",
+"          ",
+"          ",
+"          ",
+"          ",
+"}}}}}}}}}}",
+"}}}}}}}}}}",
+"}}}}}}}}}}",
+"}}}}}}}}}}",
+"}}}}}}}}}}"};
+

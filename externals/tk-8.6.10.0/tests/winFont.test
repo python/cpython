@@ -1,0 +1,392 @@
+# This file is a Tcl script to test out the procedures in tkWinFont.c.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Many of these tests are visually oriented and cannot be checked
+# programmatically (such as "does an underlined font appear to be
+# underlined?"); these tests attempt to exercise the code in question,
+# but there are no results that can be checked. 
+#
+# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+
+test winfont-1.1 {TkpGetNativeFont procedure: not native} -constraints {
+    win
+} -body {
+    catch {font delete xyz}
+    font measure {} xyz
+} -returnCodes error -result {font "" doesn't exist}
+test winfont-1.2 {TkpGetNativeFont procedure: native} -constraints win -body {
+    font measure ansifixed 0
+    font measure ansi 0
+    font measure device 0
+    font measure oemfixed 0
+    font measure systemfixed 0
+    font measure system 0
+    set x {}
+} -result {}
+
+
+test winfont-2.1 {TkpGetFontFromAttributes procedure: pointsize} -constraints {
+    win
+} -body {
+    expr {[font actual {-size -10} -size] > 0}
+} -result {1}
+test winfont-2.2 {TkpGetFontFromAttributes procedure: pointsize} -constraints {
+    win
+} -body {
+    expr {[font actual {-family Arial} -size] > 0}
+} -result {1}
+test winfont-2.3 {TkpGetFontFromAttributes procedure: normal weight} -constraints {
+    win
+} -body {
+    font actual {-weight normal} -weight
+} -result {normal}
+test winfont-2.4 {TkpGetFontFromAttributes procedure: bold weight} -constraints {
+    win
+} -body {
+    font actual {-weight bold} -weight
+} -result {bold}
+test winfont-2.5 {TkpGetFontFromAttributes procedure: no family} -constraints {
+    win
+} -body {
+    catch {expr {[font actual {-size 10} -size]}}
+} -result 0
+test winfont-2.6 {TkpGetFontFromAttributes procedure: family} -constraints {
+    win
+} -body {
+    font actual {-family Arial} -family
+} -result {Arial}
+test winfont-2.7 {TkpGetFontFromAttributes procedure: Times fonts} -constraints {
+    win
+} -setup {
+    set x {}
+} -body {
+    lappend x [font actual {-family "Times"} -family]
+    lappend x [font actual {-family "New York"} -family]
+    lappend x [font actual {-family "Times New Roman"} -family]
+} -result {{Times New Roman} {Times New Roman} {Times New Roman}}
+test winfont-2.8 {TkpGetFontFromAttributes procedure: Courier fonts} -constraints {
+    win
+} -setup {
+    set x {}
+} -body {
+    lappend x [font actual {-family "Courier"} -family]
+    lappend x [font actual {-family "Monaco"} -family]
+    lappend x [font actual {-family "Courier New"} -family]
+} -result {{Courier New} {Courier New} {Courier New}}
+test winfont-2.9 {TkpGetFontFromAttributes procedure: Helvetica fonts} -constraints {
+    win
+} -setup {
+    set x {}
+} -body {
+    lappend x [font actual {-family "Helvetica"} -family]
+    lappend x [font actual {-family "Geneva"} -family]
+    lappend x [font actual {-family "Arial"} -family]
+} -result {Arial Arial Arial}
+test winfont-2.10 {TkpGetFontFromAttributes procedure: fallback} -constraints {
+    win
+} -body {
+    # No way to get it to fail! Any font name is acceptable.
+} -result {}
+
+
+test winfont-3.1 {TkpDeleteFont procedure} -constraints win -body {
+    catch {font delete xyz}
+    font actual {-family xyz}
+    set x {}
+} -result {}
+
+
+test winfont-4.1 {TkpGetFontFamilies procedure} -constraints win -body {
+    font families
+    set x {}
+} -result {}
+
+destroy .t
+toplevel .t
+wm geometry .t +0+0
+update idletasks
+label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left -text "0" -font systemfixed
+pack .t.l
+canvas .t.c -closeenough 0
+
+set courier {Courier 14}
+set cx [font measure $courier 0]
+set t [.t.c create text 0 0 -anchor nw -just left -font $courier]
+pack .t.c
+update
+
+set ax [winfo reqwidth .t.l]
+set ay [winfo reqheight .t.l]
+proc getsize {} {
+    update
+    return "[winfo reqwidth .t.l] [winfo reqheight .t.l]"
+}
+
+test winfont-5.1 {Tk_MeasureChars procedure: unbounded right margin} -constraints {
+    win
+} -setup {
+    destroy .t.l
+} -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap 0 -text "000000"
+    list [expr {[winfo reqwidth .t.l] eq 6*$ax}] \
+        [expr {[winfo reqheight .t.l] eq $ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.2 {Tk_MeasureChars procedure: static width buffer exceeded} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap 100000 -text "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    list [expr {[winfo reqwidth .t.l] eq 256*$ax}] \
+        [expr {[winfo reqheight .t.l] eq $ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.3 {Tk_MeasureChars procedure: all chars did fit} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap [expr {$ax*10}] -text "00000000"
+    list [expr {[winfo reqwidth .t.l] eq 8*$ax}] \
+        [expr {[winfo reqheight .t.l] eq $ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.4 {Tk_MeasureChars procedure: not all chars fit} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap [expr {$ax*6}] -text "00000000"
+    list [expr {[winfo reqwidth .t.l] eq 6*$ax}] \
+        [expr {[winfo reqheight .t.l] eq 2*$ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.5 {Tk_MeasureChars procedure: include last partial char} -constraints {
+    win
+} -setup {
+    destroy .t.c
+}  -body {
+    canvas .t.c -closeenough 0
+    set t [.t.c create text 0 0 -anchor nw -just left -font $courier]
+    pack .t.c
+    update
+
+    .t.c dchars $t 0 end
+    .t.c insert $t 0 "0000"
+    .t.c index $t @[expr {int($cx*2.5)}],1
+} -cleanup {
+    destroy .t.c
+} -result {2}
+
+test winfont-5.6 {Tk_MeasureChars procedure: at least one char on line} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -text "000000" -wrap 1
+    list [expr {[winfo reqwidth .t.l] eq $ax}] \
+        [expr {[winfo reqheight .t.l] eq 6*$ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.7 {Tk_MeasureChars procedure: whole words} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap [expr {$ax*8}] -text "000000 0000"
+    list [expr {[winfo reqwidth .t.l] eq 6*$ax}] \
+        [expr {[winfo reqheight .t.l] eq 2*$ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.8 {Tk_MeasureChars procedure: already saw space in line} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap [expr {$ax*12}] -text "000000    0000000"
+    list [expr {[winfo reqwidth .t.l] eq 7*$ax}] \
+        [expr {[winfo reqheight .t.l] eq 2*$ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.9 {Tk_MeasureChars procedure: internal spaces significant} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap [expr {$ax*12}] -text "000  00   00000"
+    list [expr {[winfo reqwidth .t.l] eq 7*$ax}] \
+        [expr {[winfo reqheight .t.l] eq 2*$ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.10 {Tk_MeasureChars procedure: make first part of word fit} -constraints {
+    win
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    set ax [winfo reqwidth .t.l]
+    set ay [winfo reqheight .t.l]
+   
+    .t.l config -wrap [expr {$ax*12}] -text "0000000000000000"
+    list [expr {[winfo reqwidth .t.l] eq 12*$ax}] \
+        [expr {[winfo reqheight .t.l] eq 2*$ay}]
+} -cleanup {
+    destroy .t.l
+} -result {1 1}
+
+test winfont-5.11 {Tk_MeasureChars procedure: check for kerning} -constraints {
+    win nonPortable
+} -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+   
+    set font [.t.l cget -font]
+    .t.l config -font {{MS Sans Serif} 8} -text "W"
+    set width [winfo reqwidth .t.l]
+    .t.l config -text "XaYoYaKaWx"
+    set x [lindex [getsize] 0]
+    .t.l config -font $font
+    expr {$x < ($width*10)}
+} -cleanup {
+    destroy .t.l
+} -result {1}
+
+
+test winfont-6.1 {Tk_DrawChars procedure: loop test} -constraints win -setup {
+    destroy .t.l
+}  -body {
+    label .t.l -padx 0 -pady 0 -bd 0 -highlightthickness 0 -justify left \
+        -text "0" -font systemfixed
+    pack .t.l
+    update
+    .t.l config -text "a"
+    update
+} -cleanup {
+    destroy .t.l
+} -result {}
+
+
+test winfont-7.1 {AllocFont procedure: use old font} -constraints win -setup {
+    destroy .c
+} -setup {
+    catch {font delete xyz}
+} -body {
+    font create xyz
+    button .c -font xyz
+    font configure xyz -family times
+    update
+    destroy .c
+    font delete xyz
+} -result {}
+test winfont-7.2 {AllocFont procedure: extract info from logfont} -constraints {
+    win
+} -body {
+    font actual {arial 10 bold italic underline overstrike}
+} -result {-family Arial -size 10 -weight bold -slant italic -underline 1 -overstrike 1}
+test winfont-7.3 {AllocFont procedure: extract info from textmetric} -constraints {
+    win
+} -body {
+    font metric {arial 10 bold italic underline overstrike} -fixed
+} -result {0}
+test winfont-7.4 {AllocFont procedure: extract info from textmetric} -constraints {
+    win
+} -body {
+    font metric systemfixed -fixed
+} -result {1}
+
+# cleanup
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:
+

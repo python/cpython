@@ -1,0 +1,32 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\"
+.TH Tcl_SourceRCFile 3 8.3 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SourceRCFile \- source the Tcl rc file
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_SourceRCFile\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Tcl interpreter to source rc file into.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_SourceRCFile\fR is used to source the Tcl rc file at startup.
+It is typically invoked by Tcl_Main or Tk_Main.  The name of the file
+sourced is obtained from the global variable \fBtcl_rcFileName\fR in
+the interpreter given by \fIinterp\fR.  If this variable is not
+defined, or if the file it indicates cannot be found, no action is
+taken.
+
+.SH KEYWORDS
+application-specific initialization, main program, rc file

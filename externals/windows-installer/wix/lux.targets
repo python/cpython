@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<Project
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+  ToolsVersion="3.5">
+
+  <UsingTask TaskName="GenerateTestConsumer" AssemblyFile="$(LuxTasksPath)" />
+  <UsingTask TaskName="Nit" AssemblyFile="$(LuxTasksPath)" />
+  
+  <PropertyGroup>
+    <BuildTestPackageDependsOn>Compile;_ScanForUnitTests;_GenerateTestConsumer;Link</BuildTestPackageDependsOn>
+    <TestDependsOn>$(BuildTestPackageDependsOn)</TestDependsOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <GeneratedTestConsumer Include="$(OutputName)_test.wxs" />
+  </ItemGroup>
+
+  <Target
+    Name="_ScanForUnitTests">
+
+    <!--
+    So the Link target can do proper up-to-date checking, we need to give it the right list of 
+    .wixobj inputs, which we get by scanning for unit tests and not generating a test consumer.
+    -->
+    
+    <GenerateTestConsumer
+      InputFiles="@(CompileObjOutput);@(WixObject);@(WixLibProjects);@(_ResolvedWixLibraryPaths)"
+      Extensions="@(_ResolvedWixExtensionPaths)">
+        <Output TaskParameter="InputFragments" ItemName="FilesThatAreFragments" />
+    </GenerateTestConsumer>
+    
+    <ItemGroup>
+      <CompileObjOutput
+        Remove="@(CompileObjOutput)" />
+      <CompileObjOutput
+        Include="
+          @(GeneratedTestConsumer -> '$(IntermediateOutputPath)%(Filename)$(IntermediateExt)');
+          @(FilesThatAreFragments);
+        " />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <TargetName>$(OutputName)_test</TargetName>
+      <SuppressIces>ICE71;$(SuppressIces)</SuppressIces>
+      <SuppressValidation>true</SuppressValidation>
+    </PropertyGroup>
+
+  </Target>
+
+  <Target
+    Name="_GenerateTestConsumer"
+    Inputs="@(Compile);
+            @(Content);
+            @(_ResolvedWixExtensionPaths);
+            @(_ResolvedProjectReferencePaths);
+            $(MSBuildAllProjects)"
+    Outputs="@(GeneratedTestConsumer -> '$(IntermediateOutputPath)%(Filename)$(IntermediateExt)')">
+
+    <GenerateTestConsumer
+      InputFiles="@(CompileObjOutput);@(WixObject);@(WixLibProjects);@(_ResolvedWixLibraryPaths)"
+      Extensions="@(_ResolvedWixExtensionPaths)"
+      OutputFile="@(GeneratedTestConsumer)">
+        <Output TaskParameter="InputFragments" ItemName="FilesThatAreFragments" />
+    </GenerateTestConsumer>
+
+    <Candle
+      SourceFiles="@(GeneratedTestConsumer)"
+      AdditionalOptions="$(CompilerAdditionalOptions)"
+      DefineConstants="$(DefineConstants);$(SolutionDefineConstants);$(ProjectDefineConstants);$(ProjectReferenceDefineConstants)"
+      ExtensionDirectory="$(WixExtDir)"
+      Extensions="@(_ResolvedWixExtensionPaths)"
+      FipsCompliant="$(FipsCompliant)"
+      IncludeSearchPaths="$(IncludeSearchPaths)"
+      InstallerPlatform="$(InstallerPlatform)"
+      NoLogo="$(CompilerNoLogo)"
+      OutputFile="$(IntermediateOutputPath)"
+      Pedantic="$(Pedantic)"
+      ReferencePaths="$(ReferencePaths)"
+      RunAsSeparateProcess="$(RunWixToolsOutOfProc)"
+      ShowSourceTrace="$(ShowSourceTrace)"
+      SuppressAllWarnings="$(CompilerSuppressAllWarnings)"
+      SuppressSchemaValidation="$(CompilerSuppressSchemaValidation)"
+      SuppressSpecificWarnings="$(CompilerSuppressSpecificWarnings)"
+      ToolPath="$(WixToolPath)"
+      TreatWarningsAsErrors="$(CompilerTreatWarningsAsErrors)"
+      TreatSpecificWarningsAsErrors="$(CompilerTreatSpecificWarningsAsErrors)"
+      VerboseOutput="$(CompilerVerboseOutput)" />
+  </Target>
+
+  <Target
+    Name="BuildTestPackage"
+    Inputs="@(CompileObjOutput);
+      @(WixObject);
+      @(_ResolvedProjectReferencePaths);
+      @(_ResolvedWixLibraryPaths);
+      @(_ResolvedWixExtensionPaths);
+      $(MSBuildAllProjects)"
+    Outputs="$(TargetPath)"
+    DependsOnTargets="$(BuildTestPackageDependsOn)" />
+
+  <Target
+    Name="Test"
+    DependsOnTargets="$(BuildTestPackageDependsOn)">
+
+    <Nit 
+      TestPackages="$(TargetPath)" 
+      ToolPath="$(WixToolPath)" />
+  </Target>
+</Project>

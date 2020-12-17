@@ -1,0 +1,56 @@
+'\"
+'\" Copyright (c) 2007 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH my n 0.1 TclOO "TclOO Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+my \- invoke any method of current object
+.SH SYNOPSIS
+.nf
+package require TclOO
+
+\fBmy\fI methodName\fR ?\fIarg ...\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBmy\fR command is used to allow methods of objects to invoke any method
+of the object (or its class). In particular, the set of valid values for
+\fImethodName\fR is the set of all methods supported by an object and its
+superclasses, including those that are not exported. The object upon which the
+method is invoked is always the one that is the current context of the method
+(i.e. the object that is returned by \fBself object\fR) from which the
+\fBmy\fR command is invoked.
+.PP
+Each object has its own \fBmy\fR command, contained in its instance namespace.
+.SH EXAMPLES
+.PP
+This example shows basic use of \fBmy\fR to use the \fBvariables\fR method of
+the \fBoo::object\fR class, which is not publicly visible by default:
+.PP
+.CS
+oo::class create c {
+    method count {} {
+        \fBmy\fR variable counter
+        puts [incr counter]
+    }
+}
+c create o
+o count              \fI\(-> prints "1"\fR
+o count              \fI\(-> prints "2"\fR
+o count              \fI\(-> prints "3"\fR
+.CE
+.SH "SEE ALSO"
+next(n), oo::object(n), self(n)
+.SH KEYWORDS
+method, method visibility, object, private method, public method
+
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

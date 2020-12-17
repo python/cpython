@@ -1,0 +1,75 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_DetachPids 3 "" Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_DetachPids, Tcl_ReapDetachedProcs, Tcl_WaitPid \- manage child processes in background
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_DetachPids\fR(\fInumPids, pidPtr\fR)
+.sp
+\fBTcl_ReapDetachedProcs\fR()
+.sp
+Tcl_Pid
+\fBTcl_WaitPid\fR(\fIpid, statusPtr, options\fR)
+.SH ARGUMENTS
+.AS Tcl_Pid *statusPtr out
+.AP int numPids in
+Number of process ids contained in the array pointed to by \fIpidPtr\fR.
+.AP int *pidPtr in
+Address of array containing \fInumPids\fR process ids.
+.AP Tcl_Pid pid in
+The id of the process (pipe) to wait for.
+.AP int *statusPtr out
+The result of waiting on a process (pipe). Either 0 or ECHILD.
+.AP int options in
+The options controlling the wait. WNOHANG specifies not to wait when
+checking the process.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_DetachPids\fR and \fBTcl_ReapDetachedProcs\fR provide a
+mechanism for managing subprocesses that are running in background.
+These procedures are needed because the parent of a process must
+eventually invoke the \fBwaitpid\fR kernel call (or one of a few other
+similar kernel calls) to wait for the child to exit.  Until the
+parent waits for the child, the child's state cannot be completely
+reclaimed by the system.  If a parent continually creates children
+and doesn't wait on them, the system's process table will eventually
+overflow, even if all the children have exited.
+.PP
+\fBTcl_DetachPids\fR may be called to ask Tcl to take responsibility
+for one or more processes whose process ids are contained in the
+\fIpidPtr\fR array passed as argument.  The caller presumably
+has started these processes running in background and does not
+want to have to deal with them again.
+.PP
+\fBTcl_ReapDetachedProcs\fR invokes the \fBwaitpid\fR kernel call
+on each of the background processes so that its state can be cleaned
+up if it has exited.  If the process has not exited yet,
+\fBTcl_ReapDetachedProcs\fR does not wait for it to exit;  it will check again
+the next time it is invoked.
+Tcl automatically calls \fBTcl_ReapDetachedProcs\fR each time the
+\fBexec\fR command is executed, so in most cases it is not necessary
+for any code outside of Tcl to invoke \fBTcl_ReapDetachedProcs\fR.
+However, if you call \fBTcl_DetachPids\fR in situations where the
+\fBexec\fR command may never get executed, you may wish to call
+\fBTcl_ReapDetachedProcs\fR from time to time so that background
+processes can be cleaned up.
+.PP
+\fBTcl_WaitPid\fR is a thin wrapper around the facilities provided by
+the operating system to wait on the end of a spawned process and to
+check a whether spawned process is still running. It is used by
+\fBTcl_ReapDetachedProcs\fR and the channel system to portably access
+the operating system.
+
+.SH KEYWORDS
+background, child, detach, process, wait

@@ -1,0 +1,772 @@
+# Commands covered:  switch
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test switch-1.1 {simple patterns} {
+    switch a a {subst 1} b {subst 2} c {subst 3} default {subst 4}
+} 1
+test switch-1.2 {simple patterns} {
+    switch b a {subst 1} b {subst 2} c {subst 3} default {subst 4}
+} 2
+test switch-1.3 {simple patterns} {
+    switch x a {subst 1} b {subst 2} c {subst 3} default {subst 4}
+} 4
+test switch-1.4 {simple patterns} {
+    switch x a {subst 1} b {subst 2} c {subst 3}
+} {}
+test switch-1.5 {simple pattern matches many times} {
+    switch b a {subst 1} b {subst 2} b {subst 3} b {subst 4}
+} 2
+test switch-1.6 {simple patterns} {
+    switch default a {subst 1} default {subst 2} c {subst 3} default {subst 4}
+} 2
+test switch-1.7 {simple patterns} {
+    switch x a {subst 1} default {subst 2} c {subst 3} default {subst 4}
+} 4
+test switch-1.8 {simple patterns with -nocase} {
+    switch -nocase b a {subst 1} b {subst 2} c {subst 3} default {subst 4}
+} 2
+test switch-1.9 {simple patterns with -nocase} {
+    switch -nocase B a {subst 1} b {subst 2} c {subst 3} default {subst 4}
+} 2
+test switch-1.10 {simple patterns with -nocase} {
+    switch -nocase b a {subst 1} B {subst 2} c {subst 3} default {subst 4}
+} 2
+test switch-1.11 {simple patterns with -nocase} {
+    switch -nocase x a {subst 1} default {subst 2} c {subst 3} default {subst 4}
+} 4
+
+test switch-2.1 {single-argument form for pattern/command pairs} {
+    switch b {
+	a {subst 1}
+	b {subst 2}
+	default {subst 6}
+    }
+} {2}
+test switch-2.2 {single-argument form for pattern/command pairs} -body {
+    switch z {a 2 b}
+} -returnCodes error -result {extra switch pattern with no body}
+
+test switch-3.1 {-exact vs. -glob vs. -regexp} {
+    switch -exact aaaab {
+	^a*b$	{subst regexp}
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} exact
+test switch-3.2 {-exact vs. -glob vs. -regexp} {
+    switch -regexp aaaab {
+	^a*b$	{subst regexp}
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} regexp
+test switch-3.3 {-exact vs. -glob vs. -regexp} {
+    switch -glob aaaab {
+	^a*b$	{subst regexp}
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} glob
+test switch-3.4 {-exact vs. -glob vs. -regexp} {
+    switch aaaab {^a*b$} {subst regexp} *b {subst glob} \
+	    aaaab {subst exact} default {subst none}
+} exact
+test switch-3.5 {-exact vs. -glob vs. -regexp} {
+    switch -- -glob {
+	^g.*b$	{subst regexp}
+	-*	{subst glob}
+	-glob	{subst exact}
+	default {subst none}
+    }
+} exact
+test switch-3.6 {-exact vs. -glob vs. -regexp} -body {
+    switch -foo a b c
+} -returnCodes error -result {bad option "-foo": must be -exact, -glob, -indexvar, -matchvar, -nocase, -regexp, or --}
+test switch-3.7 {-exact vs. -glob vs. -regexp with -nocase} {
+    switch -exact -nocase aaaab {
+	^a*b$	{subst regexp}
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} exact
+test switch-3.8 {-exact vs. -glob vs. -regexp with -nocase} {
+    switch -regexp -nocase aaaab {
+	^a*b$	{subst regexp}
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} regexp
+test switch-3.9 {-exact vs. -glob vs. -regexp with -nocase} {
+    switch -glob -nocase aaaab {
+	^a*b$	{subst regexp}
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} glob
+test switch-3.10 {-exact vs. -glob vs. -regexp with -nocase} {
+    switch -nocase aaaab {^a*b$} {subst regexp} *b {subst glob} \
+	    aaaab {subst exact} default {subst none}
+} exact
+test switch-3.11 {-exact vs. -glob vs. -regexp with -nocase} {
+    switch -nocase -- -glob {
+	^g.*b$	{subst regexp}
+	-*	{subst glob}
+	-glob	{subst exact}
+	default {subst none}
+    }
+} exact
+test switch-3.12 {-exact vs. -glob vs. -regexp} {
+    switch -exa Foo Foo {set result OK}
+} OK
+test switch-3.13 {-exact vs. -glob vs. -regexp} {
+    switch -gl Foo Fo? {set result OK}
+} OK
+test switch-3.14 {-exact vs. -glob vs. -regexp} {
+    switch -re Foo Fo. {set result OK}
+} OK
+test switch-3.15 {-exact vs. -glob vs. -regexp} -body {
+    switch -exact -exact Foo Foo {set result OK}
+} -returnCodes error -result {bad option "-exact": -exact option already found}
+test switch-3.16 {-exact vs. -glob vs. -regexp} -body {
+    switch -exact -glob Foo Foo {set result OK}
+} -returnCodes error -result {bad option "-glob": -exact option already found}
+test switch-3.17 {-exact vs. -glob vs. -regexp} -body {
+    switch -glob -regexp Foo Foo {set result OK}
+} -returnCodes error -result {bad option "-regexp": -glob option already found}
+test switch-3.18 {-exact vs. -glob vs. -regexp} -body {
+    switch -regexp -glob Foo Foo {set result OK}
+} -returnCodes error -result {bad option "-glob": -regexp option already found}
+
+test switch-4.1 {error in executed command} {
+    list [catch {switch a a {error "Just a test"} default {subst 1}} msg] \
+	    $msg $::errorInfo
+} {1 {Just a test} {Just a test
+    while executing
+"error "Just a test""
+    ("a" arm line 1)
+    invoked from within
+"switch a a {error "Just a test"} default {subst 1}"}}
+test switch-4.2 {error: not enough args} -returnCodes error -body {
+    switch
+} -result {wrong # args: should be "switch ?-option ...? string ?pattern body ...? ?default body?"}
+test switch-4.3 {error: pattern with no body} -body {
+    switch a b
+} -returnCodes error -result {extra switch pattern with no body}
+test switch-4.4 {error: pattern with no body} -body {
+    switch a b {subst 1} c
+} -returnCodes error -result {extra switch pattern with no body}
+test switch-4.5 {error in default command} {
+    list [catch {switch foo a {error switch1} b {error switch 3} \
+	    default {error switch2}} msg] $msg $::errorInfo
+} {1 switch2 {switch2
+    while executing
+"error switch2"
+    ("default" arm line 1)
+    invoked from within
+"switch foo a {error switch1} b {error switch 3}  default {error switch2}"}}
+
+test switch-5.1 {errors in -regexp matching} -returnCodes error -body {
+    switch -regexp aaaab {
+	*b	{subst glob}
+	aaaab	{subst exact}
+	default	{subst none}
+    }
+} -result {couldn't compile regular expression pattern: quantifier operand invalid}
+
+test switch-6.1 {backslashes in patterns} {
+    switch -exact {\a\$\.\[} {
+	\a\$\.\[	{subst first}
+	\a\\$\.\\[	{subst second}
+	\\a\\$\\.\\[	{subst third}
+	{\a\\$\.\\[}	{subst fourth}
+	{\\a\\$\\.\\[}	{subst fifth}
+	default		{subst none}
+    }
+} third
+test switch-6.2 {backslashes in patterns} {
+    switch -exact {\a\$\.\[} {
+	\a\$\.\[	{subst first}
+	{\a\$\.\[}	{subst second}
+	{{\a\$\.\[}}	{subst third}
+	default		{subst none}
+    }
+} second
+
+test switch-7.1 {"-" bodies} {
+    switch a {
+	a -
+	b -
+	c {subst 1}
+	default {subst 2}
+    }
+} 1
+test switch-7.2 {"-" bodies} -body {
+    switch a {
+	a -
+	b -
+	c -
+    }
+} -returnCodes error -result {no body specified for pattern "c"}
+test switch-7.3 {"-" bodies} -body {
+    switch a {
+	a -
+	b -foo
+	c -
+    }
+} -returnCodes error -result {no body specified for pattern "c"}
+test switch-7.4 {"-" bodies} -body {
+    switch a {
+	a -
+	b -foo
+	c {}
+    }
+} -returnCodes error -result {invalid command name "-foo"}
+
+test switch-8.1 {empty body} {
+    set msg {}
+    switch {2} {
+    	1 {set msg 1}
+        2 {}
+        default {set msg 2}
+    }
+} {}
+proc test_switch_body {} {
+    return "INVOKED"
+}
+test switch-8.2 {weird body text, variable} {
+    set cmd {test_switch_body}
+    switch Foo {
+    	Foo $cmd
+    }
+} {INVOKED}
+test switch-8.3 {weird body text, variable} {
+    set cmd {test_switch_body}
+    switch Foo {
+    	Foo {$cmd}
+    }
+} {INVOKED}
+
+test switch-9.1 {empty pattern/body list} -returnCodes error -body {
+    switch x
+} -result {wrong # args: should be "switch ?-option ...? string ?pattern body ...? ?default body?"}
+test switch-9.2 {unpaired pattern} -returnCodes error -body {
+    switch -- x
+} -result {extra switch pattern with no body}
+test switch-9.3 {empty pattern/body list} -body {
+    switch x {}
+} -returnCodes error -result {wrong # args: should be "switch ?-option ...? string {?pattern body ...? ?default body?}"}
+test switch-9.4 {empty pattern/body list} -body {
+    switch -- x {}
+} -returnCodes error -result {wrong # args: should be "switch ?-option ...? string {?pattern body ...? ?default body?}"}
+test switch-9.5 {unpaired pattern} -body {
+    switch x a {} b
+} -returnCodes error -result {extra switch pattern with no body}
+test switch-9.6 {unpaired pattern} -body {
+    switch x {a {} b}
+} -returnCodes error -result {extra switch pattern with no body}
+test switch-9.7 {unpaired pattern} -body {
+    switch x a {} # comment b
+} -returnCodes error -result {extra switch pattern with no body}
+test switch-9.8 {unpaired pattern} -returnCodes error -body {
+    switch x {a {} # comment b}
+} -result {extra switch pattern with no body, this may be due to a comment incorrectly placed outside of a switch body - see the "switch" documentation}
+test switch-9.9 {unpaired pattern} -body {
+    switch x a {} x {} # comment b
+} -returnCodes error -result {extra switch pattern with no body}
+test switch-9.10 {unpaired pattern} -returnCodes error -body {
+    switch x {a {} x {} # comment b}
+} -result {extra switch pattern with no body, this may be due to a comment incorrectly placed outside of a switch body - see the "switch" documentation}
+
+test switch-10.1 {compiled -exact switch} {
+    if 1 {switch -exact -- a {a {subst 1} b {subst 2}}}
+} 1
+test switch-10.1a {compiled -exact switch} {
+    if 1 {switch -exact a {a {subst 1} b {subst 2}}}
+} 1
+test switch-10.2 {compiled -exact switch} {
+    if 1 {switch -exact -- b {a {subst 1} b {subst 2}}}
+} 2
+test switch-10.2a {compiled -exact switch} {
+    if 1 {switch -exact b {a {subst 1} b {subst 2}}}
+} 2
+test switch-10.3 {compiled -exact switch} {
+    if 1 {switch -exact -- c {a {subst 1} b {subst 2}}}
+} {}
+test switch-10.3a {compiled -exact switch} {
+    if 1 {switch -exact c {a {subst 1} b {subst 2}}}
+} {}
+test switch-10.4 {compiled -exact switch} {
+    if 1 {
+	set x 0
+	switch -exact -- c {a {subst 1} b {subst 2}}
+    }
+} {}
+test switch-10.5 {compiled -exact switch} {
+    if 1 {switch -exact -- a {a - aa {subst 1} b {subst 2}}}
+} 1
+test switch-10.6 {compiled -exact switch} {
+    if 1 {switch -exact -- b {a {
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+    } b {subst 2}}}
+} 2
+
+# Command variants are:
+#    c* are compiled switches, i* are interpreted
+#    *-glob use glob matching, *-exact use exact matching
+#    *2* include a default clause (different results too.)
+proc cswtest-glob s {
+    set x 0; set y 0
+    foreach c [split $s {}] {
+	switch -glob $c {
+	    a {incr x}
+	    b {incr y}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	switch -glob -- $c a {incr x} b {incr y}
+    }
+    return $x,$y
+}
+proc iswtest-glob s {
+    set x 0; set y 0; set switch switch
+    foreach c [split $s {}] {
+	$switch -glob $c {
+	    a {incr x}
+	    b {incr y}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	$switch -glob -- $c a {incr x} b {incr y}
+    }
+    return $x,$y
+}
+proc cswtest-exact s {
+    set x 0; set y 0
+    foreach c [split $s {}] {
+	switch -exact $c {
+	    a {incr x}
+	    b {incr y}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	switch -exact -- $c a {incr x} b {incr y}
+    }
+    return $x,$y
+}
+proc iswtest-exact s {
+    set x 0; set y 0; set switch switch
+    foreach c [split $s {}] {
+	$switch -exact $c {
+	    a {incr x}
+	    b {incr y}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]
+    foreach c [split $s {}] {
+	$switch -exact -- $c a {incr x} b {incr y}
+    }
+    return $x,$y
+}
+proc cswtest2-glob s {
+    set x 0; set y 0; set z 0
+    foreach c [split $s {}] {
+	switch -glob $c {
+	    a {incr x}
+	    b {incr y}
+	    default {incr z}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	switch -glob -- $c a {incr x} b {incr y} default {incr z}
+    }
+    return $x,$y,$z
+}
+proc iswtest2-glob s {
+    set x 0; set y 0; set z 0; set switch switch
+    foreach c [split $s {}] {
+	$switch -glob $c {
+	    a {incr x}
+	    b {incr y}
+	    default {incr z}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	$switch -glob -- $c a {incr x} b {incr y} default {incr z}
+    }
+    return $x,$y,$z
+}
+proc cswtest2-exact s {
+    set x 0; set y 0; set z 0
+    foreach c [split $s {}] {
+	switch -exact $c {
+	    a {incr x}
+	    b {incr y}
+	    default {incr z}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	switch -exact -- $c a {incr x} b {incr y} default {incr z}
+    }
+    return $x,$y,$z
+}
+proc iswtest2-exact s {
+    set x 0; set y 0; set z 0; set switch switch
+    foreach c [split $s {}] {
+	$switch -exact $c {
+	    a {incr x}
+	    b {incr y}
+	    default {incr z}
+	}
+    }
+    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
+    foreach c [split $s {}] {
+	$switch -exact -- $c a {incr x} b {incr y} default {incr z}
+    }
+    return $x,$y,$z
+}
+
+test switch-10.7 {comparison of compiled and interpreted behaviour of switch, exact matching} {
+    cswtest-exact abcb
+} [iswtest-exact abcb]
+test switch-10.8 {comparison of compiled and interpreted behaviour of switch, glob matching} {
+    cswtest-glob abcb
+} [iswtest-glob abcb]
+test switch-10.9 {comparison of compiled and interpreted behaviour of switch, exact matching with default} {
+    cswtest2-exact abcb
+} [iswtest2-exact abcb]
+test switch-10.10 {comparison of compiled and interpreted behaviour of switch, glob matching with default} {
+    cswtest2-glob abcb
+} [iswtest2-glob abcb]
+proc cswtest-default-exact {x} {
+    switch -- $x {
+	a* {return b}
+	aa {return c}
+	default {return d}
+    }
+}
+test switch-10.11 {default to exact matching when compiled} {
+    cswtest-default-exact a
+} d
+test switch-10.12 {default to exact matching when compiled} {
+    cswtest-default-exact aa
+} c
+test switch-10.13 {default to exact matching when compiled} {
+    cswtest-default-exact a*
+} b
+test switch-10.14 {default to exact matching when compiled} {
+    cswtest-default-exact a**
+} d
+rename cswtest-default-exact {}
+rename cswtest-glob {}
+rename iswtest-glob {}
+rename cswtest2-glob {}
+rename iswtest2-glob {}
+rename cswtest-exact {}
+rename iswtest-exact {}
+rename cswtest2-exact {}
+rename iswtest2-exact {}
+# Bug 1891827
+test switch-10.15 {(not) compiled exact nocase regression} {
+    apply {{} {
+	switch -nocase -- A { a {return yes} default {return no} }
+    }}
+} yes
+
+# Added due to TIP#75
+test switch-11.1 {regexp matching with -matchvar} {
+    switch -regexp -matchvar x -- abc {.(.). {set x}}
+} {abc b}
+test switch-11.2 {regexp matching with -matchvar} {
+    set x GOOD
+    switch -regexp -matchvar x -- abc {.(.).. {list $x z}}
+    set x
+} GOOD
+test switch-11.3 {regexp matching with -matchvar} {
+    switch -regexp -matchvar x -- "a b c" {.(.). {set x}}
+} {{a b} { }}
+test switch-11.4 {regexp matching with -matchvar} {
+    set x BAD
+    switch -regexp -matchvar x -- "a b c" {
+	bc {list $x YES}
+	default {list $x NO}
+    }
+} {{} NO}
+test switch-11.5 {-matchvar without -regexp} {
+    set x {}
+    list [catch {switch -glob -matchvar x -- abc . {set x}} msg] $x $msg
+} {1 {} {-matchvar option requires -regexp option}}
+test switch-11.6 {-matchvar unwritable} {
+    set x {}
+    list [catch {switch -regexp -matchvar x(x) -- abc . {set x}} msg] $x $msg
+} {1 {} {can't set "x(x)": variable isn't array}}
+
+test switch-12.1 {regexp matching with -indexvar} {
+    switch -regexp -indexvar x -- abc {.(.). {set x}}
+} {{0 2} {1 1}}
+test switch-12.2 {regexp matching with -indexvar} {
+    set x GOOD
+    switch -regexp -indexvar x -- abc {.(.).. {list $x z}}
+    set x
+} GOOD
+test switch-12.3 {regexp matching with -indexvar} {
+    switch -regexp -indexvar x -- "a b c" {.(.). {set x}}
+} {{0 2} {1 1}}
+test switch-12.4 {regexp matching with -indexvar} {
+    set x BAD
+    switch -regexp -indexvar x -- "a b c" {
+	bc {list $x YES}
+	default {list $x NO}
+    }
+} {{} NO}
+test switch-12.5 {-indexvar without -regexp} {
+    set x {}
+    list [catch {switch -glob -indexvar x -- abc . {set x}} msg] $x $msg
+} {1 {} {-indexvar option requires -regexp option}}
+test switch-12.6 {-indexvar unwritable} {
+    set x {}
+    list [catch {switch -regexp -indexvar x(x) -- abc . {set x}} msg] $x $msg
+} {1 {} {can't set "x(x)": variable isn't array}}
+test switch-12.7 {[Bug 3106532] -indexvar should be directly usable with [string range]} {
+    set str abcdef
+    switch -regexp -indexvar x -- $str ^... {string range $str {*}[lindex $x 0]}
+} abc
+test switch-12.8 {-indexvar and matched empty strings} {
+    switch -regexp -indexvar x -- abcdef ^...(x?) {return $x}
+} {{0 2} {3 2}}
+test switch-12.9 {-indexvar and unmatched strings} {
+    switch -regexp -indexvar x -- abcdef ^...(x)? {return $x}
+} {{0 2} {-1 -1}}
+
+test switch-13.1 {-indexvar -matchvar combinations} {
+    switch -regexp -indexvar x -matchvar y abc {
+	. {list $x $y}
+    }
+} {{{0 0}} a}
+test switch-13.2 {-indexvar -matchvar combinations} {
+    switch -regexp -indexvar x -matchvar y abc {
+	.$ {list $x $y}
+    }
+} {{{2 2}} c}
+test switch-13.3 {-indexvar -matchvar combinations} {
+    switch -regexp -indexvar x -matchvar y abc {
+	(.)(.)(.) {list $x $y}
+    }
+} {{{0 2} {0 0} {1 1} {2 2}} {abc a b c}}
+test switch-13.4 {-indexvar -matchvar combinations} {
+    set x -
+    set y -
+    switch -regexp -indexvar x -matchvar y abc {
+	(.)(.)(.). -
+	default {list $x $y}
+    }
+} {{} {}}
+test switch-13.5 {-indexvar -matchvar combinations} {
+    set x -
+    set y -
+    list [catch {
+	switch -regexp -indexvar x(x) -matchvar y abc {. {list $x $y}}
+    } msg] $x $y $msg
+} {1 - - {can't set "x(x)": variable isn't array}}
+test switch-13.6 {-indexvar -matchvar combinations} {
+    set x -
+    set y -
+    list [catch {
+	switch -regexp -indexvar x -matchvar y(y) abc {. {list $x $y}}
+    } msg] $x $y $msg
+} {1 {{0 0}} - {can't set "y(y)": variable isn't array}}
+
+test switch-14.1 {-regexp -- compilation [Bug 1854399]} {
+    switch -regexp -- 0 {
+	{[0-9]+} {return yes}
+	default  {return no}
+    }
+    foo
+} yes
+test switch-14.2 {-regexp -- compilation [Bug 1854399]} {
+    proc foo {} {
+	switch -regexp -- 0 {
+	    {[0-9]+} {return yes}
+	    default  {return no}
+	}
+    }
+    foo
+} yes
+test switch-14.3 {-regexp -- compilation [Bug 1854399]} {
+    proc foo {} {
+	switch -regexp -- 0 {
+	    {\d+} {return yes}
+	    default  {return no}
+	}
+    }
+    foo
+} yes
+test switch-14.4 {-regexp -- compilation [Bug 1854399]} {
+    proc foo {} {
+	switch -regexp -- 0 {
+	    {0} {return yes}
+	    default  {return no}
+	}
+    }
+    foo
+} yes
+test switch-14.5 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- 0 {
+	    {0|1|2} {return yes}
+	    default {return no}
+	}
+    }}
+} yes
+test switch-14.6 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- 0 {
+	    {0|11|222} {return yes}
+	    default {return no}
+	}
+    }}
+} yes
+test switch-14.7 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- 0 {
+	    {[012]} {return yes}
+	    default {return no}
+	}
+    }}
+} yes
+test switch-14.8 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- x {
+	    {0|1|2} {return yes}
+	    default {return no}
+	}
+    }}
+} no
+test switch-14.9 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- x {
+	    {0|11|222} {return yes}
+	    default {return no}
+	}
+    }}
+} no
+test switch-14.10 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- x {
+	    {[012]} {return yes}
+	    default {return no}
+	}
+    }}
+} no
+test switch-14.11 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- x {
+	    {0|1|2} {return yes}
+	    .+ {return yes2}
+	    default {return no}
+	}
+    }}
+} yes2
+test switch-14.12 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- x {
+	    {0|11|222} {return yes}
+	    .+ {return yes2}
+	    default {return no}
+	}
+    }}
+} yes2
+test switch-14.13 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- x {
+	    {[012]} {return yes}
+	    .+ {return yes2}
+	    default {return no}
+	}
+    }}
+} yes2
+test switch-14.14 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- {} {
+	    {0|1|2} {return yes}
+	    .+ {return yes2}
+	    default {return no}
+	}
+    }}
+} no
+test switch-14.15 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- {} {
+	    {0|11|222} {return yes}
+	    .+ {return yes2}
+	    default {return no}
+	}
+    }}
+} no
+test switch-14.16 {switch -regexp compilation} {
+    apply {{} {
+	switch -regexp -- {} {
+	    {[012]} {return yes}
+	    .+ {return yes2}
+	    default {return no}
+	}
+    }}
+} no
+
+test switch-15.1 {coroutine safety of non-bytecoded switch} {*}{
+    -body {
+	proc coro {} {
+	    switch -glob a {
+		a {yield ok1}
+	    }
+	    return ok2
+	}
+	list [coroutine c coro] [c]
+    }
+    -result {ok1 ok2}
+    -cleanup {
+	rename coro {}
+    }
+}
+
+# cleanup
+catch {rename foo {}}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

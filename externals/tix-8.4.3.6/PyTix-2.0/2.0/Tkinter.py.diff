@@ -1,0 +1,99 @@
+*** Tkinter.py.dist	Mon Oct 16 14:49:40 2000
+--- Tkinter.py	Wed Nov 22 01:56:28 2000
+***************
+*** 45,51 ****
+  
+  TkVersion = _string.atof(_tkinter.TK_VERSION)
+  TclVersion = _string.atof(_tkinter.TCL_VERSION)
+! 
+  READABLE = _tkinter.READABLE
+  WRITABLE = _tkinter.WRITABLE
+  EXCEPTION = _tkinter.EXCEPTION
+--- 45,53 ----
+  
+  TkVersion = _string.atof(_tkinter.TK_VERSION)
+  TclVersion = _string.atof(_tkinter.TCL_VERSION)
+! try: TixVersion = _string.atof(_tkinter.TIX_VERSION)
+! except AttributeError: TixVersion = None
+!     
+  READABLE = _tkinter.READABLE
+  WRITABLE = _tkinter.WRITABLE
+  EXCEPTION = _tkinter.EXCEPTION
+***************
+*** 1770,1781 ****
+          # XXX Obsolete -- better use self.tk.call directly!
+          return self.tk.call((self._w, name) + args)
+  
+! class Widget(BaseWidget, Pack, Place, Grid):
+!     """Internal class.
+! 
+!     Base class for a widget which can be positioned with the geometry managers
+!     Pack, Place or Grid."""
+!     pass
+  
+  class Toplevel(BaseWidget, Wm):
+      """Toplevel widget, e.g. for dialogs."""
+--- 1772,1834 ----
+          # XXX Obsolete -- better use self.tk.call directly!
+          return self.tk.call((self._w, name) + args)
+  
+! if TixVersion:
+!     # The Tix 'tixForm' geometry manager
+!     class Form:
+!         """The Tix Form geometry manager
+!     
+!         Widgets can be arranged by specifying attachments to other widgets.
+!         See Tix documentation for complete details"""
+!     
+!         def config(self, cnf={}, **kw):
+! 	    apply(self.tk.call, ('tixForm', self._w) + self._options(cnf, kw))
+!         form = config
+!     
+!         def __setitem__(self, key, value):
+! 	    Form.form({key: value})
+!     
+!         def check(self):
+! 	    return self.tk.call('tixForm', 'check', self._w)
+!     
+!         def forget(self):
+! 	    self.tk.call('tixForm', 'forget', self._w)
+!     
+!         def grid(self, xsize=0, ysize=0):
+! 	    if (not xsize) and (not ysize):
+! 	        x = self.tk.call('tixForm', 'grid', self._w)
+! 	        y = self.tk.splitlist(x)
+! 	        z = ()
+! 	        for x in y:
+! 		    z = z + (self.tk.getint(x),)
+! 	        return z
+! 	    self.tk.call('tixForm', 'grid', self._w, xsize, ysize)
+!     
+!         def info(self, option=None):
+! 	    if not option:
+! 	        return self.tk.call('tixForm', 'info', self._w)
+! 	    if option[0] != '-':
+! 	        option = '-' + option
+! 	    return self.tk.call('tixForm', 'info', self._w, option)
+!     
+!         def slaves(self):
+! 	    return map(self._nametowidget,
+! 		       self.tk.splitlist(
+! 		           self.tk.call(
+! 		    	   'tixForm', 'slaves', self._w)))
+!     
+!     class Widget(BaseWidget, Pack, Place, Grid, Form):
+!         """Internal class.
+!     
+!         Base class for a widget which can be positioned with the geometry managers
+!         Pack, Place, Grid or Form."""
+!         pass
+! else:
+!     class Widget(BaseWidget, Pack, Place, Grid):
+!         """Internal class.
+!     
+!         Base class for a widget which can be positioned with the geometry managers
+!         Pack, Place or Grid."""
+!         pass
+  
+  class Toplevel(BaseWidget, Wm):
+      """Toplevel widget, e.g. for dialogs."""

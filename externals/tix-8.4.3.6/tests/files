@@ -1,0 +1,25 @@
+# -*- mode: TCL; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# List of tests to execute.
+# Format:
+#
+# {<file/directory name> <Description> <List of conditions>}
+# {<file/directory name> <Description> <List of conditions>}
+# ...
+#
+# the conditions are AND'ed. Target is taken only if all conditions
+# are true 
+
+{general							}
+{xpm		{i pixmap}					}
+{hlist		{c tixHList}					}
+{load		{c load}					}
+{tlist		{c tixTList}					}
+{grid		{c tixGrid}					}
+{itcl		{c @scope}					}
+
+# This following subdirectory tests whether there is any garbage left
+# after all the test files are executed. If so, either Tix has
+# resource leak or the test suite doesn't clean up properly.
+#
+
+{cleanup							}

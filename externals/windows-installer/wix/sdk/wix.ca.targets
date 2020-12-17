@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<Project
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+  InitialTargets="_SetDefaultPathValues">
+
+  <Import Project="$(CustomBeforeWixCATargets)" Condition=" '$(CustomBeforeWixCATargets)' != '' and Exists('$(CustomBeforeWixCATargets)')" />
+
+  <PropertyGroup>
+    <WixCATargetsImported>true</WixCATargetsImported>
+
+    <WixTasksPath Condition=" '$(WixTasksPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\..\WiX Toolset v3.11\bin\WixTasks.dll</WixTasksPath>
+    <WixTasksPath Condition=" '$(WixTasksPath)' == '' ">$(MSBuildExtensionsPath)\..\WiX Toolset v3.11\bin\WixTasks.dll</WixTasksPath>
+    <!-- This is a fallback in case using the relative paths above did not work. -->
+    <WixTasksPath Condition=" !Exists('$(WixTasksPath)') ">$(MSBuildProgramFiles32)\WiX Toolset v3.11\bin\WixTasks.dll</WixTasksPath>
+
+    <TargetCAFileName Condition=" '$(TargetCAFileName)' == '' ">$(TargetName).CA$(TargetExt)</TargetCAFileName>
+  </PropertyGroup>
+
+  <UsingTask TaskName="ReadRegistry" AssemblyFile="$(WixTasksPath)"/>
+
+  <!--
+  ==================================================================================================
+  _SetDefaultPathValues
+
+    Gets the default values of some paths from the registry.
+
+    [OUT]
+    $(WixExtDir) - Default Wix Extension Directory
+    $(WixToolPath) - Default Wix Tool install folder
+  ==================================================================================================
+  -->
+  <PropertyGroup>
+    <WixInstallRegKey>SOFTWARE\Microsoft\Windows Installer XML\3.11</WixInstallRegKey>
+    <WixInstallRegKeyWow64>SOFTWARE\Wow6432Node\Microsoft\Windows Installer XML\3.11</WixInstallRegKeyWow64>
+  </PropertyGroup>
+  <Target
+    Name="_SetDefaultPathValues">
+
+    <ReadRegistry
+      Hive="LocalMachine"
+      Key="$(WixInstallRegKey)"
+      Name="InstallRoot"
+      FailIfMissing="false"
+      Condition=" '$(WixToolPath)' == '' ">
+
+      <Output TaskParameter="Value" PropertyName="WixToolPath" />
+    </ReadRegistry>
+
+    <!-- If we didn't find the first registry path, assume we're in a 64bit process. -->
+    <ReadRegistry
+      Hive="LocalMachine"
+      Key="$(WixInstallRegKeyWow64)"
+      Name="InstallRoot"
+      FailIfMissing="false"
+      Condition=" '$(WixToolPath)' == '' ">
+
+      <Output TaskParameter="Value" PropertyName="WixToolPath" />
+    </ReadRegistry>
+
+    <CreateProperty Value="$(WixToolPath)..\sdk\" Condition=" '$(WixSdkPath)' == '' ">
+      <Output TaskParameter="Value" PropertyName="WixSdkPath" />
+    </CreateProperty>
+    <CreateProperty Value="$(WixSdkPath)x86\" Condition=" '$(WixSdkX86Path)' == '' ">
+      <Output TaskParameter="Value" PropertyName="WixSdkX86Path" />
+    </CreateProperty>
+    <CreateProperty Value="$(WixSdkPath)x64\" Condition=" '$(WixSdkX64Path)' == '' ">
+      <Output TaskParameter="Value" PropertyName="WixSdkX64Path" />
+    </CreateProperty>
+
+    <CreateProperty Value="$(WixSdkPath)MakeSfxCA.exe" Condition=" '$(MakeSfxCA)' == '' ">
+      <Output TaskParameter="Value" PropertyName="MakeSfxCA" />
+    </CreateProperty>
+    <CreateProperty Value="$(WixSdkX86Path)SfxCA.dll" Condition=" '$(SfxCADll)' == '' and '$(Platform)' != 'x64'">
+      <Output TaskParameter="Value" PropertyName="SfxCADll" />
+    </CreateProperty>
+    <CreateProperty Value="$(WixSdkX64Path)SfxCA.dll" Condition=" '$(SfxCADll)' == '' and '$(Platform)' == 'x64'">
+      <Output TaskParameter="Value" PropertyName="SfxCADll" />
+    </CreateProperty>
+
+  </Target>
+  
+  <!--
+  ==================================================================================================
+  PackCustomAction
+
+    Creates an MSI managed custom action package that includes the custom action assembly,
+    local assembly dependencies, and project content files.
+
+    [IN]
+    @(IntermediateAssembly) - Managed custom action assembly.
+    @(Content) - Project items of type Content will be included in the package.
+    $(CustomActionContents) - Optional space-delimited list of additional files to include.
+    
+    [OUT]
+    $(IntermediateOutputPath)$(TargetCAFileName) - Managed custom action package with unmanaged stub.
+  ==================================================================================================
+  -->
+  <Target Name="PackCustomAction"
+   Inputs="@(IntermediateAssembly);@(Content);$(CustomActionContents)"
+   Outputs="$(IntermediateOutputPath)$(TargetCAFileName)">
+
+    <!-- Find all referenced items marked CopyLocal, but exclude non-binary files. -->
+    <CreateItem
+     Include="@(ReferenceCopyLocalPaths)"
+     Condition=" '%(ReferenceCopyLocalPaths.extension)' == '.dll' or '%(ReferenceCopyLocalPaths.extension)' == '.exe' ">
+      <Output TaskParameter="Include" ItemName="CustomActionReferenceContents"/>
+    </CreateItem>
+
+    <CreateItem
+     Include="@(ReferenceComWrappersToCopyLocal)"
+     Condition=" '%(ReferenceComWrappersToCopyLocal.extension)' == '.dll' or '%(ReferenceComWrappersToCopyLocal.extension)' == '.exe' ">
+      <Output TaskParameter="Include" ItemName="CustomActionReferenceContents"/>
+    </CreateItem>
+	
+	<!-- include PDBs for Debug only -->
+	<CreateItem
+	 Include="@(IntermediateAssembly->'%(RootDir)%(Directory)%(Filename).pdb')"
+	 Condition=" Exists('%(RootDir)%(Directory)%(Filename).pdb') and '$(Configuration)' == 'Debug' ">
+	  <Output TaskParameter="Include" ItemName="CustomActionReferenceContents"/>
+	</CreateItem>
+	
+	<CreateItem
+	 Include="@(ReferenceCopyLocalPaths)"
+	 Condition=" '%(ReferenceCopyLocalPaths.extension)' == '.pdb' and '$(Configuration)' == 'Debug' ">
+	  <Output TaskParameter="Include" ItemName="CustomActionReferenceContents"/>
+	</CreateItem>
+	
+	<CreateItem
+     Include="@(ReferenceComWrappersToCopyLocal)"
+     Condition=" '%(ReferenceComWrappersToCopyLocal.extension)' == '.pdb' and '$(Configuration)' == 'Debug' ">
+      <Output TaskParameter="Include" ItemName="CustomActionReferenceContents"/>
+    </CreateItem>
+	
+    <!--
+  Items to include in the CA package:
+     - Reference assemblies marked CopyLocal
+     - Project items of type Content
+     - Additional items in the CustomActionContents property
+  -->
+    <CreateProperty Value="@(CustomActionReferenceContents);@(Content->'%(FullPath)');$(CustomActionContents)">
+      <Output TaskParameter="Value" PropertyName="CustomActionContents" />
+    </CreateProperty>
+
+    <CreateItem Include="@(IntermediateAssembly->'%(FullPath)')">
+      <Output TaskParameter="Include" ItemName="IntermediateCAAssembly" />
+    </CreateItem>
+
+    <CreateItem Include="@(IntermediateAssembly->'%(RootDir)%(Directory)$(TargetCAFileName)')">
+      <Output TaskParameter="Include" ItemName="IntermediateCAPackage" />
+    </CreateItem>
+
+    <!-- Run the MakeSfxCA.exe CA packaging tool. -->
+    <Exec Command='"$(MakeSfxCA)" "@(IntermediateCAPackage)" "$(SfxCADll)" "@(IntermediateCAAssembly)" "$(CustomActionContents)"'
+     WorkingDirectory="$(ProjectDir)" />
+  
+    <!-- Add modules to be copied to output dir. -->
+    <CreateItem Include="@(AddModules);@(IntermediateCAPackage)">
+    <Output TaskParameter="Include" ItemName="AddModules" />
+    </CreateItem>
+
+  </Target>
+
+  <!--
+  ==================================================================================================
+  CleanCustomAction
+
+    Cleans the .CA.dll binary created by the PackCustomAction target.
+
+  ==================================================================================================
+  -->
+  <Target Name="CleanCustomAction">
+    <Delete Files="$(IntermediateOutputPath)$(TargetCAFileName)"
+     TreatErrorsAsWarnings="true" />
+  </Target>
+
+  <!--
+  ==================================================================================================
+  AfterCompile (redefinition)
+
+    Calls the PackCustomAction target after compiling.
+    Overrides the empty AfterCompile target from Microsoft.Common.targets.
+
+  ==================================================================================================
+  -->
+  <Target Name="AfterCompile"
+   DependsOnTargets="PackCustomAction" />
+
+  <!--
+  ==================================================================================================
+  BeforeClean (redefinition)
+
+    Calls the CleanCustomAction target before cleaning.
+    Overrides the empty AfterCompile target from Microsoft.Common.targets.
+
+  ==================================================================================================
+  -->
+  <Target Name="BeforeClean"
+   DependsOnTargets="CleanCustomAction" />
+
+  <Import Project="$(CustomAfterWixCATargets)" Condition=" '$(CustomAfterWixCATargets)' != '' and Exists('$(CustomAfterWixCATargets)')" />
+
+</Project>

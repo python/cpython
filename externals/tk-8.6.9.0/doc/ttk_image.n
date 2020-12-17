@@ -1,0 +1,98 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk_image n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk_image \- Define an element based on an image
+.SH SYNOPSIS
+\fBttk::style element create \fIname\fR \fBimage\fR \fIimageSpec\fR ?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fIimage\fR element factory creates a new element
+in the current theme whose visual appearance is determined
+by Tk images.
+\fIimageSpec\fP is a list of one or more elements.
+The first element is the default image name.
+The rest of the list is a sequence of \fIstatespec / value\fR
+pairs specifying other images to use when the element is
+in a particular state or combination of states.
+.SH OPTIONS
+.PP
+Valid \fIoptions\fR are:
+.TP
+\fB\-border\fR \fIpadding\fR
+\fIpadding\fR is a list of up to four integers, specifying
+the left, top, right, and bottom borders, respectively.
+If fewer than four elements are specified,
+\fIbottom\fR defaults to \fItop\fR,
+\fIright\fR defaults to \fIleft\fR, and
+\fItop\fR defaults to \fIleft\fR.
+In other words, a list of three numbers specify the left, vertical, and right border;
+a list of two numbers specify the horizontal and the vertical border;
+a single number specifies the same border all the way around the element.
+See \fBIMAGE STRETCHING\fR, below.
+.TP
+\fB\-height \fIheight\fR
+Specifies a minimum height for the element.
+If less than zero, the base image's height is used as a default.
+.TP
+\fB\-padding\fR \fIpadding\fR
+Specifies the element's interior padding.
+The padding is a list of up to four length specifications
+\fIleft top right bottom\fR.
+If fewer than four elements are specified,
+\fIbottom\fR defaults to \fItop\fR,
+\fIright\fR defaults to \fIleft\fR, and
+\fItop\fR defaults to \fIleft\fR.
+In other words, a list of three numbers specify the left, vertical, and right padding;
+a list of two numbers specify the horizontal and the vertical padding;
+a single number specifies the same padding all the way around the widget.
+Defaults to \fB\-border\fR if not specified.
+.TP
+\fB\-sticky\fR \fIspec\fR
+Specifies how the image is placed within the final parcel.
+\fIspec\fR contains zero or more characters
+.QW n ,
+.QW s ,
+.QW w ,
+or
+.QW e .
+.TP
+\fB\-width \fIwidth\fR
+Specifies a minimum width for the element.
+If less than zero, the base image's width is used as a default.
+.SH "IMAGE STRETCHING"
+.PP
+If the element's allocated parcel is larger than the image,
+the image will be placed in the parcel based on the \fB\-sticky\fR option.
+If the image needs to stretch horizontally (i.e., \fB\-sticky ew\fR)
+or vertically (\fB\-sticky ns\fR),
+subregions of the image are replicated to fill the parcel
+based on the \fB\-border\fR option.
+The \fB\-border\fR divides the image into 9 regions:
+four fixed corners, top and left edges (which may be tiled horizontally),
+left and right edges (which may be tiled vertically),
+and the central area (which may be tiled in both directions).
+.SH "EXAMPLE"
+.PP
+.CS
+set img1 [image create photo \-file button.png]
+set img2 [image create photo \-file button-pressed.png]
+set img3 [image create photo \-file button-active.png]
+style element create Button.button image \e
+    [list $img1  pressed $img2  active $img3] \e
+    \-border {2 4} \-sticky we
+.CE
+.SH "SEE ALSO"
+ttk::intro(n), ttk::style(n), ttk_vsapi(n), image(n), photo(n)
+.SH KEYWORDS
+style, theme, appearance, pixmap theme, image
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

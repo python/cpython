@@ -1,0 +1,186 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH switch n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+switch \- Evaluate one of several scripts, depending on a given value
+.SH SYNOPSIS
+\fBswitch \fR?\fIoptions\fR?\fI string pattern body \fR?\fIpattern body \fR...?
+.sp
+\fBswitch \fR?\fIoptions\fR?\fI string \fR{\fIpattern body \fR?\fIpattern body \fR...?}
+.BE
+.SH DESCRIPTION
+.PP
+The \fBswitch\fR command matches its \fIstring\fR argument against each of
+the \fIpattern\fR arguments in order.
+As soon as it finds a \fIpattern\fR that matches \fIstring\fR it
+evaluates the following \fIbody\fR argument by passing it recursively
+to the Tcl interpreter and returns the result of that evaluation.
+If the last \fIpattern\fR argument is \fBdefault\fR then it matches
+anything.
+If no \fIpattern\fR argument
+matches \fIstring\fR and no default is given, then the \fBswitch\fR
+command returns an empty string.
+.PP
+If the initial arguments to \fBswitch\fR start with \fB\-\fR then
+they are treated as options
+unless there are exactly two arguments to \fBswitch\fR (in which case the
+first must the \fIstring\fR and the second must be the
+\fIpattern\fR/\fIbody\fR list).
+The following options are currently supported:
+.TP 10
+\fB\-exact\fR
+.
+Use exact matching when comparing \fIstring\fR to a pattern.  This
+is the default.
+.TP 10
+\fB\-glob\fR
+.
+When matching \fIstring\fR to the patterns, use glob-style matching
+(i.e. the same as implemented by the \fBstring match\fR command).
+.TP 10
+\fB\-regexp\fR
+.
+When matching \fIstring\fR to the patterns, use regular
+expression matching
+(as described in the \fBre_syntax\fR reference page).
+.TP 10
+\fB\-nocase\fR
+.
+Causes comparisons to be handled in a case-insensitive manner.
+.TP 10
+\fB\-matchvar\fR \fIvarName\fR
+.
+This option (only legal when \fB\-regexp\fR is also specified)
+specifies the name of a variable into which the list of matches
+found by the regular expression engine will be written.  The first
+element of the list written will be the overall substring of the input
+string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, the
+second element of the list will be the substring matched by the first
+capturing parenthesis in the regular expression that matched, and so
+on.  When a \fBdefault\fR branch is taken, the variable will have the
+empty list written to it.  This option may be specified at the same
+time as the \fB\-indexvar\fR option.
+.TP 10
+\fB\-indexvar\fR \fIvarName\fR
+.
+This option (only legal when \fB\-regexp\fR is also specified)
+specifies the name of a variable into which the list of indices
+referring to matching substrings
+found by the regular expression engine will be written.  The first
+element of the list written will be a two-element list specifying the
+index of the start and index of the first character after the end of
+the overall substring of the input
+string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, in a
+similar way to the \fB\-indices\fR option to the \fBregexp\fR can
+obtain.  Similarly, the second element of the list refers to the first
+capturing parenthesis in the regular expression that matched, and so
+on.  When a \fBdefault\fR branch is taken, the variable will have the
+empty list written to it.  This option may be specified at the same
+time as the \fB\-matchvar\fR option.
+.TP 10
+\fB\-\|\-\fR
+.
+Marks the end of options.  The argument following this one will
+be treated as \fIstring\fR even if it starts with a \fB\-\fR.
+This is not required when the matching patterns and bodies are grouped
+together in a single argument.
+.PP
+Two syntaxes are provided for the \fIpattern\fR and \fIbody\fR arguments.
+The first uses a separate argument for each of the patterns and commands;
+this form is convenient if substitutions are desired on some of the
+patterns or commands.
+The second form places all of the patterns and commands together into
+a single argument; the argument must have proper list structure, with
+the elements of the list being the patterns and commands.
+The second form makes it easy to construct multi-line switch commands,
+since the braces around the whole list make it unnecessary to include a
+backslash at the end of each line.
+Since the \fIpattern\fR arguments are in braces in the second form,
+no command or variable substitutions are performed on them;  this makes
+the behavior of the second form different than the first form in some
+cases.
+.PP
+If a \fIbody\fR is specified as
+.QW \fB\-\fR
+it means that the \fIbody\fR
+for the next pattern should also be used as the body for this
+pattern (if the next pattern also has a body of
+.QW \fB\-\fR
+then the body after that is used, and so on).
+This feature makes it possible to share a single \fIbody\fR among
+several patterns.
+.PP
+Beware of how you place comments in \fBswitch\fR commands.  Comments
+should only be placed \fBinside\fR the execution body of one of the
+patterns, and not intermingled with the patterns.
+.SH "EXAMPLES"
+.PP
+The \fBswitch\fR command can match against variables and not just
+literals, as shown here (the result is \fI2\fR):
+.PP
+.CS
+set foo "abc"
+\fBswitch\fR abc a \- b {expr {1}} $foo {expr {2}} default {expr {3}}
+.CE
+.PP
+Using glob matching and the fall-through body is an alternative to
+writing regular expressions with alternations, as can be seen here
+(this returns \fI1\fR):
+.PP
+.CS
+\fBswitch\fR \-glob aaab {
+    a*b     \-
+    b       {expr {1}}
+    a*      {expr {2}}
+    default {expr {3}}
+}
+.CE
+.PP
+Whenever nothing matches, the \fBdefault\fR clause (which must be
+last) is taken.  This example has a result of \fI3\fR:
+.PP
+.CS
+\fBswitch\fR xyz {
+    a \-
+    b {
+        # Correct Comment Placement
+        expr {1}
+    }
+    c {
+        expr {2}
+    }
+    default {
+        expr {3}
+    }
+}
+.CE
+.PP
+When matching against regular expressions, information about what
+exactly matched is easily obtained using the \fB\-matchvar\fR option:
+.PP
+.CS
+\fBswitch\fR \-regexp \-matchvar foo \-\- $bar {
+    a(b*)c {
+        puts "Found [string length [lindex $foo 1]] 'b's"
+    }
+    d(e*)f(g*)h {
+        puts "Found [string length [lindex $foo 1]] 'e's and\e
+                [string length [lindex $foo 2]] 'g's"
+    }
+}
+.CE
+.SH "SEE ALSO"
+for(n), if(n), regexp(n)
+.SH KEYWORDS
+switch, match, regular expression
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

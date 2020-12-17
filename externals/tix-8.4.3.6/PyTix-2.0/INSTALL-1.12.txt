@@ -1,0 +1,52 @@
+Installing PyTix
+----------------
+
+0) To use PyTix, you need Tcl (V7.6), Tk (V4.2), Tix (V4.0.5) and Python (V1.4).
+   PyTix has been written and tested on a Sun Sparc running Solaris 2.5
+   with the above mentioned packages.
+
+   Tcl7.5 and Tk4.1 should work just as well but I haven't tried it. If
+   you are using Tcl7.4 and Tk4.0, there are bugs with the handling of
+   compound images.
+
+   There is nothing OS-specific in PyTix itself so it should work on
+   any machine with Tix and Python installed.
+
+1) Build and install Tcl 7.6, Tk 4.2 and Tix 4.0.5.
+   Ensure that Tix is properly installed by running tixwish and executing
+   the demo programs
+
+   Note that Tix 4.0.5 does not compile with Tcl 7.6 / Tk 4.2 out of the
+   box although it seems to compile and run OK. You might want to use
+   Tcl 7.5/ Tk 4.1 instead.
+
+2) Modify _tkinter.c in the Modules directory of the Python distribution.
+   In the routine Tcl_AppInit(), add the following lines just after the
+   block which calls to Tk_Init().
+
+	  if (Tix_Init (interp) == TCL_ERROR) {
+	    fprintf(stderr, "Tix_Init error: %s\n", interp->result);
+	    return TCL_ERROR;
+	  }
+
+   The modified _tkinter.c is supplied.
+
+3) Modify the Modules/Setup file to link in the Tix library. On Solaris,
+   this looks like
+
+	tkinter tkintermodule.c -I/usr/local/include -L/usr/local/lib \
+		-ltix4.0-tk4.1 -ltk4.2 -ltcl7.6 -lX11
+
+4) Copy Tix.py and the modified Tkinter.py to Lib/tkinter. If you have
+   modified Tkinter for any reason, just apply the diffs by hand. There
+   are only a few changes (see Tkinter.diff)
+
+5) Rebuild Python and reinstall.
+
+You should now have a working Tix implementation in Python. To see if all
+is as it should be, run the 'tixwidgets.py' script in the demos directory.
+
+If you find any bugs or have suggestions for improvement, please report them
+to me.
+
+Sudhir Shenoy (sshenoy@gol.com)

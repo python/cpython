@@ -1,0 +1,80 @@
+README: tdbcmysql
+
+    This is the 1.1.1 source distribution of the driver for Tcl
+    Database Connectivity (TDBC) to access MySQL databases.. TDBC and
+    its drivers are available from a Fossil version control repository
+    at http://tdbc.tcl.tk/
+
+RCS: @(#) $Id: $
+
+1. Introduction
+
+This directory contains the source code, documentation, and test
+scripts for the MySQL driver for Tcl Database Connectivity. This
+module, plus TDBC itself, allow you to access MySQL databases using a
+standard application programming interface (API) from a Tcl script.
+This module is also available from http://tdbc.tcl.tk along with the
+source code of TDBC itself. A bug database and Wiki are available at
+the same location.
+
+Tdbc::mysql is a freely-available open source package.  You can do
+virtually anything you like with it, such as modifying it,
+redistributing it, and selling it either in whole or in part.  See the
+file "license.terms" for complete information.
+
+2. Compilation and Installation
+
+This module follows the general configuration and installation
+rules described in the README file for tdbc. In addition to the
+options described there, the 'configure' script for tdbcmysql
+accepts the following two options:
+
+    --with-mysql-includedir=PATH
+
+	Specifies PATH as the path to the directory that contains
+	'mysql.h' and related header files.
+
+    --with-mysql-libdir=PATH
+
+	Specifies PATH as the path to the directory that contains
+	the MySQL link libraries.
+
+Building on Windows is tested only with msys/mingw, and only with
+the version of MySQL present in XAMPP (https://sourceforge.net/projects/xampp)
+You need the 'xampp-win32-devel' package as well as the 'xampp-win32'
+package.
+
+In order to build the code under msys/mingw, you need to rebuild the
+import library for use by mingw. (This also requires the 'reimp'
+utility from mingw-utils.) The recipe for this step is:
+
+    reimp -d drive:/path/to/xampp/lib/mysql/libmysql.lib
+    dlltool -k -d libmysql.def -l libmysql.a
+    cp libmysql.a drive:/path/to/mingw/lib
+
+It is also convenient to make sure that the MySQL headers are available
+without the --with option:
+
+   cp -r drive:/path/to/xampp/include/mysql/* drive:/path/to/mingw/include/
+
+Then an ordinary 'configure' and 'make' should function to build the
+load module.
+
+NOTE THAT ON WINDOWS, THE 'libmysql.dll' LIBRARY MUST BE ON THE PATH
+AT RUNTIME.  Probably the easiest way to ensure this happens is to
+put it either in the Windows 'system32' directory or the 'bin'
+directory of your Tcl distribution.
+
+3. Documentation
+
+The 'doc' subdirectory in this release contains a set of reference
+manual entries for tdbc::mysql.  Files with an extension '.n' are for
+Tcl classes and commands; files with an extension '.3' are for C
+library functions. The file, 'doc/tdbcmysql.n' gives an overview,
+listing the classes and functions
+
+4. See also
+
+More information about TDBC and its drivers are available in the
+README file for TDBC itself; refer to that file for compilation and
+installation instructions, and support information.

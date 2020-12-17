@@ -1,0 +1,32 @@
+<HEAD>
+<TITLE>  Configuration Methods and Public Variable Initialization<A NAME=6521>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1322 HREF=subsection3_8_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1320 HREF=subsection3_8_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1316 HREF=subsubsection3_8_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1324 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1323 HREF=subsection3_8_6.html> Summary of Widget </A>
+<B>Up:</B> <A NAME=tex2html1321 HREF=subsection3_8_5.html> Declaring and Using </A>
+<B> Previous:</B> <A NAME=tex2html1317 HREF=subsubsection3_8_5_3.html> Public Variable Configuration </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00085400000000000000>  Configuration Methods and Public Variable Initialization<A NAME=6521>&nbsp;</A></A></H3>
+<P>
+For efficiency reasons, the configuration methods are not called
+  during the intialization of the public variables. If you want to
+  force the configuration method to be called for a particular public
+  variable, you can specify it in the <tt>-forcecall</tt> section of the
+  class declaration. In the following example, we force the
+  configuration method of the <tt>-direction</tt> variable to be called
+  during intialization:
+<P>
+<blockquote> <P><tt> -forcecall {<BR>
+    -direction<BR>
+}</tt>
+<P></blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

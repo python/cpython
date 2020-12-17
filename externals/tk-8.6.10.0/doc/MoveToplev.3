@@ -1,0 +1,51 @@
+'\"
+'\" Copyright (c) 1990-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_MoveToplevelWindow 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_MoveToplevelWindow \- Adjust the position of a top-level window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_MoveToplevelWindow(\fItkwin, x, y\fB)\fR
+.SH ARGUMENTS
+.AS Tk_Window tkwin
+.AP Tk_Window tkwin in
+Token for top-level window to move.
+.AP int x in
+New x-coordinate for the top-left pixel of \fItkwin\fR's border, or the
+top-left pixel of the decorative border supplied for \fItkwin\fR by the
+window manager, if there is one.
+.AP int y in
+New y-coordinate for the top-left pixel of \fItkwin\fR's border, or the
+top-left pixel of the decorative border supplied for \fItkwin\fR by the
+window manager, if there is one.
+.BE
+.SH DESCRIPTION
+.PP
+In general, a window should never set its own position;  this should be
+done only by the geometry manger that is responsible for the window.
+For top-level windows the window manager is effectively the geometry
+manager;  Tk provides interface code between the application and the
+window manager to convey the application's desires to the geometry
+manager.  The desired size for a top-level window is conveyed using
+the usual \fBTk_GeometryRequest\fR mechanism.  The procedure
+\fBTk_MoveToplevelWindow\fR may be used by an application to request
+a particular position for a top-level window;  this procedure is
+similar in function to the \fBwm geometry\fR Tcl command except that
+negative offsets cannot be specified.  It is invoked by widgets such as
+menus that want to appear at a particular place on the screen.
+.PP
+When \fBTk_MoveToplevelWindow\fR is called it does not immediately
+pass on the new desired location to the window manager;  it defers
+this action until all other outstanding work has been completed,
+using the \fBTcl_DoWhenIdle\fR mechanism.
+.SH KEYWORDS
+position, top-level window, window manager

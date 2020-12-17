@@ -1,0 +1,219 @@
+'\"
+.\" tdbc_odbc.n --
+.\"
+.\" Copyright (c) 2008 by Kevin B. Kenny.
+.\"
+.\" See the file "license.terms" for information on usage and redistribution of
+.\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc::odbc" n 8.6 Tcl "Tcl Database Connectivity"
+.\" .so man.macros
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.BS
+.SH "NAME"
+tdbc::odbc \- TDBC-ODBC bridge
+.SH "SYNOPSIS"
+package require \fBtdbc::odbc 1.0\fR
+.sp
+\fBtdbc::odbc::connection create\fR \fIdb\fR \fIconnectionString\fR ?\fI-option value...\fR?
+.br
+\fBtdbc::odbc::connection new\fR \fIconnectionString\fR ?\fI-option value...\fR?
+.sp
+\fBtdbc::odbc::datasources\fR ?\fB-system\fR|\fB-user\fR?
+.sp
+\fBtdbc::odbc::drivers\fR
+.sp
+\fBtdbc::odbc::datasource\fR \fIcommand\fR \fIdriverName\fR ?\fIkeyword\fR-\fIvalue\fR?...
+.BE
+.SH "DESCRIPTION"
+.PP
+The \fBtdbc::odbc\fR driver provides a database interface that conforms
+to Tcl DataBase Connectivity (TDBC) and allows a Tcl script to connect
+to any SQL database presenting an ODBC interface.  It is also provided
+as a worked example of how to write a database driver in C, so that
+driver authors have a starting point for further development.
+.PP
+Connection to an ODBC database is established by invoking
+\fBtdbc::odbc::connection create\fR, passing it the name to be used
+as a connection handle, followed by a standard ODBC
+connection string. As an alternative, \fBtdbc::odbc::connection new\fR
+may be used to create
+a database connection with an automatically assigned name. The return value
+from \fBtdbc::odbc::connection new\fR is the name that was chosen for the
+connection handle.
+.PP
+The connection string will include at least a
+\fBDRIVER\fR or \fBDSN\fR keyword, and may include others that are defined by a
+particular ODBC driver. (If the local ODBC system supports a graphical
+user interface, the \fB-parent\fR option (see below) may allow calling
+\fBtdbc::odbc::connection create\fR with an empty connection string.)
+.PP
+The side effect of \fBtdbc::odbc::connection create\fR is to create a
+new database connection.. See \fBtdbc::connection(n)\fR for the
+details of how to use the connection to manipulate a database.
+.PP
+In addition to a standard TDBC interface, \fBtdbc::odbc\fR supports
+three additional ccommands. The first of these,
+\fBtdbc::odbc::datasources\fR, which returns a Tcl
+list enumerating the named data sources available to the program (for
+connection with the \fBDSN\fR keyword in the connection string).
+The result of \fBtdbc::odbc::datasources\fR may be constrained to only
+system data sources or only user data sources by including the
+\fB-system\fR or \fB-user\fR options, respectively.
+.PP
+The \fBtdbc::odbc::drivers\fR command returns a dictionary whose keys
+are the names of drivers available for the \fBDRIVER\fR keyword in the
+connection string, and whose values are descriptions of the drivers.
+.PP
+The \fBtdbc::odbc::datasource\fR command allows configuration of named
+data sources on those systems that support the ODBC Installer
+application programming interface. It accepts a \fIcommand\fR, which
+specifies the operation to be performed, the name of a \fIdriver\fR
+for the database in question, and a set of keyword-value pairs that
+are interpreted by the given driver. The \fIcommand\fR must be one of
+the following:
+.IP \fBadd\fR
+Adds a user data source. The keyword-value pairs must include
+at least a \fBDSN\fR option naming the data source
+.IP \fBadd_system\fR
+Adds a system data source. The keyword-value pairs must include
+at least a \fBDSN\fR option naming the data source
+.IP \fBconfigure\fR
+Configures a user data source. The keyword-value pairs will usually
+include a \fBDSN\fR option naming the data source. Some drivers will
+support other options, such as the \fBCREATE_DB\fR option to the
+Microsoft Access driver on Windows.
+.IP \fBconfigure_system\fR
+Configures a system data source.
+.IP \fBremove\fR
+Removes a user data source. The keyword-value pairs must include a
+\fBDSN\fR option specifying the data source to remove.
+.IP \fBremove_system\fR
+Removes a system data source. The keyword-value pairs must include a
+\fBDSN\fR option specifying the data source to remove.
+.SH "CONNECTION OPTIONS"
+.PP
+The \fBtdbc::odbc::connection create\fR object command supports the
+\fB-encoding\fR, \fB-isolation\fR, \fB-readonly\fR and \fB-timeout\fR
+options common to all TDBC drivers. The \fB-encoding\fR option will
+succeed only if the requested encoding is the same as the system
+encoding; \fBtdbc::odbc\fR does not attempt to specify alternative
+encodings to an ODBC driver. (Some drivers accept encoding
+specifications in the connection string.)
+.PP
+In addition, if Tk is present in the requesting interpreter,
+and the local system's ODBC driver manager supports a graphical user
+interface, the \fBtdbc::odbc::connection create\fR object command
+supports a \fB-parent\fR option, whose value is the path name of
+a Tk window. If this option is specified, and a connection string does
+not specify all the information needed to connect to an interface, the
+ODBC driver manager will display a dialog box to request whatever
+additional information is required. The requesting interpreter will
+block until the user dismisses the dialog, at which point the
+connection is made.
+.SH EXAMPLES
+.PP
+Sincs ODBC connection strings are driver specific, it is often
+difficult to find the documentation needed to compose them. The
+following examples are known to work on most Windows systems and
+provide at least a few useful things that a program can do.
+.PP
+.CS
+tdbc::odbc::connection create db \\
+    "DSN={PAYROLL};UID={aladdin};PWD={Sesame}"
+.CE
+Connects to a named data source "PAYROLL", providing "aladdin" as a
+user name and "Sesame" as a password. Uses \fBdb\fR as the name of the
+connection.
+.PP
+.CS
+set connString {DRIVER={Microsoft Access Driver (*.mdb)};}
+append connString {FIL={MS Access}\\;}
+append connString {DBQ=} \\
+    [file nativename [file normalize $fileName]]
+tdbc::odbc::connection create db2 -readonly 1 $connString
+.CE
+Opens a connection to a Microsoft Access database file whose
+name is in \fI$fileName\fR. The database is opened in read-only
+mode. The resulting connection is called "db2".
+.PP
+.CS
+tdbc::odbc::connection create db3 \\
+    "DRIVER=SQLite3;DATABASE=$fileName"
+.CE
+Opens a connection to a SQLite3 database whose name is in "$fileName".
+.PP
+.CS
+tdbc::odbc::datasource add \\
+    {Microsoft Access Driver (*.mdb)} \\
+    DSN=MyTestDatabase \\
+    DBQ=[file native [file normalize $fileName]]
+.CE
+Creates a new user data source with the name, "MyTestDatabase" bound
+to a Microsoft Access file whose path name is in "$fileName". No
+connection is made to the data source until the program calls
+\fBtdbc::odbc::connection create\fR.
+.PP
+.CS
+tdbc::odbc::datasource configure \\
+    {Microsoft Access Driver (*.mdb)} \\
+    CREATE_DB=[file native [file normalize $fileName]] \\
+    General
+.CE
+Creates a new, empty Microsoft Access database in the file identified
+by "$fileName". No connection is made to the database until the
+program calls \fBtdbc::odbc::connection create\fR.
+.SH "SEE ALSO"
+tdbc(n), tdbc::connection(n),  tdbc::resultset(n), tdbc::statement(n)
+.SH "KEYWORDS"
+TDBC, SQL, ODBC, database, connectivity, connection
+.SH "COPYRIGHT"
+Copyright (c) 2008 by Kevin B. Kenny.
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
+.\"

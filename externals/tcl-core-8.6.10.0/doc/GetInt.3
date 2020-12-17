@@ -1,0 +1,101 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_GetInt 3 "" Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetInt, Tcl_GetDouble, Tcl_GetBoolean \- convert from string to integer, double, or boolean
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_GetInt\fR(\fIinterp, src, intPtr\fR)
+.sp
+int
+\fBTcl_GetDouble\fR(\fIinterp, src, doublePtr\fR)
+.sp
+int
+\fBTcl_GetBoolean\fR(\fIinterp, src, boolPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *doublePtr out
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP "const char" *src in
+Textual value to be converted.
+.AP int *intPtr out
+Points to place to store integer value converted from \fIsrc\fR.
+.AP double *doublePtr out
+Points to place to store double-precision floating-point
+value converted from \fIsrc\fR.
+.AP int *boolPtr out
+Points to place to store boolean value (0 or 1) converted from \fIsrc\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures convert from strings to integers or double-precision
+floating-point values or booleans (represented as 0- or 1-valued
+integers).  Each of the procedures takes a \fIsrc\fR argument,
+converts it to an internal form of a particular type, and stores
+the converted value at the location indicated by the procedure's
+third argument.  If all goes well, each of the procedures returns
+\fBTCL_OK\fR.  If \fIsrc\fR does not have the proper syntax for the
+desired type then \fBTCL_ERROR\fR is returned, an error message is left
+in the interpreter's result, and nothing is stored at *\fIintPtr\fR
+or *\fIdoublePtr\fR or *\fIboolPtr\fR.
+.PP
+\fBTcl_GetInt\fR expects \fIsrc\fR to consist of a collection
+of integer digits, optionally signed and optionally preceded and
+followed by white space.  If the first two characters of \fIsrc\fR
+after the optional white space and sign are
+.QW \fB0x\fR
+then \fIsrc\fR is expected to be in hexadecimal form;  otherwise,
+if the first such characters are
+.QW \fB0o\fR
+then \fIsrc\fR is expected to be in octal form;  otherwise,
+if the first such characters are
+.QW \fB0b\fR
+then \fIsrc\fR is expected to be in binary form;  otherwise,
+if the first such character is
+.QW \fB0\fR
+then \fIsrc\fR
+is expected to be in octal form;  otherwise, \fIsrc\fR is
+expected to be in decimal form.
+.PP
+\fBTcl_GetDouble\fR expects \fIsrc\fR to consist of a floating-point
+number, which is:  white space;  a sign; a sequence of digits;  a
+decimal point
+.QW \fB.\fR ;
+a sequence of digits;  the letter
+.QW \fBe\fR ;
+a signed decimal exponent;  and more white space.
+Any of the fields may be omitted, except that
+the digits either before or after the decimal point must be present
+and if the
+.QW \fBe\fR
+is present then it must be followed by the exponent number. If there
+are no fields apart from the sign and initial sequence of digits
+(i.e., no decimal point or exponent indicator), that
+initial sequence of digits should take one of the forms that
+\fBTcl_GetInt\fR supports, described above. The use of
+.QW \fB,\fR
+as a decimal point is not supported nor should any other sort of
+inter-digit separator be present.
+.PP
+\fBTcl_GetBoolean\fR expects \fIsrc\fR to specify a boolean
+value.  If \fIsrc\fR is any of \fB0\fR, \fBfalse\fR,
+\fBno\fR, or \fBoff\fR, then \fBTcl_GetBoolean\fR stores a zero
+value at \fI*boolPtr\fR.
+If \fIsrc\fR is any of \fB1\fR, \fBtrue\fR, \fByes\fR, or \fBon\fR,
+then 1 is stored at \fI*boolPtr\fR.
+Any of these values may be abbreviated, and upper-case spellings
+are also acceptable.
+
+.SH KEYWORDS
+boolean, conversion, double, floating-point, integer

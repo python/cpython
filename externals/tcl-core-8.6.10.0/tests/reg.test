@@ -1,0 +1,1229 @@
+# reg.test --
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+# (Don't panic if you are seeing this as part of the reg distribution
+# and aren't using Tcl -- reg's own regression tester also knows how
+# to read this file, ignoring the Tcl-isms.)
+#
+# Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# All tests require the testregexp command, return if this
+# command doesn't exist
+
+::tcltest::testConstraint testregexp [llength [info commands testregexp]]
+::tcltest::testConstraint localeRegexp 0
+
+# This file uses some custom procedures, defined below, for regexp regression
+# testing.  The name of the procedure indicates the general nature of the
+# test:
+#	expectError	compile error expected
+#	expectNomatch	match failure expected
+#	expectMatch	successful match
+#	expectIndices	successful match with -indices (used in checking things
+#			like nonparticipating subexpressions)
+#	expectPartial	unsuccessful match with -indices (!!) (used in checking
+#			partial-match reporting)
+# There is also "doing" which sets up title and major test number for each
+# block of tests.
+
+# The first 3 arguments are constant: a minor number (which often gets
+# a letter or two suffixed to it internally), some flags, and the RE
+# itself.  For expectError, the remaining argument is the name of the
+# compile error expected, less the leading "REG_".  For the rest, the
+# next argument is the string to try the match against.  Remaining
+# arguments are the substring expected to be matched, and any
+# substrings expected to be matched by subexpressions.  (For
+# expectNomatch, these arguments are optional, and if present are
+# ignored except that they indicate how many subexpressions should be
+# present in the RE.)  It is an error for the number of subexpression
+# arguments to be wrong.  Cases involving nonparticipating
+# subexpressions, checking where empty substrings are located,
+# etc. should be done using expectIndices and expectPartial.
+
+# The flag characters are complex and a bit eclectic.  Generally speaking, 
+# lowercase letters are compile options, uppercase are expected re_info
+# bits, and nonalphabetics are match options, controls for how the test is 
+# run, or testing options.  The one small surprise is that AREs are the
+# default, and you must explicitly request lesser flavors of RE.  The flags
+# are as follows.  It is admitted that some are not very mnemonic.
+# There are some others which are purely debugging tools and are not
+# useful in this file.
+#
+#	-	no-op (placeholder)
+#	+	provide fake xy equivalence class and ch collating element
+#	%	force small state-set cache in matcher (to test cache replace)
+#	^	beginning of string is not beginning of line
+#	$	end of string is not end of line
+#	*	test is Unicode-specific, needs big character set
+#
+#	&	test as both ARE and BRE
+#	b	BRE
+#	e	ERE
+#	a	turn advanced-features bit on (error unless ERE already)
+#	q	literal string, no metacharacters at all
+#
+#	i	case-independent matching
+#	o	("opaque") no subexpression capture
+#	p	newlines are half-magic, excluded from . and [^ only
+#	w	newlines are half-magic, significant to ^ and $ only
+#	n	newlines are fully magic, both effects
+#	x	expanded RE syntax
+#	t	incomplete-match reporting
+#
+#	A	backslash-_a_lphanumeric seen
+#	B	ERE/ARE literal-_b_race heuristic used
+#	E	backslash (_e_scape) seen within []
+#	H	looka_h_ead constraint seen
+#	I	_i_mpossible to match
+#	L	_l_ocale-specific construct seen
+#	M	unportable (_m_achine-specific) construct seen
+#	N	RE can match empty (_n_ull) string
+#	P	non-_P_OSIX construct seen
+#	Q	{} _q_uantifier seen
+#	R	back _r_eference seen
+#	S	POSIX-un_s_pecified syntax seen
+#	T	prefers shortest (_t_iny)
+#	U	saw original-POSIX botch:  unmatched right paren in ERE (_u_gh)
+
+# The one area we can't easily test is memory-allocation failures (which
+# are hard to provoke on command).  Embedded NULs also are not tested at
+# the moment, but this is a historical accident which should be fixed.
+
+
+# test procedures and related
+namespace eval RETest {
+    namespace export doing expect* knownBug
+
+    variable regBug 0
+
+    # re_info abbreviation mapping table
+    variable infonames
+    array set infonames {
+	A REG_UBSALNUM
+	B REG_UBRACES
+	E REG_UBBS
+	H REG_ULOOKAHEAD
+	I REG_UIMPOSSIBLE
+	L REG_ULOCALE
+	M REG_UUNPORT
+	N REG_UEMPTYMATCH
+	P REG_UNONPOSIX
+	Q REG_UBOUNDS
+	R REG_UBACKREF
+	S REG_UUNSPEC
+	T REG_USHORTEST
+	U REG_UPBOTCH
+    }
+    variable infonameorder "RHQBAUEPSMLNIT" ;# must match bit order, lsb first
+
+    # build test number (internal)
+    proc TestNum {args} {
+	return reg-[join [concat $args] .]
+    }
+
+    # build description, with possible modifiers (internal)
+    proc TestDesc {args} {
+	variable description
+
+	set testid [concat $args]
+	set d $description
+	if {[llength $testid] > 1} {
+	    set d "$d ([lrange $testid 1 end])"
+	}
+	return $d
+    }
+
+    # build trailing options and flags argument from a flags string (internal)
+    proc TestFlags {fl} {
+	set args [list]
+	set flags ""
+	foreach f [split $fl ""] {
+	    switch -exact -- $f {
+		"i" { lappend args "-nocase" }
+		"x" { lappend args "-expanded" }
+		"n" { lappend args "-line" }
+		"p" { lappend args "-linestop" }
+		"w" { lappend args "-lineanchor" }
+		"-" { }
+		default { append flags $f }
+	    }
+	}
+	if {$flags ne ""} {
+	    lappend args -xflags $flags
+	}
+	return $args
+    }
+
+    # build info-flags list from a flags string (internal)
+    proc TestInfoFlags {fl} {
+	variable infonames
+	variable infonameorder
+
+	set ret [list]
+	foreach f [split $infonameorder ""] {
+	    if {[string match *$f* $fl]} {
+		lappend ret $infonames($f)
+	    }
+	}
+	return $ret
+    }
+
+    # Share the generation of the list of test constraints so it is
+    # done the same on all routes.
+    proc TestConstraints {flags} {
+	set constraints [list testregexp]
+
+	variable regBug
+	if {$regBug} {
+	    # This will trigger registration as a skipped test
+	    lappend constraints knownBug
+	}
+
+	# Tcl locale stuff doesn't do the ch/xy test fakery yet
+	if {[string match *+* $flags]} {
+	    # This will trigger registration as a skipped test
+	    lappend constraints localeRegexp
+	}
+
+	return $constraints
+    }
+
+    # match expected, internal routine that does the work
+    # parameters like the "real" routines except they don't have "opts",
+    #  which is a possibly-empty list of switches for the regexp match attempt
+    # The ! flag is used to indicate expected match failure (for REG_EXPECT,
+    #  which wants argument testing even in the event of failure).
+    proc MatchExpected {opts testid flags re target args} {
+	# if &, test as both BRE and ARE
+	if {[string match *&* $flags]} {
+	    set f [string map {& {}} $flags]
+	    MatchExpected $opts "$testid ARE" ${f}  $re $target {*}$args
+	    MatchExpected $opts "$testid BRE" ${f}b $re $target {*}$args
+	    return
+	}
+
+	set constraints [TestConstraints $flags]
+
+	set f [TestFlags $flags]
+	set infoflags [TestInfoFlags $flags]
+	set ccmd [list testregexp -about        {*}$f $re]
+	set ecmd [list testregexp {*}$opts {*}$f $re $target]
+
+	set nsub [expr {[llength $args] - 1}]
+	set names [list]
+	set refs ""
+	for {set i 0} {$i < [llength $args]} {incr i} {
+	    if {$i == 0} {
+		set name match
+	    } else {
+		set name sub$i
+	    }
+	    lappend names $name
+	    append refs " \$$name"
+	    set $name ""
+	}
+	if {[string match *o* $flags]} {	;# REG_NOSUB kludge
+	    set nsub 0				;# unsigned value cannot be -1
+	}
+	if {[string match *t* $flags]} {	;# REG_EXPECT
+	    incr nsub -1			;# the extra does not count
+	}
+	set erun "list \[[concat $ecmd $names]\] $refs"
+	set result [list [expr {![string match *!* $flags]}] {*}$args]
+	set info [list $nsub $infoflags]
+
+	::tcltest::test [TestNum $testid compile] [TestDesc $testid compile] \
+		-constraints $constraints -body $ccmd -result $info
+	::tcltest::test [TestNum $testid execute] [TestDesc $testid execute] \
+		-constraints $constraints -body $erun -result $result
+    }
+
+    # set major test number and description
+    proc doing {major desc} {
+	variable description "RE engine $desc"
+    }
+
+    # compilation error expected
+    proc expectError {testid flags re err} {
+	# if &, test as both ARE and BRE
+	if {[string match *&* $flags]} {
+	    set f [string map {& {}} $flags]
+	    expectError "$testid ARE" ${f}  $re $err
+	    expectError "$testid BRE" ${f}b $re $err
+	    return
+	}
+
+	set constraints [TestConstraints $flags]
+
+	set cmd [list testregexp -about {*}[TestFlags $flags] $re]
+	::tcltest::test [TestNum $testid error] [TestDesc $testid error] \
+		-constraints $constraints -result [list 1 REG_$err] -body \
+		"list \[catch \{$cmd\}\] \[lindex \$::errorCode 1\]"
+    }
+
+    # match failure expected
+    proc expectNomatch {testid flags re target args} {
+	variable regBug
+	# if &, test as both ARE and BRE
+	if {[string match *&* $flags]} {
+	    set f [string map {& {}} $flags]
+	    expectNomatch "$testid ARE" ${f}  $re $target {*}$args
+	    expectNomatch "$testid BRE" ${f}b $re $target {*}$args
+	    return
+	}
+
+	set constraints [TestConstraints $flags]
+
+	set f [TestFlags $flags]
+	set infoflags [TestInfoFlags $flags]
+	set ccmd [list testregexp -about {*}$f $re]
+	set nsub [expr {[llength $args] - 1}]
+	if {$nsub == -1} {
+	    # didn't tell us number of subexps
+	    set ccmd "lreplace \[$ccmd\] 0 0"
+	    set info [list $infoflags]
+	} else {
+	    set info [list $nsub $infoflags]
+	}
+	set ecmd [list testregexp {*}$f $re $target]
+
+	::tcltest::test [TestNum $testid compile] [TestDesc $testid compile] \
+		-constraints $constraints -body $ccmd -result $info
+	::tcltest::test [TestNum $testid execute] [TestDesc $testid execute] \
+		-constraints $constraints -body $ecmd -result 0
+    }
+
+    # match expected (no missing, empty, or ambiguous submatches)
+    # expectMatch testno flags re target mat submat ...
+    proc expectMatch {args} {
+	MatchExpected {} {*}$args
+    }
+
+    # match expected (full fanciness)
+    # expectIndices testno flags re target mat submat ...
+    proc expectIndices {args} {
+	MatchExpected -indices {*}$args 
+    }
+
+    # partial match expected
+    # expectPartial testno flags re target mat "" ...
+    # Quirk:  number of ""s must be one more than number of subREs.
+    proc expectPartial {args} {
+	lset args 1 ![lindex $args 1]	;# add ! flag
+	MatchExpected -indices {*}$args
+    }
+
+    # test is a knownBug
+    proc knownBug {args} {
+	variable regBug 1
+	uplevel \#0 $args
+	set regBug 0
+    }
+}
+namespace import RETest::*
+
+######## the tests themselves ########
+
+# support functions and preliminary misc.
+# This is sensitive to changes in message wording, but we really have to
+# test the code->message expansion at least once.
+::tcltest::test reg-0.1 "regexp error reporting" {
+    list [catch {regexp (*) ign} msg] $msg
+} {1 {couldn't compile regular expression pattern: quantifier operand invalid}}
+
+
+doing 1 "basic sanity checks"
+expectMatch	1.1 &		abc	abc		abc
+expectNomatch	1.2 &		abc	def
+expectMatch	1.3 &		abc	xyabxabce	abc
+
+
+doing 2 "invalid option combinations"
+expectError	2.1 qe		a	INVARG
+expectError	2.2 qa		a	INVARG
+expectError	2.3 qx		a	INVARG
+expectError	2.4 qn		a	INVARG
+expectError	2.5 ba		a	INVARG
+
+
+doing 3 "basic syntax"
+expectIndices	3.1 &NS		""	a	{0 -1}
+expectMatch	3.2 NS		a|	a	a
+expectMatch	3.3 -		a|b	a	a
+expectMatch	3.4 -		a|b	b	b
+expectMatch	3.5 NS		a||b	b	b
+expectMatch	3.6 &		ab	ab	ab
+
+
+doing 4 "parentheses"
+expectMatch	4.1  -		(a)e		ae	ae	a
+expectMatch	4.2  o		(a)e		ae
+expectMatch	4.3  b		{\(a\)b}	ab	ab	a
+expectMatch	4.4  -		a((b)c)		abc	abc	bc	b
+expectMatch	4.5  -		a(b)(c)		abc	abc	b	c
+expectError	4.6  -		a(b		EPAREN
+expectError	4.7  b		{a\(b}		EPAREN
+# sigh, we blew it on the specs here... someday this will be fixed in POSIX,
+#  but meanwhile, it's fixed in AREs
+expectMatch	4.8  eU		a)b		a)b	a)b
+expectError	4.9  -		a)b		EPAREN
+expectError	4.10 b		{a\)b}		EPAREN
+expectMatch	4.11 P		a(?:b)c		abc	abc
+expectError	4.12 e		a(?:b)c		BADRPT
+expectIndices	4.13 S		a()b		ab	{0 1}	{1 0}
+expectMatch	4.14 SP		a(?:)b		ab	ab
+expectIndices	4.15 S		a(|b)c		ac	{0 1}	{1 0}
+expectMatch	4.16 S		a(b|)c		abc	abc	b
+
+
+doing 5 "simple one-char matching"
+# general case of brackets done later
+expectMatch	5.1 &		a.b		axb	axb
+expectNomatch	5.2 &n		"a.b"		"a\nb"
+expectMatch	5.3 &		{a[bc]d}	abd	abd
+expectMatch	5.4 &		{a[bc]d}	acd	acd
+expectNomatch	5.5 &		{a[bc]d}	aed
+expectNomatch	5.6 &		{a[^bc]d}	abd
+expectMatch	5.7 &		{a[^bc]d}	aed	aed
+expectNomatch	5.8 &p		"a\[^bc]d"	"a\nd"
+
+
+doing 6 "context-dependent syntax"
+# plus odds and ends
+expectError	6.1  -		*	BADRPT
+expectMatch	6.2  b		*	*	*
+expectMatch	6.3  b		{\(*\)}	*	*	*
+expectError	6.4  -		(*)	BADRPT
+expectMatch	6.5  b		^*	*	*
+expectError	6.6  -		^*	BADRPT
+expectNomatch	6.7  &		^b	^b
+expectMatch	6.8  b		x^	x^	x^
+expectNomatch	6.9  I		x^	x
+expectMatch	6.10 n		"\n^"	"x\nb"	"\n"
+expectNomatch	6.11 bS		{\(^b\)} ^b
+expectMatch	6.12 -		(^b)	b	b	b
+expectMatch	6.13 &		{x$}	x	x
+expectMatch	6.14 bS		{\(x$\)} x	x	x
+expectMatch	6.15 -		{(x$)}	x	x	x
+expectMatch	6.16 b		{x$y}	"x\$y"	"x\$y"
+expectNomatch	6.17 I		{x$y}	xy
+expectMatch	6.18 n		"x\$\n"	"x\n"	"x\n"
+expectError	6.19 -		+	BADRPT
+expectError	6.20 -		?	BADRPT
+
+
+doing 7 "simple quantifiers"
+expectMatch	7.1  &N		a*	aa	aa
+expectIndices	7.2  &N		a*	b	{0 -1}
+expectMatch	7.3  -		a+	aa	aa
+expectMatch	7.4  -		a?b	ab	ab
+expectMatch	7.5  -		a?b	b	b
+expectError	7.6  -		**	BADRPT
+expectMatch	7.7  bN		**	***	***
+expectError	7.8  &		a**	BADRPT
+expectError	7.9  &		a**b	BADRPT
+expectError	7.10 &		***	BADRPT
+expectError	7.11 -		a++	BADRPT
+expectError	7.12 -		a?+	BADRPT
+expectError	7.13 -		a?*	BADRPT
+expectError	7.14 -		a+*	BADRPT
+expectError	7.15 -		a*+	BADRPT
+
+
+doing 8 "braces"
+expectMatch	8.1  NQ		"a{0,1}"	""	""
+expectMatch	8.2  NQ		"a{0,1}"	ac	a
+expectError	8.3  -		"a{1,0}"	BADBR
+expectError	8.4  -		"a{1,2,3}"	BADBR
+expectError	8.5  -		"a{257}"	BADBR
+expectError	8.6  -		"a{1000}"	BADBR
+expectError	8.7  -		"a{1"		EBRACE
+expectError	8.8  -		"a{1n}"		BADBR
+expectMatch	8.9  BS		"a{b"		"a\{b"	"a\{b"
+expectMatch	8.10 BS		"a{"		"a\{"	"a\{"
+expectMatch	8.11 bQ		"a\\{0,1\\}b"	cb	b
+expectError	8.12 b		"a\\{0,1"	EBRACE
+expectError	8.13 -		"a{0,1\\"	BADBR
+expectMatch	8.14 Q		"a{0}b"		ab	b
+expectMatch	8.15 Q		"a{0,0}b"	ab	b
+expectMatch	8.16 Q		"a{0,1}b"	ab	ab
+expectMatch	8.17 Q		"a{0,2}b"	b	b
+expectMatch	8.18 Q		"a{0,2}b"	aab	aab
+expectMatch	8.19 Q		"a{0,}b"	aab	aab
+expectMatch	8.20 Q		"a{1,1}b"	aab	ab
+expectMatch	8.21 Q		"a{1,3}b"	aaaab	aaab
+expectNomatch	8.22 Q		"a{1,3}b"	b
+expectMatch	8.23 Q		"a{1,}b"	aab	aab
+expectNomatch	8.24 Q		"a{2,3}b"	ab
+expectMatch	8.25 Q		"a{2,3}b"	aaaab	aaab
+expectNomatch	8.26 Q		"a{2,}b"	ab
+expectMatch	8.27 Q		"a{2,}b"	aaaab	aaaab
+
+
+doing 9 "brackets"
+expectMatch	9.1  &		{a[bc]}		ac	ac
+expectMatch	9.2  &		{a[-]}		a-	a-
+expectMatch	9.3  &		{a[[.-.]]}	a-	a-
+expectMatch	9.4  &L		{a[[.zero.]]}	a0	a0
+expectMatch	9.5  &LM	{a[[.zero.]-9]}	a2	a2
+expectMatch	9.6  &M		{a[0-[.9.]]}	a2	a2
+expectMatch	9.7  &+L	{a[[=x=]]}	ax	ax
+expectMatch	9.8  &+L	{a[[=x=]]}	ay	ay
+expectNomatch	9.9  &+L	{a[[=x=]]}	az
+expectError	9.10 &		{a[0-[=x=]]}	ERANGE
+expectMatch	9.11 &L		{a[[:digit:]]}	a0	a0
+expectError	9.12 &		{a[[:woopsie:]]}	ECTYPE
+expectNomatch	9.13 &L		{a[[:digit:]]}	ab
+expectError	9.14 &		{a[0-[:digit:]]}	ERANGE
+expectMatch	9.15 &LP	{[[:<:]]a}	a	a
+expectMatch	9.16 &LP	{a[[:>:]]}	a	a
+expectError	9.17 &		{a[[..]]b}	ECOLLATE
+expectError	9.18 &		{a[[==]]b}	ECOLLATE
+expectError	9.19 &		{a[[::]]b}	ECTYPE
+expectError	9.20 &		{a[[.a}		EBRACK
+expectError	9.21 &		{a[[=a}		EBRACK
+expectError	9.22 &		{a[[:a}		EBRACK
+expectError	9.23 &		{a[}		EBRACK
+expectError	9.24 &		{a[b}		EBRACK
+expectError	9.25 &		{a[b-}		EBRACK
+expectError	9.26 &		{a[b-c}		EBRACK
+expectMatch	9.27 &M		{a[b-c]}	ab	ab
+expectMatch	9.28 &		{a[b-b]}	ab	ab
+expectMatch	9.29 &M		{a[1-2]}	a2	a2
+expectError	9.30 &		{a[c-b]}	ERANGE
+expectError	9.31 &		{a[a-b-c]}	ERANGE
+expectMatch	9.32 &M		{a[--?]b}	a?b	a?b
+expectMatch	9.33 &		{a[---]b}	a-b	a-b
+expectMatch	9.34 &		{a[]b]c}	a]c	a]c
+expectMatch	9.35 EP		{a[\]]b}	a]b	a]b
+expectNomatch	9.36 bE		{a[\]]b}	a]b
+expectMatch	9.37 bE		{a[\]]b}	"a\\]b"	"a\\]b"
+expectMatch	9.38 eE		{a[\]]b}	"a\\]b"	"a\\]b"
+expectMatch	9.39 EP		{a[\\]b}	"a\\b"	"a\\b"
+expectMatch	9.40 eE		{a[\\]b}	"a\\b"	"a\\b"
+expectMatch	9.41 bE		{a[\\]b}	"a\\b"	"a\\b"
+expectError	9.42 -		{a[\Z]b}	EESCAPE
+expectMatch	9.43 &		{a[[b]c}	"a\[c"	"a\[c"
+expectMatch	9.44 EMP*	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
+	"a\u0102\u02ffb"	"a\u0102\u02ffb"
+
+
+doing 10 "anchors and newlines"
+expectMatch	10.1  &		^a	a	a
+expectNomatch	10.2  &^	^a	a
+expectIndices	10.3  &N	^	a	{0 -1}
+expectIndices	10.4  &		{a$}	aba	{2 2}
+expectNomatch	10.5  {&$}	{a$}	a
+expectIndices	10.6  &N	{$}	ab	{2 1}
+expectMatch	10.7  &n	^a	a	a
+expectMatch	10.8  &n	"^a"	"b\na"	"a"
+expectIndices	10.9  &w	"^a"	"a\na"	{0 0}
+expectIndices	10.10 &n^	"^a"	"a\na"	{2 2}
+expectMatch	10.11 &n	{a$}	a	a
+expectMatch	10.12 &n	"a\$"	"a\nb"	"a"
+expectIndices	10.13 &n	"a\$"	"a\na"	{0 0}
+expectIndices	10.14 N		^^	a	{0 -1}
+expectMatch	10.15 b		^^	^	^
+expectIndices	10.16 N		{$$}	a	{1 0}
+expectMatch	10.17 b		{$$}	"\$"	"\$"
+expectMatch	10.18 &N	{^$}	""	""
+expectNomatch	10.19 &N	{^$}	a
+expectIndices	10.20 &nN	"^\$"	a\n\nb	{2 1}
+expectMatch	10.21 N		{$^}	""	""
+expectMatch	10.22 b		{$^}	"\$^"	"\$^"
+expectMatch	10.23 P		{\Aa}	a	a
+expectMatch	10.24 ^P	{\Aa}	a	a
+expectNomatch	10.25 ^nP	{\Aa}	"b\na"
+expectMatch	10.26 P		{a\Z}	a	a
+expectMatch	10.27 \$P	{a\Z}	a	a
+expectNomatch	10.28 \$nP	{a\Z}	"a\nb"
+expectError	10.29 -		^*	BADRPT
+expectError	10.30 -		{$*}	BADRPT
+expectError	10.31 -		{\A*}	BADRPT
+expectError	10.32 -		{\Z*}	BADRPT
+
+
+doing 11 "boundary constraints"
+expectMatch	11.1  &LP	{[[:<:]]a}	a	a
+expectMatch	11.2  &LP	{[[:<:]]a}	-a	a
+expectNomatch	11.3  &LP	{[[:<:]]a}	ba
+expectMatch	11.4  &LP	{a[[:>:]]}	a	a
+expectMatch	11.5  &LP	{a[[:>:]]}	a-	a
+expectNomatch	11.6  &LP	{a[[:>:]]}	ab
+expectMatch	11.7  bLP	{\<a}		a	a
+expectNomatch	11.8  bLP	{\<a}		ba
+expectMatch	11.9  bLP	{a\>}		a	a
+expectNomatch	11.10 bLP	{a\>}		ab
+expectMatch	11.11 LP	{\ya}		a	a
+expectNomatch	11.12 LP	{\ya}		ba
+expectMatch	11.13 LP	{a\y}		a	a
+expectNomatch	11.14 LP	{a\y}		ab
+expectMatch	11.15 LP	{a\Y}		ab	a
+expectNomatch	11.16 LP	{a\Y}		a-
+expectNomatch	11.17 LP	{a\Y}		a
+expectNomatch	11.18 LP	{-\Y}		-a
+expectMatch	11.19 LP	{-\Y}		-%	-
+expectNomatch	11.20 LP	{\Y-}		a-
+expectError	11.21 -		{[[:<:]]*}	BADRPT
+expectError	11.22 -		{[[:>:]]*}	BADRPT
+expectError	11.23 b		{\<*}		BADRPT
+expectError	11.24 b		{\>*}		BADRPT
+expectError	11.25 -		{\y*}		BADRPT
+expectError	11.26 -		{\Y*}		BADRPT
+expectMatch	11.27 LP	{\ma}		a	a
+expectNomatch	11.28 LP	{\ma}		ba
+expectMatch	11.29 LP	{a\M}		a	a
+expectNomatch	11.30 LP	{a\M}		ab
+expectNomatch	11.31 ILP	{\Ma}		a
+expectNomatch	11.32 ILP	{a\m}		a
+
+
+doing 12 "character classes"
+expectMatch	12.1  LP	{a\db}		a0b	a0b
+expectNomatch	12.2  LP	{a\db}		axb
+expectNomatch	12.3  LP	{a\Db}		a0b
+expectMatch	12.4  LP	{a\Db}		axb	axb
+expectMatch	12.5  LP	"a\\sb"		"a b"	"a b"
+expectMatch	12.6  LP	"a\\sb"		"a\tb"	"a\tb"
+expectMatch	12.7  LP	"a\\sb"		"a\nb"	"a\nb"
+expectNomatch	12.8  LP	{a\sb}		axb
+expectMatch	12.9  LP	{a\Sb}		axb	axb
+expectNomatch	12.10 LP	"a\\Sb"		"a b"
+expectMatch	12.11 LP	{a\wb}		axb	axb
+expectNomatch	12.12 LP	{a\wb}		a-b
+expectNomatch	12.13 LP	{a\Wb}		axb
+expectMatch	12.14 LP	{a\Wb}		a-b	a-b
+expectMatch	12.15 LP	{\y\w+z\y}	adze-guz	guz
+expectMatch	12.16 LPE	{a[\d]b}	a1b	a1b
+expectMatch	12.17 LPE	"a\[\\s]b"	"a b"	"a b"
+expectMatch	12.18 LPE	{a[\w]b}	axb	axb
+
+
+doing 13 "escapes"
+expectError	13.1  &		"a\\"		EESCAPE
+expectMatch	13.2  -		{a\<b}		a<b	a<b
+expectMatch	13.3  e		{a\<b}		a<b	a<b
+expectMatch	13.4  bAS	{a\wb}		awb	awb
+expectMatch	13.5  eAS	{a\wb}		awb	awb
+expectMatch	13.6  PL	"a\\ab"		"a\007b"	"a\007b"
+expectMatch	13.7  P		"a\\bb"		"a\bb"	"a\bb"
+expectMatch	13.8  P		{a\Bb}		"a\\b"	"a\\b"
+expectMatch	13.9  MP	"a\\chb"	"a\bb"	"a\bb"
+expectMatch	13.10 MP	"a\\cHb"	"a\bb"	"a\bb"
+expectMatch	13.11 LMP	"a\\e"		"a\033"	"a\033"
+expectMatch	13.12 P		"a\\fb"		"a\fb"	"a\fb"
+expectMatch	13.13 P		"a\\nb"		"a\nb"	"a\nb"
+expectMatch	13.14 P		"a\\rb"		"a\rb"	"a\rb"
+expectMatch	13.15 P		"a\\tb"		"a\tb"	"a\tb"
+expectMatch	13.16 P		"a\\u0008x"	"a\bx"	"a\bx"
+expectMatch	13.17 P		{a\u008x}	"a\bx"	"a\bx"
+expectMatch	13.18 P		"a\\u00088x"	"a\b8x"	"a\b8x"
+expectMatch	13.19 P		"a\\U00000008x"	"a\bx"	"a\bx"
+expectMatch	13.20 P		{a\U0000008x}	"a\bx"	"a\bx"
+expectMatch	13.21 P		"a\\vb"		"a\vb"	"a\vb"
+expectMatch	13.22 MP	"a\\x08x"	"a\bx"	"a\bx"
+expectError	13.23 -		{a\xq}		EESCAPE
+expectMatch	13.24 MP	"a\\x08x"	"a\bx"	"a\bx"
+expectError	13.25 -		{a\z}		EESCAPE
+expectMatch	13.26 MP	"a\\010b"	"a\bb"	"a\bb"
+expectMatch	13.27 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.28 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
+expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
+expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
+expectMatch	13.33 P		"a\\U1000000x"	"a\ufffd0x"	"a\ufffd0x"
+expectMatch	13.34 P		{a\U1000000x}	"a\ufffd0x"	"a\ufffd0x"
+
+
+doing 14 "back references"
+# ugh
+expectMatch	14.1  RP	{a(b*)c\1}	abbcbb	abbcbb	bb
+expectMatch	14.2  RP	{a(b*)c\1}	ac	ac	""
+expectNomatch	14.3  RP	{a(b*)c\1}	abbcb
+expectMatch	14.4  RP	{a(b*)\1}	abbcbb	abb	b
+expectMatch	14.5  RP	{a(b|bb)\1}	abbcbb	abb	b
+expectMatch	14.6  RP	{a([bc])\1}	abb	abb	b
+expectNomatch	14.7  RP	{a([bc])\1}	abc
+expectMatch	14.8  RP	{a([bc])\1}	abcabb	abb	b
+expectNomatch	14.9  RP	{a([bc])*\1}	abc
+expectNomatch	14.10 RP	{a([bc])\1}	abB
+expectMatch	14.11 iRP	{a([bc])\1}	abB	abB	b
+expectMatch	14.12 RP	{a([bc])\1+}	abbb	abbb	b
+expectMatch	14.13 QRP	"a(\[bc])\\1{3,4}"	abbbb	abbbb	b
+expectNomatch	14.14 QRP	"a(\[bc])\\1{3,4}"	abbb
+expectMatch	14.15 RP	{a([bc])\1*}	abbb	abbb	b
+expectMatch	14.16 RP	{a([bc])\1*}	ab	ab	b
+expectMatch	14.17 RP	{a([bc])(\1*)}	ab	ab	b	""
+expectError	14.18 -		{a((b)\1)}	ESUBREG
+expectError	14.19 -		{a(b)c\2}	ESUBREG
+expectMatch	14.20 bR	{a\(b*\)c\1}	abbcbb	abbcbb	bb
+expectMatch	14.21 RP	{^([bc])\1*$}	bbb	bbb	b
+expectMatch	14.22 RP	{^([bc])\1*$}	ccc	ccc	c
+expectNomatch	14.23 RP	{^([bc])\1*$}	bcb
+expectMatch	14.24 LRP	{^(\w+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
+expectNomatch	14.25 LRP	{^(\w+)( \1)+$}	{abc abd abc}
+expectNomatch	14.26 LRP	{^(\w+)( \1)+$}	{abc abc abd}
+expectMatch	14.27 RP	{^(.+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
+expectNomatch	14.28 RP	{^(.+)( \1)+$}	{abc abd abc}
+expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
+
+
+doing 15 "octal escapes vs back references"
+# initial zero is always octal
+expectMatch	15.1  MP	"a\\010b"	"a\bb"	"a\bb"
+expectMatch	15.2  MP	"a\\0070b"	"a\0070b"	"a\0070b"
+expectMatch	15.3  MP	"a\\07b"	"a\007b"	"a\007b"
+expectMatch	15.4  MP	"a(b)(b)(b)(b)(b)(b)(b)(b)(b)(b)\\07c" \
+	"abbbbbbbbbb\007c" abbbbbbbbbb\007c b b b b b b b b b b
+# a single digit is always a backref
+expectError	15.5  -		{a\7b}	ESUBREG
+# otherwise it's a backref only if within range (barf!)
+expectMatch	15.6  MP	"a\\10b"	"a\bb"	"a\bb"
+expectMatch	15.7  MP	{a\101b}	aAb	aAb
+expectMatch	15.8  RP	{a(b)(b)(b)(b)(b)(b)(b)(b)(b)(b)\10c} \
+	"abbbbbbbbbbbc" abbbbbbbbbbbc b b b b b b b b b b
+# but we're fussy about border cases -- guys who want octal should use the zero
+expectError	15.9  -	{a((((((((((b\10))))))))))c}	ESUBREG
+# BREs don't have octal, EREs don't have backrefs
+expectMatch	15.10 MP	"a\\12b"	"a\nb"	"a\nb"
+expectError	15.11 b		{a\12b}		ESUBREG
+expectMatch	15.12 eAS	{a\12b}		a12b	a12b
+expectMatch	15.13 MP	{a\701b}	a\u00381b	a\u00381b
+
+
+doing 16 "expanded syntax"
+expectMatch	16.1 xP		"a b c"		"abc"	"abc"
+expectMatch	16.2 xP		"a b #oops\nc\td"	"abcd"	"abcd"
+expectMatch	16.3 x		"a\\ b\\\tc"	"a b\tc"	"a b\tc"
+expectMatch	16.4 xP		"a b\\#c"	"ab#c"	"ab#c"
+expectMatch	16.5 xP		"a b\[c d]e"	"ab e"	"ab e"
+expectMatch	16.6 xP		"a b\[c#d]e"	"ab#e"	"ab#e"
+expectMatch	16.7 xP		"a b\[c#d]e"	"abde"	"abde"
+expectMatch	16.8 xSPB	"ab{ d"		"ab\{d"	"ab\{d"
+expectMatch	16.9 xPQ	"ab{ 1 , 2 }c"	"abc"	"abc"
+
+
+doing 17 "misc syntax"
+expectMatch	17.1 P	a(?#comment)b	ab	ab
+
+
+doing 18 "unmatchable REs"
+expectNomatch	18.1 I	a^b		ab
+
+
+doing 19 "case independence"
+expectMatch	19.1 &i		ab		Ab	Ab
+expectMatch	19.2 &i		{a[bc]}		aC	aC
+expectNomatch	19.3 &i		{a[^bc]}	aB
+expectMatch	19.4 &iM	{a[b-d]}	aC	aC
+expectNomatch	19.5 &iM	{a[^b-d]}	aC
+
+
+doing 20 "directors and embedded options"
+expectError	20.1  &		***?		BADPAT
+expectMatch	20.2  q		***?		***?	***?
+expectMatch	20.3  &P	***=a*b		a*b	a*b
+expectMatch	20.4  q		***=a*b		***=a*b	***=a*b
+expectMatch	20.5  bLP	{***:\w+}	ab	ab
+expectMatch	20.6  eLP	{***:\w+}	ab	ab
+expectError	20.7  &		***:***=a*b	BADRPT
+expectMatch	20.8  &P	***:(?b)a+b	a+b	a+b
+expectMatch	20.9  P		(?b)a+b		a+b	a+b
+expectError	20.10 e		{(?b)\w+}	BADRPT
+expectMatch	20.11 bAS	{(?b)\w+}	(?b)w+	(?b)w+
+expectMatch	20.12 iP	(?c)a		a	a
+expectNomatch	20.13 iP	(?c)a		A
+expectMatch	20.14 APS	{(?e)\W+}	WW	WW
+expectMatch	20.15 P		(?i)a+		Aa	Aa
+expectNomatch	20.16 P		"(?m)a.b"	"a\nb"
+expectMatch	20.17 P		"(?m)^b"	"a\nb"	"b"
+expectNomatch	20.18 P		"(?n)a.b"	"a\nb"
+expectMatch	20.19 P		"(?n)^b"	"a\nb"	"b"
+expectNomatch	20.20 P		"(?p)a.b"	"a\nb"
+expectNomatch	20.21 P		"(?p)^b"	"a\nb"
+expectMatch	20.22 P		(?q)a+b		a+b	a+b
+expectMatch	20.23 nP	"(?s)a.b"	"a\nb"	"a\nb"
+expectMatch	20.24 xP	"(?t)a b"	"a b"	"a b"
+expectMatch	20.25 P		"(?w)a.b"	"a\nb"	"a\nb"
+expectMatch	20.26 P		"(?w)^b"	"a\nb"	"b"
+expectMatch	20.27 P		"(?x)a b"	"ab"	"ab"
+expectError	20.28 -		(?z)ab		BADOPT
+expectMatch	20.29 P		(?ici)a+	Aa	Aa
+expectError	20.30 P		(?i)(?q)a+	BADRPT
+expectMatch	20.31 P		(?q)(?i)a+	(?i)a+	(?i)a+
+expectMatch	20.32 P		(?qe)a+		a	a
+expectMatch	20.33 xP	"(?q)a b"	"a b"	"a b"
+expectMatch	20.34 P		"(?qx)a b"	"a b"	"a b"
+expectMatch	20.35 P		(?qi)ab		Ab	Ab
+
+
+doing 21 "capturing"
+expectMatch	21.1  -		a(b)c		abc	abc	b
+expectMatch	21.2  P		a(?:b)c		xabc	abc
+expectMatch	21.3  -		a((b))c		xabcy	abc	b	b
+expectMatch	21.4  P		a(?:(b))c	abcy	abc	b
+expectMatch	21.5  P		a((?:b))c	abc	abc	b
+expectMatch	21.6  P		a(?:(?:b))c	abc	abc
+expectIndices	21.7  Q		"a(b){0}c"	ac	{0 1}	{-1 -1}
+expectMatch	21.8  -		a(b)c(d)e	abcde	abcde	b	d
+expectMatch	21.9  -		(b)c(d)e	bcde	bcde	b	d
+expectMatch	21.10 -		a(b)(d)e	abde	abde	b	d
+expectMatch	21.11 -		a(b)c(d)	abcd	abcd	b	d
+expectMatch	21.12 -		(ab)(cd)	xabcdy	abcd	ab	cd
+expectMatch	21.13 -		a(b)?c		xabcy	abc	b
+expectIndices	21.14 -		a(b)?c		xacy	{1 2}	{-1 -1}
+expectMatch	21.15 -		a(b)?c(d)?e	xabcdey	abcde	b	d
+expectIndices	21.16 -		a(b)?c(d)?e	xacdey	{1 4}	{-1 -1}	{3 3}
+expectIndices	21.17 -		a(b)?c(d)?e	xabcey	{1 4}	{2 2}	{-1 -1}
+expectIndices	21.18 -		a(b)?c(d)?e	xacey	{1 3}	{-1 -1}	{-1 -1}
+expectMatch	21.19 -		a(b)*c		xabcy	abc	b
+expectIndices	21.20 -		a(b)*c		xabbbcy	{1 5}	{4 4}
+expectIndices	21.21 -		a(b)*c		xacy	{1 2}	{-1 -1}
+expectMatch	21.22 -		a(b*)c		xabbbcy	abbbc	bbb
+expectMatch	21.23 -		a(b*)c		xacy	ac	""
+expectNomatch	21.24 -		a(b)+c		xacy
+expectMatch	21.25 -		a(b)+c		xabcy	abc	b
+expectIndices	21.26 -		a(b)+c		xabbbcy	{1 5}	{4 4}
+expectMatch	21.27 -		a(b+)c		xabbbcy	abbbc	bbb
+expectIndices	21.28 Q		"a(b){2,3}c"	xabbbcy	{1 5}	{4 4}
+expectIndices	21.29 Q		"a(b){2,3}c"	xabbcy	{1 4}	{3 3}
+expectNomatch	21.30 Q		"a(b){2,3}c"	xabcy
+expectMatch	21.31 LP	"\\y(\\w+)\\y"	"-- abc-"	"abc"	"abc"
+expectMatch	21.32 -		a((b|c)d+)+	abacdbd	acdbd	bd	b
+expectMatch	21.33 N		(.*).*		abc	abc	abc
+expectMatch	21.34 N		(a*)*		bc	""	""
+expectMatch	21.35 M		{ TO (([a-z0-9._]+|"([^"]+|"")+")+)}	{asd TO foo}	{ TO foo} foo o {}
+
+
+doing 22 "multicharacter collating elements"
+# again ugh
+expectMatch	22.1  &+L	{a[c]e}		ace	ace
+expectNomatch	22.2  &+IL	{a[c]h}		ach
+expectMatch	22.3  &+L	{a[[.ch.]]}	ach	ach
+expectNomatch	22.4  &+L	{a[[.ch.]]}	ace
+expectMatch	22.5  &+L	{a[c[.ch.]]}	ac	ac
+expectMatch	22.6  &+L	{a[c[.ch.]]}	ace	ac
+expectMatch	22.7  &+L	{a[c[.ch.]]}	ache	ach
+expectNomatch	22.8  &+L	{a[^c]e}	ace
+expectMatch	22.9  &+L	{a[^c]e}	abe	abe
+expectMatch	22.10 &+L	{a[^c]e}	ache	ache
+expectNomatch	22.11 &+L	{a[^[.ch.]]}	ach
+expectMatch	22.12 &+L	{a[^[.ch.]]}	ace	ac
+expectMatch	22.13 &+L	{a[^[.ch.]]}	ac	ac
+expectMatch	22.14 &+L	{a[^[.ch.]]}	abe	ab
+expectNomatch	22.15 &+L	{a[^c[.ch.]]}	ach
+expectNomatch	22.16 &+L	{a[^c[.ch.]]}	ace
+expectNomatch	22.17 &+L	{a[^c[.ch.]]}	ac
+expectMatch	22.18 &+L	{a[^c[.ch.]]}	abe	ab
+expectMatch	22.19 &+L	{a[^b]}		ac	ac
+expectMatch	22.20 &+L	{a[^b]}		ace	ac
+expectMatch	22.21 &+L	{a[^b]}		ach	ach
+expectNomatch	22.22 &+L	{a[^b]}		abe
+
+
+doing 23 "lookahead constraints"
+expectMatch	23.1 HP		a(?=b)b*	ab	ab
+expectNomatch	23.2 HP		a(?=b)b*	a
+expectMatch	23.3 HP		a(?=b)b*(?=c)c*	abc	abc
+expectNomatch	23.4 HP		a(?=b)b*(?=c)c*	ab
+expectNomatch	23.5 HP		a(?!b)b*	ab
+expectMatch	23.6 HP		a(?!b)b*	a	a
+expectMatch	23.7 HP		(?=b)b		b	b
+expectNomatch	23.8 HP		(?=b)b		a
+
+
+doing 24 "non-greedy quantifiers"
+expectMatch	24.1  PT	ab+?		abb	ab
+expectMatch	24.2  PT	ab+?c		abbc	abbc
+expectMatch	24.3  PT	ab*?		abb	a
+expectMatch	24.4  PT	ab*?c		abbc	abbc
+expectMatch	24.5  PT	ab??		ab	a
+expectMatch	24.6  PT	ab??c		abc	abc
+expectMatch	24.7  PQT	"ab{2,4}?"	abbbb	abb
+expectMatch	24.8  PQT	"ab{2,4}?c"	abbbbc	abbbbc
+expectMatch	24.9  -		3z*		123zzzz456	3zzzz
+expectMatch	24.10 PT	3z*?		123zzzz456	3
+expectMatch	24.11 -		z*4		123zzzz456	zzzz4
+expectMatch	24.12 PT	z*?4		123zzzz456	zzzz4
+expectMatch	24.13 PT	{^([^/]+?)(?:/([^/]+?))(?:/([^/]+?))?$}	{foo/bar/baz}	{foo/bar/baz} {foo} {bar} {baz}
+
+
+doing 25 "mixed quantifiers"
+# this is very incomplete as yet
+# should include |
+expectMatch	25.1 PNT	{^(.*?)(a*)$}	"xyza"	xyza	xyz	a
+expectMatch	25.2 PNT	{^(.*?)(a*)$}	"xyzaa"	xyzaa	xyz	aa
+expectMatch	25.3 PNT	{^(.*?)(a*)$}	"xyz"	xyz	xyz	""
+
+
+doing 26 "tricky cases"
+# attempts to trick the matcher into accepting a short match
+expectMatch	26.1 -		(week|wee)(night|knights) \
+	"weeknights" weeknights wee knights
+expectMatch	26.2 RP		{a(bc*).*\1}	abccbccb abccbccb	b
+expectMatch	26.3 -		{a(b.[bc]*)+}	abcbd	abcbd	bd
+
+
+doing 27 "implementation misc."
+# duplicate arcs are suppressed
+expectMatch	27.1 P		a(?:b|b)c	abc	abc
+# make color/subcolor relationship go back and forth
+expectMatch	27.2 &		{[ab][ab][ab]}	aba	aba
+expectMatch	27.3 &		{[ab][ab][ab][ab][ab][ab][ab]} \
+	"abababa" abababa
+
+
+doing 28 "boundary busters etc."
+# color-descriptor allocation changes at 10
+expectMatch	28.1 &		abcdefghijkl	"abcdefghijkl"	abcdefghijkl
+# so does arc allocation
+expectMatch	28.2 P		a(?:b|c|d|e|f|g|h|i|j|k|l|m)n	"agn"	agn
+# subexpression tracking also at 10
+expectMatch	28.3 -		a(((((((((((((b)))))))))))))c \
+	"abc" abc b b b b b b b b b b b b b
+# state-set handling changes slightly at unsigned size (might be 64...)
+# (also stresses arc allocation)
+expectMatch	28.4  Q		"ab{1,100}c"	abbc	abbc
+expectMatch	28.5  Q		"ab{1,100}c" \
+	"abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc" \
+	abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc
+expectMatch	28.6  Q		"ab{1,100}c" \
+	"abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc"\
+	abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc
+# force small cache and bust it, several ways
+expectMatch	28.7  LP	{\w+abcdefgh}	xyzabcdefgh	xyzabcdefgh
+expectMatch	28.8  %LP	{\w+abcdefgh}	xyzabcdefgh	xyzabcdefgh
+expectMatch	28.9  %LP	{\w+abcdefghijklmnopqrst} \
+	"xyzabcdefghijklmnopqrst" xyzabcdefghijklmnopqrst
+expectIndices	28.10 %LP	{\w+(abcdefgh)?} xyz	{0 2}	{-1 -1}
+expectIndices	28.11 %LP	{\w+(abcdefgh)?} xyzabcdefg	{0 9}	{-1 -1}
+expectIndices	28.12 %LP	{\w+(abcdefghijklmnopqrst)?} \
+	"xyzabcdefghijklmnopqrs" {0 21} {-1 -1}
+
+
+doing 29 "incomplete matches"
+expectPartial		29.1  t		def	abc	{3 2}	""
+expectPartial		29.2  t		bcd	abc	{1 2}	""
+expectPartial		29.3  t		abc	abab	{0 3}	""
+expectPartial		29.4  t		abc	abdab	{3 4}	""
+expectIndices		29.5  t		abc	abc	{0 2}	{0 2}
+expectIndices		29.6  t		abc	xyabc	{2 4}	{2 4}
+expectPartial		29.7  t		abc+	xyab	{2 3}	""
+expectIndices		29.8  t		abc+	xyabc	{2 4}	{2 4}
+knownBug expectIndices	29.9  t		abc+	xyabcd	{2 4}	{6 5}
+expectIndices		29.10 t		abc+	xyabcdd	{2 4}	{7 6}
+expectPartial		29.11 tPT	abc+?	xyab	{2 3}	""
+# the retain numbers in these two may look wrong, but they aren't
+expectIndices		29.12 tPT	abc+?	xyabc	{2 4}	{5 4}
+expectIndices		29.13 tPT	abc+?	xyabcc	{2 4}	{6 5}
+expectIndices		29.14 tPT	abc+?	xyabcd	{2 4}	{6 5}
+expectIndices		29.15 tPT	abc+?	xyabcdd	{2 4}	{7 6}
+expectIndices		29.16 t		abcd|bc	xyabc	{3 4}	{2 4}
+expectPartial		29.17 tn	.*k	"xx\nyyy"	{3 5}	""
+
+
+doing 30 "misc. oddities and old bugs"
+expectError	30.1 &		***	BADRPT
+expectMatch	30.2 N		a?b*	abb	abb
+expectMatch	30.3 N		a?b*	bb	bb
+expectMatch	30.4 &		a*b	aab	aab
+expectMatch	30.5 &		^a*b	aaaab	aaaab
+expectMatch	30.6 &M		{[0-6][1-2][0-3][0-6][1-6][0-6]} \
+	"010010" 010010
+# temporary REG_BOSONLY kludge
+expectMatch	30.7 s		abc	abcd	abc
+expectNomatch	30.8 s		abc	xabcd
+# back to normal stuff
+expectMatch	30.9 HLP	{(?n)^(?![t#])\S+} \
+	"tk\n\n#\n#\nit0"	it0
+
+
+# Now for tests *not* written by Henry Spencer
+
+namespace import -force ::tcltest::test
+
+# Tests resulting from bugs reported by users
+test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
+    set str {2:::DebugWin32}
+    set re {([[:xdigit:]])([[:space:]]*)}
+    list [regexp $re $str match xdigit spaces] $match $xdigit $spaces
+    # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
+} {1 2 2 {}}
+
+test reg-32.1 {canmatch functionality -- at end} testregexp {
+    set pat {blah}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 7}
+test reg-32.2 {canmatch functionality -- at end} testregexp {
+    set pat {s%$}
+    set line "asd asd"
+    # can only match after the end of the string
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 7}
+test reg-32.3 {canmatch functionality -- not last char} testregexp {
+    set pat {[^d]%$}
+    set line "asd asd"
+    # can only match after the end of the string
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 7}
+test reg-32.3.1 {canmatch functionality -- no match} testregexp {
+    set pat {\Zx}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 -1}
+test reg-32.4 {canmatch functionality -- last char} {knownBug testregexp} {
+    set pat {.x}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+test reg-32.4.1 {canmatch functionality -- last char} {knownBug testregexp} {
+    set pat {.x$}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+test reg-32.5 {canmatch functionality -- last char} {knownBug testregexp} {
+    set pat {.[^d]x$}
+    set line "asd asd"
+    # can match the last char, if followed by not-d and x.
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+test reg-32.6 {canmatch functionality -- last char} {knownBug testregexp} {
+    set pat {[^a]%[^\r\n]*$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+test reg-32.7 {canmatch functionality -- last char} {knownBug testregexp} {
+    set pat {[^a]%$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+test reg-32.8 {canmatch functionality -- last char} {knownBug testregexp} {
+    set pat {[^x]%$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+test reg-32.9 {canmatch functionality -- more complex case} {knownBug testregexp} {
+    set pat {((\B\B|\Bh+line)[ \t]*|[^\B]%[^\r\n]*)$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+# Tests reg-33.*: Checks for bug fixes
+
+test reg-33.1 {Bug 230589} {
+    regexp {[ ]*(^|[^%])%V} "*%V2" m s
+} 1
+test reg-33.2 {Bug 504785} {
+    regexp -inline {([^_.]*)([^.]*)\.(..)(.).*} bbcos_001_c01.q1la
+} {bbcos_001_c01.q1la bbcos _001_c01 q1 l}
+test reg-33.3 {Bug 505048} {
+    regexp {\A\s*[^<]*\s*<([^>]+)>} a<a>
+} 1
+test reg-33.4 {Bug 505048} {
+    regexp {\A\s*([^b]*)b} ab
+} 1
+test reg-33.5 {Bug 505048} {
+    regexp {\A\s*[^b]*(b)} ab
+} 1
+test reg-33.6 {Bug 505048} {
+    regexp {\A(\s*)[^b]*(b)} ab
+} 1
+test reg-33.7 {Bug 505048} {
+    regexp {\A\s*[^b]*b} ab
+} 1
+test reg-33.8 {Bug 505048} {
+    regexp -inline {\A\s*[^b]*b} ab
+} ab
+test reg-33.9 {Bug 505048} {
+    regexp -indices -inline {\A\s*[^b]*b} ab
+} {{0 1}}
+test reg-33.10 {Bug 840258} -body {
+    regsub {(^|\n)+\.*b} \n.b {} tmp
+} -cleanup {
+    unset tmp
+} -result 1
+test reg-33.11 {Bug 840258} -body {
+    regsub {(^|[\n\r]+)\.*\?<.*?(\n|\r)+} \
+	    "TQ\r\n.?<5000267>Test already stopped\r\n" {} tmp
+} -cleanup {
+    unset tmp
+} -result 1
+test reg-33.12 {Bug 1810264 - bad read} {
+    regexp {\3161573148} {\3161573148}
+} 0
+test reg-33.13 {Bug 1810264 - infinite loop} {
+    regexp {($|^)*} {x}
+} 1
+# Some environments have small default stack sizes. [Bug 1905562]
+test reg-33.14 {Bug 1810264 - super-expensive expression} nonPortable {
+    regexp {(x{200}){200}$y} {x}
+} 0
+
+test reg-33.15.1 {Bug 3603557 - an "in the wild" RE} {
+    lindex [regexp -expanded -about {
+	^TETRA_MODE_CMD				# Message Type
+	([[:blank:]]+)				# Pad
+	(ETS_1_1|ETS_1_2|ETS_2_2)		# SystemCode
+	([[:blank:]]+)				# Pad
+	(CONTINUOUS|CARRIER|MCCH|TRAFFIC)	# SharingMode
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,2})			# ColourCode
+	([[:blank:]]+)				# Pad
+	(1|2|3|4|6|9|12|18)			# TSReservedFrames
+	([[:blank:]]+)				# Pad
+	(PASS|TRUE|FAIL|FALSE)			# UPlaneDTX
+	([[:blank:]]+)				# Pad
+	(PASS|TRUE|FAIL|FALSE)			# Frame18Extension
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,4})			# MCC
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,5})			# MNC
+	([[:blank:]]+)				# Pad
+	(BOTH|BCAST|ENQRY|NONE)			# NbrCellBcast
+	([[:blank:]]+)				# Pad
+	(UNKNOWN|LOW|MEDIUM|HIGH)		# CellServiceLevel
+	([[:blank:]]+)				# Pad
+	(PASS|TRUE|FAIL|FALSE)			# LateEntryInfo
+	([[:blank:]]+)				# Pad
+	(300|400)				# FrequencyBand
+	([[:blank:]]+)				# Pad
+	(NORMAL|REVERSE)			# ReverseOperation
+	([[:blank:]]+)				# Pad
+	(NONE|\+6\.25|\-6\.25|\+12\.5)		# Offset
+	([[:blank:]]+)				# Pad
+	(10)					# DuplexSpacing
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,4})			# MainCarrierNr
+	([[:blank:]]+)				# Pad
+	(0|1|2|3)				# NrCSCCH
+	([[:blank:]]+)				# Pad
+	(15|20|25|30|35|40|45)			# MSTxPwrMax
+	([[:blank:]]+)				# Pad
+	(\-125|\-120|\-115|\-110|\-105|\-100|\-95|\-90|\-85|\-80|\-75|\-70|\-65|\-60|\-55|\-50)
+						# RxLevAccessMin
+	([[:blank:]]+)				# Pad
+	(\-53|\-51|\-49|\-47|\-45|\-43|\-41|\-39|\-37|\-35|\-33|\-31|\-29|\-27|\-25|\-23)
+						# AccessParameter
+	([[:blank:]]+)				# Pad
+	(DISABLE|[[:digit:]]{3,4})		# RadioDLTimeout
+	([[:blank:]]+)				# Pad
+	(\-[[:digit:]]{2,3})			# RSSIThreshold
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,5})			# CCKIdSCKVerNr
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,5})			# LocationArea
+	([[:blank:]]+)				# Pad
+	([(1|0)]{16})				# SubscriberClass
+	([[:blank:]]+)				# Pad
+	([(1|0)]{12})				# BSServiceDetails
+	([[:blank:]]+)				# Pad
+	(RANDOMIZE|IMMEDIATE|[[:digit:]]{1,2})	# IMM
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,2})			# WT
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,2})			# Nu
+	([[:blank:]]+)				# Pad
+	([0-1])					# FrameLngFctr
+	([[:blank:]]+)				# Pad
+	([[:digit:]]{1,2})			# TSPtr
+	([[:blank:]]+)				# Pad
+	([0-7])					# MinPriority
+	([[:blank:]]+)				# Pad
+	(PASS|TRUE|FAIL|FALSE)			# ExtdSrvcsEnabled
+	([[:blank:]]+)				# Pad
+	(.*)					# ConditionalFields
+    }] 0
+} 68
+test reg-33.16.1 {Bug [8d2c0da36d]- another "in the wild" RE} {
+    lindex [regexp -about "^MRK:client1: =1339 14HKelly Talisman 10011000 (\[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]*) \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 8 0 8 0 0 0 77 77 1 1 2 0 11 { 1 3 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 13HC6 My Creator 2 3 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 31HC7 Slightly offensive name, huh 3 8 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 23HE-mail:kelly@hotbox.com 4 9 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 17Hcompface must die 5 10 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 0 3HAir 6 12 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 14HPGP public key 7 13 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 16Hkelly@hotbox.com 8 30 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 0 12H2 text/plain 9 30 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 0 13H2 x-kom/basic 10 33 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 1H0 11 14 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 1H3 }\r?"] 0
+} 1
+
+test reg-33.15 {constraint fixes} {
+    regexp {(^)+^} x
+} 1
+test reg-33.16 {constraint fixes} {
+    regexp {($^)+} x
+} 0
+test reg-33.17 {constraint fixes} {
+    regexp {(^$)*} x
+} 1
+test reg-33.18 {constraint fixes} {
+    regexp {(^(?!aa))+} {aa bb cc}
+} 0
+test reg-33.19 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {aa x}
+} 0
+test reg-33.20 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {bb x}
+} 0
+test reg-33.21 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {cc x}
+} 0
+test reg-33.22 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {dd x}
+} 1
+
+test reg-33.23 {} {
+    regexp {abcd(\m)+xyz} x
+} 0
+test reg-33.24 {} {
+    regexp {abcd(\m)+xyz} a
+} 0
+test reg-33.25 {} {
+    regexp {^abcd*(((((^(a c(e?d)a+|)+|)+|)+|)+|a)+|)} x
+} 0
+test reg-33.26 {} {
+    regexp {a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$} x
+} 0
+test reg-33.27 {} {
+    regexp {xyz(\Y\Y)+} x
+} 0
+test reg-33.28 {} {
+    regexp {x|(?:\M)+} x
+} 1
+test reg-33.29 {} {
+    # This is near the limits of the RE engine
+    regexp [string repeat x*y*z* 480] x
+} 1
+
+test reg-33.30 {Bug 1080042} {
+    regexp {(\Y)+} foo
+} 1
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

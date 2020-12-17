@@ -1,0 +1,125 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 by Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lindex n 8.4 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lindex \- Retrieve an element from a list
+.SH SYNOPSIS
+\fBlindex \fIlist ?index ...?\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlindex\fR command accepts a parameter, \fIlist\fR, which
+it treats as a Tcl list. It also accepts zero or more \fIindices\fR into
+the list.  The indices may be presented either consecutively on the
+command line, or grouped in a
+Tcl list and presented as a single argument.
+.PP
+If no indices are presented, the command takes the form:
+.PP
+.CS
+\fBlindex \fIlist\fR
+.CE
+.PP
+or
+.PP
+.CS
+\fBlindex \fIlist\fR {}
+.CE
+.PP
+In this case, the return value of \fBlindex\fR is simply the value of the
+\fIlist\fR parameter.
+.PP
+When presented with a single index, the \fBlindex\fR command
+treats \fIlist\fR as a Tcl list and returns the
+\fIindex\fR'th element from it (0 refers to the first element of the list).
+In extracting the element, \fBlindex\fR observes the same rules
+concerning braces and quotes and backslashes as the Tcl command
+interpreter; however, variable
+substitution and command substitution do not occur.
+If \fIindex\fR is negative or greater than or equal to the number
+of elements in \fIvalue\fR, then an empty
+string is returned.
+The interpretation of each simple \fIindex\fR value is the same as
+for the command \fBstring index\fR, supporting simple index
+arithmetic and indices relative to the end of the list.
+.PP
+If additional \fIindex\fR arguments are supplied, then each argument is
+used in turn to select an element from the previous indexing operation,
+allowing the script to select elements from sublists.  The command,
+.PP
+.CS
+\fBlindex\fR $a 1 2 3
+.CE
+.PP
+or
+.PP
+.CS
+\fBlindex\fR $a {1 2 3}
+.CE
+.PP
+is synonymous with
+.PP
+.CS
+\fBlindex\fR [\fBlindex\fR [\fBlindex\fR $a 1] 2] 3
+.CE
+.SH EXAMPLES
+.PP
+Lists can be indexed into from either end:
+.PP
+.CS
+\fBlindex\fR {a b c} 0
+      \fI\(-> a\fR
+\fBlindex\fR {a b c} 2
+      \fI\(-> c\fR
+\fBlindex\fR {a b c} end
+      \fI\(-> c\fR
+\fBlindex\fR {a b c} end-1
+      \fI\(-> b\fR
+.CE
+.PP
+Lists or sequences of indices allow selection into lists of lists:
+.PP
+.CS
+\fBlindex\fR {a b c}
+      \fI\(-> a b c\fR
+\fBlindex\fR {a b c} {}
+      \fI\(-> a b c\fR
+\fBlindex\fR {{a b c} {d e f} {g h i}} 2 1
+      \fI\(-> h\fR
+\fBlindex\fR {{a b c} {d e f} {g h i}} {2 1}
+      \fI\(-> h\fR
+\fBlindex\fR {{{a b} {c d}} {{e f} {g h}}} 1 1 0
+      \fI\(-> g\fR
+\fBlindex\fR {{{a b} {c d}} {{e f} {g h}}} {1 1 0}
+      \fI\(-> g\fR
+.CE
+.PP
+List indices may also perform limited computation, adding or subtracting fixed
+amounts from other indices:
+.PP
+.CS
+set idx 1
+\fBlindex\fR {a b c d e f} $idx+2
+      \fI\(-> d\fR
+set idx 3
+\fBlindex\fR {a b c d e f} $idx+2
+      \fI\(-> f\fR
+.CE
+.SH "SEE ALSO"
+list(n), lappend(n), linsert(n), llength(n), lsearch(n),
+lset(n), lsort(n), lrange(n), lreplace(n),
+string(n)
+.SH KEYWORDS
+element, index, list
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

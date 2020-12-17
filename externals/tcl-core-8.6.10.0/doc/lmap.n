@@ -1,0 +1,85 @@
+'\"
+'\" Copyright (c) 2012 Trevor Davel
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lmap n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lmap \- Iterate over all elements in one or more lists and collect results
+.SH SYNOPSIS
+\fBlmap \fIvarname list body\fR
+.br
+\fBlmap \fIvarlist1 list1\fR ?\fIvarlist2 list2 ...\fR? \fIbody\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlmap\fR command implements a loop where the loop variable(s) take on
+values from one or more lists, and the loop returns a list of results
+collected from each iteration.
+.PP
+In the simplest case there is one loop variable, \fIvarname\fR, and one list,
+\fIlist\fR, that is a list of values to assign to \fIvarname\fR. The
+\fIbody\fR argument is a Tcl script. For each element of \fIlist\fR (in order
+from first to last), \fBlmap\fR assigns the contents of the element to
+\fIvarname\fR as if the \fBlindex\fR command had been used to extract the
+element, then calls the Tcl interpreter to execute \fIbody\fR. If execution of
+the body completes normally then the result of the body is appended to an
+accumulator list. \fBlmap\fR returns the accumulator list.
+.PP
+In the general case there can be more than one value list (e.g., \fIlist1\fR
+and \fIlist2\fR), and each value list can be associated with a list of loop
+variables (e.g., \fIvarlist1\fR and \fIvarlist2\fR). During each iteration of
+the loop the variables of each \fIvarlist\fR are assigned consecutive values
+from the corresponding \fIlist\fR. Values in each \fIlist\fR are used in order
+from first to last, and each value is used exactly once. The total number of
+loop iterations is large enough to use up all the values from all the value
+lists. If a value list does not contain enough elements for each of its loop
+variables in each iteration, empty values are used for the missing elements.
+.PP
+The \fBbreak\fR and \fBcontinue\fR statements may be invoked inside
+\fIbody\fR, with the same effect as in the \fBfor\fR and \fBforeach\fR
+commands. In these cases the body does not complete normally and the result is
+not appended to the accumulator list.
+.SH EXAMPLES
+.PP
+Zip lists together:
+.PP
+.CS
+set list1 {a b c d}
+set list2 {1 2 3 4}
+set zipped [\fBlmap\fR a $list1 b $list2 {list $a $b}]
+# The value of zipped is "{a 1} {b 2} {c 3} {d 4}"
+.CE
+.PP
+Filter a list to remove odd values:
+.PP
+.CS
+set values {1 2 3 4 5 6 7 8}
+proc isEven {n} {expr {($n % 2) == 0}}
+set goodOnes [\fBlmap\fR x $values {expr {
+    [isEven $x] ? $x : [continue]
+}}]
+# The value of goodOnes is "2 4 6 8"
+.CE
+.PP
+Take a prefix from a list based on the contents of the list:
+.PP
+.CS
+set values {8 7 6 5 4 3 2 1}
+proc isGood {counter} {expr {$n > 3}}
+set prefix [\fBlmap\fR x $values {expr {
+    [isGood $x] ? $x : [break]
+}}]
+# The value of prefix is "8 7 6 5 4"
+.CE
+.SH "SEE ALSO"
+break(n), continue(n), for(n), foreach(n), while(n)
+.SH KEYWORDS
+foreach, iteration, list, loop, map
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

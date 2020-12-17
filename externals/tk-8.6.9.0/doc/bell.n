@@ -1,0 +1,34 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Ajuba Solutions.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH bell n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+bell \- Ring a display's bell
+.SH SYNOPSIS
+\fBbell \fR?\fB\-displayof \fIwindow\fR? ?\fB\-nice\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command rings the bell on the display for \fIwindow\fR and
+returns an empty string.
+If the \fB\-displayof\fR option is omitted, the display of the
+application's main window is used by default.
+The command uses the current bell-related settings for the display, which
+may be modified with programs such as \fBxset\fR.
+.PP
+If \fB\-nice\fR is not specified, this command also resets the screen saver
+for the screen.  Some screen savers will ignore this, but others will reset
+so that the screen becomes visible again.
+.SH KEYWORDS
+beep, bell, ring
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

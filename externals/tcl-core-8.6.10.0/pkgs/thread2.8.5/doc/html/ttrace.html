@@ -1,0 +1,312 @@
+
+<html><head>
+<title>ttrace - Tcl Threading</title>
+<style type="text/css"><!--
+    HTML {
+	background: 	#FFFFFF;
+	color: 		black;
+    }
+    BODY {
+	background: 	#FFFFFF;
+	color:	 	black;
+    }
+    DIV.doctools {
+	margin-left:	10%;
+	margin-right:	10%;
+    }
+    DIV.doctools H1,DIV.doctools H2 {
+	margin-left:	-5%;
+    }
+    H1, H2, H3, H4 {
+	margin-top: 	1em;
+	font-family:	sans-serif;
+	font-size:	large;
+	color:		#005A9C;
+	background: 	transparent;
+	text-align:		left;
+    }
+    H1.doctools_title {
+	text-align: center;
+    }
+    UL,OL {
+	margin-right: 0em;
+	margin-top: 3pt;
+	margin-bottom: 3pt;
+    }
+    UL LI {
+	list-style: disc;
+    }
+    OL LI {
+	list-style: decimal;
+    }
+    DT {
+	padding-top: 	1ex;
+    }
+    UL.doctools_toc,UL.doctools_toc UL, UL.doctools_toc UL UL {
+	font:		normal 12pt/14pt sans-serif;
+	list-style:	none;
+    }
+    LI.doctools_section, LI.doctools_subsection {
+	list-style: 	none;
+	margin-left: 	0em;
+	text-indent:	0em;
+	padding: 	0em;
+    }
+    PRE {
+	display: 	block;
+	font-family:	monospace;
+	white-space:	pre;
+	margin:		0%;
+	padding-top:	0.5ex;
+	padding-bottom:	0.5ex;
+	padding-left:	1ex;
+	padding-right:	1ex;
+	width:		100%;
+    }
+    PRE.doctools_example {
+	color: 		black;
+	background: 	#f5dcb3;
+	border:		1px solid black;
+    }
+    UL.doctools_requirements LI, UL.doctools_syntax LI {
+	list-style: 	none;
+	margin-left: 	0em;
+	text-indent:	0em;
+	padding:	0em;
+    }
+    DIV.doctools_synopsis {
+	color: 		black;
+	background: 	#80ffff;
+	border:		1px solid black;
+	font-family:	serif;
+	margin-top: 	1em;
+	margin-bottom: 	1em;
+    }
+    UL.doctools_syntax {
+	margin-top: 	1em;
+	border-top:	1px solid black;
+    }
+    UL.doctools_requirements {
+	margin-bottom: 	1em;
+	border-bottom:	1px solid black;
+    }
+--></style>
+</head>
+<! -- Generated from file '' by tcllib/doctools with format 'html'
+   -->
+<! -- ttrace.n
+   -->
+<body><div class="doctools">
+<h1 class="doctools_title">ttrace(n) 2.8  &quot;Tcl Threading&quot;</h1>
+<div id="name" class="doctools_section"><h2><a name="name">Name</a></h2>
+<p>ttrace - Trace-based interpreter initialization</p>
+</div>
+<div id="toc" class="doctools_section"><h2><a name="toc">Table Of Contents</a></h2>
+<ul class="doctools_toc">
+<li class="doctools_section"><a href="#toc">Table Of Contents</a></li>
+<li class="doctools_section"><a href="#synopsis">Synopsis</a></li>
+<li class="doctools_section"><a href="#section1">Description</a></li>
+<li class="doctools_section"><a href="#section2">USER COMMANDS</a></li>
+<li class="doctools_section"><a href="#section3">CALLBACK COMMANDS</a></li>
+<li class="doctools_section"><a href="#section4">DISCUSSION</a></li>
+<li class="doctools_section"><a href="#see-also">See Also</a></li>
+<li class="doctools_section"><a href="#keywords">Keywords</a></li>
+</ul>
+</div>
+<div id="synopsis" class="doctools_section"><h2><a name="synopsis">Synopsis</a></h2>
+<div class="doctools_synopsis">
+<ul class="doctools_requirements">
+<li>package require <b class="pkgname">Tcl 8.4</b></li>
+<li>package require <b class="pkgname">Thread <span class="opt">?2.8?</span></b></li>
+</ul>
+<ul class="doctools_syntax">
+<li><a href="#1"><b class="cmd">ttrace::eval</b> <i class="arg">arg</i> <span class="opt">?arg ...?</span></a></li>
+<li><a href="#2"><b class="cmd">ttrace::enable</b></a></li>
+<li><a href="#3"><b class="cmd">ttrace::disable</b></a></li>
+<li><a href="#4"><b class="cmd">ttrace::cleanup</b></a></li>
+<li><a href="#5"><b class="cmd">ttrace::update</b> <span class="opt">?epoch?</span></a></li>
+<li><a href="#6"><b class="cmd">ttrace::getscript</b></a></li>
+<li><a href="#7"><b class="cmd">ttrace::atenable</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></li>
+<li><a href="#8"><b class="cmd">ttrace::atdisable</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></li>
+<li><a href="#9"><b class="cmd">ttrace::addtrace</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></li>
+<li><a href="#10"><b class="cmd">ttrace::addscript</b> <i class="arg">name</i> <i class="arg">body</i></a></li>
+<li><a href="#11"><b class="cmd">ttrace::addresolver</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></li>
+<li><a href="#12"><b class="cmd">ttrace::addcleanup</b> <i class="arg">body</i></a></li>
+<li><a href="#13"><b class="cmd">ttrace::addentry</b> <i class="arg">cmd</i> <i class="arg">var</i> <i class="arg">val</i></a></li>
+<li><a href="#14"><b class="cmd">ttrace::getentry</b> <i class="arg">cmd</i> <i class="arg">var</i></a></li>
+<li><a href="#15"><b class="cmd">ttrace::getentries</b> <i class="arg">cmd</i> <span class="opt">?pattern?</span></a></li>
+<li><a href="#16"><b class="cmd">ttrace::delentry</b> <i class="arg">cmd</i></a></li>
+<li><a href="#17"><b class="cmd">ttrace::preload</b> <i class="arg">cmd</i></a></li>
+</ul>
+</div>
+</div>
+<div id="section1" class="doctools_section"><h2><a name="section1">Description</a></h2>
+<p>This package creates a framework for on-demand replication of the
+interpreter state accross threads in an multithreading application.
+It relies on the mechanics of Tcl command tracing and the Tcl
+<b class="cmd">unknown</b> command and mechanism.</p>
+<p>The package requires Tcl threading extension but can be alternatively
+used stand-alone within the AOLserver, a scalable webserver from
+America Online.</p>
+<p>In a nutshell, a short sample illustrating the usage of the ttrace
+with the Tcl threading extension:</p>
+<pre class="doctools_example">
+    % package require Ttrace
+    2.8.2
+    % set t1 [thread::create {package require Ttrace; thread::wait}]
+    tid0x1802800
+    % ttrace::eval {proc test args {return test-[thread::id]}}
+    % thread::send $t1 test
+    test-tid0x1802800
+    % set t2 [thread::create {package require Ttrace; thread::wait}]
+    tid0x1804000
+    % thread::send $t2 test
+    test-tid0x1804000
+</pre>
+<p>As seen from above, the <b class="cmd">ttrace::eval</b> and <b class="cmd">ttrace::update</b>
+commands are used to create a thread-wide definition of a simple
+Tcl procedure and replicate that definition to all, already existing
+or later created, threads.</p>
+</div>
+<div id="section2" class="doctools_section"><h2><a name="section2">USER COMMANDS</a></h2>
+<p>This section describes user-level commands. Those commands can be
+used by script writers to control the execution of the tracing
+framework.</p>
+<dl class="doctools_definitions">
+<dt><a name="1"><b class="cmd">ttrace::eval</b> <i class="arg">arg</i> <span class="opt">?arg ...?</span></a></dt>
+<dd><p>This command concatenates given arguments and evaluates the resulting
+Tcl command with trace framework enabled. If the command execution
+was ok, it takes necessary steps to automatically propagate the
+trace epoch change to all threads in the application.
+For AOLserver, only newly created threads actually receive the
+epoch change. For the Tcl threading extension, all threads created by
+the extension are automatically updated. If the command execution
+resulted in Tcl error, no state propagation takes place.</p>
+<p>This is the most important user-level command of the package as
+it wraps most of the commands described below. This greatly
+simplifies things, because user need to learn just this (one)
+command in order to effectively use the package. Other commands,
+as desribed below, are included mostly for the sake of completeness.</p></dd>
+<dt><a name="2"><b class="cmd">ttrace::enable</b></a></dt>
+<dd><p>Activates all registered callbacks in the framework
+and starts a new trace epoch. The trace epoch encapsulates all
+changes done to the interpreter during the time traces are activated.</p></dd>
+<dt><a name="3"><b class="cmd">ttrace::disable</b></a></dt>
+<dd><p>Deactivates all registered callbacks in the framework
+and closes the current trace epoch.</p></dd>
+<dt><a name="4"><b class="cmd">ttrace::cleanup</b></a></dt>
+<dd><p>Used to clean-up all on-demand loaded resources in the interpreter.
+It effectively brings Tcl interpreter to its pristine state.</p></dd>
+<dt><a name="5"><b class="cmd">ttrace::update</b> <span class="opt">?epoch?</span></a></dt>
+<dd><p>Used to refresh the state of the interpreter to match the optional
+trace <span class="opt">?epoch?</span>. If the optional <span class="opt">?epoch?</span> is not given, it takes
+the most recent trace epoch.</p></dd>
+<dt><a name="6"><b class="cmd">ttrace::getscript</b></a></dt>
+<dd><p>Returns a synthetized Tcl script which may be sourced in any interpreter.
+This script sets the stage for the Tcl <b class="cmd">unknown</b> command so it can
+load traced resources from the in-memory database. Normally, this command
+is automatically invoked by other higher-level commands like
+<b class="cmd">ttrace::eval</b> and <b class="cmd">ttrace::update</b>.</p></dd>
+</dl>
+</div>
+<div id="section3" class="doctools_section"><h2><a name="section3">CALLBACK COMMANDS</a></h2>
+<p>A word upfront: the package already includes callbacks for tracing
+following Tcl commands: <b class="cmd">proc</b>, <b class="cmd">namespace</b>, <b class="cmd">variable</b>,
+<b class="cmd">load</b>, and <b class="cmd">rename</b>. Additionaly, a set of callbacks for
+tracing resources (object, clasess) for the XOTcl v1.3.8+, an
+OO-extension to Tcl, is also provided.
+This gives a solid base for solving most of the real-life needs and
+serves as an example for people wanting to customize the package
+to cover their specific needs.</p>
+<p>Below, you can find commands for registering callbacks in the
+framework and for writing callback scripts. These callbacks are
+invoked by the framework in order to gather interpreter state
+changes, build in-memory database, perform custom-cleanups and
+various other tasks.</p>
+<dl class="doctools_definitions">
+<dt><a name="7"><b class="cmd">ttrace::atenable</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></dt>
+<dd><p>Registers Tcl callback to be activated at <b class="cmd">ttrace::enable</b>.
+Registered callbacks are activated on FIFO basis. The callback
+definition includes the name of the callback, <i class="arg">cmd</i>, a list
+of callback arguments, <i class="arg">arglist</i> and the <i class="arg">body</i> of the
+callback. Effectively, this actually resembles the call interface
+of the standard Tcl <b class="cmd">proc</b> command.</p></dd>
+<dt><a name="8"><b class="cmd">ttrace::atdisable</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></dt>
+<dd><p>Registers Tcl callback to be activated at <b class="cmd">ttrace::disable</b>.
+Registered callbacks are activated on FIFO basis. The callback
+definition includes the name of the callback, <i class="arg">cmd</i>, a list
+of callback arguments, <i class="arg">arglist</i> and the <i class="arg">body</i> of the
+callback. Effectively, this actually resembles the call interface
+of the standard Tcl <b class="cmd">proc</b> command.</p></dd>
+<dt><a name="9"><b class="cmd">ttrace::addtrace</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></dt>
+<dd><p>Registers Tcl callback to be activated for tracing the Tcl
+<b class="cmd">cmd</b> command. The callback definition includes the name of
+the Tcl command to trace, <i class="arg">cmd</i>, a list of callback arguments,
+<i class="arg">arglist</i> and the <i class="arg">body</i> of the callback. Effectively,
+this actually resembles the call interface of the standard Tcl
+<b class="cmd">proc</b> command.</p></dd>
+<dt><a name="10"><b class="cmd">ttrace::addscript</b> <i class="arg">name</i> <i class="arg">body</i></a></dt>
+<dd><p>Registers Tcl callback to be activated for building a Tcl
+script to be passed to other interpreters. This script is
+used to set the stage for the Tcl <b class="cmd">unknown</b> command.
+Registered callbacks are activated on FIFO basis.
+The callback definition includes the name of the callback,
+<i class="arg">name</i> and the <i class="arg">body</i> of the callback.</p></dd>
+<dt><a name="11"><b class="cmd">ttrace::addresolver</b> <i class="arg">cmd</i> <i class="arg">arglist</i> <i class="arg">body</i></a></dt>
+<dd><p>Registers Tcl callback to be activated by the overloaded Tcl
+<b class="cmd">unknown</b> command.
+Registered callbacks are activated on FIFO basis.
+This callback is used to resolve the resource and load the
+resource in the current interpreter.</p></dd>
+<dt><a name="12"><b class="cmd">ttrace::addcleanup</b> <i class="arg">body</i></a></dt>
+<dd><p>Registers Tcl callback to be activated by the <b class="cmd">trace::cleanup</b>.
+Registered callbacks are activated on FIFO basis.</p></dd>
+<dt><a name="13"><b class="cmd">ttrace::addentry</b> <i class="arg">cmd</i> <i class="arg">var</i> <i class="arg">val</i></a></dt>
+<dd><p>Adds one entry to the named in-memory database.</p></dd>
+<dt><a name="14"><b class="cmd">ttrace::getentry</b> <i class="arg">cmd</i> <i class="arg">var</i></a></dt>
+<dd><p>Returns the value of the entry from the named in-memory database.</p></dd>
+<dt><a name="15"><b class="cmd">ttrace::getentries</b> <i class="arg">cmd</i> <span class="opt">?pattern?</span></a></dt>
+<dd><p>Returns names of all entries from the named in-memory database.</p></dd>
+<dt><a name="16"><b class="cmd">ttrace::delentry</b> <i class="arg">cmd</i></a></dt>
+<dd><p>Deletes an entry from the named in-memory database.</p></dd>
+<dt><a name="17"><b class="cmd">ttrace::preload</b> <i class="arg">cmd</i></a></dt>
+<dd><p>Registers the Tcl command to be loaded in the interpreter.
+Commands registered this way will always be the part of
+the interpreter and not be on-demand loaded by the Tcl
+<b class="cmd">unknown</b> command.</p></dd>
+</dl>
+</div>
+<div id="section4" class="doctools_section"><h2><a name="section4">DISCUSSION</a></h2>
+<p>Common introspective state-replication approaches use a custom Tcl
+script to introspect the running interpreter and synthesize another
+Tcl script to replicate this state in some other interpreter.
+This package, on the contrary, uses Tcl command traces. Command
+traces are registered on selected Tcl commands, like <b class="cmd">proc</b>,
+<b class="cmd">namespace</b>, <b class="cmd">load</b> and other standard (and/or user-defined)
+Tcl commands. When activated, those traces build an in-memory
+database of created resources. This database is used as a resource
+repository for the (overloaded) Tcl <b class="cmd">unknown</b> command which
+creates the requested resource in the interpreter on demand.
+This way, users can update just one interpreter (master) in one
+thread and replicate that interpreter state (or part of it) to other
+threads/interpreters in the process.</p>
+<p>Immediate benefit of such approach is the much smaller memory footprint
+of the application and much faster thread creation. By not actually
+loading all necessary procedures (and other resources) in every thread
+at the thread initialization time, but by deffering this to the time the
+resource is actually referenced, significant improvements in both
+memory consumption and thread initialization time can be achieved. Some
+tests have shown that memory footprint of an multithreading Tcl application
+went down more than three times and thread startup time was reduced for
+about 50 times. Note that your mileage may vary.
+Other benefits include much finer control about what (and when) gets
+replicated from the master to other Tcl thread/interpreters.</p>
+</div>
+<div id="see-also" class="doctools_section"><h2><a name="see-also">See Also</a></h2>
+<p>thread, tpool, tsv</p>
+</div>
+<div id="keywords" class="doctools_section"><h2><a name="keywords">Keywords</a></h2>
+<p>command tracing, introspection</p>
+</div>
+</div></body></html>
+

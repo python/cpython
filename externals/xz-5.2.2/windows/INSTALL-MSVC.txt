@@ -1,0 +1,51 @@
+
+Building XZ Utils with Microsoft Visual Studio
+==============================================
+
+Introduction
+------------
+
+    MSVC 2013 update 2 and later have enough C99 support to build
+    liblzma from XZ Utils 5.2.0 and later without modifications.
+    Older MSVC versions would require a large number of changes to
+    the XZ Utils code and thus the old MSVC versions aren't supported.
+
+    As of 2015-06-19, some work has been done to get xz.exe and other
+    command line tools built with MSVC, but it's not complete enough
+    to be included in XZ Utils.
+
+
+Building
+--------
+
+    The following files in this directory are for MSVC:
+
+        config.h              liblzma configuration #defines for MSVC.
+        liblzma.vcxproj       This builds static liblzma.
+        liblzma_dll.vcxproj   This builds liblzma.dll.
+        xz_win.sln            Solution using the above project files.
+
+    The projects have x86 and x86-64 platform configurations, as well
+    as a Debug, Release, and ReleaseMT configuration -- MT is the
+    compiler switch to link to the CRT statically, so it will not
+    have any other DLL dependencies.
+
+    The VS2017 project files don't set <WindowsTargetPlatformVersion>.
+    This means that you may need to either install Windows SDK 8.1 or
+    you may need to set the target platform version before building.
+
+    Currently no test programs are built or run under MSVC.
+
+    MSVC gives a bunch of compiler warnings. Some warnings are specific
+    to 32-bit or 64-bit build and some appear for both builds. These
+    are known and shouldn't be a problem. Some of them will probably
+    be fixed in the future.
+
+
+Notes
+-----
+
+    liblzma API headers declare the functions with __declspec(dllimport)
+    by default. To avoid this when using static liblzma from your code,
+    #define LZMA_API_STATIC before #including <lzma.h>.
+

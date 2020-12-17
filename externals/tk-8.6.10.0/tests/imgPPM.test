@@ -1,0 +1,239 @@
+# This file is a Tcl script to test out the code in tkImgFmtPPM.c,
+# which reads and write PPM-format image files for photo widgets.
+# The files is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+imageInit
+
+# Note that we do not use [tcltest::makeFile] because it is
+# only suitable for text files
+proc put {file data} {
+    set f [open $file w]
+    fconfigure $f -translation lf
+    puts -nonewline $f $data
+    close $f
+}
+
+test imgPPM-1.1 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n0 256\n255\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {PPM image file "test.ppm" has dimension(s) <= 0}
+test imgPPM-1.2 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n-2 256\n255\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {PPM image file "test.ppm" has dimension(s) <= 0}
+test imgPPM-1.3 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n10 0\n255\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {PPM image file "test.ppm" has dimension(s) <= 0}
+test imgPPM-1.4 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n10 -2\n255\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {PPM image file "test.ppm" has dimension(s) <= 0}
+test imgPPM-1.5 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n10 20\n100000\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {PPM image file "test.ppm" has bad maximum intensity value 100000}
+test imgPPM-1.6 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n10 20\n0\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {PPM image file "test.ppm" has bad maximum intensity value 0}
+test imgPPM-1.7 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n10 10\n255\nabcdef"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {error reading PPM image file "test.ppm": not enough data}
+test imgPPM-1.8 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n5 4\n255\n01234567890123456789012345678901234567890123456789012345678"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {error reading PPM image file "test.ppm": not enough data}
+test imgPPM-1.9 {FileReadPPM procedure} -body {
+    put test.ppm "P6\n5 4\n150\n012345678901234567890123456789012345678901234567890123456789"
+    list [image create photo p1 -file test.ppm] \
+        [image width p1] [image height p1]
+} -returnCodes ok -result {p1 5 4}
+
+
+test imgPPM-2.1 {FileWritePPM procedure} -setup {
+    catch {image delete p1}
+} -body {
+    put test.ppm "P6\n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+    list [catch {p1 write not_a_dir/bar/baz/gorp} msg] [string tolower $msg] \
+        [string tolower $errorCode]
+} -cleanup {
+    image delete p1
+} -result {1 {couldn't open "not_a_dir/bar/baz/gorp": no such file or directory} {posix enoent {no such file or directory}}}
+
+test imgPPM-2.2 {FileWritePPM procedure} -setup {
+    catch {image delete p1}
+    catch {unset data}
+} -body {
+    put test.ppm "P6\n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+    p1 write -format ppm test.ppm
+    set fd [open test.ppm]
+    set data [read $fd]
+    close $fd
+    set data
+} -cleanup {
+    image delete p1
+} -result {P6
+5 4
+255
+012345678901234567890123456789012345678901234567890123456789}
+
+
+test imgPPM-3.1 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "#   \n#\n#\nP6\n#\n##\n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -cleanup {
+    image delete p1
+} -returnCodes ok -result p1
+test imgPPM-3.2 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6\n5\n 4   	                                                                 255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -cleanup {
+    image delete p1
+} -returnCodes ok -result p1
+test imgPPM-3.3 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6\n#                                                                      asdfasdf\n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -cleanup {
+    image delete p1
+} -returnCodes ok -result p1
+test imgPPM-3.4 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6 \n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -cleanup {
+    image delete p1
+} -returnCodes ok -result p1
+test imgPPM-3.5 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P5\n5 4\n255\n01234567890123456789"
+    image create photo p1 -file test.ppm
+} -cleanup {
+    image delete p1
+} -returnCodes ok -result p1
+test imgPPM-3.6 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P3\n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.7 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6x\n5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.8 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6\nxy5 4\n255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.9 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6\n5\n255\n!012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.10 {ReadPPMFileHeader procedure} -body {
+    put test.ppm "P6\n5 4\nzz255\n012345678901234567890123456789012345678901234567890123456789"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.11 {ReadPPMFileHeader procedure, empty file} -body {
+    put test.ppm "     "
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.12 {ReadPPMFileHeader procedure, file ends too soon} -body {
+    put test.ppm "P6\n566"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+test imgPPM-3.13 {ReadPPMFileHeader procedure, file ends too soon} -body {
+    put test.ppm "P6\n566\n#asdf"
+    image create photo p1 -file test.ppm
+} -returnCodes error -result {couldn't recognize data in image file "test.ppm"}
+
+
+test imgPPM-4.1 {StringReadPPM procedure, data too short [Bug 1822391]} -body {
+    image create photo I -width 1103 -height 997
+    I put "P5\n1103 997\n255\n"
+} -cleanup {
+    image delete I
+} -returnCodes error -result {truncated PPM data}
+
+test imgPPM-5.1 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n0 256\n255\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {PPM image data has dimension(s) <= 0}
+test imgPPM-5.2 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n-2 256\n255\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {PPM image data has dimension(s) <= 0}
+test imgPPM-5.3 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n10 0\n255\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {PPM image data has dimension(s) <= 0}
+test imgPPM-5.4 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n10 -2\n255\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {PPM image data has dimension(s) <= 0}
+test imgPPM-5.5 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n10 20\n100000\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {PPM image data has bad maximum intensity value 100000}
+test imgPPM-5.6 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n10 20\n0\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {PPM image data has bad maximum intensity value 0}
+test imgPPM-5.7 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n10 10\n255\nabcdef"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {truncated PPM data}
+test imgPPM-5.8 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n5 4\n255\n01234567890123456789012345678901234567890123456789012345678"
+} -returnCodes error -cleanup {
+    image delete ppm
+} -result {truncated PPM data}
+test imgPPM-5.9 {StringReadPPM procedure} -setup {
+    image create photo ppm
+} -body {
+    ppm put "P6\n5 4\n150\n012345678901234567890123456789012345678901234567890123456789"
+    list [image width ppm] [image height ppm]
+} -cleanup {
+    image delete ppm
+} -result {5 4}
+
+imageFinish
+
+# cleanup
+catch {file delete test.ppm}
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

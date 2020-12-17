@@ -1,0 +1,46 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetVRootGeometry 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetVRootGeometry \- Get location and size of virtual root for window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_GetVRootGeometry(\fItkwin, xPtr, yPtr, widthPtr, heightPtr\fB)\fR
+.SH ARGUMENTS
+.AS Tk_Window heightPtr
+.AP Tk_Window tkwin in
+Token for window whose virtual root is to be queried.
+.AP int xPtr out
+Points to word in which to store x-offset of virtual root.
+.AP int yPtr out
+Points to word in which to store y-offset of virtual root.
+.AP "int" widthPtr out
+Points to word in which to store width of virtual root.
+.AP "int" heightPtr out
+Points to word in which to store height of virtual root.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetVRootGeometry\fR returns geometry information about the virtual
+root window associated with \fItkwin\fR.  The
+.QW associated
+virtual root is the one in which \fItkwin\fR's nearest top-level ancestor (or
+\fItkwin\fR itself if it is a top-level window) has
+been reparented by the window manager.  This window is identified by
+a \fB__SWM_ROOT\fR or \fB__WM_ROOT\fR property placed on the top-level
+window by the window manager.
+If \fItkwin\fR is not associated with a virtual root (e.g.
+because the window manager does not use virtual roots) then *\fIxPtr\fR and
+*\fIyPtr\fR will be set to 0 and *\fIwidthPtr\fR and *\fIheightPtr\fR
+will be set to the dimensions of the screen containing \fItkwin\fR.
+.SH KEYWORDS
+geometry, height, location, virtual root, width, window manager

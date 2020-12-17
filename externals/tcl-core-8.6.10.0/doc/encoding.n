@@ -1,0 +1,115 @@
+'\"
+'\" Copyright (c) 1998 by Scriptics Corporation.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH encoding n "8.1" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+.SH NAME
+encoding \- Manipulate encodings
+.SH SYNOPSIS
+\fBencoding \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+.SH INTRODUCTION
+.PP
+Strings in Tcl are logically a sequence of 16-bit Unicode characters.
+These strings are represented in memory as a sequence of bytes that
+may be in one of several encodings: modified UTF\-8 (which uses 1 to 3
+bytes per character), 16-bit
+.QW Unicode
+(which uses 2 bytes per character, with an endianness that is
+dependent on the host architecture), and binary (which uses a single
+byte per character but only handles a restricted range of characters).
+Tcl does not guarantee to always use the same encoding for the same
+string.
+.PP
+Different operating system interfaces or applications may generate
+strings in other encodings such as Shift\-JIS.  The \fBencoding\fR
+command helps to bridge the gap between Unicode and these other
+formats.
+.SH DESCRIPTION
+.PP
+Performs one of several encoding related operations, depending on
+\fIoption\fR.  The legal \fIoption\fRs are:
+.TP
+\fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
+.
+Convert \fIdata\fR to Unicode from the specified \fIencoding\fR.  The
+characters in \fIdata\fR are treated as binary data where the lower
+8-bits of each character is taken as a single byte.  The resulting
+sequence of bytes is treated as a string in the specified
+\fIencoding\fR.  If \fIencoding\fR is not specified, the current
+system encoding is used.
+.TP
+\fBencoding convertto\fR ?\fIencoding\fR? \fIstring\fR
+.
+Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
+The result is a sequence of bytes that represents the converted
+string.  Each byte is stored in the lower 8-bits of a Unicode
+character (indeed, the resulting string is a binary string as far as
+Tcl is concerned, at least initially).  If \fIencoding\fR is not
+specified, the current system encoding is used.
+.TP
+\fBencoding dirs\fR ?\fIdirectoryList\fR?
+.
+Tcl can load encoding data files from the file system that describe
+additional encodings for it to work with. This command sets the search
+path for \fB*.enc\fR encoding data files to the list of directories
+\fIdirectoryList\fR. If \fIdirectoryList\fR is omitted then the
+command returns the current list of directories that make up the
+search path. It is an error for \fIdirectoryList\fR to not be a valid
+list. If, when a search for an encoding data file is happening, an
+element in \fIdirectoryList\fR does not refer to a readable,
+searchable directory, that element is ignored.
+.TP
+\fBencoding names\fR
+.
+Returns a list containing the names of all of the encodings that are
+currently available.
+The encodings
+.QW utf-8
+and
+.QW iso8859-1
+are guaranteed to be present in the list.
+.TP
+\fBencoding system\fR ?\fIencoding\fR?
+.
+Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
+omitted then the command returns the current system encoding.  The
+system encoding is used whenever Tcl passes strings to system calls.
+.SH EXAMPLE
+.PP
+It is common practice to write script files using a text editor that
+produces output in the euc-jp encoding, which represents the ASCII
+characters as singe bytes and Japanese characters as two bytes.  This
+makes it easy to embed literal strings that correspond to non-ASCII
+characters by simply typing the strings in place in the script.
+However, because the \fBsource\fR command always reads files using the
+current system encoding, Tcl will only source such files correctly
+when the encoding used to write the file is the same.  This tends not
+to be true in an internationalized setting.  For example, if such a
+file was sourced in North America (where the ISO8859\-1 is normally
+used), each byte in the file would be treated as a separate character
+that maps to the 00 page in Unicode.  The resulting Tcl strings will
+not contain the expected Japanese characters.  Instead, they will
+contain a sequence of Latin-1 characters that correspond to the bytes
+of the original string.  The \fBencoding\fR command can be used to
+convert this string to the expected Japanese Unicode characters.  For
+example,
+.PP
+.CS
+set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
+.CE
+.PP
+would return the Unicode string
+.QW "\eu306F" ,
+which is the Hiragana letter HA.
+.SH "SEE ALSO"
+Tcl_GetEncoding(3)
+.SH KEYWORDS
+encoding, unicode
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

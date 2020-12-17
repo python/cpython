@@ -1,0 +1,237 @@
+'\"
+'\" $Id: tixScrolledWindow.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixScrolledWindow n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixScrolledWindow \- Create and manipulate Tix ScrolledWindow widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixScrolledWindow \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SO
+\-anchor	\-background	\-cursor
+\-relief	\-borderWidth
+.SE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP -height height Height
+Specifies the desired height for the window, in pixels.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-scrollbar scrollbar Scrollbar
+Specifies the display policy of the scrollbars. The following
+values are recognized:
+.RS
+'\"
+.TP
+\fBauto \fR?\fI+x\fR? ?\fI\-x\fR? ?\fI+y\fR? ?\fI\-y\fR? 
+'\"
+When \fB\-scrollbar\fR is set to "\fBauto\fR", the scrollbars are
+shown only when needed. Additional modifiers can be used to force a
+scrollbar to be shown or hidden. For example, "\fBauto \-y\fR" means
+the horizontal scrollbar should be shown when needed but the vertical
+scrollbar should always be hidden; "\fBauto +x\fR" means the vertical
+scrollbar should be shown when needed but the horizontal scrollbar
+should always be shown, and so on.
+'\"
+.TP
+\fBboth\fR
+Both scrollbars are shown
+'\"
+.TP
+\fBnone\fR
+The scrollbars are never shown.
+'\"
+.TP
+\fBx\fR
+Only the horizontal scrollbar is shown;
+'\"
+.TP
+\fBy\fR
+Only the vertical scrollbar is shown.
+'\"
+.RE
+'\"
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP -width width Width
+Specifies the desired width for the window, in pixels.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP -xscrollincrement xScrollIncrement ScrollIncrement
+Specifies by how much the window should be scrolled in the horizontal
+direction when the user presses the arrows in the horizontal
+scrollbar. In Pixels.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP -yscrollincrement yScrollIncrement ScrollIncrement
+Specifies by how much the window should be scrolled in the vertical
+direction when the user presses the arrows in the horizontal
+scrollbar. In pixels.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The horizontal scrollbar subwidget.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBwindow\fR
+Class:		\fBFrame\fR
+.fi
+.IP
+The frame subwidget which is scrolled by the ScrolledWindow widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBvsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The vertical scrollbar subwidget.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixScrolledWindow\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a ScrolledWindow widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+ScrolledWindow widget such as its cursor and relief.
+'\"
+.SH CREATING WIDGETS INSIDE A SCROLLEDWINDOW WIDGET
+.PP
+'\"
+To create widgets inside a ScrolledWindow widget, one must create the
+new widgets relative to the \fBwindow\fR subwidget and manage them
+inside the \fBwindow\fR subwidget. An error will be generated if one
+tries to create widgets as immediate children of the ScrolledWindow.
+For example: the following is correct code, which creates new widgets
+inside the window subwidget:
+.PP
+.nf
+    tixScrolledWindow .w; pack .w
+    set f [.w subwidget window]
+    button $f.b \-text hi \-width 40 \-height 40
+    pack $f.b
+.fi
+.PP
+The following example code is \fIincorrect\fR because it tries to
+create immediate children of the ScrolledWindow \fB\.w\fR:
+.PP
+.nf
+    tixScrolledWindow .w; pack .w
+    button .w.b \-text hi \-width 40 \-height 40
+    pack .w.b
+.fi
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixScrolledWindow\fR command creates a new Tcl command whose
+name is the same as the path name of the ScrolledWindow widget's window.  This
+command may be used to invoke various
+operations on the widget. It has the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as
+the ScrolledWindow widget's path name.  \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for ScrolledWindow widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixScrolledWindow\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If
+no \fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixScrolledWindow\fR command.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no additional arguments are given, returns the pathname of the
+subwidget of the specified name.
+
+When no additional arguments are given, the widget command of the
+specified subwidget will be called with these parameters.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+
+

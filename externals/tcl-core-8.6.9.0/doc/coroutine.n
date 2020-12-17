@@ -1,0 +1,205 @@
+'\"
+'\" Copyright (c) 2009 Donal K. Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH coroutine n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+coroutine, yield, yieldto \- Create and produce values from coroutines
+.SH SYNOPSIS
+.nf
+\fBcoroutine \fIname command\fR ?\fIarg...\fR?
+\fByield\fR ?\fIvalue\fR?
+.VS TIP396
+\fByieldto\fR \fIcommand\fR ?\fIarg...\fR?
+\fIname\fR ?\fIvalue...\fR?
+.VE TIP396
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBcoroutine\fR command creates a new coroutine context (with associated
+command) named \fIname\fR and executes that context by calling \fIcommand\fR,
+passing in the other remaining arguments without further interpretation. Once
+\fIcommand\fR returns normally or with an exception (e.g., an error) the
+coroutine context \fIname\fR is deleted.
+.PP
+Within the context, values may be generated as results by using the
+\fByield\fR command; if no \fIvalue\fR is supplied, the empty string is used.
+When that is called, the context will suspend execution and the
+\fBcoroutine\fR command will return the argument to \fByield\fR. The execution
+of the context can then be resumed by calling the context command, optionally
+passing in the \fIsingle\fR value to use as the result of the \fByield\fR call
+that caused
+the context to be suspended. If the coroutine context never yields and instead
+returns conventionally, the result of the \fBcoroutine\fR command will be the
+result of the evaluation of the context.
+.PP
+.VS TIP396
+The coroutine may also suspend its execution by use of the \fByieldto\fR
+command, which instead of returning, cedes execution to some command called
+\fIcommand\fR (resolved in the context of the coroutine) and to which \fIany
+number\fR of arguments may be passed. Since every coroutine has a context
+command, \fByieldto\fR can be used to transfer control directly from one
+coroutine to another (this is only advisable if the two coroutines are
+expecting this to happen) but \fIany\fR command may be the target. If a
+coroutine is suspended by this mechanism, the coroutine processing can be
+resumed by calling the context command optionally passing in an arbitrary
+number of arguments. The return value of the \fByieldto\fR call will be the
+list of arguments passed to the context command; it is up to the caller to
+decide what to do with those values.
+.PP
+The recommended way of writing a version of \fByield\fR that allows resumption
+with multiple arguments is by using \fByieldto\fR and the \fBreturn\fR
+command, like this:
+.PP
+.CS
+proc yieldm {value} {
+    \fByieldto\fR return -level 0 $value
+}
+.CE
+.VE TIP396
+.PP
+The coroutine can also be deleted by destroying the command \fIname\fR, and
+the name of the current coroutine can be retrieved by using
+\fBinfo coroutine\fR.
+If there are deletion traces on variables in the coroutine's
+implementation, they will fire at the point when the coroutine is explicitly
+deleted (or, naturally, if the command returns conventionally).
+.PP
+At the point when \fIcommand\fR is called, the current namespace will be the
+global namespace and there will be no stack frames above it (in the sense of
+\fBupvar\fR and \fBuplevel\fR). However, which command to call will be
+determined in the namespace that the \fBcoroutine\fR command was called from.
+.SH EXAMPLES
+.PP
+This example shows a coroutine that will produce an infinite sequence of
+even values, and a loop that consumes the first ten of them.
+.PP
+.CS
+proc allNumbers {} {
+    \fByield\fR
+    set i 0
+    while 1 {
+        \fByield\fR $i
+        incr i 2
+    }
+}
+\fBcoroutine\fR nextNumber allNumbers
+for {set i 0} {$i < 10} {incr i} {
+    puts "received [\fInextNumber\fR]"
+}
+rename nextNumber {}
+.CE
+.PP
+In this example, the coroutine acts to add up the arguments passed to it.
+.PP
+.CS
+\fBcoroutine\fR accumulator apply {{} {
+    set x 0
+    while 1 {
+        incr x [\fByield\fR $x]
+    }
+}}
+for {set i 0} {$i < 10} {incr i} {
+    puts "$i -> [\fIaccumulator\fR $i]"
+}
+.CE
+.PP
+This example demonstrates the use of coroutines to implement the classic Sieve
+of Eratosthenes algorithm for finding prime numbers. Note the creation of
+coroutines inside a coroutine.
+.PP
+.CS
+proc filterByFactor {source n} {
+    \fByield\fR [info coroutine]
+    while 1 {
+        set x [\fI$source\fR]
+        if {$x % $n} {
+            \fByield\fR $x
+        }
+    }
+}
+\fBcoroutine\fR allNumbers apply {{} {while 1 {\fByield\fR [incr x]}}}
+\fBcoroutine\fR eratosthenes apply {c {
+    \fByield\fR
+    while 1 {
+        set n [\fI$c\fR]
+        \fByield\fR $n
+        set c [\fBcoroutine\fR prime$n filterByFactor $c $n]
+    }
+}} allNumbers
+for {set i 1} {$i <= 20} {incr i} {
+    puts "prime#$i = [\fIeratosthenes\fR]"
+}
+.CE
+.PP
+.VS TIP396
+This example shows how a value can be passed around a group of three
+coroutines that yield to each other:
+.PP
+.CS
+proc juggler {name target {value ""}} {
+    if {$value eq ""} {
+        set value [\fByield\fR [info coroutine]]
+    }
+    while {$value ne ""} {
+        puts "$name : $value"
+        set value [string range $value 0 end-1]
+        lassign [\fByieldto\fR $target $value] value
+    }
+}
+\fBcoroutine\fR j1 juggler Larry [
+    \fBcoroutine\fR j2 juggler Curly [
+        \fBcoroutine\fR j3 juggler Moe j1]] "Nyuck!Nyuck!Nyuck!"
+.CE
+.VE TIP396
+.SS "DETAILED SEMANTICS"
+.PP
+This example demonstrates that coroutines start from the global namespace, and
+that \fIcommand\fR resolution happens before the coroutine stack is created.
+.PP
+.CS
+proc report {where level} {
+    # Where was the caller called from?
+    set ns [uplevel 2 {namespace current}]
+    \fByield\fR "made $where $level context=$ns name=[info coroutine]"
+}
+proc example {} {
+    report outer [info level]
+}
+namespace eval demo {
+    proc example {} {
+        report inner [info level]
+    }
+    proc makeExample {} {
+        puts "making from [info level]"
+        puts [\fBcoroutine\fR coroEg example]
+    }
+    makeExample
+}
+.CE
+.PP
+Which produces the output below. In particular, we can see that stack
+manipulation has occurred (comparing the levels from the first and second
+line) and that the parent level in the coroutine is the global namespace. We
+can also see that coroutine names are local to the current namespace if not
+qualified, and that coroutines may yield at depth (e.g., in called
+procedures).
+.PP
+.CS
+making from 2
+made inner 1 context=:: name=::demo::coroEg
+.CE
+.SH "SEE ALSO"
+apply(n), info(n), proc(n), return(n)
+.SH KEYWORDS
+coroutine, generator
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

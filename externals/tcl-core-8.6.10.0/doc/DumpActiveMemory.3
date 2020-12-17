@@ -1,0 +1,68 @@
+'\"
+'\" Copyright (c) 1992-1999 Karl Lehenbauer and Mark Diekhans.
+'\" Copyright (c) 2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\"
+.TH "Tcl_DumpActiveMemory" 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_DumpActiveMemory, Tcl_InitMemory, Tcl_ValidateAllMemory \- Validated memory allocation interface
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_DumpActiveMemory\fR(\fIfileName\fR)
+.sp
+void
+\fBTcl_InitMemory\fR(\fIinterp\fR)
+.sp
+void
+\fBTcl_ValidateAllMemory\fR(\fIfileName, line\fR)
+
+.SH ARGUMENTS
+.AS Tcl_Interp *fileName
+.AP Tcl_Interp *interp in
+Tcl interpreter in which to add commands.
+.AP "const char" *fileName in
+For \fBTcl_DumpActiveMemory\fR, name of the file to which memory
+information will be written.  For \fBTcl_ValidateAllMemory\fR, name of
+the file from which the call is being made (normally \fB__FILE__\fR).
+.AP int line in
+Line number at which the call to \fBTcl_ValidateAllMemory\fR is made
+(normally \fB__LINE__\fR).
+.BE
+
+.SH DESCRIPTION
+These functions provide access to Tcl memory debugging information.
+They are only functional when Tcl has been compiled with
+\fBTCL_MEM_DEBUG\fR defined at compile-time.  When \fBTCL_MEM_DEBUG\fR
+is not defined, these functions are all no-ops.
+.PP
+\fBTcl_DumpActiveMemory\fR will output a list of all currently
+allocated memory to the specified file.  The information output for
+each allocated block of memory is:  starting and ending addresses
+(excluding guard zone), size, source file where \fBckalloc\fR was
+called to allocate the block and line number in that file.  It is
+especially useful to call \fBTcl_DumpActiveMemory\fR after the Tcl
+interpreter has been deleted.
+.PP
+\fBTcl_InitMemory\fR adds the Tcl \fBmemory\fR command to the
+interpreter given by \fIinterp\fR.  \fBTcl_InitMemory\fR is called
+by \fBTcl_Main\fR.
+.PP
+\fBTcl_ValidateAllMemory\fR forces a validation of the guard zones of
+all currently allocated blocks of memory.  Normally validation of a
+block occurs when its freed, unless full validation is enabled, in
+which case validation of all blocks occurs when \fBckalloc\fR and
+\fBckfree\fR are called.  This function forces the validation to occur
+at any point.
+
+.SH "SEE ALSO"
+TCL_MEM_DEBUG, memory
+
+.SH KEYWORDS
+memory, debug
+
+

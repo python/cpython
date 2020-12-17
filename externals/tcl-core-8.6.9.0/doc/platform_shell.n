@@ -1,0 +1,57 @@
+'\"
+'\" Copyright (c) 2006-2008 ActiveState Software Inc
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH "platform::shell" n 1.1.4 platform::shell "Tcl Bundled Packages"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+platform::shell \- System identification support code and utilities
+.SH SYNOPSIS
+.nf
+\fBpackage require platform::shell ?1.1.4?\fR
+.sp
+\fBplatform::shell::generic \fIshell\fR
+\fBplatform::shell::identify \fIshell\fR
+\fBplatform::shell::platform \fIshell\fR
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBplatform::shell\fR package provides several utility commands useful
+for the identification of the architecture of a specific Tcl shell.
+.PP
+This package allows the identification of the architecture of a
+specific Tcl shell different from the shell running the package. The
+only requirement is that the other shell (identified by its path), is
+actually executable on the current machine.
+.PP
+While for most platform this means that the architecture of the
+interrogated shell is identical to the architecture of the running
+shell this is not generally true. A counter example are all platforms
+which have 32 and 64 bit variants and where a 64bit system is able to
+run 32bit code. For these running and interrogated shell may have
+different 32/64 bit settings and thus different identifiers.
+.PP
+For applications like a code repository it is important to identify
+the architecture of the shell which will actually run the installed
+packages, versus the architecture of the shell running the repository
+software.
+.SH COMMANDS
+.TP
+\fBplatform::shell::identify \fIshell\fR
+This command does the same identification as \fBplatform::identify\fR,
+for the specified Tcl shell, in contrast to the running shell.
+.TP
+\fBplatform::shell::generic \fIshell\fR
+This command does the same identification as \fBplatform::generic\fR,
+for the specified Tcl shell, in contrast to the running shell.
+.TP
+\fBplatform::shell::platform \fIshell\fR
+This command returns the contents of \fBtcl_platform(platform)\fR for
+the specified Tcl shell.
+.SH KEYWORDS
+operating system, cpu architecture, platform, architecture

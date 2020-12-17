@@ -1,0 +1,221 @@
+
+package require Tk
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+### treeview tag invariants:
+#
+
+proc assert {expr {message ""}} {
+    if {![uplevel 1 [list expr $expr]]} {
+        error "PANIC: $message ($expr failed)"
+    }
+}
+proc in {e l} { expr {[lsearch -exact $l $e] >= 0} }
+
+proc itemConstraints {tv item} {
+    # $tag in [$tv item $item -tags] <==> [$tv tag has $tag $item]
+    foreach tag [$tv item $item -tags] {
+	assert {[in $item [$tv tag has $tag]]}
+    }
+    foreach child [$tv children $item] {
+	itemConstraints $tv $child
+    }
+}
+
+proc treeConstraints {tv} {
+    # $item in [$tv tag has $tag] <==> [$tv tag has $tag $item]
+    #
+    foreach tag [$tv tag names] {
+	foreach item [$tv tag has $tag] {
+	    assert {[in $tag [$tv item $item -tags]]}
+	}
+    }
+
+    itemConstraints $tv {}
+}
+#
+###
+
+test treetags-1.0 "Setup" -body {
+    set tv [ttk::treeview .tv]
+    .tv insert {} end -id item1 -text "Item 1"
+    pack .tv
+} -cleanup {
+    treeConstraints $tv
+}
+
+test treetags-1.1 "Bad tag list" -body {
+    $tv item item1 -tags {bad {list}here bad}
+    $tv item item1 -tags
+} -returnCodes error -result "list element in braces *" -match glob
+
+test treetags-1.2 "Good tag list" -body {
+    $tv item item1 -tags tag1
+    $tv item item1 -tags
+} -cleanup {
+    assert {[$tv tag has tag1 item1]}
+    treeConstraints $tv
+} -result [list tag1]
+
+test treetags-1.3 "tag has - test" -body {
+    $tv insert {} end -id item2 -text "Item 2" -tags tag2
+    set result [list]
+    foreach item {item1 item2} {
+    	foreach tag {tag1 tag2 tag3} {
+	    lappend result $item $tag [$tv tag has $tag $item]
+	}
+    }
+    set result
+} -cleanup {
+    treeConstraints $tv
+} -result [list \
+	item1 tag1 1 item1 tag2 0 item1 tag3 0 \
+	item2 tag1 0 item2 tag2 1 item2 tag3 0 ]
+
+test treetags-1.4 "tag has - query" -body {
+    list [$tv tag has tag1] [$tv tag has tag2] [$tv tag has tag3]
+} -cleanup {
+    treeConstraints $tv
+} -result [list [list item1] [list item2] [list]]
+
+test treetags-1.5 "tag add" -body {
+    $tv tag add tag3 {item1 item2}
+    list [$tv tag has tag1] [$tv tag has tag2] [$tv tag has tag3]
+} -cleanup {
+    treeConstraints $tv
+} -result [list [list item1] [list item2] [list item1 item2]]
+
+test treetags-1.6 "tag remove - list" -body {
+    $tv tag remove tag3 {item1 item2}
+    list [$tv tag has tag1] [$tv tag has tag2] [$tv tag has tag3]
+} -cleanup {
+    treeConstraints $tv
+} -result [list [list item1] [list item2] [list]]
+
+test treetags-1.7 "tag remove - all items" -body {
+    $tv tag remove tag1
+    list [$tv tag has tag1] [$tv tag has tag2] [$tv tag has tag3]
+} -cleanup {
+    treeConstraints $tv
+} -result [list [list] [list item2] [list]]
+
+test treetags-1.8 "tag names" -body {
+    lsort [$tv tag names]
+} -result [list tag1 tag2 tag3]
+
+test treetags-1.9 "tag names - tag added to item" -body {
+    $tv item item1 -tags tag4 
+    lsort [$tv tag names]
+} -result [list tag1 tag2 tag3 tag4]
+
+test treetags-1.10 "tag names - tag configured" -body {
+    $tv tag configure tag5
+    lsort [$tv tag names]
+} -result [list tag1 tag2 tag3 tag4 tag5]
+
+test treetags-1.end "cleanup" -body {
+    $tv item item1 -tags tag1
+    $tv item item2 -tags tag2
+    list [$tv tag has tag1] [$tv tag has tag2] [$tv tag has tag3]
+} -cleanup {
+    treeConstraints $tv
+} -result [list [list item1] [list item2] [list]]
+
+test treetags-2.0 "tag bind" -body {
+    $tv tag bind tag1 <KeyPress> {set ::KEY %A}
+    $tv tag bind tag1 <KeyPress>
+} -cleanup {
+    treeConstraints $tv
+} -result {set ::KEY %A}
+
+test treetags-2.1 "Events delivered to tags" -body {
+    focus -force $tv ; update	;# needed so [event generate] delivers KeyPress
+    $tv focus item1
+    event generate $tv <KeyPress-a>
+    set ::KEY
+} -cleanup {
+    treeConstraints $tv
+} -result a
+
+test treetags-2.2 "Events delivered to correct tags" -body {
+    $tv tag bind tag2 <KeyPress> [list set ::KEY2 %A]
+
+    $tv focus item1
+    event generate $tv <KeyPress-b>
+    $tv focus item2
+    event generate $tv <KeyPress-c>
+
+    list $::KEY $::KEY2
+} -cleanup {
+    treeConstraints $tv
+} -result [list b c]
+
+test treetags-2.3 "Virtual events delivered to focus item" -body {
+    set ::bong 0
+    $tv tag bind tag2 <<Bing>> { incr bong }
+    $tv focus item2
+    event generate $tv <<Bing>>
+    $tv focus item1
+    event generate $tv <<Bing>>
+    set bong
+} -cleanup {
+    treeConstraints $tv
+} -result 1
+
+test treetags-2.4 "Bad events" -body {
+    $tv tag bind bad <Enter> { puts "Entered!" }
+} -returnCodes 1 -result "unsupported event <Enter>*" -match glob
+
+test treetags-3.0 "tag configure - set" -body {
+    $tv tag configure tag1 -foreground blue -background red
+} -cleanup {
+    treeConstraints $tv
+} -result {}
+
+test treetags-3.1 "tag configure - get" -body {
+    $tv tag configure tag1 -foreground
+} -cleanup {
+    treeConstraints $tv
+} -result blue
+
+# @@@ fragile test
+test treetags-3.2 "tag configure - enumerate" -body {
+    $tv tag configure tag1
+} -cleanup {
+    treeConstraints $tv
+} -result [list \
+    -text {} -image {} -anchor {} -background red -foreground blue -font {} \
+]
+
+# The next test exercises tag resource management.
+# If options are not properly freed, the message:
+# Test file error: "Font times 20 still in cache."
+# will show up on stderr at program exit.
+#
+test treetags-3.3 "tag configure - set font" -body {
+    $tv tag configure tag2 -font {times 20}
+}
+
+test treetags-3.4 "stomp tags in tag binding procedure" -body {
+    set result [list]
+    $tv tag bind rm1 <<Remove>> { lappend ::result rm1 [%W focus] <<Remove>> }
+    $tv tag bind rm2 <<Remove>> {
+    	lappend ::result rm2 [%W focus] <<Remove>> 
+	%W item [%W focus] -tags {tag1}
+    }
+    $tv tag bind rm3 <<Remove>> { lappend ::result rm3 [%W focus] <<Remove>> }
+
+    $tv item item1 -tags {rm1 rm2 rm3} 
+    $tv focus item1
+    event generate $tv <<Remove>>
+    set result
+} -cleanup {
+    treeConstraints $tv
+} -result [list rm1 item1 <<Remove>> rm2 item1 <<Remove>> rm3 item1 <<Remove>>]
+
+#
+
+test treetags-end "Cleanup" -body { destroy $tv }
+
+tcltest::cleanupTests

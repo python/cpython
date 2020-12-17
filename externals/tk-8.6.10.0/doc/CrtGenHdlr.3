@@ -1,0 +1,81 @@
+'\"
+'\" Copyright (c) 1992-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CreateGenericHandler 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateGenericHandler, Tk_DeleteGenericHandler \- associate procedure callback with all X events
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_CreateGenericHandler\fR(\fIproc, clientData\fR)
+.sp
+\fBTk_DeleteGenericHandler\fR(\fIproc, clientData\fR)
+.SH ARGUMENTS
+.AS "Tk_GenericProc" clientData
+.AP Tk_GenericProc *proc in
+Procedure to invoke whenever any X event occurs on any display.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_CreateGenericHandler\fR arranges for \fIproc\fR to be
+invoked in the future whenever any X event occurs.  This mechanism is
+\fInot\fR intended for dispatching X events on windows managed by Tk
+(you should use \fBTk_CreateEventHandler\fR for this purpose).
+\fBTk_CreateGenericHandler\fR is intended for other purposes, such
+as tracing X events, monitoring events on windows not owned by Tk,
+accessing X-related libraries that were not originally designed for
+use with Tk, and so on.
+.PP
+The callback to \fIproc\fR will be made by \fBTk_HandleEvent\fR;
+this mechanism only works in programs that dispatch events
+through \fBTk_HandleEvent\fR (or through other Tk procedures that
+call \fBTk_HandleEvent\fR, such as \fBTcl_DoOneEvent\fR or
+\fBTk_MainLoop\fR).
+.PP
+\fIProc\fR should have arguments and result that match the
+type \fBTk_GenericProc\fR:
+.CS
+typedef int \fBTk_GenericProc\fR(
+        ClientData \fIclientData\fR,
+        XEvent *\fIeventPtr\fR);
+.CE
+The \fIclientData\fR parameter to \fIproc\fR is a copy of the \fIclientData\fR
+argument given to \fBTk_CreateGenericHandler\fR when the callback
+was created.  Typically, \fIclientData\fR points to a data
+structure containing application-specific information about
+how to handle events.
+\fIEventPtr\fR is a pointer to the X event.
+.PP
+Whenever an X event is processed by \fBTk_HandleEvent\fR, \fIproc\fR
+is called.  The return value from \fIproc\fR is normally 0.
+A non-zero return value indicates that the event is not to be handled
+further; that is, \fIproc\fR has done all processing that is to be
+allowed for the event.
+.PP
+If there are multiple generic event handlers, each one is called
+for each event, in the order in which they were established.
+.PP
+\fBTk_DeleteGenericHandler\fR may be called to delete a
+previously-created generic event handler:  it deletes each handler
+it finds that matches the \fIproc\fR and \fIclientData\fR arguments.  If
+no such handler exists, then \fBTk_DeleteGenericHandler\fR returns
+without doing anything.  Although Tk supports it, it's probably
+a bad idea to have more than one callback with the same
+\fIproc\fR and \fIclientData\fR arguments.
+.PP
+Establishing a generic event handler does nothing to ensure that the
+process will actually receive the X events that the handler wants to
+process.
+For example, it is the caller's responsibility to invoke
+\fBXSelectInput\fR to select the desired events, if that is necessary.
+.SH KEYWORDS
+bind, callback, event, handler

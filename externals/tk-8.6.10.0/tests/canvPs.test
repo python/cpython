@@ -1,0 +1,196 @@
+# This file is a Tcl script to test out procedures to write postscript
+# for canvases to files and channels. It exercises the procedure
+# TkCanvPostscriptCmd in generic/tkCanvPs.c
+#
+# Copyright (c) 1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+imageInit
+
+# canvas used in 1.* and 2.* test cases
+canvas .c -width 400 -height 300 -bd 2 -relief sunken
+.c create rectangle 20 20 80 80 -fill red
+pack .c
+update
+
+test canvPs-1.1 {test writing to a file} -constraints {
+    unixOrPc
+} -setup {
+    set foo [makeFile {} foo.ps]
+} -body {
+    .c postscript -file $foo
+    file exists $foo
+} -cleanup {
+    removeFile foo.ps
+} -result 1
+test canvPs-1.2 {test writing to a file, idempotency} -constraints {
+    unixOrPc
+} -setup {
+    set foo [makeFile {} foo.ps]
+    set bar [makeFile {} bar.ps]
+} -body {
+    .c postscript -file $foo
+    .c postscript -file $bar
+    set status ok
+    if {[file size $bar] != [file size $foo]} {
+	set status broken
+    }
+    set status
+} -cleanup {
+    removeFile foo.ps
+    removeFile bar.ps
+} -result ok
+
+
+test canvPs-2.1 {test writing to a channel} -constraints {
+    unixOrPc
+} -setup {
+    set foo [makeFile {} foo.ps]
+    file delete $foo
+} -body {
+    set chan [open $foo w]
+    fconfigure $chan -translation lf
+    .c postscript -channel $chan
+    close $chan
+    file exists $foo
+} -cleanup {
+    removeFile foo.ps
+} -result 1
+test canvPs-2.2 {test writing to channel, idempotency} -constraints {
+    unixOrPc
+} -setup {
+    set foo [makeFile {} foo.ps]
+    set bar [makeFile {} bar.ps]
+    file delete $foo
+    file delete $bar
+} -body {
+    set c1 [open $foo w]
+    set c2 [open $bar w]
+    fconfigure $c1 -translation lf
+    fconfigure $c2 -translation lf
+    .c postscript -channel $c1
+    .c postscript -channel $c2
+    close $c1
+    close $c2
+    set status ok
+    if {[file size $bar] != [file size $foo]} {
+	    set status broken
+    }
+    set status
+} -cleanup {
+    removeFile foo.ps
+    removeFile bar.ps
+} -result ok
+test canvPs-2.3 {test writing to channel and file, same output} -constraints {
+    unix
+} -setup {
+    set foo [makeFile {} foo.ps]
+    set bar [makeFile {} bar.ps]
+    file delete $foo
+    file delete $bar
+} -body {
+    set c1 [open $foo w]
+    fconfigure $c1 -translation lf
+    .c postscript -channel $c1
+    close $c1
+    .c postscript -file $bar
+    set status ok
+    if {[file size $foo] != [file size $bar]} {
+	    set status broken
+    }
+    set status
+} -cleanup {
+    removeFile foo.ps
+    removeFile bar.ps
+} -result ok
+test canvPs-2.4 {test writing to channel and file, same output} -constraints {
+    win
+} -setup  {
+    set foo [makeFile {} foo.ps]
+    set bar [makeFile {} bar.ps]
+    file delete $foo
+    file delete $bar
+} -body {
+    set c1 [open $foo w]
+    fconfigure $c1 -translation crlf
+    .c postscript -channel $c1
+    close $c1
+    .c postscript -file $bar
+    set status ok
+    if {[file size $foo] != [file size $bar]} {
+	    set status broken
+    }
+    set status
+} -cleanup {
+    removeFile foo.ps
+    removeFile bar.ps
+} -result ok
+destroy .c
+
+
+test canvPs-3.1 {test ps generation with an embedded window} -constraints {
+    notAqua
+} -setup {
+    set bar [makeFile {} bar.ps]
+    file delete $bar
+} -body {
+    pack [canvas .c -width 200 -height 200 -background white]
+    .c create rect 20 20 150 150 -tags rect0 -dash . -width 2
+    .c create arc 0 50 200 200 -tags arc0 \
+	    -dash {4 4} -stipple question -outline red -fill green
+
+    image create photo logo \
+	-file [file join [file dirname [info script]] pwrdLogo150.gif]
+    .c create image 200 50 -image logo -anchor nw
+
+    entry .c.e -background pink -foreground blue -width 14
+    .c.e insert 0 "we gonna be postscripted"
+    .c create window 50 180 -anchor nw -window .c.e
+    update
+    .c postscript -file $bar
+    file exists $bar
+} -cleanup {
+    destroy .c
+    imageCleanup
+    removeFile bar.ps
+} -result {1}
+test canvPs-3.2 {test ps generation with an embedded window not mapped} -setup {
+    set bar [makeFile {} bar.ps]
+    file delete $bar
+} -body {
+    pack [canvas .c -width 200 -height 200 -background white]
+    entry .c.e -background pink -foreground blue -width 14
+    .c.e insert 0 "we gonna be postscripted"
+    .c create window 50 180 -anchor nw -window .c.e
+    .c postscript -file $bar
+    file exists $bar
+} -cleanup {
+    destroy .c
+    removeFile bar.ps
+} -result {1}
+
+
+test canvPs-4.1 {test ps generation with single-point uncolored poly, bug 734498} -body {
+    pack [canvas .c]
+    .c create poly 10 20 10 20
+    .c postscript
+} -cleanup {
+    destroy .c
+} -returnCodes ok -match glob -result *
+
+
+# cleanup
+unset -nocomplain foo bar
+imageFinish
+deleteWindows
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

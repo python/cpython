@@ -1,0 +1,93 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH bgerror n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+bgerror \- Command invoked to process background errors
+.SH SYNOPSIS
+\fBbgerror \fImessage\fR
+.BE
+.SH DESCRIPTION
+.PP
+Release 8.5 of Tcl supports the \fBinterp bgerror\fR command,
+which allows applications to register in an interpreter the command
+that will handle background errors in that interpreter.  In older
+releases of Tcl, this level of control was not available, and applications
+could control the handling of background errors only by creating
+a command with the particular command name \fBbgerror\fR in the
+global namespace of an interpreter.  The following documentation
+describes the interface requirements of the \fBbgerror\fR command
+an application might define to retain compatibility with pre-8.5
+releases of Tcl.  Applications intending to support only
+Tcl releases 8.5 and later should simply make use of \fBinterp bgerror\fR.
+.PP
+The \fBbgerror\fR command does not exist as built-in part of Tcl.  Instead,
+individual applications or users can define a \fBbgerror\fR
+command (e.g. as a Tcl procedure) if they wish to handle background
+errors.
+.PP
+A background error is one that occurs in an event handler or some
+other command that did not originate with the application.
+For example, if an error occurs while executing a command specified
+with the \fBafter\fR command, then it is a background error.
+For a non-background error, the error can simply be returned up
+through nested Tcl command evaluations until it reaches the top-level
+code in the application; then the application can report the error
+in whatever way it wishes.  When a background error occurs, the
+unwinding ends in the Tcl library and there is no obvious way for Tcl
+to report the error.
+.PP
+When Tcl detects a background error, it saves information about the
+error and invokes a handler command registered by \fBinterp bgerror\fR
+later as an idle event handler.  The default handler command in turn
+calls the \fBbgerror\fR command .
+Before invoking \fBbgerror\fR, Tcl restores the
+\fBerrorInfo\fR and \fBerrorCode\fR variables to their values at the
+time the error occurred, then it invokes \fBbgerror\fR with the error
+message as its only argument.  Tcl assumes that the application has
+implemented the \fBbgerror\fR command, and that the command will
+report the error in a way that makes sense for the application.  Tcl
+will ignore any result returned by the \fBbgerror\fR command as long
+as no error is generated.
+.PP
+If another Tcl error occurs within the \fBbgerror\fR command (for
+example, because no \fBbgerror\fR command has been defined) then Tcl
+reports the error itself by writing a message to stderr.
+.PP
+If several background errors accumulate before \fBbgerror\fR is
+invoked to process them, \fBbgerror\fR will be invoked once for each
+error, in the order they occurred.  However, if \fBbgerror\fR returns
+with a break exception, then any remaining errors are skipped without
+calling \fBbgerror\fR.
+.PP
+If you are writing code that will be used by others as part of a
+package or other kind of library, consider avoiding \fBbgerror\fR.
+The reason for this is that the application programmer may also want
+to define a \fBbgerror\fR, or use other code that does and thus will
+have trouble integrating your code.
+.SH "EXAMPLE"
+.PP
+This \fBbgerror\fR procedure appends errors to a file, with a timestamp.
+.PP
+.CS
+proc bgerror {message} {
+    set timestamp [clock format [clock seconds]]
+    set fl [open mylog.txt {WRONLY CREAT APPEND}]
+    puts $fl "$timestamp: bgerror in $::argv '$message'"
+    close $fl
+}
+.CE
+.SH "SEE ALSO"
+after(n), errorCode(n), errorInfo(n), interp(n)
+.SH KEYWORDS
+background error, reporting
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

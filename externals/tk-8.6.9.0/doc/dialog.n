@@ -1,0 +1,74 @@
+'\"
+'\" Copyright (c) 1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_dialog n 4.1 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_dialog \- Create modal dialog and wait for response
+.SH SYNOPSIS
+\fBtk_dialog \fIwindow title text bitmap default string string ...\fR
+.BE
+.SH DESCRIPTION
+.PP
+This procedure is part of the Tk script library.
+It is largely \fIdeprecated\fR by the \fBtk_messageBox\fR.
+Its arguments describe a dialog box:
+.TP
+\fIwindow\fR
+Name of top-level window to use for dialog.  Any existing window
+by this name is destroyed.
+.TP
+\fItitle\fR
+Text to appear in the window manager's title bar for the dialog.
+.TP
+\fItext\fR
+Message to appear in the top portion of the dialog box.
+.TP
+\fIbitmap\fR
+If non-empty, specifies a bitmap (in a form suitable for Tk_GetBitmap)
+to display in the top portion of
+the dialog, to the left of the text.
+If this is an empty string then no bitmap is displayed in the dialog.
+.TP
+\fIdefault\fR
+If this is an integer greater than or equal to zero, then it gives
+the index of the button that is to be the default button for the dialog
+(0 for the leftmost button, and so on).
+If less than zero or an empty string then there will not be any default
+button.
+.TP
+\fIstring\fR
+There will be one button for each of these arguments.
+Each \fIstring\fR specifies text to display in a button,
+in order from left to right.
+.PP
+After creating a dialog box, \fBtk_dialog\fR waits for the user to
+select one of the buttons either by clicking on the button with the
+mouse or by typing return to invoke the default button (if any).
+Then it returns the index of the selected button:  0 for the leftmost
+button, 1 for the button next to it, and so on.
+If the dialog's window is destroyed before the user selects one
+of the buttons, then \-1 is returned.
+.PP
+While waiting for the user to respond, \fBtk_dialog\fR sets a local
+grab.  This prevents the user from interacting with the application
+in any way except to invoke the dialog box.
+.SH EXAMPLE
+.PP
+.CS
+set reply [\fBtk_dialog\fR .foo "The Title" "Do you want to say yes?" \e
+        questhead 0 Yes No "I'm not sure"]
+.CE
+.SH "SEE ALSO"
+tk_messageBox(n)
+.SH KEYWORDS
+bitmap, dialog, modal
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

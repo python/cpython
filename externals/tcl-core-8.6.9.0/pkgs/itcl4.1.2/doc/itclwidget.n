@@ -1,0 +1,549 @@
+'\"
+'\" Copyright (c) 2008 Arnulf Wiedemann
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH widget n "4.0" itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::widget \- create a widget class of objects
+.SH WARNING!
+This is new functionality in [incr Tcl] where the API can still change!!
+.SH SYNOPSIS
+.nf
+\fBitcl::widget \fIwidgetName\fR \fB{\fR
+    \fBinherit \fIbaseWidget\fR ?\fIbaseWidget\fR...?
+    \fBconstructor \fIargs\fR ?\fIinit\fR? \fIbody\fR
+    \fBdestructor \fIbody\fR
+    \fBpublic method \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+    \fBprotected method \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+    \fBprivate method \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+    \fBpublic proc \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+    \fBprotected proc \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+    \fBprivate proc \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+    \fBpublic variable \fIvarName\fR ?\fIinit\fR? ?\fIconfig\fR?
+    \fBprotected variable \fIvarName\fR ?\fIinit\fR? ?\fIconfig\fR?
+    \fBprivate variable \fIvarName\fR ?\fIinit\fR? ?\fIconfig\fR?
+    \fBpublic common \fIvarName\fR ?\fIinit\fR?
+    \fBprotected common \fIvarName\fR ?\fIinit\fR?
+    \fBprivate common \fIvarName\fR ?\fIinit\fR?
+
+    \fBpublic \fIcommand\fR ?\fIarg arg ...\fR?
+    \fBprotected \fIcommand\fR ?\fIarg arg ...\fR?
+    \fBprivate \fIcommand\fR ?\fIarg arg ...\fR?
+
+    \fB<delegation info>\fR see delegation page
+
+    \fB<option info>\fR see option page
+
+    \fBset \fIvarName\fR ?\fIvalue\fR?
+    \fBarray \fIoption\fR ?\fIarg arg ...\fR?
+\fB}\fR
+
+\fIwidgetName objName\fR ?\fIarg arg ...\fR?
+
+\fIobjName method\fR ?\fIarg arg ...\fR?
+
+\fIwidgetName::proc\fR ?\fIarg arg ...\fR?
+.fi
+.BE
+
+.SH DESCRIPTION
+.PP
+One of the fundamental constructs in \fB[incr\ Tcl]\fR is the widget definition.
+A widget is like a class with some additional features.
+Each widget acts as a template for actual objects that can be created.
+The widget itself is a namespace which contains things common to all
+objects.  Each object has its own unique bundle of data which contains
+instances of the "variables" defined in the widget definition.  Each
+object also has a built-in variable named "this", which contains the
+name of the object.  Widgets can also have "common" data members that
+are shared by all objects in a widget.
+.PP
+Two types of functions can be included in the widget definition.
+"Methods" are functions which operate on a specific object, and
+therefore have access to both "variables" and "common" data members.
+"Procs" are ordinary procedures in the widget namespace, and only
+have access to "common" data members.
+.PP
+If the body of any method or proc starts with "\fB@\fR", it is treated
+as the symbolic name for a C procedure.  Otherwise, it is treated as
+a Tcl code script.  See below for details on registering and using
+C procedures.
+.PP
+A widget can only be defined once, although the bodies of widget
+methods and procs can be defined again and again for interactive
+debugging.  See the \fBbody\fR and \fBconfigbody\fR commands for
+details.
+.PP
+Each namespace can have its own collection of objects and widgets.
+The list of widgets available in the current context can be queried
+using the "\fBitcl::find widgets\fR" command, and the list of objects,
+with the "\fBitcl::find objects\fR" command.
+.PP
+A widget can be deleted using the "\fBdelete widget\fR" command.
+Individual objects can be deleted using the "\fBdelete object\fR"
+command.
+
+.SH "WIDGET DEFINITIONS"
+.TP
+\fBwidget \fIwidgetName definition\fR
+.
+Provides the definition for a widget named \fIwidgetName\fR.  If
+the widget \fIwidgetName\fR already exists, or if a command called
+\fIwidgetName\fR exists in the current namespace context, this
+command returns an error.  If the widget definition is successfully
+parsed, \fIwidgetName\fR becomes a command in the current context,
+handling the creation of objects for this widget.
+.PP
+The widget \fIdefinition\fR is evaluated as a series of Tcl
+statements that define elements within the widget.  The following
+widget definition commands are recognized:
+.RS
+.TP
+\fBinherit \fIbaseWidget\fR ?\fIbaseWidget\fR...?
+.
+Causes the current widget to inherit characteristics from one or
+more base widgets.  Widgets must have been defined by a previous
+\fBwidget\fR command, or must be available to the auto-loading
+facility (see "AUTO-LOADING" below).  A single widget definition
+can contain no more than one \fBinherit\fR command.
+.RS
+.PP
+The order of \fIbaseWidget\fR names in the \fBinherit\fR list
+affects the name resolution for widget members.  When the same
+member name appears in two or more base widgets, the base widget
+that appears first in the \fBinherit\fR list takes precedence.
+For example, if widgets "Foo" and "Bar" both contain the member
+"x", and if another widget has the "\fBinherit\fR" statement:
+.PP
+.CS
+inherit Foo Bar
+.CE
+.PP
+then the name "x" means "Foo::x".  Other inherited members named
+"x" must be referenced with their explicit name, like "Bar::x".
+.RE
+.TP
+\fBconstructor \fIargs\fR ?\fIinit\fR? \fIbody\fR
+.
+Declares the \fIargs\fR argument list and \fIbody\fR used for
+the constructor, which is automatically invoked whenever an
+object is created.
+.RS
+.PP
+Before the \fIbody\fR is executed, the
+optional \fIinit\fR statement is used to invoke any base widget
+constructors that require arguments.  Variables in the \fIargs\fR
+specification can be accessed in the \fIinit\fR code fragment,
+and passed to base widget constructors.  After evaluating the
+\fIinit\fR statement, any base widget constructors that have
+not been executed are invoked automatically without arguments.
+This ensures that all base widgets are fully constructed before
+the constructor \fIbody\fR is executed.  By default, this
+scheme causes constructors to be invoked in order from least-
+to most-specific.  This is exactly the opposite of the order
+that widgets are reported by the \fBinfo heritage\fR command.
+.PP
+If construction is successful, the constructor always returns
+the object name\-regardless of how the \fIbody\fR is defined\-and
+the object name becomes a command in the current namespace context.
+If construction fails, an error message is returned.
+.RE
+.TP
+\fBdestructor \fIbody\fR
+.
+Declares the \fIbody\fR used for the destructor, which is automatically
+invoked when an object is deleted.  If the destructor is successful,
+the object data is destroyed and the object name is removed as a command
+from the interpreter.  If destruction fails, an error message is returned
+and the object remains.
+.RS
+.PP
+When an object is destroyed, all destructors in its widget hierarchy
+are invoked in order from most- to least-specific.  This is the
+order that the widgets are reported by the "\fBinfo heritage\fR"
+command, and it is exactly the opposite of the default constructor
+order.
+.RE
+.TP
+\fBmethod \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+.
+Declares a method called \fIname\fR.  When the method \fIbody\fR is
+executed, it will have automatic access to object-specific variables
+and common data members.
+.RS
+.PP
+If the \fIargs\fR list is specified, it establishes the usage
+information for this method.  The \fBbody\fR command can be used
+to redefine the method body, but the \fIargs\fR list must match
+this specification.
+.PP
+Within the body of another widget method, a method can be invoked
+like any other command\-simply by using its name.  Outside of the
+widget context, the method name must be prefaced an object name,
+which provides the context for the data that it manipulates.
+Methods in a base widget that are redefined in the current widget,
+or hidden by another base widget, can be qualified using the
+"\fIwidgetName\fR::\fImethod\fR" syntax.
+.RE
+.TP
+\fBproc \fIname\fR ?\fIargs\fR? ?\fIbody\fR?
+.
+Declares a proc called \fIname\fR.  A proc is an ordinary procedure
+within the widget namespace.  Unlike a method, a proc is invoked
+without referring to a specific object.  When the proc \fIbody\fR is
+executed, it will have automatic access only to common data members.
+.RS
+.PP
+If the \fIargs\fR list is specified, it establishes the usage
+information for this proc.  The \fBbody\fR command can be used
+to redefine the proc body, but the \fIargs\fR list must match
+this specification.
+.PP
+Within the body of another widget method or proc, a proc can be
+invoked like any other command\-simply by using its name.
+In any other namespace context, the proc is invoked using a
+qualified name like "\fIwidgetName\fB::\fIproc\fR".  Procs in
+a base widget that are redefined in the current widget, or hidden
+by another base widget, can also be accessed via their qualified
+name.
+.RE
+.TP
+\fBvariable \fIvarName\fR ?\fIinit\fR? ?\fIconfig\fR?
+.
+Defines an object-specific variable named \fIvarName\fR.  All
+object-specific variables are automatically available in widget
+methods.  They need not be declared with anything like the
+\fBglobal\fR command.
+.RS
+.PP
+If the optional \fIinit\fR string is specified, it is used as the
+initial value of the variable when a new object is created.
+Initialization forces the variable to be a simple scalar
+value; uninitialized variables, on the other hand, can be set
+within the constructor and used as arrays.
+.PP
+The optional \fIconfig\fR script is only allowed for public variables.
+If specified, this code fragment is executed whenever a public
+variable is modified by the built-in "configure" method.  The
+\fIconfig\fR script can also be specified outside of the widget
+definition using the \fBconfigbody\fR command.
+.RE
+.TP
+\fBcommon \fIvarName\fR ?\fIinit\fR?
+.
+Declares a common variable named \fIvarName\fR.  Common variables
+reside in the widget namespace and are shared by all objects belonging
+to the widget.  They are just like global variables, except that
+they need not be declared with the usual \fBglobal\fR command.
+They are automatically visible in all widget methods and procs.
+.RS
+.PP
+If the optional \fIinit\fR string is specified, it is used as the
+initial value of the variable.  Initialization forces the variable
+to be a simple scalar value; uninitialized variables, on the other
+hand, can be set with subsequent \fBset\fR and \fBarray\fR commands
+and used as arrays.
+.PP
+Once a common data member has been defined, it can be set using
+\fBset\fR and \fBarray\fR commands within the widget definition.
+This allows common data members to be initialized as arrays.
+For example:
+.PP
+.CS
+itcl::widget Foo {
+    protected common boolean
+    set boolean(true) 1
+    set boolean(false) 0
+}
+.CE
+.PP
+Note that if common data members are initialized within the
+constructor, they get initialized again and again whenever new
+objects are created.
+.RE
+.TP
+\fBpublic \fIcommand\fR ?\fIarg arg ...\fR?
+.TP
+\fBprotected \fIcommand\fR ?\fIarg arg ...\fR?
+.TP
+\fBprivate \fIcommand\fR ?\fIarg arg ...\fR?
+.
+These commands are used to set the protection level for widget
+members that are created when \fIcommand\fR is evaluated.
+The \fIcommand\fR is usually \fBmethod\fR, \fBproc\fR,
+\fBvariable\fR or\fBcommon\fR, and the remaining \fIarg\fR's
+complete the member definition.  However, \fIcommand\fR can
+also be a script containing many different member definitions,
+and the protection level will apply to all of the members
+that are created.
+.RE
+.SH "WIDGET USAGE"
+.PP
+Once a widget has been defined, the widget name can be used as a
+command to create new objects belonging to the widget.
+.TP
+\fIwidgetName objName\fR ?\fIargs...\fR?
+.
+Creates a new object in widget \fIwidgetName\fR with the name \fIobjName\fR.
+Remaining arguments are passed to the constructor of the most-specific
+widget.  This in turn passes arguments to base widget constructors before
+invoking its own body of commands.  If construction is successful, a
+command called \fIobjName\fR is created in the current namespace context,
+and \fIobjName\fR is returned as the result of this operation.
+If an error is encountered during construction, the destructors are
+automatically invoked to free any resources that have been allocated,
+the object is deleted, and an error is returned.
+.RS
+.PP
+If \fIobjName\fR contains the string "\fB#auto\fR", that string is
+replaced with an automatically generated name.  Names have the
+form \fIwidgetName<number>\fR, where the \fIwidgetName\fR part is
+modified to start with a lowercase letter.  In widget "Toaster",
+for example, the "\fB#auto\fR" specification would produce names
+like toaster0, toaster1, etc.  Note that "\fB#auto\fR" can be
+also be buried within an object name:
+.PP
+.CS
+fileselectiondialog .foo.bar.#auto -background red
+.CE
+.PP
+This would generate an object named ".foo.bar.fileselectiondialog0".
+.RE
+.SH "OBJECT USAGE"
+.PP
+Once an object has been created, the object name can be used
+as a command to invoke methods that operate on the object.
+.TP
+\fIobjName method\fR ?\fIargs...\fR?
+.
+Invokes a method named \fImethod\fR on an object named \fIobjName\fR.
+Remaining arguments are passed to the argument list for the
+method.  The method name can be "constructor", "destructor",
+any method name appearing in the widget definition, or any of
+the following built-in methods.
+.SH "BUILT-IN METHODS"
+.TP
+\fIobjName\fR \fBcget option\fR
+.
+Provides access to public variables as configuration options.  This
+mimics the behavior of the usual "cget" operation for Tk widgets.
+The \fIoption\fR argument is a string of the form "\fB-\fIvarName\fR",
+and this method returns the current value of the public variable
+\fIvarName\fR.
+.TP
+\fIobjName\fR \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Provides access to public variables as configuration options.  This
+mimics the behavior of the usual "configure" operation for Tk widgets.
+With no arguments, this method returns a list of lists describing
+all of the public variables.  Each list has three elements:  the
+variable name, its initial value and its current value.
+.RS
+.PP
+If a single \fIoption\fR of the form "\fB-\fIvarName\fR" is specified,
+then this method returns the information for that one variable.
+.PP
+Otherwise, the arguments are treated as \fIoption\fR/\fIvalue\fR
+pairs assigning new values to public variables.  Each variable
+is assigned its new value, and if it has any "config" code associated
+with it, it is executed in the context of the widget where it was
+defined.  If the "config" code generates an error, the variable
+is set back to its previous value, and the \fBconfigure\fR method
+returns an error.
+.RE
+.TP
+\fIobjName\fR \fBisa \fIwidgetName\fR
+.
+Returns non-zero if the given \fIwidgetName\fR can be found in the
+object's heritage, and zero otherwise.
+.TP
+\fIobjName\fR \fBinfo \fIoption\fR ?\fIargs...\fR?
+.
+Returns information related to a particular object named
+\fIobjName\fR, or to its widget definition.  The \fIoption\fR
+parameter includes the following things, as well as the options
+recognized by the usual Tcl "info" command:
+.RS
+.TP
+\fIobjName\fR \fBinfo widget\fR
+.
+Returns the name of the most-specific widget for object \fIobjName\fR.
+.TP
+\fIobjName\fR \fBinfo inherit\fR
+.
+Returns the list of base widgets as they were defined in the
+"\fBinherit\fR" command, or an empty string if this widget
+has no base widgets.
+.TP
+\fIobjName\fR \fBinfo heritage\fR
+.
+Returns the current widget name and the entire list of base widgets
+in the order that they are traversed for member lookup and object
+destruction.
+.TP
+\fIobjName\fR \fBinfo function\fR ?\fIcmdName\fR? ?\fB-protection\fR? ?\fB-type\fR? ?\fB-name\fR? ?\fB-args\fR? ?\fB-body\fR?
+.
+With no arguments, this command returns a list of all widgets methods
+and procs.  If \fIcmdName\fR is specified, it returns information
+for a specific method or proc.  If no flags are specified, this
+command returns a list with the following elements:  the protection
+level, the type (method/proc), the qualified name, the argument list
+and the body.  Flags can be used to request specific elements from
+this list.
+.TP
+\fIobjName\fR \fBinfo variable\fR ?\fIvarName\fR? ?\fB-protection\fR? ?\fB-type\fR? ?\fB-name\fR? ?\fB-init\fR? ?\fB-value\fR? ?\fB-config\fR?
+.
+With no arguments, this command returns a list of all object-specific
+variables and common data members.  If \fIvarName\fR is specified, it
+returns information for a specific data member.  If no flags are
+specified, this command returns a list with the following elements:  the
+protection level, the type (variable/common), the qualified name, the
+initial value, and the current value.  If \fIvarName\fR is a public
+variable, the "config" code is included on this list.  Flags can be
+used to request specific elements from this list.
+.RE
+.SH "CHAINING METHODS/PROCS"
+.PP
+Sometimes a base widget has a method or proc that is redefined with
+the same name in a derived widget.  This is a way of making the
+derived widget handle the same operations as the base widget, but
+with its own specialized behavior.  For example, suppose we have
+a Toaster widget that looks like this:
+.PP
+.CS
+itcl::widget Toaster {
+    variable crumbs 0
+    method toast {nslices} {
+        if {$crumbs > 50} {
+            error "== FIRE! FIRE! =="
+        }
+        set crumbs [expr $crumbs+4*$nslices]
+    }
+    method clean {} {
+        set crumbs 0
+    }
+}
+.CE
+.PP
+We might create another widget like SmartToaster that redefines
+the "toast" method.  If we want to access the base widget method,
+we can qualify it with the base widget name, to avoid ambiguity:
+.PP
+.CS
+itcl::widget SmartToaster {
+    inherit Toaster
+    method toast {nslices} {
+        if {$crumbs > 40} {
+            clean
+        }
+        return [Toaster::toast $nslices]
+    }
+}
+.CE
+.PP
+Instead of hard-coding the base widget name, we can use the
+"chain" command like this:
+.PP
+.CS
+itcl::widget SmartToaster {
+    inherit Toaster
+    method toast {nslices} {
+        if {$crumbs > 40} {
+            clean
+        }
+        return [chain $nslices]
+    }
+}
+.CE
+.PP
+The chain command searches through the widget hierarchy for
+a slightly more generic (base widget) implementation of a method
+or proc, and invokes it with the specified arguments.  It starts
+at the current widget context and searches through base widgets
+in the order that they are reported by the "info heritage" command.
+If another implementation is not found, this command does nothing
+and returns the null string.
+
+.SH AUTO-LOADING
+.PP
+Widget definitions need not be loaded explicitly; they can be loaded as
+needed by the usual Tcl auto-loading facility.  Each directory containing
+widget definition files should have an accompanying "tclIndex" file.
+Each line in this file identifies a Tcl procedure or \fB[incr\ Tcl]\fR
+widget definition and the file where the definition can be found.
+.PP
+For example, suppose a directory contains the definitions for widgets
+"Toaster" and "SmartToaster".  Then the "tclIndex" file for this
+directory would look like:
+.PP
+.CS
+# Tcl autoload index file, version 2.0 for [incr Tcl]
+# This file is generated by the "auto_mkindex" command
+# and sourced to set up indexing information for one or
+# more commands.  Typically each line is a command that
+# sets an element in the auto_index array, where the
+# element name is the name of a command and the value is
+# a script that loads the command.
+
+set auto_index(::Toaster) "source $dir/Toaster.itcl"
+set auto_index(::SmartToaster) "source $dir/SmartToaster.itcl"
+.CE
+.PP
+The \fBauto_mkindex\fR command is used to automatically
+generate "tclIndex" files.
+.PP
+The auto-loader must be made aware of this directory by appending
+the directory name to the "auto_path" variable.  When this is in
+place, widgets will be auto-loaded as needed when used in an
+application.
+
+.SH C PROCEDURES
+.PP
+C procedures can be integrated into an \fB[incr\ Tcl]\fR widget
+definition to implement methods, procs, and the "config" code
+for public variables.  Any body that starts with "\fB@\fR"
+is treated as the symbolic name for a C procedure.
+.PP
+Symbolic names are established by registering procedures via
+\fBItcl_RegisterC()\fR.  This is usually done in the \fBTcl_AppInit()\fR
+procedure, which is automatically called when the interpreter starts up.
+In the following example, the procedure \fCMy_FooCmd()\fR is registered
+with the symbolic name "foo".  This procedure can be referenced in
+the \fBbody\fR command as "\fC@foo\fR".
+.PP
+.CS
+int
+Tcl_AppInit(interp)
+    Tcl_Interp *interp;     /* Interpreter for application. */
+{
+    if (Itcl_Init(interp) == TCL_ERROR) {
+        return TCL_ERROR;
+    }
+
+    if (Itcl_RegisterC(interp, "foo", My_FooCmd) != TCL_OK) {
+        return TCL_ERROR;
+    }
+}
+.CE
+.PP
+C procedures are implemented just like ordinary Tcl commands.
+See the \fBCrtCommand\fR man page for details.  Within the procedure,
+widget data members can be accessed like ordinary variables
+using \fBTcl_SetVar()\fR, \fBTcl_GetVar()\fR, \fBTcl_TraceVar()\fR,
+etc.  Widget methods and procs can be executed like ordinary commands
+using \fBTcl_Eval()\fR.  \fB[incr\ Tcl]\fR makes this possible by
+automatically setting up the context before executing the C procedure.
+.PP
+This scheme provides a natural migration path for code development.
+Widgets can be developed quickly using Tcl code to implement the
+bodies.  An entire application can be built and tested.  When
+necessary, individual bodies can be implemented with C code to
+improve performance.
+
+.SH KEYWORDS
+widget, object, object-oriented

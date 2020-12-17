@@ -1,0 +1,26 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  gzclose.c
+  gzlib.c
+  gzread.c
+  gzwrite.c
+  infback.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  ioapi.c
+  iowin32.c
+C:\CPython\externals\zlib-1.2.11\contrib\minizip\iowin32.c(31,32): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  trees.c
+  uncompr.c
+  unzip.c
+  zip.c
+  zutil.c
+     Creating library x86\ZlibDllReleaseWithoutAsm\zlibwapi.lib and object x86\ZlibDllReleaseWithoutAsm\zlibwapi.exp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 265 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  zlibvc.vcxproj -> C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc12\x86\ZlibDllReleaseWithoutAsm\zlibwapi.dll

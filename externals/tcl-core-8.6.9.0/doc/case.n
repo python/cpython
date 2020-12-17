@@ -1,0 +1,60 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH case n 7.0 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+case \- Evaluate one of several scripts, depending on a given value
+.SH SYNOPSIS
+\fBcase\fI string \fR?\fBin\fR? \fIpatList body \fR?\fIpatList body \fR...?
+.sp
+\fBcase\fI string \fR?\fBin\fR? {\fIpatList body \fR?\fIpatList body \fR...?}
+.BE
+
+.SH DESCRIPTION
+.PP
+\fINote: the \fBcase\fI command is obsolete and is supported only
+for backward compatibility.  At some point in the future it may be
+removed entirely.  You should use the \fBswitch\fI command instead.\fR
+.PP
+The \fBcase\fR command matches \fIstring\fR against each of
+the \fIpatList\fR arguments in order.
+Each \fIpatList\fR argument is a list of one or
+more patterns.  If any of these patterns matches \fIstring\fR then
+\fBcase\fR evaluates the following \fIbody\fR argument
+by passing it recursively to the Tcl interpreter and returns the result
+of that evaluation.
+Each \fIpatList\fR argument consists of a single
+pattern or list of patterns.  Each pattern may contain any of the wild-cards
+described under \fBstring match\fR.  If a \fIpatList\fR
+argument is \fBdefault\fR, the corresponding body will be evaluated
+if no \fIpatList\fR matches \fIstring\fR.  If no \fIpatList\fR argument
+matches \fIstring\fR and no default is given, then the \fBcase\fR
+command returns an empty string.
+.PP
+Two syntaxes are provided for the \fIpatList\fR and \fIbody\fR arguments.
+The first uses a separate argument for each of the patterns and commands;
+this form is convenient if substitutions are desired on some of the
+patterns or commands.
+The second form places all of the patterns and commands together into
+a single argument; the argument must have proper list structure, with
+the elements of the list being the patterns and commands.
+The second form makes it easy to construct multi-line case commands,
+since the braces around the whole list make it unnecessary to include a
+backslash at the end of each line.
+Since the \fIpatList\fR arguments are in braces in the second form,
+no command or variable substitutions are performed on them;  this makes
+the behavior of the second form different than the first form in some
+cases.
+
+.SH "SEE ALSO"
+switch(n)
+
+.SH KEYWORDS
+case, match, regular expression

@@ -1,0 +1,291 @@
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+proc propagate-geometry {} { update idletasks }
+
+# Basic sanity checks:
+#
+test panedwindow-1.0 "Setup" -body {
+    ttk::panedwindow .pw
+} -result .pw
+
+test panedwindow-1.1 "Make sure empty panedwindow doesn't crash" -body {
+    pack .pw -expand true -fill both
+    update
+}
+
+test panedwindow-1.2 "Add a pane" -body {
+    .pw add [ttk::frame .pw.f1]
+    winfo manager .pw.f1
+} -result "panedwindow"
+
+test panedwindow-1.3 "Steal pane" -body {
+    pack .pw.f1 -side bottom
+    winfo manager .pw.f1
+} -result "pack"
+
+test panedwindow-1.4 "Make sure empty panedwindow still doesn't crash" -body {
+    update
+}
+
+test panedwindow-1.5 "Remanage pane" -body {
+    #XXX .pw insert 0 .pw.f1
+    .pw add .pw.f1
+    winfo manager .pw.f1
+} -result "panedwindow"
+
+test panedwindow-1.6 "Forget pane" -body {
+    .pw forget .pw.f1
+    winfo manager .pw.f1
+} -result ""
+
+test panedwindow-1.7 "Make sure empty panedwindow still still doesn't crash" -body {
+    update
+}
+
+test panedwindow-1.8 "Re-forget pane" -body {
+    .pw forget .pw.f1
+} -returnCodes 1 -result ".pw.f1 is not managed by .pw"
+
+test panedwindow-1.end "Cleanup" -body {
+    destroy .pw
+}
+
+# Resize behavior:
+#
+test panedwindow-2.1 "..." -body {
+    ttk::panedwindow .pw -orient horizontal
+
+    .pw add [listbox .pw.l1]
+    .pw add [listbox .pw.l2]
+    .pw add [listbox .pw.l3]
+    .pw add [listbox .pw.l4]
+
+    pack .pw -expand true -fill both
+    update
+    set w1 [winfo width .]
+
+    # This should make the window shrink:
+    destroy .pw.l2
+
+    update
+    set w2 [winfo width .]
+
+    expr {$w2 < $w1}
+} -result 1
+
+test panedwindow-2.2 "..., cont'd" -body {
+
+    # This should keep the window from shrinking:
+    wm geometry . [wm geometry .]
+
+    set rw2 [winfo reqwidth .pw]
+
+    destroy .pw.l1
+    update
+
+    set w3 [winfo width .]
+    set rw3 [winfo reqwidth .pw]
+
+    expr {$w3 == $w2 && $rw3 < $rw2}
+    # problem: [winfo reqwidth] shrinks, but sashes haven't moved
+    # since we haven't gotten a ConfigureNotify.
+    # How to (a) check for this, and (b) fix it?
+} -result 1
+
+test panedwindow-2.3 "..., cont'd" -body {
+
+    .pw add [listbox .pw.l5]
+    update
+    set rw4 [winfo reqwidth .pw]
+
+    expr {$rw4 > $rw3}
+} -result 1
+
+test panedwindow-2.end "Cleanup" -body { destroy .pw }
+
+#
+# ...
+#
+test panedwindow-3.0 "configure pane" -body {
+    ttk::panedwindow .pw
+    .pw add [listbox .pw.lb1] 
+    .pw add [listbox .pw.lb2] 
+    .pw pane 1 -weight 2
+    .pw pane 1 -weight
+} -result 2
+
+test panedwindow-3.1 "configure pane -- errors" -body {
+    .pw pane 1 -weight -4
+} -returnCodes 1 -match glob -result "-weight must be nonnegative"
+
+test panedwindow-3.2 "add pane -- errors" -body {
+    .pw add [ttk::label .pw.l] -weight -1
+} -returnCodes 1 -match glob -result "-weight must be nonnegative"
+
+
+test panedwindow-3.end "cleanup" -body { destroy .pw }
+
+
+test panedwindow-4.1 "forget" -body {
+    pack [ttk::panedwindow .pw -orient vertical] -expand true -fill both
+    .pw add [label .pw.l1 -text "L1"]
+    .pw add [label .pw.l2 -text "L2"]
+    .pw add [label .pw.l3 -text "L3"]
+    .pw add [label .pw.l4 -text "L4"]
+
+    update
+
+    .pw forget .pw.l1
+    .pw forget .pw.l2
+    .pw forget .pw.l3
+    .pw forget .pw.l4
+    update
+}
+
+test panedwindow-4.2 "forget forgotten" -body {
+    .pw forget .pw.l1
+} -returnCodes 1 -result ".pw.l1 is not managed by .pw"
+
+# checkorder $winlist --
+#	Ensure that Y coordinates windows in $winlist are strictly increasing.
+#
+proc checkorder {winlist} {
+    set pos -1
+    set positions [list]
+    foreach win $winlist {
+    	lappend positions [set nextpos [winfo y $win]]
+	if {$nextpos <= $pos} {
+	    error "window $win out of order ($positions)"
+	}
+	set pos $nextpos
+    }
+}
+
+test panedwindow-4.3 "insert command" -body {
+    .pw insert end .pw.l1
+    .pw insert end .pw.l3
+    .pw insert 1 .pw.l2
+    .pw insert end .pw.l4
+
+    update;
+    checkorder {.pw.l1 .pw.l2 .pw.l3 .pw.l4}
+}
+
+test panedwindow-4.END "cleanup" -body {
+    destroy .pw
+}
+
+# See #1292219
+
+test panedwindow-5.1 "Propagate Map/Unmap state to children" -body {
+    set result [list]
+    pack [ttk::panedwindow .pw]
+    .pw add [ttk::button .pw.b]
+    update
+
+    lappend result [winfo ismapped .pw] [winfo ismapped .pw.b]
+
+    pack forget .pw
+    update
+    lappend result [winfo ismapped .pw] [winfo ismapped .pw.b]
+
+    set result
+} -result [list 1 1 0 0] -cleanup {
+    destroy .pw
+}
+
+### sashpos tests.
+#
+proc sashpositions {pw} {
+    set positions [list]
+    set npanes [llength [winfo children $pw]]
+    for {set i 0} {$i < $npanes - 1} {incr i} {
+    	lappend positions [$pw sashpos $i]
+    }
+    return $positions
+}
+
+test paned-sashpos-setup "Setup for sash position test" -body {
+    ttk::style theme use default
+    ttk::style configure -sashthickness 5
+
+    ttk::panedwindow .pw
+    .pw add [frame .pw.f1 -width 20 -height 20]
+    .pw add [frame .pw.f2 -width 20 -height 20]
+    .pw add [frame .pw.f3 -width 20 -height 20]
+    .pw add [frame .pw.f4 -width 20 -height 20]
+
+    propagate-geometry
+    list [winfo reqwidth .pw] [winfo reqheight .pw]
+} -result [list 20 [expr {20*4 + 5*3}]]
+
+test paned-sashpos-attempt-restore "Attempt to set sash positions" -body {
+    # This is not expected to succeed, since .pw isn't large enough yet.
+    #
+    .pw sashpos 0 30
+    .pw sashpos 1 60
+    .pw sashpos 2 90
+
+    list [winfo reqwidth .pw] [winfo reqheight .pw] [sashpositions .pw]
+} -result [list 20 95 [list 0 5 10]]
+
+test paned-sashpos-restore "Set height then sash positions" -body {
+    # Setting sash positions after setting -height _should_ succeed.
+    #
+    .pw configure -height 120
+    .pw sashpos 0 30
+    .pw sashpos 1 60
+    .pw sashpos 2 90
+    list [winfo reqwidth .pw] [winfo reqheight .pw] [sashpositions .pw]
+} -result [list 20 120 [list 30 60 90]]
+
+test paned-sashpos-cleanup "Clean up" -body { destroy .pw }
+
+test paned-propagation-setup "Setup." -body {
+    ttk::style theme use default
+    ttk::style configure -sashthickness 5
+    wm geometry . {}
+    ttk::panedwindow .pw -orient vertical
+
+    frame .pw.f1 -width 100 -height 50
+    frame .pw.f2 -width 100 -height 50
+
+    list [winfo reqwidth .pw.f1] [winfo reqheight .pw.f1]
+} -result [list 100 50] 
+
+test paned-propagation-1 "Initial request size" -body {
+    .pw add .pw.f1
+    .pw add .pw.f2
+    propagate-geometry
+    list [winfo reqwidth .pw] [winfo reqheight .pw]
+} -result [list 100 105]
+
+test paned-propagation-2 "Slave change before map" -body {
+    .pw.f1 configure -width 200 -height 100
+    propagate-geometry
+    list [winfo reqwidth .pw] [winfo reqheight .pw]
+} -result [list 200 155]
+
+test paned-propagation-3 "Map window" -body {
+    pack .pw -expand true -fill both
+    update
+    list [winfo width .pw] [winfo height .pw] [.pw sashpos 0]
+} -result [list 200 155 100]
+
+test paned-propagation-4 "Slave change after map, off-axis" -body {
+    .pw.f1 configure -width 100 ;# should be granted
+    propagate-geometry
+    list [winfo reqwidth .pw] [winfo reqheight .pw] [.pw sashpos 0]
+} -result [list 100 155 100]
+
+test paned-propagation-5 "Slave change after map, on-axis" -body {
+    .pw.f1 configure -height 50 ;# should be denied
+    propagate-geometry
+    list [winfo reqwidth .pw] [winfo reqheight .pw] [.pw sashpos 0]
+} -result [list 100 155 100]
+
+test paned-propagation-cleanup "Clean up." -body { destroy .pw }
+
+tcltest::cleanupTests

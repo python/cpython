@@ -1,0 +1,47 @@
+<HEAD>
+<TITLE> Advantages of Display Items<A NAME=321>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html786 HREF=subsubsection3_5_2_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html784 HREF=subsection3_5_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html778 HREF=subsection3_5_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html788 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html787 HREF=subsubsection3_5_2_2.html> Display Items and </A>
+<B>Up:</B> <A NAME=tex2html785 HREF=subsection3_5_2.html> Display Items</A>
+<B> Previous:</B> <A NAME=tex2html779 HREF=subsection3_5_2.html> Display Items</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00052100000000000000> Advantages of Display Items<A NAME=321>&nbsp;</A></A></H3>
+<P>
+It is easy to see the advantages of seperating the display items from their
+  host widgets. First, the display items are easy to learn. Since they are
+  the same across different types of widgets. Once you learn about a type
+  of display items, you will know how to use them in all Tix widgets that
+  support display items (currently these include TixHList, TixTList and the
+  spreadsheet widget TixGrid, but the number is growing). In contrast, if
+  you want to create a text item for the Tk widgets, you will find out that
+  the listbox, text, canvas and entry widget each have a different method
+  of creating and manipulating text items, and it is quite annoying to
+  learn each of them individually.
+<P>
+   Second, the hosts widgets that use display items are extensible.
+  Because of the separation of task, the host widgets are not involved
+  in the implementation details of the display items. Therefore, if
+  you add a new type of display items, such as a <tt>animation</tt> type
+  that displays live video, the host widgets will gladly take them in
+  and display them. You don't need to modify the existing host widgets
+  at all. In contrast, if you want to display graphical images in the
+  existing Tk listbox widgets, you'd better set aside 100 hours to
+  rewrite it completely!
+<P>
+   Third, display items are good for writers of host widgets. Because
+  now they just need to implement the arrangement policy of the host
+  widgets. They don't need to worry about drawing at all because it is
+  all handled by the display items. This is a significant saving in
+  code because a widget that does not use display items has to spend
+  30%of its C code to do the drawing.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

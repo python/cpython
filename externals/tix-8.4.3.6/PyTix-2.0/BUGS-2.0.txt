@@ -1,0 +1,6 @@
+$Id: BUGS-2.0.txt,v 1.1 2000/11/05 19:46:32 idiscovery Exp $
+
+1)	There seems to be a problem with ComboBox that shows up
+in the ExFileSelectBox demo. The popdown scrolled list widget
+is being created, then destroyed. This does not happen in Tcl Tix.
+

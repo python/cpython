@@ -1,0 +1,866 @@
+# httpPipeline.test
+#
+#	Test HTTP/1.1 concurrent requests including
+#	queueing, pipelining and retries.
+#
+# Copyright (C) 2018 Keith Nash <kjnash@users.sourceforge.net>
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+
+package require http 2.8
+
+set sourcedir [file normalize [file dirname [info script]]]
+source [file join $sourcedir httpTest.tcl]
+source [file join $sourcedir httpTestScript.tcl]
+
+# ------------------------------------------------------------------------------
+# (1) Define the test scripts that will be used to generate logs for analysis -
+#     and also define the "correct" results.
+# ------------------------------------------------------------------------------
+
+proc ReturnTestScriptAndResult {ca cb delay te} {
+
+    switch -- $ca {
+	1     {set start {
+	    START
+	    KEEPALIVE 0
+	    PIPELINE  0
+	}}
+
+	2     {set start {
+	    START
+	    KEEPALIVE 0
+	    PIPELINE  1
+	}}
+
+	3     {set start {
+	    START
+	    KEEPALIVE 1
+	    PIPELINE  0
+	}}
+
+	4     {set start {
+	    START
+	    KEEPALIVE 1
+	    PIPELINE  1
+	}}
+
+	default {
+	    return -code error {no matching script}
+	}
+    }
+
+    set middle "
+	    [list DELAY $delay]
+    "
+
+    switch -- $cb {
+	1     {set end {
+	    GET a
+	    GET b
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 ? ? ?}
+	    set resLong  {1 2 3 4}
+	}
+
+	2     {set end {
+	    GET a
+	    HEAD b
+	    GET c
+	    HEAD a
+	    HEAD c
+	    STOP
+	    }
+	    set resShort {1 ? ? ? ?}
+	    set resLong  {1 2 3 4 5}
+	}
+
+	3     {set end {
+	    HEAD a
+	    GET b
+	    HEAD c
+	    HEAD b
+	    GET a
+	    GET b
+	    STOP
+	    }
+	    set resShort {1 ? ? ? ? ?}
+	    set resLong  {1 2 3 4 5 6}
+	}
+
+	4     {set end {
+	    GET a
+	    GET b
+	    GET c
+	    GET a
+	    POST b address=home code=brief paid=yes
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    STOP
+	    }
+	    set resShort {1 ? ? ? 5 ? ? ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	5     {set end {
+	    POST a address=home code=brief paid=yes
+	    POST b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    POST a address=home code=brief paid=yes
+	    POST b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    POST a address=home code=brief paid=yes
+	    POST b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    STOP
+	    }
+	    set resShort {1 2 3 4 5 6 7 8 9}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	6     {set end {
+	    POST a address=home code=brief paid=yes
+	    GET b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    GET a address=home code=brief paid=yes
+	    GET b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    POST a address=home code=brief paid=yes
+	    HEAD b address=home code=brief paid=yes
+	    GET c address=home code=brief paid=yes
+	    STOP
+	    }
+	    set resShort {1 ? 3 ? ? 6 7 ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	7     {set end {
+	    GET b address=home code=brief paid=yes
+	    POST a address=home code=brief paid=yes
+	    GET a address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    GET b address=home code=brief paid=yes
+	    HEAD b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes
+	    POST a address=home code=brief paid=yes
+	    GET c address=home code=brief paid=yes
+	    STOP
+	    }
+	    set resShort {1 2 ? 4 ? ? 7 8 ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	8     {set end {
+	    # Telling the server to close the connection.
+	    GET a
+	    GET b close=y
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    STOP
+	    }
+	    set resShort {1 ? 3 ? ? ? ? ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	9     {set end {
+	    # Telling the server to close the connection.
+	    GET a
+	    POST b close=y address=home code=brief paid=yes
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    STOP
+	    }
+	    set resShort {1 2 3 ? ? ? ? ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	10     {set end {
+	    # Telling the server to close the connection.
+	    GET a
+	    GET b close=y
+	    POST c address=home code=brief paid=yes
+	    GET a
+	    GET b
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    STOP
+	    }
+	    set resShort {1 ? 3 ? ? ? ? ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	11    {set end {
+	    # Telling the server to close the connection twice.
+	    GET a
+	    GET b close=y
+	    GET c
+	    GET a
+	    GET b close=y
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    STOP
+	    }
+	    set resShort {1 ? 3 ? ? 6 ? ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	12    {set end {
+	    # Telling the server to delay before sending the response.
+	    GET a
+	    GET b delay=1
+	    GET c
+	    GET a
+	    GET b
+	    STOP
+	    }
+	    set resShort {1 ? ? ? ?}
+	    set resLong  {1 2 3 4 5}
+	}
+
+	13    {set end {
+	    # Making the server close the connection (time out).
+	    GET a
+	    WAIT 2000
+	    GET b
+	    GET c
+	    GET a
+	    GET b
+	    STOP
+	    }
+	    set resShort {1 2 ? ? ?}
+	    set resLong  {1 2 3 4 5}
+	}
+
+	14    {set end {
+	    # Making the server close the connection (time out) twice.
+	    GET a
+	    WAIT 2000
+	    GET b
+	    GET c
+	    GET a
+	    WAIT 2000
+	    GET b
+	    GET c
+	    GET a
+	    GET b
+	    GET c
+	    STOP
+	    }
+	    set resShort {1 2 ? ? 5 ? ? ? ?}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	15    {set end {
+	    POST a address=home code=brief paid=yes
+	    POST b address=home code=brief paid=yes close=y delay=1
+	    POST c address=home code=brief paid=yes delay=1
+	    POST a address=home code=brief paid=yes close=y
+	    WAIT 2000
+	    POST b address=home code=brief paid=yes delay=1
+	    POST c address=home code=brief paid=yes close=y
+	    POST a address=home code=brief paid=yes
+	    POST b address=home code=brief paid=yes close=y
+	    POST c address=home code=brief paid=yes
+	    STOP
+	    }
+	    set resShort {1 2 3 4 5 6 7 8 9}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	16    {set end {
+	    POST a address=home code=brief paid=yes
+	    GET b address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes close=y
+	    GET a address=home code=brief paid=yes
+	    GET b address=home code=brief paid=yes close=y
+	    POST c address=home code=brief paid=yes
+	    WAIT 2000
+	    POST a address=home code=brief paid=yes
+	    HEAD b address=home code=brief paid=yes close=y
+	    GET c address=home code=brief paid=yes
+	    STOP
+	    }
+	    set resShort {1 ? 3 4 ? 6 7 ? 9}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+	17    {set end {
+	    GET b address=home code=brief paid=yes
+	    POST a address=home code=brief paid=yes
+	    GET a address=home code=brief paid=yes
+	    POST c address=home code=brief paid=yes close=y
+	    GET b address=home code=brief paid=yes
+	    HEAD b address=home code=brief paid=yes close=y
+	    POST c address=home code=brief paid=yes
+	    WAIT 2000
+	    POST a address=home code=brief paid=yes
+	    WAIT 2000
+	    GET c address=home code=brief paid=yes
+	    STOP
+	    }
+	    set resShort {1 2 3 4 5 ? 7 8 9}
+	    set resLong  {1 2 3 4 5 6 7 8 9}
+	}
+
+
+	18    {set end {
+	    REPOST 0
+	    GET a
+	    WAIT 2000
+	    POST b address=home code=brief paid=yes
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 2 ? ?}
+	    set resLong  {1 2 3 4}
+	    # resShort is overwritten below for the case ($te == 1).
+	}
+
+
+	19    {set end {
+	    REPOST 0
+	    GET a
+	    WAIT 2000
+	    GET b address=home code=brief paid=yes
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 2 ? ?}
+	    set resLong  {1 2 3 4}
+	}
+
+
+	20    {set end {
+	    POSTFRESH 1
+	    GET a
+	    WAIT 2000
+	    POST b address=home code=brief paid=yes
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 3 ?}
+	    set resLong  {1 3 4}
+	}
+
+
+	21    {set end {
+	    POSTFRESH 1
+	    GET a
+	    WAIT 2000
+	    GET b address=home code=brief paid=yes
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 2 ? ?}
+	    set resLong  {1 2 3 4}
+	}
+
+	22    {set end {
+	    GET a
+	    WAIT 2000
+	    KEEPALIVE 0
+	    POST b address=home code=brief paid=yes
+	    KEEPALIVE 1
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 3 ?}
+	    set resLong  {1 3 4}
+	}
+
+
+	23    {set end {
+	    GET a
+	    WAIT 2000
+	    KEEPALIVE 0
+	    GET b address=home code=brief paid=yes
+	    KEEPALIVE 1
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 3 ?}
+	    set resLong  {1 3 4}
+	}
+
+	24    {set end {
+	    GET a
+	    KEEPALIVE 0
+	    POST b address=home code=brief paid=yes
+	    KEEPALIVE 1
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 ? ?}
+	    set resLong  {1 3 4}
+	}
+
+
+	25    {set end {
+	    GET a
+	    KEEPALIVE 0
+	    GET b address=home code=brief paid=yes
+	    KEEPALIVE 1
+	    GET c
+	    GET a
+	    STOP
+	    }
+	    set resShort {1 ? ?}
+	    set resLong  {1 3 4}
+	}
+
+	default {
+	    return -code error {no matching script}
+	}
+    }
+
+
+    if {$ca < 3} {
+	# Not Keep-Alive.
+        set result "Passed all sanity checks."
+
+    } elseif {$ca == 3} {
+        # Keep-Alive, not pipelined.
+        set result {}
+        append result "Passed all sanity checks.\n"
+        append result "Have overlaps including response body:\n"
+
+    } else {
+        # Keep-Alive, pipelined: ($ca == 4)
+        set result {}
+        append result "Passed all sanity checks.\n"
+        append result "Overlap-free without response body:\n"
+        append result "$resShort"
+    }
+
+    # - The special case of test *.18*-testEof needs test results to be
+    #   individually written.
+    # - These test -repost 0 when there is a POST to apply it to, and the server
+    #   timeout has not been detected.
+    if {($cb == 18) && ($te == 1)} {
+        if {$ca < 3} {
+	    # Not Keep-Alive.
+	    set result "Passed all sanity checks."
+
+	} elseif {$ca == 3 && $delay == 0} {
+	    # Keep-Alive, not pipelined.
+            set result [MakeMessage {
+		|Problems with sanity checks:
+		|Wrong sequence for token ::http::2 - {A B C D X X X}
+		|- and error(s) X
+		|Wrong sequence for token ::http::3 - {A X X}
+		|- and error(s) X
+		|Wrong sequence for token ::http::4 - {A X X X}
+		|- and error(s) X
+		|
+		|Have overlaps including response body:
+		|
+	    }]
+
+	} elseif {$ca == 3} {
+	    # Keep-Alive, not pipelined.
+            set result [MakeMessage {
+		|Problems with sanity checks:
+		|Wrong sequence for token ::http::2 - {A B C D X X X}
+		|- and error(s) X
+		|
+		|Have overlaps including response body:
+		|
+	    }]
+
+	} elseif {$delay == 0} {
+	    # Keep-Alive, pipelined: ($ca == 4)
+            set result [MakeMessage {
+		|Problems with sanity checks:
+		|Wrong sequence for token ::http::2 - {A B C D X X X}
+		|- and error(s) X
+		|Wrong sequence for token ::http::3 - {A X X}
+		|- and error(s) X
+		|Wrong sequence for token ::http::4 - {A X X X}
+		|- and error(s) X
+		|
+		|Overlap-free without response body:
+		|
+	    }]
+
+	} else {
+            set result [MakeMessage {
+		|Problems with sanity checks:
+		|Wrong sequence for token ::http::2 - {A B C D X X X}
+		|- and error(s) X
+		|
+		|Overlap-free without response body:
+		|
+	    }]
+
+        }
+    }
+
+    return [list "$start$middle$end" $result]
+}
+
+# ------------------------------------------------------------------------------
+#  Proc MakeMessage
+# ------------------------------------------------------------------------------
+# WHD's one-line command to generate multi-line strings from readable code.
+#
+# Example:
+#   set blurb [MakeMessage {
+#            |This command allows multi-line strings to be created with readable
+#            |code, and without breaking the rules for indentation.
+#            |
+#            |The command shifts the entire block of text to the left, omitting
+#            |the pipe character and the spaces to its left.
+#   }]
+# ------------------------------------------------------------------------------
+
+proc MakeMessage {in} {
+    regsub -all -line {^\s*\|} [string trim $in] {}
+    # N.B. Implicit Return.
+}
+
+
+proc ReturnTestScript {ca cb delay te} {
+    lassign [ReturnTestScriptAndResult $ca $cb $delay $te] script result
+    return $script
+}
+
+proc ReturnTestResult {ca cb delay te} {
+    lassign [ReturnTestScriptAndResult $ca $cb $delay $te] script result
+    return $result
+}
+
+
+# ------------------------------------------------------------------------------
+# (2) Command to run a test script and use httpTest to analyse the logs.
+# ------------------------------------------------------------------------------
+
+namespace import httpTestScript::runHttpTestScript
+namespace import httpTestScript::cleanupHttpTestScript
+namespace import httpTest::cleanupHttpTest
+namespace import httpTest::logAnalyse
+namespace import httpTest::setHttpTestOptions
+
+proc RunTest {header footer delay te} {
+    set num [runHttpTestScript [ReturnTestScript $header $footer $delay $te]]
+    set skipOverlaps 0
+    set notPiped    {}
+    set notIncluded {}
+
+    # --------------------------------------------------------------------------
+    # Custom code for specific tests
+    # --------------------------------------------------------------------------
+    if {$header < 3} {
+        set skipOverlaps 1
+        for {set i 1} {$i <= $num} {incr i} {
+	    lappend notPiped $i
+        }
+    } elseif {$header > 2 && $footer == 18 && $te == 1} {
+        set skipOverlaps 1
+        if {$delay == 0} {
+	    # Transaction 1 is conventional.
+	    # Check that transactions 2,3,4 are cancelled.
+	    set notPiped {1}
+	    set notIncluded $notPiped
+        } else {
+	    # Transaction 1 is conventional.
+	    # Check that transaction 2 is cancelled.
+	    # The timing of transactions 3 and 4 is uncertain.
+	    set notPiped {1 3 4}
+	    set notIncluded $notPiped
+	}
+    } elseif {$footer in {20 22 23 24 25}} {
+	# Transaction 2 uses its own socket.
+	set notPiped    2
+	set notIncluded $notPiped
+    } else {
+    }
+    # --------------------------------------------------------------------------
+    # End of custom code for specific tests
+    # --------------------------------------------------------------------------
+
+
+    set Results [logAnalyse $num $skipOverlaps $notIncluded $notPiped]
+    lassign $Results msg cleanE cleanF dirtyE dirtyF
+    if {$msg eq {}} {
+        set msg "Passed all sanity checks."
+    } else {
+        set msg "Problems with sanity checks:\n$msg"
+    }
+
+    if 0 {
+        puts $msg
+        puts "Overlap-free including response body:\n$cleanF"
+        puts "Have overlaps including response body:\n$dirtyF"
+        puts "Overlap-free without response body:\n$cleanE"
+        puts "Have overlaps without response body:\n$dirtyE"
+    }
+
+    if {$header < 3} {
+        # No ordering, just check that transactions all finish
+        set result $msg
+    } elseif {$header == 3} {
+        # Not pipelined - check overlaps with response body.
+        set result "$msg\nHave overlaps including response body:\n$dirtyF"
+    } else {
+        # Pipelined - check overlaps without response body.  Check that the
+        # first request, the first requests after replay, and POSTs are clean.
+        set result "$msg\nOverlap-free without response body:\n$cleanE"
+    }
+    set ::nTokens $num
+    return $result
+}
+
+
+# ------------------------------------------------------------------------------
+# (3) VERBOSITY CONTROL
+# ------------------------------------------------------------------------------
+# If tests fail, run an individual test with -verbose 1 or 2 for diagnosis.
+# If still obscure, uncomment #Log and ##Log lines in the http package.
+# ------------------------------------------------------------------------------
+
+setHttpTestOptions -verbose 0
+
+# ------------------------------------------------------------------------------
+# (4) Define the base URLs used for testing.  Each must have a query string.
+# ------------------------------------------------------------------------------
+# - A HTTP/1.1 server is required.  It should be configured to provide
+#   persistent connections when requested to do so, and to close these
+#   connections if they are idle for one second.
+# - The resource must be served with status 200 in response to a valid GET or
+#   POST.
+# - The value of "page" is always specified in the query-string. Different
+#   resources for the three values of "page" allow testing of both chunked and
+#   unchunked transfer encoding.
+# - The variables "close" and "delay" may be specified in the query-string (for
+#   a GET) or the request body (for a POST).
+#   - "delay" is a numerical value in seconds, and causes the server to delay
+#     the response, including headers.
+#   - "close", if it has the value "y", instructs the server to close the
+#     connection ater the current request.
+# - Any other variables should be ignored.
+# ------------------------------------------------------------------------------
+
+namespace eval ::httpTestScript {
+    variable URL
+    array set URL {
+        a  http://test-tcl-http.kerlin.org/index.html?page=privacy
+        b  http://test-tcl-http.kerlin.org/index.html?page=conditions
+        c  http://test-tcl-http.kerlin.org/index.html?page=welcome
+    }
+}
+
+
+# ------------------------------------------------------------------------------
+# (5) Define the tests
+# ------------------------------------------------------------------------------
+# Constraints:
+# - serverNeeded - the URLs defined at (4) must be available, and must have the
+#                  properties specified there.
+# - duplicate    - the value of -pipeline does not matter if -keepalive 0
+# - timeout1s    - tests that work correctly only if the server closes
+#                  persistent connections after one second.
+#
+# Server timeout of persistent connections should be 1s.  Delays of 2s are
+# intended to cause timeout.
+# Servers are usually configured to use a longer timeout: this will cause the
+# tests to fail.  The "2000" could be replaced with a larger number, but the
+# tests will then be inconveniently slow.
+# ------------------------------------------------------------------------------
+
+#testConstraint serverNeeded 1
+#testConstraint timeout1s 1
+#testConstraint duplicate 1
+
+# ------------------------------------------------------------------------------
+#  Proc SetTestEof - to edit the command ::http::KeepSocket
+# ------------------------------------------------------------------------------
+# The usual line in command ::http::KeepSocket is "    set TEST_EOF 0".
+# Whether the value set in the file is 0 or 1, change it here to the value
+# specified by the argument.
+#
+# It is worth doing all tests for both values of the argument.
+#
+# test 0  - ::http::KeepSocket is unchanged, detects server eof where possible
+#           and closes the connection.
+# test 1  - ::http::KeepSocket is edited, does not detect server eof, so the
+#           reaction to finding server eof can be tested without the difficulty
+#           of testing in the few milliseconds of an asynchronous close event.
+# ------------------------------------------------------------------------------
+
+proc SetTestEof {test} {
+    set body [info body ::http::KeepSocket]
+    set subs "    set TEST_EOF $test"
+    set count [regsub -line -all -- {^\s*set TEST_EOF .*$} $body $subs newBody]
+    if {$count != 1} {
+        return -code error {proc ::http::KeepSocket has unexpected form}
+    }
+    proc ::http::KeepSocket {token} $newBody
+    return
+}
+
+for {set header 1} {$header <= 4} {incr header} {
+    if {$header == 4} {
+	setHttpTestOptions -dotted 1
+	set match glob
+    } else {
+	setHttpTestOptions -dotted 0
+	set match exact
+    }
+
+    if {$header == 2} {
+        set cons0 {serverNeeded duplicate}
+    } else {
+        set cons0 serverNeeded
+    }
+
+    for {set footer 1} {$footer <= 25} {incr footer} {
+        foreach {delay label} {
+	       0 a
+	       1 b
+	       2 c
+	       3 d
+	       5 e
+	       8 f
+	      12 g
+	     100 h
+	     500 i
+	    2000 j
+	} {
+	  foreach te {0 1} {
+	    if {$te} {
+	        set tag testEof
+	    } else {
+	        set tag normal
+	    }
+	    set suffix {}
+	    set cons $cons0
+
+	    # ------------------------------------------------------------------
+	    # Custom code for individual tests
+	    # ------------------------------------------------------------------
+	    if {$footer in {18}} {
+		# Custom code:
+		if {($label eq "j") && ($te == 1)} {
+		    continue
+		}
+		if {$te == 1} {
+		    # The test (of REPOST 0) is useful if tag is "testEof"
+		    # (server timeout without client reaction).  The same test
+		    # has a different result if tag is "normal".
+
+		    set suffix " - extra test for -repost 0 - ::http::2 must be"
+		    append suffix " cancelled"
+		    if {($delay == 0)} {
+			append suffix ", along with  ::http::3  ::http::4 if"
+			append suffix " the test creates these before ::http::2"
+			append suffix " is cancelled"
+		    }
+		} else {
+		}
+	    } elseif {$footer in {19}} {
+		set suffix " - extra test for -repost 0"
+	    } elseif {$footer in {20 21}} {
+		set suffix " - extra test for -postfresh 1"
+		if {($footer == 20)} {
+		    append suffix " - ::http::2 uses a separate socket"
+		    append suffix ", other requests use a persistent connection"
+		}
+	    } elseif {$footer in {22 23 24 25}} {
+		append suffix " - ::http::2 uses a separate socket"
+		append suffix ", other requests use a persistent connection"
+	    } else {
+	    }
+
+	    if {($footer >= 13 && $footer <= 23)} {
+		# Test use WAIT and depend on server timeout before this time.
+		lappend cons timeout1s
+	    }
+	    # ------------------------------------------------------------------
+	    # End of custom code.
+	    # ------------------------------------------------------------------
+
+            set name "pipeline test header $header footer $footer delay $delay $tag$suffix"
+
+
+	    # Here's the test:
+            test httpPipeline-${header}.${footer}${label}-${tag} $name \
+            -constraints $cons \
+            -setup [string map [list TE $te] {
+		# Restore default values for tests:
+		http::config -pipeline 1 -postfresh 0 -repost 1
+                http::init
+                set http::http(uid) 0
+		SetTestEof {TE}
+	    }] -body [list RunTest $header $footer $delay $te] -cleanup {
+		# Restore default values for tests:
+		http::config -pipeline 1 -postfresh 0 -repost 1
+		cleanupHttpTestScript
+		SetTestEof 0
+		cleanupHttpTest
+		after 2000
+		# Wait for persistent sockets on the server to time out.
+	    } -result [ReturnTestResult $header $footer $delay $te] -match $match
+
+
+	  }
+
+	}
+    }
+}
+
+# ------------------------------------------------------------------------------
+# (*) Notes on tests *.18*-testEof, *.19*-testEof - these test -repost 0
+# ------------------------------------------------------------------------------
+# These tests are a bit awkward because the main test kit analyses whether all
+# requests are satisfied, with retries if necessary, and it has result analysis
+# for processing retry logs.
+# - *.18*-testEof tests that certain requests are NOT satisfied, so the analysis
+#   is a one-off.
+# - Tests *.18a-testEof depend on client/server timing - the test needs to call
+#   http::geturl for all requests before the POST (request 2) is cancelled.
+#   We test that requests 2, 3, 4 are all cancelled.
+# - Other tests *.18*-testEof may not request 3 and 4 in time for the to be
+#   added to the write queue before request 2 is completed. We simply check that
+#   request 2 is cancelled.
+# - The behaviour is different if all connections are allowed to time out
+#   (label "j").  This case is not needed to test -repost 0, and is omitted.
+# - Tests *.18*-normal and *.19* are conventional (-repost 0 should have no
+#   effect).
+# ------------------------------------------------------------------------------
+
+
+unset header footer delay label suffix match cons name te
+namespace delete ::httpTest
+namespace delete ::httpTestScript
+
+::tcltest::cleanupTests

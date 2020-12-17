@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# ldAix ldCmd ldArg ldArg ...
+#
+# This shell script provides a wrapper for ld under AIX in order to
+# create the .exp file required for linking.  Its arguments consist
+# of the name and arguments that would normally be provided to the
+# ld command.  This script extracts the names of the object files
+# from the argument list, creates a .exp file describing all of the
+# symbols exported by those files, and then invokes "ldCmd" to
+# perform the real link.
+
+# Extract from the arguments the names of all of the object files.
+
+args=$*
+ofiles=""
+for i do
+    x=`echo $i | grep '[^.].o$'`
+    if test "$x" != ""; then
+	ofiles="$ofiles $i"
+    fi
+done
+
+# Extract the name of the object file that we're linking.
+outputFile=`echo $args | sed -e 's/.*-o \([^ ]*\).*/\1/'`
+
+# Create the export file from all of the object files, using nm followed
+# by sed editing.  Here are some tricky aspects of this:
+#
+# - Use the -X32_64 switch to nm to handle 32 or 64bit compiles.
+# - Eliminate lines that end in ":": these are the names of object files
+# - Eliminate entries with the "U" key letter;  these are undefined symbols
+# - If a line starts with ".", delete the leading ".", since this will just
+#   cause confusion later
+# - Eliminate everything after the first field in a line, so that we're
+#   left with just the symbol name
+
+nmopts="-g -C -h -X32_64"
+rm -f lib.exp
+echo "#! $outputFile" >lib.exp
+/usr/ccs/bin/nm $nmopts $ofiles | sed -e '/:$/d' -e '/ U /d' -e 's/^\.//' -e 's/[ 	|].*//' | sort | uniq >>lib.exp
+
+# If we're linking a .a file, then link all the objects together into a
+# single file "shr.o" and then put that into the archive.  Otherwise link
+# the object files directly into the .a file.
+
+noDotA=`echo $outputFile | sed -e '/\.a$/d'`
+echo "noDotA=\"$noDotA\""
+if test "$noDotA" = "" ; then
+    linkArgs=`echo $args | sed -e 's/-o .*\.a /-o shr.o /'`
+    echo $linkArgs
+    eval $linkArgs
+    echo ar cr $outputFile shr.o
+    ar cr $outputFile shr.o
+    rm -f shr.o
+else
+    eval $args
+fi

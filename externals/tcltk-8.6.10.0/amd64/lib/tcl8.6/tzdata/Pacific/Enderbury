@@ -1,0 +1,8 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Enderbury) {
+    {-9223372036854775808 -41060 0 LMT}
+    {-2177411740 -43200 0 -12}
+    {307627200 -39600 0 -11}
+    {788871600 46800 0 +13}
+}

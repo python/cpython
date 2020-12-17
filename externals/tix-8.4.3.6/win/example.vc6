@@ -1,0 +1,38 @@
+
+# Where the Tcl and Tk. They must be in the same directory
+# If you want to run "nmake tests", this *must* be an absolute filename.
+
+SRC_ROOT	= ..\..
+
+# Set the TCL version. The TK version are assumed to be equal. The default
+# is 8.4.7.
+
+TCL_MAJOR	= 8
+TCL_MINOR	= 4
+TCL_PATCH	= 7
+
+# Uncomment the following if you had compiled Tcl with debugging symbols
+#TCL_DBGX	= d
+
+# Uncomment the following if you had compiled Tk with debugging symbols
+#TK_DBGX	= d
+
+# Comment this out if you don't want to compile with stubs
+USESTUBS	= 1
+
+# Comment this out if you want to compile with debugging symbols
+NODEBUG		= 1
+
+# Where to install Tix. By default it installs at the default Tcl 
+# installation directory C:\Tcl
+INSTALL_DIR             = C:\Progra~1\Tcl
+
+# TOOLS32     	= location of VC++ 32-bit development tools.
+# TOOLS32_rc  	= location of VC++ rc program
+#
+# Visual C++ 6.0
+#
+TOOLS32 	= c:\Program Files\Microsoft Visual Studio\VC98
+TOOLS32_rc 	= c:\Program Files\Microsoft Visual Studio\Common\MSDev98
+
+!include "makefile.vc"

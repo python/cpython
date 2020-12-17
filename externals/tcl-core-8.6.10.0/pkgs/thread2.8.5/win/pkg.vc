@@ -1,0 +1,6 @@
+# remember to change configure.ac as well when these change
+# (then re-autoconf)
+
+PACKAGE_MAJOR	= 2
+PACKAGE_MINOR	= 8
+PACKAGE_VERSION	= "2.8.5"

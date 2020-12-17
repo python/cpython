@@ -1,0 +1,67 @@
+# This file is a Tcl script to test out Tk's "tk_dialog" command.
+# It is organized in the standard fashion for Tcl tests.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+test dialog-1.1 {tk_dialog command} -body {
+    tk_dialog
+} -match glob -returnCodes error -result {wrong # args: should be "tk_dialog w title text bitmap default *"}
+test dialog-1.2 {tk_dialog command} -body {
+    tk_dialog foo foo foo foo foo
+} -returnCodes error -result {bad window path name "foo"}
+test dialog-1.3 {tk_dialog command} -body {
+    tk_dialog .d foo foo fooBitmap foo
+} -cleanup {
+    destroy .d
+} -returnCodes error -result {bitmap "fooBitmap" not defined}
+
+
+test dialog-2.1 {tk_dialog operation} -setup {
+    proc PressButton {btn} {
+        if {![winfo ismapped $btn]} {
+            update
+        }
+        event generate $btn <Enter>
+        event generate $btn <1> -x 5 -y 5
+        event generate $btn <ButtonRelease-1> -x 5 -y 5
+    }
+} -body {
+    set x [after 5000 [list set tk::Priv(button) "no response"]]
+    after 100 PressButton .d.button0
+    set res [tk_dialog .d foo foo info 0 click]
+    after cancel $x
+    return $res
+} -cleanup {
+    destroy .d
+} -result {0}
+test dialog-2.2 {tk_dialog operation} -setup {
+    proc HitReturn {w} {
+        event generate $w <Enter>
+        focus -force $w
+        event generate $w <KeyPress> -keysym Return
+    }
+} -body {
+    set x [after 5000 [list set tk::Priv(button) "no response"]]
+    after 100 HitReturn .d
+    set res [tk_dialog .d foo foo info 1 click default]
+    after cancel $x
+    return $res
+} -cleanup {
+    destroy .d
+} -result {1}
+test dialog-2.3 {tk_dialog operation} -body {
+    set x [after 5000 [list set tk::Priv(button) "no response"]]
+    after 100 destroy .d
+    set res [tk_dialog .d foo foo info 0 click]
+    after cancel $x
+    return $res
+} -cleanup {
+    destroy .b
+} -result {-1}
+
+cleanupTests
+return
+

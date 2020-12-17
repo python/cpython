@@ -1,0 +1,166 @@
+# This file is a Tcl script to test out the the procedures in file
+# tkIndexObj.c, which implement indexed table lookups.  The tests here are
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testindexobj [llength [info commands testindexobj]]
+testConstraint testparseargs [llength [info commands testparseargs]]
+
+test indexObj-1.1 {exact match} testindexobj {
+    testindexobj 1 1 xyz abc def xyz alm
+} {2}
+test indexObj-1.2 {exact match} testindexobj {
+    testindexobj 1 1 abc abc def xyz alm
+} {0}
+test indexObj-1.3 {exact match} testindexobj {
+    testindexobj 1 1 alm abc def xyz alm
+} {3}
+test indexObj-1.4 {unique abbreviation} testindexobj {
+    testindexobj 1 1 xy abc def xalb xyz alm
+} {3}
+test indexObj-1.5 {multiple abbreviations and exact match} testindexobj {
+    testindexobj 1 1 x abc def xalb xyz alm x
+} {5}
+test indexObj-1.6 {forced exact match} testindexobj {
+    testindexobj 1 0 xy abc def xalb xy alm
+} {3}
+test indexObj-1.7 {forced exact match} testindexobj {
+    testindexobj 1 0 x abc def xalb xyz alm x
+} {5}
+test indexObj-1.8 {exact match of empty values} testindexobj {
+    testindexobj 1 1 {} a aa aaa {} b bb bbb
+} 3
+test indexObj-1.9 {exact match of empty values} testindexobj {
+    testindexobj 1 0 {} a aa aaa {} b bb bbb
+} 3
+
+test indexObj-2.1 {no match} testindexobj {
+    list [catch {testindexobj 1 1 dddd abc def xalb xyz alm x} msg] $msg
+} {1 {bad token "dddd": must be abc, def, xalb, xyz, alm, or x}}
+test indexObj-2.2 {no match} testindexobj {
+    list [catch {testindexobj 1 1 dddd abc} msg] $msg
+} {1 {bad token "dddd": must be abc}}
+test indexObj-2.3 {no match: no abbreviations} testindexobj {
+    list [catch {testindexobj 1 0 xy abc def xalb xyz alm} msg] $msg
+} {1 {bad token "xy": must be abc, def, xalb, xyz, or alm}}
+test indexObj-2.4 {ambiguous value} testindexobj {
+    list [catch {testindexobj 1 1 d dumb daughter a c} msg] $msg
+} {1 {ambiguous token "d": must be dumb, daughter, a, or c}}
+test indexObj-2.5 {omit error message} testindexobj {
+    list [catch {testindexobj 0 1 d x} msg] $msg
+} {1 {}}
+test indexObj-2.6 {TCL_EXACT => no "ambiguous" error message} testindexobj {
+    list [catch {testindexobj 1 0 d dumb daughter a c} msg] $msg
+} {1 {bad token "d": must be dumb, daughter, a, or c}}
+test indexObj-2.7 {exact match of empty values} testindexobj {
+    list [catch {testindexobj 1 1 {} a b c} msg] $msg
+} {1 {ambiguous token "": must be a, b, or c}}
+test indexObj-2.8 {exact match of empty values: singleton case} testindexobj {
+    list [catch {testindexobj 1 0 {} a} msg] $msg
+} {1 {bad token "": must be a}}
+test indexObj-2.9 {non-exact match of empty values: singleton case} testindexobj {
+    # NOTE this is a special case.  Although the empty string is a
+    # unique prefix, we have an established history of rejecting
+    # empty lookup keys, requiring any unique prefix match to have
+    # at least one character.
+    list [catch {testindexobj 1 1 {} a} msg] $msg
+} {1 {bad token "": must be a}}
+
+test indexObj-3.1 {cache result to skip next lookup} testindexobj {
+    testindexobj check 42
+} {42}
+
+test indexObj-4.1 {free old internal representation} testindexobj {
+    set x {a b}
+    lindex $x 1
+    testindexobj 1 1 $x abc def {a b} zzz
+} {2}
+
+test indexObj-5.1 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 1 "?-switch?" mycmd
+} "wrong # args: should be \"mycmd ?-switch?\""
+test indexObj-5.2 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 2 "bar" mycmd foo
+} "wrong # args: should be \"mycmd foo bar\""
+test indexObj-5.3 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 0 "bar" mycmd foo
+} "wrong # args: should be \"bar\""
+test indexObj-5.4 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 0 "" mycmd foo
+} "wrong # args: should be \"\""
+test indexObj-5.5 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 1 "" mycmd foo
+} "wrong # args: should be \"mycmd\""
+test indexObj-5.6 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 2 "" mycmd foo
+} "wrong # args: should be \"mycmd foo\""
+# Contrast this with test proc-3.6; they have to be like this because
+# of [Bug 1066837] so Itcl won't break.
+test indexObj-5.7 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 2 "fee fi" "fo fum" foo bar
+} "wrong # args: should be \"fo fum foo fee fi\""
+
+test indexObj-6.1 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x a
+    testgetindexfromobjstruct $x 0
+} "wrong # args: should be \"testgetindexfromobjstruct a 0\""
+test indexObj-6.2 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x a
+    testgetindexfromobjstruct $x 0
+    testgetindexfromobjstruct $x 0
+} "wrong # args: should be \"testgetindexfromobjstruct a 0\""
+test indexObj-6.3 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x c
+    testgetindexfromobjstruct $x 1
+} "wrong # args: should be \"testgetindexfromobjstruct c 1\""
+test indexObj-6.4 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x c
+    testgetindexfromobjstruct $x 1
+    testgetindexfromobjstruct $x 1
+} "wrong # args: should be \"testgetindexfromobjstruct c 1\""
+
+test indexObj-7.1 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs
+} {0 1 testparseargs}
+test indexObj-7.2 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -bool
+} {1 1 testparseargs}
+test indexObj-7.3 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -bool bar
+} {1 2 {testparseargs bar}}
+test indexObj-7.4 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs bar
+} {0 2 {testparseargs bar}}
+test indexObj-7.5 {Tcl_ParseArgsObjv} -constraints testparseargs -body {
+    testparseargs -help
+} -returnCodes error -result {Command-specific options:
+ -bool: booltest
+ --:    Marks the end of the options
+ -help: Print summary of command-line options and abort}
+test indexObj-7.6 {Tcl_ParseArgsObjv} testparseargs {
+    testparseargs -- -bool -help
+} {0 3 {testparseargs -bool -help}}
+test indexObj-7.7 {Tcl_ParseArgsObjv memory management} testparseargs {
+    testparseargs 1 2 3 4 5 6 7 8 9 0 -bool 1 2 3 4 5 6 7 8 9 0
+} {1 21 {testparseargs 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -1,0 +1,12 @@
+/*
+ * Author: Lasse Collin
+ *
+ * This file has been put into the public domain.
+ * You can do whatever you want with this file.
+ */
+
+#define MY_TYPE VFT_DLL
+#define MY_NAME "liblzma"
+#define MY_SUFFIX ".dll"
+#define MY_DESC "liblzma data compression library"
+#include "common_w32res.rc"

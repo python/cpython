@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<Project
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- All common targets/items/properties -->
+
+  <!-- Version specific targets/items/properties -->
+  <PropertyGroup>
+    <WixTargetsImported>true</WixTargetsImported>
+
+    <!-- MSBuild 4.0 -->
+    <!-- MSBuild does not do short circuit evaluation of the AND operator, so we cannot have
+         something like '$(MSBuildToolsVersion)' != '' AND '$(MSBuildToolsVersion)' &gt;= '4.0'
+         instead set as default and override -->
+    <WixVersionTargetsPath>wix2010.targets</WixVersionTargetsPath>
+    <!-- MSBuild 2.0 - 3.5 -->
+    <WixVersionTargetsPath Condition=" '$(MSBuildToolsVersion)' == '' OR '$(MSBuildToolsVersion)' &lt; '4.0' ">wix200x.targets</WixVersionTargetsPath>
+  </PropertyGroup>
+
+  <Import Project="$(WixVersionTargetsPath)" />
+</Project>

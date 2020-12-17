@@ -1,0 +1,55 @@
+<HEAD>
+<TITLE> Display Items and Display Styles<A NAME=322>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html795 HREF=subsection3_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html793 HREF=subsection3_5_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html789 HREF=subsubsection3_5_2_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html797 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html796 HREF=subsection3_5_3.html> Creating Display Items </A>
+<B>Up:</B> <A NAME=tex2html794 HREF=subsection3_5_2.html> Display Items</A>
+<B> Previous:</B> <A NAME=tex2html790 HREF=subsubsection3_5_2_1.html> Advantages of Display </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00052200000000000000> Display Items and Display Styles<A NAME=322>&nbsp;</A></A></H3>
+<P>
+The appearance of a display item is controlled by a set of
+  attributes. For example, the <tt>text</tt> attribute controls the text
+  string displayed on the item and the <tt>font</tt> attribute specifies
+  what font should be used.
+<P>
+   Usually, each of the attributes falls into one of two categroies:
+  ``<em>individual</em>'' or ``<em>collective</em>''. For example, each of
+  the items inside a TixTList widget may display a different text
+  string; therefore we call the text string an <em>individual
+  attribute</em>. However, in most cases, the items share the same color,
+  font and spacing and we call these <em>collective attributes</em>.
+<P>
+   One question concerns where we keep the collective attribute for the
+  display items. Certainly, we can keep a <tt>font</tt> attribute for each
+  item, but this is not really an efficient solution. In fact, if all the
+  items have the same font, we would be keeping a duplicated copy of the
+  same font for each of the items we create. Since a host widget may have
+  many thousands of items, keeping thousands of dupilcated copys of the
+  same font, or any other collective attributes, would be very wasteful.
+<P>
+<blockquote> <P><CENTER><IMG SRC="../gif/tix/tlist/relation.gif">
+  </CENTER>
+</blockquote>
+<P>
+To avoid the unnecessary duplication of resources, Tix stores the
+  collective attributes in special objects called <em>display styles</em>. The
+  relationship between display items and their styles is depicted in figure
+  3-4. Each item holds its own copy of the individual
+  attributes, such as <tt>text</tt>. However, the collective attributes are
+  stored in the style objects. Each item has a special <tt>style</tt>
+  attribute that tells it which style it should use. In figure 3-4
+, since items <em>a</em> and <em>b</em> are assigned the same
+  style, therefore, they share the same font and color. Item <em>c</em> is
+  assigned a different style, thus, it uses a different font than <em>a</em>
+  and <em>b</em>.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

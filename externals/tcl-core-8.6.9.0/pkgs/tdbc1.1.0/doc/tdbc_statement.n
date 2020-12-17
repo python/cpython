@@ -1,0 +1,236 @@
+'\"
+'\" tdbc_statement.n --
+'\"
+'\" Copyright (c) 2008 by Kevin B. Kenny.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution of
+'\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc::statement" n 8.6 Tcl "Tcl Database Connectivity"
+'\" .so man.macros
+'\" IGNORE
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+'\"	Draw four-sided box normally, but don't draw top of
+'\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+'\" END IGNORE
+.BS
+.SH "NAME"
+tdbc::statement \- TDBC statement object
+.SH "SYNOPSIS"
+.nf
+package require \fBtdbc 1.0\fR
+package require \fBtdbc::\fR\fIdriver version\fR
+
+\fBtdbc::\fR\fIdriver\fR\fB::connection create \fR\fIdb\fR \fI?\-option value\fR...?
+
+\fBset\fR \fIstmt\fR \fB[\fR\fIdb\fR \fBprepare\fR \fIsql-code\fR\fB]\fR
+\fBset\fR \fIstmt\fR \fB[\fR\fIdb\fR \fBpreparecall\fR \fIcall\fR\fB]\fR
+
+\fI$stmt\fR \fBparams\fR
+\fI$stmt\fR \fBparamtype\fR ?\fIdirection\fR? \fItype\fR ?\fIprecision\fR? ?\fIscale\fR?
+\fI$stmt\fR \fBexecute\fR ?\fIdict\fR?
+\fI$stmt\fR \fBresultsets\fR
+.fi
+.ad l
+.in 14
+.ti 7
+\fI$stmt\fR \fBallrows\fR ?\fB-as lists|dicts\fR? ?\fB-columnsvariable\fR \fIname\fR? ?\fB--\fR? ?\fIdict\fR
+.br
+.ti 7
+\fI$stmt\fR \fBforeach\fR ?\fB-as lists|dicts\fR? ?\fB-columnsvariable\fR \fIname\fR? ?\fB--\fR? \fIvarName\fR ?\fIdict\fR? \fIscript\fR
+.br
+.ti 7
+\fI$stmt\fR \fBclose\fR
+.ad b
+.BE
+.SH "DESCRIPTION"
+.PP
+Every database driver for TDBC (Tcl DataBase Connectivity) implements
+a \fIstatement\fR object that represents a SQL statement in a
+database. Instances of this object are created by executing the
+\fBprepare\fR or \fBpreparecall\fR object command on a database
+connection. 
+.PP
+The \fBprepare\fR object command against the connection
+accepts arbitrary SQL code to be
+executed against the database. The SQL code may contain \fIbound
+variables\fR, which are strings of alphanumeric characters or
+underscores (the first character of the string may not be numeric),
+prefixed with a colon (\fB:\fR). If a bound variable appears in the
+SQL statement, and is not in a string set off by single or double
+quotes, nor in a comment introduced by \fB--\fR, it becomes a value
+that is substituted when the statement is executed. A bound variable
+becomes a single value (string or numeric) in the resulting
+statement. \fIDrivers are responsible for ensuring that the mechanism
+for binding variables prevents SQL injection.\fR 
+.PP
+The \fBpreparecall\fR object command against the connection accepts a
+stylized statement in the form:
+.PP
+.CS
+\fIprocname\fR \fB(\fR?\fB:\fR\fIvarname\fR? ?\fB,:\fR\fIvarname\fR...?\fB)\fR
+.CE
+.PP
+or
+.PP
+.CS
+\fIvarname\fR \fB=\fR \fIprocname\fR \fB(\fR?\fB:\fR\fIvarname\fR? ?\fB,:\fR\fIvarname\fR...?\fB)\fR
+.CE
+.PP
+This statement represents a call to a stored procedure \fIprocname\fR in the
+database. The variable name to the left of the equal sign (if
+present), and all variable names that are parameters inside
+parentheses, become bound variables.
+.PP
+The \fBparams\fR method against a statement object enumerates the
+bound variables that appear in the statement. The result returned from
+the \fBparams\fR method is a dictionary whose keys are the names of
+bound variables (listed in the order in which the variables first
+appear in the statement), and whose values are dictionaries. The
+subdictionaries include at least the following keys (database drivers
+may add additional keys that are not in this list).
+.IP \fBdirection\fR
+Contains one of the keywords, \fBin\fR, \fBout\fR or \fBinout\fR
+according to whether the variable is an input to or output from the
+statement. Only stored procedure calls will have \fBout\fR or
+\fBinout\fR parameters.
+.IP \fBtype\fR
+Contains the data type of the column, and will generally be chosen
+from the set, 
+\fBbigint\fR, \fBbinary\fR, \fBbit\fR, \fBchar\fR, \fBdate\fR,
+\fBdecimal\fR, \fBdouble\fR, \fBfloat\fR, \fBinteger\fR,
+\fBlongvarbinary\fR, \fBlongvarchar\fR, \fBnumeric\fR, \fBreal\fR,
+\fBtime\fR, \fBtimestamp\fR, \fBsmallint\fR, \fBtinyint\fR,
+\fBvarbinary\fR, and \fBvarchar\fR. (If the variable has a type that
+cannot be represented as one of the above, \fBtype\fR will contain
+a driver-dependent description of the type.)
+.IP \fBprecision\fR
+Contains the precision of the column in bits, decimal digits, or the
+width in characters, according to the type.
+.IP \fBscale\fR
+Contains the scale of the column (the number of digits after the radix
+point), for types that support the concept.
+.IP \fBnullable\fR
+Contains 1 if the column can contain NULL values, and 0 otherwise.
+.PP
+The \fBparamtype\fR object command allows the script to specify the
+type and direction of parameter transmission of a variable in a
+statement. (Some databases provide no method to determine this
+information automatically and place the burden on the caller to do
+so.) The \fIdirection\fR, \fItype\fR, \fIprecision\fR, \fIscale\fR,
+and \fInullable\fR arguments have the same meaning as the
+corresponding dictionary values in the \fBparams\fR object command.
+.PP
+The \fBexecute\fR object command executes the statement. Prior to
+executing the statement, values are provided for the bound variables
+that appear in it.  If the \fIdict\fR parameter is supplied, it is
+searched for a key whose name matches the name of the bound
+variable. If the key is present, its value becomes the substituted
+variable. If not, the value of the substituted variable becomes a SQL
+NULL. If the \fIdict\fR parameter is \fInot\fR supplied, the
+\fBexecute\fR object command searches for a variable in the caller's
+scope whose name matches the name of the bound variable. If one is
+found, its value becomes the bound variable's value. If none is found,
+the bound variable is assigned a SQL NULL as its value.  Once
+substitution is finished, the resulting statement is executed. The
+return value is a result set object (see \fBtdbc::resultset\fR for
+details).
+.PP
+The \fBresultsets\fR method returns a list of all the result sets that
+have been returned by executing the statement and have not yet been
+closed.
+.PP
+The \fBallrows\fR object command executes the statement as with the
+\fBexecute\fR object command, accepting an
+optional \fIdict\fR parameter giving bind variables. After executing
+the statement,
+it uses the \fIallrows\fR object command on the result set (see
+\fBtdbc::resultset\fR) to construct a list of the results. Finally, 
+the result set is closed. The return value is the list of
+results. 
+.PP
+The \fBforeach\fR object command executes the statement as with the
+\fBexecute\fR object command, accepting an
+optional \fIdict\fR parameter giving bind variables. After executing
+the statement,
+it uses the \fIforeach\fR object command on the result set (see
+\fBtdbc::resultset\fR) to evaluate the given \fIscript\fR for each row of
+the results. Finally, the result set is closed, even
+if the given \fIscript\fR results in a \fBreturn\fR, an error, or
+an unusual return code. 
+.PP
+The \fBclose\fR object command removes a statement and any result sets
+that it has created. All system resources associated with the objects
+are freed.
+.SH "EXAMPLES"
+The following code would look up a telephone number in a directory,
+assuming an appropriate SQL schema:
+.PP
+.CS
+package require tdbc::sqlite3
+tdbc::sqlite3::connection create db phonebook.sqlite3
+set statement [db prepare {
+    select phone_num from directory
+    where first_name = :firstname and last_name = :lastname
+}]
+set firstname Fred
+set lastname Flintstone
+$statement foreach row {
+    puts [dict get $row phone_num]
+}
+$statement close
+db close
+.CE
+.SH "SEE ALSO"
+encoding(n), tdbc(n), tdbc::connection(n), tdbc::resultset(n), tdbc::tokenize(n)
+.SH "KEYWORDS"
+TDBC, SQL, database, connectivity, connection, resultset, statement,
+bound variable, stored procedure, call
+.SH "COPYRIGHT"
+Copyright (c) 2008 by Kevin B. Kenny.
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
+'\"

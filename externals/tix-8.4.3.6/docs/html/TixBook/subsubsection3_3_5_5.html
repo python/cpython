@@ -1,0 +1,47 @@
+<HEAD>
+<TITLE> Specifying Selection Rules<A NAME=152>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html540 HREF=subsubsection3_3_5_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html538 HREF=subsection3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html532 HREF=subsubsectionstar3_3_5_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html542 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html541 HREF=subsubsection3_3_5_6.html> Accessing the Value </A>
+<B>Up:</B> <A NAME=tex2html539 HREF=subsection3_3_5.html> The TixSelect Widget</A>
+<B> Previous:</B> <A NAME=tex2html533 HREF=subsubsectionstar3_3_5_4.html>  Accessing the Button </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00035500000000000000> Specifying Selection Rules<A NAME=152>&nbsp;</A></A></H3>
+<P>
+For simple selection rules, you can use the <tt>-allowzero</tt> and <tt>-radio</tt> options. The <tt>-allowzero</tt> option specifies whether the user
+  can select none of the choices inside the TixSelect widget. The <tt>-radio</tt> option controls how many buttons can be selected at once: when
+  set to true, the user can select only one button at a time; when set to
+  false, the user can select as many buttons as he desires.
+<P>
+With these two options, we can write a program using two TixSelect widgets
+  for little Jimmy to fill up his lunch box. On the Sandwich side, we set
+  <tt>-radio</tt> to true and <tt>-allowzero</tt> <tt>false</tt>. That means Jimmy
+  can select one and only one sandwich among beef, cheese or ham
+  sandwiches. On the Veggie side, we want to encourage Jimmy to consume as
+  much veggie as possible, so we set the <tt>-allowzero</tt> option to <tt>false</tt>. We also set the <tt>-allowzero</tt> option to <tt>false</tt> so that
+  Jimmy cannot get away with eating none of the vegetables (see program
+  1-13).
+<P>
+<blockquote> <tt> tixSelect .sandwich -allowzero false -radio true -label &quot;Sandwich :&quot;<BR>
+.sandwich add beef   -text Beef<BR>
+.sandwich add cheese -text Cheese<BR>
+.sandwich add ham    -text Ham<BR>
+<BR>
+tixSelect .vege -allowzero false -radio false -label &quot;Vegetable :&quot;<BR>
+.vege add bean    -text Bean<BR>
+.vege add carrot  -text Carrot<BR>
+.vege add lettuce -text Lettuce
+</tt>
+</blockquote>
+<P><CENTER>(Figure 1-13) Specifying Simple Selection Rules<A NAME=113>&nbsp;</A>
+  </CENTER>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

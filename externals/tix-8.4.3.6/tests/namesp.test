@@ -1,0 +1,187 @@
+# -*- mode: TCL; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# namesp.test --
+#
+#       This file is a Tcl script to test out Tix's behavior under
+#       namespaces.  It is organized in the standard fashion for Tcl
+#       tests.
+#
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# $Id: namesp.test,v 1.3 2002/11/13 21:12:17 idiscovery Exp $
+
+
+# TODO:
+#       Invoke tix methods inside namespace
+#       Invoke tix var traces inside namesp
+#       Invoke tix -commands inside namesp
+#       Invoke delayed actions (e.g., browsecmd) inside namesp
+#       more more more tests
+
+package require Tix
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+tixClass tixTestClass {
+    -superclass {}
+    -classname  TixTestClass
+    -method {
+	cget configure foo bar
+    }
+    -flag {
+	-x -y
+    }
+    -configspec {
+	{-x 0}
+	{-y 0}
+    }
+}
+
+proc tixTestClass:Constructor {args} {}
+
+proc tixTestClass:foo {w args} {
+    upvar #0 $w data
+
+    return [list $data(-x) and me too]
+}
+
+test namesp-1.1.1 {create widget in namespace} {
+    #
+    # widget command should be created in global name space
+    #
+
+    namespace eval ::myNameSpace {
+        tixScrolledHList .sl
+    }
+    set a [info command ::.sl]
+    destroy .sl
+    set a
+} {::.sl}
+
+test namesp-1.1.2 {create class instance in namespace} {
+    #
+    # instance command should be created in global name space
+    #
+
+    namespace eval ::myNameSpace {
+        tixTestClass xx
+    }
+    set a [info command ::xx]
+    rename xx ""
+    set a
+} {::xx}
+
+test namesp-1.2.1 {create widget in namespace} {
+    #
+    # widget variable should be created in global name space
+    #
+
+    namespace eval ::myNameSpace {
+        tixScrolledHList .sl
+    }
+    set a [list [catch {set ::.sl} msg] $msg]
+    destroy .sl
+    set a
+} {1 {can't read "::.sl": variable is array}}
+
+test namesp-1.2.2 {create class instance in namespace} {
+    #
+    # instance variable should be created in global name space
+    #
+
+    namespace eval ::myNameSpace {
+        tixTestClass xx
+    }
+    set a [list [catch {set ::xx} msg] $msg]
+    rename xx {}
+    set a
+} {1 {can't read "::xx": variable is array}}
+
+test namesp-1.3.2 {class instance variable} {
+    #
+    # instance variable should be created in global name space
+    #
+
+    namespace eval ::myNameSpace {
+        tixTestClass xx -x 10 -y 10
+    }
+    set a [list [catch {set ::xx(-x)} msg] $msg]
+    rename xx {}
+    set a
+} {0 10}
+
+test namesp-1.4.2 {class instance method} {
+    tixTestClass xx -x 10 -y 10
+    namespace eval ::myNameSpace {
+        set ::a [list [catch {xx foo} msg] $msg]
+    }
+    rename xx {}
+    set a
+} {0 {10 and me too}}
+
+test namesp-1.5.2 {class instance cget} {
+    tixTestClass xx -x 1234
+
+    namespace eval ::myNameSpace {
+        set ::a [list [catch {xx cget -x} msg] $msg]
+    }
+    rename xx {}
+    set a
+} {0 1234}
+
+test namesp-1.6.2 {class instance configure} {
+    tixTestClass xx -x 1234
+
+    namespace eval ::myNameSpace {
+        xx config -x 2345
+    }
+    set ::a [list [catch {xx cget -x} msg] $msg]
+    rename xx {}
+    set a
+} {0 2345}
+
+test namesp-2.1.1 {invalid widget name} {
+    list [catch {tixScrolledHList ::.sl} msg] $msg
+} {1 {invalid widget name "::.sl": may not contain substring "::"}}
+
+test namesp-2.1.2 {invalid instance name} {
+    list [catch {tixTestClass ::.sl} msg] $msg
+} {1 {invalid instance name "::.sl": may not contain substring "::"}}
+
+test namesp-2.2 {invalid widget name} {
+    list [catch {tixScrolledHList .sl::xx} msg] $msg
+} {1 {invalid widget name ".sl::xx": may not contain substring "::"}}
+
+test namesp-3.1.1 {declare class inside namespace} {
+    namespace eval ::myNameSpace {
+        tixClass tixTestClass2 {
+            -superclass {}
+            -classname  TixTestClass
+            -method {
+                foo bar
+            }
+            -flag {
+                -x -y
+            }
+            -configspec {
+                {-x 0}
+                {-y 0}
+            }
+        }
+    }
+    set a [list [catch {info commands ::tixTestClass2} msg] $msg]
+    set b [list [catch {set ::tixTestClass2} msg] $msg]
+    set c [list [catch {set ::tixTestClass2(className)} msg] $msg]
+
+    list $a $b $c
+} {{0 ::tixTestClass2} {1 {can't read "::tixTestClass2": variable is array}} {0 tixTestClass2}}
+
+
+
+# cleanup
+::tcltest::cleanupTests
+return
+

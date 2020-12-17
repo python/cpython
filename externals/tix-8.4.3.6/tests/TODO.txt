@@ -1,0 +1,3 @@
+# -*- mode: text; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+
+[1] NoteBook active/inactive/disabled tabs drawing

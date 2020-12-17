@@ -1,0 +1,113 @@
+'\"
+'\" Copyright (c) 2008 Pat Thoyts
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk_vsapi n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk_vsapi \- Define a Microsoft Visual Styles element
+.SH SYNOPSIS
+\fBttk::style element create \fIname\fR \fBvsapi\fR \fIclassName\fR \fIpartId\fR ?\fIstateMap\fR? ?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBvsapi\fR element factory creates a new element
+in the current theme whose visual appearance is drawn using the
+Microsoft Visual Styles API which is responsible for the themed styles
+on Windows XP and Vista. This factory permits any of the Visual
+Styles parts to be declared as Ttk elements that can then be
+included in a style layout to modify the appearance of Ttk widgets.
+.PP
+\fIclassName\fR and \fIpartId\fR are required parameters and specify
+the Visual Styles class and part as given in the Microsoft
+documentation. The \fIstateMap\fR may be provided to map Ttk states to
+Visual Styles API states (see \fBSTATE MAP\fR).
+.SH "OPTIONS"
+.PP
+Valid \fIoptions\fR are:
+.TP
+\fB\-padding \fIpadding\fR
+.
+Specify the element's interior padding.
+\fIpadding\fR is a list of up to four integers specifying
+the left, top, right and bottom padding quantities respectively.
+If fewer than four elements are specified,
+\fIbottom\fR defaults to \fItop\fR,
+\fIright\fR defaults to \fIleft\fR, and
+\fItop\fR defaults to \fIleft\fR.
+In other words, a list of three numbers specify the left, vertical, and right padding;
+a list of two numbers specify the horizontal and the vertical padding;
+a single number specifies the same padding all the way around the widget.
+This option may not be mixed with any other options.
+.TP
+\fB\-margins \fIpadding\fR
+.
+Specifies the elements exterior padding.
+\fIpadding\fR is a list of up to four integers specifying
+the left, top, right and bottom padding quantities respectively.
+This option may not be mixed with any other options.
+.TP
+\fB\-width \fIwidth\fR
+.
+Specifies the height for the element. If this option is set then
+the Visual Styles API will not be queried for the recommended
+size or the part. If this option is set then \fB\-height\fR should
+also be set. The \fB\-width\fR and \fB\-height\fR options cannot
+be mixed with the \fB\-padding\fR or \fB\-margins\fR options.
+.TP
+\fB\-height \fIheight\fR
+.
+Specifies the height of the element. See the comments for \fB\-width\fR.
+.SH "STATE MAP"
+.PP
+The \fIstateMap\fR parameter is a list of ttk states and the
+corresponding Visual Styles API state value.
+This permits the element appearance to respond to changes in the
+widget state such as becoming active or being pressed. The list should
+be as described for the \fBttk::style map\fR command but note that the
+last pair in the list should be the default state and is typically an
+empty list and 1. Unfortunately all the Visual Styles parts have
+different state values and these must be looked up either in the
+Microsoft documentation or more likely in the header files. The
+original header to use was \fItmschema.h\fR, but in more recent
+versions of the Windows Development Kit this is \fIvssym32.h\fR.
+.PP
+If no \fIstateMap\fR parameter is given there is an implicit default
+map of {{} 1}
+.SH "EXAMPLE"
+.PP
+Create a correctly themed close button by changing the layout of
+a \fBttk::button\fR(n). This uses the WINDOW part WP_SMALLCLOSEBUTTON
+and as documented the states CBS_DISABLED, CBS_HOT, CBS_NORMAL and
+CBS_PUSHED are mapped from ttk states.
+.CS
+ttk::style element create smallclose \fBvsapi\fR WINDOW 19 \\
+    {disabled 4 pressed 3 active 2 {} 1}
+ttk::style layout CloseButton {CloseButton.smallclose -sticky news}
+pack [ttk::button .close -style CloseButton]
+.CE
+.PP
+Change the appearance of a \fBttk::checkbutton\fR(n) to use the
+Explorer pin part EBP_HEADERPIN.
+.CS
+ttk::style element create pin \fBvsapi\fR EXPLORERBAR 3 {
+    {pressed !selected} 3
+    {active !selected} 2
+    {pressed selected} 6
+    {active selected} 5
+    {selected} 4
+    {} 1
+}
+ttk::style layout Explorer.Pin {Explorer.Pin.pin -sticky news}
+pack [ttk::checkbutton .pin -style Explorer.Pin]
+.CE
+.SH "SEE ALSO"
+ttk::intro(n), ttk::widget(n), ttk::style(n), ttk_image(n)
+.SH "KEYWORDS"
+style, theme, appearance, windows
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

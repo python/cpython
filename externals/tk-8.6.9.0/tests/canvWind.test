@@ -1,0 +1,144 @@
+# This file is a Tcl script to test out the procedures in tkCanvWind.c,
+# which implement canvas "window" items.  It is organized in the standard
+# fashion for Tcl tests.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+test canvWind-1.1 {DisplayWinItem, windows off-screen vertically} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    canvas .t.c -scrollregion {0 0 1000 800} -width 250 -height 200 -bd 2 \
+	    -relief sunken -xscrollincrement 1 -yscrollincrement 1 \
+	    -highlightthickness 1
+    pack .t.c -fill both -expand 1 -padx 20 -pady 20
+    wm geometry .t +0+0
+    set f .t.f
+    frame $f -width 80 -height 50 -bg red
+    .t.c create window 300 400 -window $f -anchor nw
+    .t.c xview moveto .3
+    .t.c yview moveto .50
+    update
+    set x [list [list [winfo ismapped $f] [winfo y $f]]]
+    .t.c yview scroll 52 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+    .t.c yview scroll 1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+    .t.c yview scroll -255 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+    .t.c yview scroll -1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+} -cleanup {
+    destroy .t
+} -result {{1 23} {1 -29} {0 -29} {1 225} {0 225}}
+
+test canvWind-1.2 {DisplayWinItem, windows off-screen vertically} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    canvas .t.c -scrollregion {0 0 1000 800} -width 250 -height 200 -bd 2 \
+	    -relief sunken -xscrollincrement 1 -yscrollincrement 1 \
+	    -highlightthickness 1
+    pack .t.c -fill both -expand 1 -padx 20 -pady 20
+    wm geometry .t +0+0
+    set f .t.c.f
+    frame $f -width 80 -height 50 -bg red
+    .t.c create window 300 400 -window $f -anchor nw
+    .t.c xview moveto .3
+    .t.c yview moveto .50
+    update
+    set x [list [list [winfo ismapped $f] [winfo y $f]]]
+    .t.c yview scroll 52 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+    .t.c yview scroll 1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+    .t.c yview scroll -255 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+    .t.c yview scroll -1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo y $f]]
+} -cleanup {
+    destroy .t
+} -result {{1 3} {1 -49} {0 -49} {1 205} {0 205}}
+
+test canvWind-1.3 {DisplayWinItem, windows off-screen horizontally} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    canvas .t.c -scrollregion {0 0 1000 800} -width 250 -height 200 -bd 2 \
+	    -relief sunken -xscrollincrement 1 -yscrollincrement 1 \
+	    -highlightthickness 1
+    pack .t.c -fill both -expand 1 -padx 20 -pady 20
+    wm geometry .t +0+0
+    set f .t.f
+    frame $f -width 80 -height 50 -bg red
+    .t.c create window 300 400 -window $f -anchor nw
+    .t.c xview moveto .3
+    .t.c yview moveto .50
+    update
+    set x [list [list [winfo ismapped $f] [winfo x $f]]]
+    .t.c xview scroll 82 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+    .t.c xview scroll 1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+    .t.c xview scroll -335 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+    .t.c xview scroll -1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+} -cleanup {
+    destroy .t
+} -result {{1 23} {1 -59} {0 -59} {1 275} {0 275}}
+
+test canvWind-1.4 {DisplayWinItem, windows off-screen horizontally} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    canvas .t.c -scrollregion {0 0 1000 800} -width 250 -height 200 -bd 2 \
+	    -relief sunken -xscrollincrement 1 -yscrollincrement 1 \
+	    -highlightthickness 1
+    pack .t.c -fill both -expand 1 -padx 20 -pady 20
+    wm geometry .t +0+0
+    set f .t.c.f
+    frame $f -width 80 -height 50 -bg red
+    .t.c create window 300 400 -window $f -anchor nw
+    .t.c xview moveto .3
+    .t.c yview moveto .50
+    update
+    set x [list [list [winfo ismapped $f] [winfo x $f]]]
+    .t.c xview scroll 82 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+    .t.c xview scroll 1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+    .t.c xview scroll -335 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+    .t.c xview scroll -1 units
+    update
+    lappend x [list [winfo ismapped $f] [winfo x $f]]
+} -cleanup {
+    destroy .t
+} -result {{1 3} {1 -79} {0 -79} {1 255} {0 255}}
+
+# cleanup
+cleanupTests
+return

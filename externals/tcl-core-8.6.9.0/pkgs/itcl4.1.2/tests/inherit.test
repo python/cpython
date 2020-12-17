@@ -1,0 +1,589 @@
+#
+# Tests for inheritance and scope handling
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Test construction/destruction with inheritance
+# ----------------------------------------------------------------------
+test inherit-1.1 {define classes with constructors/destructors} {
+    variable ::test_cd_watch ""
+    itcl::class test_cd_foo {
+        constructor {x y} {
+            global ::test_cd_watch
+            lappend test_cd_watch "foo: $x $y"
+        }
+        destructor {
+            global ::test_cd_watch
+            lappend test_cd_watch "foo destruct"
+        }
+    }
+    itcl::class test_cd_bar {
+        constructor {args} {
+            global ::test_cd_watch
+            lappend test_cd_watch "bar: $args"
+        }
+        destructor {
+            global ::test_cd_watch
+            lappend test_cd_watch "bar destruct"
+        }
+    }
+    itcl::class test_cd_foobar {
+        inherit test_cd_foo test_cd_bar
+        constructor {x y args} {
+            test_cd_foo::constructor $x $y
+        } {
+            global ::test_cd_watch
+            lappend test_cd_watch "foobar: $x $y ($args)"
+        }
+        destructor {
+            global ::test_cd_watch
+            lappend test_cd_watch "foobar destruct"
+        }
+    }
+    itcl::class test_cd_geek {
+        constructor {} {
+            global ::test_cd_watch
+            lappend test_cd_watch "geek"
+        }
+        destructor {
+            global ::test_cd_watch
+            lappend test_cd_watch "geek destruct"
+        }
+    }
+    itcl::class test_cd_mongrel {
+        inherit test_cd_foobar test_cd_geek
+        constructor {x} {
+            eval test_cd_foobar::constructor 1 2 fred $x
+        } {
+            global ::test_cd_watch
+            lappend test_cd_watch "mongrel: $x"
+        }
+        destructor {
+            global ::test_cd_watch
+            lappend test_cd_watch "mongrel destruct"
+        }
+    }
+    itcl::class test_cd_none {
+        inherit test_cd_bar test_cd_geek
+    }
+    itcl::class test_cd_skip {
+        inherit test_cd_none
+        constructor {} {
+            global ::test_cd_watch
+            lappend test_cd_watch "skip"
+        }
+        destructor {
+            global ::test_cd_watch
+            lappend test_cd_watch "skip destruct"
+        }
+    }
+} {}
+
+test inherit-1.2 {constructors should be invoked in the proper order} {
+    set ::test_cd_watch ""
+    list [test_cd_mongrel #auto bob] [set ::test_cd_watch]
+} {test_cd_mongrel0 {{foo: 1 2} {bar: } {foobar: 1 2 (fred bob)} geek {mongrel: bob}}}
+
+test inherit-1.3 {destructors should be invoked in the proper order} {
+    set ::test_cd_watch ""
+    list [itcl::delete object test_cd_mongrel0] [set ::test_cd_watch]
+} {{} {{mongrel destruct} {foobar destruct} {foo destruct} {bar destruct} {geek destruct}}}
+
+test inherit-1.4 {constructors are optional} {
+    set ::test_cd_watch ""
+    list [test_cd_none #auto] [set ::test_cd_watch]
+} {test_cd_none0 {geek {bar: }}}
+
+test inherit-1.5 {destructors are optional} {
+    set ::test_cd_watch ""
+    list [itcl::delete object test_cd_none0] [set ::test_cd_watch]
+} {{} {{bar destruct} {geek destruct}}}
+
+test inherit-1.6 {construction ok if constructors are missing} {
+    set ::test_cd_watch ""
+    list [test_cd_skip #auto] [set ::test_cd_watch]
+} {test_cd_skip0 {geek {bar: } skip}}
+
+test inherit-1.7 {destruction ok if destructors are missing} {
+    set ::test_cd_watch ""
+    list [itcl::delete object test_cd_skip0] [set ::test_cd_watch]
+} {{} {{skip destruct} {bar destruct} {geek destruct}}}
+
+
+test inherit-1.8 {errors during construction are cleaned up and reported} knownBug {
+    global errorInfo test_cd_watch
+    set test_cd_watch ""
+    itcl::body test_cd_bar::constructor {args} {error "bar: failed"}
+    list [catch {test_cd_mongrel #auto bob} msg] $msg \
+        $errorInfo $test_cd_watch
+} {1 {bar: failed} {bar: failed
+    while executing
+"error "bar: failed""
+    while constructing object "::test_cd_mongrel1" in ::test_cd_bar::constructor (body line 1)
+    while constructing object "::test_cd_mongrel1" in ::test_cd_foobar::constructor (body line 1)
+    invoked from within
+"test_cd_foobar::constructor 1 2 fred bob"
+    ("eval" body line 1)
+    invoked from within
+"eval test_cd_foobar::constructor 1 2 fred $x"
+    while constructing object "::test_cd_mongrel1" in ::test_cd_mongrel::constructor (body line 2)
+    invoked from within
+"::itcl::parser::handleClass test_cd_mongrel ::test_cd_mongrel #auto bob"
+    invoked from within
+"test_cd_mongrel #auto bob"} {{foo: 1 2} {mongrel destruct} {foobar destruct} {foo destruct} {bar destruct} {geek destruct}}}
+
+test inherit-1.9 {errors during destruction prevent object delete} {
+    global errorInfo test_cd_watch
+    itcl::body test_cd_bar::constructor {args} {return "bar: $args"}
+    itcl::body test_cd_bar::destructor {} {error "bar: failed"}
+    test_cd_mongrel mongrel1 ted
+    set test_cd_watch ""
+    list [catch {itcl::delete object mongrel1} msg] $msg \
+        $errorInfo $test_cd_watch [itcl::find objects mongrel*]
+} {1 {bar: failed} {bar: failed
+    while executing
+"error "bar: failed""
+    while deleting object "::mongrel1" in ::test_cd_bar::destructor (body line 1)
+    invoked from within
+"itcl::delete object mongrel1"} {{mongrel destruct} {foobar destruct} {foo destruct}} mongrel1}
+
+test inherit-1.10 {errors during destruction prevent class delete} {
+    list [catch {itcl::delete class test_cd_foo} msg] $msg
+} {1 {bar: failed}}
+
+eval namespace delete [itcl::find classes test_cd_*]
+
+# ----------------------------------------------------------------------
+#  Test data member access and scoping
+# ----------------------------------------------------------------------
+test inherit-2.1 {define classes with data members} {
+    itcl::class test_cd_foo {
+        protected variable x "foo-x"
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_bar {
+        protected variable x "bar-x"
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_foobar {
+        inherit test_cd_foo test_cd_bar
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_geek {
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_mongrel {
+        inherit test_cd_foobar test_cd_geek
+        protected variable x "mongrel-x"
+        method do {args} {eval $args}
+    }
+} {}
+
+test inherit-2.2 {"info" provides access to shadowed data members} {
+    test_cd_mongrel #auto
+    list [lsort [test_cd_mongrel0 info variable]] \
+         [test_cd_mongrel0 info variable test_cd_foo::x] \
+         [test_cd_mongrel0 info variable test_cd_bar::x] \
+         [test_cd_mongrel0 info variable test_cd_mongrel::x] \
+         [test_cd_mongrel0 info variable x]
+} {{::test_cd_bar::x ::test_cd_foo::x ::test_cd_mongrel::this ::test_cd_mongrel::x} {protected variable ::test_cd_foo::x foo-x foo-x} {protected variable ::test_cd_bar::x bar-x bar-x} {protected variable ::test_cd_mongrel::x mongrel-x mongrel-x} {protected variable ::test_cd_mongrel::x mongrel-x mongrel-x}}
+
+test inherit-2.3 {variable resolution works properly in methods} {
+    list [test_cd_mongrel0 test_cd_foo::do set x] \
+         [test_cd_mongrel0 test_cd_bar::do set x] \
+         [test_cd_mongrel0 test_cd_foobar::do set x] \
+         [test_cd_mongrel0 test_cd_mongrel::do set x]
+} {foo-x bar-x foo-x mongrel-x}
+
+test inherit-2.4 {methods have access to shadowed data members} {
+    list [test_cd_mongrel0 test_cd_foobar::do set x] \
+         [test_cd_mongrel0 test_cd_foobar::do set test_cd_foo::x] \
+         [test_cd_mongrel0 test_cd_foobar::do set test_cd_bar::x] \
+         [test_cd_mongrel0 test_cd_mongrel::do set test_cd_foo::x] \
+         [test_cd_mongrel0 test_cd_mongrel::do set test_cd_bar::x]
+} {foo-x foo-x bar-x foo-x bar-x}
+
+eval namespace delete [itcl::find classes test_cd_*]
+
+# ----------------------------------------------------------------------
+#  Test public variables and "configure" method
+# ----------------------------------------------------------------------
+test inherit-3.1 {define classes with public variables} {
+    variable ::test_cd_watch ""
+    itcl::class test_cd_foo {
+        public variable x "foo-x" {
+            global test_cd_watch
+            lappend test_cd_watch "foo: $x in scope [namespace current]"
+        }
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_bar {
+        public variable x "bar-x" {
+            global test_cd_watch
+            lappend test_cd_watch "bar: $x in scope [namespace current]"
+        }
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_foobar {
+        inherit test_cd_foo test_cd_bar
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_geek {
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_mongrel {
+        inherit test_cd_foobar test_cd_geek
+        public variable x "mongrel-x" {
+            global test_cd_watch
+            lappend test_cd_watch "mongrel: $x in scope [namespace current]"
+        }
+        method do {args} {eval $args}
+    }
+} {}
+
+test inherit-3.2 {create an object with public variables} {
+    test_cd_mongrel #auto
+} {test_cd_mongrel0}
+
+test inherit-3.3 {"configure" lists all public variables} {
+    lsort [test_cd_mongrel0 configure]
+} {{-test_cd_bar::x bar-x bar-x} {-test_cd_foo::x foo-x foo-x} {-x mongrel-x mongrel-x}}
+
+test inherit-3.4 {"configure" treats simple names as "most specific"} {
+    lsort [test_cd_mongrel0 configure -x]
+} {-x mongrel-x mongrel-x}
+
+test inherit-3.5 {"configure" treats simple names as "most specific"} {
+    set ::test_cd_watch ""
+    list [test_cd_mongrel0 configure -x hello] \
+         [set ::test_cd_watch]
+} {{} {{mongrel: hello in scope ::test_cd_mongrel}}}
+
+test inherit-3.6 {"configure" allows access to shadowed options} {
+    set ::test_cd_watch ""
+    list [test_cd_mongrel0 configure -test_cd_foo::x hello] \
+         [test_cd_mongrel0 configure -test_cd_bar::x there] \
+         [set ::test_cd_watch]
+} {{} {} {{foo: hello in scope ::test_cd_foo} {bar: there in scope ::test_cd_bar}}}
+
+test inherit-3.7 {"configure" will change several variables at once} {
+    set ::test_cd_watch ""
+    list [test_cd_mongrel0 configure -x one \
+                                     -test_cd_foo::x two \
+                                     -test_cd_bar::x three] \
+         [set ::test_cd_watch]
+} {{} {{mongrel: one in scope ::test_cd_mongrel} {foo: two in scope ::test_cd_foo} {bar: three in scope ::test_cd_bar}}}
+
+test inherit-3.8 {"cget" does proper name resolution} {
+    list [test_cd_mongrel0 cget -x] \
+         [test_cd_mongrel0 cget -test_cd_foo::x] \
+         [test_cd_mongrel0 cget -test_cd_bar::x] \
+         [test_cd_mongrel0 cget -test_cd_mongrel::x]
+} {one two three one}
+
+eval namespace delete [itcl::find classes test_cd_*]
+
+# ----------------------------------------------------------------------
+#  Test inheritance info
+# ----------------------------------------------------------------------
+test inherit-4.1 {define classes for inheritance info} {
+    itcl::class test_cd_foo {
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_bar {
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_foobar {
+        inherit test_cd_foo test_cd_bar
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_geek {
+        method do {args} {eval $args}
+    }
+    itcl::class test_cd_mongrel {
+        inherit test_cd_foobar test_cd_geek
+        method do {args} {eval $args}
+    }
+} {}
+
+test inherit-4.2 {create an object for inheritance tests} {
+    test_cd_mongrel #auto
+} {test_cd_mongrel0}
+
+test inherit-4.3 {"info class" should be virtual} {
+    list [test_cd_mongrel0 info class] \
+         [test_cd_mongrel0 test_cd_foo::do info class] \
+         [test_cd_mongrel0 test_cd_geek::do info class]
+} {::test_cd_mongrel ::test_cd_mongrel ::test_cd_mongrel}
+
+test inherit-4.4 {"info inherit" depends on class scope} {
+    list [test_cd_mongrel0 info inherit] \
+         [test_cd_mongrel0 test_cd_foo::do info inherit] \
+         [test_cd_mongrel0 test_cd_foobar::do info inherit]
+} {{::test_cd_foobar ::test_cd_geek} {} {::test_cd_foo ::test_cd_bar}}
+
+test inherit-4.5 {"info heritage" depends on class scope} {
+    list [test_cd_mongrel0 info heritage] \
+         [test_cd_mongrel0 test_cd_foo::do info heritage] \
+         [test_cd_mongrel0 test_cd_foobar::do info heritage]
+} {{::test_cd_mongrel ::test_cd_foobar ::test_cd_foo ::test_cd_bar ::test_cd_geek} ::test_cd_foo {::test_cd_foobar ::test_cd_foo ::test_cd_bar}}
+
+test inherit-4.6 {built-in "isa" method works} {
+    set status ""
+    foreach c [test_cd_mongrel0 info heritage] {
+        lappend status [test_cd_mongrel0 isa $c]
+    }
+    set status
+} {1 1 1 1 1}
+
+test inherit-4.7 {built-in "isa" method works within methods} {
+    set status ""
+    foreach c [test_cd_mongrel0 info heritage] {
+        lappend status [test_cd_mongrel0 test_cd_foo::do isa $c]
+    }
+    set status
+} {1 1 1 1 1}
+
+test inherit-4.8 {built-in "isa" method recognizes bad classes} {
+    itcl::class test_cd_other {}
+    test_cd_mongrel0 isa test_cd_other
+} {0}
+
+test inherit-4.9 {built-in "isa" method recognizes bad classes} {
+    list [catch {test_cd_mongrel0 isa test_cd_bogus} msg] $msg
+} {1 {class "test_cd_bogus" not found in context "::test_cd_foo"}}
+
+eval namespace delete [itcl::find classes test_cd_*]
+
+# ----------------------------------------------------------------------
+#  Test "find objects"
+# ----------------------------------------------------------------------
+test inherit-5.1 {define classes for inheritance info} {
+    itcl::class test_cd_foo {
+    }
+    itcl::class test_cd_bar {
+    }
+    itcl::class test_cd_foobar {
+        inherit test_cd_foo test_cd_bar
+    }
+    itcl::class test_cd_geek {
+    }
+    itcl::class test_cd_mongrel {
+        inherit test_cd_foobar test_cd_geek
+    }
+} {}
+
+test inherit-5.2 {create objects for info tests} {
+    list [test_cd_foo #auto] [test_cd_foo #auto] \
+         [test_cd_foobar #auto] \
+         [test_cd_geek #auto] \
+         [test_cd_mongrel #auto]
+} {test_cd_foo0 test_cd_foo1 test_cd_foobar0 test_cd_geek0 test_cd_mongrel0}
+
+test inherit-5.3 {find objects: -class qualifier} {
+    lsort [itcl::find objects -class test_cd_foo]
+} {test_cd_foo0 test_cd_foo1}
+
+test inherit-5.4 {find objects: -class qualifier} {
+    lsort [itcl::find objects -class test_cd_mongrel]
+} {test_cd_mongrel0}
+
+test inherit-5.5 {find objects: -isa qualifier} {
+    lsort [itcl::find objects -isa test_cd_foo]
+} {test_cd_foo0 test_cd_foo1 test_cd_foobar0 test_cd_mongrel0}
+
+test inherit-5.6 {find objects: -isa qualifier} {
+    lsort [itcl::find objects -isa test_cd_mongrel]
+} {test_cd_mongrel0}
+
+test inherit-5.7 {find objects: name qualifier} {
+    lsort [itcl::find objects test_cd_foo*]
+} {test_cd_foo0 test_cd_foo1 test_cd_foobar0}
+
+test inherit-5.8 {find objects: -class and -isa qualifiers} {
+    lsort [itcl::find objects -isa test_cd_foo -class test_cd_foobar]
+} {test_cd_foobar0}
+
+test inherit-5.9 {find objects: -isa and name qualifiers} {
+    lsort [itcl::find objects -isa test_cd_foo *0]
+} {test_cd_foo0 test_cd_foobar0 test_cd_mongrel0}
+
+test inherit-5.10 {find objects: usage errors} {
+    list [catch {itcl::find objects -xyzzy value} msg] $msg
+} {1 {wrong # args: should be "itcl::find objects ?-class className? ?-isa className? ?pattern?"}}
+
+eval namespace delete [itcl::find classes test_cd_*]
+
+# ----------------------------------------------------------------------
+#  Test method scoping and execution
+# ----------------------------------------------------------------------
+test inherit-6.1 {define classes for scope tests} {
+    itcl::class test_cd_foo {
+        method check {} {return "foo"}
+        method do {args} {return "foo says: [eval $args]"}
+    }
+    itcl::class test_cd_bar {
+        method check {} {return "bar"}
+        method do {args} {return "bar says: [eval $args]"}
+    }
+    itcl::class test_cd_foobar {
+        inherit test_cd_foo test_cd_bar
+        method check {} {return "foobar"}
+        method do {args} {return "foobar says: [eval $args]"}
+    }
+    itcl::class test_cd_geek {
+        method check {} {return "geek"}
+        method do {args} {return "geek says: [eval $args]"}
+    }
+    itcl::class test_cd_mongrel {
+        inherit test_cd_foobar test_cd_geek
+        method check {} {return "mongrel"}
+        method do {args} {return "mongrel says: [eval $args]"}
+    }
+} {}
+
+test inherit-6.2 {create objects for scoping tests} {
+    list [test_cd_mongrel #auto] [test_cd_foobar #auto]
+} {test_cd_mongrel0 test_cd_foobar0}
+
+test inherit-6.3 {methods are "virtual" outside of the class} {
+    test_cd_mongrel0 check
+} {mongrel}
+
+test inherit-6.4 {specific methods can be accessed by name} {
+    test_cd_mongrel0 test_cd_foo::check
+} {foo}
+
+test inherit-6.5 {methods are "virtual" within a class too} {
+    test_cd_mongrel0 test_cd_foobar::do check
+} {foobar says: mongrel}
+
+test inherit-6.6 {methods are executed where they were defined} {
+    list [test_cd_mongrel0 test_cd_foo::do namespace current] \
+         [test_cd_mongrel0 test_cd_foobar::do namespace current] \
+         [test_cd_mongrel0 do namespace current] \
+} {{foo says: ::test_cd_foo} {foobar says: ::test_cd_foobar} {mongrel says: ::test_cd_mongrel}}
+
+test inherit-6.7 {"virtual" command no longer exists} {
+    list [catch {
+        test_cd_mongrel0 test_cd_foobar::do virtual namespace current
+    } msg] $msg
+} {1 {invalid command name "virtual"}}
+
+test inherit-6.8 {"previous" command no longer exists} {
+    list [catch {
+        test_cd_mongrel0 test_cd_foobar::do previous check
+    } msg] $msg
+} {1 {invalid command name "previous"}}
+
+test inherit-6.9 {errors are detected and reported across class boundaries} {
+    #
+    # NOTE: For tcl8.2.3 and earlier the stack trace will have
+    #       'invoked from within "eval $args"' for the first eval
+    #       statement.  For later versions, it does not.  Use
+    #       string match to reduce the sensitivity to that.
+    #
+    list [catch {
+        test_cd_mongrel0 do test_cd_foobar0 do error "test" "some error"
+    } msg] $msg [string match {some error
+    ("eval" body line 1)*
+    (object "::test_cd_foobar0" method "::test_cd_foobar::do" body line 1)
+    invoked from within
+"test_cd_foobar0 do error test {some error}"
+    ("eval" body line 1)
+    invoked from within
+"eval $args"
+    (object "::test_cd_mongrel0" method "::test_cd_mongrel::do" body line 1)
+    invoked from within
+"test_cd_mongrel0 do test_cd_foobar0 do error "test" "some error""} [set ::errorInfo]]
+} {1 test 1}
+
+test inherit-6.10 {errors codes are preserved across class boundaries} {
+    list [catch {
+        test_cd_mongrel0 do test_cd_foobar0 do error "test" "problem" CODE-BLUE
+    } msg] $msg [set ::errorCode]
+} {1 test CODE-BLUE}
+
+test inherit-6.11 {multi-value error codes are preserved across class boundaries} {
+    list [catch {
+        test_cd_mongrel0 do test_cd_foobar0 do error "test" "problem" "CODE BLUE 123"
+    } msg] $msg [set ::errorCode]
+} {1 test {CODE BLUE 123}}
+
+eval namespace delete [itcl::find classes test_cd_*]
+
+# ----------------------------------------------------------------------
+#  Test inheritance errors
+# ----------------------------------------------------------------------
+test inherit-7.1 {cannot inherit from non-existant class} {
+    list [catch {
+        itcl::class bogus {
+            inherit non_existant_class_xyzzy
+        }
+    } msg] $msg
+} {1 {cannot inherit from "non_existant_class_xyzzy" (class "non_existant_class_xyzzy" not found in context "::")}}
+
+test inherit-7.2 {cannot inherit from procs} {
+    proc inherit_test_proc {x y} {
+        error "never call this"
+    }
+    list [catch {
+        itcl::class bogus {
+            inherit inherit_test_proc
+        }
+    } msg] $msg
+} {1 {cannot inherit from "inherit_test_proc" (class "inherit_test_proc" not found in context "::")}}
+
+test inherit-7.3 {cannot inherit from yourself} {
+    list [catch {
+        itcl::class bogus {
+            inherit bogus
+        }
+    } msg] $msg
+} {1 {class "bogus" cannot inherit from itself}}
+
+test inherit-7.4 {cannot have more than one inherit statement} {
+    list [catch {
+        itcl::class test_inherit_base1 { }
+        itcl::class test_inherit_base2 { }
+        itcl::class bogus {
+            inherit test_inherit_base1
+            inherit test_inherit_base2
+        }
+    } msg] $msg
+} {1 {inheritance "test_inherit_base1 " already defined for class "::bogus"}}
+
+::itcl::delete class test_inherit_base1 test_inherit_base2
+
+# ----------------------------------------------------------------------
+#  Multiple base class error detection
+# ----------------------------------------------------------------------
+test inherit-8.1 {cannot inherit from the same base class more than once} {
+    itcl::class test_mi_base {}
+    itcl::class test_mi_foo {inherit test_mi_base}
+    itcl::class test_mi_bar {inherit test_mi_base}
+    list [catch {
+        itcl::class test_mi_foobar {inherit test_mi_foo test_mi_bar}
+    } msg] $msg
+} {1 {class "::test_mi_foobar" inherits base class "::test_mi_base" more than once:
+  test_mi_foobar->test_mi_foo->test_mi_base
+  test_mi_foobar->test_mi_bar->test_mi_base}}
+
+itcl::delete class test_mi_base
+
+::tcltest::cleanupTests
+return

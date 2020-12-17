@@ -1,0 +1,140 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CreateErrorHandler 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateErrorHandler, Tk_DeleteErrorHandler \- handle X protocol errors
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_ErrorHandler
+\fBTk_CreateErrorHandler\fR(\fIdisplay, error, request, minor, proc, clientData\fR)
+.sp
+\fBTk_DeleteErrorHandler\fR(\fIhandler\fR)
+.SH ARGUMENTS
+.AS "Tk_ErrorHandler" clientData
+.AP Display *display in
+Display whose errors are to be handled.
+.AP int error in
+Match only error events with this value in the \fIerror_code\fR
+field.  If \-1, then match any \fIerror_code\fR value.
+.AP int request in
+Match only error events with this value in the \fIrequest_code\fR
+field.  If \-1, then match any \fIrequest_code\fR value.
+.AP int minor in
+Match only error events with this value in the \fIminor_code\fR
+field.  If \-1, then match any \fIminor_code\fR value.
+.AP Tk_ErrorProc *proc in
+Procedure to invoke whenever an error event is received for
+\fIdisplay\fR and matches \fIerror\fR, \fIrequest\fR, and \fIminor\fR.
+NULL means ignore any matching errors.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.AP Tk_ErrorHandler handler in
+Token for error handler to delete (return value from a previous
+call to \fBTk_CreateErrorHandler\fR).
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_CreateErrorHandler\fR arranges for a particular procedure
+(\fIproc\fR) to be called whenever certain protocol errors occur on a
+particular display (\fIdisplay\fR).  Protocol errors occur when
+the X protocol is used incorrectly, such as attempting to map a window
+that does not exist.  See the Xlib documentation for \fBXSetErrorHandler\fR
+for more information on the kinds of errors that can occur.
+For \fIproc\fR to be invoked
+to handle a particular error, five things must occur:
+.IP [1]
+The error must pertain to \fIdisplay\fR.
+.IP [2]
+Either the \fIerror\fR argument to \fBTk_CreateErrorHandler\fR
+must have been \-1, or the \fIerror\fR argument must match
+the \fIerror_code\fR field from the error event.
+.IP [3]
+Either the \fIrequest\fR argument to \fBTk_CreateErrorHandler\fR
+must have been \-1, or the \fIrequest\fR argument must match
+the \fIrequest_code\fR field from the error event.
+.IP [4]
+Either the \fIminor\fR argument to \fBTk_CreateErrorHandler\fR
+must have been \-1, or the \fIminor\fR argument must match
+the \fIminor_code\fR field from the error event.
+.IP [5]
+The protocol request to which the error pertains must have been
+made when the handler was active (see below for more information).
+.PP
+\fIProc\fR should have arguments and result that match the
+following type:
+.CS
+typedef int \fBTk_ErrorProc\fR(
+        ClientData \fIclientData\fR,
+        XErrorEvent *\fIerrEventPtr\fR);
+.CE
+The \fIclientData\fR parameter to \fIproc\fR is a copy of the \fIclientData\fR
+argument given to \fBTcl_CreateErrorHandler\fR when the callback
+was created.  Typically, \fIclientData\fR points to a data
+structure containing application-specific information that is
+needed to deal with the error.  \fIErrEventPtr\fR is
+a pointer to the X error event.
+The procedure \fIproc\fR should return an integer value.  If it
+returns 0 it means that \fIproc\fR handled the error completely and there
+is no need to take any other action for the error.  If it returns
+non-zero it means \fIproc\fR was unable to handle the error.
+.PP
+If a value of NULL is specified for \fIproc\fR, all matching errors
+will be ignored:  this will produce the same result as if a procedure
+had been specified that always returns 0.
+.PP
+If more than more than one handler matches a particular error, then
+they are invoked in turn.  The handlers will be invoked in reverse
+order of creation:  most recently declared handler first.
+If any handler returns 0, then subsequent (older) handlers will
+not be invoked.  If no handler returns 0, then Tk invokes X's
+default error handler, which prints an error message and aborts the
+program.  If you wish to have a default handler that deals with errors
+that no other handler can deal with, then declare it first.
+.PP
+The X documentation states that
+.QW "the error handler should not call any functions (directly or indirectly) on the display that will generate protocol requests or that will look for input events."
+This restriction applies to handlers declared by \fBTk_CreateErrorHandler\fR;
+disobey it at your own risk.
+.PP
+\fBTk_DeleteErrorHandler\fR may be called to delete a
+previously-created error handler.  The \fIhandler\fR argument
+identifies the error handler, and should be a value returned by
+a previous call to \fBTk_CreateEventHandler\fR.
+.PP
+A particular error handler applies to errors resulting
+from protocol requests generated between
+the call to \fBTk_CreateErrorHandler\fR and the call to
+\fBTk_DeleteErrorHandler\fR.  However, the actual callback
+to \fIproc\fR may not occur until after the \fBTk_DeleteErrorHandler\fR
+call, due to buffering in the client and server.
+If an error event pertains to
+a protocol request made just before calling \fBTk_DeleteErrorHandler\fR,
+then the error event may not have been processed
+before the \fBTk_DeleteErrorHandler\fR
+call.  When this situation arises, Tk will save information about
+the handler and
+invoke the handler's \fIproc\fR later when the error event
+finally arrives.
+If an application wishes to delete an error handler and know
+for certain that all relevant errors have been processed,
+it should first call \fBTk_DeleteErrorHandler\fR and then
+call \fBXSync\fR;  this will flush out any buffered requests and errors,
+but will result in a performance penalty because
+it requires communication to and from the X server.  After the
+\fBXSync\fR call Tk is guaranteed not to call any error
+handlers deleted before the \fBXSync\fR call.
+.PP
+For the Tk error handling mechanism to work properly, it is essential
+that application code never calls \fBXSetErrorHandler\fR directly;
+applications should use only \fBTk_CreateErrorHandler\fR.
+.SH KEYWORDS
+callback, error, event, handler

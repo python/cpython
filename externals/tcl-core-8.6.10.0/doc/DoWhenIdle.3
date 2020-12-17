@@ -1,0 +1,87 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_DoWhenIdle 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_DoWhenIdle, Tcl_CancelIdleCall \- invoke a procedure when there are no pending events
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_DoWhenIdle\fR(\fIproc, clientData\fR)
+.sp
+\fBTcl_CancelIdleCall\fR(\fIproc, clientData\fR)
+.SH ARGUMENTS
+.AS Tcl_IdleProc clientData
+.AP Tcl_IdleProc *proc in
+Procedure to invoke.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_DoWhenIdle\fR arranges for \fIproc\fR to be invoked
+when the application becomes idle.  The application is
+considered to be idle when \fBTcl_DoOneEvent\fR has been
+called, could not find any events to handle, and is about
+to go to sleep waiting for an event to occur.  At this
+point all pending \fBTcl_DoWhenIdle\fR handlers are
+invoked.  For each call to \fBTcl_DoWhenIdle\fR there will
+be a single call to \fIproc\fR;  after \fIproc\fR is
+invoked the handler is automatically removed.
+\fBTcl_DoWhenIdle\fR is only usable in programs that
+use \fBTcl_DoOneEvent\fR to dispatch events.
+.PP
+\fIProc\fR should have arguments and result that match the
+type \fBTcl_IdleProc\fR:
+.PP
+.CS
+typedef void \fBTcl_IdleProc\fR(
+        ClientData \fIclientData\fR);
+.CE
+.PP
+The \fIclientData\fR parameter to \fIproc\fR is a copy of the \fIclientData\fR
+argument given to \fBTcl_DoWhenIdle\fR.  Typically, \fIclientData\fR
+points to a data structure containing application-specific information about
+what \fIproc\fR should do.
+.PP
+\fBTcl_CancelIdleCall\fR
+may be used to cancel one or more previous
+calls to \fBTcl_DoWhenIdle\fR:  if there is a \fBTcl_DoWhenIdle\fR
+handler registered for \fIproc\fR and \fIclientData\fR, then it
+is removed without invoking it.  If there is more than one
+handler on the idle list that refers to \fIproc\fR and \fIclientData\fR,
+all of the handlers are removed.  If no existing handlers match
+\fIproc\fR and \fIclientData\fR then nothing happens.
+.PP
+\fBTcl_DoWhenIdle\fR is most useful in situations where
+(a) a piece of work will have to be done but (b) it is
+possible that something will happen in the near future
+that will change what has to be done or require something
+different to be done.  \fBTcl_DoWhenIdle\fR allows the
+actual work to be deferred until all pending events have
+been processed.  At this point the exact work to be done
+will presumably be known and it can be done exactly once.
+.PP
+For example, \fBTcl_DoWhenIdle\fR might be used by an editor
+to defer display updates until all pending commands have
+been processed.  Without this feature, redundant redisplays
+might occur in some situations, such as the processing of
+a command file.
+.SH BUGS
+.PP
+At present it is not safe for an idle callback to reschedule itself
+continuously.  This will interact badly with certain features of Tk
+that attempt to wait for all idle callbacks to complete.  If you would
+like for an idle callback to reschedule itself continuously, it is
+better to use a timer handler with a zero timeout period.
+.SH "SEE ALSO"
+after(n), Tcl_CreateFileHandler(3), Tcl_CreateTimerHandler(3)
+.SH KEYWORDS
+callback, defer, idle callback

@@ -1,0 +1,192 @@
+'\"
+'\" Copyright (c) 2004 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_LimitCheck 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_LimitAddHandler, Tcl_LimitCheck, Tcl_LimitExceeded, Tcl_LimitGetCommands, Tcl_LimitGetGranularity, Tcl_LimitGetTime, Tcl_LimitReady, Tcl_LimitRemoveHandler, Tcl_LimitSetCommands, Tcl_LimitSetGranularity, Tcl_LimitSetTime, Tcl_LimitTypeEnabled, Tcl_LimitTypeExceeded, Tcl_LimitTypeReset, Tcl_LimitTypeSet \- manage and check resource limits on interpreters
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_LimitCheck\fR(\fIinterp\fR)
+.sp
+int
+\fBTcl_LimitReady\fR(\fIinterp\fR)
+.sp
+int
+\fBTcl_LimitExceeded\fR(\fIinterp\fR)
+.sp
+int
+\fBTcl_LimitTypeExceeded\fR(\fIinterp, type\fR)
+.sp
+int
+\fBTcl_LimitTypeEnabled\fR(\fIinterp, type\fR)
+.sp
+void
+\fBTcl_LimitTypeSet\fR(\fIinterp, type\fR)
+.sp
+void
+\fBTcl_LimitTypeReset\fR(\fIinterp, type\fR)
+.sp
+int
+\fBTcl_LimitGetCommands\fR(\fIinterp\fR)
+.sp
+void
+\fBTcl_LimitSetCommands\fR(\fIinterp, commandLimit\fR)
+.sp
+void
+\fBTcl_LimitGetTime\fR(\fIinterp, timeLimitPtr\fR)
+.sp
+void
+\fBTcl_LimitSetTime\fR(\fIinterp, timeLimitPtr\fR)
+.sp
+int
+\fBTcl_LimitGetGranularity\fR(\fIinterp, type\fR)
+.sp
+void
+\fBTcl_LimitSetGranularity\fR(\fIinterp, type, granularity\fR)
+.sp
+void
+\fBTcl_LimitAddHandler\fR(\fIinterp, type, handlerProc, clientData, deleteProc\fR)
+.sp
+void
+\fBTcl_LimitRemoveHandler\fR(\fIinterp, type, handlerProc, clientData\fR)
+.SH ARGUMENTS
+.AS Tcl_LimitHandlerDeleteProc commandLimit in/out
+.AP Tcl_Interp *interp in
+Interpreter that the limit being managed applies to or that will have
+its limits checked.
+.AP int type in
+The type of limit that the operation refers to.  This must be either
+\fBTCL_LIMIT_COMMANDS\fR or \fBTCL_LIMIT_TIME\fR.
+.AP int commandLimit in
+The maximum number of commands (as reported by \fBinfo cmdcount\fR)
+that may be executed in the interpreter.
+.AP Tcl_Time *timeLimitPtr in/out
+A pointer to a structure that will either have the new time limit read
+from (\fBTcl_LimitSetTime\fR) or the current time limit written to
+(\fBTcl_LimitGetTime\fR).
+.AP int granularity in
+Divisor that indicates how often a particular limit should really be
+checked.  Must be at least 1.
+.AP Tcl_LimitHandlerProc *handlerProc in
+Function to call when a particular limit is exceeded.  If the
+\fIhandlerProc\fR removes or raises the limit during its processing,
+the limited interpreter will be permitted to continue to process after
+the handler returns.  Many handlers may be attached to the same
+interpreter limit; their order of execution is not defined, and they
+must be identified by \fIhandlerProc\fR and \fIclientData\fR when they
+are deleted.
+.AP ClientData clientData in
+Arbitrary pointer-sized word used to pass some context to the
+\fIhandlerProc\fR function.
+.AP Tcl_LimitHandlerDeleteProc *deleteProc in
+Function to call whenever a handler is deleted.  May be NULL if the
+\fIclientData\fR requires no deletion.
+.BE
+.SH DESCRIPTION
+.PP
+Tcl's interpreter resource limit subsystem allows for close control
+over how much computation time a script may use, and is useful for
+cases where a program is divided into multiple pieces where some parts
+are more trusted than others (e.g. web application servers).
+.PP
+Every interpreter may have a limit on the wall-time for execution, and
+a limit on the number of commands that the interpreter may execute.
+Since checking of these limits is potentially expensive (especially
+the time limit), each limit also has a checking granularity, which is
+a divisor for an internal count of the number of points in the core
+where a check may be performed (which is immediately before executing
+a command and at an unspecified frequency between running commands,
+which can happen in empty-bodied \fBwhile\fR loops).
+.PP
+The final component of the limit engine is a callback scheme which
+allows for notifications of when a limit has been exceeded.  These
+callbacks can just provide logging, or may allocate more resources to
+the interpreter to permit it to continue processing longer.
+.PP
+When a limit is exceeded (and the callbacks have run; the order of
+execution of the callbacks is unspecified) execution in the limited
+interpreter is stopped by raising an error and setting a flag that
+prevents the \fBcatch\fR command in that interpreter from trapping
+that error.  It is up to the context that started execution in that
+interpreter (typically a master interpreter) to handle the error.
+.SH "LIMIT CHECKING API"
+.PP
+To check the resource limits for an interpreter, call
+\fBTcl_LimitCheck\fR, which returns \fBTCL_OK\fR if the limit was not
+exceeded (after processing callbacks) and \fBTCL_ERROR\fR if the limit was
+exceeded (in which case an error message is also placed in the
+interpreter result).  That function should only be called when
+\fBTcl_LimitReady\fR returns non-zero so that granularity policy is
+enforced.  This API is designed to be similar in usage to
+\fBTcl_AsyncReady\fR and \fBTcl_AsyncInvoke\fR.
+.PP
+When writing code that may behave like \fBcatch\fR in respect of
+errors, you should only trap an error if \fBTcl_LimitExceeded\fR
+returns zero.  If it returns non-zero, the interpreter is in a
+limit-exceeded state and errors should be allowed to propagate to the
+calling context.  You can also check whether a particular type of
+limit has been exceeded using \fBTcl_LimitTypeExceeded\fR.
+.SH "LIMIT CONFIGURATION"
+.PP
+To check whether a limit has been set (but not whether it has actually
+been exceeded) on an interpreter, call \fBTcl_LimitTypeEnabled\fR with
+the type of limit you want to check.  To enable a particular limit
+call \fBTcl_LimitTypeSet\fR, and to disable a limit call
+\fBTcl_LimitTypeReset\fR.
+.PP
+The level of a command limit may be set using
+\fBTcl_LimitSetCommands\fR, and retrieved using
+\fBTcl_LimitGetCommands\fR.  Similarly for a time limit with
+\fBTcl_LimitSetTime\fR and \fBTcl_LimitGetTime\fR respectively, but
+with that API the time limit is copied from and to the Tcl_Time
+structure that the \fItimeLimitPtr\fR argument points to.
+.PP
+The checking granularity for a particular limit may be set using
+\fBTcl_LimitSetGranularity\fR and retrieved using
+\fBTcl_LimitGetGranularity\fR.  Note that granularities must always be
+positive.
+.SS "LIMIT CALLBACKS"
+.PP
+To add a handler callback to be invoked when a limit is exceeded, call
+\fBTcl_LimitAddHandler\fR.  The \fIhandlerProc\fR argument describes
+the function that will actually be called; it should have the
+following prototype:
+.PP
+.CS
+typedef void \fBTcl_LimitHandlerProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR);
+.CE
+.PP
+The \fIclientData\fR argument to the handler will be whatever is
+passed to the \fIclientData\fR argument to \fBTcl_LimitAddHandler\fR,
+and the \fIinterp\fR is the interpreter that had its limit exceeded.
+.PP
+The \fIdeleteProc\fR argument to \fBTcl_LimitAddHandler\fR is a
+function to call to delete the \fIclientData\fR value.  It may be
+\fBTCL_STATIC\fR or NULL if no deletion action is necessary, or
+\fBTCL_DYNAMIC\fR if all that is necessary is to free the structure with
+\fBTcl_Free\fR.  Otherwise, it should refer to a function with the
+following prototype:
+.PP
+.CS
+typedef void \fBTcl_LimitHandlerDeleteProc\fR(
+        ClientData \fIclientData\fR);
+.CE
+.PP
+A limit handler may be deleted using \fBTcl_LimitRemoveHandler\fR; the
+handler removed will be the first one found (out of the handlers added
+with \fBTcl_LimitAddHandler\fR) with exactly matching \fItype\fR,
+\fIhandlerProc\fR and \fIclientData\fR arguments.  This function
+always invokes the \fIdeleteProc\fR on the \fIclientData\fR (unless
+the \fIdeleteProc\fR was NULL or \fBTCL_STATIC\fR).
+.SH KEYWORDS
+interpreter, resource, limit, commands, time, callback

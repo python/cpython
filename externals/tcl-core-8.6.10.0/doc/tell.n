@@ -1,0 +1,48 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tell n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tell \- Return current access position for an open channel
+.SH SYNOPSIS
+\fBtell \fIchannelId\fR
+.BE
+.SH DESCRIPTION
+.PP
+Returns an integer string giving the current access position in
+\fIchannelId\fR.  This value returned is a byte offset that can be passed to
+\fBseek\fR in order to set the channel to a particular position.  Note
+that this value is in terms of bytes, not characters like \fBread\fR.
+The value returned is -1 for channels that do not support
+seeking.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
+the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
+the result of a channel creation command provided by a Tcl extension.
+.SH EXAMPLE
+.PP
+Read a line from a file channel only if it starts with \fBfoobar\fR:
+.PP
+.CS
+# Save the offset in case we need to undo the read...
+set offset [\fBtell\fR $chan]
+if {[read $chan 6] eq "foobar"} {
+    gets $chan line
+} else {
+    set line {}
+    # Undo the read...
+    seek $chan $offset
+}
+.CE
+.SH "SEE ALSO"
+file(n), open(n), close(n), gets(n), seek(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+access position, channel, seeking

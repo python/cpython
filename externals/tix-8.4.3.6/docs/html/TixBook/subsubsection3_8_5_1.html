@@ -1,0 +1,49 @@
+<HEAD>
+<TITLE> Initialization of Public Variables<A NAME=651>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1291 HREF=subsubsectionstar3_8_5_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1289 HREF=subsection3_8_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1283 HREF=subsection3_8_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1293 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1292 HREF=subsubsectionstar3_8_5_2.html>  Type Checker</A>
+<B>Up:</B> <A NAME=tex2html1290 HREF=subsection3_8_5.html> Declaring and Using </A>
+<B> Previous:</B> <A NAME=tex2html1284 HREF=subsection3_8_5.html> Declaring and Using </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00085100000000000000> Initialization of Public Variables<A NAME=651>&nbsp;</A></A></H3>
+<P>
+When a widget instance is created, all of its public variables are
+  initialized by the Tix Intrinsics before the <tt>InitWidgetRec</tt>
+  method is called. Therefore, <tt>InitWidgetRec</tt> and any other
+  method of this widgte instance are free to assume that all the
+  public variables have been properly initialized and use them as
+  such.
+<P>The public variables are initialized by the following criteria.
+<P>
+<blockquote> <UL><P><LI><P>Step 1: If the value of the variable is specified by the
+  creation command, this value is used. For example, if the
+  application programmer has created an instance in the following way:
+<P>
+<blockquote> <P><tt> tixArrowButton .arr -direction n
+</tt>
+<P></blockquote>
+<P>The value <tt>n</tt> will be used for the -direction variable.
+<P><LI><P>Step 2: if step 1 fails but the value of the variable is
+  specified in the options database, that value is used. For example,
+  if the user has created an instance in the following way:
+<P>
+<blockquote> <P><tt> option add *TixArrowButton.direction w<BR>
+tixArrowButton .arr
+</tt>
+<P></blockquote>
+<P>The value <tt>w</tt> will be used for the <tt>-direction</tt> variable.
+<P><LI><P>Step3: if step 2 also fails, the default value specified in
+  the <tt>-configspec</tt> secton of the class declaration will be used.
+<P></UL>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,83 @@
+# -*- mode: text; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# $Id: Release-8.2.0.txt,v 1.2 2002/01/24 09:12:08 idiscovery Exp $
+
+        ---   Tix 8.2.0 Release Notes   ---
+
+
+OVERVIEW
+========
+
+    We appreciate your help in testing Tix. Please follow these steps:
+
+    + Read license.terms in this directory for licensing terms and
+      a disclaimer of all liabilities
+    + Read this document
+    + Download Tix source release
+    + Build Tix
+    + Run the Tix regression test suite and demos
+    + Install Tix (with care)
+    + Build/run your local apps using Tix
+    + Send us feedback
+
+CHANGES
+=======
+
+    For a full list of the changes, see ChangeLog.txt in the parent
+    directory. Here's a list of the major changes and improvements:
+
+    + Improved support for Tcl namespaces and Itcl
+    + Revamped build system for Unix and Windows
+    + You can now compile Tix using cygwin as well as VC++
+    + Better support for native look-and-feel on Windows (incomplete)
+    + Preliminary support for ::tk namespace using ExposePrivateCommand (tk8.4)
+    + Some features have been deactivated and may be restored in
+      future release:
+
+      + Embedded TK (ET). See http://hwaci.com for the successor to ET.
+
+
+DOWNLOAD TIX
+============
+
+    The sources to this release of Tix can be downloaded from
+
+        http://tix.sourceforge.net/
+
+    You also need to download Tcl and Tk sources from
+
+        http://tcl.activestate.com/
+
+
+BUILD TIX
+=========
+
+    Please read the files win/README.txt and unix/README.txt.
+
+    Because of major changes in the build system, you may run into
+    difficulties when building Tix. Do not despair. If you have
+    questions, bug reports or, better yet, bug fixes, please send post
+    them on http://tix.sourceforge.net.
+
+RUN TESTS AND DEMOS
+===================
+
+    Refer to the win/README.txt and unix/README.txt files for
+    instructions. You just need to type "make test" and "make
+    rundemos" in most cases.
+
+INSTALL TIX (WITH CARE)
+=======================
+
+    Refer to the win/README.txt and unix/README.txt files for
+    instructions. 
+
+FEEDBACK
+========
+
+    Please send us feedback so that we know about the quality of this
+    release. If it works fine, consider sending us a message such as
+    "it works" and noting the versions of OS, Tcl/Tk and other
+    relevant components. If you encounter problems, please let us know
+    so that we can fix them. 
+
+    Again, thank you for helping with Tix testing.

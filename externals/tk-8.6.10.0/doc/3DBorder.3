@@ -1,0 +1,294 @@
+'\"
+'\" Copyright (c) 1990-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_Alloc3DBorderFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_Alloc3DBorderFromObj, Tk_Get3DBorder, Tk_Get3DBorderFromObj, Tk_Draw3DRectangle, Tk_Fill3DRectangle, Tk_Draw3DPolygon, Tk_Fill3DPolygon, Tk_3DVerticalBevel, Tk_3DHorizontalBevel, Tk_SetBackgroundFromBorder, Tk_NameOf3DBorder, Tk_3DBorderColor, Tk_3DBorderGC, Tk_Free3DBorderFromObj, Tk_Free3DBorder \- draw borders with three-dimensional appearance
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_3DBorder
+\fBTk_Alloc3DBorderFromObj(\fIinterp, tkwin, objPtr\fB)\fR
+.sp
+Tk_3DBorder
+\fBTk_Get3DBorder(\fIinterp, tkwin, colorName\fB)\fR
+.sp
+Tk_3DBorder
+\fBTk_Get3DBorderFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+void
+\fBTk_Draw3DRectangle(\fItkwin, drawable, border, x, y, width, height, borderWidth, relief\fB)\fR
+.sp
+void
+\fBTk_Fill3DRectangle(\fItkwin, drawable, border, x, y, width, height, borderWidth, relief\fB)\fR
+.sp
+void
+\fBTk_Draw3DPolygon(\fItkwin, drawable, border, pointPtr, numPoints, polyBorderWidth, leftRelief\fB)\fR
+.sp
+void
+\fBTk_Fill3DPolygon(\fItkwin, drawable, border, pointPtr, numPoints, polyBorderWidth, leftRelief\fB)\fR
+.sp
+void
+\fBTk_3DVerticalBevel\fR(\fItkwin, drawable, border, x, y, width, height, leftBevel, relief\fB)\fR
+.sp
+void
+\fBTk_3DHorizontalBevel\fR(\fItkwin, drawable, border, x, y, width, height, leftIn, rightIn, topBevel, relief\fB)\fR
+.sp
+void
+\fBTk_SetBackgroundFromBorder(\fItkwin, border\fB)\fR
+.sp
+const char *
+\fBTk_NameOf3DBorder(\fIborder\fB)\fR
+.sp
+XColor *
+\fBTk_3DBorderColor(\fIborder\fB)\fR
+.sp
+GC *
+\fBTk_3DBorderGC(\fItkwin, border, which\fB)\fR
+.sp
+\fBTk_Free3DBorderFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+\fBTk_Free3DBorder(\fIborder\fB)\fR
+.SH ARGUMENTS
+.AS "Tk_3DBorder" borderWidth
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP Tk_Window tkwin in
+Token for window (for all procedures except \fBTk_Get3DBorder\fR,
+must be the window for which the border was allocated).
+.AP Tcl_Obj *objPtr in
+Pointer to value whose value describes color corresponding to
+background (flat areas).  Illuminated edges will be brighter than
+this and shadowed edges will be darker than this.
+.AP char *colorName in
+Same as \fIobjPtr\fR except value is supplied as a string rather
+than a value.
+.AP Drawable drawable in
+X token for window or pixmap;  indicates where graphics are to be drawn.
+Must either be the X window for \fItkwin\fR or a pixmap with the
+same screen and depth as \fItkwin\fR.
+.AP Tk_3DBorder border in
+Token for border previously allocated in call to \fBTk_Get3DBorder\fR.
+.AP int x in
+X-coordinate of upper-left corner of rectangle describing border
+or bevel, in pixels.
+.AP int y in
+Y-coordinate of upper-left corner of rectangle describing border or
+bevel, in pixels.
+.AP int width in
+Width of rectangle describing border or bevel, in pixels.
+.AP int height in
+Height of rectangle describing border or bevel, in pixels.
+.AP int borderWidth in
+Width of border in pixels. Positive means border is inside rectangle
+given by \fIx\fR, \fIy\fR, \fIwidth\fR, \fIheight\fR, negative means
+border is outside rectangle.
+.AP int relief in
+Indicates 3-D position of interior of value relative to exterior;
+should be \fBTK_RELIEF_RAISED\fR, \fBTK_RELIEF_SUNKEN\fR, \fBTK_RELIEF_GROOVE\fR,
+\fBTK_RELIEF_SOLID\fR, or \fBTK_RELIEF_RIDGE\fR (may also be \fBTK_RELIEF_FLAT\fR
+for \fBTk_Fill3DRectangle\fR).
+.AP XPoint *pointPtr in
+Pointer to array of points describing the set of vertices in a polygon.
+The polygon need not be closed (it will be closed automatically if it
+is not).
+.AP int numPoints in
+Number of points at \fI*pointPtr\fR.
+.AP int polyBorderWidth in
+Width of border in pixels.  If positive, border is drawn to left of
+trajectory given by \fIpointPtr\fR;  if negative, border is drawn to
+right of trajectory.  If \fIleftRelief\fR is \fBTK_RELIEF_GROOVE\fR or
+\fBTK_RELIEF_RIDGE\fR then the border is centered on the trajectory.
+.AP int leftRelief in
+Height of left side of polygon's path relative to right.  \fBTK_RELIEF_RAISED\fR
+means left side should appear higher and \fBTK_RELIEF_SUNKEN\fR means right side
+should appear higher;
+\fBTK_RELIEF_GROOVE\fR and \fBTK_RELIEF_RIDGE\fR mean the obvious things.
+For \fBTk_Fill3DPolygon\fR, \fBTK_RELIEF_FLAT\fR may also be specified to
+indicate no difference in height.
+.AP int leftBevel in
+Non-zero means this bevel forms the left side of the value;  zero means
+it forms the right side.
+.AP int leftIn in
+Non-zero means that the left edge of the horizontal bevel angles in,
+so that the bottom of the edge is farther to the right than
+the top.
+Zero means the edge angles out, so that the bottom is farther to the
+left than the top.
+.AP int rightIn in
+Non-zero means that the right edge of the horizontal bevel angles in,
+so that the bottom of the edge is farther to the left than the top.
+Zero means the edge angles out, so that the bottom is farther to the
+right than the top.
+.AP int topBevel in
+Non-zero means this bevel forms the top side of the value;  zero means
+it forms the bottom side.
+.AP int which in
+Specifies which of the border's graphics contexts is desired.
+Must be \fBTK_3D_FLAT_GC\fR, \fBTK_3D_LIGHT_GC\fR, or \fBTK_3D_DARK_GC\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures provide facilities for drawing window borders in a
+way that produces a three-dimensional appearance.
+\fBTk_Alloc3DBorderFromObj\fR
+allocates colors and Pixmaps needed to draw a border in the window
+given by the \fItkwin\fR argument.  The value of \fIobjPtr\fR
+is a standard Tk color name that determines the border colors.
+The color indicated by \fIobjPtr\fR will not actually be used in
+the border;  it indicates the background color for the window
+(i.e. a color for flat surfaces).
+The illuminated portions of the border will appear brighter than indicated
+by \fIobjPtr\fR, and the shadowed portions of the border will appear
+darker than \fIobjPtr\fR.
+.PP
+\fBTk_Alloc3DBorderFromObj\fR returns a token that may be used in later calls
+to \fBTk_Draw3DRectangle\fR.  If an error occurs in allocating information
+for the border (e.g. a bogus color name was given)
+then NULL is returned and an error message is left as the result of
+interpreter \fIinterp\fR.
+If it returns successfully, \fBTk_Alloc3DBorderFromObj\fR caches
+information about the return value in \fIobjPtr\fR, which speeds up
+future calls to \fBTk_Alloc3DBorderFromObj\fR with the same \fIobjPtr\fR
+and \fItkwin\fR.
+.PP
+\fBTk_Get3DBorder\fR is identical to \fBTk_Alloc3DBorderFromObj\fR except
+that the color is specified with a string instead of a value.  This
+prevents \fBTk_Get3DBorder\fR from caching the return value, so
+\fBTk_Get3DBorder\fR is less efficient than \fBTk_Alloc3DBorderFromObj\fR.
+.PP
+\fBTk_Get3DBorderFromObj\fR returns the token for an existing border, given
+the window and color name used to create the border.
+\fBTk_Get3DBorderFromObj\fR does not actually create the border; it must
+already have been created with a previous call to
+\fBTk_Alloc3DBorderFromObj\fR or \fBTk_Get3DBorder\fR.  The return
+value is cached in \fIobjPtr\fR, which speeds up
+future calls to \fBTk_Get3DBorderFromObj\fR with the same \fIobjPtr\fR
+and \fItkwin\fR.
+.PP
+Once a border structure has been created, \fBTk_Draw3DRectangle\fR may be
+invoked to draw the border.
+The \fItkwin\fR argument specifies the
+window for which the border was allocated, and \fIdrawable\fR
+specifies a window or pixmap in which the border is to be drawn.
+\fIDrawable\fR need not refer to the same window as \fItkwin\fR, but it
+must refer to a compatible
+pixmap or window:  one associated with the same screen and with the
+same depth as \fItkwin\fR.
+The \fIx\fR, \fIy\fR, \fIwidth\fR, and
+\fIheight\fR arguments define the bounding box of the border region
+within \fIdrawable\fR (usually \fIx\fR and \fIy\fR are zero and
+\fIwidth\fR and \fIheight\fR are the dimensions of the window), and
+\fIborderWidth\fR specifies the number of pixels actually
+occupied by the border.  The \fIrelief\fR argument indicates
+which of several three-dimensional effects is desired:
+\fBTK_RELIEF_RAISED\fR means that the interior of the rectangle should
+appear raised relative to the exterior of the rectangle, and
+\fBTK_RELIEF_SUNKEN\fR means that the interior should appear depressed.
+\fBTK_RELIEF_GROOVE\fR and \fBTK_RELIEF_RIDGE\fR mean that there should appear to be
+a groove or ridge around the exterior of the rectangle.
+.PP
+\fBTk_Fill3DRectangle\fR is somewhat like \fBTk_Draw3DRectangle\fR except
+that it first fills the rectangular area with the background color
+(one corresponding
+to the color used to create \fIborder\fR).  Then it calls
+\fBTk_Draw3DRectangle\fR to draw a border just inside the outer edge of
+the rectangular area.  The argument \fIrelief\fR indicates the desired
+effect (\fBTK_RELIEF_FLAT\fR means no border should be drawn; all that
+happens is to fill the rectangle with the background color).
+.PP
+The procedure \fBTk_Draw3DPolygon\fR may be used to draw more complex
+shapes with a three-dimensional appearance.  The \fIpointPtr\fR and
+\fInumPoints\fR arguments define a trajectory, \fIpolyBorderWidth\fR
+indicates how wide the border should be (and on which side of the
+trajectory to draw it), and \fIleftRelief\fR indicates which side
+of the trajectory should appear raised.  \fBTk_Draw3DPolygon\fR
+draws a border around the given trajectory using the colors from
+\fIborder\fR to produce a three-dimensional appearance.  If the trajectory is
+non-self-intersecting, the appearance will be a raised or sunken
+polygon shape.  The trajectory may be self-intersecting, although
+it's not clear how useful this is.
+.PP
+\fBTk_Fill3DPolygon\fR is to \fBTk_Draw3DPolygon\fR what
+\fBTk_Fill3DRectangle\fR is to \fBTk_Draw3DRectangle\fR:  it fills
+the polygonal area with the background color from \fIborder\fR,
+then calls \fBTk_Draw3DPolygon\fR to draw a border around the
+area (unless \fIleftRelief\fR is \fBTK_RELIEF_FLAT\fR; in this case no
+border is drawn).
+.PP
+The procedures \fBTk_3DVerticalBevel\fR and \fBTk_3DHorizontalBevel\fR
+provide lower-level drawing primitives that are used by
+procedures such as \fBTk_Draw3DRectangle\fR.
+These procedures are also useful in their own right for drawing
+rectilinear border shapes.
+\fBTk_3DVerticalBevel\fR draws a vertical beveled edge, such as the
+left or right side of a rectangle, and \fBTk_3DHorizontalBevel\fR
+draws a horizontal beveled edge, such as the top or bottom of a
+rectangle.
+Each procedure takes \fIx\fR, \fIy\fR, \fIwidth\fR, and \fIheight\fR
+arguments that describe the rectangular area of the beveled edge
+(e.g., \fIwidth\fR is the border width for \fBTk_3DVerticalBevel\fR).
+The \fIleftBorder\fR and \fItopBorder\fR arguments indicate the
+position of the border relative to the
+.QW inside
+of the value, and
+\fIrelief\fR indicates the relief of the inside of the value relative
+to the outside.
+\fBTk_3DVerticalBevel\fR just draws a rectangular region.
+\fBTk_3DHorizontalBevel\fR draws a trapezoidal region to generate
+mitered corners;  it should be called after \fBTk_3DVerticalBevel\fR
+(otherwise \fBTk_3DVerticalBevel\fR will overwrite the mitering in
+the corner).
+The \fIleftIn\fR and \fIrightIn\fR arguments to \fBTk_3DHorizontalBevel\fR
+describe the mitering at the corners;  a value of 1 means that the bottom
+edge of the trapezoid will be shorter than the top, 0 means it will
+be longer.
+For example, to draw a rectangular border the top bevel should be
+drawn with 1 for both \fIleftIn\fR and \fIrightIn\fR, and the
+bottom bevel should be drawn with 0 for both arguments.
+.PP
+The procedure \fBTk_SetBackgroundFromBorder\fR will modify the background
+pixel and/or pixmap of \fItkwin\fR to produce a result compatible
+with \fIborder\fR.  For color displays, the resulting background will
+just be the color specified when \fIborder\fR was created;  for monochrome
+displays, the resulting background
+will be a light stipple pattern, in order to distinguish the background from
+the illuminated portion of the border.
+.PP
+Given a token for a border, the procedure \fBTk_NameOf3DBorder\fR
+will return the color name that was used to create the border.
+.PP
+The procedure \fBTk_3DBorderColor\fR returns the XColor structure
+that will be used for flat surfaces drawn for its \fIborder\fR
+argument by procedures like \fBTk_Fill3DRectangle\fR.
+The return value corresponds to the color name that was used to
+create the border.
+The XColor, and its associated pixel value, will remain allocated
+as long as \fIborder\fR exists.
+.PP
+The procedure \fBTk_3DBorderGC\fR returns one of the X graphics contexts
+that are used to draw the border.
+The argument \fIwhich\fR selects which one of the three possible GC's:
+\fBTK_3D_FLAT_GC\fR returns the context used for flat surfaces,
+\fBTK_3D_LIGHT_GC\fR returns the context for light shadows,
+and \fBTK_3D_DARK_GC\fR returns the context for dark shadows.
+.PP
+When a border is no longer needed, \fBTk_Free3DBorderFromObj\fR
+or \fBTk_Free3DBorder\fR should
+be called to release the resources associated with it.
+For \fBTk_Free3DBorderFromObj\fR the border to release is specified
+with the window and color name used to create the
+border; for \fBTk_Free3DBorder\fR the border to release is specified
+with the Tk_3DBorder token for the border.
+There should be exactly one call to \fBTk_Free3DBorderFromObj\fR or
+\fBTk_Free3DBorder\fR for each call to \fBTk_Alloc3DBorderFromObj\fR
+or \fBTk_Get3DBorder\fR.
+.SH KEYWORDS
+3D, background, border, color, depressed, illumination, value, polygon, raised, shadow, three-dimensional effect

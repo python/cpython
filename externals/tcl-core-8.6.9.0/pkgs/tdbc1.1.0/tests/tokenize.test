@@ -1,0 +1,69 @@
+# tokenize.test --
+#
+#	Tests for the tokenizer in TDBC
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+tcltest::loadTestedCommands
+package require tdbc
+
+test tokenize-1.0 {wrong args} \
+    -body {
+	::tdbc::tokenize
+    } \
+    -returnCodes error \
+    -result {wrong # args: should be "::tdbc::tokenize statement"}
+
+test tokenize-1.1 {wrong args} \
+    -body {
+	::tdbc::tokenize foo bar
+    } \
+    -returnCodes error \
+    -result {wrong # args: should be "::tdbc::tokenize statement"}
+
+test tokenize-2.0 {colon substitution, unquoted and quoted} {
+    ::tdbc::tokenize {SELECT :a, ':b' FROM y}
+} [list {SELECT } {:a} {, ':b' FROM y}]
+
+test tokenize-2.1 {PostgreSQL cast syntax, not a colon substitution} {
+    ::tdbc::tokenize {SELECT :foo::VARCHAR}
+} [list {SELECT } :foo {::VARCHAR}]
+
+test tokenize-3.0 {complex set of statements} {
+    ::tdbc::tokenize {-- begin with a comment :hi;
+	SELECT :a, ':b', ":c", [:d], /* :e, */ :f FROM y;
+	INSERT INTO y VALUES(1,2,oracle$name,:g);}
+} [list \
+       "-- begin with a comment :hi;\n\tSELECT " \
+       :a \
+       {, ':b', ":c", [:d], /* :e, */ } \
+       :f \
+       { FROM y} \
+       \; \
+       "\n\tINSERT INTO y VALUES(1,2,oracle\$name," \
+       :g \
+       ")" \
+       ";"]
+
+test tokenize-4.0 {unterminated comment} {
+    ::tdbc::tokenize {-- unterminated comment}
+} {{-- unterminated comment}}
+
+test tokenize-4.1 {unterminated quote} {
+    ::tdbc::tokenize {' unterminated quote}
+} {{' unterminated quote}}
+
+test tokenize-4.2 {unterminated quote} {
+    ::tdbc::tokenize "\" unterminated quote"
+} [list "\" unterminated quote"]
+
+test tokenize-4.3 {unterminated quote} {
+    ::tdbc::tokenize "\[ unterminated quote"
+} [list "\[ unterminated quote"]
+	    
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

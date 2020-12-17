@@ -1,0 +1,88 @@
+#
+# Tests for using [incr Tcl] in slave interpreters
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Make sure that slave interpreters can be created and loaded
+#  with [incr Tcl]...
+# ----------------------------------------------------------------------
+test interp-1.1 {create a slave interp with [incr Tcl]} {
+    interp create slave
+    load "" Itcl slave
+    list [slave eval "namespace children :: itcl"] [interp delete slave]
+} {::itcl {}}
+
+test interp-1.2 {create a safe slave interp with [incr Tcl]} {
+    interp create -safe slave
+    load "" Itcl slave
+    list [slave eval "namespace children :: itcl"] [interp delete slave]
+} {::itcl {}}
+
+test interp-1.3 {errors are okay when slave interp is deleted} {
+catch {interp delete slave}
+    interp create slave
+    load "" Itcl slave
+    slave eval {
+        itcl::class Troublemaker {
+            destructor { error "cannot delete this object" }
+        }
+        itcl::class Foo {
+            variable obj ""
+            constructor {} {
+                set obj [Troublemaker #auto]
+            }
+            destructor {
+                delete object $obj
+            }
+        }
+        Foo f
+    }
+    interp delete slave
+} {}
+
+test interp-1.4 {one namespace can cause another to be destroyed} {
+    interp create slave
+    load "" Itcl slave
+    slave eval {
+        namespace eval group {
+            itcl::class base1 {}
+            itcl::class base2 {}
+        }
+        itcl::class TroubleMaker {
+            inherit group::base1 group::base2
+        }
+    }
+    interp delete slave
+} {}
+
+test interp-1.5 {cleanup interp object list, this should not
+        include an object that deletes itself in ctor} {
+    interp create slave
+    load "" Itcl slave
+    slave eval {
+        itcl::class DeleteSelf {
+            constructor {} {
+                itcl::delete object $this
+            }
+        }
+        DeleteSelf ds
+    }
+    interp delete slave
+} {}
+
+::tcltest::cleanupTests
+return

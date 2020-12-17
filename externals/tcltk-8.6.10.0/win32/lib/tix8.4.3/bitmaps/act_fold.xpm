@@ -1,0 +1,22 @@
+/* XPM */
+static char * act_fold_xpm[] = {
+/* width height num_colors chars_per_pixel */
+"16 12 4 1",
+/* colors */
+" 	s None	c None",
+".	c black",
+"X	c yellow",
+"o	c #5B5B57574646",
+/* pixels */
+"   ....         ",
+"  .XXXX.        ",
+" .XXXXXX.       ",
+".............   ",
+".oXoXoXoXoXo.   ",
+".XoX............",
+".oX.XXXXXXXXXXX.",
+".Xo.XXXXXXXXXX. ",
+".o.XXXXXXXXXXX. ",
+".X.XXXXXXXXXXX. ",
+"..XXXXXXXXXX..  ",
+".............   "};

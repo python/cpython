@@ -1,0 +1,150 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH message n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+message \- Create and manipulate 'message' non-interactive text widgets
+.SH SYNOPSIS
+\fBmessage\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-anchor	\-background	\-borderwidth
+\-cursor	\-font	\-foreground
+\-highlightbackground	\-highlightcolor	\-highlightthickness
+\-padx	\-pady	\-relief
+\-takefocus	\-text	\-textvariable
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-aspect aspect Aspect
+Specifies a non-negative integer value indicating desired
+aspect ratio for the text.  The aspect ratio is specified as
+100*width/height.  100 means the text should
+be as wide as it is tall, 200 means the text should
+be twice as wide as it is tall, 50 means the text should
+be twice as tall as it is wide, and so on.
+Used to choose line length for text if \fB\-width\fR option
+is not specified.
+Defaults to 150.
+.OP \-justify justify Justify
+Specifies how to justify lines of text.
+Must be one of \fBleft\fR, \fBcenter\fR, or \fBright\fR.  Defaults
+to \fBleft\fR.
+This option works together with the \fB\-anchor\fR, \fB\-aspect\fR,
+\fB\-padx\fR, \fB\-pady\fR, and \fB\-width\fR options to provide a variety
+of arrangements of the text within the window.
+The \fB\-aspect\fR and \fB\-width\fR options determine the amount of
+screen space needed to display the text.
+The \fB\-anchor\fR, \fB\-padx\fR, and \fB\-pady\fR options determine where this
+rectangular area is displayed within the widget's window, and the
+\fB\-justify\fR option determines how each line is displayed within that
+rectangular region.
+For example, suppose \fB\-anchor\fR is \fBe\fR and \fB\-justify\fR is
+\fBleft\fR, and that the message window is much larger than needed
+for the text.
+The text will be displayed so that the left edges of all the lines
+line up and the right edge of the longest line is \fB\-padx\fR from
+the right side of the window;  the entire text block will be centered
+in the vertical span of the window.
+.OP \-width width Width
+Specifies the length of lines in the window.
+The value may have any of the forms acceptable to \fBTk_GetPixels\fR.
+If this option has a value greater than zero then the \fB\-aspect\fR
+option is ignored and the \fB\-width\fR option determines the line
+length.
+If this option has a value less than or equal to zero, then
+the \fB\-aspect\fR option determines the line length.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBmessage\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a message widget.
+Additional
+options, described above, may be specified on the command line
+or in the option database
+to configure aspects of the message such as its colors, font,
+text, and initial relief.  The \fBmessage\fR command returns its
+\fIpathName\fR argument.  At the time this command is invoked,
+there must not exist a window named \fIpathName\fR, but
+\fIpathName\fR's parent must exist.
+.PP
+A message is a widget that displays a textual string.  A message
+widget has three special features that differentiate it from a
+\fBlabel\fR widget.  First, it breaks up
+its string into lines in order to produce a given aspect ratio
+for the window.  The line breaks are chosen at word boundaries
+wherever possible (if not even a single word would fit on a
+line, then the word will be split across lines).  Newline characters
+in the string will force line breaks;  they can be used, for example,
+to leave blank lines in the display.
+.PP
+The second feature of a message widget is justification.  The text
+may be displayed left-justified (each line starts at the left side of
+the window), centered on a line-by-line basis, or right-justified
+(each line ends at the right side of the window).
+.PP
+The third feature of a message widget is that it handles control
+characters and non-printing characters specially.  Tab characters
+are replaced with enough blank space to line up on the next
+8-character boundary.  Newlines cause line breaks.  Other control
+characters (ASCII code less than 0x20) and characters not defined
+in the font are displayed as a four-character sequence \fB\ex\fIhh\fR where
+\fIhh\fR is the two-digit hexadecimal number corresponding to
+the character.  In the unusual case where the font does not contain
+all of the characters in
+.QW 0123456789abcdef\ex
+then control characters and undefined characters are not displayed at all.
+.SH "WIDGET COMMAND"
+.PP
+The \fBmessage\fR command creates a new Tcl command whose
+name is \fIpathName\fR.  This
+command may be used to invoke various
+operations on the widget.  It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for message widgets:
+.TP
+\fIpathName \fBcget \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBmessage\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBmessage\fR
+command.
+.SH "DEFAULT BINDINGS"
+.PP
+When a new message is created, it has no default event bindings:
+messages are intended for output purposes only.
+.SH BUGS
+.PP
+Tabs do not work very well with text that is centered or right-justified.
+The most common result is that the line is justified wrong.
+.SH "SEE ALSO"
+label(n)
+.SH KEYWORDS
+message, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

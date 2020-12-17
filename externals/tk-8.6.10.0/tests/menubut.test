@@ -1,0 +1,795 @@
+# This file is a Tcl script to test menubuttons in Tk.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+# XXX This test file is woefully incomplete right now.  If any part
+# XXX of a procedure has tests then the whole procedure has tests,
+# XXX but many procedures have no tests.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+imageInit
+
+# Create entries in the option database to be sure that geometry options
+# like border width have predictable values.
+
+option add *Menubutton.borderWidth 2
+option add *Menubutton.highlightThickness 2
+option add *Menubutton.font {Helvetica -12 bold}
+option add *Button.borderWidth 2
+option add *Button.highlightThickness 2
+option add *Button.font {Helvetica -12 bold}
+
+
+menubutton .mb -text "Test"
+pack .mb
+update
+test menubutton-1.1 {configuration options} -body {
+    .mb configure -activebackground #012345
+    .mb cget -activebackground
+} -cleanup {
+    .mb configure -activebackground [lindex [.mb configure -activebackground] 3]
+} -result {#012345}
+test menubutton-1.2 {configuration options} -body {
+    .mb configure -activebackground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test menubutton-1.3 {configuration options} -body {
+    .mb configure -activeforeground #ff0000
+    .mb cget -activeforeground
+} -cleanup {
+    .mb configure -activeforeground [lindex [.mb configure -activeforeground] 3]
+} -result {#ff0000}
+test menubutton-1.4 {configuration options} -body {
+    .mb configure -activeforeground non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test menubutton-1.5 {configuration options} -body {
+    .mb configure -anchor nw
+    .mb cget -anchor
+} -cleanup {
+    .mb configure -anchor [lindex [.mb configure -anchor] 3]
+} -result {nw}
+test menubutton-1.6 {configuration options} -body {
+    .mb configure -anchor bogus
+} -returnCodes error -result {bad anchor "bogus": must be n, ne, e, se, s, sw, w, nw, or center}
+test menubutton-1.7 {configuration options} -body {
+    .mb configure -background #ff0000
+    .mb cget -background
+} -cleanup {
+    .mb configure -background [lindex [.mb configure -background] 3]
+} -result {#ff0000}
+test menubutton-1.8 {configuration options} -body {
+    .mb configure -background non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test menubutton-1.9 {configuration options} -body {
+    .mb configure -bd 4
+    .mb cget -bd
+} -cleanup {
+    .mb configure -bd [lindex [.mb configure -bd] 3]
+} -result {4}
+test menubutton-1.10 {configuration options} -body {
+    .mb configure -bd badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test menubutton-1.11 {configuration options} -body {
+    .mb configure -bg #ff0000
+    .mb cget -bg
+} -cleanup {
+    .mb configure -bg [lindex [.mb configure -bg] 3]
+} -result {#ff0000}
+test menubutton-1.12 {configuration options} -body {
+    .mb configure -bg non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test menubutton-1.13 {configuration options} -body {
+    .mb configure -bitmap questhead
+    .mb cget -bitmap
+} -cleanup {
+    .mb configure -bitmap [lindex [.mb configure -bitmap] 3]
+} -result {questhead}
+test menubutton-1.14 {configuration options} -body {
+    .mb configure -bitmap badValue
+} -returnCodes error -result {bitmap "badValue" not defined}
+test menubutton-1.15 {configuration options} -body {
+    .mb configure -borderwidth 1.3
+    .mb cget -borderwidth
+} -cleanup {
+    .mb configure -borderwidth [lindex [.mb configure -borderwidth] 3]
+} -result {1}
+test menubutton-1.16 {configuration options} -body {
+    .mb configure -borderwidth badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test menubutton-1.17 {configuration options} -body {
+    .mb configure -cursor arrow
+    .mb cget -cursor
+} -cleanup {
+    .mb configure -cursor [lindex [.mb configure -cursor] 3]
+} -result {arrow}
+test menubutton-1.18 {configuration options} -body {
+    .mb configure -cursor badValue
+} -returnCodes error -result {bad cursor spec "badValue"}
+test menubutton-1.19 {configuration options} -body {
+    .mb configure -direction below
+    .mb cget -direction
+} -cleanup {
+    .mb configure -direction [lindex [.mb configure -direction] 3]
+} -result {below}
+test menubutton-1.20 {configuration options} -body {
+    .mb configure -direction badValue
+} -returnCodes error -result {bad direction "badValue": must be above, below, flush, left, or right}
+test menubutton-1.21 {configuration options} -body {
+    .mb configure -disabledforeground #00ff00
+    .mb cget -disabledforeground
+} -cleanup {
+    .mb configure -disabledforeground [lindex [.mb configure -disabledforeground] 3]
+} -result {#00ff00}
+test menubutton-1.22 {configuration options} -body {
+    .mb configure -disabledforeground xyzzy
+} -returnCodes error -result {unknown color name "xyzzy"}
+test menubutton-1.23 {configuration options} -body {
+    .mb configure -fg #110022
+    .mb cget -fg
+} -cleanup {
+    .mb configure -fg [lindex [.mb configure -fg] 3]
+} -result {#110022}
+test menubutton-1.24 {configuration options} -body {
+    .mb configure -fg bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test menubutton-1.25 {configuration options} -body {
+    .mb configure -font {Helvetica 12}
+    .mb cget -font
+} -cleanup {
+    .mb configure -font [lindex [.mb configure -font] 3]
+} -result {Helvetica 12}
+test menubutton-1.26 {configuration options} -body {
+    .mb configure -foreground #110022
+    .mb cget -foreground
+} -cleanup {
+    .mb configure -foreground [lindex [.mb configure -foreground] 3]
+} -result {#110022}
+test menubutton-1.27 {configuration options} -body {
+    .mb configure -foreground bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test menubutton-1.28 {configuration options} -body {
+    .mb configure -height 18
+    .mb cget -height
+} -cleanup {
+    .mb configure -height [lindex [.mb configure -height] 3]
+} -result {18}
+test menubutton-1.29 {configuration options} -body {
+    .mb configure -height 20.0
+} -returnCodes error -result {expected integer but got "20.0"}
+test menubutton-1.30 {configuration options} -body {
+    .mb configure -highlightbackground #112233
+    .mb cget -highlightbackground
+} -cleanup {
+    .mb configure -highlightbackground [lindex [.mb configure -highlightbackground] 3]
+} -result {#112233}
+test menubutton-1.31 {configuration options} -body {
+    .mb configure -highlightbackground ugly
+} -returnCodes error -result {unknown color name "ugly"}
+test menubutton-1.32 {configuration options} -body {
+    .mb configure -highlightcolor #110022
+    .mb cget -highlightcolor
+} -cleanup {
+    .mb configure -highlightcolor [lindex [.mb configure -highlightcolor] 3]
+} -result {#110022}
+test menubutton-1.33 {configuration options} -body {
+    .mb configure -highlightcolor bogus
+} -returnCodes error -result {unknown color name "bogus"}
+test menubutton-1.34 {configuration options} -body {
+    .mb configure -highlightthickness 18
+    .mb cget -highlightthickness
+} -cleanup {
+    .mb configure -highlightthickness [lindex [.mb configure -highlightthickness] 3]
+} -result {18}
+test menubutton-1.35 {configuration options} -body {
+    .mb configure -highlightthickness badValue
+} -returnCodes error -result {bad screen distance "badValue"}
+test menubutton-1.36 {configuration options} -constraints {
+    testImageType
+} -setup {
+    catch {image delete image1}
+    image create test image1
+} -body {
+    .mb configure -image image1
+    .mb cget -image
+} -cleanup {
+    .mb configure -image [lindex [.mb configure -image] 3]
+    image create test image1
+} -result {image1}
+test menubutton-1.37 {configuration options} -setup {
+    catch {image delete bogus}
+} -body {
+    .mb configure -image bogus
+} -cleanup {
+    .mb configure -image [lindex [.mb configure -image] 3]
+} -returnCodes error -result {image "bogus" doesn't exist}
+test menubutton-1.38 {configuration options} -body {
+    .mb configure -indicatoron yes
+    .mb cget -indicatoron
+} -cleanup {
+    .mb configure -indicatoron [lindex [.mb configure -indicatoron] 3]
+} -result {1}
+test menubutton-1.39 {configuration options} -body {
+    .mb configure -indicatoron no_way
+} -returnCodes error -result {expected boolean value but got "no_way"}
+test menubutton-1.40 {configuration options} -body {
+    .mb configure -justify right
+    .mb cget -justify
+} -cleanup {
+    .mb configure -justify [lindex [.mb configure -justify] 3]
+} -result {right}
+test menubutton-1.41 {configuration options} -body {
+    .mb configure -justify bogus
+} -returnCodes error -result {bad justification "bogus": must be left, right, or center}
+test menubutton-1.42 {configuration options} -body {
+    .mb configure -menu {any old string}
+    .mb cget -menu
+} -cleanup {
+    .mb configure -menu [lindex [.mb configure -menu] 3]
+} -result {any old string}
+test menubutton-1.43 {configuration options} -body {
+    .mb configure -padx 12
+    .mb cget -padx
+} -cleanup {
+    .mb configure -padx [lindex [.mb configure -padx] 3]
+} -result {12}
+test menubutton-1.44 {configuration options} -body {
+    .mb configure -padx 420x
+} -returnCodes error -result {bad screen distance "420x"}
+test menubutton-1.45 {configuration options} -body {
+    .mb configure -pady 12
+    .mb cget -pady
+} -cleanup {
+    .mb configure -pady [lindex [.mb configure -pady] 3]
+} -result {12}
+test menubutton-1.46 {configuration options} -body {
+    .mb configure -pady 420x
+} -returnCodes error -result {bad screen distance "420x"}
+test menubutton-1.47 {configuration options} -body {
+    .mb configure -relief groove
+    .mb cget -relief
+} -cleanup {
+    .mb configure -relief [lindex [.mb configure -relief] 3]
+} -result {groove}
+test menubutton-1.48 {configuration options} -body {
+    .mb configure -relief 1.5
+} -returnCodes error -result {bad relief "1.5": must be flat, groove, raised, ridge, solid, or sunken}
+test menubutton-1.49 {configuration options} -body {
+    .mb configure -state normal
+    .mb cget -state
+} -cleanup {
+    .mb configure -state [lindex [.mb configure -state] 3]
+} -result {normal}
+test menubutton-1.50 {configuration options} -body {
+    .mb configure -state bogus
+} -returnCodes error -result {bad state "bogus": must be active, disabled, or normal}
+test menubutton-1.51 {configuration options} -body {
+    .mb configure -takefocus {any string}
+    .mb cget -takefocus
+} -cleanup {
+    .mb configure -takefocus [lindex [.mb configure -takefocus] 3]
+} -result {any string}
+test menubutton-1.52 {configuration options} -body {
+    .mb configure -text {Sample text}
+    .mb cget -text
+} -cleanup {
+    .mb configure -text [lindex [.mb configure -text] 3]
+} -result {Sample text}
+test menubutton-1.53 {configuration options} -body {
+    .mb configure -textvariable i
+    .mb cget -textvariable
+} -cleanup {
+    .mb configure -textvariable [lindex [.mb configure -textvariable] 3]
+} -result {i}
+test menubutton-1.54 {configuration options} -body {
+    .mb configure -underline 5
+    .mb cget -underline
+} -cleanup {
+    .mb configure -underline [lindex [.mb configure -underline] 3]
+} -result {5}
+test menubutton-1.55 {configuration options} -body {
+    .mb configure -underline 3p
+} -returnCodes error -result {expected integer but got "3p"}
+test menubutton-1.56 {configuration options} -body {
+    .mb configure -width 402
+    .mb cget -width
+} -cleanup {
+    .mb configure -width [lindex [.mb configure -width] 3]
+} -result {402}
+test menubutton-1.57 {configuration options} -body {
+    .mb configure -width 3p
+} -returnCodes error -result {expected integer but got "3p"}
+test menubutton-1.58 {configuration options} -body {
+    .mb configure -wraplength 100
+    .mb cget -wraplength
+} -cleanup {
+    .mb configure -wraplength [lindex [.mb configure -wraplength] 3]
+} -result {100}
+test menubutton-1.59 {configuration options} -body {
+    .mb configure -wraplength 6x
+} -returnCodes error -result {bad screen distance "6x"}
+
+
+deleteWindows
+menubutton .mb -text "Test"
+pack .mb
+update
+test menubutton-2.1 {Tk_MenubuttonCmd procedure} -body {
+    menubutton
+} -returnCodes error -result {wrong # args: should be "menubutton pathName ?-option value ...?"}
+test menubutton-2.2 {Tk_MenubuttonCmd procedure} -body {
+    menubutton foo
+} -returnCodes error -result {bad window path name "foo"}
+test menubutton-2.3 {Tk_MenubuttonCmd procedure} -body {
+    catch {destroy .mb}
+    menubutton .mb
+    winfo class .mb
+} -result {Menubutton}
+test menubutton-2.4 {Tk_ButtonCmd procedure} -setup {
+    destroy .mb
+} -body {
+    menubutton .mb -gorp foo
+} -returnCodes error -result {unknown option "-gorp"}
+test menubutton-2.5 {Tk_ButtonCmd procedure} -setup {
+    destroy .mb
+} -body {
+    catch {menubutton .mb -gorp foo}
+    winfo exists .mb
+} -result 0
+
+
+deleteWindows
+menubutton .mb -text "Test Menu"
+pack .mb
+test menubutton-3.1 {MenuButtonWidgetCmd procedure} -body {
+    .mb
+} -returnCodes error -result {wrong # args: should be ".mb option ?arg ...?"}
+test menubutton-3.2 {ButtonWidgetCmd procedure, "cget" option} -body {
+    .mb c
+} -returnCodes error -result {ambiguous option "c": must be cget or configure}
+test menubutton-3.3 {ButtonWidgetCmd procedure, "cget" option} -body {
+    .mb cget
+} -returnCodes error -result {wrong # args: should be ".mb cget option"}
+test menubutton-3.4 {ButtonWidgetCmd procedure, "cget" option} -body {
+    .mb cget a b
+} -returnCodes error -result {wrong # args: should be ".mb cget option"}
+test menubutton-3.5 {ButtonWidgetCmd procedure, "cget" option} -body {
+    .mb cget -gorp
+} -returnCodes error -result {unknown option "-gorp"}
+test menubutton-3.6 {ButtonWidgetCmd procedure, "cget" option} -body {
+    .mb configure -highlightthickness 3
+    .mb cget -highlightthickness
+} -result {3}
+test menubutton-3.7 {ButtonWidgetCmd procedure, "configure" option} -body {
+    llength [.mb configure]
+} -result {33}
+test menubutton-3.8 {ButtonWidgetCmd procedure, "configure" option} -body {
+    .mb configure -gorp
+} -returnCodes error -result {unknown option "-gorp"}
+test menubutton-3.9 {ButtonWidgetCmd procedure, "configure" option} -body {
+    .mb co -bg #ffffff -fg
+} -returnCodes error -result {value for "-fg" missing}
+test menubutton-3.10 {ButtonWidgetCmd procedure, "configure" option} -body {
+    .mb configure -fg #123456
+    .mb configure -bg #654321
+    lindex [.mb configure -fg] 4
+} -result {#123456}
+test menubutton-3.11 {ButtonWidgetCmd procedure, "configure" option} -body {
+    .mb foobar
+} -returnCodes error -result {bad option "foobar": must be cget or configure}
+deleteWindows
+
+# XXX Need to add tests for several procedures here.   The tests for   XXX
+# XXX ConfigureMenuButton aren't complete either.                      XXX
+
+test menubutton-4.1 {ConfigureMenuButton procedure} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -text "Menubutton 1"
+    .mb1 configure -width 1i
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {expected integer but got "1i"} 
+test menubutton-4.2 {ConfigureMenuButton procedure} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -text "Menubutton 1"
+    catch {.mb1 configure -width 1i}
+    return $errorInfo
+} -cleanup {
+    deleteWindows
+} -result {expected integer but got "1i"
+    (processing -width option)
+    invoked from within
+".mb1 configure -width 1i"}
+
+test menubutton-4.3 {ConfigureMenuButton procedure} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -text "Menubutton 1"
+    .mb1 configure -height 0.5c
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {expected integer but got "0.5c"}
+test menubutton-4.4 {ConfigureMenuButton procedure} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -text "Menubutton 1"
+    catch {.mb1 configure -height 0.5c}
+    return $errorInfo
+} -cleanup {
+    deleteWindows
+} -result {expected integer but got "0.5c"
+    (processing -height option)
+    invoked from within
+".mb1 configure -height 0.5c"}
+
+test menubutton-4.5 {ConfigureMenuButton procedure} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -bitmap questhead
+    .mb1 configure -width abc
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {bad screen distance "abc"}
+test menubutton-4.6 {ConfigureMenuButton procedure} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -bitmap questhead
+    catch {.mb1 configure -width abc}
+    return $errorInfo
+} -cleanup {
+    deleteWindows
+} -result {bad screen distance "abc"
+    (processing -width option)
+    invoked from within
+".mb1 configure -width abc"}
+
+test menubutton-4.7 {ConfigureMenuButton procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    button .mb1 -image image1
+    .mb1 configure -height 0.5x
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -returnCodes error -result {bad screen distance "0.5x"}
+test menubutton-4.8 {ConfigureMenuButton procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create test image1
+    button .mb1 -image image1
+    catch {.mb1 configure -height 0.5x}
+    return $errorInfo
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {bad screen distance "0.5x"
+    (processing -height option)
+    invoked from within
+".mb1 configure -height 0.5x"}
+
+test menubutton-4.9 {ConfigureMenuButton procedure} -constraints {
+    nonPortable fonts
+} -setup {
+    deleteWindows
+} -body {
+    button .mb1 -text "Sample text" -width 10 -height 2
+    pack .mb1
+    set result "[winfo reqwidth .mb1] [winfo reqheight .mb1]"
+    .mb1 configure -bitmap questhead
+    lappend result [winfo reqwidth .mb1] [winfo reqheight .mb1]
+} -cleanup {
+    deleteWindows
+} -result {102 46 20 12}
+
+test menubutton-4.10 {ConfigureMenuButton procedure - bad direction} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text "Test"
+    .mb configure -direction badValue 
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result {bad direction "badValue": must be above, below, flush, left, or right}
+test menubutton-4.11 {ConfigureMenuButton procedure - bad direction} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text "Test"
+    catch {.mb configure -direction badValue}
+    list [.mb cget -direction] [destroy .mb]
+} -cleanup {
+    deleteWindows
+} -result {below {}}
+
+
+
+# XXX Need to add tests for several procedures here. XXX
+
+test menubutton-5.1 {MenuButtonEventProc procedure} -setup {
+    deleteWindows
+    set x {}
+} -body {
+    menubutton .mb1 -bg #543210
+    rename .mb1 .mb2
+    lappend x [winfo children .]
+    lappend x [.mb2 cget -bg]
+    destroy .mb1
+    lappend x [info command .mb*] [winfo children .]
+} -cleanup {
+    deleteWindows
+} -result {.mb1 #543210 {} {}}
+
+
+test menubutton-6.1 {MenuButtonCmdDeletedProc procedure} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb1
+    rename .mb1 {}
+    list [info command .mb*] [winfo children .]
+} -cleanup {
+    deleteWindows
+} -result {{} {}}
+
+if {[tk windowingsystem] == "aqua"} {
+    set extraWidth 36
+} else {
+    set extraWidth 0
+}
+test menubutton-7.1 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    menubutton .mb -image image1 -bd 4 -highlightthickness 0
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result [list [expr {38 + $extraWidth}] 23]
+test menubutton-7.2 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    menubutton .mb -image image1 -bd 3 -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result [list [expr {38 + $extraWidth}] 23]
+test menubutton-7.3 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    menubutton .mb -image image1 -bd 1 -highlightthickness 3 -padx 5 -pady 5
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result [list [expr {38 + $extraWidth}] 23]
+test menubutton-7.4 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    menubutton .mb -image image1 -bd 2 -relief raised -width 40 \
+        -highlightthickness 2
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result [list [expr {48 + $extraWidth}] 23]
+test menubutton-7.5 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType 
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    menubutton .mb -image image1 -bd 2 -relief raised -height 30 \
+        -highlightthickness 2
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result [list [expr {38 + $extraWidth}] 38]
+test menubutton-7.6 {ComputeMenuButtonGeometry procedure} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -bitmap question -bd 2 -relief raised \
+        -highlightthickness 2
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result [list [expr {25 + $extraWidth}] 35]
+test menubutton-7.7 {ComputeMenuButtonGeometry procedure} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -bitmap question -bd 2 -relief raised -width 40 \
+        -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result [list [expr {46 + $extraWidth}] 33]
+test menubutton-7.8 {ComputeMenuButtonGeometry procedure} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -bitmap question -bd 2 -relief raised -height 50 \
+        -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result [list [expr {23 + $extraWidth}] 56]
+test menubutton-7.9 {ComputeMenuButtonGeometry procedure} -constraints {
+    fonts
+} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text String -bd 2 -relief raised -padx 0 -pady 0 \
+        -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result {42 20}
+test menubutton-7.10 {ComputeMenuButtonGeometry procedure} -constraints {
+    fonts
+} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text String -bd 2 -relief raised -width 20 \
+        -padx 0 -pady 0 -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result {146 20}
+test menubutton-7.11 {ComputeMenuButtonGeometry procedure} -constraints {
+    fonts
+} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text String -bd 2 -relief raised -height 2 \
+        -padx 0 -pady 0 -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result {42 34}
+test menubutton-7.12 {ComputeMenuButtonGeometry procedure} -constraints {
+    fonts
+} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text String -bd 2 -relief raised -padx 10 -pady 5 \
+        -highlightthickness 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result {62 30}
+test menubutton-7.13 {ComputeMenuButtonGeometry procedure} -constraints {
+    nonPortable fonts
+} -setup {
+    deleteWindows
+} -body {
+    menubutton .mb -text String -bd 2 -relief raised \
+        -highlightthickness 1 -indicatoron 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+} -result {78 28}
+test menubutton-7.14 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType unix nonPortable
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    # The following test is non-portable because the indicator's pixel
+    # size varies to maintain constant absolute size.
+
+    menubutton .mb -image image1 -bd 2 -relief raised \
+        -highlightthickness 2 -indicatoron 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {64 23}
+test menubutton-7.15 {ComputeMenuButtonGeometry procedure} -constraints {
+    testImageType win nonPortable
+} -setup {
+    deleteWindows
+    image create test image1
+} -body {
+    # The following test is non-portable because the indicator's pixel
+    # size varies to maintain constant absolute size.
+
+    menubutton .mb -image image1 -bd 2 -relief raised \
+        -highlightthickness 2 -indicatoron 1
+    pack .mb
+    list [winfo reqwidth .mb] [winfo reqheight .mb]
+} -cleanup {
+    deleteWindows
+    imageCleanup
+} -result {65 23}
+
+
+test menubutton-8.1 {menubutton vs hidden commands} -body {
+    set l [interp hidden]
+    deleteWindows
+    menubutton .mb
+    interp hide {} .mb
+    destroy .mb
+    set res1 [list [winfo children .] [interp hidden]]
+    set res2 [list {} $l]
+    expr {$res1 eq $res2}
+} -result 1
+
+test menubutton-9.1 {Bug [5d991b822e]} {
+    # Want this not to segfault, or write to variable with empty name
+    unset -nocomplain {}
+    set var INIT
+    menubutton .b -textvariable var
+    trace add variable var unset {apply {args {
+        .b configure -textvariable {}
+    }}}
+    pack .b
+    bind .b <Configure> {unset var}
+    update
+    destroy .b
+    info exists {}
+} 0
+test menubutton-9.2 {Bug [5d991b822e]} {
+    # Want this not to leak traces
+    set var INIT
+    menubutton .b -textvariable var
+    trace add variable var unset {apply {args {
+        .b configure -textvariable new
+    }}}
+    pack .b
+    bind .b <Configure> {unset -nocomplain var}
+    update
+    destroy .b
+    unset new
+} {}
+
+
+
+
+deleteWindows
+option clear
+imageFinish
+
+# cleanup
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

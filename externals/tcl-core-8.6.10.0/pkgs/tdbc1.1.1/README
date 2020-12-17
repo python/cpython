@@ -1,0 +1,95 @@
+README: tdbc
+
+    This is the 1.1.1 source distribution of Tcl Database Connectivity
+    (TDBC). TDBC is available from a Fossil version control repository
+    at http://tdbc.tcl.tk/ .
+
+RCS: @(#) $Id$
+
+1. Introduction
+
+This directory contains the source code, documentation, and test scripts
+for the base classes and SQL tokenizer of Tcl Database Connectivity. It
+is not very useful by itself; to access databases, you also need one
+or more driver modules for the database manager(s) that you intend to use.
+The drivers are available from http://tdbc.tcl.tk along with the
+source code of this module. A bug database and Wiki are available
+at the same location.
+
+TDBC is a freely-available open source package.  You can do virtually
+anything you like with it, such as modifying it, redistributing it,
+and selling it either in whole or in part.  See the file
+"license.terms" for complete information.
+
+2. Documentation
+
+The 'doc' subdirectory in this release contains a set of reference manual
+entries for TDBC.  Files with an extension '.n' are for Tcl classes and
+commands; files with an extension '.3' are for C library functions. The
+file, 'doc/tdbc.n' gives an overview, listing the classes and functions.
+
+3. Compiling and Installing.
+
+TDBC is built in much the same way that Tcl itself is. Once you have
+a Tcl build environment set up, you should be able to simply
+enter the commands:
+
+    cd tdbc
+    ./configure
+    make all
+    make test
+    make install
+
+to have the TDBC base classes and tokenizer installed and usable from
+Tcl.  See http://www.tcl.tk/doc/howto/compile.html for instructions on
+how to set up a build environment for Tcl.
+
+4. Tcl newsgroup.
+
+There is a USENET news group, "comp.lang.tcl", intended for the exchange of
+information about Tcl, Tk, and related applications.  The newsgroup is a
+great place to ask general information questions.  For bug reports, please
+see the "Support and bug fixes" section below.
+
+5. Tcl'ers Wiki
+
+A Wiki-based open community site covering all aspects of Tcl/Tk is at:
+
+	http://wiki.tcl.tk/
+
+It is dedicated to the Tcl programming language and its extensions.  A
+wealth of useful information can be found there.  It contains code
+snippets, references to papers, books, and FAQs, as well as pointers to
+development tools, extensions, and applications.  You can also recommend
+additional URLs by editing the wiki yourself.
+
+6. Mailing lists
+
+SourceForge hosts a mailing list, tcl-tdbc, to discuss issues with using
+and developing TDBC. For more information and to subscribe, visit
+
+    http://sourceforge.net/projects/tcl
+
+and go to the 'Mailing Lists' page.
+
+7. Support
+
+We are very interested in receiving bug reports, patches, and suggestions
+for improvements.  We prefer that you send this information to us via the
+bug database, rather than emailing us directly.  The bug database is at:
+
+	http://tdbc.tcl.tk/
+
+The bug form was designed to give uniform structure to bug reports as
+well as to solicit enough information to minimize followup questions.
+
+We will log and follow-up on each bug, although we cannot promise a
+specific turn-around time.  Enhancements, reported via the Feature
+Requests form at the same web site, may take longer and may not happen
+at all unless there is widespread support for them.
+
+The Tcl community is too large for us to provide much individual support
+for users.  If you need help, we suggest that you post questions to
+comp.lang.tcl.  We read the newsgroup and will attempt to answer esoteric
+questions for which no one else is likely to know the answer.
+

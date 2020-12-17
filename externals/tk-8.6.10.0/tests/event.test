@@ -1,0 +1,874 @@
+# This file is a Tcl script to test the code in tkEvent.c.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1995 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+# XXX This test file is woefully incomplete.  Right now it only tests
+# a few of the procedures in tkEvent.c.  Please add more tests whenever
+# possible.
+
+# Setup table used to query key events.
+
+proc _init_keypress_lookup {} {
+    global keypress_lookup
+
+    scan A %c start
+    scan Z %c finish
+
+    for {set i $start} {$i <= $finish} {incr i} {
+        set l [format %c $i]
+        set keypress_lookup($l) $l
+    }
+
+    scan a %c start
+    scan z %c finish
+
+    for {set i $start} {$i <= $finish} {incr i} {
+        set l [format %c $i]
+        set keypress_lookup($l) $l
+    }
+
+    scan 0 %c start
+    scan 9 %c finish
+
+    for {set i $start} {$i <= $finish} {incr i} {
+        set l [format %c $i]
+        set keypress_lookup($l) $l
+    }
+
+    # Most punctuation
+    array set keypress_lookup {
+        ! exclam
+        % percent
+        & ampersand
+        ( parenleft
+        ) parenright
+        * asterisk
+        + plus
+        , comma
+        - minus
+        . period
+        / slash
+        : colon
+        < less
+        = equal
+        > greater
+        ? question
+        @ at
+        ^ asciicircum
+        _ underscore
+        | bar
+        ~ asciitilde
+        ' apostrophe
+    }
+    # Characters with meaning to Tcl...
+    array set keypress_lookup [list \
+	    \"   quotedbl \
+	    \#   numbersign \
+	    \$   dollar \
+	    \;   semicolon \
+	    \[   bracketleft \
+	    \\   backslash \
+	    \]   bracketright \
+	    \{   braceleft \
+	    \}   braceright \
+	    " "  space \
+	    "\n" Return \
+	    "\t" Tab]
+}
+
+# Lookup an event in the keypress table.
+# For example:
+# Q -> Q
+# . -> period
+# / -> slash
+# Delete -> Delete
+# Escape -> Escape
+
+proc _keypress_lookup {char} {
+    global keypress_lookup
+
+    if {! [info exists keypress_lookup]} {
+        _init_keypress_lookup
+    }
+
+    if {$char == ""} {
+        error "empty char"
+    }
+
+    if {[info exists keypress_lookup($char)]} {
+        return $keypress_lookup($char)
+    } else {
+        return $char
+    }
+}
+
+# Lookup and generate a pair of KeyPress and KeyRelease events
+
+proc _keypress {win key} {
+    set keysym [_keypress_lookup $key]
+
+    # Force focus to the window before delivering
+    # each event so that a window manager using
+    # a focus follows mouse will not steal away
+    # the focus if the mouse is moved around.
+
+    if {[focus] != $win} {
+        focus -force $win
+    }
+    event generate $win <KeyPress-$keysym>
+    _pause 50
+    if {[focus] != $win} {
+        focus -force $win
+    }
+    event generate $win <KeyRelease-$keysym>
+    _pause 50
+}
+
+# Call _keypress for each character in the given string
+
+proc _keypress_string {win string} {
+    foreach letter [split $string ""] {
+        _keypress $win $letter
+    }
+}
+
+# Delay script execution for a given amount of time
+
+proc _pause {{msecs 1000}} {
+    global _pause
+
+    if {! [info exists _pause(number)]} {
+        set _pause(number) 0
+    }
+
+    set num [incr _pause(number)]
+    set _pause($num) 0
+
+    after $msecs "set _pause($num) 1"
+    vwait _pause($num)
+    unset _pause($num)
+}
+
+# Helper proc to convert index to x y position
+
+proc _text_ind_to_x_y {text ind} {
+    set bbox [$text bbox $ind]
+    if {[llength $bbox] != 4} {
+        error "got bbox \{$bbox\} from $text, index $ind"
+    }
+    foreach {x1 y1 width height} $bbox break
+    set middle_y [expr {$y1 + ($height / 2)}]
+    return [list $x1 $middle_y]
+}
+
+# Return selection only if owned by the given widget
+
+proc _get_selection {widget} {
+    if {[string compare $widget [selection own]] != 0} {
+        return ""
+    }
+    if {[catch {selection get} sel]} {
+        return ""
+    }
+    return $sel
+}
+
+# Begining of the actual tests
+
+test event-1.1 {Tk_HandleEvent procedure, filter events for dead windows} -setup {
+	deleteWindows
+    set x {}
+} -body {
+    button .b -text Test
+    pack .b
+    bindtags .b .b
+    update
+    bind .b <Destroy> {
+	    lappend x destroy
+	    event generate .b <1>
+	    event generate .b <ButtonRelease-1>
+    }
+    bind .b <1> {
+	    lappend x button
+    }
+
+    destroy .b
+    return $x
+} -cleanup {
+    deleteWindows
+} -result {destroy}
+test event-1.2 {event generate <Alt-z>} -setup {
+	deleteWindows
+    catch {unset ::event12result}
+} -body {
+	set ::event12result 0
+	pack [entry .e]
+	update
+	bind .e <Alt-z> {set ::event12result "1"}
+
+	focus -force .e
+     event generate .e <Alt-z>
+	destroy .e
+	set ::event12result
+} -cleanup {
+    deleteWindows
+} -result 1
+
+
+test event-2.1(keypress) {type into entry widget and hit Return} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    set return_binding 0
+    bind $e <Return> {set return_binding 1}
+    tkwait visibility $e
+    _keypress_string $e HELLO\n
+    list [$e get] $return_binding
+} -cleanup {
+    deleteWindows
+} -result {HELLO 1}
+test event-2.2(keypress) {type into entry widget and then delete some text} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    tkwait visibility $e
+    # Avoid a hang when macOS puts the mouse pointer on the green button 
+    wm geometry .t +200+100
+    _keypress_string $e MELLO
+    _keypress $e BackSpace
+    _keypress $e BackSpace
+    $e get
+} -cleanup {
+    deleteWindows
+} -result {MEL}
+test event-2.3(keypress) {type into entry widget, triple click, hit Delete key,
+        and then type some more} -setup {
+    deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e JUMP
+
+    set result [$e get]
+
+    event generate $e <Enter>
+    for {set i 0} {$i < 3} {incr i} {
+        _pause 100
+        event generate $e <ButtonPress-1>
+        _pause 100
+        event generate $e <ButtonRelease-1>
+    }
+
+    _keypress $e Delete
+    _keypress_string $e UP
+    lappend result [$e get]
+} -cleanup {
+    deleteWindows
+} -result {JUMP UP}
+test event-2.4(keypress) {type into text widget and hit Return} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    set return_binding 0
+    bind $e <Return> {set return_binding 1}
+    tkwait visibility $e
+    _keypress_string $e HELLO\n
+    list [$e get 1.0 end] $return_binding
+} -cleanup {
+    deleteWindows
+} -result [list "HELLO\n\n" 1]
+test event-2.5(keypress) {type into text widget and then delete some text} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e MELLO
+    _keypress $e BackSpace
+    _keypress $e BackSpace
+    $e get 1.0 1.end
+} -cleanup {
+    deleteWindows
+} -result {MEL}
+test event-2.6(keypress) {type into text widget, triple click,
+    hit Delete key, and then type some more} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e JUMP
+
+    set result [$e get 1.0 1.end]
+
+    event generate $e <Enter>
+    for {set i 0} {$i < 3} {incr i} {
+        _pause 100
+        event generate $e <ButtonPress-1>
+        _pause 100
+        event generate $e <ButtonRelease-1>
+    }
+
+    _keypress $e Delete
+    _keypress_string $e UP
+    lappend result [$e get 1.0 1.end]
+} -cleanup {
+    deleteWindows
+} -result {JUMP UP}
+
+test event-3.1(click-drag) {click and drag in a text widget, this tests
+    tkTextSelectTo in text.tcl} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e "A Tcl/Tk selection test!"
+    set anchor 1.6
+    set selend 1.18
+
+    set result [list]
+    lappend result [$e get 1.0 1.end]
+
+    # Get the x,y coords of the second T in "Tcl/Tk"
+    foreach {anchor_x anchor_y} [_text_ind_to_x_y $e $anchor] break
+
+    # Click down to set the insert cursor position
+    event generate $e <Enter>
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+
+    # Save the position of the insert cursor
+    lappend result [$e index insert]
+    
+    # Now drag until selend is highlighted, then click up
+
+    set current $anchor
+    while {[$e compare $current <= $selend]} {
+        foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+        event generate $e <B1-Motion> -x $current_x -y $current_y
+        set current [$e index [list $current + 1 char]]
+        _pause 50
+    }
+
+    event generate $e <ButtonRelease-1> -x $current_x -y $current_y
+    _pause 200
+
+    # Save the position of the insert cursor
+    lappend result [$e index insert]
+
+    # Save the highlighted text
+    lappend result [_get_selection $e]
+
+    # Now click and click and drag to the left, over "Tcl/Tk selection"
+
+    event generate $e <ButtonPress-1> -x $current_x -y $current_y
+
+    while {[$e compare $current >= [list $anchor - 4 char]]} {
+        foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+        event generate $e <B1-Motion> -x $current_x -y $current_y
+        set current [$e index [list $current - 1 char]]
+        _pause 50
+    }
+
+    event generate $e <ButtonRelease-1> -x $current_x -y $current_y
+    _pause 200
+
+    # Save the position of the insert cursor
+    lappend result [$e index insert]
+
+    # Save the highlighted text
+    lappend result [_get_selection $e]
+
+} -cleanup {
+    deleteWindows
+} -result {{A Tcl/Tk selection test!} 1.6 1.18 {Tk selection} 1.2 {Tcl/Tk selection}}
+ test event-3.2(click-drag) {click and drag in an entry widget, this
+    tests tkEntryMouseSelect in entry.tcl} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e "A Tcl/Tk selection!"
+    set anchor 6
+    set selend 18
+
+    set result [list]
+    lappend result [$e get]
+
+    # Get the x,y coords of the second T in "Tcl/Tk"
+    foreach {anchor_x anchor_y} [_text_ind_to_x_y $e $anchor] break
+
+    # Click down to set the insert cursor position
+    event generate $e <Enter>
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+
+    # Save the position of the insert cursor
+    lappend result [$e index insert]
+    
+    # Now drag until selend is highlighted, then click up
+
+    set current $anchor
+    while {$current <= $selend} {
+        foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+        event generate $e <B1-Motion> -x $current_x -y $current_y
+        incr current
+        _pause 50
+    }
+
+    event generate $e <ButtonRelease-1> -x $current_x -y $current_y
+    _pause 200
+
+    # Save the position of the insert cursor
+    lappend result [$e index insert]
+
+    # Save the highlighted text
+    lappend result [_get_selection $e]
+
+    # Now click and click and drag to the left, over "Tcl/Tk selection"
+
+    event generate $e <ButtonPress-1> -x $current_x -y $current_y
+
+    while {$current >= ($anchor - 4)} {
+        foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+        event generate $e <B1-Motion> -x $current_x -y $current_y
+        incr current -1
+        _pause 50
+    }
+
+    event generate $e <ButtonRelease-1> -x $current_x -y $current_y
+    _pause 200
+
+    # Save the position of the insert cursor
+    lappend result [$e index insert]
+
+    # Save the highlighted text
+    lappend result [_get_selection $e]
+
+} -cleanup {
+    deleteWindows
+} -result {{A Tcl/Tk selection!} 6 18 {Tk selection} 2 {Tcl/Tk selection}}
+
+
+test event-4.1(double-click-drag) {click down, click up, click down again,
+    then drag in a text widget} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e "Word select test"
+    set anchor 1.8
+
+    # Get the x,y coords of the second e in "select"
+    foreach {anchor_x anchor_y} [_text_ind_to_x_y $e $anchor] break
+
+    # Click down, release, then click down again
+    event generate $e <Enter>
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $anchor_x -y $anchor_y
+    _pause 50
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+
+    # Save the highlighted text
+    set result [list]
+    lappend result [_get_selection $e]
+
+    # Insert cursor should be at beginning of "select"
+    lappend result [$e index insert]
+
+    # Move mouse one character to the left
+    set current [$e index [list $anchor - 1 char]]
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    # Insert cursor should be before the l in "select"
+    lappend result [$e index insert]
+
+    # Selection should still be the word "select"
+    lappend result [_get_selection $e]
+
+    # Move mouse to the space before the word "select"
+    set current [$e index [list $current - 3 char]]
+
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 200
+
+    lappend result [$e index insert]
+    lappend result [_get_selection $e]
+
+    # Move mouse to the r in "Word"
+    set current 1.2
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    # Selection should now be "Word select"
+    lappend result [_get_selection $e]
+
+    # Insert cursor should be before the r in "Word"
+    lappend result [$e index insert]
+
+    return $result
+} -cleanup {
+    deleteWindows
+} -result {select 1.5 1.7 select 1.4 { select} {Word select} 1.2}
+test event-4.2(double-click-drag) {click down, click up, click down again,
+    then drag in an entry widget} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e "Word select test"
+
+    set anchor 8
+
+    # Get the x,y coords of the second e in "select"
+    foreach {anchor_x anchor_y} [_text_ind_to_x_y $e $anchor] break
+
+    # Click down, release, then click down again
+    event generate $e <Enter>
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $anchor_x -y $anchor_y
+    _pause 50
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+
+    set result [list]
+    lappend result [_get_selection $e]
+
+    # Insert cursor should be at the end of "select"
+    lappend result [$e index insert]
+
+    # Move mouse one character to the left
+    set current [expr {$anchor - 1}]
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    # Insert cursor should be before the l in "select"
+    lappend result [$e index insert]
+
+    # Selection should still be the word "select"
+    lappend result [_get_selection $e]
+
+    # Move mouse to the space before the word "select"
+    set current [expr {$current - 3}]
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    lappend result [$e index insert]
+    lappend result [_get_selection $e]
+
+    # Move mouse to the r in "Word"
+    set current [expr {$current - 2}]
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    # Selection should now be "Word select"
+    lappend result [_get_selection $e]
+
+    # Insert cursor should be before the r in "Word"
+    lappend result [$e index insert]
+
+    return $result
+} -cleanup {
+    deleteWindows
+} -result {select 11 7 select 4 { select} {Word select} 2}
+
+test event-5.1(triple-click-drag) {Triple click and drag across lines in a 
+        text widget, this should extend the selection to the new line} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    tkwait visibility $e
+    _keypress_string $e "LINE ONE\nLINE TWO\nLINE THREE"
+
+    set anchor 3.2
+
+    # Triple click one third line leaving mouse down
+
+    foreach {anchor_x anchor_y} [_text_ind_to_x_y $e $anchor] break
+
+    event generate $e <Enter>
+
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $anchor_x -y $anchor_y
+    _pause 50
+
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $anchor_x -y $anchor_y
+    _pause 50
+
+    event generate $e <ButtonPress-1> -x $anchor_x -y $anchor_y
+    _pause 50
+
+    set result [list]
+    lappend result [_get_selection $e]
+
+    # Drag up to second line
+
+    set current [$e index [list $anchor - 1 line]]
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    lappend result [_get_selection $e]
+
+    # Drag up to first line
+
+    set current [$e index [list $current - 1 line]]
+    foreach {current_x current_y} [_text_ind_to_x_y $e $current] break
+
+    event generate $e <B1-Motion> -x $current_x -y $current_y
+    _pause 50
+
+    lappend result [_get_selection $e]
+
+    return $result
+} -cleanup {
+    deleteWindows
+} -result [list "LINE THREE\n" "LINE TWO\nLINE THREE\n" \
+        "LINE ONE\nLINE TWO\nLINE THREE\n"]
+
+test event-6.1(button-state) {button press in a window that is then
+        destroyed, when the mouse is moved into another window it
+        should not generate a <B1-motion> event since the mouse
+        was not pressed down in that window} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+
+    event generate $t <ButtonPress-1>
+    destroy $t
+    set t [toplevel .t]
+    set motion nomotion
+    bind $t <B1-Motion> {set motion inmotion}
+    event generate $t <Motion>
+    return $motion
+} -cleanup {
+    deleteWindows
+} -result {nomotion}
+
+test event-7.1(double-click) {A double click on a lone character
+    in a text widget should select that character} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [text $t.e]
+    pack $e
+    tkwait visibility $e
+    focus -force $e
+    _keypress_string $e "On A letter"
+
+    set anchor 1.3
+
+    # Get x,y coords just inside the left
+    # and right hand side of the letter A
+    foreach {x1 y1 width height} [$e bbox $anchor] break
+
+    set middle_y [expr {$y1 + ($height / 2)}]
+
+    set left_x [expr {$x1 + 2}]
+    set left_y $middle_y
+
+    set right_x [expr {($x1 + $width) - 2}]
+    set right_y $middle_y
+
+    # Double click near left hand egde of the letter A
+
+    event generate $e <Enter>
+    event generate $e <ButtonPress-1> -x $left_x -y $left_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $left_x -y $left_y
+    _pause 50
+    event generate $e <ButtonPress-1> -x $left_x -y $left_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $left_x -y $left_y
+    _pause 50
+
+    set result [list]
+    lappend result [$e index insert]
+    lappend result [_get_selection $e]
+
+    # Clear selection by clicking at 0,0
+
+    event generate $e <ButtonPress-1> -x 0 -y 0
+    _pause 50
+    event generate $e <ButtonRelease-1> -x 0 -y 0
+    _pause 50
+
+    # Double click near right hand edge of the letter A
+
+    event generate $e <ButtonPress-1> -x $right_x -y $right_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $right_x -y $right_y
+    _pause 50
+    event generate $e <ButtonPress-1> -x $right_x -y $right_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $right_x -y $right_y
+    _pause 50
+
+    lappend result [$e index insert]
+    lappend result [_get_selection $e]
+
+    return $result
+} -cleanup {
+    deleteWindows
+} -result {1.3 A 1.3 A}
+test event-7.2(double-click) {A double click on a lone character
+    in an entry widget should select that character} -setup {
+	deleteWindows
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    tkwait visibility $e
+    focus -force $e
+    _keypress_string $e "On A letter"
+
+    set anchor 3
+
+    # Get x,y coords just inside the left
+    # and right hand side of the letter A
+    foreach {x1 y1 width height} [$e bbox $anchor] break
+
+    set middle_y [expr {$y1 + ($height / 2)}]
+
+    set left_x [expr {$x1 + 2}]
+    set left_y $middle_y
+
+    set right_x [expr {($x1 + $width) - 2}]
+    set right_y $middle_y
+
+    # Double click near left hand egde of the letter A
+
+    event generate $e <Enter>
+    event generate $e <ButtonPress-1> -x $left_x -y $left_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $left_x -y $left_y
+    _pause 50
+    event generate $e <ButtonPress-1> -x $left_x -y $left_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $left_x -y $left_y
+    _pause 50
+
+    set result [list]
+    lappend result [$e index insert]
+    lappend result [_get_selection $e]
+  
+    # Clear selection by clicking at 0,0
+
+    event generate $e <ButtonPress-1> -x 0 -y 0
+    _pause 50
+    event generate $e <ButtonRelease-1> -x 0 -y 0
+    _pause 50
+
+    # Double click near right hand edge of the letter A
+
+    event generate $e <ButtonPress-1> -x $right_x -y $right_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $right_x -y $right_y
+    _pause 50
+    event generate $e <ButtonPress-1> -x $right_x -y $right_y
+    _pause 50
+    event generate $e <ButtonRelease-1> -x $right_x -y $right_y
+    _pause 50
+
+    lappend result [$e index insert]
+    lappend result [_get_selection $e]
+
+    return $result
+} -cleanup {
+    deleteWindows
+} -result {4 A 4 A}
+
+test event-8 {event generate with keysyms corresponding to
+              multi-byte virtual keycodes - bug 
+              e36963bfe8df9f5e528134707a91b9c0051de723} -constraints nonPortable -setup {
+    deleteWindows
+    set res [list ]
+} -body {
+    set t [toplevel .t]
+    set e [entry $t.e]
+    pack $e
+    tkwait visibility $e
+    bind $e <KeyPress> {lappend res keycode: %k keysym: %K}
+    focus -force $e
+    update
+    event generate $e <diaeresis>
+    # The value now contained in $res depends on the actual
+    # physical keyboard layout and keycode generated, from
+    # the hardware on which the test suite happens to run.
+    # We don't need (and we can't really) check correctness
+    # of the (system-dependent) keycode received, however
+    # Tk should be able to associate this keycode to a
+    # (system-independent) known keysym, unless the system
+    # running the test does not have a keyboard with a
+    # diaeresis key.
+    if {[expr {[lindex $res 3] ne "??"}]} {
+        # keyboard has a physical diaeresis key and bug is fixed
+        return "OK"
+    } else  {
+        return "Test failed, unless the keyboard tied to the system \
+                on which this test is run does NOT have a diaeresis \
+                physical key - in this case, test is actually void."
+    }
+} -cleanup {
+    deleteWindows
+} -result {OK}
+
+# cleanup
+unset -nocomplain keypress_lookup
+rename _init_keypress_lookup {}
+rename _keypress_lookup {}
+rename _keypress {}
+rename _pause {}
+rename _text_ind_to_x_y {}
+rename _get_selection {}
+
+cleanupTests
+return
+
+

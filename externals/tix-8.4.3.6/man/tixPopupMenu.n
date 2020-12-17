@@ -1,0 +1,222 @@
+'\"
+'\" $Id: tixPopupMenu.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixPopupMenu n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixPopupMenu \- Create and manipulate tixPopupMenu widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixPopupMenu \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBtixPopupMenu\fR class is derived from the \fBTixShell\fR
+class and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The PopupMenu widget supports all the standard options of a frame widget.
+See the \fBoptions(n)\fR manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"
+'\"----------BEGIN
+.OP \-buttons buttons Buttons
+A Tcl list that specifies the mouse button(s) and key modifier(s) that
+bring up the popup menu. Each element of this list is in turn a list
+that contains two elements: the first element is an integer that
+indicates the
+mouse button that brings up the popup menu; the second element
+specifies the key modifiers that should be used in conjunction with
+the mouse button. For example, the value \fB{{1 {Control Meta}} {3
+{Any}}}\fR specifies that the popup menu can be popped up by (a)
+pressing mouse button 1 with either the Control or the Meta key or (b)
+pressing mouse button 3 with any key modifier. The default value is
+\fB{{3 {Any}}}\fR: only mouse button 3 brings up the popup menu.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-postcmd postCmd PostCmd
+Specifies a command to be evaluated just before the menu is about to
+pop-up. This command is called with two default arguments: the root
+x-y coordinates where the user has pressed the mouse button. This
+command must return a boolean value: a false indicates that the menu
+shouldn't be popped up at this point; a true indicates that the menu
+should be popped up. This option can be used to find out where the
+user has pressed the mouse-button and optionally disable the popup
+menu over certain screen areas.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-spring spring Spring
+When set to \fBtrue\fR, the menu will be automatically popped down if
+the user releases the mouse button outside of the menu and no menu
+commands will be invoked. This makes it easy for the user to cancel
+the popup menu without pressing the Escape key. The default value is
+\fBtrue\fR.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Must be either \fBdisabled\fR or \fBnormal\fR. The PopupMenu widget will not
+pop up unless its \fB\-state\fR is set to \fBnormal\fR.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-title title Title
+Specifies a text string to display inside the \fBmenubutton\fR
+subwidget, as the title of this PopupMenu.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBmenu\fR
+Class:		\fBMenu\fR
+.fi
+.IP
+The menu subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBmenubutton\fR
+Class:		\fBMenubutton\fR
+.fi
+.IP
+The menubutton subwidget.
+'\"----------END
+'\"
+.BE
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixPopupMenu\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a PopupMenu widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+PopupMenu widget such as its cursor and relief.
+
+The Tix PopupMenu widget can be used as a replacement of the
+\fBtk_popup\fR command. The advantage of the Tix PopupMenu widget is
+it requires less application code to manipulate. Also, it provides a
+title for the popup menu, which is not available from \fBtk_popup\fR.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixPopupMenu\fR command creates a new Tcl command whose name is
+the same as the path name of the PopupMenu widget's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+PopupMenu widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for PopupMenu widgets:
+.TP
+\fIpathName \fBbind \fIwidget \fR?\fIwidget ...\fR?
+'\"
+Binds this PopupMenu to one or more \fIwidgets\fR. The PopupMenu
+will be activated when the user presses the right mouse button over
+these \fIwidgets\fR.
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixPopupMenu\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixPopupMenu\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBpost \fIwidget x y\fR
+'\"
+Posts the PopupMenu inside the \fIwidget\fR at the coordinate
+\fIx\fR,\fIy\fR.
+'\"
+'\"
+.TP
+\fIpathName \fBunbind \fIwidget \fR?\fIwidget ...\fR?
+'\"
+Cancels the PopupMenu's binding with the \fIwidget(s)\fR.
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+'\".SH BINDINGS
+'\".PP
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+
+

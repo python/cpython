@@ -1,0 +1,402 @@
+# The file tests the functions in the tclUnixInit.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands.  Sourcing this file into Tcl runs the tests and generates output
+# for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+unset -nocomplain path
+catch {set oldlang $env(LANG)}
+set env(LANG) C
+
+test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
+    set x {}
+    # Watch out for a race condition here.  If tcltest is too slow to start
+    # then we'll kill it before it has a chance to set up its signal handler.
+    set f [open "|[list [interpreter]]" w+]
+    puts $f "puts hi"
+    flush $f
+    gets $f
+    exec kill -PIPE [pid $f]
+    lappend x [catch {close $f}]
+    set f [open "|[list [interpreter]]" w+]
+    puts $f "puts hi"
+    flush $f
+    gets $f
+    exec kill [pid $f]
+    lappend x [catch {close $f}]
+    set x
+} {0 1}
+# This test is really a test of code in tclUnixChan.c, but the channels are
+# set up as part of initialisation of the interpreter so the test seems to me
+# to fit here as well as anywhere else.
+test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio} {
+    # pipe1 is a connection to a server that reports what port it starts on,
+    # and delivers a constant string to the first client to connect to that
+    # port before exiting.
+    set pipe1 [open "|[list [interpreter]]" r+]
+    puts $pipe1 {
+	proc accept {channel host port} {
+	    puts $channel {puts [chan configure stdin -peername]; exit}
+	    close $channel
+	    exit
+	}
+	puts [chan configure [socket -server accept -myaddr 127.0.0.1 0] -sockname]
+	vwait forever \
+	    }
+    # Note the backslash above; this is important to make sure that the whole
+    # string is read before an [exit] can happen...
+    flush $pipe1
+    set port [lindex [gets $pipe1] 2]
+    set sock [socket localhost $port]
+    # pipe2 is a connection to a Tcl interpreter that takes its orders from
+    # the socket we hand it (i.e. the server we create above.)  These orders
+    # will tell it to print out the details about the socket it is taking
+    # instructions from, hopefully identifying it as a socket.  Which is what
+    # this test is all about.
+    set pipe2 [open "|[list [interpreter] <@$sock]" r]
+    set result [gets $pipe2]
+    # Clear any pending data; stops certain kinds of (non-important) errors
+    chan configure $pipe1 -blocking 0; gets $pipe1
+    chan configure $pipe2 -blocking 0; gets $pipe2
+    # Close the pipes and the socket.
+    close $pipe2
+    close $pipe1
+    catch {close $sock}
+    # Can't use normal comparison, as hostname varies due to some
+    # installations having a messed up /etc/hosts file.
+    if {
+	"127.0.0.1" eq [lindex $result 0] && $port == [lindex $result 2]
+    } then {
+	subst "OK"
+    } else {
+	subst "Expected: `[list 127.0.0.1 localhost $port]', Got `$result'"
+    }
+} {OK}
+
+# The unixInit-2.* tests were written to test the internal routine,
+# TclpInitLibraryPath.  That routine no longer does the things it used to do
+# so those tests are obsolete.  Skip them.
+
+skip [concat [skip] unixInit-2.*]
+
+test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} {
+    set origDir [testgetdefenc]
+    testsetdefenc slappy
+    set path [testgetdefenc]
+    testsetdefenc $origDir
+    set path
+} {slappy}
+test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} -setup {
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+	unset env(TCL_LIBRARY)
+    }
+} -body {
+    set path [getlibpath]
+    set installLib lib/tcl[info tclversion]
+    set developLib tcl[info patchlevel]/library
+    set prefix [file dirname [file dirname [interpreter]]]
+    list [string equal [lindex $path 0] $prefix/$installLib] \
+	[string equal [lindex $path 4] [file dirname $prefix]/$developLib]
+} -cleanup {
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result {1 1}
+test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -setup {
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+} -body {
+    # ((str != NULL) && (str[0] != '\0'))
+    set env(TCL_LIBRARY) sparkly
+    lindex [getlibpath] 0
+} -cleanup {
+    unset -nocomplain env(TCL_LIBRARY)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result "sparkly"
+test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} -setup {
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+} -body {
+    # ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc - 1]) != 0))
+    set env(TCL_LIBRARY) /a/b/tcl1.7
+    lrange [getlibpath] 0 1
+} -cleanup {
+    unset -nocomplain env(TCL_LIBRARY)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result [list /a/b/tcl1.7 /a/b/tcl[info tclversion]]
+test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -setup {
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+} -body {
+    # Child process translates env variable from native encoding.
+    set env(TCL_LIBRARY) "\xa7"
+    lindex [getlibpath] 0
+} -cleanup {
+    unset -nocomplain env(TCL_LIBRARY) env(LANG)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result "\xa7"
+test unixInit-2.5 {TclpInitLibraryPath: compiled-in library path} {
+    # cannot test
+} {}
+test unixInit-2.6 {TclpInitLibraryPath: executable relative} -setup {
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+    set env(TCL_LIBRARY) [info library]
+    makeDirectory tmp
+    makeDirectory [file join tmp sparkly]
+    makeDirectory [file join tmp sparkly bin]
+    file copy [interpreter] [file join [temporaryDirectory] tmp sparkly \
+	    bin tcltest]
+    makeDirectory [file join tmp sparkly lib]
+    makeDirectory [file join tmp sparkly lib tcl[info tclversion]]
+    makeFile {} [file join tmp sparkly lib tcl[info tclversion] init.tcl]
+} -body {
+    lrange [getlibpath [file join [temporaryDirectory] tmp sparkly \
+	    bin tcltest]] 1 2
+} -cleanup {
+    removeFile [file join tmp sparkly lib tcl[info tclversion] init.tcl]
+    removeDirectory [file join tmp sparkly lib tcl[info tclversion]]
+    removeDirectory [file join tmp sparkly lib]
+    removeDirectory [file join tmp sparkly bin]
+    removeDirectory [file join tmp sparkly]
+    removeDirectory tmp
+    unset env(TCL_LIBRARY)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result [list [temporaryDirectory]/tmp/sparkly/lib/tcl[info tclversion] [temporaryDirectory]/tmp/lib/tcl[info tclversion]]
+test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} {
+    # would need test command to get defaultLibDir and compare it to
+    # [lindex $auto_path end]
+} {}
+#
+# The following two tests write to the directory /tmp/sparkly instead of to
+# [temporaryDirectory].  This is because the failures tested by these tests
+# need paths near the "root" of the file system to present themselves.
+#
+test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} -setup {
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+    set env(TCL_LIBRARY) [info library]
+    # Checking for Bug 219416
+    # When a program that embeds the Tcl library, like tcltest, is installed
+    # near the "root" of the file system, there was a problem constructing
+    # directories relative to the executable.  When a relative ".." went past
+    # the root, relative path names were created rather than absolute
+    # pathnames.  In some cases, accessing past the root caused memory access
+    # violations too.
+    #
+    # The bug is now fixed, but here we check for it by making sure that the
+    # directories constructed relative to the executable are all absolute
+    # pathnames, even when the executable is installed near the root of the
+    # filesystem.
+    #
+    # The only directory near the root we are likely to have write access to
+    # is /tmp.
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/lib/tcl[info tclversion]
+    file mkdir /tmp/sparkly
+    file copy [interpreter] /tmp/sparkly/tcltest
+    # Keep any existing /tmp/lib directory
+    set deletelib 1
+    if {[file exists /tmp/lib]} {
+	if {[file isdirectory /tmp/lib]} {
+	    set deletelib 0
+	} else {
+	    file delete -force /tmp/lib
+	}
+    }
+    # For a successful Tcl_Init, we need a [source]-able init.tcl in
+    # ../lib/tcl$version relative to the executable.
+    file mkdir /tmp/lib/tcl[info tclversion]
+    close [open /tmp/lib/tcl[info tclversion]/init.tcl w]
+} -body {
+    # Check that all directories in the library path are absolute pathnames
+    set allAbsolute 1
+    foreach dir [getlibpath /tmp/sparkly/tcltest] {
+	set allAbsolute [expr {$allAbsolute \
+		&& [string equal absolute [file pathtype $dir]]}]
+    }
+    set allAbsolute
+} -cleanup {
+    # Clean up temporary installation
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/lib/tcl[info tclversion]
+    if {$deletelib} {file delete -force /tmp/lib}
+    unset env(TCL_LIBRARY)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result 1
+test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} -setup {
+    # Checking for Bug 438014
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+    set env(TCL_LIBRARY) [info library]
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/library
+    file mkdir /tmp/sparkly
+    file copy [interpreter] /tmp/sparkly/tcltest
+    file mkdir /tmp/library/
+    close [open /tmp/library/init.tcl w]
+} -body {
+    lrange [getlibpath /tmp/sparkly/tcltest] 1 5
+} -cleanup {
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/library
+    unset env(TCL_LIBRARY)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result [list /tmp/lib/tcl[info tclversion] /lib/tcl[info tclversion] \
+        /tmp/library /library /tcl[info patchlevel]/library]
+test unixInit-2.10 {TclpInitLibraryPath: executable relative} -setup {
+    unset -nocomplain oldlibrary
+    if {[info exists env(TCL_LIBRARY)]} {
+	set oldlibrary $env(TCL_LIBRARY)
+    }
+    set env(TCL_LIBRARY) [info library]
+    set tmpDir [makeDirectory tmp]
+    set sparklyDir [makeDirectory sparkly $tmpDir]
+    set execPath [file join [makeDirectory bin $sparklyDir] tcltest]
+    file copy [interpreter] $execPath
+    set libDir [makeDirectory lib $sparklyDir]
+    set scriptDir [makeDirectory tcl[info tclversion] $libDir]
+    makeFile {} init.tcl $scriptDir
+    set saveDir [pwd]
+    cd $libDir
+} -body {
+    # Checking for Bug 832657
+    set x [lrange [getlibpath [file join .. bin tcltest]] 3 4]
+    foreach p $x {
+	lappend y [file normalize $p]
+    }
+    set y
+} -cleanup {
+    cd $saveDir
+    removeFile init.tcl $scriptDir
+    removeDirectory tcl[info tclversion] $libDir
+    file delete $execPath
+    removeDirectory bin $sparklyDir
+    removeDirectory lib $sparklyDir
+    removeDirectory sparkly $tmpDir
+    removeDirectory tmp
+    unset -nocomplain saveDir scriptDir libDir execPath sparklyDir tmpDir
+    unset -nocomplain x p y env(TCL_LIBRARY)
+    if {[info exists oldlibrary]} {
+	set env(TCL_LIBRARY) $oldlibrary
+	unset oldlibrary
+    }
+} -result [list [file join [temporaryDirectory] tmp sparkly library] \
+	[file join [temporaryDirectory] tmp library] ]
+
+test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
+	unix stdio
+} -body {
+    set env(LANG) C
+    set f [open "|[list [interpreter]]" w+]
+    chan configure $f -buffering none
+    puts $f {puts [encoding system]; exit}
+    set enc [gets $f]
+    close $f
+    return $enc
+} -cleanup {
+    unset -nocomplain env(LANG)
+} -match regexp -result [expr {
+	($tcl_platform(os) eq "Darwin") ? "^utf-8$" : "^iso8859-15?$"}]
+test unixInit-3.2 {TclpSetInitialEncodings} -setup {
+    catch {set oldlc_all $env(LC_ALL)}
+} -constraints {unix stdio} -body {
+    set env(LANG) japanese
+    set env(LC_ALL) japanese
+    set f [open "|[list [interpreter]]" w+]
+    chan configure $f -buffering none
+    puts $f {puts [encoding system]; exit}
+    set enc [gets $f]
+    close $f
+    set validEncodings [list euc-jp]
+    if {[string match HP-UX $tcl_platform(os)]} {
+	# Some older HP-UX systems need us to accept this as valid Bug 453883
+	# reports that newer HP-UX systems report euc-jp like everybody else.
+	lappend validEncodings shiftjis
+    }
+    expr {$enc ni $validEncodings}
+} -cleanup {
+    unset -nocomplain env(LANG) env(LC_ALL)
+    catch {set env(LC_ALL) $oldlc_all}
+} -result 0
+
+test unixInit-4.1 {TclpSetVariables} {unix} {
+    # just make sure they exist
+    set a [list $tcl_library $tcl_pkgPath $tcl_platform(os)]
+    set a [list $tcl_platform(osVersion) $tcl_platform(machine)]
+    set tcl_platform(platform)
+} "unix"
+
+test unixInit-5.1 {Tcl_Init} {emptyTest unix} {
+    # test initScript
+} {}
+
+test unixInit-6.1 {Tcl_SourceRCFile} {emptyTest unix} {
+} {}
+
+test unixInit-7.1 {closed standard channel: Bug 772288} -constraints {
+    unix stdio
+} -body {
+    set tclsh [interpreter]
+    set crash [makeFile {puts [open /dev/null]} crash.tcl]
+    set crashtest [makeFile "
+	close stdin
+	[list exec $tclsh $crash]
+    " crashtest.tcl]
+    exec $tclsh $crashtest
+} -cleanup {
+    removeFile crash.tcl
+    removeFile crashtest.tcl
+} -returnCodes 0
+
+# cleanup
+unset -nocomplain env(LANG)
+catch {set env(LANG) $oldlang}
+unset -nocomplain path
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

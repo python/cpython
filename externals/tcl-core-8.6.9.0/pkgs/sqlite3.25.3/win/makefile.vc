@@ -1,0 +1,52 @@
+#------------------------------------------------------------- -*- makefile -*-
+#
+# Sample makefile for building Tcl extensions.
+#
+# Basic build, test and install
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\tcl
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\tcl test
+#   nmake /s /nologo /f makefile.vc INSTALLDIR=c:\path\to\tcl install
+#
+# For other build options (debug, static etc.)
+# See TIP 477 (https://core.tcl.tk/tips/doc/trunk/tip/477.md) for
+# detailed documentation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+#------------------------------------------------------------------------------
+
+# PROJECT is sqlite, not sqlite3 to match TEA AC_INIT definition.
+# This makes the generated DLL name also consistent between the two
+# except for the "t" suffix which is the convention for nmake builds.
+PROJECT = sqlite
+PRJ_PACKAGE_TCLNAME = sqlite3
+
+!include "rules-ext.vc"
+
+PRJ_OBJS = $(TMP_DIR)\tclsqlite3.obj
+
+# Preprocessor macros specific to sqlite3.
+PRJ_DEFINES = -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE \
+                  -DSQLITE_ENABLE_DBPAGE_VTAB=1 -DSQLITE_ENABLE_DBSTAT_VTAB=1 \
+                  -DSQLITE_ENABLE_FTS3_PARENTHESIS=1 -DSQLITE_ENABLE_FTS4=1 \
+                  -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_COLUMN_METADATA=1 \
+                  -DSQLITE_ENABLE_JSON=1 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS=1 \
+                  -DSQLITE_3_SUFFIX_ONLY=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_GEOPOLY=1 \
+                  -DSQLITE_UNTESTABLE=1 -DSQLITE_OMIT_LOOKASIDE=1 \
+                  -DSQLITE_SECURE_DELETE=1 -DSQLITE_SOUNDEX=1 \
+                  -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 -DDSQLITE_USE_ALLOCA=1 \
+                  -DSQLITE_ENABLE_FTS4=1 -DSQLITE_OMIT_DEPRECATED=1
+
+# Standard targets to build, install, test etc.
+!include "$(_RULESDIR)\targets.vc"
+
+# The built-in pkgindex does no suffice for our extension as
+# the PROJECT name (sqlite) is not same as init function name (Sqlite3)
+pkgindex:
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PRJLIBNAME)] $(PRJ_PACKAGE_TCLNAME)] > $(OUT_DIR)\pkgIndex.tcl
+
+# Install the manpage though on Windows, doubt it does much good
+install:    default-install-docs-n
+

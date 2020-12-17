@@ -1,0 +1,152 @@
+# Commands covered:  list
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# First, a bunch of individual tests
+
+test list-1.1 {basic tests} {list a b c} {a b c}
+test list-1.2 {basic tests} {list {a b} c} {{a b} c}
+test list-1.3 {basic tests} {list \{a b c} {\{a b c}
+test list-1.4 {basic tests} "list a{}} b{} c}" "a\\{\\}\\} b{} c\\}"
+test list-1.5 {basic tests} {list a\[ b\] } "{a\[} b\\]"
+test list-1.6 {basic tests} {list c\  d\t } "{c } {d\t}"
+test list-1.7 {basic tests} {list e\n f\$ } "{e\n} {f\$}"
+test list-1.8 {basic tests} {list g\; h\\} {{g;} h\\}
+test list-1.9 {basic tests} "list a\\\[} b\\\]} " "a\\\[\\\} b\\\]\\\}"
+test list-1.10 {basic tests} "list c\\\} d\\t} " "c\\} d\\t\\}"
+test list-1.11 {basic tests} "list e\\n} f\\$} " "e\\n\\} f\\$\\}"
+test list-1.12 {basic tests} "list g\\;} h\\\\} " "g\\;\\} {h\\}}"
+test list-1.13 {basic tests} {list a {{}} b} {a {{}} b}
+test list-1.14 {basic tests} {list a b xy\\} "a b xy\\\\"
+test list-1.15 {basic tests} "list a b\} e\\" "a b\\} e\\\\"
+test list-1.16 {basic tests} "list a b\}\\\$ e\\\$\\" "a b\\}\\\$ e\\\$\\\\"
+test list-1.17 {basic tests} {list a\f \{\f} "{a\f} \\\{\\f"
+test list-1.18 {basic tests} {list a\r \{\r} "{a\r} \\\{\\r"
+test list-1.19 {basic tests} {list a\v \{\v} "{a\v} \\\{\\v"
+test list-1.20 {basic tests} {list \"\}\{} "\\\"\\}\\{"
+test list-1.21 {basic tests} {list a b c\\\nd} "a b c\\\\\\nd"
+test list-1.22 {basic tests} {list "{ab}\\"} \\{ab\\}\\\\
+test list-1.23 {basic tests} {list \{} "\\{"
+test list-1.24 {basic tests} {list} {}
+test list-1.25 {basic tests} {list # #} {{#} #}
+test list-1.26 {basic tests} {list #\{ #\{} {\#\{ #\{}
+test list-1.27 {basic null treatment} {
+    set l [list "" "\0" "\0\0"]
+    set e "{} \0 \0\0"
+    string equal $l $e
+} 1
+test list-1.28 {basic null treatment} {
+    set result "\0a\0b"
+    list $result [string length $result]
+} "\0a\0b 4"
+test list-1.29 {basic null treatment} {
+    set result "\0a\0b"
+    set srep "$result 4"
+    set lrep [list $result [string length $result]]
+    string equal $srep $lrep
+} 1
+test list-1.30 {basic null treatment} {
+    set l [list "\0abc" "xyz"]
+    set e "\0abc xyz"
+    string equal $l $e
+} 1
+
+# For the next round of tests create a list and then pick it apart
+# with "index" to make sure that we get back exactly what went in.
+
+set num 0
+proc lcheck {testid a b c} {
+    global num d
+    set d [list $a $b $c]
+    test ${testid}-0 {what goes in must come out} {lindex $d 0} $a
+    test ${testid}-1 {what goes in must come out} {lindex $d 1} $b
+    test ${testid}-2 {what goes in must come out} {lindex $d 2} $c
+}
+lcheck list-2.1  a b c
+lcheck list-2.2  "a b" c\td e\nf
+lcheck list-2.3  {{a b}} {} {  }
+lcheck list-2.4  \$ \$ab ab\$
+lcheck list-2.5  \; \;ab ab\;
+lcheck list-2.6  \[ \[ab ab\[
+lcheck list-2.7  \\ \\ab ab\\
+lcheck list-2.8  {"} {"ab} {ab"}	;#" Stupid emacs highlighting!
+lcheck list-2.9  {a b} { ab} {ab }
+lcheck list-2.10 a{ a{b \{ab
+lcheck list-2.11 a} a}b }ab
+lcheck list-2.12 a\\} {a \}b} {a \{c}
+lcheck list-2.13 xyz \\ 1\\\n2
+lcheck list-2.14 "{ab}\\" "{ab}xy" abc
+
+concat {}
+
+# Check that tclListObj.c's SetListFromAny handles possible overlarge
+# string rep lengths in the source object.
+
+proc slowsort list {
+    set result {}
+    set last [expr [llength $list] - 1]
+    while {$last > 0} {
+	set minIndex [expr [llength $list] - 1]
+	set min [lindex $list $last]
+	set i [expr $minIndex-1]
+	while {$i >= 0} {
+	    if {[string compare [lindex $list $i] $min] < 0} {
+		set minIndex $i
+		set min [lindex $list $i]
+	    }
+	    set i [expr $i-1]
+	}
+	set result [concat $result [list $min]]
+	if {$minIndex == 0} {
+	    set list [lrange $list 1 end]
+	} else {
+	    set list [concat [lrange $list 0 [expr $minIndex-1]] \
+			  [lrange $list [expr $minIndex+1] end]]
+	}
+	set last [expr $last-1]
+    }
+    return [concat $result $list]
+}
+test list-3.1 {SetListFromAny and lrange/concat results} {
+    slowsort {fred julie alex carol bill annie}
+} {alex annie bill carol fred julie}
+
+test list-4.1 {Bug 3173086} {
+    string is list "{[list \\\\\}]}"
+} 1
+test list-4.2 {Bug 35a8f1c04a, check correct str-rep} {
+    set result {}
+    foreach i {
+	{#"} {#"""} {#"""""""""""""""}
+	"#\"{" "#\"\"\"{" "#\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\{"
+	"#\"}" "#\"\"\"}" "#\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\}"
+    } {
+	set list [list $i]
+	set list [string trim " $list "]
+	if {[llength $list] > 1 || $i ne [lindex $list 0]} {
+	    lappend result "wrong string-representation of list by '$i', length: [llength $list], list: '$list'"
+	}
+    }
+    set result [join $result \n]
+} {}
+test list-4.3 {Bug 35a8f1c04a, check correct string length} {
+    string length [list #""]
+} 5
+
+# cleanup
+::tcltest::cleanupTests
+return

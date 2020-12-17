@@ -1,0 +1,114 @@
+# This file is a Tcl script to test out the procedures in the file
+# tkBitmap.c.  It is organized in the standard white-box fashion for
+# Tcl tests.
+#
+# Copyright (c) 1998 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+test bitmap-1.1 {Tk_AllocBitmapFromObj - converting internal reps} -constraints {
+    testbitmap
+} -body {
+    set x gray25
+    lindex $x 0             
+    button .b -bitmap $x
+    lindex $x 0
+    testbitmap gray25
+} -cleanup {
+    destroy .b
+} -result {{1 0}}
+test bitmap-1.2 {Tk_AllocBitmapFromObj - discard stale bitmap} -constraints {
+    testbitmap
+} -setup {
+    set result {}
+} -body {
+    set x gray25
+    button .b1 -bitmap $x
+    destroy .b1
+    lappend result [testbitmap gray25]
+    button .b2 -bitmap $x
+    lappend result [testbitmap gray25]
+} -cleanup {
+    destroy .b1 .b2
+} -result {{} {{1 1}}}
+test bitmap-1.3 {Tk_AllocBitmapFromObj - reuse existing bitmap} -constraints {
+    testbitmap
+} -setup {
+    set result {}
+} -body {
+    set x gray25
+    button .b1 -bitmap $x
+    lappend result [testbitmap gray25]
+    button .b2 -bitmap $x
+    pack .b1 .b2 -side top
+    lappend result [testbitmap gray25]
+} -cleanup {
+    destroy .b1 .b2
+} -result {{{1 1}} {{2 1}}}
+
+test bitmap-2.1 {Tk_GetBitmap procedure} -body {
+    button .b1 -bitmap bad_name
+} -cleanup {
+    destroy .b1 
+} -returnCodes error -result {bitmap "bad_name" not defined}
+test bitmap-2.2 {Tk_GetBitmap procedure} -body {
+    button .b1 -bitmap @xyzzy
+} -cleanup {
+    destroy .b1 
+} -returnCodes error -result {error reading bitmap file "xyzzy"}
+
+test bitmap-3.1 {Tk_FreeBitmapFromObj - reference counts} -constraints {
+    testbitmap
+} -setup {
+    set result {}
+} -body {
+    set x questhead
+    button .b1 -bitmap $x
+    button .b3 -bitmap $x
+    button .b2 -bitmap $x
+    lappend result [testbitmap questhead]
+    destroy .b1
+    lappend result [testbitmap questhead]
+    destroy .b2
+    lappend result [testbitmap questhead]
+    destroy .b3
+    lappend result [testbitmap questhead]
+} -cleanup {
+    destroy .b1 .b2 .b3     ;# destroying just in case
+} -result {{{3 1}} {{2 1}} {{1 1}} {}}
+
+test bitmap-4.1 {FreeBitmapObjProc} -constraints {
+    testbitmap
+} -setup {
+    proc copy {s} {return [string index $s 0][string range $s 1 end]}
+} -body {
+    set x [copy questhead]
+    button .b -bitmap $x
+    set y [copy questhead]
+    .b configure -bitmap $y
+    set z [copy questhead]
+    .b configure -bitmap $z
+    set result {}
+    lappend result [testbitmap questhead]
+    set x red
+    lappend result [testbitmap questhead]
+    set z 32
+    lappend result [testbitmap questhead]
+    destroy .b
+    lappend result [testbitmap questhead]
+    set y bogus
+    return $result
+} -cleanup {
+    rename copy {}
+    destroy .b
+} -result {{{1 3}} {{1 2}} {{1 1}} {}}
+
+
+# cleanup
+cleanupTests
+return

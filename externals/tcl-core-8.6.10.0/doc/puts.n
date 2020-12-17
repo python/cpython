@@ -1,0 +1,98 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH puts n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+puts \- Write to a channel
+.SH SYNOPSIS
+\fBputs \fR?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
+.BE
+.SH DESCRIPTION
+.PP
+Writes the characters given by \fIstring\fR to the channel given
+by \fIchannelId\fR.
+.PP
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdout\fR or \fBstderr\fR), the return
+value from an invocation of \fBopen\fR or \fBsocket\fR, or the result
+of a channel creation command provided by a Tcl extension. The channel
+must have been opened for output.
+.PP
+If no \fIchannelId\fR is specified then it defaults to
+\fBstdout\fR. \fBPuts\fR normally outputs a newline character after
+\fIstring\fR, but this feature may be suppressed by specifying the
+\fB\-nonewline\fR switch.
+.PP
+Newline characters in the output are translated by \fBputs\fR to
+platform-specific end-of-line sequences according to the current
+value of the \fB\-translation\fR option for the channel (for example,
+on PCs newlines are normally replaced with carriage-return-linefeed
+sequences.
+See the \fBfconfigure\fR manual entry for a discussion on ways in
+which \fBfconfigure\fR will alter output.
+.PP
+Tcl buffers output internally, so characters written with \fBputs\fR
+may not appear immediately on the output file or device;  Tcl will
+normally delay output until the buffer is full or the channel is
+closed.
+You can force output to appear immediately with the \fBflush\fR
+command.
+.PP
+When the output buffer fills up, the \fBputs\fR command will normally
+block until all the buffered data has been accepted for output by the
+operating system.
+If \fIchannelId\fR is in nonblocking mode then the \fBputs\fR command
+will not block even if the operating system cannot accept the data.
+Instead, Tcl continues to buffer the data and writes it in the
+background as fast as the underlying file or device can accept it.
+The application must use the Tcl event loop for nonblocking output
+to work;  otherwise Tcl never finds out that the file or device is
+ready for more output data.
+It is possible for an arbitrarily large amount of data to be
+buffered for a channel in nonblocking mode, which could consume a
+large amount of memory.
+To avoid wasting memory, nonblocking I/O should normally
+be used in an event-driven fashion with the \fBfileevent\fR command
+(do not invoke \fBputs\fR unless you have recently been notified
+via a file event that the channel is ready for more output data).
+.SH EXAMPLES
+.PP
+Write a short message to the console (or wherever \fBstdout\fR is
+directed):
+.PP
+.CS
+\fBputs\fR "Hello, World!"
+.CE
+.PP
+Print a message in several parts:
+.PP
+.CS
+\fBputs\fR -nonewline "Hello, "
+\fBputs\fR "World!"
+.CE
+.PP
+Print a message to the standard error channel:
+.PP
+.CS
+\fBputs\fR stderr "Hello, World!"
+.CE
+.PP
+Append a log message to a file:
+.PP
+.CS
+set chan [open my.log a]
+set timestamp [clock format [clock seconds]]
+\fBputs\fR $chan "$timestamp - Hello, World!"
+close $chan
+.CE
+.SH "SEE ALSO"
+file(n), fileevent(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+channel, newline, output, write

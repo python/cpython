@@ -1,0 +1,473 @@
+'\"
+'\" $Id: tixDisplayStyle.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixDisplayStyle n 8.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixDisplayStyle \- Create style object for Tix display items.
+'\"
+.SH SYNOPSIS
+\fBtixDisplayStyle \fIitemType\fR ?\fI\-stylename name\fR? ?\fI\-refwindow pathName\fR? ?\fIoptions value ...\fR?
+'\"
+.BE
+'\"
+.SH DESCRIPTION
+'\"
+The Tix \fBDisplay Items\fR mechanism is devised to
+solve a general problem: many Tix widgets (both existing and planned
+ones) display many items of many types simutaneously.
+'\"
+.PP
+'\"
+For example, a hierarchical listbox widget (HList) can display items
+of images, plain text and subwindows in the form of a
+hierarchy. Another widget, the tabular listbox, (TList, currently
+planned and will be released in Tix 4.1) also display items of the
+same types, although it arranges the items in a tabular form. Yet
+another widget, the spreadsheet widget, also displays similar types
+items, but in yet another format.
+'\"
+.PP
+'\"
+In these examples, the display items in different widgets are only
+different in how they are arranged by the \fBhost widget\fR. In Tix,
+display items are clearly separated from the host widgets. The
+advantage is two-fold: first, the creation and configuration of
+display items become uniform across different host widgets. Second,
+new display item types can be added without the need to modify the
+existing host widgets.
+'\"
+.PP
+'\"
+In a way, Tix display items are similar to the items inside Tk
+the canvas widget. However, unlike the Tix display items, the canvas
+items are not independent of the canvas widget; this makes it
+impossible to use the canvas items inside other types of TK widgets.
+'\"
+.PP
+'\"
+The appearance of a display item is controlled by a set of
+\fIattributes\fR. It is observed that each the attributes usually fall
+into one of two categroies: "\fIindividual\fR" or
+"\fIcollective\fR". For example, the text items inside a HList widget
+may all display a different text string; however, in most cases, the
+text items share the same color, font and spacing. Instead of keeping
+a duplicated version of the same attributes inside each display item,
+it will be advantageous to put the collective attributes in a
+special object called a \fBdisplay style\fR. First, there is the space
+concern: a host widget may have many thousands of items; keeping
+dupilcated attributes will be very wasteful. Second, when it becomes
+necessary to change a collective attribute, such as changing all the
+text items' foreground color to red, it will be more efficient to
+change only the display style object than to modify all the text
+items one by one.
+'\"
+.PP
+'\"
+The attributes of the a display item are thus stored in two places: it
+has a set of \fBitem options\fR to store its individual attributes. Each
+display item is also associated with a \fIdisplay style\fR, which specifies
+the collective attributes of all items associated with itself.
+'\"
+.PP
+'\"
+The division between the individual and collective attributes are
+fixed and cannot be changed. Thus, when it becomes necessary for some
+items to differ in their collective attributes, two or more \fBdisplay
+styles\fR can be used. For example, suppose you want to display two
+columns of text items inside an HList widget, one column in red and
+the other in blue. You can create a TextStyle object called "red",
+which defines a red foreground, and another called "blue", which
+defines a blue foreground. You can then associate all text items of
+the first column to "red" and the second column to "blue".
+'\"
+.SH DISPLAY ITEM TYPES AND OPTIONS
+'\"
+Currently there are four types of display items: \fBtext\fR,
+\fBimage\fR, \fBimagetext\fR and \fBwindow\fR. (TODO: need to document
+the "image" item)
+'\"
+'\"----------------------------------------------------------------------
+'\"			ImageText
+'\"----------------------------------------------------------------------
+.SH IMAGETEXT ITEMS
+'\"
+Display items of the type \fBimagetext\fR are used to display an image
+together with a text string. Imagetext items support the following options:
+'\"
+.PP
+\fBITEM OPTIONS\fR
+.PP
+.RS
+'\"----------BEGIN
+.OP \-bitmap bitmap Bitmap
+Specifies the bitmap to display in the item.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-image image Image
+Specifies the image to display in the item. When both the
+\fB\-bitmap\fR and \fB\-image\fR options are specified, only the image
+will be displayed.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-style imageTextStyle ImageTextStyle
+Specifies the display style to use for this item. Must be the
+name of a \fBimagetext\fR display style that has already be created by
+the \fBtixDisplayStyle(n)\fR command.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-showimage showImage ShowImage
+A Boolean value that specifies whether the image/bitmap should be
+displayed.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-showtext showText ShowText
+A Boolean value that specifies whether the text string should be
+displayed.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-text text Text
+Specifies the text string to display in the item.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-underline underline Underline
+Specifies the integer index of a character to underline in the text
+string in the item.  0 corresponds to the first character of the text
+displayed in the widget, 1 to the next character, and so on.
+'\"----------END
+.RE
+'\"
+.PP
+\fBSTYLE OPTIONS\fR
+'\"
+.PP
+The style information of \fBimagetext\fR items are stored in the
+\fBimagetext\fR display style. The following options are supported:
+'\"
+.RS
+'\"
+.PP
+\fBSTANDARD OPTIONS\fR
+'\"
+.PP
+.ta 6c
+.nf
+activeBackground	activeForeground
+anchor			background
+disabledBackground	disabledForeground
+foreground		font
+justify			padX
+padY			selectBackground
+selectForeground	wrapLength
+.fi
+.ta 4c 
+.PP
+See the \fBoptions(n)\fR manual entry for details on the standard
+options.
+.PP
+'\"
+.PP
+\fBSTYLE-SPECIFIC OPTIONS\fR
+.PP
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBgap\fR
+Class:		\fBGap\fR
+Switch:		\fB\-gap\fR
+'\"
+.fi
+.IP
+Specifies the distance between the bitmap/image and the text string,
+in number of pixels.
+'\"----------END
+'\"
+.RE
+'\"
+'\"**********************************************************************
+'\"
+'\"			text
+'\"
+'\"**********************************************************************
+.SH TEXT ITEMS
+'\"
+Display items of the type \fBtext\fR are used to display a text string
+in a widget. Text items support the following options:
+'\"
+.PP
+\fBITEM OPTIONS\fR
+.PP
+.RS
+'\"----------BEGIN
+.OP \-style textStyle TextStyle
+Specifies the display style to use for this text item. Must be the
+name of a \fBtext\fR display style that has already be created by the
+\fBtixDisplayStyle(n)\fR command.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-text text Text
+Specifies the text string to display in the item.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-underline underline Underline
+Specifies the integer index of a character to underline in the item.
+0 corresponds to the first character of the text displayed in the
+widget, 1 to the next character, and so on.
+'\"----------END
+.RE
+'\"
+\fBSTYLE OPTIONS\fR
+.PP
+.RS
+.PP
+\fBSTANDARD OPTIONS\fR
+'\"
+.PP
+.ta 6c
+.nf
+activeBackground	activeForeground
+anchor			background
+disabledBackground	disabledForeground
+foreground		font
+justify			padX
+padY			selectBackground
+selectForeground	wrapLength
+.fi
+.ta 4c 
+.PP
+See the \fBoptions(n)\fR manual entry for details on the standard
+options.
+'\"
+'\"
+.PP
+.RE
+'\"**********************************************************************
+'\"
+'\"			Window
+'\"
+'\"**********************************************************************
+.SH WINDOW ITEMS
+'\"
+Display items of the type \fBwindow\fR are used to display a
+sub-window in a widget. \fBWindow\fR items support the following
+options:
+'\"
+.PP
+\fBITEM OPTIONS\fR
+.PP
+.RS
+'\"----------BEGIN
+.OP \-style windowStyle WindowStyle
+Specifies the display style to use for this window item. Must be the
+name of a \fBwindow\fR display style that has already be created by
+the \fBtixDisplayStyle(n)\fR command.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBwindow\fR
+Class:		\fBWindow\fR
+Switch:		\fB\-window\fR
+Alias:		\fB\-widget\fR
+.fi
+.IP
+Specifies the sub-window to display in the item.
+'\"----------END
+'\"
+.RE
+'\"
+\fBSTYLE OPTIONS\fR
+.PP
+.RS
+\fBSTANDARD OPTIONS\fR
+'\"
+.PP
+.ta 6c
+.nf
+anchor
+padX		padY
+.PP
+.fi
+.ta 4c
+See the \fBoptions(n)\fR manual entry for details on the standard
+options.
+'\"
+.PP
+.RE
+'\"
+'\"**********************************************************************
+'\"
+.SH CREATING DISPLAY ITEMS
+'\"
+'\"
+Display items do not exist on their and thus they cannot be created
+independently of the widgets they reside in. As a rule, display items
+are created by special widget commands of their "host" widgets. For
+example, the HList widgets has a command \fBitem\fR which can be used
+to create new display items. The following code creates a new imagetext
+item at the third column of the entry foo inside an HList widget:
+'\"
+.PP
+.nf
+ tixHList .h -columns 3
+ .h add foo
+ .h item create foo 2 \-itemtype imagetext \-text Hello \-image image1
+.fi
+.PP
+'\"
+The \fBitem create\fR command of the HList widget accepts a variable
+number of arguments. The special argument \fB\-itemtype\fR specifies
+which type of display item to create. Options that are valid for this
+type of display items can then be specified by one or more
+\fIoption\-value\fR pairs.
+'\"
+.PP
+'\"
+After the display item is created, they can then be configured or
+destroyed using the commands provided by the host widget. For example,
+the HList widget has the command \fBitem configure\fR, \fBitem cget\fR
+and \fBitem delete\fR for accessing the display items.
+'\"
+'\"**********************************************************************
+'\"
+.SH CREATING AND MANIPULATING DISPLAY STYLES
+'\"
+'\"
+Display styles are created by the command \fBtixDisplayStyle\fR:
+'\"
+'\"
+.PP
+\fIitemType\fR must be one of the existing display items types such as
+\fBtext\fR, \fBimagetext\fR, \fBwindow\fR or any new types added by
+the user. Additional arguments can be given in one or more
+\fIoption\-value\fR pairs. \fIoption\fR can be any of the valid option
+for this display style or any of the following:
+.PP
+.RS
+'\"
+.TP
+\fB\-stylename \fIname\fR
+'\"
+Specifies a name for this style. If unspecified, then a default name
+will be chosen for this style.
+'\"
+.TP
+\fB\-refwindow \fIpathName\fR
+'\"
+Specifies a window to use for determine the default values of the
+display type. If unspecified, the main window will be used. Default
+values for the display types can be set via the options database. The
+following example sets the \fB\-disablebackground\fR and
+\fB\-disabledforeground\fR options of a \fBtext\fR display style via
+the option database:
+.CS
+option add *table.list*disabledForeground blue
+option add *table.list*disabledBackground darkgray
+tixDisplayStyle text -refwindow .table.list -fg red
+.CE
+'\"
+.PP
+By using the option database to set the options of the display styles,
+we can advoid hard-coding the option values and give the user more
+flexibility in customization. See option(n) for a detailed description
+of the option database.
+.RE
+'\"
+.SH STYLE COMMAND
+.PP
+The \fBtixDisplayStyle\fR command creates a new Tcl command whose name is the
+same as the name of the newly created display style.  This command
+may be used to invoke various operations on the display style.  It has the
+following general form:
+'\"
+'\"
+.RS
+.CS
+'\"
+\fIstyleName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIstyleName\fR is the name of the command. \fIOption\fR and the
+\fIarg\fRs determine the exact behavior of the command. The following
+commands are possible:
+'\"
+.TP
+\fIstyleName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the valid options of this
+display style.
+'\"
+.TP
+\fIstyleName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the display style.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIstyleName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list). If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given option(s) to have the given value(s); in this case
+the command returns an empty string. \fIOption\fR may have any of the
+valid options of this display style.
+'\"
+.TP
+\fIstyleName \fBdelete\fR
+'\"
+Destroy this display style object.
+'\"
+.SH EXAMPLE
+'\"
+The following example creates two columns of data in a HList
+widget. The first column is in red and the second column in blue. The
+colors of the columns are controlled by two different \fBtext\fR
+styles. Also, the anchor and font of the second column is chosen so
+that the income data is aligned properly.
+'\"
+.PP
+.CS
+set courier {courier 14}
+set h [tixHList .h -columns 2]; pack $h
+set red  [tixDisplayStyle text -fg #800000]
+set blue [tixDisplayStyle text -fg #000080 \\
+          -anchor e -font $courier]
+
+foreach n {{Joe $10,000} {Peter $20,000} {Raj $90,000}} {
+    set entry [$h addchild {}]
+    $h item create $entry 0 -itemtype text \\
+	-text [lindex $n 0] -style $red
+    $h item create $entry 1 -itemtype text \\
+	-text [lindex $n 1] -style $blue
+}
+.CE
+.SH KEYWORDS
+display item, display style, imagetext

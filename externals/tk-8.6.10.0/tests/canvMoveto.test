@@ -1,0 +1,56 @@
+# This file is a Tcl script to test out the canvas "moveto" command. It is
+# derived from canvRect.test.
+#
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2004 Neil McKay.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+canvas .c -width 400 -height 300 -bd 2 -relief sunken
+.c create rectangle 20 20 80 80 -tag {test rect1}
+.c create rectangle 40 40 90 100 -tag {test rect2}
+
+test canvMoveto-1.1 {Bad args handling for "moveto" command} -body {
+    .c moveto test
+} -returnCodes error -result {wrong # args: should be ".c moveto tagOrId x y"}
+test canvMoveto-1.2 {Bad args handling for "moveto" command} -body {
+    .c moveto rect
+} -returnCodes error -result {wrong # args: should be ".c moveto tagOrId x y"}
+test canvMoveto-1.3 {Bad args handling for "moveto" command} -body {
+    .c moveto test 12
+} -returnCodes error -result {wrong # args: should be ".c moveto tagOrId x y"}
+test canvMoveto-1.4 {Bad args handling for "moveto" command} -body {
+    .c moveto test 12 y
+} -returnCodes error -result {bad screen distance "y"}
+test canvMoveto-1.5 {Bad args handling for "moveto" command} -body {
+    .c moveto test 12 20 -anchor
+} -returnCodes error -result {wrong # args: should be ".c moveto tagOrId x y"}
+
+test canvMoveto-2.1 {Canvas "moveto" command coordinates} {
+    .c moveto test 200 150
+    .c bbox test
+} {200 150 272 232} 
+test canvMoveto-2.2 {Canvas "moveto" command, blank y coordinate} {
+    .c moveto test 200 150
+    .c moveto test 150 {}
+    .c bbox test
+} {150 150 222 232}
+test canvMoveto-2.3 {Canvas "moveto" command, blank x coordinate} {
+    .c moveto test 200 150
+    .c moveto test {} 200
+    .c bbox test
+} {200 200 272 282}
+
+.c delete withtag all
+
+# cleanup
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

@@ -1,0 +1,491 @@
+# Commands covered: none
+#
+# This file contains tests for the procedures in tclStringObj.c that implement
+# the Tcl type manager for the string type.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1995-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testobj [llength [info commands testobj]]
+testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint testdstring [llength [info commands testdstring]]
+
+test stringObj-1.1 {string type registration} testobj {
+    set t [testobj types]
+    set first [string first "string" $t]
+    set result [expr {$first != -1}]
+} {1}
+
+test stringObj-2.1 {Tcl_NewStringObj} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [teststringobj set 1 abcd]
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} abcd string 2}
+
+test stringObj-3.1 {Tcl_SetStringObj, existing "empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testobj newobj 1]
+    lappend result [teststringobj set 1 xyz]	;# makes existing obj a string
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} {} xyz string 2}
+test stringObj-3.2 {Tcl_SetStringObj, existing non-"empty string" object} testobj {
+    set result ""
+    lappend result [testobj freeallvars]
+    lappend result [testintobj set 1 512]
+    lappend result [teststringobj set 1 foo]	;# makes existing obj a string
+    lappend result [testobj type 1]
+    lappend result [testobj refcount 1]
+} {{} 512 foo string 2}
+
+test stringObj-4.1 {Tcl_SetObjLength procedure, string gets shorter} testobj {
+    testobj freeallvars
+    teststringobj set 1 test
+    teststringobj setlength 1 3
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {3 4 tes}
+test stringObj-4.2 {Tcl_SetObjLength procedure, string gets longer} testobj {
+    testobj freeallvars
+    teststringobj set 1 abcdef
+    teststringobj setlength 1 10
+    list [teststringobj length 1] [teststringobj length2 1]
+} {10 10}
+test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} testobj {
+    testobj freeallvars
+    teststringobj set 1 abcdef
+    teststringobj append 1 xyzq -1
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {10 20 abcdefxyzq}
+test stringObj-4.4 {Tcl_SetObjLength procedure, "expty string", length 0} testobj {
+    testobj freeallvars
+    testobj newobj 1
+    teststringobj setlength 1 0
+    list [teststringobj length2 1] [teststringobj get 1]
+} {0 {}}
+
+test stringObj-5.1 {Tcl_AppendToObj procedure, type conversion} testobj {
+    testobj freeallvars
+    testintobj set2 1 43
+    teststringobj append 1 xyz -1
+    teststringobj get 1
+} {43xyz}
+test stringObj-5.2 {Tcl_AppendToObj procedure, length calculation} testobj {
+    testobj freeallvars
+    teststringobj set 1 {x y }
+    teststringobj append 1 bbCCddEE 4
+    teststringobj append 1 123 -1
+    teststringobj get 1
+} {x y bbCC123}
+test stringObj-5.3 {Tcl_AppendToObj procedure, reallocating space} testobj {
+    testobj freeallvars
+    teststringobj set 1 xyz
+    teststringobj setlength 1 15
+    teststringobj setlength 1 2
+    set result {}
+    teststringobj append 1 1234567890123 -1
+    lappend result [teststringobj length 1] [teststringobj length2 1]
+    teststringobj setlength 1 10
+    teststringobj append 1 abcdef -1
+    lappend result [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {15 15 16 32 xy12345678abcdef}
+
+test stringObj-6.1 {Tcl_AppendStringsToObj procedure, type conversion} testobj {
+    testobj freeallvars
+    teststringobj set2 1 [list a b]
+    teststringobj appendstrings 1 xyz { 1234 } foo
+    teststringobj get 1
+} {a bxyz 1234 foo}
+test stringObj-6.2 {Tcl_AppendStringsToObj procedure, counting space} testobj {
+    testobj freeallvars
+    teststringobj set 1 abc
+    teststringobj appendstrings 1
+    list [teststringobj length 1] [teststringobj get 1]
+} {3 abc}
+test stringObj-6.3 {Tcl_AppendStringsToObj procedure, counting space} testobj {
+    testobj freeallvars
+    teststringobj set 1 abc
+    teststringobj appendstrings 1 {} {} {} {}
+    list [teststringobj length 1] [teststringobj get 1]
+} {3 abc}
+test stringObj-6.4 {Tcl_AppendStringsToObj procedure, counting space} testobj {
+    testobj freeallvars
+    teststringobj set 1 abc
+    teststringobj appendstrings 1 { 123 } abcdefg
+    list [teststringobj length 1] [teststringobj get 1]
+} {15 {abc 123 abcdefg}}
+test stringObj-6.5 {Tcl_AppendStringsToObj procedure, don't double space if initial string empty} testobj {
+    testobj freeallvars
+    testobj newobj 1
+    teststringobj appendstrings 1 123 abcdefg
+    list [teststringobj length 1] [teststringobj length2 1] [teststringobj get 1]
+} {10 20 123abcdefg}
+test stringObj-6.6 {Tcl_AppendStringsToObj procedure, space reallocation} testobj {
+    testobj freeallvars
+    teststringobj set 1 abc
+    teststringobj setlength 1 10
+    teststringobj setlength 1 2
+    teststringobj appendstrings 1 34567890
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {10 10 ab34567890}
+test stringObj-6.7 {Tcl_AppendStringsToObj procedure, space reallocation} testobj {
+    testobj freeallvars
+    teststringobj set 1 abc
+    teststringobj setlength 1 10
+    teststringobj setlength 1 2
+    teststringobj appendstrings 1 34567890x
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {11 22 ab34567890x}
+test stringObj-6.8 {Tcl_AppendStringsToObj procedure, object totally empty} testobj {
+    testobj freeallvars
+    testobj newobj 1
+    teststringobj appendstrings 1 {}
+    list [teststringobj length2 1] [teststringobj get 1]
+} {0 {}}
+test stringObj-6.9 {Tcl_AppendStringToObj, pure unicode} testobj {
+    testobj freeallvars
+    teststringobj set2 1 [string replace abc 1 1 d]
+    teststringobj appendstrings 1 foo bar soom
+    teststringobj get 1
+} adcfoobarsoom
+
+test stringObj-7.1 {SetStringFromAny procedure} testobj {
+    testobj freeallvars
+    teststringobj set2 1 [list a b]
+    teststringobj append 1 x -1
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {4 8 {a bx}}
+test stringObj-7.2 {SetStringFromAny procedure, null object} testobj {
+    testobj freeallvars
+    testobj newobj 1
+    teststringobj appendstrings 1 {}
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj get 1]
+} {0 0 {}}
+test stringObj-7.3 {SetStringFromAny called with non-string obj} testobj {
+    set x 2345
+    list [incr x] [testobj objtype $x] [string index $x end] \
+	    [testobj objtype $x]
+} {2346 int 6 string}
+test stringObj-7.4 {SetStringFromAny called with string obj} testobj {
+    set x "abcdef"
+    list [string length $x] [testobj objtype $x] \
+	    [string length $x] [testobj objtype $x]
+} {6 string 6 string}
+
+test stringObj-8.1 {DupStringInternalRep procedure} testobj {
+    testobj freeallvars
+    teststringobj set 1 {}
+    teststringobj append 1 abcde -1
+    testobj duplicate 1 2
+    list [teststringobj length 1] [teststringobj length2 1] \
+	    [teststringobj maxchars 1] [teststringobj get 1] \
+	    [teststringobj length 2] [teststringobj length2 2] \
+	    [teststringobj maxchars 2] [teststringobj get 2]
+} {5 10 0 abcde 5 5 0 abcde}
+test stringObj-8.2 {DupUnicodeInternalRep, mixed width chars} testobj {
+    set x abc\u00ef\u00bf\u00aeghi
+    string length $x
+    set y $x
+    list [testobj objtype $x] [testobj objtype $y] [append x "\u00ae\u00bf\u00ef"] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} "string string abc\u00ef\u00bf\u00aeghi\u00ae\u00bf\u00ef abc\u00ef\u00bf\u00aeghi string string"
+test stringObj-8.3 {DupUnicodeInternalRep, mixed width chars} testobj {
+    set x abc\u00ef\u00bf\u00aeghi
+    set y $x
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x "\u00ae\u00bf\u00ef"] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} "string string abc\u00ef\u00bf\u00aeghi\u00ae\u00bf\u00ef abc\u00ef\u00bf\u00aeghi string string"
+test stringObj-8.4 {DupUnicodeInternalRep, all byte-size chars} testobj {
+    set x abcdefghi
+    string length $x
+    set y $x
+    list [testobj objtype $x] [testobj objtype $y] [append x jkl] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string string abcdefghijkl abcdefghi string string}
+test stringObj-8.5 {DupUnicodeInternalRep, all byte-size chars} testobj {
+    set x abcdefghi
+    set y $x
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x jkl] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string string abcdefghijkl abcdefghi string string}
+
+test stringObj-9.1 {TclAppendObjToObj, mixed src & dest} {testobj testdstring} {
+    set x abc\u00ef\u00bf\u00aeghi
+    testdstring free
+    testdstring append \u00ae\u00bf\u00ef -1
+    set y [testdstring get]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} "string none abc\u00ef\u00bf\u00aeghi\u00ae\u00bf\u00ef \u00ae\u00bf\u00ef string none"
+test stringObj-9.2 {TclAppendObjToObj, mixed src & dest} testobj {
+    set x abc\u00ef\u00bf\u00aeghi
+    string length $x
+    list [testobj objtype $x] [append x $x] [testobj objtype $x] \
+	    [append x $x] [testobj objtype $x]
+} "string abc\u00ef\u00bf\u00aeghiabc\u00ef\u00bf\u00aeghi string\
+abc\u00ef\u00bf\u00aeghiabc\u00ef\u00bf\u00aeghiabc\u00ef\u00bf\u00aeghiabc\u00ef\u00bf\u00aeghi\
+string"
+test stringObj-9.3 {TclAppendObjToObj, mixed src & 1-byte dest} {testobj testdstring} {
+    set x abcdefghi
+    testdstring free
+    testdstring append \u00ae\u00bf\u00ef -1
+    set y [testdstring get]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} "string none abcdefghi\u00ae\u00bf\u00ef \u00ae\u00bf\u00ef string none"
+test stringObj-9.4 {TclAppendObjToObj, 1-byte src & dest} {testobj testdstring} {
+    set x abcdefghi
+    testdstring free
+    testdstring append jkl -1
+    set y [testdstring get]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string none abcdefghijkl jkl string none}
+test stringObj-9.5 {TclAppendObjToObj, 1-byte src & dest} testobj {
+    set x abcdefghi
+    string length $x
+    list [testobj objtype $x] [append x $x] [testobj objtype $x] \
+	    [append x $x] [testobj objtype $x]
+} {string abcdefghiabcdefghi string abcdefghiabcdefghiabcdefghiabcdefghi\
+string}
+test stringObj-9.6 {TclAppendObjToObj, 1-byte src & mixed dest} {testobj testdstring} {
+    set x abc\u00ef\u00bf\u00aeghi
+    testdstring free
+    testdstring append jkl -1
+    set y [testdstring get]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} "string none abc\u00ef\u00bf\u00aeghijkl jkl string none"
+test stringObj-9.7 {TclAppendObjToObj, integer src & dest} testobj {
+    set x [expr {4 * 5}]
+    set y [expr {4 + 5}]
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [testobj objtype $x] [append x $y] [testobj objtype $x] \
+	    [testobj objtype $y]
+} {int int 209 string 2099 string int}
+test stringObj-9.8 {TclAppendObjToObj, integer src & dest} testobj {
+    set x [expr {4 * 5}]
+    list [testobj objtype $x] [append x $x] [testobj objtype $x] \
+	    [append x $x] [testobj objtype $x]
+} {int 2020 string 20202020 string}
+test stringObj-9.9 {TclAppendObjToObj, integer src & 1-byte dest} testobj {
+    set x abcdefghi
+    set y [expr {4 + 5}]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string int abcdefghi9 9 string int}
+test stringObj-9.10 {TclAppendObjToObj, integer src & mixed dest} testobj {
+    set x abc\u00ef\u00bf\u00aeghi
+    set y [expr {4 + 5}]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} "string int abc\u00ef\u00bf\u00aeghi9 9 string int"
+test stringObj-9.11 {TclAppendObjToObj, mixed src & 1-byte dest index check} testobj {
+    # bug 2678, in <=8.2.0, the second obj (the one to append) in
+    # Tcl_AppendObjToObj was not correctly checked to see if it was all one
+    # byte chars, so a unicode string would be added as one byte chars.
+    set x abcdef
+    set len [string length $x]
+    set y a\u00fcb\u00e5c\u00ef
+    set len [string length $y]
+    append x $y
+    string length $x
+    set q {}
+    for {set i 0} {$i < 12} {incr i} {
+	lappend q [string index $x $i]
+    }
+    set q
+} "a b c d e f a \u00fc b \u00e5 c \u00ef"
+
+test stringObj-10.1 {Tcl_GetRange with all byte-size chars} {testobj testdstring} {
+    testdstring free
+    testdstring append abcdef -1
+    set x [testdstring get]
+    list [testobj objtype $x] [set y [string range $x 1 end-1]] \
+	    [testobj objtype $x] [testobj objtype $y]
+} [list none bcde string string]
+test stringObj-10.2 {Tcl_GetRange with some mixed width chars} {testobj testdstring} {
+    # Because this test does not use \uXXXX notation below instead of
+    # hardcoding the values, it may fail in multibyte locales. However, we
+    # need to test that the parser produces untyped objects even when there
+    # are high-ASCII characters in the input (like "ï"). I don't know what
+    # else to do but inline those characters here.
+    testdstring free
+    testdstring append "abc\u00ef\u00efdef" -1
+    set x [testdstring get]
+    list [testobj objtype $x] [set y [string range $x 1 end-1]] \
+	    [testobj objtype $x] [testobj objtype $y]
+} [list none "bc\u00EF\u00EFde" string string]
+test stringObj-10.3 {Tcl_GetRange with some mixed width chars} testobj {
+    # set x "abcïïdef"
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    set x "abc\u00EF\u00EFdef"
+    string length $x
+    list [testobj objtype $x] [set y [string range $x 1 end-1]] \
+	    [testobj objtype $x] [testobj objtype $y]
+} [list string "bc\u00EF\u00EFde" string string]
+test stringObj-10.4 {Tcl_GetRange with some mixed width chars} testobj {
+    # set a "ïa¿b®cï¿d®"
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    set a "\u00EFa\u00BFb\u00AEc\u00EF\u00BFd\u00AE"
+    set result [list]
+    while {[string length $a] > 0} {
+	set a [string range $a 1 end-1]
+	lappend result $a
+    }
+    set result
+} [list a\u00BFb\u00AEc\u00EF\u00BFd	\
+	\u00BFb\u00AEc\u00EF\u00BF	\
+	b\u00AEc\u00EF			\
+	\u00AEc				\
+	{}]
+
+test stringObj-11.1 {UpdateStringOfString} testobj {
+    set x 2345
+    list [string index $x end] [testobj objtype $x] [incr x] \
+	    [testobj objtype $x]
+} {5 string 2346 int}
+
+test stringObj-12.1 {Tcl_GetUniChar with byte-size chars} testobj {
+    set x "abcdefghi"
+    list [string index $x 0] [string index $x 1]
+} {a b}
+test stringObj-12.2 {Tcl_GetUniChar with byte-size chars} testobj {
+    set x "abcdefghi"
+    list [string index $x 3] [string index $x end]
+} {d i}
+test stringObj-12.3 {Tcl_GetUniChar with byte-size chars} testobj {
+    set x "abcdefghi"
+    list [string index $x end] [string index $x end-1]
+} {i h}
+test stringObj-12.4 {Tcl_GetUniChar with mixed width chars} testobj {
+    string index "\u00efa\u00bfb\u00aec\u00ae\u00bfd\u00ef" 0
+} "\u00ef"
+test stringObj-12.5 {Tcl_GetUniChar} testobj {
+    set x "\u00efa\u00bfb\u00aec\u00ae\u00bfd\u00ef"
+    list [string index $x 4] [string index $x 0]
+} "\u00ae \u00ef"
+test stringObj-12.6 {Tcl_GetUniChar} testobj {
+    string index "\u00efa\u00bfb\u00aec\u00ef\u00bfd\u00ae" end
+} "\u00ae"
+
+test stringObj-13.1 {Tcl_GetCharLength with byte-size chars} testobj {
+    set a ""
+    list [string length $a] [string length $a]
+} {0 0}
+test stringObj-13.2 {Tcl_GetCharLength with byte-size chars} testobj {
+    string length "a"
+} 1
+test stringObj-13.3 {Tcl_GetCharLength with byte-size chars} testobj {
+    set a "abcdef"
+    list [string length $a] [string length $a]
+} {6 6}
+test stringObj-13.4 {Tcl_GetCharLength with mixed width chars} testobj {
+    string length "\u00ae" 
+} 1
+test stringObj-13.5 {Tcl_GetCharLength with mixed width chars} testobj {
+    # string length "ï¿®ï¿®" 
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    string length "\u00EF\u00BF\u00AE\u00EF\u00BF\u00AE"
+} 6
+test stringObj-13.6 {Tcl_GetCharLength with mixed width chars} testobj {
+    # set a "ïa¿b®cï¿d®"
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    set a "\u00EFa\u00BFb\u00AEc\u00EF\u00BFd\u00AE"
+    list [string length $a] [string length $a]
+} {10 10}
+test stringObj-13.7 {Tcl_GetCharLength with identity nulls} {testobj testbytestring} {
+    # SF bug #684699
+    string length [testbytestring \x00]
+} 1
+test stringObj-13.8 {Tcl_GetCharLength with identity nulls} {testobj testbytestring} {
+    string length [testbytestring \x01\x00\x02]
+} 3
+
+test stringObj-14.1 {Tcl_SetObjLength on pure unicode object} testobj {
+    teststringobj set 1 foo
+    teststringobj getunicode 1
+    teststringobj append 1 bar -1
+    teststringobj getunicode 1
+    teststringobj append 1 bar -1
+    teststringobj setlength 1 0
+    teststringobj append 1 bar -1
+    teststringobj get 1
+} {bar}
+
+test stringObj-15.1 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself 1 0
+} foofoo
+test stringObj-15.2 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself 1 1
+} foooo
+test stringObj-15.3 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself 1 2
+} fooo
+test stringObj-15.4 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself 1 3
+} foo
+test stringObj-15.5 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself2 1 0
+} foofoo
+test stringObj-15.6 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself2 1 1
+} foooo
+test stringObj-15.7 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself2 1 2
+} fooo
+test stringObj-15.8 {Tcl_Append*ToObj: self appends} testobj {
+    teststringobj set 1 foo
+    teststringobj appendself2 1 3
+} foo
+
+
+if {[testConstraint testobj]} {
+    testobj freeallvars
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

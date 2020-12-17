@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<!--
+	Copyright (c) 1997 Sun Microsystems, Inc.
+	Copyright 2009 Kevin Walzer/WordTech Communications LLC.
+	Copyright (c) 2009 Daniel A. Steffen <das@users.sourceforge.net>
+
+	See the file "license.terms" for information on usage and redistribution of
+	this file, and for a DISCLAIMER OF ALL WARRANTIES.
+-->
+<dictionary title="Wish Terminology">
+	<suite name="Standard Suite" code="reqd" description="Common commands for all applications.">
+		<command name="open" code="aevtodoc" description="Open a document.">
+			<direct-parameter description="The file(s) to be opened.">
+				<type type="file"/>
+				<type type="file" list="yes"/>
+			</direct-parameter>
+		</command>
+		<command name="print" code="aevtpdoc" description="Print a document.">
+			<direct-parameter description="The file(s) to be printed.">
+				<type type="file" list="yes"/>
+				<type type="specifier"/>
+			</direct-parameter>
+		</command>
+		<command name="quit" code="aevtquit" description="Quit the application."/>
+	</suite>
+	<suite name="Wish Suite" code="WIsH" description="Commands for the Wish application.">
+		<command name="do script" code="miscdosc" description="Execute a Tcl script.">
+			<direct-parameter description="Script to execute" type="text">
+				<type type="text"/>
+			</direct-parameter>
+			<result description="Result">
+				<type type="text"/>
+			</result>
+		</command>
+			<command name="open location" code="GURLGURL"
+				 description="Open a URL.">
+			<direct-parameter description="URL" type="text">
+				<type type="text"/>
+			</direct-parameter>
+			<result description="Result">
+				<type type="text"/>
+			</result>
+		</command>
+	</suite>
+</dictionary>

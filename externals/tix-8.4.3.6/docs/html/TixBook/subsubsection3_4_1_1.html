@@ -1,0 +1,50 @@
+<HEAD>
+<TITLE> Adding Pages to a TixNoteBook<A NAME=211>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html610 HREF=subsubsection3_4_1_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html608 HREF=subsection3_4_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html602 HREF=subsection3_4_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html612 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html611 HREF=subsubsection3_4_1_2.html> Keyboard Accelerators</A>
+<B>Up:</B> <A NAME=tex2html609 HREF=subsection3_4_1.html> TixNoteBook</A>
+<B> Previous:</B> <A NAME=tex2html603 HREF=subsection3_4_1.html> TixNoteBook</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00041100000000000000> Adding Pages to a TixNoteBook<A NAME=211>&nbsp;</A></A></H3>
+<P>
+The example program in figure 2-2 creates the
+  TixNoteBook widget shown in figure 2-1. In the first
+  three lines, we create the notebook widget and two pages inside
+  it. While we create the pages, we also set the labels on the tabs
+  associated with each page and use the <tt>-underline</tt> option to
+  indicate the keyboard accelerator for each page.
+<P>
+   Each time we create a page in the notebook using the <tt>add</tt> method, a
+  frame subwidget is created for us automatically. This frame subwidget has
+  the same name as the page (the first parameter passed to the <tt>add</tt>
+  method). We can use the <tt>subwidget</tt> method to find out the pathname
+  of this frame subwidget and pack everything we want to display on the
+  page into this frame widget. Lines 4-10 of program 2-2 shows
+  how to create the widgets inside the ``Hard Disk'' page. Creating the
+  widgets inside the ``Network'' page will be similar.
+<P>
+<blockquote> <P><tt> tixNoteBook .n<BR>
+.n add hd  -label &quot;Hard Disk&quot; -underline 0<BR>
+.n add net -label &quot;Network&quot;   -underline 0<BR>
+<BR>
+set frame [.n subwidget hd]<BR>
+tixControl $frame.access   -label &quot;Access Time:&quot;<BR>
+tixControl $frame.write    -label &quot;Write Throughput:&quot;<BR>
+tixControl $frame.read     -label &quot;Read Througput:&quot;<BR>
+tixControl $frame.capacity -label &quot;Capacity:&quot;<BR>
+pack $frame.access $frame.write $frame.read $frame.capacity <BR>    -side top -fill x
+</tt>
+<P></blockquote>
+<P><CENTER>(Figure 2-2) Using The TixNoteBook Widget<A NAME=22>&nbsp;</A>
+  </CENTER>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

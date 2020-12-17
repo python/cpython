@@ -1,0 +1,110 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_Preserve 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_Preserve, Tcl_Release, Tcl_EventuallyFree \- avoid freeing storage while it is being used
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_Preserve\fR(\fIclientData\fR)
+.sp
+\fBTcl_Release\fR(\fIclientData\fR)
+.sp
+\fBTcl_EventuallyFree\fR(\fIclientData, freeProc\fR)
+.SH ARGUMENTS
+.AS Tcl_FreeProc clientData
+.AP ClientData clientData in
+Token describing structure to be freed or reallocated.  Usually a pointer
+to memory for structure.
+.AP Tcl_FreeProc *freeProc in
+Procedure to invoke to free \fIclientData\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These three procedures help implement a simple reference count mechanism
+for managing storage.  They are designed to solve a problem
+having to do with widget deletion, but are also useful in many other
+situations.  When a widget is deleted, its
+widget record (the structure holding information specific to the
+widget) must be returned to the storage allocator.
+However, it is possible that the widget record is in active use
+by one of the procedures on the stack at the time of the deletion.
+This can happen, for example, if the command associated with a button
+widget causes the button to be destroyed:  an X event causes an
+event-handling C procedure in the button to be invoked, which in
+turn causes the button's associated Tcl command to be executed,
+which in turn causes the button to be deleted, which in turn causes
+the button's widget record to be de-allocated.
+Unfortunately, when the Tcl command returns, the button's
+event-handling procedure will need to reference the
+button's widget record.
+Because of this, the widget record must not be freed as part of the
+deletion, but must be retained until the event-handling procedure has
+finished with it.
+In other situations where the widget is deleted, it may be possible
+to free the widget record immediately.
+.PP
+\fBTcl_Preserve\fR and \fBTcl_Release\fR
+implement short-term reference counts for their \fIclientData\fR
+argument.
+The \fIclientData\fR argument identifies an object and usually
+consists of the address of a structure.
+The reference counts guarantee that an object will not be freed
+until each call to \fBTcl_Preserve\fR for the object has been
+matched by calls to \fBTcl_Release\fR.
+There may be any number of unmatched \fBTcl_Preserve\fR calls
+in effect at once.
+.PP
+\fBTcl_EventuallyFree\fR is invoked to free up its \fIclientData\fR
+argument.
+It checks to see if there are unmatched \fBTcl_Preserve\fR calls
+for the object.
+If not, then \fBTcl_EventuallyFree\fR calls \fIfreeProc\fR immediately.
+Otherwise \fBTcl_EventuallyFree\fR records the fact that \fIclientData\fR
+needs eventually to be freed.
+When all calls to \fBTcl_Preserve\fR have been matched with
+calls to \fBTcl_Release\fR then \fIfreeProc\fR will be called by
+\fBTcl_Release\fR to do the cleanup.
+.PP
+All the work of freeing the object is carried out by \fIfreeProc\fR.
+\fIFreeProc\fR must have arguments and result that match the
+type \fBTcl_FreeProc\fR:
+.PP
+.CS
+typedef void \fBTcl_FreeProc\fR(
+        char *\fIblockPtr\fR);
+.CE
+.PP
+The \fIblockPtr\fR argument to \fIfreeProc\fR will be the
+same as the \fIclientData\fR argument to \fBTcl_EventuallyFree\fR.
+The type of \fIblockPtr\fR (\fBchar *\fR) is different than the type of the
+\fIclientData\fR argument to \fBTcl_EventuallyFree\fR for historical
+reasons, but the value is the same.
+.PP
+When the \fIclientData\fR argument to \fBTcl_EventuallyFree\fR
+refers to storage allocated and returned by a prior call to
+\fBTcl_Alloc\fR, \fBckalloc\fR, or another function of the Tcl library,
+then the \fIfreeProc\fR argument should be given the special value of
+\fBTCL_DYNAMIC\fR.
+.PP
+This mechanism can be used to solve the problem described above
+by placing \fBTcl_Preserve\fR and \fBTcl_Release\fR calls around
+actions that may cause undesired storage re-allocation.  The
+mechanism is intended only for short-term use (i.e. while procedures
+are pending on the stack);  it will not work efficiently as a
+mechanism for long-term reference counts.
+The implementation does not depend in any way on the internal
+structure of the objects being freed;  it keeps the reference
+counts in a separate structure.
+.SH "SEE ALSO"
+Tcl_Interp, Tcl_Alloc
+.SH KEYWORDS
+free, reference count, storage

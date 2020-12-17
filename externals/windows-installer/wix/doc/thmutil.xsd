@@ -1,0 +1,707 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+    targetNamespace="http://wixtoolset.org/schemas/thmutil/2010"
+              xmlns="http://wixtoolset.org/schemas/thmutil/2010">
+    <xs:annotation>
+        <xs:documentation>
+            Schema for describing Theme files processed by thmutil.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://www.w3.org/1999/xhtml" />
+
+    <xs:element name="Theme">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+        <xs:complexType>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element ref="Font" />
+                <xs:element ref="ImageList" />
+                <xs:element ref="Page" />
+                <xs:element ref="Window" />
+                <xs:group ref="ControlElements" maxOccurs="unbounded" />
+            </xs:choice>
+            <xs:attribute name="ImageFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Relative path to an image file that can serve as a single source for images in the rest of the
+                    theme. This image is referenced by controls using the SourceX and SourceY attributes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Font">
+        <xs:annotation>
+            <xs:documentation>Defines a font including the size and color.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Name of the font face.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="Id" type="xs:nonNegativeInteger">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier for the font. Due to limitations in thmutil the first Font must start with "0" and each subsequent Font must increment the Id by 1. Failure to ensure the Font identifiers follow this strict ordering will create unexpected behavior or crashes.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Height" type="xs:int">
+                        <xs:annotation>
+                            <xs:documentation>Font size. Use negative numbers to specify the font in pixels.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Weight" type="xs:nonNegativeInteger">
+                        <xs:annotation>
+                            <xs:documentation>Font weight.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Foreground" type="xs:hexBinary">
+                        <xs:annotation>
+                            <xs:documentation>Hexadecimal value representing BGR foreground color of the font. "ffffff" is white, "ff0000" is pure blue, "00ff00" is pure green, "0000ff" is pure red and "000000" is black. If this value is absent the foreground will be transparent.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Background" type="xs:hexBinary">
+                        <xs:annotation>
+                            <xs:documentation>Hexadecimal value representing BGR background color of the font. "ffffff" is white, "ff0000" is pure blue, "00ff00" is pure green, "0000ff" is pure red and "000000" is black. If this value is absent the background will be transparent.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Underline" type="YesNoType">
+                        <xs:annotation>
+                            <xs:documentation>Specifies whether the font is underlined.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ImageList">
+        <xs:annotation>
+            <xs:documentation>List of images which can be shared between multiple controls.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element ref="Image" />
+            </xs:choice>
+            <xs:attribute name="Name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the ImageList, to be referenced by other controls.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Page">
+        <xs:annotation>
+            <xs:documentation>Named set of controls that can be shown and hidden collectively.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:group ref="ControlElements" maxOccurs="unbounded"/>
+            <xs:attribute name="Name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Optional name for the page.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Window">
+        <xs:annotation>
+            <xs:documentation>Defines the overall look of the main window.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Caption for the window.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="AutoResize" type="YesNoType">
+                        <xs:annotation>
+                            <xs:documentation>Specifies whether the ThmUtil default window proc should process WM_SIZE and WM_SIZING events.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="FontId" type="xs:nonNegativeInteger">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the default font for the window.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Height" type="xs:positiveInteger">
+                        <xs:annotation>
+                            <xs:documentation>Height of the window.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="HexStyle" type="xs:hexBinary">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Hexadecimal window style. If this is not specified the default value is: WS_OVERLAPPED | WS_VISIBLE | WS_MINIMIZEBOX | WS_SYSMENU.
+                                If SourceX and SourceY are greater than 0, then WS_OVERLAPPED is replaced with WS_POPUP.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="IconFile" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>Relative path to an icon file for the window. Mutually exclusive with IconResource and SourceX and SourceY attributes.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="IconResource" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>Identifier that references icon resource in the module for the window. Mutually exclusive with IconFile and SourceX and SourceY attributes.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="MinimumHeight" type="xs:positiveInteger">
+                      <xs:annotation>
+                          <xs:documentation>Minimum height of the window. Only functions if AutoResize is enabled.</xs:documentation>
+                      </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="MinimumWidth" type="xs:positiveInteger">
+                        <xs:annotation>
+                            <xs:documentation>Minimum width of the window. Only functions if AutoResize is enabled.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="SourceX" type="xs:nonNegativeInteger">
+                        <xs:annotation>
+                            <xs:documentation>X offset of the window background in the Theme/@ImageFile. Mutually exclusive with IconFile and IconResource.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="SourceY" type="xs:nonNegativeInteger">
+                        <xs:annotation>
+                            <xs:documentation>Y offset of the window background in the Theme/@ImageFile. Mutually exclusive with IconFile and IconResource.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Width" type="xs:positiveInteger">
+                        <xs:annotation>
+                            <xs:documentation>Width of the window.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Billboard">
+        <xs:annotation>
+            <xs:documentation>Defines a control that rotates through a set of images on a specified interval.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Image" />
+            </xs:sequence>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="Interval" type="xs:positiveInteger">
+                <xs:annotation>
+                    <xs:documentation>.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Loop" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether the billboard should loop through the images infinitely.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Button">
+        <xs:annotation>
+            <xs:documentation>Defines a button.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Text to display in the button.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attributeGroup ref="CommonControlAttributes" />
+                    <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="ImageFile" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>Relative path to an image file to define an graphic button. The image must be 3x the height to represent the button in 3 states: unselected, hover, selected. Mutually exclusive with ImageResource and SourceX and SourceY attributes.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="ImageResource" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>Identifier that references an image resource in the module for the control. The image must be 3x the height to represent the button in 3 states: unselected, hover, selected. Mutually exclusive with ImageFile and SourceX and SourceY attributes.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Checkbox">
+        <xs:annotation>
+            <xs:documentation>Defines a checkbox.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Text to display beside the checkbox.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attributeGroup ref="CommonControlAttributes" />
+                    <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Combobox">
+        <xs:annotation>
+            <xs:documentation>Defines a combobox.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                <xs:annotation>
+                    <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                </xs:annotation>
+             </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Editbox">
+        <xs:annotation>
+            <xs:documentation>Defines an edit box.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="FileSystemAutoComplete" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether the edit box should auto-complete with file system paths.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                <xs:annotation>
+                    <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Hyperlink">
+        <xs:annotation>
+            <xs:documentation>Defines a hyperlink.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Text to display as the link.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attributeGroup ref="CommonControlAttributes" />
+                    <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the unselected font.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="HoverFontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the font when the control is hovered over.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="SelectedFontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the font when the control is selected.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Hypertext">
+        <xs:annotation>
+            <xs:documentation>Defines a text block with support for HTML &lt;a&gt; tags.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Text to display as the link. Use HTML &lt;a href="URL"&gt; to create a link.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attributeGroup ref="CommonControlAttributes" />
+                    <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Image">
+        <xs:annotation>
+            <xs:documentation>Defines an image.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="ImageFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Relative path to an image file. Mutually exclusive with ImageResource and SourceX and SourceY attributes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ImageResource" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Identifier that references an image resource in the module. Mutually exclusive with ImageFile and SourceX and SourceY attributes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ListView">
+        <xs:annotation>
+            <xs:documentation>Defines a listview.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element ref="Column" />
+            </xs:choice>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="FontId" type="xs:nonNegativeInteger">
+                <xs:annotation>
+                    <xs:documentation>Numeric identifier to the Font element that serves as the default font for the ListView.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="HexExtendedStyle" type="xs:hexBinary">
+                <xs:annotation>
+                    <xs:documentation>Hexadecimal extended window style.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ImageList" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The name of the Image List to assign to this listview with type LVSIL_NORMAL.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ImageListSmall" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The name of the Image List to assign to this listview with type LVSIL_SMALL.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ImageListState" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The name of the Image List to assign to this listview with type LVSIL_STATE.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ImageListGroupHeader" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The name of the Image List to assign to this listview with type LVSIL_GROUPHEADER.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Progressbar">
+        <xs:annotation>
+            <xs:documentation>Defines a progress bar.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="ImageFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Relative path to an image file for the control. The image must be 4 pixels wide: left pixel is the left side of progress bar, left middle pixel is progress used, right middle pixel is progress unused, right pixel is right side of progress bar. Mutually exclusive with ImageResource and SourceX and SourceY attributes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ImageResource" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Identifier that references an image resource in the module for the control. The image must be 4 pixels wide: left pixel is the left side of progress bar, left middle pixel is progress used, right middle pixel is progress unused, right pixel is right side of progress bar. Mutually exclusive with ImageFile and SourceX and SourceY attributes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Richedit">
+        <xs:annotation>
+            <xs:documentation>Defines a rich edit control.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+            <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                <xs:annotation>
+                    <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Static">
+        <xs:annotation>
+            <xs:documentation>Defines a straight line.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Tab">
+        <xs:annotation>
+            <xs:documentation>Defines a tab.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Caption of the tab.</xs:documentation>
+                    </xs:annotation>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Text">
+        <xs:annotation>
+            <xs:documentation>Defines text.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Page" />
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="Theme" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Text to display.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attributeGroup ref="CommonControlAttributes" />
+                    <xs:attribute name="Center" type="YesNoType" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>Specifies whether the text should be centered horizontally in the width of the control. Default is "no".</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="DisablePrefix" type="YesNoType" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>By default ampersands (&amp;) in the text will underline the next character and treat it as an accelerator key. Set this attribute to "yes" to disable that behavior. Default is "no".</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="FontId" type="xs:nonNegativeInteger" use="required">
+                        <xs:annotation>
+                            <xs:documentation>Numeric identifier to the Font element that serves as the font for the control.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="TreeView">
+        <xs:annotation>
+            <xs:documentation>Defines a treeview.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attributeGroup ref="CommonControlAttributes"/>
+            <xs:attribute name="EnableDragDrop">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether drag and drop is enabled for the treeview.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="FullRowSelect">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether an entire row is selected for the treeview.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="asButtons">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether the treeview will show buttons.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AlwaysShowSelect">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether the row always appears selected even when the treeview has lost focus.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LinesAtRoot">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether the root nodes have lines beside them.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="HasLines">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether lines appear for all treeview items.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Column">
+        <xs:annotation>
+            <xs:documentation>A column of a list.</xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://wixtoolset.org/schemas/thmutil/2010" ref="ListView" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Text for the column header.</xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="Width" type="xs:int">
+                        <xs:annotation>
+                            <xs:documentation>Width of the column.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Expands" type="YesNoType">
+                        <xs:annotation>
+                            <xs:documentation>Whether or not this column can grow to fill available width of the listview.
+                                More than one column can be marked with yes - all expandable columns will share available extra space.
+                                This is especially useful if the Window/@AutoResize is yes.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:group name="ControlElements">
+        <xs:choice>
+            <xs:element ref="Billboard" />
+            <xs:element ref="Button" />
+            <xs:element ref="Checkbox" />
+            <xs:element ref="Combobox" />
+            <xs:element ref="Editbox" />
+            <xs:element ref="Hyperlink" />
+            <xs:element ref="Hypertext" />
+            <xs:element ref="Image" />
+            <xs:element ref="ListView" />
+            <xs:element ref="Progressbar" />
+            <xs:element ref="Richedit" />
+            <xs:element ref="Static" />
+            <xs:element ref="Tab" />
+            <xs:element ref="Text" />
+            <xs:element ref="TreeView" />
+        </xs:choice>
+    </xs:group>
+
+    <xs:attributeGroup name="CommonControlAttributes">
+        <xs:attribute name="Name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Optional name for the control.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Height" type="xs:int" use="required">
+            <xs:annotation>
+                <xs:documentation>Height of the control. Non-positive values extend the control to the bottom of the window minus the value.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="HexStyle" type="xs:hexBinary">
+            <xs:annotation>
+                <xs:documentation>Hexadecimal window style for the control.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="HideWhenDisabled" type="YesNoType">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the control should be hidden when disabled.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="TabStop" type="YesNoType">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the control is part of the tab sequence of controls.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Visible" type="YesNoType">
+            <xs:annotation>
+                <xs:documentation>Specifies whether the control is initially visible.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Width" type="xs:int" use="required">
+            <xs:annotation>
+                <xs:documentation>Width of the control. Non-positive values extend the control to the right of the window minus the value.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="X" type="xs:int" use="required">
+            <xs:annotation>
+                <xs:documentation>X coordinate for the control from the left of the window. Negative values are coordinates from the right of the window minus the width of the control.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Y" type="xs:int" use="required">
+            <xs:annotation>
+                <xs:documentation>Y coordinate for the control from the top of the window. Negative values are coordinates from the bottom of the window minus the height of the control.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:simpleType name="YesNoType">
+        <xs:annotation><xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation></xs:annotation>
+        <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

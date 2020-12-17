@@ -1,0 +1,11 @@
+/* XPM */
+static char * folder_xpm[] = {
+"4 4 3 2",
+ "AA 	c black",
+"..	c white",
+"XY	c yellow",
+"AAAAAAXY",
+"XYAAAAAA",
+"..AA..AA",
+"..AAAA..",
+};

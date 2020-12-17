@@ -1,0 +1,181 @@
+#
+# Tests for "auto_import" and autoloading facility
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.2
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+set ::itcllib [lindex [package ifneeded itcl [package require itcl]] 1]
+
+# ----------------------------------------------------------------------
+#  Test "itcl::import::stub" command
+# ----------------------------------------------------------------------
+test import-1.1 {basic syntax for "stub" command} {
+    list [catch {itcl::import::stub} result] $result
+} {1 {wrong # args: should be "itcl::import::stub subcommand ?arg ...?"}}
+
+test import-1.1a {basic syntax for "stub" command
+} -body {
+    list [catch {itcl::import::stub} result] $result
+} -constraints {
+    needs_frq_1773103
+} -result {1 {wrong # args: should be one of...
+  stub create name
+  stub exists name}}
+
+test import-1.2 {"stub create" requires one argument} {
+    list [catch {itcl::import::stub create} result] $result \
+         [catch {itcl::import::stub create x y} result] $result
+} {1 {wrong # args: should be "itcl::import::stub create name"} 1 {wrong # args: should be "itcl::import::stub create name"}}
+
+test import-1.3 {"stub exists" requires one argument} {
+    list [catch {itcl::import::stub exists} result] $result \
+         [catch {itcl::import::stub exists x y} result] $result
+} {1 {wrong # args: should be "itcl::import::stub exists name"} 1 {wrong # args: should be "itcl::import::stub exists name"}}
+
+set interp [interp create]
+$interp eval "
+    [list ::load $::itcllib itcl]
+    [::tcltest::configure -load]
+    proc auto_load {cmd {namespace {}}} {
+        global debug
+        proc \$cmd {args} \[format {return \"%s: \$args\"} \$cmd\]
+        append debug \"(auto_load: \$cmd)\"
+        return 1
+    }
+"
+
+test import-1.4 {"stub create" creates a stub that triggers autoloading} {
+    $interp eval {
+        set debug ""
+        list [itcl::import::stub create foo::bar::test] \
+             [info commands ::foo::bar::test] \
+             [::foo::bar::test 1 2 3] \
+             $debug
+    }
+} {{} ::foo::bar::test {::foo::bar::test: 1 2 3} {(auto_load: ::foo::bar::test)}}
+
+test import-1.5 {"stub exists" recognizes stubs created by "stub create"} {
+    $interp eval {
+        set debug ""
+        itcl::import::stub create foo::bar::stub1
+        proc foo::bar::proc1 {{args {}}} {return "proc1: $args"}
+        list [itcl::import::stub exists foo::bar::stub1] \
+             [itcl::import::stub exists foo::bar::proc1]
+    }
+} {1 0}
+
+test import-1.6 {stubs can be autoloaded and replaced} {
+    $interp eval {
+        set debug ""
+        itcl::import::stub create foo::bar::stub2
+        list [itcl::import::stub exists foo::bar::stub2] \
+             [::foo::bar::stub2 a b c] \
+             [itcl::import::stub exists foo::bar::stub2] \
+             [::foo::bar::stub2 a b c] \
+             $debug
+    }
+} {1 {::foo::bar::stub2: a b c} 0 {::foo::bar::stub2: a b c} {(auto_load: ::foo::bar::stub2)}}
+
+catch {interp delete $interp}
+
+# ----------------------------------------------------------------------
+#  Test "itcl::import::stub" command
+# ----------------------------------------------------------------------
+set interp [interp create]
+$interp eval "
+    [list ::load $::itcllib itcl]
+    [::tcltest::configure -load]
+    proc auto_load {cmd {namespace {}}} {
+        proc \$cmd {args} \[format {return \"%s: \$args\"} \$cmd\]
+        return 1
+    }
+"
+
+test import-2.1 {initialize some commands for autoloading} {
+    $interp eval {
+        namespace eval test {
+            namespace export foo*
+        }
+        itcl::import::stub create ::test::foo1
+        itcl::import::stub create ::test::foo2
+        lsort [info commands ::test::*]
+    }
+} {::test::foo1 ::test::foo2}
+
+test import-2.2 {stubs can be imported into other namespaces} {
+    $interp eval {
+        namespace eval user1 { namespace import ::test::* }
+        namespace eval user2 { namespace import ::test::* }
+        namespace eval user3 { namespace import ::test::* }
+        list [lsort [info commands ::user1::*]] \
+             [namespace origin ::user1::foo1] \
+             [namespace origin ::user1::foo2]
+    }
+} {{::user1::foo1 ::user1::foo2} ::test::foo1 ::test::foo2}
+
+test import-2.3 {stubs can be autoloaded and imported links remain} {
+    $interp eval {
+        list [::user1::foo1 1 2 3 4] \
+             [namespace origin ::user1::foo1] \
+             [namespace origin ::user2::foo1] \
+             [namespace origin ::user3::foo1] \
+             [itcl::import::stub exists ::test::foo1]
+    }
+} {{::test::foo1: 1 2 3 4} ::test::foo1 ::test::foo1 ::test::foo1 0}
+
+test import-2.4 {itcl::class handles stubs correctly
+} -body {
+    $interp eval {
+        proc auto_load {cmd {namespace {}}} {
+            itcl::class $cmd { }
+            return 1
+        }
+        list [::user2::foo2 x] \
+             [x info class] \
+             [namespace origin ::user1::foo2] \
+             [namespace origin ::user2::foo2] \
+             [namespace origin ::user3::foo2] \
+             [itcl::import::stub exists ::test::foo2]
+    }
+} -constraints {
+    only_working_in_itcl3.4
+} -result {x ::test::foo2 ::test::foo2 ::test::foo2 ::test::foo2 0}
+
+test import-2.5 {itcl::class will overwrite stubs in an existing namespace} {
+    $interp eval {
+        proc auto_load {cmd {namespace {}}} {
+            itcl::class $cmd { }
+            return 1
+        }
+        namespace eval test::buried { }
+        itcl::import::stub create ::test::buried
+        itcl::import::stub create ::test::buried::stub
+        list [catch {::test::buried xx} result] $result [xx info class]
+    }
+} {0 xx ::test::buried}
+
+test import-2.6 {itcl::class will overwrite stubs} {
+    $interp eval {
+        proc auto_load {cmd {namespace {}}} {
+            itcl::class $cmd { }
+            return 1
+        }
+        itcl::import::stub create ::test::zonk
+        list [catch {::test::zonk yy} result] $result [yy info class]
+    }
+} {0 yy ::test::zonk}
+
+catch {interp delete $interp}
+
+::tcltest::cleanupTests
+return

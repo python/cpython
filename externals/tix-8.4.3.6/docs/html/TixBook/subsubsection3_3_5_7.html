@@ -1,0 +1,51 @@
+<HEAD>
+<TITLE> Specifying Complex Selection Rules<A NAME=154>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html560 HREF=section3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html558 HREF=subsection3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html554 HREF=subsubsection3_3_5_6.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html562 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html561 HREF=section3_4.html> Container Widgets</A>
+<B>Up:</B> <A NAME=tex2html559 HREF=subsection3_3_5.html> The TixSelect Widget</A>
+<B> Previous:</B> <A NAME=tex2html555 HREF=subsubsection3_3_5_6.html> Accessing the Value </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00035700000000000000> Specifying Complex Selection Rules<A NAME=154>&nbsp;</A></A></H3>
+<P>
+If you want to have more complex selection rules for the
+  TixSelect widget, you can use the <tt>-validatecmd</tt> option. This
+  option works the same as the <tt>-validatecmd</tt> option of the
+  TixControl widget which we discusses in section
+  1.2: it specifies a command to be called every
+  time the user attempts to change the selection inside a TixSelect
+  widget.
+<P>
+In the example program 1-14, the procedure
+  <tt>TwoMax</tt> will be called every time the user tries to change the
+  selection of the <tt>.fruits</tt> widget. <tt>TwoMax</tt> limits the
+  maximum number of fruits that the user to choose to be 2 by always
+  truncating the value of the TixSelect widget to have no more than
+  two items. If you run this program, you will find out that you can
+  never select a third fruit after you have select two fruits.
+<P>
+<tt>   tixSelect .fruits -label &quot;Fruits: &quot; -radio false -validatecmd TwoMax<BR>
+  .fruits add apple  -text Apple  -width 6<BR>
+  .fruits add orange -text Orange -width 6<BR>
+  .fruits add banana -text Banana -width 6<BR>
+  pack .fruits<BR>
+<BR>
+  proc TwoMax {value} {<BR>
+     if {[llength $value] $&gt;$ 2} {<BR>
+        return [lrange $value 0 1]<BR>
+     } else {<BR>
+        return $value<BR>
+     }<BR>
+  }</tt>
+<P><CENTER>(Figure 1-14) Specifying More Complex Selection Rules<A NAME=114>&nbsp;</A>
+  </CENTER>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

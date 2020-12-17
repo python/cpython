@@ -1,0 +1,396 @@
+# This file contains a collection of tests for the procedures in the file
+# tclCompExpr.c.  Sourcing this file into Tcl runs the tests and generates
+# output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
+    testConstraint testmathfunctions 0
+} else {
+    testConstraint testmathfunctions 1
+}
+
+# Constrain memory leak tests
+testConstraint memory [llength [info commands memory]]
+
+catch {unset a}
+
+test compExpr-1.1 {TclCompileExpr procedure, successful expr parse and compile} {
+    expr 1+2
+} 3
+test compExpr-1.2 {TclCompileExpr procedure, error parsing expr} -body {
+    expr 1+2+
+} -returnCodes error -match glob -result *
+test compExpr-1.3 {TclCompileExpr procedure, error compiling expr} -body {
+    list [catch {expr "foo(123)"} msg] $msg
+} -match glob -result {1 {* "*foo"}}
+test compExpr-1.4 {TclCompileExpr procedure, expr has no operators} {
+    set a {0o00123}
+    expr {$a}
+} 83
+
+test compExpr-2.1 {CompileSubExpr procedure, TCL_TOKEN_WORD parse token} -setup {
+    unset -nocomplain a
+} -body {
+    set a 27
+    expr {"foo$a" < "bar"}
+} -result 0
+test compExpr-2.2 {CompileSubExpr procedure, error compiling TCL_TOKEN_WORD parse token} -body {
+    expr {"00[expr 1+]" + 17}
+} -returnCodes error -match glob -result *
+test compExpr-2.3 {CompileSubExpr procedure, TCL_TOKEN_TEXT parse token} {
+    expr {{12345}}
+} 12345
+test compExpr-2.4 {CompileSubExpr procedure, empty TCL_TOKEN_TEXT parse token} {
+    expr {{}}
+} {}
+test compExpr-2.5 {CompileSubExpr procedure, TCL_TOKEN_BS parse token} {
+    expr "\{  \\
+ +123 \}"
+} 123
+test compExpr-2.6 {CompileSubExpr procedure, TCL_TOKEN_COMMAND parse token} {
+    expr {[info tclversion] != ""}
+} 1
+test compExpr-2.7 {CompileSubExpr procedure, TCL_TOKEN_COMMAND parse token} {
+    expr {[]}
+} {}
+test compExpr-2.8 {CompileSubExpr procedure, error in TCL_TOKEN_COMMAND parse token} -body {
+    expr {[foo "bar"xxx] + 17}
+} -returnCodes error -match glob -result *
+test compExpr-2.9 {CompileSubExpr procedure, TCL_TOKEN_VARIABLE parse token} -setup {
+    unset -nocomplain a
+} -body {
+    set a 123
+    expr {$a*2}
+} -result 246
+test compExpr-2.10 {CompileSubExpr procedure, TCL_TOKEN_VARIABLE parse token} -setup {
+    unset -nocomplain a
+    unset -nocomplain b
+} -body {
+    set a(george) martha
+    set b geo
+    expr {$a(${b}rge)}
+} -result martha
+test compExpr-2.11 {CompileSubExpr procedure, error in TCL_TOKEN_VARIABLE parse token} -body {
+    unset -nocomplain a
+    expr {$a + 17}
+} -returnCodes error -result {can't read "a": no such variable}
+test compExpr-2.12 {CompileSubExpr procedure, TCL_TOKEN_SUB_EXPR parse token} {
+    expr {27||3? 3<<(1+4) : 4&&9}
+} 96
+test compExpr-2.13 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse token} -setup {
+    unset -nocomplain a
+} -body {
+    set a 15
+    list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
+} -result {0 1}
+test compExpr-2.14 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, op found} {
+    expr {5*6}
+} 30
+test compExpr-2.15 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, math function found} {
+    format %.6g [expr {sin(2.0)}]
+} 0.909297
+test compExpr-2.16 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, math function not found} -body {
+    list [catch {expr {fred(2.0)}} msg] $msg
+} -match glob -result {1 {* "*fred"}}
+test compExpr-2.17 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4*2}
+} 8
+test compExpr-2.18 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4/2}
+} 2
+test compExpr-2.19 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4%2}
+} 0
+test compExpr-2.20 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4<<2}
+} 16
+test compExpr-2.21 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4>>2}
+} 1
+test compExpr-2.22 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4<2}
+} 0
+test compExpr-2.23 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4>2}
+} 1
+test compExpr-2.24 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4<=2}
+} 0
+test compExpr-2.25 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4>=2}
+} 1
+test compExpr-2.26 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4==2}
+} 0
+test compExpr-2.27 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4!=2}
+} 1
+test compExpr-2.28 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4&2}
+} 0
+test compExpr-2.29 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4^2}
+} 6
+test compExpr-2.30 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator} {
+    expr {4|2}
+} 6
+test compExpr-2.31 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator, 1 operand} {
+    expr {!4}
+} 0
+test compExpr-2.32 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator, 1 operand} {
+    expr {~4}
+} -5
+test compExpr-2.33 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, normal operator, comparison} -setup {
+    unset -nocomplain a
+} -body {
+    set a 15
+    expr {$a==15}  ;# compiled out-of-line to runtime call on Tcl_ExprObjCmd
+} -result 1
+test compExpr-2.34 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
+    expr {+2}
+} 2
+test compExpr-2.35 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, error in special operator} -body {
+    expr {+[expr 1+]}
+} -returnCodes error -match glob -result *
+test compExpr-2.36 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
+    expr {4+2}
+} 6
+test compExpr-2.37 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, error in special operator} -body {
+    expr {[expr 1+]+5}
+} -returnCodes error -match glob -result *
+test compExpr-2.38 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, error in special operator} -body {
+    expr {5+[expr 1+]}
+} -returnCodes error -match glob -result *
+test compExpr-2.39 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
+    expr {-2}
+} -2
+test compExpr-2.40 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
+    expr {4-2}
+} 2
+test compExpr-2.41 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} -setup {
+    unset -nocomplain a
+} -body {
+    set a true
+    expr {0||$a}
+} -result 1
+test compExpr-2.42 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse token} -setup {
+    unset -nocomplain a
+} -body {
+    set a 15
+    list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
+} -result {0 1}
+test compExpr-2.43 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} -setup {
+    unset -nocomplain a
+} -body {
+    set a false
+    expr {3&&$a}
+} -result 0
+test compExpr-2.44 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} -setup {
+    unset -nocomplain a
+} -body {
+    set a false
+    expr {$a||1? 1 : 0}
+} -result 1
+test compExpr-2.45 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse token} -setup {
+    unset -nocomplain a
+} -body {
+    set a 15
+    list [catch {expr {1? 54 : "$a[expr 1+]00"}} msg] $msg
+} -result {0 54}
+
+test compExpr-3.1 {CompileLandOrLorExpr procedure, numeric 1st operand} -setup {
+    unset -nocomplain a
+} -body {
+    set a 2
+    expr {[set a]||0}
+} -result 1
+test compExpr-3.2 {CompileLandOrLorExpr procedure, nonnumeric 1st operand} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {$a&&1}
+} -result 0
+test compExpr-3.3 {CompileSubExpr procedure, error in 1st operand} -body {
+    expr {[expr *2]||0}
+} -returnCodes error -match glob -result *
+test compExpr-3.4 {CompileLandOrLorExpr procedure, result is 1 or 0} -setup {
+    unset -nocomplain a
+    unset -nocomplain b
+} -body {
+    set a no
+    set b true
+    expr {$a || $b}
+} -result 1
+test compExpr-3.5 {CompileLandOrLorExpr procedure, short-circuit semantics} -setup {
+    unset -nocomplain a
+} -body {
+    set a yes
+    expr {$a || [exit]}
+} -result 1
+test compExpr-3.6 {CompileLandOrLorExpr procedure, short-circuit semantics} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {$a && [exit]}
+} -result 0
+test compExpr-3.7 {CompileLandOrLorExpr procedure, numeric 2nd operand} -setup {
+    unset -nocomplain a
+} -body {
+    set a 2
+    expr {0||[set a]}
+} -result 1
+test compExpr-3.8 {CompileLandOrLorExpr procedure, nonnumeric 2nd operand} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {1&&$a}
+} -result 0
+test compExpr-3.9 {CompileLandOrLorExpr procedure, error in 2nd operand} -body {
+    expr {0||[expr %2]}
+} -returnCodes error -match glob -result *
+test compExpr-3.10 {CompileLandOrLorExpr procedure, long lor/land arm} {
+    set a "abcdefghijkl"
+    set i 7
+    expr {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]] || [string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]}
+} 1
+
+test compExpr-4.1 {CompileCondExpr procedure, simple test} -setup {
+    unset -nocomplain a
+} -body {
+    set a 2
+    expr {($a > 1)? "ok" : "nope"}
+} -result ok
+test compExpr-4.2 {CompileCondExpr procedure, complex test, convert to numeric} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {[set a]? 27 : -54}
+} -result -54
+test compExpr-4.3 {CompileCondExpr procedure, error in test} -body {
+    expr {[expr *2]? +1 : -1}
+} -returnCodes error -match glob -result *
+test compExpr-4.4 {CompileCondExpr procedure, simple "true" clause} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {1? (27-2) : -54}
+} -result 25
+test compExpr-4.5 {CompileCondExpr procedure, convert "true" clause to numeric} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {1? $a : -54}
+} -result no
+test compExpr-4.6 {CompileCondExpr procedure, error in "true" clause} -body {
+    expr {1? [expr *2] : -127}
+} -returnCodes error -match glob -result *
+test compExpr-4.7 {CompileCondExpr procedure, simple "false" clause} -setup {
+    unset -nocomplain a
+} -body {
+    set a no
+    expr {(2-2)? -3.14159 : "nope"}
+} -result nope
+test compExpr-4.8 {CompileCondExpr procedure, convert "false" clause to numeric} -setup {
+    unset -nocomplain a
+} -body {
+    set a 0o0123
+    expr {0? 42 : $a}
+} -result 83
+test compExpr-4.9 {CompileCondExpr procedure, error in "false" clause} {
+    list [catch {expr {1? 15 : [expr *2]}} msg] $msg
+} {0 15}
+
+test compExpr-5.1 {CompileMathFuncCall procedure, math function found} {
+    format %.6g [expr atan2(1.0, 2.0)]
+} 0.463648
+test compExpr-5.2 {CompileMathFuncCall procedure, math function not found} -body {
+    expr {do_it()}
+} -returnCodes error -match glob -result {* "*do_it"}
+test compExpr-5.3 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr 3*T1()-1
+} 368
+test compExpr-5.4 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T2()*3
+} 1035
+test compExpr-5.5 {CompileMathFuncCall procedure, too few arguments} -body {
+    expr {atan2(1.0)}
+} -returnCodes error -match glob -result {too few arguments for math function*}
+test compExpr-5.6 {CompileMathFuncCall procedure, complex argument} {
+    format %.6g [expr pow(2.1, 27.5-(24.4*(5%2)))]
+} 9.97424
+test compExpr-5.7 {CompileMathFuncCall procedure, error in argument} -body {
+    expr {sinh(2.*)}
+} -returnCodes error -match glob -result *
+test compExpr-5.8 {CompileMathFuncCall procedure, too many arguments} -body {
+    expr {sinh(2.0, 3.0)}
+} -returnCodes error -match glob -result {too many arguments for math function*}
+test compExpr-5.9 {CompileMathFuncCall procedure, too many arguments} -body {
+    expr {0 <= rand(5.2)}
+} -returnCodes error -match glob -result {too many arguments for math function*}
+
+test compExpr-6.1 {LogSyntaxError procedure, error in expr longer than 60 chars} -body {
+    expr {(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)/} -1 foo 3
+} -returnCodes error -match glob -result *
+
+test compExpr-7.1 {Memory Leak} -constraints memory -setup {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	lindex $lines 3 3
+    }
+} -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	interp create slave
+	slave eval expr 1+2+3+4+5+6+7+8+9+10+11+12+13
+	interp delete slave
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    unset end i tmp
+    rename getbytes {}
+} -result 0
+
+test compExpr-7.2 {[Bug 1869989]: expr parser memleak} -constraints memory -setup {
+    proc getbytes {} {
+        set lines [split [memory info] \n]
+        lindex $lines 3 3
+    }
+} -body {
+    set i 5
+    set end [getbytes]
+    while {[incr i -1]} {
+        expr ${i}000
+        set tmp $end
+        set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    unset end i tmp
+    rename getbytes {}
+} -result 0
+
+# cleanup
+catch {unset a}
+catch {unset b}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

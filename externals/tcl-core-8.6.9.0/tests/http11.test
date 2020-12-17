@@ -1,0 +1,679 @@
+# http11.test --                                                -*- tcl-*-
+#
+#	Test HTTP/1.1 features.
+#
+# Copyright (C) 2009 Pat Thoyts <patthoyts@users.sourceforge.net>
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+
+package require http 2.8
+
+# start the server
+variable httpd_output
+proc create_httpd {} {
+    proc httpd_read {chan} {
+        variable httpd_output
+        if {[gets $chan line] != -1} {
+            #puts stderr "read '$line'"
+            set httpd_output $line
+        }
+        if {[eof $chan]} {
+            puts stderr "eof from httpd"
+            fileevent $chan readable {}
+            close $chan
+        }
+    }
+    variable httpd_output
+    set httpd_script [file join [pwd] [file dirname [info script]] httpd11.tcl]
+    set httpd [open "|[list [interpreter] -encoding utf-8 $httpd_script]" r+]
+    fconfigure $httpd -buffering line -blocking 0
+    fileevent $httpd readable [list httpd_read $httpd]
+    vwait httpd_output
+    variable httpd_port [lindex $httpd_output 2]
+    return $httpd
+}
+
+proc halt_httpd {} {
+    variable httpd_output
+    variable httpd
+    if {[info exists httpd]} {
+        puts $httpd "quit"
+        vwait httpd_output
+        close $httpd
+    }
+    unset -nocomplain httpd_output httpd
+}
+
+proc meta {tok {key ""}} {
+    set meta [http::meta $tok]
+    if {$key ne ""} {
+        if {[dict exists $meta $key]} {
+            return [dict get $meta $key]
+        } else {
+            return ""
+        }
+    }
+    return $meta
+}
+
+proc check_crc {tok args} {
+    set crc [meta $tok x-crc32]
+    set data [expr {[llength $args] ? [lindex $args 0] : [http::data $tok]}]
+    set chk [format %x [zlib crc32 $data]]
+    if {$crc ne $chk} {
+        return  "crc32 mismatch: $crc ne $chk"
+    }
+    return "ok"
+}
+
+makeFile "<html><head><title>test</title></head><body><p>this is a test</p>\n[string repeat {<p>This is a tcl test file.</p>} 4192]\n</body></html>" testdoc.html
+
+# -------------------------------------------------------------------------
+
+test http11-1.0 "normal request for document " -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html -timeout 10000]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] [meta $tok connection]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close}
+
+test http11-1.1 "normal,gzip,non-chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -headers {accept-encoding gzip}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok gzip {}}
+
+test http11-1.2 "normal,deflated,non-chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -headers {accept-encoding deflate}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok deflate {}}
+
+test http11-1.3 "normal,compressed,non-chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -headers {accept-encoding compress}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok compress {}}
+
+test http11-1.4 "normal,identity,non-chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -headers {accept-encoding identity}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} {}}
+
+test http11-1.5 "normal request for document, unsupported coding" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -headers {accept-encoding unsupported}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {}}
+
+test http11-1.6 "normal, specify 1.1 " -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -protocol 1.1 -timeout 10000]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok connection] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close chunked}
+
+test http11-1.7 "normal, 1.1 and keepalive " -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -protocol 1.1 -keepalive 1 -timeout 10000]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok connection] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} chunked}
+
+test http11-1.8 "normal, 1.1 and keepalive, server close" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -protocol 1.1 -keepalive 1 -timeout 10000]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok connection] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close {}}
+
+test http11-1.9 "normal,gzip,chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -headers {accept-encoding gzip}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok gzip chunked}
+
+test http11-1.10 "normal,deflate,chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -headers {accept-encoding deflate}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok deflate chunked}
+
+test http11-1.11 "normal,compress,chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -headers {accept-encoding compress}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok compress chunked}
+
+test http11-1.12 "normal,identity,chunked" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -headers {accept-encoding identity}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok content-encoding] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} chunked}
+
+# -------------------------------------------------------------------------
+
+test http11-2.0 "-channel" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close chunked}
+
+test http11-2.1 "-channel, encoding gzip" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close gzip chunked}
+
+test http11-2.2 "-channel, encoding deflate" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close deflate chunked}
+
+test http11-2.3 "-channel,encoding compress" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan \
+                 -headers {accept-encoding compress}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close compress chunked}
+
+test http11-2.4 "-channel,encoding identity" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan \
+                 -headers {accept-encoding identity}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close {} chunked}
+
+test http11-2.5 "-channel,encoding unsupported" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan \
+                 -headers {accept-encoding unsupported}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close {} chunked}
+
+test http11-2.6 "-channel,encoding gzip,non-chunked" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close gzip {} 0}
+
+test http11-2.7 "-channel,encoding deflate,non-chunked" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 5000 -channel $chan -headers {accept-encoding deflate}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close deflate {} 0}
+
+test http11-2.8 "-channel,encoding compress,non-chunked" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 5000 -channel $chan -headers {accept-encoding compress}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close compress {} 0}
+
+test http11-2.9 "-channel,encoding identity,non-chunked" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 5000 -channel $chan -headers {accept-encoding identity}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close {} {} 0}
+
+test http11-2.10 "-channel,deflate,keepalive" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan -keepalive 1 \
+		 -headers {accept-encoding deflate}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} deflate chunked 0}
+
+test http11-2.11 "-channel,identity,keepalive" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -headers {accept-encoding identity} \
+                 -timeout 5000 -channel $chan -keepalive 1]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} {} chunked}
+
+test http11-2.12 "-channel,negotiate,keepalive" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan -keepalive 1]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding] [meta $tok x-requested-encodings]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} gzip chunked gzip,deflate,compress 0}
+
+
+# -------------------------------------------------------------------------
+#
+# The following tests for the -handler option will require changes in
+# the future. At the moment we cannot handler chunked data with this
+# option. Therefore we currently force HTTP/1.0 protocol version.
+#
+# Once this is solved, these tests should be fixed to assume chunked
+# returns in 3.2 and 3.3 and HTTP/1.1 in all but test 3.1
+
+proc handler {var sock token} {
+    upvar #0 $var data
+    set chunk [read $sock]
+    append data $chunk
+    #::http::Log "handler read [string length $chunk] ([chan configure $sock -buffersize])"
+    return [string length $chunk]
+}
+
+test http11-3.0 "-handler,close,identity" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -handler [namespace code [list handler testdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
+
+test http11-3.1 "-handler,protocol1.0" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -protocol 1.0 \
+                 -handler [namespace code [list handler testdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
+
+test http11-3.2 "-handler,close,chunked" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -keepalive 0 -binary 1\
+                 -handler [namespace code [list handler testdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
+
+test http11-3.3 "-handler,keepalive,chunked" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 10000 -keepalive 1 -binary 1\
+                 -handler [namespace code [list handler testdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
+
+test http11-4.0 "normal post request" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set query [http::formatQuery q 1 z 2]
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -query $query -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 7}
+
+test http11-4.1 "normal post request, check query length" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set query [http::formatQuery q 1 z 2]
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -headers [list x-check-query yes] \
+                 -query $query -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 7}
+
+test http11-4.2 "normal post request, check long query length" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set query [string repeat a 24576]
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html\
+                 -headers [list x-check-query yes]\
+                 -query $query -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 24576}
+
+test http11-4.3 "normal post request, check channel query length" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+    puts -nonewline $chan [string repeat [encoding convertto utf-8 "This is a test\n"] 8192]
+    flush $chan
+    seek $chan 0
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html\
+                 -headers [list x-check-query yes]\
+                 -querychannel $chan -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 122880}
+
+# -------------------------------------------------------------------------
+
+# Eliminate valgrind "still reachable" reports on outstanding "Detached"
+# structures in the detached list which stem from PipeClose2Proc not waiting
+# around for background processes to complete, meaning that previous calls to
+# Tcl_ReapDetachedProcs might not have had a chance to reap all processes.
+after 10
+exec [info nameofexecutable] << {}
+
+foreach p {create_httpd httpd_read halt_httpd meta check_crc} {
+    if {[llength [info proc $p]]} {rename $p {}}
+}
+removeFile testdoc.html
+unset -nocomplain httpd_port httpd p
+
+::tcltest::cleanupTests

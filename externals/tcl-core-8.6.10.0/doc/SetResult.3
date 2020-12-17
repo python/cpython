@@ -1,0 +1,255 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SetObjResult, Tcl_GetObjResult, Tcl_SetResult, Tcl_GetStringResult, Tcl_AppendResult, Tcl_AppendResultVA, Tcl_AppendElement, Tcl_ResetResult, Tcl_TransferResult, Tcl_FreeResult \- manipulate Tcl result
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_SetObjResult\fR(\fIinterp, objPtr\fR)
+.sp
+Tcl_Obj *
+\fBTcl_GetObjResult\fR(\fIinterp\fR)
+.sp
+\fBTcl_SetResult\fR(\fIinterp, result, freeProc\fR)
+.sp
+const char *
+\fBTcl_GetStringResult\fR(\fIinterp\fR)
+.sp
+\fBTcl_AppendResult\fR(\fIinterp, result, result, ... , \fB(char *) NULL\fR)
+.sp
+\fBTcl_AppendResultVA\fR(\fIinterp, argList\fR)
+.sp
+\fBTcl_ResetResult\fR(\fIinterp\fR)
+.sp
+.VS 8.6
+\fBTcl_TransferResult\fR(\fIsourceInterp, result, targetInterp\fR)
+.VE 8.6
+.sp
+\fBTcl_AppendElement\fR(\fIinterp, element\fR)
+.sp
+\fBTcl_FreeResult\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AS Tcl_FreeProc sourceInterp out
+.AP Tcl_Interp *interp out
+Interpreter whose result is to be modified or read.
+.AP Tcl_Obj *objPtr in
+Tcl value to become result for \fIinterp\fR.
+.AP char *result in
+String value to become result for \fIinterp\fR or to be
+appended to the existing result.
+.AP "const char" *element in
+String value to append as a list element
+to the existing result of \fIinterp\fR.
+.AP Tcl_FreeProc *freeProc in
+Address of procedure to call to release storage at
+\fIresult\fR, or \fBTCL_STATIC\fR, \fBTCL_DYNAMIC\fR, or
+\fBTCL_VOLATILE\fR.
+.AP va_list argList in
+An argument list which must have been initialized using
+\fBva_start\fR, and cleared using \fBva_end\fR.
+.AP Tcl_Interp *sourceInterp in
+.VS 8.6
+Interpreter that the result and error information should be copied from.
+.VE 8.6
+.AP Tcl_Interp *targetInterp in
+.VS 8.6
+Interpreter that the result and error information should be copied to.
+.VE 8.6
+.AP int result in
+.VS 8.6
+If \fBTCL_OK\fR, only copy the result. If \fBTCL_ERROR\fR, copy the error
+information as well.
+.VE 8.6
+.BE
+.SH DESCRIPTION
+.PP
+The procedures described here are utilities for manipulating the
+result value in a Tcl interpreter.
+The interpreter result may be either a Tcl value or a string.
+For example, \fBTcl_SetObjResult\fR and \fBTcl_SetResult\fR
+set the interpreter result to, respectively, a value and a string.
+Similarly, \fBTcl_GetObjResult\fR and \fBTcl_GetStringResult\fR
+return the interpreter result as a value and as a string.
+The procedures always keep the string and value forms
+of the interpreter result consistent.
+For example, if \fBTcl_SetObjResult\fR is called to set
+the result to a value,
+then \fBTcl_GetStringResult\fR is called,
+it will return the value's string representation.
+.PP
+\fBTcl_SetObjResult\fR
+arranges for \fIobjPtr\fR to be the result for \fIinterp\fR,
+replacing any existing result.
+The result is left pointing to the value
+referenced by \fIobjPtr\fR.
+\fIobjPtr\fR's reference count is incremented
+since there is now a new reference to it from \fIinterp\fR.
+The reference count for any old result value
+is decremented and the old result value is freed if no
+references to it remain.
+.PP
+\fBTcl_GetObjResult\fR returns the result for \fIinterp\fR as a value.
+The value's reference count is not incremented;
+if the caller needs to retain a long-term pointer to the value
+they should use \fBTcl_IncrRefCount\fR to increment its reference count
+in order to keep it from being freed too early or accidentally changed.
+.PP
+\fBTcl_SetResult\fR
+arranges for \fIresult\fR to be the result for the current Tcl
+command in \fIinterp\fR, replacing any existing result.
+The \fIfreeProc\fR argument specifies how to manage the storage
+for the \fIresult\fR argument;
+it is discussed in the section
+\fBTHE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT\fR below.
+If \fIresult\fR is \fBNULL\fR, then \fIfreeProc\fR is ignored
+and \fBTcl_SetResult\fR
+re-initializes \fIinterp\fR's result to point to an empty string.
+.PP
+\fBTcl_GetStringResult\fR returns the result for \fIinterp\fR as a string.
+If the result was set to a value by a \fBTcl_SetObjResult\fR call,
+the value form will be converted to a string and returned.
+If the value's string representation contains null bytes,
+this conversion will lose information.
+For this reason, programmers are encouraged to
+write their code to use the new value API procedures
+and to call \fBTcl_GetObjResult\fR instead.
+.PP
+\fBTcl_ResetResult\fR clears the result for \fIinterp\fR
+and leaves the result in its normal empty initialized state.
+If the result is a value,
+its reference count is decremented and the result is left
+pointing to an unshared value representing an empty string.
+If the result is a dynamically allocated string, its memory is free*d
+and the result is left as a empty string.
+\fBTcl_ResetResult\fR also clears the error state managed by
+\fBTcl_AddErrorInfo\fR, \fBTcl_AddObjErrorInfo\fR,
+and \fBTcl_SetErrorCode\fR.
+.PP
+\fBTcl_AppendResult\fR makes it easy to build up Tcl results in pieces.
+It takes each of its \fIresult\fR arguments and appends them in order
+to the current result associated with \fIinterp\fR.
+If the result is in its initialized empty state (e.g. a command procedure
+was just invoked or \fBTcl_ResetResult\fR was just called),
+then \fBTcl_AppendResult\fR sets the result to the concatenation of
+its \fIresult\fR arguments.
+\fBTcl_AppendResult\fR may be called repeatedly as additional pieces
+of the result are produced.
+\fBTcl_AppendResult\fR takes care of all the
+storage management issues associated with managing \fIinterp\fR's
+result, such as allocating a larger result area if necessary.
+It also manages conversion to and from the \fIresult\fR field of the
+\fIinterp\fR so as to handle backward-compatibility with old-style
+extensions.
+Any number of \fIresult\fR arguments may be passed in a single
+call; the last argument in the list must be a NULL pointer.
+.PP
+\fBTcl_AppendResultVA\fR is the same as \fBTcl_AppendResult\fR except that
+instead of taking a variable number of arguments it takes an argument list.
+.PP
+.VS 8.6
+\fBTcl_TransferResult\fR moves a result from one interpreter to another,
+optionally (dependent on the \fIresult\fR parameter) including the error
+information dictionary as well. The interpreters must be in the same thread.
+The source interpreter will have its result reset by this operation.
+.VE 8.6
+.SH "DEPRECATED INTERFACES"
+.SS "OLD STRING PROCEDURES"
+.PP
+Use of the following procedures is deprecated
+since they manipulate the Tcl result as a string.
+Procedures such as \fBTcl_SetObjResult\fR
+that manipulate the result as a value
+can be significantly more efficient.
+.PP
+\fBTcl_AppendElement\fR is similar to \fBTcl_AppendResult\fR in
+that it allows results to be built up in pieces.
+However, \fBTcl_AppendElement\fR takes only a single \fIelement\fR
+argument and it appends that argument to the current result
+as a proper Tcl list element.
+\fBTcl_AppendElement\fR adds backslashes or braces if necessary
+to ensure that \fIinterp\fR's result can be parsed as a list and that
+\fIelement\fR will be extracted as a single element.
+Under normal conditions, \fBTcl_AppendElement\fR will add a space
+character to \fIinterp\fR's result just before adding the new
+list element, so that the list elements in the result are properly
+separated.
+However if the new list element is the first in a list or sub-list
+(i.e. \fIinterp\fR's current result is empty, or consists of the
+single character
+.QW { ,
+or ends in the characters
+.QW " {" )
+then no space is added.
+.PP
+\fBTcl_FreeResult\fR performs part of the work
+of \fBTcl_ResetResult\fR.
+It frees up the memory associated with \fIinterp\fR's result.
+It also sets \fIinterp->freeProc\fR to zero, but does not
+change \fIinterp->result\fR or clear error state.
+\fBTcl_FreeResult\fR is most commonly used when a procedure
+is about to replace one result value with another.
+.SS "DIRECT ACCESS TO INTERP->RESULT"
+.PP
+It used to be legal for programs to
+directly read and write \fIinterp->result\fR
+to manipulate the interpreter result.  The Tcl headers no longer
+permit this access by default, and C code still doing this must
+be updated to use supported routines \fBTcl_GetObjResult\fR,
+\fBTcl_GetStringResult\fR, \fBTcl_SetObjResult\fR, and \fBTcl_SetResult\fR.
+As a migration aid, access can be restored with the compiler directive
+.CS
+#define USE_INTERP_RESULT
+.CE
+but this is meant only to offer life support to otherwise dead code.
+.SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
+.PP
+\fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how
+the Tcl system is to manage the storage for the \fIresult\fR argument.
+If \fBTcl_SetResult\fR or \fBTcl_SetObjResult\fR are called
+at a time when \fIinterp\fR holds a string result,
+they do whatever is necessary to dispose of the old string result
+(see the \fBTcl_Interp\fR manual entry for details on this).
+.PP
+If \fIfreeProc\fR is \fBTCL_STATIC\fR it means that \fIresult\fR
+refers to an area of static storage that is guaranteed not to be
+modified until at least the next call to \fBTcl_Eval\fR.
+If \fIfreeProc\fR
+is \fBTCL_DYNAMIC\fR it means that \fIresult\fR was allocated with a call
+to \fBTcl_Alloc\fR and is now the property of the Tcl system.
+\fBTcl_SetResult\fR will arrange for the string's storage to be
+released by calling \fBTcl_Free\fR when it is no longer needed.
+If \fIfreeProc\fR is \fBTCL_VOLATILE\fR it means that \fIresult\fR
+points to an area of memory that is likely to be overwritten when
+\fBTcl_SetResult\fR returns (e.g. it points to something in a stack frame).
+In this case \fBTcl_SetResult\fR will make a copy of the string in
+dynamically allocated storage and arrange for the copy to be the
+result for the current Tcl command.
+.PP
+If \fIfreeProc\fR is not one of the values \fBTCL_STATIC\fR,
+\fBTCL_DYNAMIC\fR, and \fBTCL_VOLATILE\fR, then it is the address
+of a procedure that Tcl should call to free the string.
+This allows applications to use non-standard storage allocators.
+When Tcl no longer needs the storage for the string, it will
+call \fIfreeProc\fR. \fIFreeProc\fR should have arguments and
+result that match the type \fBTcl_FreeProc\fR:
+.PP
+.CS
+typedef void \fBTcl_FreeProc\fR(
+        char *\fIblockPtr\fR);
+.CE
+.PP
+When \fIfreeProc\fR is called, its \fIblockPtr\fR will be set to
+the value of \fIresult\fR passed to \fBTcl_SetResult\fR.
+.SH "SEE ALSO"
+Tcl_AddErrorInfo, Tcl_CreateObjCommand, Tcl_SetErrorCode, Tcl_Interp
+.SH KEYWORDS
+append, command, element, list, value, result, return value, interpreter

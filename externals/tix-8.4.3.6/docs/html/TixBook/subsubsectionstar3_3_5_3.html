@@ -1,0 +1,45 @@
+<HEAD>
+<TITLE>  Creating the Button Subwidgets and Configuring
+Their Appearance<A NAME=1512>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html518 HREF=subsubsectionstar3_3_5_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html516 HREF=subsection3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html510 HREF=subsubsectionstar3_3_5_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html520 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html519 HREF=subsubsectionstar3_3_5_4.html>  Accessing the Button </A>
+<B>Up:</B> <A NAME=tex2html517 HREF=subsection3_3_5.html> The TixSelect Widget</A>
+<B> Previous:</B> <A NAME=tex2html511 HREF=subsubsectionstar3_3_5_2.html>  Label and Orientation</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00035300000000000000>  Creating the Button Subwidgets and Configuring
+Their Appearance<A NAME=1512>&nbsp;</A></A></H3>
+<P>
+After we have created the TixSelect widget, we can create the button
+  subwidgets inside the TixSelect widget by the <tt>add</tt> widget
+  command (lines 2-4 of program 1-11).
+<P>
+The first argument to the <tt>add</tt> command is the name of the button
+  subwidget. Additional arguments can be given in <em>option-value</em> pairs
+  to configure the appearance of the button subwidget. These <em>option-value</em> pairs can be any of those accepted by a normal TK button
+  widget. As shown in program 1-11, we use the <tt>-text</tt>
+  option to put appropriate text strings over the three button subwidgets.
+<P>
+Notice that we also set the <tt>-width</tt> option of all the button
+  subwidgets to 6 characters. This way, the three buttons will have
+  the same width. If we didn't set the <tt>-width</tt> option for the
+  button widgets, they will have different widths, depending on their
+  text string, and the result would look less esthetically pleasing
+  than buttons with same widths.
+<P>
+The output of program 1-11 is shown in figure
+  1-12
+<P>
+<blockquote> <P><CENTER><P><IMG ALIGN="LEFT" SRC="../gif/tix/intro/select1.gif"> <IMG ALIGN="LEFT" SRC="../gif/tix/intro/select-vert.gif"><BR CLEAR=LEFT><CENTER>(Figure 1-12) The TixSelect Widget<A NAME=112>&nbsp;</A></CENTER><P>
+  </CENTER>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

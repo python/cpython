@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+          xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
+    targetNamespace="http://schemas.microsoft.com/wix/PSExtension"
+              xmlns="http://schemas.microsoft.com/wix/PSExtension">
+  <xs:annotation>
+    <xs:documentation>
+      The source code schema for the Windows Installer XML Toolset PowerShell Extension.
+    </xs:documentation>
+  </xs:annotation>
+  <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+  <xs:element name="FormatsFile">
+    <xs:annotation>
+      <xs:documentation>
+        Identifies the parent File as a formats XML file for the referenced PowerShell snap-in.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+        <xse:remarks>
+          A formats XML file that defines output formats for objects on the pipeline.
+        </xse:remarks>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="FileId" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Reference to the formats File ID. This is required when nested under the SnapIn element.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SnapIn" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Reference to the PowerShell snap-in ID for which this formats file is associated. This is required when nested under the File element.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="TypesFile">
+    <xs:annotation>
+      <xs:documentation>
+        Identifies the parent File as a types XML file for the referenced PowerShell snap-in.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+        <xse:remarks>
+          A types XML file used by the extensible type system.
+        </xse:remarks>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="FileId" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Reference to the types File ID. This is required when nested under the SnapIn element.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SnapIn" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Reference to the PowerShell snap-in ID for which this types file is associated. This is required when nested under the File element.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SnapIn">
+    <xs:annotation>
+      <xs:documentation>
+        Identifies the parent File as a PowerShell snap-in to be registered on the system.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+        <xse:remarks>
+          <html:a href="http://www.microsoft.com/powershell">PowerShell</html:a> snap-ins
+          allow developers to extend the functionality of of the PowerShell engine.
+          Add this element to identify the parent File as a PowerShell snap-in that will
+          get registered on the system.
+        </xse:remarks>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="FormatsFile" />
+        <xs:element ref="TypesFile" />
+      </xs:choice>
+      <xs:attribute name="Id" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>
+            The identifier for this PowerShell snap-in.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="AssemblyName" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            The fully-qualified name of the assembly.
+          </xs:documentation>
+          <xs:appinfo>
+            <xse:deprecated />
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CustomSnapInType" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            The full type name of a class that is used to register a list of cmdlets and providers.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Description" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            A brief description of the snap-in.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DescriptionIndirect" type="EmbeddedResource">
+        <xs:annotation>
+          <xs:documentation>
+            An embedded resource that contains a brief description of the snap-in.
+            This resource must be embedded in the current snap-in assembly.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="RequiredPowerShellVersion" type="VersionType">
+        <xs:annotation>
+          <xs:documentation>
+            The required version of PowerShell that must be installed and is associated with the
+            snap-in registration. The default value is "1.0".
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Vendor" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            The name of the snap-in vendor.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="VendorIndirect" type="EmbeddedResource">
+        <xs:annotation>
+          <xs:documentation>
+            An embedded resource that contains the name of the snap-in vendor.
+            This resource must be embedded in the current snap-in assembly.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Version" type="VersionType">
+        <xs:annotation>
+          <xs:documentation>
+            The version of the snapin. If not specified, this is taken from the assembly name.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="RequiredVersion" type="xs:string">
+    <xs:annotation>
+      <xs:documentation>
+        The version of this extension required to compile the defining source.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Wix" />
+      </xs:appinfo>
+    </xs:annotation>
+  </xs:attribute>
+  <xs:simpleType name="EmbeddedResource">
+    <xs:annotation>
+      <xs:documentation>
+        <html:p>
+          Values should be in the format <html:i>ResourceName,StringName</html:i>, where <html:i>ResourceName</html:i>
+          is the name of the embedded resource in your assembly sans the ".resources" extension, and <html:i>StringName</html:i>
+          is the name of the string resource in the embedded resource.
+        </html:p>
+        <html:p>
+          Example: UtilityMshSnapInResources,Description
+        </html:p>
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string" />
+  </xs:simpleType>
+  <xs:simpleType name="VersionType">
+    <xs:annotation>
+      <xs:documentation>
+        Values of this type will look like: "x", "x.x", "x.x.x", or "x.x.x.x" where x is an integer from 0 to 65534.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{1,5}(\.\d{1,5}){0,3}"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

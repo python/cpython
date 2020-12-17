@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+    targetNamespace="http://schemas.microsoft.com/wix/GamingExtension"
+              xmlns="http://schemas.microsoft.com/wix/GamingExtension">
+    <xs:annotation>
+        <xs:documentation>
+            The source code schema for the Windows Installer XML Toolset Gaming Extension.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+    <xs:attribute name="IsRichSavedGame">
+        <xs:annotation>
+            <xs:documentation>
+                Registers this extension for the 
+                <html:a href="http://msdn.microsoft.com/library/bb173448.aspx" target="_blank">rich saved games</html:a> 
+                property handler on Windows Vista and later.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Extension" />
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:element name="Game">
+        <xs:annotation>
+            <xs:documentation>
+                Registers a game in Game Explorer on Windows Vista and later. The executable must have an
+                embedded Game Definition File. For more information about Game Explorer and GDFs, see
+                <html:a href="http://msdn.microsoft.com/library/bb173432.aspx" target="_blank">The Windows Vista Game Explorer</html:a>.
+                This registration is accomplished via custom action.
+
+                On Windows XP, this element instead records the same information in the registry so that
+                later upgrades to Windows Vista register the game in Game Explorer.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>Each game can support multiple play and support tasks that are shown in the Game Explorer context menu.  PlayTask and SupportTask are not needed when using when authoring the tasks in the GDF using ExtendedProperties\GameTasks available in Windows 7.  At least one play task should be created using either PlayTask or the ExtendedProperties\GameTasks\Play in the GDF.</xs:documentation>
+                </xs:annotation>
+                <xs:element ref="PlayTask"/>
+                <xs:element ref="SupportTask"/>
+            </xs:choice>
+
+            <xs:attribute name="Id" type="Guid" use="required">
+                <xs:annotation>
+                    <xs:documentation>The game's instance ID.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="GdfResourceFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Identifier of the file that contains the game's GDF resource, if it doesn't exist in the parent file.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ExecutableFile" type="xs:string">
+              <xs:annotation>
+                <xs:documentation>Identifier of the file that is the game's executable, if it isn't the parent file.</xs:documentation>
+              </xs:annotation>
+            </xs:attribute>
+          </xs:complexType>
+    </xs:element>
+
+    <xs:element name="PlayTask">
+        <xs:annotation>
+            <xs:documentation>
+                Creates a shortcut to the parent File and registers it as a "play task" in Game Explorer. For more information, see
+                <html:a href="http://msdn.microsoft.com/library/bb173450.aspx" target="_blank">
+                    Game Explorer Tasks
+                </html:a>.  PlayTask should not be used when authoring the tasks in the GDF using ExtendedProperties\GameTasks available in Windows 7.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Name" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>User-visible task name Game Explorer shows on its context menu. Note that the first task is named "Play" regardless of the name you provide.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Arguments" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Command-line arguments to be passed to the game executable for this task.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="SupportTask">
+        <xs:annotation>
+            <xs:documentation>
+                Creates an Internet shortcut and registers it as a "support task" in Game Explorer. For more information, see
+                <html:a href="http://msdn.microsoft.com/library/bb173450.aspx" target="_blank">
+                    Game Explorer Tasks
+                </html:a>.  SupportTask should not be used when authoring the tasks in the GDF using ExtendedProperties\GameTasks available in Windows 7.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Name" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>User-visible task name Game Explorer shows on its context menu. Note that the first task is named "Play" regardless of the name you provide.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Address" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>URI for this task.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="Guid">
+        <xs:annotation>
+            <xs:documentation>Values of this type will look like: "01234567-89AB-CDEF-0123-456789ABCDEF" or "{01234567-89AB-CDEF-0123-456789ABCDEF}". Also allows "PUT-GUID-HERE" for use in examples.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[{(]?[0-9A-Fa-f]{8}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{12}[})]?|PUT\-GUID\-HERE|([!$])\(loc\.[_A-Za-z][0-9A-Za-z_.]*\)|!\(wix\.[_A-Za-z][0-9A-Za-z_.]*\)"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

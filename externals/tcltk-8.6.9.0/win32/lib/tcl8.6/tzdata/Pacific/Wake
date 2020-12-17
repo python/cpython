@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Wake) {
+    {-9223372036854775808 39988 0 LMT}
+    {-2177492788 43200 0 +12}
+}

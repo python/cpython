@@ -1,0 +1,323 @@
+# Commands covered:  append lappend
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+unset -nocomplain x
+
+test append-1.1 {append command} {
+    unset -nocomplain x
+    list [append x 1 2 abc "long string"] $x
+} {{12abclong string} {12abclong string}}
+test append-1.2 {append command} {
+    set x ""
+    list [append x first] [append x second] [append x third] $x
+} {first firstsecond firstsecondthird firstsecondthird}
+test append-1.3 {append command} {
+    set x "abcd"
+    append x
+} abcd
+
+test append-2.1 {long appends} {
+    set x ""
+    for {set i 0} {$i < 1000} {set i [expr $i+1]} {
+	append x "foobar "
+    }
+    set y "foobar"
+    set y "$y $y $y $y $y $y $y $y $y $y"
+    set y "$y $y $y $y $y $y $y $y $y $y"
+    set y "$y $y $y $y $y $y $y $y $y $y "
+    expr {$x == $y}
+} 1
+
+test append-3.1 {append errors} -returnCodes error -body {
+    append
+} -result {wrong # args: should be "append varName ?value ...?"}
+test append-3.2 {append errors} -returnCodes error -body {
+    set x ""
+    append x(0) 44
+} -result {can't set "x(0)": variable isn't array}
+test append-3.3 {append errors} -returnCodes error -body {
+    unset -nocomplain x
+    append x
+} -result {can't read "x": no such variable}
+
+test append-4.1 {lappend command} {
+    unset -nocomplain x
+    list [lappend x 1 2 abc "long string"] $x
+} {{1 2 abc {long string}} {1 2 abc {long string}}}
+test append-4.2 {lappend command} {
+    set x ""
+    list [lappend x first] [lappend x second] [lappend x third] $x
+} {first {first second} {first second third} {first second third}}
+test append-4.3 {lappend command} -body {
+    proc foo {} {
+	global x
+	set x old
+	unset x
+	lappend x new
+    }
+    foo
+} -cleanup {
+    rename foo {}
+} -result {new}
+test append-4.4 {lappend command} {
+    set x {}
+    lappend x \{\  abc
+} {\{\  abc}
+test append-4.5 {lappend command} {
+    set x {}
+    lappend x \{ abc
+} {\{ abc}
+test append-4.6 {lappend command} {
+    set x {1 2 3}
+    lappend x
+} {1 2 3}
+test append-4.7 {lappend command} {
+    set x "a\{"
+    lappend x abc
+} "a\\\{ abc"
+test append-4.8 {lappend command} {
+    set x "\\\{"
+    lappend x abc
+} "\\{ abc"
+test append-4.9 {lappend command} -returnCodes error -body {
+    set x " \{"
+    lappend x abc
+} -result {unmatched open brace in list}
+test append-4.10 {lappend command} -returnCodes error -body {
+    set x "	\{"
+    lappend x abc
+} -result {unmatched open brace in list}
+test append-4.11 {lappend command} -returnCodes error -body {
+    set x "\{\{\{"
+    lappend x abc
+} -result {unmatched open brace in list}
+test append-4.12 {lappend command} -returnCodes error -body {
+    set x "x \{\{\{"
+    lappend x abc
+} -result {unmatched open brace in list}
+test append-4.13 {lappend command} {
+    set x "x\{\{\{"
+    lappend x abc
+} "x\\\{\\\{\\\{ abc"
+test append-4.14 {lappend command} {
+    set x " "
+    lappend x abc
+} "abc"
+test append-4.15 {lappend command} {
+    set x "\\ "
+    lappend x abc
+} "{ } abc"
+test append-4.16 {lappend command} {
+    set x "x "
+    lappend x abc
+} "x abc"
+test append-4.17 {lappend command} {
+    unset -nocomplain x
+    lappend x
+} {}
+test append-4.18 {lappend command} {
+    unset -nocomplain x
+    lappend x {}
+} {{}}
+test append-4.19 {lappend command} {
+    unset -nocomplain x
+    lappend x(0)
+} {}
+test append-4.20 {lappend command} {
+    unset -nocomplain x
+    lappend x(0) abc
+} {abc}
+unset -nocomplain x
+test append-4.21 {lappend command} -returnCodes error -body {
+    set x \"
+    lappend x
+} -result {unmatched open quote in list}
+test append-4.22 {lappend command} -returnCodes error -body {
+    set x \"
+    lappend x abc
+} -result {unmatched open quote in list}
+
+test append-5.1 {long lappends} -setup {
+    unset -nocomplain x
+    proc check {var size} {
+	set l [llength $var]
+	if {$l != $size} {
+	    return "length mismatch: should have been $size, was $l"
+	}
+	for {set i 0} {$i < $size} {set i [expr $i+1]} {
+	    set j [lindex $var $i]
+	    if {$j ne "item $i"} {
+		return "element $i should have been \"item $i\", was \"$j\""
+	    }
+	}
+	return ok
+    }
+} -body {
+    set x ""
+    for {set i 0} {$i < 300} {incr i} {
+	lappend x "item $i"
+    }
+    check $x 300
+} -cleanup {
+    rename check {}
+} -result ok
+
+test append-6.1 {lappend errors} -returnCodes error -body {
+    lappend
+} -result {wrong # args: should be "lappend varName ?value ...?"}
+test append-6.2 {lappend errors} -returnCodes error -body {
+    set x ""
+    lappend x(0) 44
+} -result {can't set "x(0)": variable isn't array}
+
+test append-7.1 {lappend-created var and error in trace on that var} -setup {
+    catch {rename foo ""}
+    unset -nocomplain x
+} -body {
+    trace variable x w foo
+    proc foo {} {global x; unset x}
+    catch {lappend x 1}
+    proc foo {args} {global x; unset x}
+    info exists x
+    set x
+    lappend x 1
+    list [info exists x] [catch {set x} msg] $msg
+} -result {0 1 {can't read "x": no such variable}}
+test append-7.2 {lappend var triggers read trace} -setup {
+    unset -nocomplain myvar
+    unset -nocomplain ::result
+} -body {
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    lappend myvar a
+    return $::result
+} -result {myvar {} r}
+test append-7.3 {lappend var triggers read trace, array var} -setup {
+    unset -nocomplain myvar
+    unset -nocomplain ::result
+} -body {
+    # The behavior of read triggers on lappend changed in 8.0 to not trigger
+    # them, and was changed back in 8.4.
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    lappend myvar(b) a
+    return $::result
+} -result {myvar b r}
+test append-7.4 {lappend var triggers read trace, array var exists} -setup {
+    unset -nocomplain myvar
+    unset -nocomplain ::result
+} -body {
+    set myvar(0) 1
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    lappend myvar(b) a
+    return $::result
+} -result {myvar b r}
+test append-7.5 {append var does not trigger read trace} -setup {
+    unset -nocomplain myvar
+    unset -nocomplain ::result
+} -body {
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    append myvar a
+    info exists ::result
+} -result {0}
+
+# THERE ARE NO append-8.* TESTS
+
+# New tests for bug 3057639 to show off the more consistent behaviour of
+# lappend in both direct-eval and bytecompiled code paths (see appendComp.test
+# for the compiled variants). lappend now behaves like append. 9.0/1 lappend -
+# 9.2/3 append
+
+test append-9.0 {bug 3057639, lappend direct eval, read trace on non-existing array variable element} -setup {
+    unset -nocomplain myvar
+} -body {
+    array set myvar {}
+    proc nonull {var key val} {
+	upvar 1 $var lvar
+	if {![info exists lvar($key)]} {
+	    return -code error "no such variable"
+	}
+    }
+    trace add variable myvar read nonull
+    list [catch {
+	lappend myvar(key) "new value"
+    } msg] $msg
+} -result {0 {{new value}}}
+test append-9.1 {bug 3057639, lappend direct eval, read trace on non-existing env element} -setup {
+    unset -nocomplain ::env(__DUMMY__)
+} -body {
+    list [catch {
+	lappend ::env(__DUMMY__) "new value"
+    } msg] $msg
+} -cleanup {
+    unset -nocomplain ::env(__DUMMY__)
+} -result {0 {{new value}}}
+test append-9.2 {bug 3057639, append direct eval, read trace on non-existing array variable element} -setup {
+    unset -nocomplain myvar
+} -body {
+    array set myvar {}
+    proc nonull {var key val} {
+	upvar 1 $var lvar
+	if {![info exists lvar($key)]} {
+	    return -code error "no such variable"
+	}
+    }
+    trace add variable myvar read nonull
+    list [catch {
+	append myvar(key) "new value"
+    } msg] $msg
+} -result {0 {new value}}
+test append-9.3 {bug 3057639, append direct eval, read trace on non-existing env element} -setup {
+    unset -nocomplain ::env(__DUMMY__)
+} -body {
+    list [catch {
+	append ::env(__DUMMY__) "new value"
+    } msg] $msg
+} -cleanup {
+    unset -nocomplain ::env(__DUMMY__)
+} -result {0 {new value}}
+
+test append-10.1 {Bug 214cc0eb22: lappend with no values} {
+    set lst "# 1 2 3"
+    [subst lappend] lst
+} "# 1 2 3"
+test append-10.2 {Bug 214cc0eb22: lappend with no values} -body {
+    set lst "1 \{ 2"
+    [subst lappend] lst
+} -returnCodes error -result {unmatched open brace in list}
+test append-10.3 {Bug 214cc0eb22: expanded lappend with no values} {
+    set lst "# 1 2 3"
+    [subst lappend] lst {*}[list]
+} "# 1 2 3"
+test append-10.4 {Bug 214cc0eb22: expanded lappend with no values} -body {
+    set lst "1 \{ 2"
+    [subst lappend] lst {*}[list]
+} -returnCodes error -result {unmatched open brace in list}
+
+unset -nocomplain i x result y
+catch {rename foo ""}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

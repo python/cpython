@@ -1,0 +1,277 @@
+##
+## Entry widget validation tests
+## Derived from core test suite entry-19.1 through entry-19.20
+##
+
+package require Tk 8.5
+package require tcltest 2.1
+namespace import -force tcltest::*
+
+loadTestedCommands
+
+testConstraint ttkEntry 1
+testConstraint coreEntry [expr {![testConstraint ttkEntry]}]
+
+eval tcltest::configure $argv
+
+test validate-0.0 "Setup" -constraints ttkEntry -body {
+    rename entry {}
+    interp alias {} entry {} ttk::entry
+    return;
+}
+
+test validate-0.1 "More setup" -body {
+    destroy .e
+    catch {unset ::e}
+    catch {unset ::vVals}
+    entry .e -validate all \
+	    -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+	    -invalidcommand bell \
+	    -textvariable ::e \
+	    ;
+    pack .e
+    proc doval {W d i P s S v V} {
+	set ::vVals [list $W $d $i $P $s $S $v $V]
+	return 1
+    }
+}
+
+# The validation tests build each one upon the previous, so cascading
+# failures aren't good
+#
+test validate-1.1 {entry widget validation - insert} -body {
+    .e insert 0 a
+    set ::vVals
+} -result {.e 1 0 a {} a all key}
+
+test validate-1.2 {entry widget validation - insert} -body {
+    .e insert 1 b
+    set ::vVals
+} -result {.e 1 1 ab a b all key}
+
+test validate-1.3 {entry widget validation - insert} -body {
+    .e insert end c
+    set ::vVals
+} -result {.e 1 2 abc ab c all key}
+
+test validate-1.4 {entry widget validation - insert} -body {
+    .e insert 1 123
+    list $::vVals $::e
+} -result {{.e 1 1 a123bc abc 123 all key} a123bc}
+
+test validate-1.5 {entry widget validation - delete} -body {
+    .e delete 2
+    set ::vVals
+} -result {.e 0 2 a13bc a123bc 2 all key}
+
+test validate-1.6 {entry widget validation - delete} -body {
+    .e configure -validate key
+    .e delete 1 3
+    set ::vVals
+} -result {.e 0 1 abc a13bc 13 key key}
+
+test validate-1.7 {entry widget validation - vmode focus} -body {
+    set ::vVals {}
+    .e configure -validate focus
+    .e insert end d
+    set ::vVals
+} -result {}
+
+test validate-1.8 {entry widget validation - vmode focus} -body {
+    focus -force .e
+    # update necessary to process FocusIn event
+    update
+    set ::vVals
+} -result {.e -1 -1 abcd abcd {} focus focusin}
+
+test validate-1.9 {entry widget validation - vmode focus} -body {
+    focus -force .
+    # update necessary to process FocusOut event
+    update
+    set ::vVals
+} -result {.e -1 -1 abcd abcd {} focus focusout}
+
+.e configure -validate all
+test validate-1.10 {entry widget validation - vmode all} -body {
+    focus -force .e
+    # update necessary to process FocusIn event
+    update
+    set ::vVals
+} -result {.e -1 -1 abcd abcd {} all focusin}
+
+test validate-1.11 {entry widget validation} -body {
+    focus -force .
+    # update necessary to process FocusOut event
+    update
+    set ::vVals
+} -result {.e -1 -1 abcd abcd {} all focusout}
+.e configure -validate focusin
+
+test validate-1.12 {entry widget validation} -body {
+    focus -force .e
+    # update necessary to process FocusIn event
+    update
+    set ::vVals
+} -result {.e -1 -1 abcd abcd {} focusin focusin}
+
+test validate-1.13 {entry widget validation} -body {
+    set ::vVals {}
+    focus -force .
+    # update necessary to process FocusOut event
+    update
+    set ::vVals
+} -result {}
+.e configure -validate focuso
+
+test validate-1.14 {entry widget validation} -body {
+    focus -force .e
+    # update necessary to process FocusIn event
+    update
+    set ::vVals
+} -result {}
+
+test validate-1.15 {entry widget validation} -body {
+    focus -force .
+    # update necessary to process FocusOut event
+    update
+    set ::vVals
+} -result {.e -1 -1 abcd abcd {} focusout focusout}
+
+# DIFFERENCE: core entry temporarily sets "-validate all", ttk::entry doesn't.
+test validate-1.16 {entry widget validation} -body {
+    .e configure -validate all
+    list [.e validate] $::vVals
+} -result {1 {.e -1 -1 abcd abcd {} all forced}}
+
+# DIFFERENCE: ttk::entry does not perform validation when setting the -variable
+test validate-1.17 {entry widget validation} -constraints coreEntry -body {
+    .e configure -validate all
+    set ::e newdata
+    list [.e cget -validate] $::vVals
+} -result {all {.e -1 -1 newdata abcd {} all forced}}
+
+proc doval {W d i P s S v V} {
+    set ::vVals [list $W $d $i $P $s $S $v $V]
+    return 0
+}
+
+test validate-1.18 {entry widget validation} -constraints coreEntry -body {
+    .e configure -validate all
+    set ::e nextdata
+    list [.e cget -validate] $::vVals
+} -result {none {.e -1 -1 nextdata newdata {} all forced}}
+# DIFFERENCE: ttk::entry doesn't validate when setting linked -variable
+# DIFFERENCE: ttk::entry doesn't disable validation 
+
+proc doval {W d i P s S v V} {
+    set ::vVals [list $W $d $i $P $s $S $v $V]
+    set ::e mydata
+    return 1
+}
+
+## This sets validate to none because it shows that we prevent a possible
+## loop condition in the validation, when the entry textvar is also set
+test validate-1.19 {entry widget validation} -constraints coreEntry -body {
+    .e configure -validate all
+    .e validate
+    list [.e cget -validate] [.e get] $::vVals
+} -result {none mydata {.e -1 -1 nextdata nextdata {} all forced}}
+
+## This leaves validate alone because we trigger validation through the
+## textvar (a write trace), and the write during validation triggers
+## nothing (by definition of avoiding loops on var traces).  This is
+## one of those "dangerous" conditions where the user will have a
+## different value in the entry widget shown as is in the textvar.
+
+# DIFFERENCE: ttk entry doesn't get out of sync w/textvar
+test validate-1.20 {entry widget validation} -constraints coreEntry -body {
+    .e configure -validate all
+    set ::e testdata
+    list [.e cget -validate] [.e get] $::e $::vVals
+} -result {all testdata mydata {.e -1 -1 testdata mydata {} all forced}}
+
+#
+# New tests, -JE:
+#
+proc doval {W d i P s S v V} {
+    set ::vVals [list $W $d $i $P $s $S $v $V]
+    .e delete 0 end;
+    .e insert end dovaldata
+    return 0
+}
+test validate-2.1 "Validation script changes value" -body {
+    .e configure -validate none
+    set ::e testdata
+    .e configure -validate all
+    .e validate
+    list [.e get] $::e $::vVals
+} -result {dovaldata dovaldata {.e -1 -1 testdata testdata {} all forced}}
+# DIFFERENCE: core entry disables validation, ttk entry does not.
+
+destroy .e
+catch {unset ::e ::vVals}
+
+# See bug #1236979
+
+test validate-2.2 "configure in -validatecommand" -body {
+    proc validate-2.2 {win str} {
+	$win configure -foreground black
+	return 1
+    }
+    ttk::entry .e -textvariable var -validatecommand {validate-2.2 %W %P}
+    .e validate
+} -result 1 -cleanup { destroy .e }
+
+
+### invalid state behavior
+#
+
+test validate-3.0 "Setup" -body {
+    set ::E "123"
+    ttk::entry .e \
+    	-validatecommand {string is integer -strict %P} \
+	-validate all \
+	-textvariable ::E \
+	;
+    return [list [.e get] [.e state]]
+} -result [list 123 {}]
+
+test validate-3.1 "insert - valid" -body {
+    .e insert end "4"
+    return [list [.e get] [.e state]]
+} -result [list 1234 {}]
+
+test validate-3.2 "insert - invalid" -body {
+    .e insert end "X"
+    return [list [.e get] [.e state]]
+} -result [list 1234 {}]
+
+test validate-3.3 "force invalid value" -body {
+    append ::E "XY"
+    return [list [.e get] [.e state]]
+} -result [list 1234XY {}]
+
+test validate-3.4 "revalidate" -body {
+    return [list [.e validate] [.e get] [.e state]]
+} -result [list 0 1234XY {invalid}]
+
+testConstraint NA 0
+# the next two tests (used to) exercise validation lockout protection --
+# if the widget is currently invalid, all edits are allowed.
+# This behavior is currently disabled.
+#
+test validate-3.5 "all edits allowed while invalid" -constraints NA -body {
+    .e delete 4
+    return [list [.e get] [.e state]]
+} -result [list 1234Y {invalid}]
+
+test validate-3.6 "...until the value becomes valid" -constraints NA -body {
+    .e delete 4
+    return [list [.e get] [.e state]]
+} -result [list 1234 {}]
+
+test validate-3.last "Cleanup" -body { destroy .e }
+
+
+###
+tcltest::cleanupTests

@@ -1,0 +1,251 @@
+'\"
+'\" Copyright (c) 1996-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_ListObj 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_ListObjAppendList, Tcl_ListObjAppendElement, Tcl_NewListObj, Tcl_SetListObj, Tcl_ListObjGetElements, Tcl_ListObjLength, Tcl_ListObjIndex, Tcl_ListObjReplace \- manipulate Tcl values as lists
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_ListObjAppendList\fR(\fIinterp, listPtr, elemListPtr\fR)
+.sp
+int
+\fBTcl_ListObjAppendElement\fR(\fIinterp, listPtr, objPtr\fR)
+.sp
+Tcl_Obj *
+\fBTcl_NewListObj\fR(\fIobjc, objv\fR)
+.sp
+\fBTcl_SetListObj\fR(\fIobjPtr, objc, objv\fR)
+.sp
+int
+\fBTcl_ListObjGetElements\fR(\fIinterp, listPtr, objcPtr, objvPtr\fR)
+.sp
+int
+\fBTcl_ListObjLength\fR(\fIinterp, listPtr, intPtr\fR)
+.sp
+int
+\fBTcl_ListObjIndex\fR(\fIinterp, listPtr, index, objPtrPtr\fR)
+.sp
+int
+\fBTcl_ListObjReplace\fR(\fIinterp, listPtr, first, count, objc, objv\fR)
+.SH ARGUMENTS
+.AS "Tcl_Obj *const" *elemListPtr in/out
+.AP Tcl_Interp *interp in
+If an error occurs while converting a value to be a list value,
+an error message is left in the interpreter's result value
+unless \fIinterp\fR is NULL.
+.AP Tcl_Obj *listPtr in/out
+Points to the list value to be manipulated.
+If \fIlistPtr\fR does not already point to a list value,
+an attempt will be made to convert it to one.
+.AP Tcl_Obj *elemListPtr in/out
+For \fBTcl_ListObjAppendList\fR, this points to a list value
+containing elements to be appended onto \fIlistPtr\fR.
+Each element of *\fIelemListPtr\fR will
+become a new element of \fIlistPtr\fR.
+If *\fIelemListPtr\fR is not NULL and
+does not already point to a list value,
+an attempt will be made to convert it to one.
+.AP Tcl_Obj *objPtr in
+For \fBTcl_ListObjAppendElement\fR,
+points to the Tcl value that will be appended to \fIlistPtr\fR.
+For \fBTcl_SetListObj\fR,
+this points to the Tcl value that will be converted to a list value
+containing the \fIobjc\fR elements of the array referenced by \fIobjv\fR.
+.AP int *objcPtr in
+Points to location where \fBTcl_ListObjGetElements\fR
+stores the number of element values in \fIlistPtr\fR.
+.AP Tcl_Obj ***objvPtr out
+A location where \fBTcl_ListObjGetElements\fR stores a pointer to an array
+of pointers to the element values of \fIlistPtr\fR.
+.AP int objc in
+The number of Tcl values that \fBTcl_NewListObj\fR
+will insert into a new list value,
+and \fBTcl_ListObjReplace\fR will insert into \fIlistPtr\fR.
+For \fBTcl_SetListObj\fR,
+the number of Tcl values to insert into \fIobjPtr\fR.
+.AP "Tcl_Obj *const" objv[] in
+An array of pointers to values.
+\fBTcl_NewListObj\fR will insert these values into a new list value
+and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
+Each value will become a separate list element.
+.AP int *intPtr out
+Points to location where \fBTcl_ListObjLength\fR
+stores the length of the list.
+.AP int index in
+Index of the list element that \fBTcl_ListObjIndex\fR
+is to return.
+The first element has index 0.
+.AP Tcl_Obj **objPtrPtr out
+Points to place where \fBTcl_ListObjIndex\fR is to store
+a pointer to the resulting list element value.
+.AP int first in
+Index of the starting list element that \fBTcl_ListObjReplace\fR
+is to replace.
+The list's first element has index 0.
+.AP int count in
+The number of elements that \fBTcl_ListObjReplace\fR
+is to replace.
+.BE
+
+.SH DESCRIPTION
+.PP
+Tcl list values have an internal representation that supports
+the efficient indexing and appending.
+The procedures described in this man page are used to
+create, modify, index, and append to Tcl list values from C code.
+.PP
+\fBTcl_ListObjAppendList\fR and \fBTcl_ListObjAppendElement\fR
+both add one or more values
+to the end of the list value referenced by \fIlistPtr\fR.
+\fBTcl_ListObjAppendList\fR appends each element of the list value
+referenced by \fIelemListPtr\fR while
+\fBTcl_ListObjAppendElement\fR appends the single value
+referenced by \fIobjPtr\fR.
+Both procedures will convert the value referenced by \fIlistPtr\fR
+to a list value if necessary.
+If an error occurs during conversion,
+both procedures return \fBTCL_ERROR\fR and leave an error message
+in the interpreter's result value if \fIinterp\fR is not NULL.
+Similarly, if \fIelemListPtr\fR does not already refer to a list value,
+\fBTcl_ListObjAppendList\fR will attempt to convert it to one
+and if an error occurs during conversion,
+will return \fBTCL_ERROR\fR
+and leave an error message in the interpreter's result value
+if interp is not NULL.
+Both procedures invalidate any old string representation of \fIlistPtr\fR
+and, if it was converted to a list value,
+free any old internal representation.
+Similarly, \fBTcl_ListObjAppendList\fR frees any old internal representation
+of \fIelemListPtr\fR if it converts it to a list value.
+After appending each element in \fIelemListPtr\fR,
+\fBTcl_ListObjAppendList\fR increments the element's reference count
+since \fIlistPtr\fR now also refers to it.
+For the same reason, \fBTcl_ListObjAppendElement\fR
+increments \fIobjPtr\fR's reference count.
+If no error occurs,
+the two procedures return \fBTCL_OK\fR after appending the values.
+.PP
+\fBTcl_NewListObj\fR and \fBTcl_SetListObj\fR
+create a new value or modify an existing value to hold
+the \fIobjc\fR elements of the array referenced by \fIobjv\fR
+where each element is a pointer to a Tcl value.
+If \fIobjc\fR is less than or equal to zero,
+they return an empty value.
+The new value's string representation is left invalid.
+The two procedures increment the reference counts
+of the elements in \fIobjc\fR since the list value now refers to them.
+The new list value returned by \fBTcl_NewListObj\fR
+has reference count zero.
+.PP
+\fBTcl_ListObjGetElements\fR returns a count and a pointer to an array of
+the elements in a list value.  It returns the count by storing it in the
+address \fIobjcPtr\fR.  Similarly, it returns the array pointer by storing
+it in the address \fIobjvPtr\fR.
+The memory pointed to is managed by Tcl and should not be freed or written
+to by the caller. If the list is empty, 0 is stored at \fIobjcPtr\fR
+and NULL at \fIobjvPtr\fR.
+If \fIlistPtr\fR is not already a list value, \fBTcl_ListObjGetElements\fR
+will attempt to convert it to one; if the conversion fails, it returns
+\fBTCL_ERROR\fR and leaves an error message in the interpreter's result
+value if \fIinterp\fR is not NULL.
+Otherwise it returns \fBTCL_OK\fR after storing the count and array pointer.
+.PP
+\fBTcl_ListObjLength\fR returns the number of elements in the list value
+referenced by \fIlistPtr\fR.
+It returns this count by storing an integer in the address \fIintPtr\fR.
+If the value is not already a list value,
+\fBTcl_ListObjLength\fR will attempt to convert it to one;
+if the conversion fails, it returns \fBTCL_ERROR\fR
+and leaves an error message in the interpreter's result value
+if \fIinterp\fR is not NULL.
+Otherwise it returns \fBTCL_OK\fR after storing the list's length.
+.PP
+The procedure \fBTcl_ListObjIndex\fR returns a pointer to the value
+at element \fIindex\fR in the list referenced by \fIlistPtr\fR.
+It returns this value by storing a pointer to it
+in the address \fIobjPtrPtr\fR.
+If \fIlistPtr\fR does not already refer to a list value,
+\fBTcl_ListObjIndex\fR will attempt to convert it to one;
+if the conversion fails, it returns \fBTCL_ERROR\fR
+and leaves an error message in the interpreter's result value
+if \fIinterp\fR is not NULL.
+If the index is out of range,
+that is, \fIindex\fR is negative or
+greater than or equal to the number of elements in the list,
+\fBTcl_ListObjIndex\fR stores a NULL in \fIobjPtrPtr\fR
+and returns \fBTCL_OK\fR.
+Otherwise it returns \fBTCL_OK\fR after storing the element's
+value pointer.
+The reference count for the list element is not incremented;
+the caller must do that if it needs to retain a pointer to the element.
+.PP
+\fBTcl_ListObjReplace\fR replaces zero or more elements
+of the list referenced by \fIlistPtr\fR
+with the \fIobjc\fR values in the array referenced by \fIobjv\fR.
+If \fIlistPtr\fR does not point to a list value,
+\fBTcl_ListObjReplace\fR will attempt to convert it to one;
+if the conversion fails, it returns \fBTCL_ERROR\fR
+and leaves an error message in the interpreter's result value
+if \fIinterp\fR is not NULL.
+Otherwise, it returns \fBTCL_OK\fR after replacing the values.
+If \fIobjv\fR is NULL, no new elements are added.
+If the argument \fIfirst\fR is zero or negative,
+it refers to the first element.
+If \fIfirst\fR is greater than or equal to the
+number of elements in the list, then no elements are deleted;
+the new elements are appended to the list.
+\fIcount\fR gives the number of elements to replace.
+If \fIcount\fR is zero or negative then no elements are deleted;
+the new elements are simply inserted before the one
+designated by \fIfirst\fR.
+\fBTcl_ListObjReplace\fR invalidates \fIlistPtr\fR's
+old string representation.
+The reference counts of any elements inserted from \fIobjv\fR
+are incremented since the resulting list now refers to them.
+Similarly, the reference counts for any replaced values are decremented.
+.PP
+Because \fBTcl_ListObjReplace\fR combines
+both element insertion and deletion,
+it can be used to implement a number of list operations.
+For example, the following code inserts the \fIobjc\fR values
+referenced by the array of value pointers \fIobjv\fR
+just before the element \fIindex\fR of the list referenced by \fIlistPtr\fR:
+.PP
+.CS
+result = \fBTcl_ListObjReplace\fR(interp, listPtr, index, 0,
+        objc, objv);
+.CE
+.PP
+Similarly, the following code appends the \fIobjc\fR values
+referenced by the array \fIobjv\fR
+to the end of the list \fIlistPtr\fR:
+.PP
+.CS
+result = \fBTcl_ListObjLength\fR(interp, listPtr, &length);
+if (result == TCL_OK) {
+    result = \fBTcl_ListObjReplace\fR(interp, listPtr, length, 0,
+            objc, objv);
+}
+.CE
+.PP
+The \fIcount\fR list elements starting at \fIfirst\fR can be deleted
+by simply calling \fBTcl_ListObjReplace\fR
+with a NULL \fIobjvPtr\fR:
+.PP
+.CS
+result = \fBTcl_ListObjReplace\fR(interp, listPtr, first, count,
+        0, NULL);
+.CE
+.SH "SEE ALSO"
+Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_GetObjResult(3)
+.SH KEYWORDS
+append, index, insert, internal representation, length, list, list value,
+list type, value, value type, replace, string representation

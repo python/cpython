@@ -1,0 +1,47 @@
+# -*- tcl -*-
+#
+
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+testConstraint xpnative \
+    [expr {[lsearch -exact [ttk::style theme names] xpnative] != -1}]
+
+test vsapi-1.1 "WINDOW WP_SMALLCLOSEBUTTON" -constraints {xpnative} -body {
+    ttk::style element create smallclose vsapi \
+        WINDOW 19 {disabled 4 pressed 3 active 2 {} 1}
+    ttk::style layout CloseButton {CloseButton.smallclose -sticky news}
+    ttk::button .b -style CloseButton
+    pack .b -expand true -fill both
+    list [winfo reqwidth .b] [winfo reqheight .b]
+} -cleanup { destroy .b } -result [list 13 13]
+
+test vsapi-1.2 "EXPLORERBAR EBP_HEADERPIN" -constraints {xpnative} -body {
+    ttk::style element create pin vsapi \
+        EXPLORERBAR 3 {
+            {pressed !selected} 3
+            {active !selected} 2
+            {pressed selected} 6
+            {active selected} 5
+            {selected} 4
+            {} 1
+        }
+    ttk::style layout Explorer.Pin {Explorer.Pin.pin -sticky news}
+    ttk::checkbutton .pin -style Explorer.Pin
+    pack .pin -expand true -fill both
+    list [winfo reqwidth .pin] [winfo reqheight .pin]
+} -cleanup { destroy .pin } -result [list 16 16]
+
+test vsapi-1.3 "EXPLORERBAR EBP_HEADERCLOSE" -constraints {xpnative} -body {
+    ttk::style element create headerclose vsapi \
+        EXPLORERBAR 2 {pressed 3 active 2 {} 1}
+    ttk::style layout Explorer.CloseButton {
+        Explorer.CloseButton.headerclose -sticky news
+    }
+    ttk::button .b -style Explorer.CloseButton
+    pack .b -expand true -fill both
+    list [winfo reqwidth .b] [winfo reqheight .b]
+} -cleanup { destroy .b } -result [list 16 16]
+
+tcltest::cleanupTests

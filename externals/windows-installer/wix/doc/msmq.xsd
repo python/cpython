@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:html="http://www.w3.org/1999/xhtml"
+            xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+      targetNamespace="http://schemas.microsoft.com/wix/MsmqExtension"
+                xmlns="http://schemas.microsoft.com/wix/MsmqExtension">
+  <xs:annotation>
+    <xs:documentation>
+      The source code schema for the Windows Installer XML Toolset MSMQ Extension.
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+  <xs:element name="MessageQueue">
+    <xs:annotation><xs:documentation>
+    </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="MessageQueuePermission" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Authenticate" use="optional" type="YesNoType">
+        <xs:annotation><xs:documentation>
+          Default: No.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="BasePriority" use="optional" type="xs:integer" />
+      <xs:attribute name="Journal" use="optional" type="YesNoType">
+        <xs:annotation><xs:documentation>
+          Default: No.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="JournalQuota" use="optional" type="xs:integer" />
+      <xs:attribute name="Label" use="required" type="xs:string" />
+      <xs:attribute name="MulticastAddress" use="optional" type="xs:string" />
+      <xs:attribute name="PathName" use="required" type="xs:string" />
+      <xs:attribute name="PrivLevel" use="optional">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="none" />
+            <xs:enumeration value="optional" />
+            <xs:enumeration value="body" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Quota" use="optional" type="xs:integer" />
+      <xs:attribute name="Transactional" use="optional" type="YesNoType">
+        <xs:annotation><xs:documentation>
+          Default: No.
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceTypeGuid" use="optional" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="MessageQueuePermission">
+    <xs:annotation><xs:documentation>
+    </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="MessageQueue" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="User" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Group" use="optional" type="xs:string">
+        <xs:annotation><xs:documentation>
+        </xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DeleteMessage" use="optional" type="YesNoType" />
+      <xs:attribute name="PeekMessage" use="optional" type="YesNoType" />
+      <xs:attribute name="WriteMessage" use="optional" type="YesNoType" />
+      <xs:attribute name="DeleteJournalMessage" use="optional" type="YesNoType" />
+      <xs:attribute name="SetQueueProperties" use="optional" type="YesNoType" />
+      <xs:attribute name="GetQueueProperties" use="optional" type="YesNoType" />
+      <xs:attribute name="DeleteQueue" use="optional" type="YesNoType" />
+      <xs:attribute name="GetQueuePermissions" use="optional" type="YesNoType" />
+      <xs:attribute name="ChangeQueuePermissions" use="optional" type="YesNoType" />
+      <xs:attribute name="TakeQueueOwnership" use="optional" type="YesNoType" />
+      <xs:attribute name="ReceiveMessage" use="optional" type="YesNoType" />
+      <xs:attribute name="ReceiveJournalMessage" use="optional" type="YesNoType" />
+      <xs:attribute name="QueueGenericRead" use="optional" type="YesNoType" />
+      <xs:attribute name="QueueGenericWrite" use="optional" type="YesNoType" />
+      <xs:attribute name="QueueGenericExecute" use="optional" type="YesNoType" />
+      <xs:attribute name="QueueGenericAll" use="optional" type="YesNoType" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="YesNoType">
+    <xs:annotation>
+      <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="no" />
+      <xs:enumeration value="yes" />
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

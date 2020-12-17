@@ -1,0 +1,1104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:html="http://www.w3.org/1999/xhtml"
+            xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+      targetNamespace="http://schemas.microsoft.com/wix/IIsExtension"
+                xmlns="http://schemas.microsoft.com/wix/IIsExtension">
+    <xs:annotation>
+        <xs:documentation>
+            The source code schema for the Windows Installer XML Toolset Internet Information Services Extension.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+    <xs:element name="WebDirProperties">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+            </xs:appinfo>
+            <xs:documentation>
+                WebDirProperties used by one or more WebSites. Lists properties common to IIS web sites and vroots. Corresponding properties can be viewed through the IIS Manager snap-in. One property entry can be reused by multiple sites or vroots using the Id field as a reference, using WebVirtualDir.DirProperties, WebSite.DirProperties, or WebDir.DirProperties.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" type="xs:string" use="required"/>
+            <xs:attribute name="Read" type="YesNoType"/>
+            <xs:attribute name="Write" type="YesNoType"/>
+            <xs:attribute name="Script" type="YesNoType"/>
+            <xs:attribute name="Execute" type="YesNoType"/>
+            <xs:attribute name="AnonymousAccess" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Enable Anonymous Access checkbox, which maps anonymous users to a Windows user account. When setting this to 'yes' you should also provide the user account using the AnonymousUser attribute, and determine what setting to use for the IIsControlledPassword attribute. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AnonymousUser" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Reference to the Id attribute on the User element to be used as the anonymous user for the directory. See the User element for more information.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="IIsControlledPassword" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets whether IIS should control the password used for the Windows account specified in the AnonymousUser attribute. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WindowsAuthentication" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Windows Authentication option, which enables integrated Windows authentication to be used on the site. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DigestAuthentication" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Digest Authentication option, which allows using digest authentication with domain user accounts. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="BasicAuthentication" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Basic Authentication option, which allows clients to provide credentials in plaintext over the wire. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PassportAuthentication" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Passport Authentication option, which allows clients to provide credentials via a .Net Passport account. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LogVisits" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets whether visits to this site should be logged. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Index" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Index Resource option, which specifies whether this web directory should be indexed. Defaults to 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DefaultDocuments" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The list of default documents to set for this web directory, in comma-delimited format.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AspDetailedError" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Sets the option for whether to send detailed ASP errors back to the client on script error. Default is 'no.'</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="HttpExpires" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Value to set the HttpExpires attribute to for a Web Dir in the metabase.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="CacheControlMaxAge" type="xs:nonNegativeInteger">
+                <xs:annotation>
+                    <xs:documentation>Integer value specifying the cache control maximum age value.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="CacheControlCustom" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Custom HTTP 1.1 cache control directives.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ClearCustomError" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether IIs will return custom errors for this directory.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AccessSSL" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>A value of true indicates that file access requires SSL file permission processing, with or without a client certificate. This corresponds to AccessSSL flag for AccessSSLFlags IIS metabase property.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AccessSSL128" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>A value of true indicates that file access requires SSL file permission processing with a minimum key size of 128 bits, with or without a client certificate. This corresponds to AccessSSL128 flag for AccessSSLFlags IIS metabase property.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AccessSSLMapCert" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>This corresponds to AccessSSLMapCert flag for AccessSSLFlags IIS metabase property.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AccessSSLNegotiateCert" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>This corresponds to AccessSSLNegotiateCert flag for AccessSSLFlags IIS metabase property.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AccessSSLRequireCert" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>This corresponds to AccessSSLRequireCert flag for AccessSSLFlags IIS metabase property.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AuthenticationProviders" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Comma delimited list, in order of precedence, of Windows authentication providers that IIS will attempt to use: NTLM, Kerberos, Negotiate, and others.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebError">
+        <xs:annotation>
+            <xs:documentation>Custom Web Errors used by WebSites and Virtual Directories.</xs:documentation>
+            <xs:appinfo>
+                <xse:remarks>
+                    You can only use error code and sub code combinations which are supported by IIS.  Attempting to set a custom error for
+                    an error code and sub code combination that is not supported by IIS (in the default list of error codes) will result in
+                    an installation failure.
+                </xse:remarks>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="ErrorCode" use="required" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>HTTP 1.1 error code.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SubCode" use="required" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Error sub code.  Set to 0 to get the wild card "*".</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="File" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>File to be sent to the client for this error code and sub code.  This can be formatted.  For example: [#FileId].</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="URL" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>URL to be sent to the client for this error code and sub code.  This can be formatted.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="HttpHeader">
+        <xs:annotation>
+            <xs:documentation>Custom HTTP Header definition for IIS resources such as WebSite and WebVirtualDir.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Primary key for custom HTTP Header entry.  This will default to the Name attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Name of the custom HTTP Header.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Value" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Value for the custom HTTP Header. This attribute can contain a formatted string that is processed at install time to insert the values of properties using [PropertyName] syntax. Also supported are environment variables, file installation paths, and component installation directories; see <a href="http://msdn.microsoft.com/library/aa368609.aspx" target="_blank">Formatted</a> for details.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="MimeMap">
+        <xs:annotation>
+            <xs:documentation>MimeMap definition for IIS resources.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Id for the MimeMap.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Type" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Mime-type covered by the MimeMap.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Extension" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Extension covered by the MimeMap.  Must begin with a dot.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebFilter">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+            </xs:appinfo>
+            <xs:documentation>IIs Filter for a Component</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The unique Id for the web filter.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The name of the filter to be used in IIS.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Path" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The path of the filter executable file.
+                        This should usually be a value like '[!FileId]', where 'FileId' is the file identifier
+                        of the filter executable file.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WebSite" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies the parent website for this filter (if there is one).
+                        If this is a global filter, then this attribute should not be specified.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Description" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Description of the filter.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Flags" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Sets the MD_FILTER_FLAGS metabase key for the filter. This must be an integer. See MSDN 'FilterFlags' documentation for more details.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LoadOrder" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The legal values are "first", "last", or a number.
+                        If a number is specified, it must be greater than 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebApplicationExtension">
+        <xs:annotation>
+            <xs:documentation>Extension for WebApplication</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Executable" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>usually a Property that resolves to short file name path</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Extension" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Extension being registered. Do not prefix with a '.' (e.g. you should use "html", not ".html").  To register for all extensions, use Extension="*".  To register a wildcard application map (which handles all requests, even those for directories or files with no extension) omit the Extension attribute completely.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Verbs" type="xs:string">
+            </xs:attribute>
+            <xs:attribute name="Script" type="YesNoType">
+            </xs:attribute>
+            <xs:attribute name="CheckPath" type="YesNoType">
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebAppPool">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+            </xs:appinfo>
+            <xs:documentation>IIS6 Application Pool</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="RecycleTime" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Id of the AppPool.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Name of the AppPool to be shown in IIs.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="User" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>User account to run the AppPool as.  To use this, you must set the Identity attribute to 'other'.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="RecycleMinutes" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>How often, in minutes, you want the AppPool to be recycled.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="RecycleRequests" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>How often, in requests, you want the AppPool to be recycled.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="VirtualMemory" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Specifies the amount of virtual memory (in KB) that a worker process can use before the worker process recycles. The maximum value supported for this attribute is 4,294,967 KB.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PrivateMemory" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Specifies the amount of private memory (in KB) that a worker process can use before the worker process recycles. The maximum value supported for this attribute is 4,294,967 KB.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="IdleTimeout" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Shutdown worker process after being idle for (time in minutes).</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="QueueLimit" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Limit the kernel request queue (number of requests).</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="MaxCpuUsage" type="PercentType">
+                <xs:annotation>
+                    <xs:documentation>Maximum CPU usage (percent).</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="RefreshCpu" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Refresh CPU usage numbers (in minutes).</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="CpuAction">
+                <xs:annotation>
+                    <xs:documentation>Action taken when CPU exceeds maximum CPU use (as defined with MaxCpuUsage and RefreshCpu).</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="none"/>
+                        <xs:enumeration value="shutdown"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="MaxWorkerProcesses" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Maximum number of worker processes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Identity">
+                <xs:annotation>
+                    <xs:documentation>Identity you want the AppPool to run under (applicationPoolIdentity is only available on IIS7). Use the 'other' value in conjunction with the User attribute to specify non-standard user.</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="networkService"/>
+                        <xs:enumeration value="localService"/>
+                        <xs:enumeration value="localSystem"/>
+                        <xs:enumeration value="other"/>
+                        <xs:enumeration value="applicationPoolIdentity"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+          <xs:attribute name="ManagedPipelineMode" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>
+                Specifies the request-processing mode that is used to process requests for managed content.  Only available on IIS7, ignored on IIS6.
+                See <a href="http://www.iis.net/configreference/system.applicationhost/applicationpools/applicationpooldefaults" target="_blank">http://www.iis.net/ConfigReference/system.applicationHost/applicationPools/applicationPoolDefaults</a> for valid values.
+                This attribute may be set via a formatted Property (e.g. [MyProperty]).
+              </xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="ManagedRuntimeVersion" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>
+                Specifies the .NET Framework version to be used by the application pool.  Only available on IIS7, ignored on IIS6.
+                See <a href="http://www.iis.net/configreference/system.applicationhost/applicationpools/applicationpooldefaults" target="_blank">http://www.iis.net/ConfigReference/system.applicationHost/applicationPools/applicationPoolDefaults</a> for valid values.
+                This attribute may be set via a formatted Property (e.g. [MyProperty]).
+              </xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="RecycleTime">
+        <xs:annotation>
+            <xs:documentation>IIS6 Application Pool Recycle Times on 24 hour clock.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Value" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:pattern value="\d{1,2}:\d{2}"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Certificate">
+        <xs:annotation>
+            <xs:documentation>
+                Used to install and uninstall certificates.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+                <xse:seeAlso ref="CertificateRef"/>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Unique identifier for this certificate in the installation package.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the certificate that will be installed or uninstalled in the specified store.
+                        This attribute may be set via a formatted Property (e.g. [MyProperty]).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="StoreName" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="ca">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Contains the certificates of certificate authorities that the user trusts to issue certificates to others. Certificates in these stores are normally supplied with the operating system or by the user's network administrator.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="my">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Use the "personal" value instead.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="personal">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Contains personal certificates. These certificates will usually have an associated private key. This store is often
+                                    referred to as the "MY" certificate store.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="request"/>
+                        <xs:enumeration value="root">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Contains the certificates of certificate authorities that the user trusts to issue certificates to others. Certificates in these stores are normally supplied with the operating system or by the user's network administrator. Certificates in this store are typically self-signed.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="otherPeople">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Contains the certificates of those that the user normally sends enveloped messages to or receives signed messages from.
+                                    See <a href="http://msdn.microsoft.com/library/aa388160.aspx" target="_blank">MSDN documentation</a> for more information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="trustedPeople">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Contains the certificates of those directly trusted people and resources.
+                                    See <a href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.x509certificates.storename.aspx" target="_blank">MSDN documentation</a> for more information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="trustedPublisher">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Contains the certificates of those publishers who are trusted.
+                                    See <a href="http://msdn.microsoft.com/en-us/library/system.security.cryptography.x509certificates.storename.aspx" target="_blank">MSDN documentation</a> for more information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="StoreLocation" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="currentUser"/>
+                        <xs:enumeration value="localMachine"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Overwrite" type="YesNoType"/>
+            <xs:attribute name="Request" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        This attribute controls whether the CertificatePath attribute is a path to a certificate file (Request=&apos;no&apos;) or the
+                        certificate authority to request the certificate from  (Request=&apos;yes&apos;).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="BinaryKey" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Reference to a Binary element that will store the certificate as a stream inside the package.  This attribute cannot be specified with
+                        the CertificatePath attribute.
+                    </xs:documentation>
+                    <xs:appinfo>
+                        <xse:seeAlso ref="Binary"/>
+                    </xs:appinfo>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="CertificatePath" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        If the Request attribute is "no" then this attribute is the path to the certificate file outside of the package.
+                        If the Request attribute is "yes" then this atribute is the certificate authority to request the certificate from.
+                        This attribute may be set via a formatted Property (e.g. [MyProperty]).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PFXPassword" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        If the Binary stream or path to the file outside of the package is a password protected PFX file, the password for that
+                        PFX must be specified here.  This attribute may be set via a formatted Property (e.g. [MyProperty]).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="CertificateRef">
+        <xs:annotation>
+            <xs:documentation>
+                Associates a certificate with the parent WebSite.  The Certificate element should be
+                in the same Component as the parent WebSite.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:seeAlso ref="Certificate"/>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The identifier of the referenced Certificate.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebProperty">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+                <xse:remarks>
+                    Here is an explanation of the acceptable values for each property and their meaning:
+                    <html:ul>
+                        <html:li>
+                            For the Ids IIs5IsolationMode and LogInUTF8, no value should be specified since
+                            the presence of this property indicates that the setting should be set.
+                        </html:li>
+                        <html:li>
+                            For the MaxGlobalBandwidth Id, the value should be specified in kilobytes.  The
+                            value should be a base 10 number.
+                        </html:li>
+                        <html:li>
+                            ETagChangeNumber sets the machine-specific portion of ETag as a number. This value,
+                            when synchronized across servers in a web farm, allows the web farm to return an
+                            identical ETag for a given resource regardless of the server that handled the
+                            request.  The value should be a base 10 number.
+                        </html:li>
+                    </html:ul>
+                </xse:remarks>
+            </xs:appinfo>
+            <xs:documentation>IIS Properties</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="ETagChangeNumber"/>
+                        <xs:enumeration value="IIs5IsolationMode"/>
+                        <xs:enumeration value="MaxGlobalBandwidth"/>
+                        <xs:enumeration value="LogInUTF8"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Value" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The value to be used for the WebProperty specified in the Id attribute.  See
+                        the remarks section for information on acceptable values for each Id.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebApplication">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+            </xs:appinfo>
+            <xs:documentation>Defines properties for a web application. These properties can be used for more than one application defined in a web site or vroot, by defining this element in a common location and referring to it by setting the WebApplication attribute of the WebSite and WebVirtualDir elements.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="WebApplicationExtension" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="Id" use="required" type="xs:string"/>
+            <xs:attribute name="Name" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Sets the name of this application.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Isolation">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the application isolation level for this application for pre-IIS 6 applications.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:NMTOKEN">
+                        <xs:enumeration value="low">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Means the application executes within the IIS process.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="medium">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Executes pooled in a separate process.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="high">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Means execution alone in a separate process.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="AllowSessions" type="YesNoDefaultType">
+                <xs:annotation>
+                    <xs:documentation>Sets the Enable Session State option. When enabled, you can set the session timeout using the SessionTimeout attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SessionTimeout" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Sets the timeout value for sessions in minutes.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Buffer" type="YesNoDefaultType">
+                <xs:annotation>
+                    <xs:documentation>Sets the option that enables response buffering in the application, which allows ASP script to set response headers anywhere in the script.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ParentPaths" type="YesNoDefaultType">
+                <xs:annotation>
+                    <xs:documentation>Sets the parent paths option, which allows a client to use relative paths to reach parent directories from this application.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DefaultScript">
+                <xs:annotation>
+                    <xs:documentation>Sets the default script language for the site.</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:NMTOKEN">
+                        <xs:enumeration value="VBScript"/>
+                        <xs:enumeration value="JScript"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="ScriptTimeout" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Sets the timeout value in seconds for executing ASP scripts.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ServerDebugging" type="YesNoDefaultType">
+                <xs:annotation>
+                    <xs:documentation>Enable ASP server-side script debugging.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ClientDebugging" type="YesNoDefaultType">
+                <xs:annotation>
+                    <xs:documentation>Enable ASP client-side script debugging.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WebAppPool" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>References the Id attribute of a WebAppPool element to use as the application pool for this application in IIS 6 applications.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebAddress">
+        <xs:annotation>
+            <xs:documentation>WebAddress for WebSite</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string"/>
+            <xs:attribute name="IP" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                      The IP address to locate an existing WebSite or create a new WebSite. When the WebAddress is part of a WebSite element
+                      used to locate an existing web site the following rules are used:
+                      <html:ul>
+                      <html:li>When this attribute is not specified only the "All Unassigned" IP address will be located.</html:li>
+                      <html:li>When this attribute is explicitly specified only the specified IP address will be located.</html:li>
+                      <html:li>When this attribute has the value "*" then any IP address including the "All Unassigned" IP address will be located</html:li>
+                      </html:ul>
+                      When the WebAddress is part of a WebSite element used to create a new web site the following rules are used:
+                      <html:ul>
+                      <html:li>When this attribute is not specified or the value is "*" the "All Unassigned" IP address will be used.</html:li>
+                      <html:li>When this attribute is explicitly specified the IP address will use that value.</html:li>
+                      </html:ul>
+                      The IP attribute can contain a formatted string that is processed at install time to insert the values of properties using
+                      [PropertyName] syntax. 
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Port" use="required" type="xs:string"/>
+            <xs:attribute name="Header" type="xs:string"/>
+            <xs:attribute name="Secure" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Determines if this address represents a secure binding.  The default is 'no'.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebVirtualDir">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+            </xs:appinfo>
+            <xs:documentation>Defines an IIS virtual directory. When this element is a child of WebSite element, the virtual directory is defined within that web site. Otherwise this virtual directory must reference a WebSite element via the WebSite attribute</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="WebApplication" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="WebDirProperties" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="WebError" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="WebVirtualDir" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="HttpHeader" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="MimeMap" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+            <xs:attribute name="Id" use="required" type="xs:string"/>
+            <xs:attribute name="WebSite" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>References the Id attribute for a WebSite in which this virtual directory belongs. Required when this element is not a child of WebSite element.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Alias" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Sets the application name, which is the URL relative path used to access this virtual directory</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Directory" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>References the Id attribute for a Directory element that points to the content for this virtual directory.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DirProperties" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        References the Id attribute for a WebDirProperties element that specifies the security and access properties for this virtual directory.
+                        This attribute may not be specified if a WebDirProperties element is directly nested in this element.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WebApplication" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>References the Id attribute for a WebApplication element that specifies web application settings for this virtual directory.  If a WebApplication child is not specified, the virtual directory does not host web applications.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebDir">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+            </xs:appinfo>
+            <xs:documentation>Defines a subdirectory within an IIS web site. When this element is a child of WebSite, the web directory is defined within that web site. Otherwise the web directory must reference a WebSite element via the WebSite attribute.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="WebApplication" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="WebDirProperties" minOccurs="0" maxOccurs="1" />
+            </xs:choice>
+            <xs:attribute name="Id" use="required" type="xs:string"/>
+            <xs:attribute name="WebSite" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>References the Id attribute for a WebSite element in which this directory belongs. Required when this element is not a child of a WebSite element.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Path" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>Specifies the name of this web directory.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DirProperties" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        References the Id attribute for a WebDirProperties element that specifies the security and access properties for this web directory.
+                        This attribute may not be specified if a WebDirProperties element is directly nested in this element.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebSite">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+                <xse:remarks>
+                    <html:dl>
+                        <html:dd>Nesting WebSite under a Component element will result in a WebSite being installed to the machine as the package is installed.</html:dd>
+                        <html:dd>
+                            Nesting WebSite under Product, Fragment, or Module
+                            results in a web site "locator" record being created in
+                            the IIsWebSite table.  This means that the web site
+                            itself is neither installed nor uninstalled by the MSI
+                            package.  It does make the database available for referencing
+                            from a WebApplication, WebVirtualDir or WebDir record.  This allows an MSI to install
+                            WebApplications, WebVirtualDirs or WebDirs to already existing web sites on the machine.
+                            The install will fail if the web site does not exist in these cases.
+                        </html:dd>
+                    </html:dl>
+                </xse:remarks>
+            </xs:appinfo>
+            <xs:documentation>IIs Web Site</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="WebAddress" minOccurs="1" maxOccurs="unbounded"/>
+                <xs:element ref="WebApplication" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="WebDirProperties" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="MimeMap" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="CertificateRef"/>
+                <xs:element ref="HttpHeader"/>
+                <xs:element ref="WebDir"/>
+                <xs:element ref="WebError"/>
+                <xs:element ref="WebFilter"/>
+                <xs:element ref="WebVirtualDir"/>
+            </xs:choice>
+
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Identifier for the WebSite.  Used within the MSI package only.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="AutoStart" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether to automatically start the web site.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ConfigureIfExists" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether to configure the web site if it already exists.  Note: This will not affect uninstall behavior.  If the web site exists on uninstall, it will be removed.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ConnectionTimeout" type="xs:nonNegativeInteger">
+                <xs:annotation>
+                    <xs:documentation>Sets the timeout value for connections in seconds.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Description" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>This is the name of the web site that will show up in the IIS management console.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Directory" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Root directory of the web site.  Resolved to a directory in the Directory table at install time by the server custom actions.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DirProperties" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        References the Id attribute for a WebDirProperties element that specifies the security and access properties for this website root directory.
+                        This attribute may not be specified if a WebDirProperties element is directly nested in this element.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Sequence" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Sequence that the web site is to be created in.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SiteId" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                      Optional attribute to directly specify the site id of the WebSite.  Use this to ensure all web
+                      sites in a web garden get the same site id.  If a number is provided, the site id must be unique
+                      on all target machines.  If "*" is used, the Description attribute will be hashed to create a unique
+                      value for the site id. This value must be a positive number or a "*" or a formatted value that resolves
+                      to "-1" (for the same behavior as "*") or a positive number or blank.  If this attribute is absent then
+                      the web site will be located using the WebAddress element associated with the web site.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="StartOnInstall" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Specifies whether to start the web site on install.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WebApplication" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Reference to a WebApplication that is to be installed as part of this web site.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WebLog" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Reference to WebLog definition.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebLog">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+            </xs:appinfo>
+            <xs:documentation>WebLog definition.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Identifier for the WebLog.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Type" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:NMTOKEN">
+                        <xs:enumeration value="IIS">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Microsoft IIS Log File Format
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="NCSA">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    NCSA Common Log File Format
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="none">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Disables logging.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="ODBC">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    ODBC Logging
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="W3C">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    W3C Extended Log File Format
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WebServiceExtension">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+            </xs:appinfo>
+            <xs:documentation>The WebServiceExtension property is used by the Web server to determine whether a Web service extension is permitted to run.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="Id" use="required" type="xs:string"/>
+            <xs:attribute name="File" use="required" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Usually a Property that resolves to short file name path</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Description" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Description of the extension.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Group" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>String used to identify groups of extensions.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Allow" use="required" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Indicates if the extension is allowed or denied.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="UIDeletable" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Indicates if the UI is allowed to delete the extension from the list of not.  Default: Not deletable.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="PercentType">
+        <xs:annotation>
+            <xs:documentation>Values of this type are any integers between 0 and 100, inclusive.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:nonNegativeInteger">
+            <xs:maxInclusive value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="YesNoType">
+        <xs:annotation>
+            <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base='xs:NMTOKEN'>
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="YesNoDefaultType">
+        <xs:annotation>
+            <xs:documentation>Values of this type will either be "default", "yes", or "no".</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base='xs:NMTOKEN'>
+            <xs:enumeration value="default"/>
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

@@ -1,0 +1,21 @@
+/* XPM */
+static char * openfolder_xpm[] = {
+/* width height num_colors chars_per_pixel */
+"16 12 3 1",
+/* colors */
+" 	s None	c None",
+".	c black",
+"X	c #f0ff80",
+/* pixels */
+"   ....         ",
+"  .XXXX.        ",
+" .XXXXXX.       ",
+".............   ",
+".XXXXXXXXXXX.   ",
+".XXX............",
+".XX.XXXXXXXXXXX.",
+".XX.XXXXXXXXXX. ",
+".X.XXXXXXXXXXX. ",
+".X.XXXXXXXXXXX. ",
+"..XXXXXXXXXX..  ",
+".............   "};

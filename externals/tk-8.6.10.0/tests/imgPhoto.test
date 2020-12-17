@@ -1,0 +1,1459 @@
+# This file is a Tcl script to test out the "photo" image type and the other
+# procedures in the file tkImgPhoto.c. It is organized in the standard fashion
+# for Tcl tests.
+#
+# Copyright (c) 1994 The Australian National University
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2002-2008 Donal K. Fellows
+# All rights reserved.
+#
+# Author: Paul Mackerras (paulus@cs.anu.edu.au)
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+# Used for 4.65 - 4.73 tests
+# Now for some heftier testing, checking that setting and resetting of pixels'
+# transparency status doesn't "leak" with any one-off errors.
+proc foreachPixel {img xVar yVar script} {
+    upvar 1 $xVar x $yVar y
+    set width [image width $img]
+    set height [image height $img]
+    for {set x 0} {$x<$width} {incr x} {
+	for {set y 0} {$y<$height} {incr y} {
+	    uplevel 1 $script
+	}
+    }
+}
+proc checkImgTrans {img} {
+    set result {}
+    foreachPixel $img x y {
+	if {[$img transparency get $x $y]} {
+	    lappend result $x,$y
+	}
+    }
+    return $result
+}
+proc checkImgTransLoop {img script1 script2} {
+    set result {}
+    foreachPixel $img x y {
+	eval $script1
+	lappend result {*}[checkImgTrans $img]
+	append result :
+	eval $script2
+	lappend result {*}[checkImgTrans $img]
+	append result .
+    }
+    return $result
+}
+
+imageInit
+set README [makeFile {
+    README -- Tk test suite design document.
+} README-imgPhoto]
+
+# find the teapot.ppm file for use in these tests
+set teapotPhotoFile [file join [file dirname [info script]] teapot.ppm]
+testConstraint hasTeapotPhoto [file exists $teapotPhotoFile]
+
+proc base64ok {} {
+    expr {
+        ![catch {package require base64}]
+    }
+}
+
+testConstraint base64PackageNeeded [base64ok]
+
+test imgPhoto-1.1 {options for photo images} -body {
+    image create photo photo1 -width 79 -height 83
+    list [photo1 cget -width] [photo1 cget -height] \
+	[image width photo1] [image height photo1]
+} -cleanup {
+    image delete photo1
+} -result {79 83 79 83}
+test imgPhoto-1.2 {options for photo images} -body {
+    list [catch {image create photo photo1 -file no.such.file} err] \
+	[string tolower $err]
+} -result {1 {couldn't open "no.such.file": no such file or directory}}
+test imgPhoto-1.3 {options for photo images} -constraints hasTeapotPhoto -body {
+    image create photo photo1 -file $teapotPhotoFile -format no.such.format
+} -returnCodes error -result {image file format "no.such.format" is not supported}
+test imgPhoto-1.4 {options for photo images} -constraints hasTeapotPhoto -body {
+    image create photo photo1 -file $teapotPhotoFile
+    list [image width photo1] [image height photo1]
+} -cleanup {
+    image delete photo1
+} -result {256 256}
+test imgPhoto-1.5 {options for photo images} -constraints hasTeapotPhoto -body {
+    image create photo photo1 -file $teapotPhotoFile \
+	-format ppm -width 79 -height 83
+    list [image width photo1] [image height photo1] [photo1 cget -file] [photo1 cget -format]
+} -cleanup {
+    image delete photo1
+} -result [list 79 83 $teapotPhotoFile ppm]
+test imgPhoto-1.6 {options for photo images} -body {
+    image create photo photo1 -palette 2/2/2 -gamma 2.2
+    list [format %.1f [photo1 cget -gamma]] [photo1 cget -palette]
+} -cleanup {
+    image delete photo1
+} -result {2.2 2/2/2}
+test imgPhoto-1.7 {options for photo images} -returnCodes error -body {
+    image create photo photo1 -file $README
+} -result [subst {couldn't recognize data in image file "$README"}]
+test imgPhoto-1.8 {options for photo images} -body {
+    image create photo -blah blah
+} -returnCodes error -result {unknown option "-blah"}
+test imgPhoto-1.9 {options for photo images - error case} -body {
+    image create photo -format
+} -returnCodes error -result {value for "-format" missing}
+test imgPhoto-1.10 {options for photo images - error case} -body {
+    image create photo -data
+} -returnCodes error -result {value for "-data" missing}
+test imgPhoto-1.11 {options for photo images - error case} -body {
+    image create photo photo1 -format
+} -returnCodes error -result {value for "-format" missing}
+
+test imgPhoto-2.1 {ImgPhotoCreate procedure} -setup {
+    imageCleanup
+} -body {
+    catch {image create photo -blah blah}
+    imageNames
+} -result {}
+test imgPhoto-2.2 {ImgPhotoCreate procedure} -setup {
+    imageCleanup
+} -body {
+    image create photo image1
+    list [info commands image1] [imageNames] \
+	[image width image1] [image height image1]
+} -cleanup {
+    image delete image1
+} -result {image1 image1 0 0}
+# test imgPhoto-2.3 {ImgPhotoCreate procedure: creation failure} {
+#     image create photo photo1
+#     image create photo photo2 -width 10 -height 10
+#     catch {image create photo photo2 -file bogus.img} msg
+#     photo1 copy photo2
+#     set msg
+# } {couldn't open "bogus.img": no such file or directory}
+
+test imgPhoto-3.1 {ImgPhotoConfigureMaster procedure} -constraints {
+    hasTeapotPhoto
+} -body {
+    image create photo photo1 -file $teapotPhotoFile
+    photo1 configure -file $teapotPhotoFile
+} -cleanup {
+    image delete photo1
+} -result {}
+test imgPhoto-3.2 {ImgPhotoConfigureMaster procedure} -constraints {
+    hasTeapotPhoto
+} -body {
+    image create photo photo1 -file $teapotPhotoFile
+    list [catch {photo1 configure -file bogus} err] [string tolower $err] \
+	[image width photo1] [image height photo1]
+} -cleanup {
+    image delete photo1
+} -result {1 {couldn't open "bogus": no such file or directory} 256 256}
+test imgPhoto-3.3 {ImgPhotoConfigureMaster procedure} -constraints {
+    hasTeapotPhoto
+} -setup {
+    destroy .c
+    pack [canvas .c]
+    update
+} -body {
+    image create photo photo1
+    .c create image 10 10 -image photo1 -tags photo1.1 -anchor nw
+    .c create image 300 10 -image photo1 -tags photo1.2 -anchor nw
+    update
+    photo1 configure -file $teapotPhotoFile
+    update
+    list [image width photo1] [image height photo1] [.c bbox photo1.1] [.c bbox photo1.2]
+} -cleanup {
+    destroy .c
+    image delete photo1
+} -result {256 256 {10 10 266 266} {300 10 556 266}}
+
+test imgPhoto-4.1 {ImgPhotoCmd procedure} -setup {
+    image create photo photo1
+} -body {
+    photo1
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 option ?arg ...?"}
+test imgPhoto-4.2 {ImgPhotoCmd procedure} -setup {
+    image create photo photo1
+} -body {
+    photo1 blah
+} -returnCodes error -cleanup {
+    image delete photo1
+} -match glob -result {bad option "blah": must be *}
+test imgPhoto-4.3 {ImgPhotoCmd procedure: blank option} -setup {
+    image create photo photo1
+} -body {
+    photo1 blank
+    photo1 blank x
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {wrong # args: should be "photo1 blank"}
+test imgPhoto-4.4 {ImgPhotoCmd procedure: cget option} -setup {
+    image create photo photo1
+} -body {
+    photo1 cget
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {wrong # args: should be "photo1 cget option"}
+test imgPhoto-4.5 {ImgPhotoCmd procedure: cget option} -setup {
+    image create photo photo2 -width 25 -height 30
+} -body {
+    list [photo2 cget -width] [photo2 cget -height]
+} -cleanup {
+    image delete photo2
+} -result {25 30}
+test imgPhoto-4.6 {ImgPhotoCmd procedure: configure option} -setup {
+    image create photo photo1
+} -body {
+    llength [photo1 configure]
+} -cleanup {
+    image delete photo1
+} -result 7
+test imgPhoto-4.7 {ImgPhotoCmd procedure: configure option} -setup {
+    image create photo photo1
+} -body {
+    photo1 conf -palette 3/4/2
+    photo1 configure -palette
+} -cleanup {
+    image delete photo1
+} -result {-palette {} {} {} 3/4/2}
+test imgPhoto-4.8 {ImgPhotoCmd procedure: configure option} -setup {
+    image create photo photo1
+} -body {
+    photo1 configure -blah
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {unknown option "-blah"}
+test imgPhoto-4.9 {ImgPhotoCmd procedure: configure option} -setup {
+    image create photo photo1
+} -body {
+    photo1 configure -palette {} -gamma
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {value for "-gamma" missing}
+test imgPhoto-4.10 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -width 25 -height 30
+} -body {
+    image create photo photo2 -file $teapotPhotoFile
+    photo1 configure -width 0 -height 0 -palette {} -gamma 1
+    photo1 copy photo2
+    list [image width photo1] [image height photo1] [photo1 get 100 100]
+} -cleanup {
+    image delete photo1 photo2
+} -result {256 256 {169 117 90}}
+test imgPhoto-4.11 {ImgPhotoCmd procedure: copy option} -setup {
+    image create photo photo1
+} -body {
+    photo1 copy
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 copy source-image ?-compositingrule rule? ?-from x1 y1 x2 y2? ?-to x1 y1 x2 y2? ?-zoom x y? ?-subsample x y?"}
+test imgPhoto-4.12 {ImgPhotoCmd procedure: copy option} -setup {
+    image create photo photo1
+} -body {
+    photo1 copy blah
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {image "blah" doesn't exist or is not a photo image}
+test imgPhoto-4.13 {ImgPhotoCmd procedure: copy option} -setup {
+    image create photo photo1
+    image create photo photo2
+} -body {
+    photo1 copy photo2 -blah
+} -returnCodes error -cleanup {
+    image delete photo1 photo2
+} -result {unrecognized option "-blah": must be -compositingrule, -from, -shrink, -subsample, -to, or -zoom}
+test imgPhoto-4.14 {ImgPhotoCmd procedure: copy option} -setup {
+    image create photo photo1
+    image create photo photo2
+} -body {
+    photo1 copy photo2 -from -to
+} -returnCodes error -cleanup {
+    image delete photo1 photo2
+} -result {the "-from" option requires one to four integer values}
+test imgPhoto-4.15 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2
+    photo1 copy photo2 -from 0 70 60 120 -shrink
+    list [image width photo1] [image height photo1] [photo1 get 20 10]
+} -cleanup {
+    image delete photo1 photo2
+} -result {60 50 {215 154 120}}
+test imgPhoto-4.16 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2 -from 60 120 0 70 -to 20 50
+    list [image width photo1] [image height photo1] [photo1 get 40 80]
+} -cleanup {
+    image delete photo1 photo2
+} -result {80 100 {19 92 192}}
+test imgPhoto-4.17 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2 -from 0 120 60 70 -to 0 0 100 100
+    list [image width photo1] [image height photo1] [photo1 get 80 60]
+} -cleanup {
+    image delete photo1 photo2
+} -result {100 100 {215 154 120}}
+test imgPhoto-4.18 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2 -from 60 70 0 120 -zoom 2
+    list [image width photo1] [image height photo1] [photo1 get 100 50]
+} -cleanup {
+    image delete photo1 photo2
+} -result {120 100 {169 99 47}}
+test imgPhoto-4.19 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2 -from 0 70 60 120 -zoom 2
+    list [image width photo1] [image height photo1] [photo1 get 100 50]
+} -cleanup {
+    image delete photo1 photo2
+} -result {120 100 {169 99 47}}
+test imgPhoto-4.20 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2 -from 20 20 200 180 -subsample 2 -shrink
+    list [image width photo1] [image height photo1] [photo1 get 50 30]
+} -cleanup {
+    image delete photo1 photo2
+} -result {90 80 {207 146 112}}
+test imgPhoto-4.21 {ImgPhotoCmd procedure: copy option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+    image create photo photo2 -file $teapotPhotoFile
+} -body {
+    photo1 copy photo2
+    set result [list [image width photo1] [image height photo1]]
+    photo1 conf -width 49 -height 51
+    lappend result [image width photo1] [image height photo1]
+    photo1 copy photo2
+    lappend result [image width photo1] [image height photo1]
+    photo1 copy photo2 -from 0 0 10 10 -shrink
+    lappend result [image width photo1] [image height photo1]
+    photo1 conf -width 0
+    photo1 copy photo2 -from 0 0 10 10 -shrink
+    lappend result [image width photo1] [image height photo1]
+    photo1 conf -height 0
+    photo1 copy photo2 -from 0 0 10 10 -shrink
+    lappend result [image width photo1] [image height photo1]
+} -cleanup {
+    image delete photo1 photo2
+} -result {256 256 49 51 49 51 49 51 10 51 10 10}
+test imgPhoto-4.22 {ImgPhotoCmd procedure: get option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+} -body {
+    photo1 read $teapotPhotoFile
+    list [photo1 get 100 100] [photo1 get 150 100] [photo1 get 100 150]
+} -cleanup {
+    image delete photo1
+} -result {{169 117 90} {172 115 84} {35 35 35}}
+test imgPhoto-4.23 {ImgPhotoCmd procedure: get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 get 256 0
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {photo1 get: coordinates out of range}
+test imgPhoto-4.24 {ImgPhotoCmd procedure: get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 get 0 -1
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {photo1 get: coordinates out of range}
+test imgPhoto-4.25 {ImgPhotoCmd procedure: get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 get
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {wrong # args: should be "photo1 get x y"}
+test imgPhoto-4.26 {ImgPhotoCmd procedure: put option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 put data ?-option value ...?"}
+test imgPhoto-4.27 {ImgPhotoCmd procedure: put option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put {{white} {white white}}
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {all elements of color list must have the same number of elements}
+test imgPhoto-4.28 {ImgPhotoCmd procedure: put option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put {{blahgle}}
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {can't parse color "blahgle"}
+test imgPhoto-4.29 {ImgPhotoCmd procedure: put option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put -to 10 10 20 20 {{white}}
+    photo1 get 19 19
+} -cleanup {
+    image delete photo1
+} -result {255 255 255}
+test imgPhoto-4.30 {ImgPhotoCmd procedure: read option} -setup {
+    image create photo photo1
+} -body {
+    photo1 read
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 read fileName ?-option value ...?"}
+test imgPhoto-4.31 {ImgPhotoCmd procedure: read option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+} -body {
+    photo1 read $teapotPhotoFile -zoom 2
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {unrecognized option "-zoom": must be -format, -from, -shrink, or -to}
+test imgPhoto-4.32 {ImgPhotoCmd procedure: read option} -setup {
+    image create photo photo1
+} -body {
+    list [catch {photo1 read bogus} err] [string tolower $err]
+} -cleanup {
+    image delete photo1
+} -result {1 {couldn't open "bogus": no such file or directory}}
+test imgPhoto-4.33 {ImgPhotoCmd procedure: read option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+} -body {
+    photo1 read $teapotPhotoFile -format bogus
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {image file format "bogus" is not supported}
+test imgPhoto-4.34 {ImgPhotoCmd procedure: read option} -setup {
+    image create photo photo1
+} -body {
+    photo1 read $README
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result [subst {couldn't recognize data in image file "$README"}]
+test imgPhoto-4.35 {ImgPhotoCmd procedure: read option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+} -body {
+    photo1 read $teapotPhotoFile
+    list [image width photo1] [image height photo1] [photo1 get 120 120]
+} -cleanup {
+    image delete photo1
+} -result {256 256 {161 109 82}}
+test imgPhoto-4.36 {ImgPhotoCmd procedure: read option} -constraints {
+    hasTeapotPhoto
+} -setup {
+    image create photo photo1
+} -body {
+    photo1 read $teapotPhotoFile -from 0 70 60 120 -to 10 10 -shrink
+    list [image width photo1] [image height photo1] [photo1 get 29 19]
+} -cleanup {
+    image delete photo1
+} -result {70 60 {244 180 144}}
+test imgPhoto-4.37 {ImgPhotoCmd procedure: redither option} -setup {
+    image create photo photo1
+} -body {
+    photo1 redither
+    photo1 redither x
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {wrong # args: should be "photo1 redither"}
+test imgPhoto-4.38 {ImgPhotoCmd procedure: write option} -setup {
+    image create photo photo1
+} -body {
+    photo1 write
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 write fileName ?-option value ...?"}
+test imgPhoto-4.39 {ImgPhotoCmd procedure: write option} -setup {
+    image create photo photo1
+} -body {
+    photo1 write teapot.tmp -format bogus
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {image file format "bogus" is unknown}
+test imgPhoto-4.40 {ImgPhotoCmd procedure: transparency option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency option ?arg ...?"}
+test imgPhoto-4.41 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency get x y"}
+test imgPhoto-4.42 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency get x y"}
+test imgPhoto-4.43 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get 0 0 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency get x y"}
+test imgPhoto-4.44 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get bogus 0
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {expected integer but got "bogus"}
+test imgPhoto-4.45 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get 0 bogus
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {expected integer but got "bogus"}
+test imgPhoto-4.46 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white
+    photo1 transparency get 0 0
+} -cleanup {
+    image delete photo1
+} -result 0
+test imgPhoto-4.47 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get 1 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency get: coordinates out of range}
+test imgPhoto-4.48 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get -1 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency get: coordinates out of range}
+test imgPhoto-4.49 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get 0 1
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency get: coordinates out of range}
+test imgPhoto-4.50 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency get 0 -1
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency get: coordinates out of range}
+test imgPhoto-4.51 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white
+    photo1 blank
+    photo1 transparency get 0 0
+} -cleanup {
+    image delete photo1
+} -result 1
+test imgPhoto-4.52 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency set x y boolean"}
+test imgPhoto-4.53 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency set x y boolean"}
+test imgPhoto-4.54 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency set x y boolean"}
+test imgPhoto-4.55 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0 0 0 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {wrong # args: should be "photo1 transparency set x y boolean"}
+test imgPhoto-4.56 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set bogus 0 0
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {expected integer but got "bogus"}
+test imgPhoto-4.57 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0 bogus 0
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {expected integer but got "bogus"}
+test imgPhoto-4.58 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0 0 bogus
+} -cleanup {
+    image delete photo1
+} -returnCodes error -result {expected boolean value but got "bogus"}
+test imgPhoto-4.59 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 1 0 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency set: coordinates out of range}
+test imgPhoto-4.60 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set -1 0 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency set: coordinates out of range}
+test imgPhoto-4.61 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0 1 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency set: coordinates out of range}
+test imgPhoto-4.62 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 transparency set 0 -1 0
+} -returnCodes error -cleanup {
+    image delete photo1
+} -result {photo1 transparency set: coordinates out of range}
+test imgPhoto-4.63 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white
+    photo1 transparency set 0 0 false
+    photo1 transparency get 0 0
+} -cleanup {
+    image delete photo1
+} -result 0
+test imgPhoto-4.64 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white
+    photo1 transparency set 0 0 true
+    photo1 transparency get 0 0
+} -cleanup {
+    image delete photo1
+} -result 1
+# Now for some heftier testing, checking that setting and resetting of pixels'
+# transparency status doesn't "leak" with any one-off errors.
+test imgPhoto-4.65 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white -to 0 0 3 3
+    checkImgTrans photo1
+} -cleanup {
+    image delete photo1
+} -result {}
+test imgPhoto-4.66 {ImgPhotoCmd procedure: transparency get option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white -to 0 0 3 3
+    photo1 blank
+    checkImgTrans photo1
+} -result {0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2}
+test imgPhoto-4.67 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white -to 0 0 3 3
+    checkImgTransLoop photo1 {
+	photo1 put white -to 0 0 3 3
+	photo1 transparency set $x $y 1
+    } {
+	photo1 transparency set $x $y 0
+    }
+} -cleanup {
+    image delete photo1
+} -result {0,0:. 0,1:. 0,2:. 1,0:. 1,1:. 1,2:. 2,0:. 2,1:. 2,2:.}
+test imgPhoto-4.68 {ImgPhotoCmd procedure: transparency set option} -setup {
+    image create photo photo1
+} -body {
+    photo1 put white -to 0 0 3 3
+    checkImgTransLoop photo1 {
+	photo1 blank
+	photo1 transparency set $x $y 0
+    } {
+	photo1 transparency set $x $y 1
+    }
+} -cleanup {
+    image delete photo1
+} -result {0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,2 1,0 1,1 1,2 2,0 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 1,0 1,1 1,2 2,0 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 0,2 1,1 1,2 2,0 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 0,2 1,0 1,2 2,0 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 0,2 1,0 1,1 2,0 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 0,2 1,0 1,1 1,2 2,1 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,2: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2. 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1: 0,0 0,1 0,2 1,0 1,1 1,2 2,0 2,1 2,2.}
+test imgPhoto-4.69 {ImgPhotoCmd procedure: copy with -compositingrule} -setup {
+    # Test the compositing rules for copying images
+    image create photo photo1 -width 3 -height 3
+    image create photo photo2 -width 2 -height 2
+} -body {
+    photo1 copy photo2 -to 1 1 -compositingrule
+} -cleanup {
+    image delete photo1 photo2
+} -returnCodes error -result {the "-compositingrule" option requires a value}
+test imgPhoto-4.70 {ImgPhotoCmd procedure: copy with -compositingrule} -setup {
+    # Test the compositing rules for copying images
+    image create photo photo1 -width 3 -height 3
+    image create photo photo2 -width 2 -height 2
+} -body {
+    photo1 copy photo2 -to 1 1 -compositingrule BAD
+} -returnCodes error -cleanup {
+    image delete photo1 photo2
+} -result {bad compositing rule "BAD": must be overlay or set}
+test imgPhoto-4.71 {ImgPhotoCmd procedure: copy with -compositingrule} -setup {
+    # Test the compositing rules for copying images
+    image create photo photo1 -width 3 -height 3
+    image create photo photo2 -width 2 -height 2
+} -body {
+    # Tests default compositing rule
+    photo1 blank
+    photo2 blank
+    photo1 put white -to 0 0 2 2
+    photo2 put white -to 0 0 2 2
+    photo2 transparency set 0 0 true
+    photo1 copy photo2 -to 1 1
+    checkImgTrans photo1
+} -cleanup {
+    image delete photo1 photo2
+} -result {0,2 2,0}
+test imgPhoto-4.72 {ImgPhotoCmd procedure: copy with -compositingrule} -setup {
+    # Test the compositing rules for copying images
+    image create photo photo1 -width 3 -height 3
+    image create photo photo2 -width 2 -height 2
+} -body {
+    photo1 blank
+    photo2 blank
+    photo1 put white -to 0 0 2 2
+    photo2 put white -to 0 0 2 2
+    photo2 transparency set 0 0 true
+    photo1 copy photo2 -to 1 1 -compositingrule overlay
+    checkImgTrans photo1
+} -cleanup {
+    image delete photo1 photo2
+} -result {0,2 2,0}
+test imgPhoto-4.73 {ImgPhotoCmd procedure: copy with -compositingrule} -setup {
+    # Test the compositing rules for copying images
+    image create photo photo1 -width 3 -height 3
+    image create photo photo2 -width 2 -height 2
+} -body {
+    photo1 blank
+    photo2 blank
+    photo1 put white -to 0 0 2 2
+    photo2 put white -to 0 0 2 2
+    photo2 transparency set 0 0 true
+    photo1 copy photo2 -to 1 1 -compositingrule set
+    checkImgTrans photo1
+} -cleanup {
+    image delete photo1 photo2
+} -result {0,2 1,1 2,0}
+test imgPhoto-4.74 {ImgPhotoCmd procedure: put option error handling} -setup {
+    image create photo photo1
+} -body {
+    photo1 put {{white}} -to 10 10 20 20 {{white}}
+} -cleanup {
+    image delete photo1
+} -returnCodes 1 -result {wrong # args: should be "photo1 put data ?-option value ...?"}
+test imgPhoto-4.75 {<photo> read command: filename starting with '-'} -constraints {
+    hasTeapotPhoto
+} -body {
+    file copy -force $teapotPhotoFile -teapotPhotoFile
+    image create photo photo1
+    photo1 read -teapotPhotoFile
+} -cleanup {
+    image delete photo1
+    file delete ./-teapotPhotoFile
+} -result {}
+test imgPhoto-4.76 {ImgPhotoCmd procedure: copy to same image} -constraints {
+    hasTeapotPhoto 
+} -setup {
+    imageCleanup
+    image create photo photo1 -file $teapotPhotoFile
+} -body {
+    # non-regression test for bug [5239fd749b] - shall just not crash
+    photo1 copy photo1 -to 0 0 2000 1000
+    photo1 copy photo1 -subsample 2 2 -shrink
+} -cleanup {
+    imageCleanup
+} -result {}
+
+test imgPhoto-5.1 {ImgPhotoGet/Free procedures, shared instances} -constraints {
+    hasTeapotPhoto
+} -setup {
+    destroy .c
+    pack [canvas .c]
+    imageCleanup
+} -body {
+    image create photo photo1 -file $teapotPhotoFile
+    .c create image 0 0 -image photo1 -tags photo1.1
+    .c create image 256 0 -image photo1 -tags photo1.2
+    .c create image 0 256 -image photo1 -tags photo1.3
+    update
+    .c delete i1.1
+    photo1 configure -width 1
+    update
+    .c delete i1.2
+    photo1 configure -height 1
+    update
+    image delete photo1
+} -cleanup {
+    destroy .c
+} -result {}
+
+test imgPhoto-6.1 {ImgPhotoDisplay procedure, blank display} -setup {
+    destroy .c
+    pack [canvas .c]
+    imageCleanup
+} -body {
+    image create photo photo1 -width 10 -height 10
+    photo1 blank
+    .c create image 10 10 -image photo1
+    update
+} -cleanup {
+    destroy .c
+    image delete photo1
+} -result {}
+
+test imgPhoto-7.1 {ImgPhotoFree procedure, resource freeing} -constraints {
+    hasTeapotPhoto
+} -setup {
+    destroy .c
+    pack [canvas .c]
+    imageCleanup
+} -body {
+    image create photo photo1 -file $teapotPhotoFile
+    .c create image 0 0 -image photo1 -anchor nw
+    update
+    .c delete all
+    image delete photo1
+} -cleanup {
+    destroy .c
+}  -result {}
+test imgPhoto-7.2 {ImgPhotoFree procedures, unlinking} -constraints {
+    hasTeapotPhoto
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create photo photo1 -file $teapotPhotoFile
+    pack [canvas .c]
+    .c create image 10 10 -image photo1 -anchor nw
+    button .b1 -image photo1
+    button .b2 -image photo1
+    button .b3 -image photo1
+    pack .b1 .b2 .b3
+    update
+    destroy .b2
+    update
+    destroy .b3
+    update
+    destroy .b1
+    update
+    .c delete all
+} -cleanup {
+    destroy .c
+    image delete photo1
+} -result {}
+test imgPhoto-7.3 {ImgPhotoFree procedures, multiple visuals} -constraints {
+    hasTeapotPhoto
+} -setup {
+    deleteWindows
+    imageCleanup
+} -body {
+    image create photo photo1 -file $teapotPhotoFile
+    button .b1 -image photo1
+    frame .f -visual best
+    button .f.b2 -image photo1
+    pack .f.b2
+    pack .b1 .f
+    update
+    destroy .b1
+    update
+    .f.b2 configure -image {}
+    update
+    destroy .f
+    image delete photo1
+} -result {}
+
+test imgPhoto-8.1 {ImgPhotoDelete procedure} -constraints hasTeapotPhoto -body {
+    image create photo photo2 -file $teapotPhotoFile
+    image delete photo2
+} -result {}
+test imgPhoto-8.2 {ImgPhotoDelete procedure} -constraints {
+    hasTeapotPhoto
+} -setup {
+    set x {}
+} -body {
+    image create photo photo2 -file $teapotPhotoFile
+    rename photo2 newphoto2
+    lappend x [info command photo2] [info command new*] [newphoto2 cget -file]
+    image delete photo2
+    lappend x [info command new*]
+} -result [list {} newphoto2 $teapotPhotoFile {}]
+test imgPhoto-8.3 {ImgPhotoDelete procedure, name cleanup} -body {
+    image create photo photo1
+    image create photo photo2 -width 10 -height 10
+    image delete photo2
+    photo1 copy photo2
+} -returnCodes error -cleanup {
+    imageCleanup
+} -result {image "photo2" doesn't exist or is not a photo image}
+
+test imgPhoto-9.1 {ImgPhotoCmdDeletedProc procedure} -constraints {
+    hasTeapotPhoto
+} -body {
+    image create photo photo2 -file $teapotPhotoFile
+    rename photo2 {}
+    list [lsearch -exact [imageNames] photo2] [catch {photo2 foo} msg] $msg
+} -result {-1 1 {invalid command name "photo2"}}
+
+test imgPhoto-10.1 {Tk_ImgPhotoPutBlock procedure} -setup {
+    imageCleanup
+} -body {
+    image create photo photo1
+    photo1 put "{#ff0000 #ff0000 #ff0000 #ff0000 #ff0000 #ff0000 #ff0000 #ff0000}" -to 0 0
+    photo1 put "{#00ff00 #00ff00}" -to 2 0
+    list [photo1 get 2 0] [photo1 get 3 0] [photo1 get 4 0]
+} -result {{0 255 0} {0 255 0} {255 0 0}}
+test imgPhoto-10.2 {Tk_ImgPhotoPutBlock, same source and dest img} -constraints {
+    hasTeapotPhoto
+} -setup {
+    imageCleanup
+} -body {
+    # Test for bug e4336bef5d
+    image create photo photo1 -file $teapotPhotoFile
+    image create photo photo2 -file $teapotPhotoFile
+    photo2 copy photo1 -to 1 2
+    photo1 copy photo1 -to 1 2
+    string equal [photo1 data] [photo2 data]
+} -cleanup {
+    imageCleanup
+} -result {1}
+test imgPhoto-10.3 {Tk_ImgPhotoPutBlock, same source and dest img} -constraints {
+    hasTeapotPhoto
+} -setup {
+    imageCleanup
+} -body {
+    # Test for bug e4336bef5d
+    image create photo photo1 -file $teapotPhotoFile
+    image create photo photo2 -file $teapotPhotoFile
+    photo2 copy photo1 -from 2 1 -to 4 5 300 300
+    photo1 copy photo1 -from 2 1 -to 4 5 300 300
+    string equal [photo1 data] [photo2 data]
+} -cleanup {
+    imageCleanup
+} -result {1}
+test imgPhoto-10.4 {Tk_ImgPhotoPutBlock, empty image} -setup {
+    imageCleanup
+} -body {
+    image create photo photo1
+    photo1 copy photo1 -to 0 5 10 20
+    list [image width photo1] [image height photo1]
+} -cleanup {
+    imageCleanup
+} -result {0 0}
+
+
+test imgPhoto-11.1 {Tk_FindPhoto} -setup {
+    imageCleanup
+} -body {
+    image create bitmap i1
+    image create photo photo1
+    photo1 copy i1
+} -cleanup {
+    imageCleanup
+} -returnCodes error -result {image "i1" doesn't exist or is not a photo image}
+
+test imgPhoto-12.1 {Tk_PhotoPutZoomedBlock} -constraints hasTeapotPhoto -body {
+    image create photo p3 -file $teapotPhotoFile
+    set result [list [p3 get 50 50] [p3 get 100 100]]
+    p3 copy p3 -zoom 2
+    lappend result [image width p3] [image height p3] [p3 get 100 100]
+} -cleanup {
+    image delete p3
+} -result {{19 92 192} {169 117 90} 512 512 {19 92 192}}
+test imgPhoto-12.2 {Tk_ImgPhotoPutZoomedBlock, same source and dest img} -constraints {
+    hasTeapotPhoto
+} -setup {
+    imageCleanup
+} -body {
+    # Test for bug e4336bef5d
+    image create photo photo1 -file $teapotPhotoFile
+    image create photo photo2 -file $teapotPhotoFile
+    photo2 copy photo1 -to 0 1 200 200 -zoom 2 3
+    photo1 copy photo1 -to 0 1 200 200 -zoom 2 3
+    string equal [photo1 data] [photo2 data]
+} -cleanup {
+    imageCleanup
+} -result {1}
+test imgPhoto-12.3 {Tk_ImgPhotoPutZoomedBlock, same source and dest img} -setup {
+    imageCleanup
+} -body {
+    # Test for bug e4336bef5d
+    image create photo photo1 -file $teapotPhotoFile
+    image create photo photo2 -file $teapotPhotoFile
+    photo2 copy photo1 -from 1 0 -to 4 5 300 300 -zoom 1 2
+    photo1 copy photo1 -from 1 0 -to 4 5 300 300 -zoom 1 2
+    string equal [photo1 data] [photo2 data]
+} -cleanup {
+    imageCleanup
+} -result {1}
+test imgPhoto-12.4 {Tk_ImgPhotoPutZoomedBlock, empty image} -setup {
+    imageCleanup
+} -body {
+    image create photo photo1
+    photo1 copy photo1 -to 0 5 10 20
+    list [image width photo1] [image height photo1]
+} -cleanup {
+    imageCleanup
+} -result {0 0}
+
+test imgPhoto-13.1 {check separation of images in different interpreters} -setup {
+    imageCleanup
+    set data {
+	R0lGODlhQgBkAPUAANbWxs7Wxs7OxsbOxsbGxsbGvb3Gvca9vcDAwL21vbW1vbW1tbWtta2t
+	ta2ltaWltaWlraWctaWcrZycrZyUrZSUrZSMrZSMpYyMrYyMpYyEpYSEpYR7pYR7nHp7pYRz
+	pYRynHtzpXtznHtrnHNrnHNjnGtjnGtjlGtalGNalGNSlGNSjFpSlFpKlFpKjFJKjFJCjFI5
+	jEo5jEo5hEoxhEIxhDkphDkhhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAAAQgBkAAAG
+	/kCEcEgsGo/IpHLJbDqf0Kh0Sq1ar9isdsvter/gsHhMLpvP6LR6zW673/C4fE6v2+/4vH7P
+	7/v/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmOBZxXnAQEnKIIBUQJCguoDKkIBgWhpUev
+	CA4TDwgEUpwKERUaHCIiJCQjIiEUQhwqKiwqLjDQMCwoIha3oUO5ESMuLSwtLSIMsU4Tzi4o
+	JBwWFA8ODQoMCkIMq6sNDQ4UFhwlzC4qSGhgkMvCsAoM6E0oAWMCOSUFGrgQcauAgAACSqGa
+	l6SAK1EaJXBA0SIDBw0KBiCg8EtEBgEWYCxoooAigFwIJGgQYQIF/goTAjk6sXhxAwwFnHRO
+	mEmAwoQAIUo8lCWhRgoOElJVkJBQFCwhCRqkYlUE1QMKHEywoBCrQaeIMCgQeOCi3AkYMmRI
+	S5EuxEkN7OApkGDhF4fDxoSVMAFUBAWkRxI0a+XghVAkBSqMsFCBwj4OI0igSKGCdLN0wYKd
+	zGDBwUYhn6YOKUCioQECGk7INpIArQgUKkr87TyhAYIDQxQgLkYsRIcQIDjcgi2Lw8RYKaAz
+	MXCgAs8UJrZGmOA5AkeQBlqRKsIpvYMQDx4S4NCCxIJSKJpFYMIgnPlSF2ygAQWuCUHAAp6x
+	E4EEE5BXQQUWYLABBySoAIMLHBSBWwso/jxwIAoyzMAWEw3AEEJCt6nUwAQagCDCYcCQwJcK
+	6QD3DDQxwNDCCSg9NIAGKpwwgQAOtDADDBbsdkQDIPhkwosDPgDPAg1EAME++1jTnhAKdAnb
+	VAR04EIJFAhwwQs0sBDfE7cZwEAE++yU2joOtDcKE7GUcoIKH6RSmwwnQCZFKAo8cE2es7my
+	HnuxKTDgAA6owEEBjoL3wqRUNDBCCnyRYMFMRSDoWYPvyBPPA738lt1KKTxgpjolrDDiFAWU
+	cAMKE+CipAMRZMDTCSSUQMIJPQHLwWOcrDKBCBpokAIJgmYqQgosxIAOCS8iJEQD7HR2QbMh
+	WCCEK7Ck90Cz/oAFu+YVigpTwTsLyJOcBJ6N6plxRihA3E4cOKTkFCU6FMoAA7wiygAZgURA
+	ekYsEJYFGTSATRccQEMjti8eZsEFFuA7z2WkEJAAl7iEQekEhQHGzgQR4INUKLB8pYAFJaQA
+	KhleKdwAByEkFswHIoxQQn4AcYBvGRosisDICCjQAIMJGnZYBsUd4JEZBIhQwgPzKFwAwggL
+	IHbOQzCtxZ1NL0BlKmmhIOwwHGTg2YMUEBdtKzBfbQWlhMHoHIXBnvABBGE9UMKNMKhgQgnG
+	nNQO0wVQoI4FEohFyr9GzDIYaaPxxWy0rCjKQJUMQvxBaMOgNMQChcU4DAkZ6PoV/hIUoP4i
+	Z7g/YHZHIPXeyWyONgsaCi4AOoLjXP8uhAAvPpCQ2Akr38UpXW60Ij8yPkMmwwj8KAI8QWtQ
+	+eXSixEb37WhcHQBERz2rdZ8leCBBcXNY3XevQ8VG/6+F5CACDYgATlmYYD27aRmLngBNADC
+	GGxxQEAWUJDzqpcctc2DARN4kNRgtJxhnKAFV0kIEhYAJ34IQwUhqkENYFCCE5BmGf9wwWmA
+	5UGgXAAVtfCFMIgRLMbFLQIPYFACcMI7TjQoH2eJQIs2poEMYMAp5XGAvFrBCYS9ImzQG1vT
+	arGTEQhIhE7QjLA+MKDOxClGwuoJtWi0uBIUIxjDSE2wQ4iHl7ywQDjGwZws/NcAlgBjaKQJ
+	JDVuoQBeUeACoFkMcFqgQL1IgxpRSsjsqHA/gy0tHvmAx2z2BxIupaJrnVxCEAAAOw==
+    }
+    interp create x1
+    interp create x2
+    x1 eval {load {} Tk}
+    x2 eval {load {} Tk}
+} -body {
+    x1 eval [list image create photo T1_data -data $data]
+    x2 eval [list image create photo T1_data -data $data]
+} -cleanup {
+    interp delete x1
+    interp delete x2
+} -result T1_data
+
+test imgPhoto-14.1 {GIF writes work correctly} -setup {
+    set data {
+	R0lGODlhYwA5APcAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgAysnGy8hKzM
+	hASs3MTcjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDAwP8AAAD/
+	AP//AAAA//8A/wD//////ywAAAAAYwA5AAAI/wAZCBxIsKDBgwgTKlzIsKHD
+	hxAjSpxIsaLFixgzatzIsaPHjyBDihxJsqTJkyhTqlzJsqXLlzBjypxJs6bN
+	mzhz6tzJs6fPn0CDCh1KtKhRiwoSKEXAtGlTpUqPGkyagOmCq1edNsWalWkC
+	BUSXIuDqFepBqFWtZv3KU+zYrkrBSqT6dgECtjOTbu16NwFHvV3lshRLti/J
+	qlgRCE6ZuO9ik4Dt+k0ZVyZiyVIvXr77ODPEy5g9T4zMWfTEzXdNz1VbWvXn
+	uqldP1TAOrbshqBb314Y2W7n3Qdpv7UNPCHpycUVbv6dnODy5sqzQldIe8H0
+	hciva9/Ovbv37+BzBgEEADs=
+    }
+    set tmpfilename [makeFile {} imgPhoto-14.1.gif]
+    removeFile $tmpfilename
+} -body {
+    image create photo photo1 -data $data
+    photo1 write $tmpfilename -format gif
+    image create photo photo2 -file $tmpfilename
+    string equal [photo1 data] [photo2 data]
+} -cleanup {
+    catch {image delete photo1 photo2}
+    catch {file delete -force $tmpfilename}
+} -result 1
+test imgPhoto-14.2 {GIF -index handler buffer sizing} -setup {
+    set data {
+	R0lGODlhIAAgAKEAAPkOSQsi7////////yH/C05FVFNDQVBFMi4wAwEAAAAh
+	+QQJMgAAACwGAAYAFAAUAAACEYyPqcvtD6OctNqLs968+68VACH5BAkyAAEA
+	LAMAAwAaABoAAAI0jH+gq+gfmFzQzUsr3gBybn1gIm5kaUaoubbuC8fyTNel
+	Ohv1CSO533u8KrgbUfc5Ci/EAgA7
+    }
+} -body {
+    # Bug 1458234 makes this crash when trying to access buffers of the wrong
+    # size, caused when the initial frame is not the largest frame.
+    set i [image create photo]
+    $i configure -data $data -format {gif -index 2}
+} -cleanup {
+    image delete $i
+} -returnCodes error -result {no image data for this index}
+test imgPhoto-14.3 {GIF -index interleaving and small frames} -body {
+    # Interleaved GIFs used to crash us when a smaller subsequent frame was
+    # accessed.
+    set i [image create photo]
+    $i configure -format {GIF -index 1} -data {
+	R0lGODdhAQAFAPAAAP8AAAAAACwAAAAAAQAFAEACAoRdACwAAAAAAQAEAEACAoRRADs=
+    }
+} -cleanup {
+    image delete $i
+}
+test imgPhoto-14.4 {GIF buffer overflow} -setup {
+    set data {
+	R0lGODlhCgAKAPcAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/
+	AP//AAAA//8A/wD//////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAMwAAZgAAmQAAzAAA/wAzAAAzMwAzZgAzmQAzzAAz/wBmAABmMwBmZgBm
+	mQBmzABm/wCZAACZMwCZZgCZmQCZzACZ/wDMAADMMwDMZgDMmQDMzADM/wD/
+	AAD/MwD/ZgD/mQD/zAD//zMAADMAMzMAZjMAmTMAzDMA/zMzADMzMzMzZjMz
+	mTMzzDMz/zNmADNmMzNmZjNmmTNmzDNm/zOZADOZMzOZZjOZmTOZzDOZ/zPM
+	ADPMMzPMZjPMmTPMzDPM/zP/ADP/MzP/ZjP/mTP/zDP//2YAAGYAM2YAZmYA
+	mWYAzGYA/2YzAGYzM2YzZmYzmWYzzGYz/2ZmAGZmM2ZmZmZmmWZmzGZm/2aZ
+	AGaZM2aZZmaZmWaZzGaZ/2bMAGbMM2bMZmbMmWbMzGbM/2b/AGb/M2b/Zmb/
+	mWb/zGb//5kAAJkAM5kAZpkAmZkAzJkA/5kzAJkzM5kzZpkzmZkzzJkz/5lm
+	AJlmM5lmZplmmZlmzJlm/5mZAJmZM5mZZpmZmZmZzJmZ/5nMAJnMM5nMZpnM
+	mZnMzJnM/5n/AJn/M5n/Zpn/mZn/zJn//8wAAMwAM8wAZswAmcwAzMwA/8wz
+	AMwzM8wzZswzmcwzzMwz/8xmAMxmM8xmZsxmmcxmzMxm/8yZAMyZM8yZZsyZ
+	mcyZzMyZ/8zMAMzMM8zMZszMmczMzMzM/8z/AMz/M8z/Zsz/mcz/zMz///8A
+	AP8AM/8AZv8Amf8AzP8A//8zAP8zM/8zZv8zmf8zzP8z//9mAP9mM/9mZv9m
+	mf9mzP9m//+ZAP+ZM/+ZZv+Zmf+ZzP+Z///MAP/MM//MZv/Mmf/MzP/M////
+	AP//M///Zv//mf//zP///yH5BAEAABAALAAAAAAKAAoAABUSAAD/HEiwoMGD
+	CBMqXMiwYcKAADs=
+    }
+} -body {
+    # This crashes Tk up to 8.4.17 and 8.5.0
+    set i [image create photo]
+    $i configure -data $data
+} -cleanup {
+    image delete $i
+} -returnCodes error -result {malformed image}
+test imgPhoto-14.5 {Bug [fbaed1f66b] - GIF decoder with deferred clear code} -setup {
+    set fileName [file join [file dirname [info script]] deferredClearCode.gif]
+} -body {
+    # This erroneously produced "malformed image" error.
+    # The animated GIF "deferredClearCode.gif" has two frames, and calling for -index 2
+    # simply is an easy way to trigger the problem of improper management of a deferred
+    # clear code. The effect was that the GIF decoder bailed out before the end of the
+    # image reading, and produced the inappropriate "malformed image error".
+    image create photo -file $fileName -format "gif -index 2"
+} -returnCodes error -result {no image data for this index}
+
+test imgPhoto-14.6 {Access Subimage after Subimage with buffer overflow. Ticket 4da2191b} -setup {
+    set data {
+	R0lGODlhYwA5APcAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgAysnGy8hKzM
+	hASs3MTcjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDAwP8AAAD/
+	AP//AAAA//8A/wD//////ywAAAAAYwA5AAAI/wAZCBxIsKDBgwgTKlzIsKHD
+	hxAjSpxIsaLFixgzatzIsaPHjyBDihxJsqTJkyhTqlzJsqXLlzBjypxJs6bN
+	mzhz6tzJs6fPn0CDCh1KtKhRiwoSKEXAtGlTpUqPGkyagOmCq1edNsWalWkC
+	BUSXIuDqFepBqFWtZv3KU+zYrkrBSqT6dgECtjOTbu16NwFHvV3lshRLti/J
+	qlgRCE6ZuO9ik4Dt+k0ZVyZiyVIvXr77ODPEy5g9T4zMWfTEzXdNz1VbWvXn
+	uqldP1TAOrbshqBb314Y2W7n3Qdpv7UNPCHpycUVbv6dnODy5sqzQldIe8H0
+	hciva9/Ovbv37+BzBgE7ACH5BAFkAAMALAAAAAAEAAQAAAMEKLrckgA7
+    }
+} -body {
+    image create photo photo1 -data $data -format "GIF -index 1"
+} -cleanup {
+    catch {image delete photo1}
+} -result photo1
+
+test imgPhoto-15.1 {photo images can fail to allocate memory gracefully} -constraints {
+    nonPortable
+} -body {
+    # This is not portable to very large machines with more than around 3GB of
+    # free memory available...
+    image create photo -width 32000 -height 32000
+} -returnCodes error -result {not enough free memory for image buffer}
+
+test imgPhoto-16.1 {copying to self doesn't access freed memory} -setup {
+    set i [image create photo]
+} -body {
+    # Bug 877950 makes this crash when trying to copy out of a deallocated
+    # area.
+    $i put red -to 0 0 1000 1000
+    $i copy $i -from 0 0 1000 1000 -to 500 0
+} -cleanup {
+    image delete $i
+} -result {}
+
+# Check that we can guess our supported output formats [Bug 2983824]
+test imgPhoto-17.1 {photo write: format guessing from filename} -setup {
+    set i [image create photo -width 3 -height 3]
+} -body {
+    set f [makeFile {} test.png]
+    $i write $f
+    set fd [open $f]
+    seek $fd 1
+    read $fd 3
+} -cleanup {
+    catch {close $fd}
+    image delete $i
+    catch {removeFile $f}
+} -result PNG
+test imgPhoto-17.2 {photo write: format guessing from filename} -setup {
+    set i [image create photo -width 3 -height 3]
+} -body {
+    set f [makeFile {} test.gif]
+    $i write $f
+    set fd [open $f]
+    read $fd 3
+} -cleanup {
+    catch {close $fd}
+    image delete $i
+    catch {removeFile $f}
+} -result GIF
+test imgPhoto-17.3 {photo write: format guessing from filename} -setup {
+    set i [image create photo -width 3 -height 3]
+} -body {
+    set f [makeFile {} test.ppm]
+    $i write $f
+    set fd [open $f]
+    read $fd 3
+} -cleanup {
+    catch {close $fd}
+    image delete $i
+    catch {removeFile $f}
+} -result "P6\n"
+
+# Reject corrupted or truncated image [Bug b601ce3ab1].
+# WARNING - tests 18.1-18.9 will cause a segfault on 8.5.19 and lower,
+#           and on 8.6.6 and lower.
+test imgPhoto-18.1 {Reject corrupted GIF (binary string)} -constraints {
+    base64PackageNeeded
+} -setup {
+    package require base64
+    set data [base64::decode {
+	R0lGODlhAAQABP8zM/8z/zP/MzP/////M////yH5CiwheLrcLTBCd6Tv2qW16tdK4jhV
+	5qpraXIvM1JlNyAgOw==
+    }]
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map|not enough free memory for image buffer} -match regexp
+test imgPhoto-18.2 {Reject corrupted GIF (base 64 string)} -setup {
+    set data {
+	R0lGODlhAAQABP8zM/8z/zP/MzP/////M////yH5CiwheLrcLTBCd6Tv2qW16tdK4jhV
+	5qpraXIvM1JlNyAgOw==
+    }
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map|not enough free memory for image buffer} -match regexp
+test imgPhoto-18.3 {Reject corrupted GIF (file)} -setup {
+    set fileName [file join [file dirname [info script]] corruptMangled.gif]
+} -body {
+    image create photo gif1 -file $fileName
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map|not enough free memory for image buffer} -match regexp
+test imgPhoto-18.4 {Reject truncated GIF (binary string)} -constraints {
+    base64PackageNeeded
+} -setup {
+    package require base64
+    set data [base64::decode {
+	R0lGODlhEAAQAMIHAAAAADMz//8zM/8z/zP/MzP///8=
+    }]
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map}
+test imgPhoto-18.5 {Reject truncated GIF (base 64 string)} -setup {
+    set data {
+	R0lGODlhEAAQAMIHAAAAADMz//8zM/8z/zP/MzP///8=
+    }
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map}
+test imgPhoto-18.6 {Reject truncated GIF (file)} -setup {
+    set fileName [file join [file dirname [info script]] corruptTruncated.gif]
+} -body {
+    image create photo gif1 -file $fileName
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map}
+test imgPhoto-18.7 {Reject corrupted GIF (> 4Gb) (binary string)} -constraints {
+    base64PackageNeeded nonPortable
+} -setup {
+    # About the non portability constraint of this test: see ticket [cc42cc18a5]
+    # If there is insufficient memory, the error message
+    # {not enough free memory for image buffer} should be returned.
+    # Instead, some systems (e.g. FreeBSD 11.1) terminate the test interpreter.
+    package require base64
+    set data [base64::decode {
+	R0lGODlhwmYz//8zM/8z/zP/MzP/////M////yH5Ciwhe
+	LrcLTBCd6Tv2qW16tdK4jhV5qpraXIvM1JlNyAgOw==
+    }]
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map|not enough free memory for image buffer} -match regexp
+test imgPhoto-18.8 {Reject corrupted GIF (> 4Gb) (base 64 string)} -constraints {
+    nonPortable
+} -setup {
+    # About the non portability constraint of this test: see ticket [cc42cc18a5]
+    # If there is insufficient memory, the error message
+    # {not enough free memory for image buffer} should be returned.
+    # Instead, some systems (e.g. FreeBSD 11.1) terminate the test interpreter.
+    set data {
+	R0lGODlhwmYz//8zM/8z/zP/MzP/////M////yH5Ciwhe
+	LrcLTBCd6Tv2qW16tdK4jhV5qpraXIvM1JlNyAgOw==
+    }
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map|not enough free memory for image buffer} -match regexp
+test imgPhoto-18.9 {Reject corrupted GIF (> 4Gb) (file)} -constraints {
+    nonPortable
+} -setup {
+    # About the non portability constraint of this test: see ticket [cc42cc18a5]
+    # If there is insufficient memory, the error message
+    # {not enough free memory for image buffer} should be returned.
+    # Instead, some systems (e.g. FreeBSD 11.1) terminate the test interpreter.
+    set fileName [file join [file dirname [info script]] corruptMangled4G.gif]
+} -body {
+    image create photo gif1 -file $fileName
+} -cleanup {
+    catch {image delete gif1}
+} -returnCodes error -result {error reading color map|not enough free memory for image buffer} -match regexp
+test imgPhoto-18.10 {Valid GIF (binary string)} -constraints {
+    base64PackageNeeded
+} -setup {
+    # Test the binary string reader with a valid GIF.
+    # This is not tested elsewhere.
+    # Tests 18.11, 18.12, with matching data, are included for completeness.
+    package require base64
+    set data [base64::decode {
+	R0lGODlhEAAQAMIHAAAAADMz//8zM/8z/zP/MzP/////M////yH5BAEKAAcALAAA
+	AAAQABAAAAMheLrcLTBCd6QV79qlterXB0riOFXmmapraXIvM1IdZTcJADs=
+    }]
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -result gif1
+test imgPhoto-18.11 {Valid GIF (base 64 string)} -setup {
+    set data {
+	R0lGODlhEAAQAMIHAAAAADMz//8zM/8z/zP/MzP/////M////yH5BAEKAAcALAAA
+	AAAQABAAAAMheLrcLTBCd6QV79qlterXB0riOFXmmapraXIvM1IdZTcJADs=
+    }
+} -body {
+    image create photo gif1 -data $data
+} -cleanup {
+    catch {image delete gif1}
+} -result gif1
+test imgPhoto-18.12 {Valid GIF (file)} -setup {
+    set fileName [file join [file dirname [info script]] red.gif]
+} -body {
+    image create photo gif1 -file $fileName
+} -cleanup {
+    catch {image delete gif1}
+} -result gif1
+
+catch {rename foreachPixel {}}
+catch {rename checkImgTrans {}}
+catch {rename checkImgTransLoop {}}
+imageFinish
+
+# cleanup
+removeFile README-imgPhoto
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

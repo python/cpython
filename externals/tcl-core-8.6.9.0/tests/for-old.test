@@ -1,0 +1,71 @@
+# Commands covered:  for, continue, break
+#
+# This file contains the original set of tests for Tcl's for command.
+# Since the for command is now compiled, a new set of tests covering
+# the new implementation is in the file "for.test". Sourcing this file
+# into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+# Check "for" and its use of continue and break.
+
+catch {unset a i}
+test for-old-1.1 {for tests} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3 4 5}
+test for-old-1.2 {for tests} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 continue
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3 5}
+test for-old-1.3 {for tests} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-old-1.4 {for tests} {catch {for 1 2 3} msg} 1
+test for-old-1.5 {for tests} {
+    catch {for 1 2 3} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-old-1.6 {for tests} {catch {for 1 2 3 4 5} msg} 1
+test for-old-1.7 {for tests} {
+    catch {for 1 2 3 4 5} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-old-1.8 {for tests} {
+    set a {xyz}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {}
+    set a
+} xyz
+test for-old-1.9 {for tests} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]; if $i==4 break} {
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+
+# cleanup
+::tcltest::cleanupTests
+return

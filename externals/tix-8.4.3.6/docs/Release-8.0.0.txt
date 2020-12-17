@@ -1,0 +1,235 @@
+$Id: Release-8.0.0.txt,v 1.1 2000/10/10 21:02:26 idiscovery Exp $
+
+============
+BUILDING TIX
+============
+1. You must have a recent source distribution of Tcl/Tk installed (we
+   have tested with 8.0.4 and 8.0.5).
+
+2. For Unix, You should be able to change to unix/tk8.0; then,
+   configure and compile with:
+        ./configure
+        make > make.log 2 > make.errs
+
+   Before running "make", you can edit the Makefile and change the -O
+   compile option to -O2 for slightly better performance with gcc/egcs.
+
+   You may find the configure options --prefix, --with-tcl, --with-tk
+   etc. useful. For example, I have a copy of the egcs compiler
+   installed as /d2a/exper/bin/gcc, the tcl8.0.4 and tk8.0.4 source
+   distributions at /d2a/src/tcl-tk/tcl8.0.4 and
+   /d2a/src/tcl-tk/tk8.0.4 respectively, and prefer to install Tix to
+   /d2a/exper, so I use something like this:
+
+        env PATH=/d2a/exper/bin:$PATH ./configure \
+            --prefix=/d2a/exper --enable-gcc --enable-shared \
+            --with-tcl=/d2a/src/tcl-tk/tcl8.0.4 \
+            --with-tk=/d2a/src/tcl-tk/tk8.0.4
+
+   [If you reassign the PATH variable like this, remember to do the
+   same thing with all the "make" commands as well.]
+
+   If the compile failed for some reason, you can look at the files
+   make.errs and make.log for clues.
+
+3. If the compile is successful, you should now be able to run it:
+        ./tixwish
+        source ../../demos/widget
+   This will bring up a demo window with lots of Tix megawidgets.
+
+4. You can now run the test suite if you wish and install Tix:
+      make tests [optional]
+      make install
+   [If the "make tests" fails with a complaint like this:
+           ld.so: open error 2 for /libtix4180.so.1.0
+    edit Makefile and remove the line that assigns a value to
+    LD_LIBRARY_PATH for the "tests" target (I had to do this on SunOS)].
+
+5. For WinNT, read win/README.
+
+========================
+NOTES ON FUTURE RELEASES
+========================
+
+1. If you are interested in a support contract for Tix please contact me
+   by email at ram@netcom.com.
+
+2. I plan to make at least one more release of Tix, though the timeframe
+   is uncertain. Among the changes planned:
+   -- performance improvements
+   -- cleanup various obsolete elements from code and docs (there is a
+      lot of clutter in many files).
+   -- more bug fixes
+
+3. Support for all versions of Tcl/Tk preceding 8.0 is now discontinued.
+
+====================
+CHANGES in 4.1.0.007
+====================
+
+1.  tix.h:TIX_RELEASE changed to 4.1.0.007
+
+2. Changed all uses of strdup to tixStrdup (changes to several files)
+   and moved declaration of tixStrDup to tixInt.h to avoid various
+   compiler warnings. Also, removed check for strdup() from files
+   'configure' and 'configure.in' in unix/tk8.0 since it is no longer
+   needed.
+
+3.  The following erroneous code crashes Tix:
+        # test Tix crash
+        package require Tix
+        tixWidgetClass ab {
+            -alias {-dir -direction}
+        }
+    The problem is that the argument to -alias is supposed to be a list
+    of pairs. Added a check in tixClass.c:InitAlias() for this.
+
+4.  Changes to suppress egcs warnings:
+    -- Uncommented prototype for tixStrDup() in tix.h
+    -- In tixGrData.c, changed many occurrences of "(char*)i" to
+       FIX(i) which has better casts.
+
+5. Replaced generic/{tixItcl.[ch],tixMethod.c} with fixed versions for
+   dealing properly with namespaces.  Also fixed 'level' bug in
+   tixItcl.c:TixItclSetGlobalNameSp(); see test code below.
+
+6. For very long lists, tixTree was showing stray vertical lines and
+   indicators. Caused by overflows in window coordinates which are
+   limited to 16-bit values in X. Fixed by adding bounds checks in
+   tixHList.c:DrawElements().
+
+7. An initial "see" command on a tixHList before the window is mapped
+   was not updating the scrollbar; fixed by adding UpdateScrollbars()
+   call in tixHList.c:WidgetDisplay().
+
+8. Removed directories win/tcl7.x and unix/tk4.x (versions of Tcl/Tk
+   earlier than 8.0 are no longer supported).
+
+9. There is a problem with compound images which causes a crash upon
+   exit, illustrated by the following script:
+   ------------
+   set i [image create compound -window .]
+   $i add text -text Hello
+   exit
+   ------------
+   This now appears to be fixed by changes to tixImgCmp.c
+
+10. An incompatibility between Tix and Jan Nijtmans Img extension has
+    been fixed.
+
+11. Fixed a bug in tests/library/TestLib.tcl:TestBlock that was causing
+    the button test in tests/general/event0.tcl to fail. Running
+    "make tests" under unix/tk8.0 now produces no errors with one
+    exception: The label-entry test in tests/general/labentry.tcl
+    sometimes fails for unknown reasons that appear to be related to
+    the way focus events are generated when a window is created directly
+    underneath the current pointer.
+
+    [NOTE: the fs.tcl tests attempt to locate home directories of all
+    users on your system, so if you have a non-existent home directory
+    (this happens on Red Hat Linux 5.2 because the home directory
+    /var/adm of user 'adm' does not exist), this test will report a
+    failure.]
+
+12. Some cosmetic changes to a few files in the test suite for better
+    readability.
+
+13. The Tix Programming Guide is now included in the release; see
+    docs/pguide-tix4.0.ps. Note that we have not made any changes to
+    this document and have not been able to locate the original
+    TeX/LaTeX file.
+
+14. tix.h: Changed the definition of strcasecmp to be the same as in
+    tk8.0.5/win/tkWinPort.h
+
+15. Added the BUILD_tix mechanism to tix.h.
+
+16. tixInt.h:
+    -- Changed EXTERN to extern. The EXTERN macro is used in Tcl
+       to implement the DLL import/export mechanism and should
+       therefore be used _ONLY_ to declare functions exported from a
+       package.
+    -- Removed some stuff within "#if 0 ... #endif"
+
+================
+ACKNOWLEDGEMENTS:
+================
+
+Thanks to the following people for reporting bugs and/or providing
+patches:
+-- Bruce Stephens <bruce@cenderis.demon.co.uk>
+-- Ric Klaren <klaren@telin.nl>
+-- Jean-Paul Dzisiak <JP.Dzisiak@ulg.ac.be>
+-- Jan Nijtmans <Jan.Nijtmans@wxs.nl>
+
+========================
+NOTES ON THE 'level' BUG:
+========================
+
+Both the 005 and 007 releases print:
+
+0
+1
+2
+1 a 2 b 3 c
+
+with the following code fragment. But 006 prints incorrect values:
+
+0
+2
+4
+
+One patch to 006 floating around replaces tixItcl.[ch] and tixMethod.c
+and prints these incorrect values:
+
+0
+1
+1
+
+Here is the code fragment:
+
+------------------------------------------------------------------------
+tixWidgetClass class1 {
+    -classname Class2
+    -superclass tixPrimitive
+    -method {
+        foo
+    }
+}
+
+proc class1:foo {w} {
+    puts [info level]
+    set a(1) a
+    set a(2) b
+    set a(3) c
+    $w.a baa a
+}
+proc class1:ConstructWidget {w} {
+    upvar \#0 $w data
+
+    tixChainMethod $w ConstructWidget
+
+    class2 $w.a
+    pack $w.a
+    set data(w:a) $w.a
+}
+
+tixWidgetClass class2 {
+    -classname Class2
+    -superclass tixPrimitive
+    -method {
+        baa
+    }
+}
+
+proc class2:baa {w var} {
+    puts [info level]
+    upvar 1 $var a
+    puts [array get a]
+}
+
+class1 .foo
+puts [info level]
+.foo foo
+
+------------------------------------------------------------------------

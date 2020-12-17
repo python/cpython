@@ -1,0 +1,83 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Itcl_PreserveData 3 3.0 itcl "[incr\ Tcl] Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Itcl_Alloc, Itcl_Free, Itcl_PreserveData, Itcl_ReleaseData, Itcl_EventuallyFree \- Manipulate an Itcl list object.
+.SH SYNOPSIS
+.nf
+\fB#include <itcl.h>\fR
+
+void *
+\fBItcl_Alloc\fR(\fIsize\fR)
+
+void
+\fBItcl_PreserveData\fR(\fIptr\fR)
+
+void
+\fBItcl_ReleaseData\fR(\fIptr\fR)
+
+void
+\fBItcl_EventuallyFree\fR(\fIptr, fproc\fR)
+
+void
+\fBItcl_Free\fR(\fIptr\fR)
+.fi
+.SH ARGUMENTS
+.AP size_t size in
+Number of bytes to allocate.
+.AP void *ptr in
+Pointer value allocated by \fBItcl_Alloc\fR.
+.AP Tcl_FreeProc *fproc in
+Address of function to call when the block is to be freed.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures are used to allocate and release memory, especially blocks
+of memory that will be used by multiple independent modules. They are similar
+in function to the routines in the public Tcl interface, \fBTcl_Alloc\fR,
+\fBTcl_Free\fR, \fBTcl_Preserve\fR, \fBTcl_Release\fR, and
+\fBTcl_EventuallyFree\fR. The Tcl routines suffer from issues with
+performance scaling as the number of blocks managed grows large. The facilities
+of Itcl encounter these performance scaling issues and require an
+alternative that does not suffer from them.
+.PP
+\fBItcl_Alloc\fR returns an untyped pointer to an allocated block
+of memory of at least \fIsize\fR bytes. All \fIsize\fR bytes are
+initialized to zero.
+.PP
+A module calls \fBItcl_PreserveData\fR on a pointer \fIptr\fR 
+allocated by \fBItcl_Alloc\fR to prevent deallocation of that memory while
+the module remains interested in it.
+.PP
+A module calls \fBItcl_ReleaseData\fR on a pointer \fIptr\fR previously
+preserved by \fBItcl_PreserveData\fR to indicate the module no longer has
+an interest in the block of memory, and will not be disturbed by its
+deallocation.
+.PP
+\fBItcl_EventuallyFree\fR is called on a pointer \fIptr\fR allocated by
+\fBItcl_Alloc\fR to register a deallocation routine \fIfproc\fR to be
+called when the number of calls to \fBItcl_ReleaseData\fR on \fIptr\fR
+matches the number of calls to \fBItcl_PreserveData\fR on \fIptr\fR. This
+condition indicates all modules have ended their interest in the block
+of memory and a call to \fIfproc\fR with argument \fIptr\fR will deallocate
+the memory that no module needs anymore.
+.PP
+\fBItcl_Free\fR is a deallocation routine for a \fIptr\fR value allocated
+by \fBItcl_Alloc\fR. It may be called on any \fIptr\fR with no history of
+an \fBItcl_PreserveData\fR call unmatched by an \fBItcl_ReleaseData\fR
+call. It is best used as an \fIfproc\fR argument to \fBItcl_EventuallyFree\fR
+or as a routine called from within such an \fIfproc\fR routine. It can also
+be used to deallocate a \fIptr\fR value when it can be assured that value
+has never been passed to \fBItcl_PreserveData\fR or \fBItcl_EventuallyFree\fR.
+
+.SH KEYWORDS
+free, memory
+

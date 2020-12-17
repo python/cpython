@@ -1,0 +1,788 @@
+# This file is a Tcl script to test out scrollbar widgets and
+# the "scrollbar" command of Tk.  It is organized in the standard
+# fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+proc scroll args {
+    global scrollInfo
+    set scrollInfo $args
+}
+
+proc getTroughSize {w} {
+    if {[testConstraint testmetrics]} {
+        # Only Windows has [testmetrics]
+	if [string match v* [$w cget -orient]] {
+	    return [expr {[winfo height $w] - 2*[testmetrics cyvscroll $w]}]
+	} else {
+	    return [expr {[winfo width $w] - 2*[testmetrics cxhscroll $w]}]
+	}	    
+    } else {
+        if {[tk windowingsystem] eq "x11"} {
+            # Calculations here assume that the arrow area is a square.
+	    if [string match v* [$w cget -orient]] {
+	        return [expr {[winfo height $w] \
+		        - ([winfo width $w] \
+			    - [$w cget -highlightthickness] \
+			    - [$w cget -bd] + 1)*2}]
+	    } else {
+	        return [expr {[winfo width $w] \
+		        - ([winfo height $w] \
+			    - [$w cget -highlightthickness] \
+			    - [$w cget -bd] + 1)*2}]
+	    }
+        } else {
+            # macOS aqua
+	    if [string match v* [$w cget -orient]] {
+	        return [expr {[winfo height $w] \
+			- ([$w cget -highlightthickness] \
+			  +[$w cget -bd])*2}]
+	    } else {
+	        return [expr {[winfo width $w] \
+			- ([$w cget -highlightthickness] \
+			  +[$w cget -bd])*2}]
+	    }
+        }
+    }
+}
+
+# XXX Note: this test file is woefully incomplete.  Right now there are
+# only bits and pieces of tests.  Please make this file more complete
+# as you fix bugs and add features.
+
+foreach {width height} [wm minsize .] {
+    set height [expr {($height < 200) ? 200 : $height}]
+    set width [expr {($width < 1) ? 1 : $width}]
+} 
+
+frame .f -height $height -width $width
+pack .f -side left
+scrollbar .s
+pack .s -side right -fill y
+update
+set i 1
+foreach test {
+    {-activebackground #ff0000 #ff0000 non-existent
+	    {unknown color name "non-existent"}}
+    {-activerelief sunken sunken non-existent
+	    {bad relief "non-existent": must be flat, groove, raised, ridge, solid, or sunken}}
+    {-background #ff0000 #ff0000 non-existent
+	    {unknown color name "non-existent"}}
+    {-bd 4 4 badValue {bad screen distance "badValue"}}
+    {-bg #ff0000 #ff0000 non-existent
+	    {unknown color name "non-existent"}}
+    {-borderwidth 1.3 1 badValue {bad screen distance "badValue"}}
+    {-command "set x" {set x} {} {}}
+    {-elementborderwidth 4 4 badValue {bad screen distance "badValue"}}
+    {-cursor arrow arrow badValue {bad cursor spec "badValue"}}
+    {-highlightbackground #112233 #112233 ugly {unknown color name "ugly"}}
+    {-highlightcolor #123456 #123456 bogus {unknown color name "bogus"}}
+    {-highlightthickness 6 6 bogus {bad screen distance "bogus"}}
+    {-highlightthickness -2 0 {} {}}
+    {-jump true 1 silly {expected boolean value but got "silly"}}
+    {-orient horizontal horizontal badValue
+	    {bad orientation "badValue": must be vertical or horizontal}}
+    {-orient horizontal horizontal bogus {bad orientation "bogus": must be vertical or horizontal}}
+    {-relief ridge ridge badValue {bad relief "badValue": must be flat, groove, raised, ridge, solid, or sunken}}
+    {-repeatdelay 140 140 129.3 {expected integer but got "129.3"}}
+    {-repeatinterval 140 140 129.3 {expected integer but got "129.3"}}
+    {-takefocus "any string" "any string" {} {}}
+    {-troughcolor #432 #432 lousy {unknown color name "lousy"}}
+    {-width 32 32 badValue {bad screen distance "badValue"}}
+} {
+    lassign $test name value okResult badValue badResult
+    # Assume $name is plain; true of all our in-use options!
+    test scrollbar-1.$i {configuration options} \
+	".s configure $name [list $value]; .s cget $name" $okResult
+    incr i
+    if {$badValue ne ""} {
+	test scrollbar-1.$i {configuration options} \
+	    -body [list .s configure $name $badValue] \
+	    -returnCodes error -result $badResult
+	incr i
+    }
+    .s configure $name [lindex [.s configure $name] 3]
+}
+
+destroy .s
+test scrollbar-2.1 {Tk_ScrollbarCmd procedure} -returnCodes error -body {
+    scrollbar
+} -result {wrong # args: should be "scrollbar pathName ?-option value ...?"}
+test scrollbar-2.2 {Tk_ScrollbarCmd procedure} -body {
+    scrollbar gorp
+} -returnCodes error -result {bad window path name "gorp"}
+test scrollbar-2.3 {Tk_ScrollbarCmd procedure} -setup {
+    scrollbar .s
+} -body {
+    list [winfo class .s] [info command .s]
+} -cleanup {
+    destroy .s
+} -result {Scrollbar .s}
+test scrollbar-2.4 {Tk_ScrollbarCmd procedure} {
+    list [catch {scrollbar .s -gorp blah} msg] $msg [winfo exists .s] \
+	    [info command .s]
+} {1 {unknown option "-gorp"} 0 {}}
+test scrollbar-2.5 {Tk_ScrollbarCmd procedure} -setup {
+    catch {destroy .s}
+} -body {
+    scrollbar .s
+} -cleanup {
+    destroy .s
+} -result .s
+
+scrollbar .s -orient vertical -command scroll -highlightthickness 2 -bd 2
+pack .s -side right -fill y
+update
+test scrollbar-3.1 {ScrollbarWidgetCmd procedure} {
+    list [catch {.s} msg] $msg
+} {1 {wrong # args: should be ".s option ?arg ...?"}}
+test scrollbar-3.2 {ScrollbarWidgetCmd procedure, "cget" option} {
+    list [catch {.s cget} msg] $msg
+} {1 {wrong # args: should be ".s cget option"}}
+test scrollbar-3.3 {ScrollbarWidgetCmd procedure, "cget" option} {
+    list [catch {.s cget -gorp} msg] $msg
+} {1 {unknown option "-gorp"}}
+test scrollbar-3.4 {ScrollbarWidgetCmd procedure, "activate" option} {
+    list [catch {.s activate a b} msg] $msg
+} {1 {wrong # args: should be ".s activate element"}}
+test scrollbar-3.5 {ScrollbarWidgetCmd procedure, "activate" option} {
+    .s activate arrow1
+    .s activate
+} {arrow1}
+test scrollbar-3.6 {ScrollbarWidgetCmd procedure, "activate" option} {
+    .s activate slider
+    .s activate
+} {slider}
+test scrollbar-3.7 {ScrollbarWidgetCmd procedure, "activate" option} {
+    .s activate arrow2
+    .s activate
+} {arrow2}
+test scrollbar-3.8 {ScrollbarWidgetCmd procedure, "activate" option} {
+    .s activate s
+    .s activate {}
+    .s activate
+} {}
+test scrollbar-3.9 {ScrollbarWidgetCmd procedure, "activate" option} {
+    list [catch {.s activate trough1} msg] $msg
+} {0 {}}
+test scrollbar-3.10 {ScrollbarWidgetCmd procedure, "cget" option} {
+    list [catch {.s cget -orient} msg] $msg
+} {0 vertical}
+scrollbar .s2
+test scrollbar-3.11 {ScrollbarWidgetCmd procedure, "cget" option} {
+    expr {[.s2 cget -bd] == [lindex [.s2 configure -bd] 3]}
+} 1
+test scrollbar-3.12 {ScrollbarWidgetCmd procedure, "cget" option} emptyTest {
+    # empty test; duplicated scrollbar-3.11
+} {}
+test scrollbar-3.12.1 {ScrollbarWidgetCmd procedure, "cget" option} emptyTest {
+    # empty test; duplicated scrollbar-3.11
+} {}
+test scrollbar-3.13 {ScrollbarWidgetCmd procedure, "cget" option} {
+    expr {[.s2 cget -highlightthickness] == [lindex [.s2 configure -highlightthickness] 3]}
+} 1
+test scrollbar-3.14 {ScrollbarWidgetCmd procedure, "cget" option} emptyTest {
+    # empty test; duplicated scrollbar-3.13
+} {}
+test scrollbar-3.14.1 {ScrollbarWidgetCmd procedure, "cget" option} emptyTest {
+    # empty test; duplicated scrollbar-3.13
+} {}
+destroy .s2
+test scrollbar-3.15 {ScrollbarWidgetCmd procedure, "configure" option} {
+    llength [.s configure]
+} {20}
+test scrollbar-3.16 {ScrollbarWidgetCmd procedure, "configure" option} {
+    list [catch {.s configure -bad} msg] $msg
+} {1 {unknown option "-bad"}}
+test scrollbar-3.17 {ScrollbarWidgetCmd procedure, "configure" option} {
+    .s configure -orient
+} {-orient orient Orient vertical vertical}
+test scrollbar-3.18 {ScrollbarWidgetCmd procedure, "configure" option} {
+    .s configure -orient horizontal
+    set x [.s cget -orient]
+    .s configure -orient vertical
+    set x
+} {horizontal}
+test scrollbar-3.19 {ScrollbarWidgetCmd procedure, "configure" option} {
+    list [catch {.s configure -bad worse} msg] $msg
+} {1 {unknown option "-bad"}}
+test scrollbar-3.20 {ScrollbarWidgetCmd procedure, "delta" option} {
+    list [catch {.s delta 24} msg] $msg
+} {1 {wrong # args: should be ".s delta xDelta yDelta"}}
+test scrollbar-3.21 {ScrollbarWidgetCmd procedure, "delta" option} {
+    list [catch {.s delta 24 35 42} msg] $msg
+} {1 {wrong # args: should be ".s delta xDelta yDelta"}}
+test scrollbar-3.22 {ScrollbarWidgetCmd procedure, "delta" option} {
+    list [catch {.s delta silly 24} msg] $msg
+} {1 {expected integer but got "silly"}}
+test scrollbar-3.23 {ScrollbarWidgetCmd procedure, "delta" option} {
+    list [catch {.s delta 18 xxyz} msg] $msg
+} {1 {expected integer but got "xxyz"}}
+test scrollbar-3.24 {ScrollbarWidgetCmd procedure, "delta" option} {
+    list [catch {.s delta 18 xxyz} msg] $msg
+} {1 {expected integer but got "xxyz"}}
+test scrollbar-3.25 {ScrollbarWidgetCmd procedure, "delta" option} {
+    format {%.6g} [.s delta 20 0]
+} {0}
+test scrollbar-3.26 {ScrollbarWidgetCmd procedure, "delta" option} {
+    format {%.6g} [.s delta 0 20]
+} [format %.6g [expr {20.0/([getTroughSize .s]-1)}]]
+test scrollbar-3.27 {ScrollbarWidgetCmd procedure, "delta" option} {
+    format {%.6g} [.s delta 0 -20]
+} [format %.6g [expr {-20.0/([getTroughSize .s]-1)}]]
+test scrollbar-3.28 {ScrollbarWidgetCmd procedure, "delta" option} {
+    toplevel .t -width 250 -height 100
+    wm geom .t +0+0
+    scrollbar .t.s -orient horizontal -borderwidth 2
+    place .t.s -width 201
+    update
+    set result [list [format {%.6g} [.t.s delta 0 20]] \
+	    [format {%.6g} [.t.s delta [expr {[getTroughSize .t.s] - 1}] 0]]]
+    destroy .t
+    set result
+} {0 1}
+test scrollbar-3.29 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    list [catch {.s fraction 24} msg] $msg
+} {1 {wrong # args: should be ".s fraction x y"}}
+test scrollbar-3.30 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    list [catch {.s fraction 24 30 32} msg] $msg
+} {1 {wrong # args: should be ".s fraction x y"}}
+test scrollbar-3.31 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    list [catch {.s fraction silly 24} msg] $msg
+} {1 {expected integer but got "silly"}}
+test scrollbar-3.32 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    list [catch {.s fraction 24 bogus} msg] $msg
+} {1 {expected integer but got "bogus"}}
+test scrollbar-3.33 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    format {%.6g} [.s fraction 0 0]
+} {0}
+test scrollbar-3.34 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    format {%.6g} [.s fraction 0 1000]
+} {1}
+test scrollbar-3.35 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    format {%.6g} [.s fraction 4 21]
+} [format %.6g [expr {(21.0 - ([winfo height .s] - [getTroughSize .s])/2.0) \
+       /([getTroughSize .s] - 1)}]]
+test scrollbar-3.36 {ScrollbarWidgetCmd procedure, "fraction" option} x11 {
+    format {%.6g} [.s fraction 4 179]
+} {1}
+test scrollbar-3.37 {ScrollbarWidgetCmd procedure, "fraction" option} {testmetrics} {
+    format {%.6g} [.s fraction 4 [expr {200 - [testmetrics cyvscroll .s]}]]
+} {1}
+test scrollbar-3.38 {ScrollbarWidgetCmd procedure, "fraction" option} x11 {
+    format {%.6g} [.s fraction 4 178]
+} {0.993711}
+test scrollbar-3.39 {ScrollbarWidgetCmd procedure, "fraction" option} {testmetrics win} {
+    expr {
+    [format {%.6g} [.s fraction 4 [expr {200 - [testmetrics cyvscroll .s] - 2}]]]
+	== [format %g [expr {(200.0 - [testmetrics cyvscroll .s]*2 - 2)
+			   / ($height - 1 - [testmetrics cyvscroll .s]*2)}]]}
+} 1
+
+toplevel .t -width 250 -height 100
+wm geom .t +0+0
+scrollbar .t.s -orient horizontal -borderwidth 2
+place .t.s -width 201
+update
+
+test scrollbar-3.41 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    format {%.6g} [.t.s fraction 100 0]
+} {0.5}
+if {[testConstraint testmetrics]} {
+    # Only Windows has [testmetrics]
+    place configure .t.s -width [expr {2*[testmetrics cxhscroll .t.s]+1}]
+} else {
+    if {[tk windowingsystem] eq "x11"} {
+        place configure .t.s -width [expr {[winfo height .t.s] - 2*([.t.s cget -highlightthickness] + [.t.s cget -bd] + 1)}]
+    } else {
+        # macOS aqua
+        place configure .t.s -width [expr {2*([.t.s cget -highlightthickness] + [.t.s cget -bd])}]
+    }
+}
+update
+test scrollbar-3.42 {ScrollbarWidgetCmd procedure, "fraction" option} {
+    format {%.6g} [.t.s fraction 100 0]
+} {0}
+destroy .t
+test scrollbar-3.43 {ScrollbarWidgetCmd procedure, "get" option} {
+    list [catch {.s get a} msg] $msg
+} {1 {wrong # args: should be ".s get"}}
+test scrollbar-3.44 {ScrollbarWidgetCmd procedure, "get" option} {
+    .s set 100 10 13 14
+    .s get
+} {100 10 13 14}
+test scrollbar-3.45 {ScrollbarWidgetCmd procedure, "get" option} {
+    .s set 0.6 0.8
+    set result {}
+    foreach element [.s get] {
+	lappend result [format %.1f $element]
+    }
+    set result
+} {0.6 0.8}
+test scrollbar-3.46 {ScrollbarWidgetCmd procedure, "identify" option} {
+    list [catch {.s identify 0} msg] $msg
+} {1 {wrong # args: should be ".s identify x y"}}
+test scrollbar-3.47 {ScrollbarWidgetCmd procedure, "identify" option} {
+    list [catch {.s identify 0 0 1} msg] $msg
+} {1 {wrong # args: should be ".s identify x y"}}
+test scrollbar-3.48 {ScrollbarWidgetCmd procedure, "identify" option} {
+    list [catch {.s identify bogus 2} msg] $msg
+} {1 {expected integer but got "bogus"}}
+test scrollbar-3.49 {ScrollbarWidgetCmd procedure, "identify" option} {
+    list [catch {.s identify -1 bogus} msg] $msg
+} {1 {expected integer but got "bogus"}}
+test scrollbar-3.50.1 {ScrollbarWidgetCmd procedure, "identify" option} notAqua {
+    .s identify 5 5
+} {arrow1}
+test scrollbar-3.50.1 {ScrollbarWidgetCmd procedure, "identify" option} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .s identify 5 5
+} {trough1}
+test scrollbar-3.51 {ScrollbarWidgetCmd procedure, "identify" option} {
+    .s identify 5 35
+} {trough1}
+test scrollbar-3.52 {ScrollbarWidgetCmd procedure, "identify" option} {
+    .s set .3 .6
+    .s identify 5 80
+} {slider}
+test scrollbar-3.53 {ScrollbarWidgetCmd procedure, "identify" option} {
+    .s identify 5 145
+} {trough2}
+test scrollbar-3.54.1 {ScrollbarWidgetCmd procedure, "identify" option} notAqua {
+    .s identify 5 195
+} {arrow2}
+test scrollbar-3.54.2 {ScrollbarWidgetCmd procedure, "identify" option} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .s identify 5 195
+} {trough2}
+test scrollbar-3.56 {ScrollbarWidgetCmd procedure, "identify" option} unix {
+    .s identify 0 0
+} {}
+test scrollbar-3.57 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set abc def} msg] $msg
+} {1 {expected floating-point number but got "abc"}}
+test scrollbar-3.58 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set 0.6 def} msg] $msg
+} {1 {expected floating-point number but got "def"}}
+test scrollbar-3.59 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set -.2 .3
+    set result {}
+    foreach element [.s get] {
+	lappend result [format %.1f $element]
+    }
+    set result
+} {0.0 0.3}
+test scrollbar-3.60 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set 1.1 .4 
+    .s get
+} {1.0 1.0}
+test scrollbar-3.61 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set .5 -.3 
+    .s get
+} {0.5 0.5}
+test scrollbar-3.62 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set .5 87 
+    .s get
+} {0.5 1.0}
+test scrollbar-3.63 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set .4 .3
+    set result {}
+    foreach element [.s get] {
+	lappend result [format %.1f $element]
+    }
+    set result
+} {0.4 0.4}
+test scrollbar-3.64 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set abc def ghi jkl} msg] $msg
+} {1 {expected integer but got "abc"}}
+test scrollbar-3.65 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set 1 def ghi jkl} msg] $msg
+} {1 {expected integer but got "def"}}
+test scrollbar-3.66 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set 1 2 ghi jkl} msg] $msg
+} {1 {expected integer but got "ghi"}}
+test scrollbar-3.67 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set 1 2 3 jkl} msg] $msg
+} {1 {expected integer but got "jkl"}}
+test scrollbar-3.68 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set -10 50 20 30 
+    .s get
+} {0 50 0 0}
+test scrollbar-3.69 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set 100 -10 20 30 
+    .s get
+} {100 0 20 30}
+test scrollbar-3.70 {ScrollbarWidgetCmd procedure, "set" option} {
+    .s set 100 50 30 20 
+    .s get
+} {100 50 30 30}
+test scrollbar-3.71 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set 1 2 3} msg] $msg
+} {1 {wrong # args: should be ".s set firstFraction lastFraction" or ".s set totalUnits windowUnits firstUnit lastUnit"}}
+test scrollbar-3.72 {ScrollbarWidgetCmd procedure, "set" option} {
+    list [catch {.s set 1 2 3 4 5} msg] $msg
+} {1 {wrong # args: should be ".s set firstFraction lastFraction" or ".s set totalUnits windowUnits firstUnit lastUnit"}}
+test scrollbar-3.73 {ScrollbarWidgetCmd procedure} {
+    list [catch {.s bogus} msg] $msg
+} {1 {bad option "bogus": must be activate, cget, configure, delta, fraction, get, identify, or set}}
+test scrollbar-3.74 {ScrollbarWidgetCmd procedure} {
+    list [catch {.s c} msg] $msg
+} {1 {ambiguous option "c": must be activate, cget, configure, delta, fraction, get, identify, or set}}
+
+test scrollbar-4.1 {ScrollbarEventProc procedure} {
+    catch {destroy .s1}
+    scrollbar .s1 -bg #543210
+    rename .s1 .s2
+    set x {}
+    lappend x [winfo exists .s1]
+    lappend x [.s2 cget -bg]
+    destroy .s1
+    lappend x [info command .s?] [winfo exists .s1] [winfo exists .s2]
+} {1 #543210 {} 0 0}
+
+test scrollbar-5.1 {ScrollbarCmdDeletedProc procedure} {
+    catch {destroy .s1}
+    scrollbar .s1
+    rename .s1 {}
+    list [info command .s?] [winfo exists .s1]
+} {{} 0}
+
+catch {destroy .s}
+scrollbar .s -orient vertical -relief sunken -bd 2 -highlightthickness 2
+pack .s -side left -fill y
+.s set .2 .4
+update
+
+test scrollbar-6.1 {ScrollbarPosition procedure} unix {
+    .s identify 8 3
+} {}
+test scrollbar-6.3 {ScrollbarPosition procedure} unix {
+    .s identify 8 196
+} {}
+test scrollbar-6.4 {ScrollbarPosition procedure} unix {
+    .s identify 3 100
+} {}
+test scrollbar-6.6 {ScrollbarPosition procedure} unix {
+    .s identify 19 100
+} {}
+test scrollbar-6.7 {ScrollbarPosition procedure} {
+    .s identify [expr {[winfo width .s] / 2}] -1
+} {}
+test scrollbar-6.8 {ScrollbarPosition procedure} {
+    .s identify [expr {[winfo width .s] / 2}] [winfo height .s]
+} {}
+test scrollbar-6.9 {ScrollbarPosition procedure} {
+    .s identify -1 [expr {[winfo height .s] / 2}]
+} {}
+test scrollbar-6.10 {ScrollbarPosition procedure} {
+    .s identify [winfo width .s] [expr {[winfo height .s] / 2}]
+} {}
+test scrollbar-6.11.1 {ScrollbarPosition procedure} x11 {
+    .s identify 8 4
+} {arrow1}
+test scrollbar-6.11.2 {ScrollbarPosition procedure} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .s identify 8 4
+} {trough1}
+test scrollbar-6.12.1 {ScrollbarPosition procedure} x11 {
+    .s identify 8 19
+} {arrow1}
+test scrollbar-6.12.2 {ScrollbarPosition procedure} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .s identify 8 19
+} {trough1}
+test scrollbar-6.14 {ScrollbarPosition procedure} win {
+    .s identify [expr {[winfo width .s] / 2}] 0 
+} {arrow1}
+test scrollbar-6.15 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] [expr {[testmetrics cyvscroll .s] - 1}]
+} {arrow1}
+test scrollbar-6.16 {ScrollbarPosition procedure} unix {
+    .s identify 8 20
+} {trough1}
+test scrollbar-6.17 {ScrollbarPosition procedure} {unix nonPortable} {
+    # Don't know why this is non-portable, but it doesn't work on
+    # some platforms.
+    .s identify 8 51
+} {trough1}
+test scrollbar-6.18 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] [testmetrics cyvscroll .s]
+} {trough1}
+test scrollbar-6.19 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] [expr {int(.2 / [.s delta 0 1])
+						+ [testmetrics cyvscroll .s] - 1}]
+} {trough1}
+test scrollbar-6.20 {ScrollbarPosition procedure} unix {
+    .s identify 8 52
+} {slider}
+test scrollbar-6.21 {ScrollbarPosition procedure} {unix nonPortable} {
+    # Don't know why this is non-portable, but it doesn't work on
+    # some platforms.
+    .s identify 8 83
+} {slider}
+test scrollbar-6.22 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] \
+	[expr {int(.2 / [.s delta 0 1] + 0.5) + [testmetrics cyvscroll .s]}]
+} {slider}
+test scrollbar-6.23 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] [expr {int(.4 / [.s delta 0 1])
+						 + [testmetrics cyvscroll .s] - 1}]
+} {slider}
+test scrollbar-6.24 {ScrollbarPosition procedure} unix {
+    .s identify 8 84
+} {trough2}
+test scrollbar-6.25 {ScrollbarPosition procedure} unix {
+    .s identify 8 179
+} {trough2}
+test scrollbar-6.27 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] [expr {int(.4 / [.s delta 0 1])
+						 + [testmetrics cyvscroll .s]}]
+} {trough2}
+test scrollbar-6.28 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}] [expr {[winfo height .s]
+						 - [testmetrics cyvscroll .s] - 1}]
+} {trough2}
+test scrollbar-6.29.1 {ScrollbarPosition procedure} x11 {
+    .s identify 8 180
+} {arrow2}
+test scrollbar-6.29.2 {ScrollbarPosition procedure} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .s identify 8 180
+} {trough2}
+test scrollbar-6.30.1 {ScrollbarPosition procedure} x11 {
+    .s identify 8 195
+} {arrow2}
+test scrollbar-6.30.2 {ScrollbarPosition procedure} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .s identify 8 195
+} {trough2}
+test scrollbar-6.32 {ScrollbarPosition procedure} {testmetrics win} {
+    .s identify [expr {[winfo width .s] / 2}]  [expr {[winfo height .s]
+						  - [testmetrics cyvscroll .s]}]
+} {arrow2}
+test scrollbar-6.33 {ScrollbarPosition procedure} win {
+    .s identify [expr {[winfo width .s] / 2}] [expr {[winfo height .s] - 1}]
+} {arrow2}
+test scrollbar-6.34 {ScrollbarPosition procedure} unix {
+    .s identify 4 100
+} {trough2}
+test scrollbar-6.35 {ScrollbarPosition procedure} unix {
+    .s identify 18 100
+} {trough2}
+test scrollbar-6.37 {ScrollbarPosition procedure} win {
+    .s identify 0 100
+} {trough2}
+test scrollbar-6.38 {ScrollbarPosition procedure} win {
+    .s identify [expr {[winfo width .s] - 1}] 100
+} {trough2}
+
+catch {destroy .t}
+toplevel .t -width 250 -height 150
+wm geometry .t +0+0
+scrollbar .t.s -orient horizontal -relief sunken -bd 2 -highlightthickness 2
+place .t.s -width 200
+.t.s set .2 .4
+update
+
+test scrollbar-6.39.1 {ScrollbarPosition procedure} x11 {
+    .t.s identify 4 8
+} {arrow1}
+test scrollbar-6.39.2 {ScrollbarPosition procedure} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .t.s identify 4 8
+} {trough1}
+test scrollbar-6.40 {ScrollbarPosition procedure} win {
+    .t.s identify 0 [expr {[winfo height .t.s] / 2}]
+} {arrow1}
+test scrollbar-6.41.1 {ScrollbarPosition procedure} x11 {
+    .t.s identify 82 8
+} {slider}
+test scrollbar-6.41.2 {ScrollbarPosition procedure} aqua {
+    # macOS scrollbars have no arrows nowadays
+    .t.s identify 82 8
+} {trough2}
+test scrollbar-6.43 {ScrollbarPosition procedure} {testmetrics win} {
+    .t.s identify [expr {int(.4 / [.t.s delta 1 0]) + [testmetrics cxhscroll .t.s]
+		       - 1}] [expr {[winfo height .t.s] / 2}] 
+} {slider}
+test scrollbar-6.44 {ScrollbarPosition procedure} unix {
+    .t.s identify 100 18
+} {trough2}
+test scrollbar-6.46 {ScrollbarPosition procedure} win {
+    .t.s identify 100 [expr {[winfo height .t.s] - 1}]
+} {trough2}
+
+test scrollbar-7.1 {EventuallyRedraw} {
+    .s configure -orient horizontal
+    update
+    set result [.s cget -orient]
+    .s configure -orient vertical
+    update
+    lappend result [.s cget -orient]
+} {horizontal vertical}
+
+catch {destroy .t}
+toplevel .t
+wm geometry .t +0+0
+test scrollbar-8.1 {TkScrollbarEventProc: recursive deletion} notAqua {
+    # constrained by notAqua because this test clicks on an arrow of the
+    # scrollbar - but macOS has no such arrows in modern scrollbars
+    proc doit {args} { destroy .t.f }
+    proc bgerror {args} {}
+    destroy .t.f
+    frame .t.f
+    scrollbar .t.f.s -command doit
+    pack .t.f -fill both -expand 1
+    pack .t.f.s -fill y -expand 1 -side right
+    wm geometry .t 100x100
+    .t.f.s set 0 .5
+    update
+    set result [winfo exists .t.f.s]
+    event generate .t.f.s <ButtonPress> -button 1 -x [expr {[winfo width .t.f.s] / 2}] -y 5
+    event generate .t <ButtonRelease> -button 1
+    update
+    lappend result [winfo exists .t.f.s] [winfo exists .t.f]
+    rename bgerror {}
+    set result
+} {1 0 0}
+test scrollbar-8.2 {TkScrollbarEventProc: recursive deletion} notAqua {
+    # constrained by notAqua because this test clicks on an arrow of the
+    # scrollbar - but macOS has no such arrows in modern scrollbars
+    proc doit {args} { destroy .t.f.s }
+    proc bgerror {args} {}
+    destroy .t.f
+    frame .t.f
+    scrollbar .t.f.s -command doit
+    pack .t.f -fill both -expand 1
+    pack .t.f.s -fill y -expand 1 -side right
+    wm geometry .t 100x100
+    .t.f.s set 0 .5
+    update
+    set result [winfo exists .t.f.s]
+    event generate .t.f.s <ButtonPress> -button 1 -x [expr {[winfo width .t.f.s] / 2}] -y 5
+    event generate .t.f <ButtonRelease> -button 1
+    update
+    lappend result [winfo exists .t.f.s] [winfo exists .t.f]
+    rename bgerror {}
+    set result
+} {1 0 1}
+
+set l [interp hidden]
+deleteWindows
+
+test scrollbar-9.1 {scrollbar widget vs hidden commands} {
+    catch {destroy .s}
+    scrollbar .s
+    interp hide {} .s
+    destroy .s
+    list [winfo children .] [interp hidden]
+} [list {} $l]
+
+test scrollbar-10.1.1 {<MouseWheel> event on scrollbar} -constraints {notAqua} -setup {
+    destroy .t .s
+} -body {
+    pack [text .t -yscrollcommand {.s set}] -side left
+    for {set i 1} {$i < 100} {incr i} {.t insert end "Line $i\n"}
+    pack [scrollbar .s -command {.t yview}] -fill y -expand 1 -side left
+    update
+    focus -force .s
+    event generate .s <MouseWheel> -delta -120
+    after 200 {set eventprocessed 1} ; vwait eventprocessed
+    .t index @0,0
+} -cleanup {
+    destroy .t .s
+} -result {5.0}
+test scrollbar-10.1.2 {<MouseWheel> event on scrollbar} -constraints {aqua} -setup {
+    destroy .t .s
+} -body {
+    pack [text .t -yscrollcommand {.s set}] -side left
+    for {set i 1} {$i < 100} {incr i} {.t insert end "Line $i\n"}
+    pack [scrollbar .s -command {.t yview}] -fill y -expand 1 -side left
+    update
+    focus -force .s
+    event generate .s <MouseWheel> -delta -4
+    after 200 {set eventprocessed 1} ; vwait eventprocessed
+    .t index @0,0
+} -cleanup {
+    destroy .t .s
+} -result {5.0}
+
+test scrollbar-10.2.1 {<MouseWheel> event on scrollbar} -constraints {notAqua} -setup {
+    destroy .t .s
+} -body {
+    pack [text .t -xscrollcommand {.s set} -wrap none] -side top
+    for {set i 1} {$i < 100} {incr i} {.t insert end "Char $i "}
+    pack [scrollbar .s -command {.t xview} -orient horizontal] -fill x -expand 1 -side top
+    update
+    focus -force .s
+    event generate .s <Shift-MouseWheel> -delta -120
+    after 200 {set eventprocessed 1} ; vwait eventprocessed
+    .t index @0,0
+} -cleanup {
+    destroy .t .s
+} -result {1.4}
+test scrollbar-10.2.2 {<MouseWheel> event on scrollbar} -constraints {aqua} -setup {
+    destroy .t .s
+} -body {
+    pack [text .t -xscrollcommand {.s set} -wrap none] -side top
+    for {set i 1} {$i < 100} {incr i} {.t insert end "Char $i "}
+    pack [scrollbar .s -command {.t xview} -orient horizontal] -fill x -expand 1 -side top
+    update
+    focus -force .s
+    event generate .s <Shift-MouseWheel> -delta -4
+    after 200 {set eventprocessed 1} ; vwait eventprocessed
+    .t index @0,0
+} -cleanup {
+    destroy .t .s
+} -result {1.4}
+
+test scrollbar-11.1 {bug fix: [011706ec42] Scrollbar unsafe wrt widget destruction} -body {
+    proc destroy_scrollbar {} {
+        if {[winfo exists .top.s]} {
+            destroy .top.s
+        }
+    }
+    toplevel .top
+    scrollbar .top.s
+    bind .top.s <2> {destroy_scrollbar}
+    pack .top.s
+    focus -force .top.s
+    update
+    event generate .top.s <2>
+    update  ; # shall not trigger error  invalid command name ".top.s"
+} -cleanup {
+    destroy .top.s .top
+} -result {} 
+test scrollbar-11.2 {bug fix: [011706ec42] Scrollbar unsafe wrt widget destruction} -body {
+    proc destroy_scrollbar {{y 0}} {
+        if {[winfo exists .top.s]} {
+            destroy .top.s
+        }
+    }
+    toplevel .top
+    wm minsize .top 50 400
+    update
+    scrollbar .top.s
+    bind .top.s <2> {after idle destroy_scrollbar}
+    pack .top.s -expand true -fill y
+    focus -force .top.s
+    update
+    event generate .top.s <2> -x 2 -y [expr {[winfo height .top.s] / 2}]
+    update  ; # shall not trigger error  invalid command name ".top.s"
+} -cleanup {
+    destroy .top.s .top
+} -result {} 
+
+catch {destroy .s}
+catch {destroy .t}
+
+# cleanup
+cleanupTests
+return

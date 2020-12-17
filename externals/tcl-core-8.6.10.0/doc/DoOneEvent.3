@@ -1,0 +1,106 @@
+'\"
+'\" Copyright (c) 1990-1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_DoOneEvent 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_DoOneEvent \- wait for events and invoke event handlers
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_DoOneEvent\fR(\fIflags\fR)
+.SH ARGUMENTS
+.AS int flags
+.AP int flags in
+This parameter is normally zero.  It may be an OR-ed combination
+of any of the following flag bits:
+\fBTCL_WINDOW_EVENTS\fR, \fBTCL_FILE_EVENTS\fR,
+\fBTCL_TIMER_EVENTS\fR, \fBTCL_IDLE_EVENTS\fR, \fBTCL_ALL_EVENTS\fR,
+or \fBTCL_DONT_WAIT\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+This procedure is the entry point to Tcl's event loop; it is responsible for
+waiting for events and dispatching event handlers created with
+procedures such as \fBTk_CreateEventHandler\fR, \fBTcl_CreateFileHandler\fR,
+\fBTcl_CreateTimerHandler\fR, and \fBTcl_DoWhenIdle\fR.
+\fBTcl_DoOneEvent\fR checks to see if
+events are already present on the Tcl event queue; if so,
+it calls the handler(s) for the first (oldest) event, removes it from
+the queue, and returns.
+If there are no events ready to be handled, then \fBTcl_DoOneEvent\fR
+checks for new events from all possible sources.
+If any are found, it puts all of them on Tcl's event queue, calls
+handlers for the first event on the queue, and returns.
+If no events are found, \fBTcl_DoOneEvent\fR checks for \fBTcl_DoWhenIdle\fR
+callbacks; if any are found, it invokes all of them and returns.
+Finally, if no events or idle callbacks have been found, then
+\fBTcl_DoOneEvent\fR sleeps until an event occurs; then it adds any
+new events to the Tcl event queue, calls handlers for the first event,
+and returns.
+The normal return value is 1 to signify that some event
+was processed (see below for other alternatives).
+.PP
+If the \fIflags\fR argument to \fBTcl_DoOneEvent\fR is non-zero,
+it restricts the kinds of events that will be processed by
+\fBTcl_DoOneEvent\fR.
+\fIFlags\fR may be an OR-ed combination of any of the following bits:
+.TP 27
+\fBTCL_WINDOW_EVENTS\fR \-
+Process window system events.
+.TP 27
+\fBTCL_FILE_EVENTS\fR \-
+Process file events.
+.TP 27
+\fBTCL_TIMER_EVENTS\fR \-
+Process timer events.
+.TP 27
+\fBTCL_IDLE_EVENTS\fR \-
+Process idle callbacks.
+.TP 27
+\fBTCL_ALL_EVENTS\fR \-
+Process all kinds of events:  equivalent to OR-ing together all of the
+above flags or specifying none of them.
+.TP 27
+\fBTCL_DONT_WAIT\fR \-
+Do not sleep:  process only events that are ready at the time of the
+call.
+.LP
+If any of the flags \fBTCL_WINDOW_EVENTS\fR, \fBTCL_FILE_EVENTS\fR,
+\fBTCL_TIMER_EVENTS\fR, or \fBTCL_IDLE_EVENTS\fR is set, then the only
+events that will be considered are those for which flags are set.
+Setting none of these flags is equivalent to the value
+\fBTCL_ALL_EVENTS\fR, which causes all event types to be processed.
+If an application has defined additional event sources with
+\fBTcl_CreateEventSource\fR, then additional \fIflag\fR values
+may also be valid, depending on those event sources.
+.PP
+The \fBTCL_DONT_WAIT\fR flag causes \fBTcl_DoOneEvent\fR not to put
+the process to sleep:  it will check for events but if none are found
+then it returns immediately with a return value of 0 to indicate
+that no work was done.
+\fBTcl_DoOneEvent\fR will also return 0 without doing anything if
+the only alternative is to block forever (this can happen, for example,
+if \fIflags\fR is \fBTCL_IDLE_EVENTS\fR and there are no
+\fBTcl_DoWhenIdle\fR callbacks pending, or if no event handlers or
+timer handlers exist).
+.PP
+\fBTcl_DoOneEvent\fR may be invoked recursively.  For example,
+it is possible to invoke \fBTcl_DoOneEvent\fR recursively
+from a handler called by \fBTcl_DoOneEvent\fR.  This sort
+of operation is useful in some modal situations, such
+as when a
+notification dialog has been popped up and an application wishes to
+wait for the user to click a button in the dialog before
+doing anything else.
+
+.SH KEYWORDS
+callback, event, handler, idle, timer

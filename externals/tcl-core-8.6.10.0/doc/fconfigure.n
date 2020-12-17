@@ -1,0 +1,289 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fconfigure \- Set and get options on a channel
+.SH SYNOPSIS
+.nf
+\fBfconfigure \fIchannelId\fR
+\fBfconfigure \fIchannelId\fR \fIname\fR
+\fBfconfigure \fIchannelId\fR \fIname value \fR?\fIname value ...\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBfconfigure\fR command sets and retrieves options for channels.
+.PP
+\fIChannelId\fR identifies the channel for which to set or query an
+option and must refer to an open channel such as a Tcl standard
+channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR), the return
+value from an invocation of \fBopen\fR or \fBsocket\fR, or the result
+of a channel creation command provided by a Tcl extension.
+.PP
+If no \fIname\fR or \fIvalue\fR arguments are supplied, the command
+returns a list containing alternating option names and values for the channel.
+If \fIname\fR is supplied but no \fIvalue\fR then the command returns
+the current value of the given option.
+If one or more pairs of \fIname\fR and \fIvalue\fR are supplied, the
+command sets each of the named options to the corresponding \fIvalue\fR;
+in this case the return value is an empty string.
+.PP
+The options described below are supported for all channels. In addition,
+each channel type may add options that only it supports. See the manual
+entry for the command that creates each type of channels for the options
+that that specific type of channel supports. For example, see the manual
+entry for the \fBsocket\fR command for additional options for sockets, and
+the \fBopen\fR command for additional options for serial devices.
+.TP
+\fB\-blocking\fR \fIboolean\fR
+The \fB\-blocking\fR option determines whether I/O operations on the
+channel can cause the process to block indefinitely.
+The value of the option must be a proper boolean value.
+Channels are normally in blocking mode;  if a channel is placed into
+nonblocking mode it will affect the operation of the \fBgets\fR,
+\fBread\fR, \fBputs\fR, \fBflush\fR, and \fBclose\fR commands by
+allowing them to operate asynchronously;
+see the documentation for those commands for details.
+For nonblocking mode to work correctly, the application must be
+using the Tcl event loop (e.g. by calling \fBTcl_DoOneEvent\fR or
+invoking the \fBvwait\fR command).
+.TP
+\fB\-buffering\fR \fInewValue\fR
+.
+If \fInewValue\fR is \fBfull\fR then the I/O system will buffer output
+until its internal buffer is full or until the \fBflush\fR command is
+invoked. If \fInewValue\fR is \fBline\fR, then the I/O system will
+automatically flush output for the channel whenever a newline character
+is output. If \fInewValue\fR is \fBnone\fR, the I/O system will flush
+automatically after every output operation.  The default is for
+\fB\-buffering\fR to be set to \fBfull\fR except for channels that
+connect to terminal-like devices; for these channels the initial setting
+is \fBline\fR.  Additionally, \fBstdin\fR and \fBstdout\fR are
+initially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
+.TP
+\fB\-buffersize\fR \fInewSize\fR
+.
+\fINewvalue\fR must be an integer; its value is used to set the size of
+buffers, in bytes, subsequently allocated for this channel to store input
+or output. \fINewvalue\fR must be between one and one million, allowing
+buffers of one to one million bytes in size.
+.TP
+\fB\-encoding\fR \fIname\fR
+.
+This option is used to specify the encoding of the channel, so that the data
+can be converted to and from Unicode for use in Tcl.  For instance, in
+order for Tcl to read characters from a Japanese file in \fBshiftjis\fR
+and properly process and display the contents, the encoding would be set
+to \fBshiftjis\fR.  Thereafter, when reading from the channel, the bytes in
+the Japanese file would be converted to Unicode as they are read.
+Writing is also supported \- as Tcl strings are written to the channel they
+will automatically be converted to the specified encoding on output.
+.RS
+.PP
+If a file contains pure binary data (for instance, a JPEG image), the
+encoding for the channel should be configured to be \fBbinary\fR.  Tcl
+will then assign no interpretation to the data in the file and simply read or
+write raw bytes.  The Tcl \fBbinary\fR command can be used to manipulate this
+byte-oriented data.  It is usually better to set the
+\fB\-translation\fR option to \fBbinary\fR when you want to transfer
+binary data, as this turns off the other automatic interpretations of
+the bytes in the stream as well.
+.PP
+The default encoding for newly opened channels is the same platform- and
+locale-dependent system encoding used for interfacing with the operating
+system, as returned by \fBencoding system\fR.
+.RE
+.TP
+\fB\-eofchar\fR \fIchar\fR
+.TP
+\fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
+.
+This option supports DOS file systems that use Control-z (\ex1a) as an
+end of file marker.  If \fIchar\fR is not an empty string, then this
+character signals end-of-file when it is encountered during input.  For
+output, the end-of-file character is output when the channel is closed.
+If \fIchar\fR is the empty string, then there is no special end of file
+character marker.  For read-write channels, a two-element list specifies
+the end of file marker for input and output, respectively.  As a
+convenience, when setting the end-of-file character for a read-write
+channel you can specify a single value that will apply to both reading
+and writing.  When querying the end-of-file character of a read-write
+channel, a two-element list will always be returned.  The default value
+for \fB\-eofchar\fR is the empty string in all cases except for files
+under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1a) for
+reading and the empty string for writing.
+The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7f;
+attempting to set \fB\-eofchar\fR to a value outside of this range will
+generate an error.
+.TP
+\fB\-translation\fR \fImode\fR
+.TP
+\fB\-translation\fR \fB{\fIinMode outMode\fB}\fR
+.
+In Tcl scripts the end of a line is always represented using a single
+newline character (\en).  However, in actual files and devices the end of
+a line may be represented differently on different platforms, or even for
+different devices on the same platform.  For example, under UNIX newlines
+are used in files, whereas carriage-return-linefeed sequences are
+normally used in network connections.  On input (i.e., with \fBgets\fR
+and \fBread\fR) the Tcl I/O system automatically translates the external
+end-of-line representation into newline characters.  Upon output (i.e.,
+with \fBputs\fR), the I/O system translates newlines to the external
+end-of-line representation.  The default translation mode, \fBauto\fR,
+handles all the common cases automatically, but the \fB\-translation\fR
+option provides explicit control over the end of line translations.
+.RS
+.PP
+The value associated with \fB\-translation\fR is a single item for
+read-only and write-only channels.  The value is a two-element list for
+read-write channels; the read translation mode is the first element of
+the list, and the write translation mode is the second element.  As a
+convenience, when setting the translation mode for a read-write channel
+you can specify a single value that will apply to both reading and
+writing.  When querying the translation mode of a read-write channel, a
+two-element list will always be returned.  The following values are
+currently supported:
+.TP
+\fBauto\fR
+.
+As the input translation mode, \fBauto\fR treats any of newline
+(\fBlf\fR), carriage return (\fBcr\fR), or carriage return followed by a
+newline (\fBcrlf\fR) as the end of line representation.  The end of line
+representation can even change from line-to-line, and all cases are
+translated to a newline.  As the output translation mode, \fBauto\fR
+chooses a platform specific representation; for sockets on all platforms
+Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR, and
+for the various flavors of Windows it chooses \fBcrlf\fR.  The default
+setting for \fB\-translation\fR is \fBauto\fR for both input and output.
+.TP
+\fBbinary\fR
+.
+No end-of-line translations are performed.  This is nearly identical to
+\fBlf\fR mode, except that in addition \fBbinary\fR mode also sets the
+end-of-file character to the empty string (which disables it) and sets the
+encoding to \fBbinary\fR (which disables encoding filtering).  See the
+description of \fB\-eofchar\fR and \fB\-encoding\fR for more information.
+.RS
+.PP
+Internally, i.e. when it comes to the actual behaviour of the
+translator this value \fBis\fR identical to \fBlf\fR and is therefore
+reported as such when queried. Even if \fBbinary\fR was used to set
+the translation.
+.RE
+.TP
+\fBcr\fR
+.
+The end of a line in the underlying file or device is represented by a
+single carriage return character.  As the input translation mode,
+\fBcr\fR mode converts carriage returns to newline characters.  As the
+output translation mode, \fBcr\fR mode translates newline characters to
+carriage returns.
+.TP
+\fBcrlf\fR
+.
+The end of a line in the underlying file or device is represented by a
+carriage return character followed by a linefeed character.  As the input
+translation mode, \fBcrlf\fR mode converts carriage-return-linefeed
+sequences to newline characters.  As the output translation mode,
+\fBcrlf\fR mode translates newline characters to carriage-return-linefeed
+sequences.  This mode is typically used on Windows platforms and for
+network connections.
+.TP
+\fBlf\fR
+.
+The end of a line in the underlying file or device is represented by a
+single newline (linefeed) character.  In this mode no translations occur
+during either input or output.  This mode is typically used on UNIX
+platforms.
+.RE
+.PP
+.SH "STANDARD CHANNELS"
+.PP
+The Tcl standard channels (\fBstdin\fR, \fBstdout\fR, and \fBstderr\fR)
+can be configured through this command like every other channel opened
+by the Tcl library. Beyond the standard options described above they
+will also support any special option according to their current type.
+If, for example, a Tcl application is started by the \fBinet\fR
+super-server common on Unix system its Tcl standard channels will be
+sockets and thus support the socket options.
+.SH EXAMPLES
+.PP
+Instruct Tcl to always send output to \fBstdout\fR immediately,
+whether or not it is to a terminal:
+.PP
+.CS
+\fBfconfigure\fR stdout -buffering none
+.CE
+.PP
+Open a socket and read lines from it without ever blocking the
+processing of other events:
+.PP
+.CS
+set s [socket some.where.com 12345]
+\fBfconfigure\fR $s -blocking 0
+fileevent $s readable "readMe $s"
+proc readMe chan {
+    if {[gets $chan line] < 0} {
+        if {[eof $chan]} {
+            close $chan
+            return
+        }
+        # Could not read a complete line this time; Tcl's
+        # internal buffering will hold the partial line for us
+        # until some more data is available over the socket.
+    } else {
+        puts stdout $line
+    }
+}
+.CE
+.PP
+Read a PPM-format image from a file:
+.PP
+.CS
+# Open the file and put it into Unix ASCII mode
+set f [open teapot.ppm]
+\fBfconfigure\fR $f \-encoding ascii \-translation lf
+
+# Get the header
+if {[gets $f] ne "P6"} {
+    error "not a raw\-bits PPM"
+}
+
+# Read lines until we have got non-comment lines
+# that supply us with three decimal values.
+set words {}
+while {[llength $words] < 3} {
+    gets $f line
+    if {[string match "#*" $line]} continue
+    lappend words {*}[join [scan $line %d%d%d]]
+}
+
+# Those words supply the size of the image and its
+# overall depth per channel. Assign to variables.
+lassign $words xSize ySize depth
+
+# Now switch to binary mode to pull in the data,
+# one byte per channel (red,green,blue) per pixel.
+\fBfconfigure\fR $f \-translation binary
+set numDataBytes [expr {3 * $xSize * $ySize}]
+set data [read $f $numDataBytes]
+
+close $f
+.CE
+.SH "SEE ALSO"
+close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
+Tcl_StandardChannels(3)
+.SH KEYWORDS
+blocking, buffering, carriage return, end of line, flushing, linemode,
+newline, nonblocking, platform, translation, encoding, filter, byte array,
+binary
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

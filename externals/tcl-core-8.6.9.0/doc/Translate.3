@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_TranslateFileName 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_TranslateFileName \- convert file name to native form and replace tilde with home directory
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+char *
+\fBTcl_TranslateFileName\fR(\fIinterp\fR, \fIname\fR, \fIbufferPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_DString *bufferPtr in/out
+.AP Tcl_Interp *interp in
+Interpreter in which to report an error, if any.
+.AP "const char" *name in
+File name, which may start with a
+.QW ~ .
+.AP Tcl_DString *bufferPtr in/out
+If needed, this dynamic string is used to store the new file name.
+At the time of the call it should be uninitialized or free.  The
+caller must eventually call \fBTcl_DStringFree\fR to free up
+anything stored here.
+.BE
+.SH DESCRIPTION
+.PP
+This utility procedure translates a file name to a platform-specific form
+which, after being converted to the appropriate encoding, is suitable for
+passing to the local operating system.  In particular, it converts
+network names into native form and does tilde substitution.
+.PP
+However, with the advent of the newer \fBTcl_FSGetNormalizedPath\fR and
+\fBTcl_FSGetNativePath\fR, there is no longer any need to use this
+procedure.  In particular, \fBTcl_FSGetNativePath\fR performs all the
+necessary translation and encoding conversion, is virtual-filesystem
+aware, and caches the native result for faster repeated calls.
+Finally \fBTcl_FSGetNativePath\fR does not require you to free anything
+afterwards.
+.PP
+If
+\fBTcl_TranslateFileName\fR has to do tilde substitution or translate
+the name then it uses
+the dynamic string at \fI*bufferPtr\fR to hold the new string it
+generates.
+After \fBTcl_TranslateFileName\fR returns a non-NULL result, the caller must
+eventually invoke \fBTcl_DStringFree\fR to free any information
+placed in \fI*bufferPtr\fR.  The caller need not know whether or
+not \fBTcl_TranslateFileName\fR actually used the string;  \fBTcl_TranslateFileName\fR
+initializes \fI*bufferPtr\fR even if it does not use it, so the call to
+\fBTcl_DStringFree\fR will be safe in either case.
+.PP
+If an error occurs (e.g. because there was no user by the given
+name) then NULL is returned and an error message will be left
+in the interpreter's result.
+When an error occurs, \fBTcl_TranslateFileName\fR
+frees the dynamic string itself so that the caller need not call
+\fBTcl_DStringFree\fR.
+.PP
+The caller is responsible for making sure that the interpreter's result
+has its default empty value when \fBTcl_TranslateFileName\fR is invoked.
+.SH "SEE ALSO"
+filename(n)
+.SH KEYWORDS
+file name, home directory, tilde, translate, user

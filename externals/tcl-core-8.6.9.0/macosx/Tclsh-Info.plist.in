@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Copyright (c) 2005-2007 Daniel A. Steffen <das@users.sourceforge.net>
+
+	See the file "license.terms" for information on usage and redistribution of
+	this file, and for a DISCLAIMER OF ALL WARRANTIES.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>tclsh@TCL_VERSION@</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Tcl Shell @TCL_VERSION@@TCL_PATCH_LEVEL@,
+Copyright © 1987-@TCL_YEAR@ Tcl Core Team,
+Copyright © 2001-@TCL_YEAR@ Daniel A. Steffen,
+Copyright © 2001-2009 Apple Inc.,
+Copyright © 2001-2002 Jim Ingham &amp; Ian Reid</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.tcltk.tclsh</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>tclsh</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@TCL_VERSION@@TCL_PATCH_LEVEL@</string>
+	<key>CFBundleSignature</key>
+	<string>TclS</string>
+	<key>CFBundleVersion</key>
+	<string>@TCL_VERSION@@TCL_PATCH_LEVEL@</string>
+</dict>
+</plist>

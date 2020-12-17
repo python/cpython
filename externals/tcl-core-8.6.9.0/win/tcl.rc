@@ -1,0 +1,57 @@
+// Version Resource Script
+//
+
+#include <winver.h>
+#include <tcl.h>
+
+//
+// build-up the name suffix that defines the type of build this is.
+//
+#if TCL_THREADS
+#define SUFFIX_THREADS	    "t"
+#else
+#define SUFFIX_THREADS	    ""
+#endif
+
+#if DEBUG && !UNCHECKED
+#define SUFFIX_DEBUG	    "g"
+#else
+#define SUFFIX_DEBUG	    ""
+#endif
+
+#define SUFFIX		    SUFFIX_THREADS SUFFIX_DEBUG
+
+
+LANGUAGE 0x9, 0x1	/* LANG_ENGLISH, SUBLANG_DEFAULT */
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 	TCL_MAJOR_VERSION,TCL_MINOR_VERSION,TCL_RELEASE_LEVEL,TCL_RELEASE_SERIAL
+ PRODUCTVERSION TCL_MAJOR_VERSION,TCL_MINOR_VERSION,TCL_RELEASE_LEVEL,TCL_RELEASE_SERIAL
+ FILEFLAGSMASK 	0x3fL
+#ifdef DEBUG
+ FILEFLAGS 	VS_FF_DEBUG
+#else
+ FILEFLAGS 	0x0L
+#endif
+ FILEOS 	VOS__WINDOWS32
+ FILETYPE 	VFT_DLL
+ FILESUBTYPE 	0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0" /* LANG_ENGLISH/SUBLANG_ENGLISH_US, Unicode CP */
+        BEGIN
+            VALUE "FileDescription", "Tcl DLL\0"
+            VALUE "OriginalFilename", "tcl" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) SUFFIX ".dll\0"
+            VALUE "CompanyName", "ActiveState Corporation\0"
+            VALUE "FileVersion", TCL_PATCH_LEVEL
+            VALUE "LegalCopyright", "Copyright \251 2001 by ActiveState Corporation, et al\0"
+            VALUE "ProductName", "Tcl " TCL_VERSION " for Windows\0"
+            VALUE "ProductVersion", TCL_PATCH_LEVEL
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

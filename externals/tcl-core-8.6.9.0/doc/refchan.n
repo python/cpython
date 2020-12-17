@@ -1,0 +1,411 @@
+'\" 
+'\" Copyright (c) 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH refchan n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+.\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+refchan \- command handler API of reflected channels
+.SH SYNOPSIS
+\fBcmdPrefix \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The Tcl-level handler for a reflected channel has to be a command with
+subcommands (termed an \fIensemble\fR, as it is a command such as that
+created by \fBnamespace ensemble\fR \fBcreate\fR, though the implementation
+of handlers for reflected channel \fIis not\fR tied to \fBnamespace
+ensemble\fRs in any way; see \fBEXAMPLE\fR below for how to build an
+\fBoo::class\fR that supports the API). Note that \fIcmdPrefix\fR is whatever was
+specified in the call to \fBchan create\fR, and may consist of
+multiple arguments; this will be expanded to multiple words in place
+of the prefix.
+.PP
+Of all the possible subcommands, the handler \fImust\fR support
+\fBinitialize\fR, \fBfinalize\fR, and \fBwatch\fR. Support for the
+other subcommands is optional.
+.SS "MANDATORY SUBCOMMANDS"
+.TP
+\fIcmdPrefix \fBinitialize \fIchannelId mode\fR
+.
+An invocation of this subcommand will be the first call the
+\fIcmdPrefix\fR will receive for the specified new \fIchannelId\fR. It
+is the responsibility of this subcommand to set up any internal data
+structures required to keep track of the channel and its state.
+.RS
+.PP
+The return value of the method has to be a list containing the names
+of all subcommands supported by the \fIcmdPrefix\fR. This also tells
+the Tcl core which version of the API for reflected channels is used by
+this command handler.
+.PP
+Any error thrown by the method will abort the creation of the channel
+and no channel will be created. The thrown error will appear as error
+thrown by \fBchan create\fR. Any exception other than an \fBerror\fR
+(e.g.,\ \fBbreak\fR, etc.) is treated as (and converted to) an error.
+.PP
+\fBNote:\fR If the creation of the channel was aborted due to failures
+here, then the \fBfinalize\fR subcommand will not be called.
+.PP
+The \fImode\fR argument tells the handler whether the channel was
+opened for reading, writing, or both. It is a list containing any of
+the strings \fBread\fR or \fBwrite\fR. The list will always
+contain at least one element.
+.PP
+The subcommand must throw an error if the chosen mode is not
+supported by the \fIcmdPrefix\fR.
+.RE
+.TP
+\fIcmdPrefix \fBfinalize \fIchannelId\fR
+.
+An invocation of this subcommand will be the last call the
+\fIcmdPrefix\fR will receive for the specified \fIchannelId\fR. It will
+be generated just before the destruction of the data structures of the
+channel held by the Tcl core. The command handler \fImust not\fR
+access the \fIchannelId\fR anymore in no way. Upon this subcommand being
+called, any internal resources allocated to this channel must be
+cleaned up.
+.RS
+.PP
+The return value of this subcommand is ignored.
+.PP
+If the subcommand throws an error the command which caused its
+invocation (usually \fBchan close\fR) will appear to have thrown this
+error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is
+treated as (and converted to) an error.
+.PP
+This subcommand is not invoked if the creation of the channel was
+aborted during \fBinitialize\fR (See above).
+.RE
+.TP
+\fIcmdPrefix \fBwatch \fIchannelId eventspec\fR
+.
+This subcommand notifies the \fIcmdPrefix\fR that the specified
+\fIchannelId\fR is interested in the events listed in the
+\fIeventspec\fR. This argument is a list containing any of \fBread\fR
+and \fBwrite\fR. The list may be empty, which signals that the
+channel does not wish to be notified of any events. In that situation,
+the handler should disable event generation completely.
+.RS
+.PP
+\fBWarning:\fR Any return value of the subcommand is ignored. This
+includes all errors thrown by the subcommand, \fBbreak\fR, \fBcontinue\fR, and
+custom return codes.
+.PP
+This subcommand interacts with \fBchan postevent\fR. Trying to post an
+event which was not listed in the last call to \fBwatch\fR will cause
+\fBchan postevent\fR to throw an error.
+.RE
+.SS "OPTIONAL SUBCOMMANDS"
+.TP
+\fIcmdPrefix \fBread \fIchannelId count\fR
+.
+This \fIoptional\fR subcommand is called when the user requests data from the
+channel \fIchannelId\fR. \fIcount\fR specifies how many \fIbytes\fR have been
+requested. If the subcommand is not supported then it is not possible to read
+from the channel handled by the command.
+.RS
+.PP
+The return value of this subcommand is taken as the requested data
+\fIbytes\fR. If the returned data contains more bytes than requested,
+an error will be signaled and later thrown by the command which
+performed the read (usually \fBgets\fR or \fBread\fR). However,
+returning fewer bytes than requested is acceptable.
+.PP
+Note that returning nothing (0 bytes) is a signal to the higher layers
+that \fBEOF\fR has been reached on the channel. To signal that the
+channel is out of data right now, but has not yet reached \fBEOF\fR,
+it is necessary to throw the error "EAGAIN", i.e. to either
+.PP
+.CS
+return -code error EAGAIN
+.CE
+or
+.CS
+error EAGAIN
+.CE
+.PP
+For extensibility any error whose value is a negative integer number
+will cause the higher layers to set the C-level variable "\fBerrno\fR"
+to the absolute value of this number, signaling a system error.
+However, note that the exact mapping between these error numbers and
+their meanings is operating system dependent.
+.PP
+For example, while on Linux both
+.PP
+.CS
+return -code error -11
+.CE
+and
+.CS
+error -11
+.CE
+.PP
+are equivalent to the examples above, using the more readable string "EAGAIN",
+this is not true for BSD, where the equivalent number is -35.
+.PP
+The symbolic string however is the same across systems, and internally
+translated to the correct number. No other error value has such a mapping
+to a symbolic string.
+.PP
+If the subcommand throws any other error, the command which caused its
+invocation (usually \fBgets\fR, or \fBread\fR) will appear to have
+thrown this error. Any exception beyond \fBerror\fR, (e.g.,\ \fBbreak\fR,
+etc.) is treated as and converted to an error.
+.RE
+.TP
+\fIcmdPrefix \fBwrite \fIchannelId data\fR
+.
+This \fIoptional\fR subcommand is called when the user writes data to
+the channel \fIchannelId\fR. The \fIdata\fR argument contains \fIbytes\fR, not
+characters. Any type of transformation (EOL, encoding) configured for
+the channel has already been applied at this point. If this subcommand
+is not supported then it is not possible to write to the channel
+handled by the command.
+.RS
+.PP
+The return value of the subcommand is taken as the number of bytes
+written by the channel. Anything non-numeric will cause an error to be
+signaled and later thrown by the command which performed the write. A
+negative value implies that the write failed. Returning a value
+greater than the number of bytes given to the handler, or zero, is
+forbidden and will cause the Tcl core to throw an error.
+.PP
+To signal that the channel is not able to accept data for writing
+right now, it is necessary to throw the error "EAGAIN", i.e. to either
+.PP
+.CS
+return -code error EAGAIN
+.CE
+or
+.CS
+error EAGAIN
+.CE
+.PP
+For extensibility any error whose value is a negative integer number
+will cause the higher layers to set the C-level variable "\fBerrno\fR"
+to the absolute value of this number, signaling a system error.
+However, note that the exact mapping between these error numbers and
+their meanings is operating system dependent.
+.PP
+For example, while on Linux both
+.PP
+.CS
+return -code error -11
+.CE
+and
+.CS
+error -11
+.CE
+.PP
+are equivalent to the examples above, using the more readable string "EAGAIN",
+this is not true for BSD, where the equivalent number is -35.
+.PP
+The symbolic string however is the same across systems, and internally
+translated to the correct number. No other error value has such a mapping
+to a symbolic string.
+.PP
+If the subcommand throws any other error the command which caused its
+invocation (usually \fBputs\fR) will appear to have thrown this error.
+Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is treated
+as and converted to an error.
+.RE
+.TP
+\fIcmdPrefix \fBseek \fIchannelId offset base\fR
+.
+This \fIoptional\fR subcommand is responsible for the handling of
+\fBchan seek\fR and \fBchan tell\fR requests on the channel
+\fIchannelId\fR. If it is not supported then seeking will not be possible for
+the channel.
+.RS
+.PP
+The \fIbase\fR argument is the same as the equivalent argument of the
+builtin \fBchan seek\fR, namely:
+.TP 10
+\fBstart\fR
+.
+Seeking is relative to the beginning of the channel.
+.TP 10
+\fBcurrent\fR
+.
+Seeking is relative to the current seek position.
+.TP 10
+\fBend\fR
+.
+Seeking is relative to the end of the channel.
+.PP
+The \fIoffset\fR is an integer number specifying the amount of
+\fBbytes\fR to seek forward or backward. A positive number should seek
+forward, and a negative number should seek backward.
+A channel may provide only limited seeking. For example sockets can
+seek forward, but not backward.
+.PP
+The return value of the subcommand is taken as the (new) location of
+the channel, counted from the start. This has to be an integer number
+greater than or equal to zero.
+If the subcommand throws an error the command which caused its
+invocation (usually \fBchan seek\fR, or \fBchan tell\fR) will appear to have
+thrown this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
+etc.) is treated as and converted to an error.
+.PP
+The offset/base combination of 0/\fBcurrent\fR signals a \fBchan tell\fR
+request, i.e.,\ seek nothing relative to the current location, making
+the new location identical to the current one, which is then returned.
+.RE
+.TP
+\fIcmdPrefix \fBconfigure \fIchannelId option value\fR
+.
+This \fIoptional\fR subcommand is for setting the type-specific options of
+channel \fIchannelId\fR. The \fIoption\fR argument indicates the option to be
+written, and the \fIvalue\fR argument indicates the value to set the option to.
+.RS
+.PP
+This subcommand will never try to update more than one option at a
+time; that is behavior implemented in the Tcl channel core.
+.PP
+The return value of the subcommand is ignored.
+.PP
+If the subcommand throws an error the command which performed the
+(re)configuration or query (usually \fBfconfigure\fR or
+\fBchan configure\fR) will appear to have thrown this error. Any exception
+beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is treated as and
+converted to an error.
+.RE
+.TP
+\fIcmdPrefix \fBcget \fIchannelId option\fR
+.
+This \fIoptional\fR subcommand is used when reading a single type-specific
+option of channel \fIchannelId\fR. If this subcommand is supported then the
+subcommand \fBcgetall\fR must be supported as well.
+.RS
+.PP
+The subcommand should return the value of the specified \fIoption\fR.
+.PP
+If the subcommand throws an error, the command which performed the
+(re)configuration or query (usually \fBfconfigure\fR or \fBchan configure\fR)
+will appear to have thrown this error. Any exception beyond \fIerror\fR
+(e.g.,\ \fBbreak\fR, etc.) is treated as and converted to an error.
+.RE
+.TP
+\fIcmdPrefix \fBcgetall \fIchannelId\fR
+.
+This \fIoptional\fR subcommand is used for reading all type-specific options
+of channel \fIchannelId\fR. If this subcommand is supported then the
+subcommand \fBcget\fR has to be supported as well.
+.RS
+.PP
+The subcommand should return a list of all options and their values.
+This list must have an even number of elements.
+.PP
+If the subcommand throws an error the command which performed the
+(re)configuration or query (usually \fBfconfigure\fR or \fBchan configure\fR)
+will appear to have thrown this error. Any exception beyond \fBerror\fR
+(e.g.,\ \fBbreak\fR, etc.) is treated as and converted to an error.
+.RE
+.TP
+\fIcmdPrefix \fBblocking \fIchannelId mode\fR
+.
+This \fIoptional\fR subcommand handles changes to the blocking mode of the
+channel \fIchannelId\fR. The \fImode\fR is a boolean flag. A true value means
+that the channel has to be set to blocking, and a false value means that the
+channel should be non-blocking.
+.RS
+.PP
+The return value of the subcommand is ignored.
+.PP
+If the subcommand throws an error the command which caused its
+invocation (usually \fBfconfigure\fR or \fBchan configure\fR) will appear to
+have thrown this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
+etc.) is treated as and converted to an error.
+.RE
+.SH NOTES
+Some of the functions supported in channels defined in Tcl's C
+interface are not available to channels reflected to the Tcl level.
+.PP
+The function \fBTcl_DriverGetHandleProc\fR is not supported;
+i.e.,\ reflected channels do not have OS specific handles.
+.PP
+The function \fBTcl_DriverHandlerProc\fR is not supported. This driver
+function is relevant only for stacked channels, i.e.,\ transformations.
+Reflected channels are always base channels, not transformations.
+.PP
+The function \fBTcl_DriverFlushProc\fR is not supported. This is
+because the current generic I/O layer of Tcl does not use this
+function anywhere at all. Therefore support at the Tcl level makes no
+sense either. This may be altered in the future (through extending the
+API defined here and changing its version number) should the function
+be used at some time in the future.
+.SH EXAMPLE
+.PP
+This demonstrates how to make a channel that reads from a string.
+.PP
+.CS
+oo::class create stringchan {
+    variable data pos
+    constructor {string {encoding {}}} {
+        if {$encoding eq ""} {set encoding [encoding system]}
+        set data [encoding convertto $encoding $string]
+        set pos 0
+    }
+
+    method \fBinitialize\fR {ch mode} {
+        return "initialize finalize watch read seek"
+    }
+    method \fBfinalize\fR {ch} {
+        my destroy
+    }
+    method \fBwatch\fR {ch events} {
+        # Must be present but we ignore it because we do not
+        # post any events
+    }
+
+    # Must be present on a readable channel
+    method \fBread\fR {ch count} {
+        set d [string range $data $pos [expr {$pos+$count-1}]]
+        incr pos [string length $d]
+        return $d
+    }
+
+    # This method is optional, but useful for the example below
+    method \fBseek\fR {ch offset base} {
+        switch $base {
+            start {
+                set pos $offset
+            }
+            current {
+                incr pos $offset
+            }
+            end {
+                set pos [string length $data]
+                incr pos $offset
+            }
+        }
+        if {$pos < 0} {
+            set pos 0
+        } elseif {$pos > [string length $data]} {
+            set pos [string length $data]
+        }
+        return $pos
+    }
+}
+
+# Now we create an instance...
+set string "The quick brown fox jumps over the lazy dog.\\n"
+set ch [\fBchan create\fR read [stringchan new $string]]
+
+puts [gets $ch];   # Prints the whole string
+
+seek $ch -5 end;
+puts [read $ch];   # Prints just the last word
+.CE
+.SH "SEE ALSO"
+chan(n), transchan(n)
+.SH KEYWORDS
+API, channel, ensemble, prefix, reflection
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

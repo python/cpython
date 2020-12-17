@@ -1,0 +1,552 @@
+# Commands covered:  set (plus basic command syntax).  Also tests the
+# procedures in the file tclOldParse.c.  This set of tests is an old
+# one that predates the new parser in Tcl 8.1.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testwordend [llength [info commands testwordend]]
+testConstraint testbytestring [llength [info commands testbytestring]]
+
+# Save the argv value for restoration later
+set savedArgv $argv
+
+proc fourArgs {a b c d} {
+    global arg1 arg2 arg3 arg4
+    set arg1 $a
+    set arg2 $b
+    set arg3 $c
+    set arg4 $d
+}
+
+proc getArgs args {
+    global argv
+    set argv $args
+}
+
+# Basic argument parsing.
+
+test parseOld-1.1 {basic argument parsing} {
+    set arg1 {}
+    fourArgs a b	c 		 d
+    list $arg1 $arg2 $arg3 $arg4
+} {a b c d}
+test parseOld-1.2 {basic argument parsing} {
+    set arg1 {}
+    eval "fourArgs 123\v4\f56\r7890"
+    list $arg1 $arg2 $arg3 $arg4
+} {123 4 56 7890}
+
+# Quotes.
+
+test parseOld-2.1 {quotes and variable-substitution} {
+    getArgs "a b c" d
+    set argv
+} {{a b c} d}
+test parseOld-2.2 {quotes and variable-substitution} {
+    set a 101
+    getArgs "a$a b c"
+    set argv
+} {{a101 b c}}
+test parseOld-2.3 {quotes and variable-substitution} {
+    set argv "xy[format xabc]"
+    set argv
+} {xyxabc}
+test parseOld-2.4 {quotes and variable-substitution} {
+    set argv "xy\t"
+    set argv
+} xy\t
+test parseOld-2.5 {quotes and variable-substitution} {
+    set argv "a b	c
+d e f"
+    set argv
+} a\ b\tc\nd\ e\ f
+test parseOld-2.6 {quotes and variable-substitution} {
+    set argv a"bcd"e
+    set argv
+} {a"bcd"e}
+
+# Braces.
+
+test parseOld-3.1 {braces} {
+    getArgs {a b c} d
+    set argv
+} "{a b c} d"
+test parseOld-3.2 {braces} {
+    set a 101
+    set argv {a$a b c}
+    set b [string index $argv 1]
+    set b
+} {$}
+test parseOld-3.3 {braces} {
+    set argv {a[format xyz] b}
+    string length $argv
+} 15
+test parseOld-3.4 {braces} {
+    set argv {a\nb\}}
+    string length $argv
+} 6
+test parseOld-3.5 {braces} {
+    set argv {{{{}}}}
+    set argv
+} "{{{}}}"
+test parseOld-3.6 {braces} {
+    set argv a{{}}b
+    set argv
+} "a{{}}b"
+test parseOld-3.7 {braces} {
+    set a [format "last]"]
+    set a
+} {last]}
+
+# Command substitution.
+
+test parseOld-4.1 {command substitution} {
+    set a [format xyz]
+    set a
+} xyz
+test parseOld-4.2 {command substitution} {
+    set a a[format xyz]b[format q]
+    set a
+} axyzbq
+test parseOld-4.3 {command substitution} {
+    set a a[
+set b 22;
+format %s $b
+
+]b
+    set a
+} a22b
+test parseOld-4.4 {command substitution} {
+    set a 7.7
+    if [catch {expr int($a)}] {set a foo}
+    set a
+} 7.7
+
+# Variable substitution.
+
+test parseOld-5.1 {variable substitution} {
+    set a 123
+    set b $a
+    set b
+} 123
+test parseOld-5.2 {variable substitution} {
+    set a 345
+    set b x$a.b
+    set b
+} x345.b
+test parseOld-5.3 {variable substitution} {
+    set _123z xx
+    set b $_123z^
+    set b
+} xx^
+test parseOld-5.4 {variable substitution} {
+    set a 78
+    set b a${a}b
+    set b
+} a78b
+test parseOld-5.5 {variable substitution} {catch {$_non_existent_} msg} 1
+test parseOld-5.6 {variable substitution} {
+    catch {$_non_existent_} msg
+    set msg
+} {can't read "_non_existent_": no such variable}
+test parseOld-5.7 {array variable substitution} {
+    unset -nocomplain a
+    set a(xyz) 123
+    set b $a(xyz)foo
+    set b
+} 123foo
+test parseOld-5.8 {array variable substitution} {
+    unset -nocomplain a
+    set "a(x y z)" 123
+    set b $a(x y z)foo
+    set b
+} 123foo
+test parseOld-5.9 {array variable substitution} {
+    unset -nocomplain a qqq
+    set "a(x y z)" qqq
+    set $a([format x]\ y [format z]) foo
+    set qqq
+} foo
+test parseOld-5.10 {array variable substitution} {
+    unset -nocomplain a
+    list [catch {set b $a(22)} msg] $msg
+} {1 {can't read "a(22)": no such variable}}
+test parseOld-5.11 {array variable substitution} {
+    set b a$!
+    set b
+} {a$!}
+test parseOld-5.12 {empty array name support} {
+    list [catch {set b a$()} msg] $msg
+} {1 {can't read "()": no such variable}}
+unset -nocomplain a
+test parseOld-5.13 {array variable substitution} {
+    unset -nocomplain a
+    set long {This is a very long variable, long enough to cause storage \
+	allocation to occur in Tcl_ParseVar.  If that storage isn't getting \
+	freed up correctly, then a core leak will occur when this test is \
+	run.  This text is probably beginning to sound like drivel, but I've \
+	run out of things to say and I need more characters still.}
+    set a($long) 777
+    set b $a($long)
+    list $b [array names a]
+} {777 {{This is a very long variable, long enough to cause storage \
+	allocation to occur in Tcl_ParseVar.  If that storage isn't getting \
+	freed up correctly, then a core leak will occur when this test is \
+	run.  This text is probably beginning to sound like drivel, but I've \
+	run out of things to say and I need more characters still.}}}
+test parseOld-5.14 {array variable substitution} {
+    unset -nocomplain a b a1
+    set a1(22) foo
+    set a(foo) bar
+    set b $a($a1(22))
+    set b
+} bar
+unset -nocomplain a a1
+
+test parseOld-7.1 {backslash substitution} {
+    set a "\a\c\n\]\}"
+    string length $a
+} 5
+test parseOld-7.2 {backslash substitution} {
+    set a {\a\c\n\]\}}
+    string length $a
+} 10
+test parseOld-7.3 {backslash substitution} {
+    set a "abc\
+def"
+    set a
+} {abc def}
+test parseOld-7.4 {backslash substitution} {
+    set a {abc\
+def}
+    set a
+} {abc def}
+test parseOld-7.5 {backslash substitution} {
+    set msg {}
+    set a xxx
+    set error [catch {if {24 < \
+	35} {set a 22} {set \
+	    a 33}} msg]
+    list $error $msg $a
+} {0 22 22}
+test parseOld-7.6 {backslash substitution} {
+    eval "concat abc\\"
+} "abc\\"
+test parseOld-7.7 {backslash substitution} {
+    eval "concat \\\na"
+} "a"
+test parseOld-7.8 {backslash substitution} {
+    eval "concat x\\\n   	a"
+} "x a"
+test parseOld-7.9 {backslash substitution} {
+    eval "concat \\x"
+} "x"
+test parseOld-7.10 {backslash substitution} {
+    eval "list a b\\\nc d"
+} {a b c d}
+test parseOld-7.11 {backslash substitution} {
+    eval "list a \"b c\"\\\nd e"
+} {a {b c} d e}
+test parseOld-7.12 {backslash substitution} testbytestring {
+    expr {[list \ua2] eq [testbytestring "\xc2\xa2"]}
+} 1
+test parseOld-7.13 {backslash substitution} testbytestring {
+    expr {[list \u4e21] eq [testbytestring "\xe4\xb8\xa1"]}
+} 1
+test parseOld-7.14 {backslash substitution} testbytestring {
+    expr {[list \u4e2k] eq [testbytestring "\xd3\xa2k"]}
+} 1
+
+# Semi-colon.
+
+test parseOld-8.1 {semi-colons} {
+    set b 0
+    getArgs a;set b 2
+    set argv
+} a
+test parseOld-8.2 {semi-colons} {
+    set b 0
+    getArgs a;set b 2
+    set b
+} 2
+test parseOld-8.3 {semi-colons} {
+    getArgs a b ; set b 1
+    set argv
+} {a b}
+test parseOld-8.4 {semi-colons} {
+    getArgs a b ; set b 1
+    set b
+} 1
+
+# The following checks are to ensure that the interpreter's result
+# gets re-initialized by Tcl_Eval in all the right places.
+
+set a 22
+test parseOld-9.1 {result initialization} {concat abc} abc
+test parseOld-9.2 {result initialization} {concat abc; proc foo {} {}} {}
+test parseOld-9.3 {result initialization} {concat abc; proc foo {} $a} {}
+test parseOld-9.4 {result initialization} {proc foo {} [concat abc]} {}
+test parseOld-9.5 {result initialization} {concat abc; } abc
+test parseOld-9.6 {result initialization} {
+    eval {
+    concat abc
+}} abc
+test parseOld-9.7 {result initialization} {} {}
+test parseOld-9.8 {result initialization} {concat abc; ; ;} abc
+
+# Syntax errors.
+
+test parseOld-10.1 {syntax errors} {catch "set a \{bcd" msg} 1
+test parseOld-10.2 {syntax errors} {
+	catch "set a \{bcd" msg
+	set msg
+} {missing close-brace}
+test parseOld-10.3 {syntax errors} {catch {set a "bcd} msg} 1
+test parseOld-10.4 {syntax errors} {
+	catch {set a "bcd} msg
+	set msg
+} {missing "}
+#" Emacs formatting >:^(
+test parseOld-10.5 {syntax errors} {catch {set a "bcd"xy} msg} 1
+test parseOld-10.6 {syntax errors} {
+	catch {set a "bcd"xy} msg
+	set msg
+} {extra characters after close-quote}
+test parseOld-10.7 {syntax errors} {catch "set a {bcd}xy" msg} 1
+test parseOld-10.8 {syntax errors} {
+	catch "set a {bcd}xy" msg
+	set msg
+} {extra characters after close-brace}
+test parseOld-10.9 {syntax errors} {catch {set a [format abc} msg} 1
+test parseOld-10.10 {syntax errors} {
+	catch {set a [format abc} msg
+	set msg
+} {missing close-bracket}
+test parseOld-10.11 {syntax errors} {catch gorp-a-lot msg} 1
+test parseOld-10.12 {syntax errors} {
+	catch gorp-a-lot msg
+	set msg
+} {invalid command name "gorp-a-lot"}
+test parseOld-10.13 {syntax errors} {
+    set a [concat {a}\
+ {b}]
+    set a
+} {a b}
+
+# The next test will fail on the Mac, 'cause the MSL uses a fixed sized
+# buffer for %d conversions (LAME!).  I won't leave the test out, however,
+# since MetroWerks may some day fix this.
+
+test parseOld-10.14 {syntax errors} {
+    list [catch {eval \$x[format "%01000d" 0](} msg] $msg $::errorInfo
+} {1 {missing )} {missing )
+    while executing
+"$x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000..."
+    ("eval" body line 1)
+    invoked from within
+"eval \$x[format "%01000d" 0]("}}
+test parseOld-10.15 {syntax errors, missplaced braces} {
+    catch {
+        proc misplaced_end_brace {} {
+            set what foo
+            set when [expr ${what}size - [set off$what]}]
+    } msg
+    set msg
+} {extra characters after close-brace}
+test parseOld-10.16 {syntax errors, missplaced braces} {
+    catch {
+        set a {
+            set what foo
+            set when [expr ${what}size - [set off$what]}]
+    } msg
+    set msg
+} {extra characters after close-brace}
+test parseOld-10.17 {syntax errors, unusual spacing} {
+    list [catch {return [ [1]]} msg] $msg
+} {1 {invalid command name "1"}}
+# Long values (stressing storage management)
+
+set a {1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH}
+
+test parseOld-11.1 {long values} {
+    string length $a
+} 214
+test parseOld-11.2 {long values} {
+    llength $a
+} 43
+test parseOld-11.3 {long values} {
+    set b "1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH"
+    set b
+} $a
+test parseOld-11.4 {long values} {
+    set b "$a"
+    set b
+} $a
+test parseOld-11.5 {long values} {
+    set b [set a]
+    set b
+} $a
+test parseOld-11.6 {long values} {
+    set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]
+    string length $b
+} 214
+test parseOld-11.7 {long values} {
+    set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]
+    llength $b
+} 43
+# Duplicate action of previous test
+llength [set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]]
+test parseOld-11.8 {long values} {
+    set b
+} $a
+test parseOld-11.9 {long values} {
+    set a [concat 0000 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH IIII JJJJ KKKK LLLL MMMM NNNN OOOO PPPP QQQQ RRRR SSSS TTTT UUUU VVVV WWWW XXXX YYYY ZZZZ]
+    llength $a
+} 62
+set i 0
+foreach j [concat 0000 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH IIII JJJJ KKKK LLLL MMMM NNNN OOOO PPPP QQQQ RRRR SSSS TTTT UUUU VVVV WWWW XXXX YYYY ZZZZ] {
+    set test [string index 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ $i]
+    set test $test$test$test$test
+    test parseOld-11.10-[incr i] {long values} {
+	set j
+    } $test
+}
+test parseOld-11.11 {test buffer overflow in backslashes in braces} {
+    expr {"a" == {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101}}
+} 0
+
+test parseOld-12.1 {comments} {
+    set a old
+    eval {  # set a new}
+    set a
+} {old}
+test parseOld-12.2 {comments} {
+    set a old
+    eval "  # set a new\nset a new"
+    set a
+} {new}
+test parseOld-12.3 {comments} {
+    set a old
+    eval "  # set a new\\\nset a new"
+    set a
+} {old}
+test parseOld-12.4 {comments} {
+    set a old
+    eval "  # set a new\\\\\nset a new"
+    set a
+} {new}
+
+test parseOld-13.1 {comments at the end of a bracketed script} {
+    set x "[
+expr 1+1
+# skip this!
+]"
+} {2}
+
+test parseOld-14.1 {TclWordEnd procedure} {testwordend} {
+    testwordend " 	\n abc"
+} {c}
+test parseOld-14.2 {TclWordEnd procedure} {testwordend} {
+    testwordend "   \\\n"
+} {}
+test parseOld-14.3 {TclWordEnd procedure} {testwordend} {
+    testwordend "   \\\n "
+} { }
+test parseOld-14.4 {TclWordEnd procedure} {testwordend} {
+    testwordend {"abc"}
+} {"}
+#" Emacs formatting :^(
+test parseOld-14.5 {TclWordEnd procedure} {testwordend} {
+    testwordend {{xyz}}
+} \}
+test parseOld-14.6 {TclWordEnd procedure} {testwordend} {
+    testwordend {{a{}b{}\}} xyz}
+} "\} xyz"
+test parseOld-14.7 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc[this is a]def ghi}
+} {f ghi}
+test parseOld-14.8 {TclWordEnd procedure} {testwordend} {
+    testwordend "puts\\\n\n  "
+} "s\\\n\n  "
+test parseOld-14.9 {TclWordEnd procedure} {testwordend} {
+    testwordend "puts\\\n   	"
+} "s\\\n   	"
+test parseOld-14.10 {TclWordEnd procedure} {testwordend} {
+    testwordend "puts\\\n   	xyz"
+} "s\\\n   	xyz"
+test parseOld-14.11 {TclWordEnd procedure} {testwordend} {
+    testwordend {a$x.$y(a long index) foo}
+} ") foo"
+test parseOld-14.12 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc; def}
+} {; def}
+test parseOld-14.13 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc def}
+} {c def}
+test parseOld-14.14 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc	def}
+} {c	def}
+test parseOld-14.15 {TclWordEnd procedure} {testwordend} {
+    testwordend "abc\ndef"
+} "c\ndef"
+test parseOld-14.16 {TclWordEnd procedure} {testwordend} {
+    testwordend "abc"
+} {c}
+test parseOld-14.17 {TclWordEnd procedure} {testwordend} {
+    testwordend "a\000bc"
+} {c}
+test parseOld-14.18 {TclWordEnd procedure} {testwordend} {
+    testwordend \[a\000\]
+} {]}
+test parseOld-14.19 {TclWordEnd procedure} {testwordend} {
+    testwordend \"a\000\"
+} {"}
+#" Emacs formatting :^(
+test parseOld-14.20 {TclWordEnd procedure} {testwordend} {
+    testwordend a{\000}b
+} {b}
+test parseOld-14.21 {TclWordEnd procedure} {testwordend} {
+    testwordend "   \000b"
+} {b}
+
+test parseOld-15.1 {TclScriptEnd procedure} {
+    info complete {puts [
+	expr 1+1
+	#this is a comment ]}
+} {0}
+test parseOld-15.2 {TclScriptEnd procedure} {
+    info complete "abc\\\n"
+} {0}
+test parseOld-15.3 {TclScriptEnd procedure} {
+    info complete "abc\\\\\n"
+} {1}
+test parseOld-15.4 {TclScriptEnd procedure} {
+    info complete "xyz \[abc \{abc\]"
+} {0}
+test parseOld-15.5 {TclScriptEnd procedure} {
+    info complete "xyz \[abc"
+} {0}
+
+# cleanup
+set argv $savedArgv
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

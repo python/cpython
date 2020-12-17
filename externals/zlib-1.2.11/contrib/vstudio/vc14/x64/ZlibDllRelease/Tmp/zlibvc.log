@@ -1,0 +1,45 @@
+﻿  Microsoft (R) Macro Assembler (x64) Version 14.00.24210.0
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+   Assembling: inffasx64.asm
+  Microsoft (R) Macro Assembler (x64) Version 14.00.24210.0
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+   Assembling: gvmat64.asm
+  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  Assembler code may have bugs -- use at your own risk
+  gzclose.c
+  gzlib.c
+  gzread.c
+..\..\..\gzread.c(319): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzread.c(400): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzread.c(472): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  gzwrite.c
+..\..\..\gzwrite.c(212): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzwrite.c(232): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+..\..\..\gzwrite.c(371): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  infback.c
+  inffas8664.c
+  inffast.c
+  Assembler code may have bugs -- use at your own risk
+  inflate.c
+  inftrees.c
+  ioapi.c
+  iowin32.c
+..\..\minizip\iowin32.c(31): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  trees.c
+  uncompr.c
+  zutil.c
+  unzip.c
+  zip.c
+     Creating library x64\ZlibDllRelease\zlibwapi.lib and object x64\ZlibDllRelease\zlibwapi.exp
+  Generating code
+  0 of 264 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  zlibvc.vcxproj -> C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc14\x64\ZlibDllRelease\zlibwapi.dll
+  zlibvc.vcxproj -> x64\ZlibDllRelease\zlibwapi.pdb (Full PDB)

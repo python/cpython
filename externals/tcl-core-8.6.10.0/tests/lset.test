@@ -1,0 +1,481 @@
+# This file is a -*- tcl -*- test script
+
+# Commands covered: lset
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+proc failTrace {name1 name2 op} {
+    error "trace failed"
+}
+
+testConstraint testevalex [llength [info commands testevalex]]
+
+set noRead {}
+trace add variable noRead read failTrace
+set noWrite {a b c}
+trace add variable noWrite write failTrace
+
+test lset-1.1 {lset, not compiled, arg count} testevalex {
+    list [catch {testevalex lset} msg] $msg
+} "1 {wrong \# args: should be \"lset listVar ?index? ?index ...? value\"}"
+test lset-1.2 {lset, not compiled, no such var} testevalex {
+    list [catch {testevalex {lset noSuchVar 0 {}}} msg] $msg
+} "1 {can't read \"noSuchVar\": no such variable}"
+test lset-1.3 {lset, not compiled, var not readable} testevalex {
+    list [catch {testevalex {lset noRead 0 {}}} msg] $msg
+} "1 {can't read \"noRead\": trace failed}"
+
+test lset-2.1 {lset, not compiled, 3 args, second arg a plain index} testevalex {
+    set x {0 1 2}
+    list [testevalex {lset x 0 3}] $x
+} {{3 1 2} {3 1 2}}
+test lset-2.2 {lset, not compiled, 3 args, second arg neither index nor list} testevalex {
+    set x {0 1 2}
+    list [catch {
+	testevalex {lset x {{bad}1} 3}
+    } msg] $msg
+} {1 {bad index "{bad}1": must be integer?[+-]integer? or end?[+-]integer?}}
+
+test lset-3.1 {lset, not compiled, 3 args, data duplicated} testevalex {
+    set x {0 1 2}
+    list [testevalex {lset x 0 $x}] $x
+} {{{0 1 2} 1 2} {{0 1 2} 1 2}}
+test lset-3.2 {lset, not compiled, 3 args, data duplicated} testevalex {
+    set x {0 1}
+    set y $x
+    list [testevalex {lset x 0 2}] $x $y
+} {{2 1} {2 1} {0 1}}
+test lset-3.3 {lset, not compiled, 3 args, data duplicated} testevalex {
+    set x {0 1}
+    set y $x
+    list [testevalex {lset x 0 $x}] $x $y
+} {{{0 1} 1} {{0 1} 1} {0 1}}
+test lset-3.4 {lset, not compiled, 3 args, data duplicated} testevalex {
+    set x {0 1 2}
+    list [testevalex {lset x [list 0] $x}] $x
+} {{{0 1 2} 1 2} {{0 1 2} 1 2}}
+test lset-3.5 {lset, not compiled, 3 args, data duplicated} testevalex {
+    set x {0 1}
+    set y $x
+    list [testevalex {lset x [list 0] 2}] $x $y
+} {{2 1} {2 1} {0 1}}
+test lset-3.6 {lset, not compiled, 3 args, data duplicated} testevalex {
+    set x {0 1}
+    set y $x
+    list [testevalex {lset x [list 0] $x}] $x $y
+} {{{0 1} 1} {{0 1} 1} {0 1}}
+
+test lset-4.1 {lset, not compiled, 3 args, not a list} testevalex {
+    set a "x \{"
+    list [catch {
+	testevalex {lset a [list 0] y}
+    } msg] $msg
+} {1 {unmatched open brace in list}}
+test lset-4.2 {lset, not compiled, 3 args, bad index} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a [list 2a2] w}
+    } msg] $msg
+} {1 {bad index "2a2": must be integer?[+-]integer? or end?[+-]integer?}}
+test lset-4.3 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a [list -1] w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.4 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a [list 4] w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.5a {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a [list end--2] w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.5b {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a [list end+2] w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.6 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a [list end-3] w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.7 {lset, not compiled, 3 args, not a list} testevalex {
+    set a "x \{"
+    list [catch {
+	testevalex {lset a 0 y}
+    } msg] $msg
+} {1 {unmatched open brace in list}}
+test lset-4.8 {lset, not compiled, 3 args, bad index} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a 2a2 w}
+    } msg] $msg
+} {1 {bad index "2a2": must be integer?[+-]integer? or end?[+-]integer?}}
+test lset-4.9 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a -1 w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.10 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a 4 w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.11a {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a end--2 w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.11 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a end+2 w}
+    } msg] $msg
+} {1 {list index out of range}}
+test lset-4.12 {lset, not compiled, 3 args, index out of range} testevalex {
+    set a {x y z}
+    list [catch {
+	testevalex {lset a end-3 w}
+    } msg] $msg
+} {1 {list index out of range}}
+
+test lset-5.1 {lset, not compiled, 3 args, can't set variable} testevalex {
+    list [catch {
+	testevalex {lset noWrite 0 d}
+    } msg] $msg $noWrite
+} {1 {can't set "noWrite": trace failed} {d b c}}
+test lset-5.2 {lset, not compiled, 3 args, can't set variable} testevalex {
+    list [catch {
+	testevalex {lset noWrite [list 0] d}
+    } msg] $msg $noWrite
+} {1 {can't set "noWrite": trace failed} {d b c}}
+
+test lset-6.1 {lset, not compiled, 3 args, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a 0 a}] $a
+} {{a y z} {a y z}}
+test lset-6.2 {lset, not compiled, 3 args, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a [list 0] a}] $a
+} {{a y z} {a y z}}
+test lset-6.3 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a 2 a}] $a
+} {{x y a} {x y a}}
+test lset-6.4 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a [list 2] a}] $a
+} {{x y a} {x y a}}
+test lset-6.5 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a end a}] $a
+} {{x y a} {x y a}}
+test lset-6.6 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a [list end] a}] $a
+} {{x y a} {x y a}}
+test lset-6.7 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a end-0 a}] $a
+} {{x y a} {x y a}}
+test lset-6.8 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a [list end-0] a}] $a
+} {{x y a} {x y a}}
+test lset-6.9 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a end-2 a}] $a
+} {{a y z} {a y z}}
+test lset-6.10 {lset, not compiled, 1-d list basics} testevalex {
+    set a {x y z}
+    list [testevalex {lset a [list end-2] a}] $a
+} {{a y z} {a y z}}
+
+test lset-7.1 {lset, not compiled, data sharing} testevalex {
+    set a 0
+    list [testevalex {lset a $a {gag me}}] $a
+} {{{gag me}} {{gag me}}}
+test lset-7.2 {lset, not compiled, data sharing} testevalex {
+    set a [list 0]
+    list [testevalex {lset a $a {gag me}}] $a
+} {{{gag me}} {{gag me}}}
+test lset-7.3 {lset, not compiled, data sharing} testevalex {
+    set a {x y}
+    list [testevalex {lset a 0 $a}] $a
+} {{{x y} y} {{x y} y}}
+test lset-7.4 {lset, not compiled, data sharing} testevalex {
+    set a {x y}
+    list [testevalex {lset a [list 0] $a}] $a
+} {{{x y} y} {{x y} y}}
+test lset-7.5 {lset, not compiled, data sharing} testevalex {
+    set n 0
+    set a {x y}
+    list [testevalex {lset a $n $n}] $a $n
+} {{0 y} {0 y} 0}
+test lset-7.6 {lset, not compiled, data sharing} testevalex {
+    set n [list 0]
+    set a {x y}
+    list [testevalex {lset a $n $n}] $a $n
+} {{0 y} {0 y} 0}
+test lset-7.7 {lset, not compiled, data sharing} testevalex {
+    set n 0
+    set a [list $n $n]
+    list [testevalex {lset a $n 1}] $a $n
+} {{1 0} {1 0} 0}
+test lset-7.8 {lset, not compiled, data sharing} testevalex {
+    set n [list 0]
+    set a [list $n $n]
+    list [testevalex {lset a $n 1}] $a $n
+} {{1 0} {1 0} 0}
+test lset-7.9 {lset, not compiled, data sharing} testevalex {
+    set a 0
+    list [testevalex {lset a $a $a}] $a
+} {0 0}
+test lset-7.10 {lset, not compiled, data sharing} testevalex {
+    set a [list 0]
+    list [testevalex {lset a $a $a}] $a
+} {0 0}
+
+test lset-8.1 {lset, not compiled, malformed sublist} testevalex {
+    set a [list "a \{" b]
+    list [catch {testevalex {lset a 0 1 c}} msg] $msg
+} {1 {unmatched open brace in list}}
+test lset-8.2 {lset, not compiled, malformed sublist} testevalex {
+    set a [list "a \{" b]
+    list [catch {testevalex {lset a {0 1} c}} msg] $msg
+} {1 {unmatched open brace in list}}
+test lset-8.3 {lset, not compiled, bad second index} testevalex {
+    set a {{b c} {d e}}
+    list [catch {testevalex {lset a 0 2a2 f}} msg] $msg
+} {1 {bad index "2a2": must be integer?[+-]integer? or end?[+-]integer?}}
+test lset-8.4 {lset, not compiled, bad second index} testevalex {
+    set a {{b c} {d e}}
+    list [catch {testevalex {lset a {0 2a2} f}} msg] $msg
+} {1 {bad index "2a2": must be integer?[+-]integer? or end?[+-]integer?}}
+test lset-8.5 {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a 2 -1 h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.6 {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a {2 -1} h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.7 {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a 2 3 h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.8 {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a {2 3} h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.9a {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a 2 end--2 h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.9b {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a 2 end+2 h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.10a {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a {2 end--2} h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.10b {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a {2 end+2} h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.11 {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a 2 end-2 h}} msg] $msg
+} {1 {list index out of range}}
+test lset-8.12 {lset, not compiled, second index out of range} testevalex {
+    set a {{b c} {d e} {f g}}
+    list [catch {testevalex {lset a {2 end-2} h}} msg] $msg
+} {1 {list index out of range}}
+
+test lset-9.1 {lset, not compiled, entire variable} testevalex {
+    set a x
+    list [testevalex {lset a y}] $a
+} {y y}
+test lset-9.2 {lset, not compiled, entire variable} testevalex {
+    set a x
+    list [testevalex {lset a {} y}] $a
+} {y y}
+
+test lset-10.1 {lset, not compiled, shared data} testevalex {
+    set row {p q}
+    set a [list $row $row]
+    list [testevalex {lset a 0 0 x}] $a
+} {{{x q} {p q}} {{x q} {p q}}}
+test lset-10.2 {lset, not compiled, shared data} testevalex {
+    set row {p q}
+    set a [list $row $row]
+    list [testevalex {lset a {0 0} x}] $a
+} {{{x q} {p q}} {{x q} {p q}}}
+test lset-10.3 {lset, not compiled, shared data, [Bug 1333036]} testevalex {
+    set a [list [list p q] [list r s]]
+    set b $a
+    list [testevalex {lset b {0 0} x}] $a
+} {{{x q} {r s}} {{p q} {r s}}}
+
+test lset-11.1 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a 0 0 f}] $a
+} {{{f c} {d e}} {{f c} {d e}}}
+test lset-11.2 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a {0 0} f}] $a
+} {{{f c} {d e}} {{f c} {d e}}}
+test lset-11.3 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a 0 1 f}] $a
+} {{{b f} {d e}} {{b f} {d e}}}
+test lset-11.4 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a {0 1} f}] $a
+} {{{b f} {d e}} {{b f} {d e}}}
+test lset-11.5 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a 1 0 f}] $a
+} {{{b c} {f e}} {{b c} {f e}}}
+test lset-11.6 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a {1 0} f}] $a
+} {{{b c} {f e}} {{b c} {f e}}}
+test lset-11.7 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a 1 1 f}] $a
+} {{{b c} {d f}} {{b c} {d f}}}
+test lset-11.8 {lset, not compiled, 2-d basics} testevalex {
+    set a {{b c} {d e}}
+    list [testevalex {lset a {1 1} f}] $a
+} {{{b c} {d f}} {{b c} {d f}}}
+
+test lset-12.0 {lset, not compiled, typical sharing pattern} testevalex {
+    set zero 0
+    set row [list $zero $zero $zero $zero]
+    set ident [list $row $row $row $row]
+    for { set i 0 } { $i < 4 } { incr i } {
+	testevalex {lset ident $i $i 1}
+    }
+    set ident
+} {{1 0 0 0} {0 1 0 0} {0 0 1 0} {0 0 0 1}}
+
+test lset-13.0 {lset, not compiled, shimmering hell} testevalex {
+    set a 0
+    list [testevalex {lset a $a $a $a $a {gag me}}] $a
+} {{{{{{gag me}}}}} {{{{{gag me}}}}}}
+test lset-13.1 {lset, not compiled, shimmering hell} testevalex {
+    set a [list 0]
+    list [testevalex {lset a $a $a $a $a {gag me}}] $a
+} {{{{{{gag me}}}}} {{{{{gag me}}}}}}
+test lset-13.2 {lset, not compiled, shimmering hell} testevalex {
+    set a [list 0 0 0 0]
+    list [testevalex {lset a $a {gag me}}] $a
+} {{{{{{gag me}}}} 0 0 0} {{{{{gag me}}}} 0 0 0}}
+
+test lset-14.1 {lset, not compiled, list args, is string rep preserved?} testevalex {
+    set a { { 1 2 } { 3 4 } }
+    catch { testevalex {lset a {1 5} 5} }
+    list $a [lindex $a 1]
+} "{ { 1 2 } { 3 4 } } { 3 4 }"
+test lset-14.2 {lset, not compiled, flat args, is string rep preserved?} testevalex {
+    set a { { 1 2 } { 3 4 } }
+    catch { testevalex {lset a 1 5 5} }
+    list $a [lindex $a 1]
+} "{ { 1 2 } { 3 4 } } { 3 4 }"
+
+testConstraint testobj [llength [info commands testobj]]
+test lset-15.1 {lset: shared intrep [Bug 1677512]} -setup {
+    teststringobj set 1 {{1 2} 3}
+    testobj convert 1 list
+    testobj duplicate 1 2
+    variable x [teststringobj get 1]
+    variable y [teststringobj get 2]
+    testobj freeallvars
+    set l [list $y z]
+    unset y
+} -constraints testobj -body {
+    lset l 0 0 0 5
+    lindex $x 0 0
+} -cleanup {
+    unset -nocomplain x l
+} -result 1
+
+test lset-16.1 {lset - grow a variable} testevalex {
+    set x {}
+    testevalex {lset x 0 {test 1}}
+    testevalex {lset x 1 {test 2}}
+    set x
+} {{test 1} {test 2}}
+test lset-16.2 {lset - multiple created sublists} testevalex {
+    set x {}
+    testevalex {lset x 0 0 {test 1}}
+} {{{test 1}}}
+test lset-16.3 {lset - sublists 3 deep} testevalex {
+    set x {}
+    testevalex {lset x 0 0 0 {test 1}}
+} {{{{test 1}}}}
+test lset-16.4 {lset - append to inner list} testevalex {
+    set x {test 1}
+    testevalex {lset x 1 1 2}
+    testevalex {lset x 1 2 3}
+    testevalex {lset x 1 2 1 4}
+} {test {1 2 {3 4}}}
+
+test lset-16.5 {lset - grow a variable} testevalex {
+    set x {}
+    testevalex {lset x end+1 {test 1}}
+    testevalex {lset x end+1 {test 2}}
+    set x
+} {{test 1} {test 2}}
+test lset-16.6 {lset - multiple created sublists} testevalex {
+    set x {}
+    testevalex {lset x end+1 end+1 {test 1}}
+} {{{test 1}}}
+test lset-16.7 {lset - sublists 3 deep} testevalex {
+    set x {}
+    testevalex {lset x end+1 end+1 end+1 {test 1}}
+} {{{{test 1}}}}
+test lset-16.8 {lset - append to inner list} testevalex {
+    set x {test 1}
+    testevalex {lset x end end+1 2}
+    testevalex {lset x end end+1 3}
+    testevalex {lset x end end end+1 4}
+} {test {1 2 {3 4}}}
+
+catch {unset noRead}
+catch {unset noWrite}
+catch {rename failTrace {}}
+catch {unset ::x}
+catch {unset ::y}
+
+# cleanup
+::tcltest::cleanupTests
+return

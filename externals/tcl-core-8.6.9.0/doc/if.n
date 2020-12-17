@@ -1,0 +1,88 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH if n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+if \- Execute scripts conditionally
+.SH SYNOPSIS
+\fBif \fIexpr1 \fR?\fBthen\fR? \fIbody1 \fBelseif \fIexpr2 \fR?\fBthen\fR? \fIbody2\fR \fBelseif\fR ... ?\fBelse\fR? ?\fIbodyN\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fIif\fR command evaluates \fIexpr1\fR as an expression (in the
+same way that \fBexpr\fR evaluates its argument).  The value of the
+expression must be a boolean
+(a numeric value, where 0 is false and
+anything is true, or a string value such as \fBtrue\fR or \fByes\fR
+for true and \fBfalse\fR or \fBno\fR for false);
+if it is true then \fIbody1\fR is executed by passing it to the
+Tcl interpreter.
+Otherwise \fIexpr2\fR is evaluated as an expression and if it is true
+then \fBbody2\fR is executed, and so on.
+If none of the expressions evaluates to true then \fIbodyN\fR is
+executed.
+The \fBthen\fR and \fBelse\fR arguments are optional
+.QW "noise words"
+to make the command easier to read.
+There may be any number of \fBelseif\fR clauses, including zero.
+\fIBodyN\fR may also be omitted as long as \fBelse\fR is omitted too.
+The return value from the command is the result of the body script
+that was executed, or an empty string
+if none of the expressions was non-zero and there was no \fIbodyN\fR.
+.SH EXAMPLES
+.PP
+A simple conditional:
+.PP
+.CS
+\fBif\fR {$vbl == 1} { puts "vbl is one" }
+.CE
+.PP
+With an \fBelse\fR-clause:
+.PP
+.CS
+\fBif\fR {$vbl == 1} {
+    puts "vbl is one"
+} \fBelse\fR {
+    puts "vbl is not one"
+}
+.CE
+.PP
+With an \fBelseif\fR-clause too:
+.PP
+.CS
+\fBif\fR {$vbl == 1} {
+    puts "vbl is one"
+} \fBelseif\fR {$vbl == 2} {
+    puts "vbl is two"
+} \fBelse\fR {
+    puts "vbl is not one or two"
+}
+.CE
+.PP
+Remember, expressions can be multi-line, but in that case it can be a
+good idea to use the optional \fBthen\fR keyword for clarity:
+.PP
+.CS
+\fBif\fR {
+    $vbl == 1
+    || $vbl == 2
+    || $vbl == 3
+} \fBthen\fR {
+    puts "vbl is one, two or three"
+}
+.CE
+.SH "SEE ALSO"
+expr(n), for(n), foreach(n)
+.SH KEYWORDS
+boolean, conditional, else, false, if, true
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

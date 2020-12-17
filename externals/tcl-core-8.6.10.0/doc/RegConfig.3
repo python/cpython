@@ -1,0 +1,111 @@
+'\"
+'\" Copyright (c) 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_RegisterConfig 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_RegisterConfig \- procedures to register embedded configuration information
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_RegisterConfig\fR(\fIinterp, pkgName, configuration, valEncoding\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_Interp *configuration
+.AP Tcl_Interp *interp in
+Refers to the interpreter the embedded configuration information is
+registered for. Must not be NULL.
+.AP "const char" *pkgName in
+Contains the name of the package registering the embedded
+configuration as ASCII string. This means that this information is in
+UTF-8 too. Must not be NULL.
+.AP "const Tcl_Config" *configuration in
+Refers to an array of Tcl_Config entries containing the information
+embedded in the binary library. Must not be NULL. The end of the array
+is signaled by either a key identical to NULL, or a key referring to
+the empty string.
+.AP "const char" *valEncoding in
+Contains the name of the encoding used to store the configuration
+values as ASCII string. This means that this information is in UTF-8
+too. Must not be NULL.
+.BE
+.SH DESCRIPTION
+.PP
+The function described here has its base in TIP 59 and provides
+extensions with support for the embedding of configuration
+information into their binary library and the generation of a
+Tcl-level interface for querying this information.
+.PP
+To embed configuration information into their binary library an
+extension has to define a non-volatile array of Tcl_Config entries in
+one if its source files and then call \fBTcl_RegisterConfig\fR to
+register that information.
+.PP
+\fBTcl_RegisterConfig\fR takes four arguments; first, a reference to
+the interpreter we are registering the information with, second, the
+name of the package registering its configuration information, third,
+a pointer to an array of structures, and fourth a string declaring the
+encoding used by the configuration values.
+.PP
+The string \fIvalEncoding\fR contains the name of an encoding known to
+Tcl.  All these names are use only characters in the ASCII subset of
+UTF-8 and are thus implicitly in the UTF-8 encoding. It is expected
+that keys are legible English text and therefore using the ASCII
+subset of UTF-8. In other words, they are expected to be in UTF-8
+too. The values associated with the keys can be any string
+however. For these the contents of \fIvalEncoding\fR define which
+encoding was used to represent the characters of the strings.
+.PP
+Each element of the \fIconfiguration\fR array refers to two strings
+containing the key and the value associated with that key. The end of
+the array is signaled by either an empty key or a key identical to
+NULL. The function makes \fBno\fR copy of the \fIconfiguration\fR
+array. This means that the caller has to make sure that the memory
+holding this array is never released. This is the meaning behind the
+word \fBnon-volatile\fR used earlier. The easiest way to accomplish
+this is to define a global static array of Tcl_Config entries. See the file
+.QW generic/tclPkgConfig.c
+in the sources of the Tcl core for an example.
+.PP
+When called \fBTcl_RegisterConfig\fR will
+.IP (1)
+create a namespace having the provided \fIpkgName\fR, if not yet
+existing.
+.IP (2)
+create the command \fBpkgconfig\fR in that namespace and link it to
+the provided information so that the keys from \fIconfiguration\fR and
+their associated values can be retrieved through calls to
+\fBpkgconfig\fR.
+.PP
+The command \fBpkgconfig\fR will provide two subcommands, \fBlist\fR
+and \fBget\fR:
+.RS
+.TP
+::\fIpkgName\fR::\fBpkgconfig\fR list
+Returns a list containing the names of all defined keys.
+.TP
+::\fIpkgName\fR::\fBpkgconfig\fR get \fIkey\fR
+Returns the configuration value associated with the specified
+\fIkey\fR.
+.RE
+.SH TCL_CONFIG
+.PP
+The \fBTcl_Config\fR structure contains the following fields:
+.PP
+.CS
+typedef struct Tcl_Config {
+    const char *\fIkey\fR;
+    const char *\fIvalue\fR;
+} \fBTcl_Config\fR;
+.CE
+.\" No cross references yet.
+.\" .SH "SEE ALSO"
+.SH KEYWORDS
+embedding, configuration, binary library

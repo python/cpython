@@ -1,0 +1,35 @@
+<HEAD>
+<TITLE> Widget Class Declaration<A NAME=62>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1165 HREF=subsubsection3_8_2_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1163 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1157 HREF=subsubsectionstar3_8_1_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1167 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1166 HREF=subsubsection3_8_2_1.html> Using the tixWidgetClass </A>
+<B>Up:</B> <A NAME=tex2html1164 HREF=section3_8.html> Tix Object Oriented </A>
+<B> Previous:</B> <A NAME=tex2html1158 HREF=subsubsectionstar3_8_1_5.html>  Component Widgets</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00082000000000000000> Widget Class Declaration<A NAME=62>&nbsp;</A></A></H2>
+<P>
+The first step of writing a new widget class is to decide the base
+  class from which the new class. Usually, if the new class does not
+  share any common features with other classes, it should be derived
+  from the TixPrimitive class. If it does share common features with
+  other classes, then it should be derived from the appropriate base
+  class. For example, if the new class support scrollbars, it should
+  be derived from TixScrolledWidget; if it displays a label next to
+  its ``main area'', then it should be derived from TixLabelWidget.
+<P>In the case of our new TixArrowButton class, it doesn't really share
+  any common features with other classes, so we decide to use the base
+  class TixPrimitive as its superclass.
+<P>
+<HR>
+<UL> 
+<LI> <A NAME=tex2html1168 HREF=subsubsection3_8_2_1.html#SECTION00082100000000000000> Using the tixWidgetClass Command<A NAME=621>&nbsp;</A></A>
+</UL>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

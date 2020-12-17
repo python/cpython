@@ -1,0 +1,15 @@
+1)	The compound image stuff doesn't work.  CmpImg core dumps.
+	This seems to be something to do with Tcl/Tkinter
+
+	**** FIXED **** as of Tcl7.6, Tk4.2, Tix4.0.5
+
+2)	tk.call is used a lot in the demos. These functions should be
+	encapsulated somewhere in Python (more mods to Tkinter ?)
+
+3)	Callback definition is not straightforward. A lot of the time
+	a lambda definition has to be written. However, this is a
+	general Tkinter problem.
+
+4)	In the Control widget, the callbacks for increment, decrement
+	and validate should return a string to Tix. Find a way to do
+	this.

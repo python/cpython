@@ -1,0 +1,928 @@
+'\"
+'\" Copyright (c) 1996-1997 Sun Microsystems, Inc.
+'\" Copyright (c) 1997-2000 Ajuba Solutions.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelWideSeekProc, Tcl_ChannelTruncateProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_ChannelThreadActionProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Channel
+\fBTcl_CreateChannel\fR(\fItypePtr, channelName, instanceData, mask\fR)
+.sp
+ClientData
+\fBTcl_GetChannelInstanceData\fR(\fIchannel\fR)
+.sp
+const Tcl_ChannelType *
+\fBTcl_GetChannelType\fR(\fIchannel\fR)
+.sp
+const char *
+\fBTcl_GetChannelName\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_GetChannelHandle\fR(\fIchannel, direction, handlePtr\fR)
+.sp
+Tcl_ThreadId
+\fBTcl_GetChannelThread\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_GetChannelMode\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_GetChannelBufferSize\fR(\fIchannel\fR)
+.sp
+\fBTcl_SetChannelBufferSize\fR(\fIchannel, size\fR)
+.sp
+\fBTcl_NotifyChannel\fR(\fIchannel, mask\fR)
+.sp
+int
+\fBTcl_BadChannelOption\fR(\fIinterp, optionName, optionList\fR)
+.sp
+int
+\fBTcl_IsChannelShared\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_IsChannelRegistered\fR(\fIinterp, channel\fR)
+.sp
+int
+\fBTcl_IsChannelExisting\fR(\fIchannelName\fR)
+.sp
+void
+\fBTcl_CutChannel\fR(\fIchannel\fR)
+.sp
+void
+\fBTcl_SpliceChannel\fR(\fIchannel\fR)
+.sp
+void
+\fBTcl_ClearChannelHandlers\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_ChannelBuffered\fR(\fIchannel\fR)
+.sp
+const char *
+\fBTcl_ChannelName\fR(\fItypePtr\fR)
+.sp
+Tcl_ChannelTypeVersion
+\fBTcl_ChannelVersion\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverBlockModeProc *
+\fBTcl_ChannelBlockModeProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverCloseProc *
+\fBTcl_ChannelCloseProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverClose2Proc *
+\fBTcl_ChannelClose2Proc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverInputProc *
+\fBTcl_ChannelInputProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverOutputProc *
+\fBTcl_ChannelOutputProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverSeekProc *
+\fBTcl_ChannelSeekProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverWideSeekProc *
+\fBTcl_ChannelWideSeekProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverThreadActionProc *
+\fBTcl_ChannelThreadActionProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverTruncateProc *
+\fBTcl_ChannelTruncateProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverSetOptionProc *
+\fBTcl_ChannelSetOptionProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverGetOptionProc *
+\fBTcl_ChannelGetOptionProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverWatchProc *
+\fBTcl_ChannelWatchProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverGetHandleProc *
+\fBTcl_ChannelGetHandleProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverFlushProc *
+\fBTcl_ChannelFlushProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverHandlerProc *
+\fBTcl_ChannelHandlerProc\fR(\fItypePtr\fR)
+.sp
+.SH ARGUMENTS
+.AS "const Tcl_ChannelType" *channelName
+.AP "const Tcl_ChannelType" *typePtr in
+Points to a structure containing the addresses of procedures that
+can be called to perform I/O and other functions on the channel.
+.AP "const char" *channelName in
+The name of this channel, such as \fBfile3\fR; must not be in use
+by any other channel. Can be NULL, in which case the channel is
+created without a name. If the created channel is assigned to one
+of the standard channels (\fBstdin\fR, \fBstdout\fR or \fBstderr\fR),
+the assigned channel name will be the name of the standard channel.
+.AP ClientData instanceData in
+Arbitrary one-word value to be associated with this channel.  This
+value is passed to procedures in \fItypePtr\fR when they are invoked.
+.AP int mask in
+OR-ed combination of \fBTCL_READABLE\fR and \fBTCL_WRITABLE\fR to indicate
+whether a channel is readable and writable.
+.AP Tcl_Channel channel in
+The channel to operate on.
+.AP int direction in
+\fBTCL_READABLE\fR means the input handle is wanted; \fBTCL_WRITABLE\fR
+means the output handle is wanted.
+.AP ClientData *handlePtr out
+Points to the location where the desired OS-specific handle should be
+stored.
+.AP int size in
+The size, in bytes, of buffers to allocate in this channel.
+.AP int mask in
+An OR-ed combination of \fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR
+and \fBTCL_EXCEPTION\fR that indicates events that have occurred on
+this channel.
+.AP Tcl_Interp *interp in
+Current interpreter. (can be NULL)
+.AP "const char" *optionName in
+Name of the invalid option.
+.AP "const char" *optionList in
+Specific options list (space separated words, without
+.QW \- )
+to append to the standard generic options list.
+Can be NULL for generic options error message only.
+.BE
+.SH DESCRIPTION
+.PP
+Tcl uses a two-layered channel architecture. It provides a generic upper
+layer to enable C and Tcl programs to perform input and output using the
+same APIs for a variety of files, devices, sockets etc. The generic C APIs
+are described in the manual entry for \fBTcl_OpenFileChannel\fR.
+.PP
+The lower layer provides type-specific channel drivers for each type
+of device supported on each platform.  This manual entry describes the
+C APIs used to communicate between the generic layer and the
+type-specific channel drivers.  It also explains how new types of
+channels can be added by providing new channel drivers.
+.PP
+Channel drivers consist of a number of components: First, each channel
+driver provides a \fBTcl_ChannelType\fR structure containing pointers to
+functions implementing the various operations used by the generic layer to
+communicate with the channel driver. The \fBTcl_ChannelType\fR structure
+and the functions referenced by it are described in the section
+\fBTCL_CHANNELTYPE\fR, below.
+.PP
+Second, channel drivers usually provide a Tcl command to create
+instances of that type of channel. For example, the Tcl \fBopen\fR
+command creates channels that use the file and command channel
+drivers, and the Tcl \fBsocket\fR command creates channels that use
+TCP sockets for network communication.
+.PP
+Third, a channel driver optionally provides a C function to open
+channel instances of that type. For example, \fBTcl_OpenFileChannel\fR
+opens a channel that uses the file channel driver, and
+\fBTcl_OpenTcpClient\fR opens a channel that uses the TCP network
+protocol.  These creation functions typically use
+\fBTcl_CreateChannel\fR internally to open the channel.
+.PP
+To add a new type of channel you must implement a C API or a Tcl command
+that opens a channel by invoking \fBTcl_CreateChannel\fR.
+When your driver calls \fBTcl_CreateChannel\fR it passes in
+a \fBTcl_ChannelType\fR structure describing the driver's I/O
+procedures.
+The generic layer will then invoke the functions referenced in that
+structure to perform operations on the channel.
+.PP
+\fBTcl_CreateChannel\fR opens a new channel and associates the supplied
+\fItypePtr\fR and \fIinstanceData\fR with it. The channel is opened in the
+mode indicated by \fImask\fR.
+For a discussion of channel drivers, their operations and the
+\fBTcl_ChannelType\fR structure, see the section \fBTCL_CHANNELTYPE\fR, below.
+.PP
+\fBTcl_CreateChannel\fR interacts with the code managing the standard
+channels. Once a standard channel was initialized either through a
+call to \fBTcl_GetStdChannel\fR or a call to \fBTcl_SetStdChannel\fR
+closing this standard channel will cause the next call to
+\fBTcl_CreateChannel\fR to make the new channel the new standard
+channel too. See \fBTcl_StandardChannels\fR for a general treatise
+about standard channels and the behavior of the Tcl library with
+regard to them.
+.PP
+\fBTcl_GetChannelInstanceData\fR returns the instance data associated with
+the channel in \fIchannel\fR. This is the same as the \fIinstanceData\fR
+argument in the call to \fBTcl_CreateChannel\fR that created this channel.
+.PP
+\fBTcl_GetChannelType\fR returns a pointer to the \fBTcl_ChannelType\fR
+structure used by the channel in the \fIchannel\fR argument. This is
+the same as the \fItypePtr\fR argument in the call to
+\fBTcl_CreateChannel\fR that created this channel.
+.PP
+\fBTcl_GetChannelName\fR returns a string containing the name associated
+with the channel, or NULL if the \fIchannelName\fR argument to
+\fBTcl_CreateChannel\fR was NULL.
+.PP
+\fBTcl_GetChannelHandle\fR places the OS-specific device handle
+associated with \fIchannel\fR for the given \fIdirection\fR in the
+location specified by \fIhandlePtr\fR and returns \fBTCL_OK\fR.  If
+the channel does not have a device handle for the specified direction,
+then \fBTCL_ERROR\fR is returned instead.  Different channel drivers
+will return different types of handle.  Refer to the manual entries
+for each driver to determine what type of handle is returned.
+.PP
+\fBTcl_GetChannelThread\fR returns the id of the thread currently managing
+the specified \fIchannel\fR. This allows channel drivers to send their file
+events to the correct event queue even for a multi-threaded core.
+.PP
+\fBTcl_GetChannelMode\fR returns an OR-ed combination of \fBTCL_READABLE\fR
+and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input
+and output.
+.PP
+\fBTcl_GetChannelBufferSize\fR returns the size, in bytes, of buffers
+allocated to store input or output in \fIchannel\fR. If the value was not set
+by a previous call to \fBTcl_SetChannelBufferSize\fR, described below, then
+the default value of 4096 is returned.
+.PP
+\fBTcl_SetChannelBufferSize\fR sets the size, in bytes, of buffers that
+will be allocated in subsequent operations on the channel to store input or
+output. The \fIsize\fR argument should be between one and one million,
+allowing buffers of one byte to one million bytes. If \fIsize\fR is
+outside this range, \fBTcl_SetChannelBufferSize\fR sets the buffer size to
+4096.
+.PP
+\fBTcl_NotifyChannel\fR is called by a channel driver to indicate to
+the generic layer that the events specified by \fImask\fR have
+occurred on the channel.  Channel drivers are responsible for invoking
+this function whenever the channel handlers need to be called for the
+channel.  See \fBWATCHPROC\fR below for more details.
+.PP
+\fBTcl_BadChannelOption\fR is called from driver specific
+\fIsetOptionProc\fR or \fIgetOptionProc\fR to generate a complete
+error message.
+.PP
+\fBTcl_ChannelBuffered\fR returns the number of bytes of input
+currently buffered in the internal buffer (push back area) of the
+channel itself. It does not report about the data in the overall
+buffers for the stack of channels the supplied channel is part of.
+.PP
+\fBTcl_IsChannelShared\fR checks the refcount of the specified
+\fIchannel\fR and returns whether the \fIchannel\fR was shared among
+multiple interpreters (result == 1) or not (result == 0).
+.PP
+\fBTcl_IsChannelRegistered\fR checks whether the specified \fIchannel\fR is
+registered in the given \fIinterp\fRreter (result == 1) or not
+(result == 0).
+.PP
+\fBTcl_IsChannelExisting\fR checks whether a channel with the specified
+name is registered in the (thread)-global list of all channels (result
+== 1) or not (result == 0).
+.PP
+\fBTcl_CutChannel\fR removes the specified \fIchannel\fR from the
+(thread)global list of all channels (of the current thread).
+Application to a channel still registered in some interpreter
+is not allowed.
+Also notifies the driver if the \fBTcl_ChannelType\fR version is
+\fBTCL_CHANNEL_VERSION_4\fR (or higher), and
+\fBTcl_DriverThreadActionProc\fR is defined for it.
+.PP
+\fBTcl_SpliceChannel\fR adds the specified \fIchannel\fR to the
+(thread)global list of all channels (of the current thread).
+Application to a channel registered in some interpreter is not allowed.
+Also notifies the driver if the \fBTcl_ChannelType\fR version is
+\fBTCL_CHANNEL_VERSION_4\fR (or higher), and
+\fBTcl_DriverThreadActionProc\fR is defined for it.
+.PP
+\fBTcl_ClearChannelHandlers\fR removes all channel handlers and event
+scripts associated with the specified \fIchannel\fR, thus shutting
+down all event processing for this channel.
+.SH TCL_CHANNELTYPE
+.PP
+A channel driver provides a \fBTcl_ChannelType\fR structure that contains
+pointers to functions that implement the various operations on a channel;
+these operations are invoked as needed by the generic layer.  The structure
+was versioned starting in Tcl 8.3.2/8.4 to correct a problem with stacked
+channel drivers.  See the \fBOLD CHANNEL TYPES\fR section below for
+details about the old structure.
+.PP
+The \fBTcl_ChannelType\fR structure contains the following fields:
+.PP
+.CS
+typedef struct Tcl_ChannelType {
+        const char *\fItypeName\fR;
+        Tcl_ChannelTypeVersion \fIversion\fR;
+        Tcl_DriverCloseProc *\fIcloseProc\fR;
+        Tcl_DriverInputProc *\fIinputProc\fR;
+        Tcl_DriverOutputProc *\fIoutputProc\fR;
+        Tcl_DriverSeekProc *\fIseekProc\fR;
+        Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
+        Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
+        Tcl_DriverWatchProc *\fIwatchProc\fR;
+        Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
+        Tcl_DriverClose2Proc *\fIclose2Proc\fR;
+        Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
+        Tcl_DriverFlushProc *\fIflushProc\fR;
+        Tcl_DriverHandlerProc *\fIhandlerProc\fR;
+        Tcl_DriverWideSeekProc *\fIwideSeekProc\fR;
+        Tcl_DriverThreadActionProc *\fIthreadActionProc\fR;
+        Tcl_DriverTruncateProc *\fItruncateProc\fR;
+} \fBTcl_ChannelType\fR;
+.CE
+.PP
+It is not necessary to provide implementations for all channel
+operations.  Those which are not necessary may be set to NULL in the
+struct: \fIblockModeProc\fR, \fIseekProc\fR, \fIsetOptionProc\fR,
+\fIgetOptionProc\fR, \fIgetHandleProc\fR, and \fIclose2Proc\fR, in addition to
+\fIflushProc\fR, \fIhandlerProc\fR, \fIthreadActionProc\fR, and
+\fItruncateProc\fR.  Other functions that cannot be implemented in a
+meaningful way should return \fBEINVAL\fR when called, to indicate
+that the operations they represent are not available. Also note that
+\fIwideSeekProc\fR can be NULL if \fIseekProc\fR is.
+.PP
+The user should only use the above structure for \fBTcl_ChannelType\fR
+instantiation.  When referencing fields in a \fBTcl_ChannelType\fR
+structure, the following functions should be used to obtain the values:
+\fBTcl_ChannelName\fR, \fBTcl_ChannelVersion\fR,
+\fBTcl_ChannelBlockModeProc\fR, \fBTcl_ChannelCloseProc\fR,
+\fBTcl_ChannelClose2Proc\fR, \fBTcl_ChannelInputProc\fR,
+\fBTcl_ChannelOutputProc\fR, \fBTcl_ChannelSeekProc\fR,
+\fBTcl_ChannelWideSeekProc\fR, \fBTcl_ChannelThreadActionProc\fR,
+\fBTcl_ChannelTruncateProc\fR,
+\fBTcl_ChannelSetOptionProc\fR, \fBTcl_ChannelGetOptionProc\fR,
+\fBTcl_ChannelWatchProc\fR, \fBTcl_ChannelGetHandleProc\fR,
+\fBTcl_ChannelFlushProc\fR, or \fBTcl_ChannelHandlerProc\fR.
+.PP
+The change to the structures was made in such a way that standard channel
+types are binary compatible.  However, channel types that use stacked
+channels (i.e. TLS, Trf) have new versions to correspond to the above change
+since the previous code for stacked channels had problems.
+.SS TYPENAME
+.PP
+The \fItypeName\fR field contains a null-terminated string that
+identifies the type of the device implemented by this driver, e.g.
+\fBfile\fR or \fBsocket\fR.
+.PP
+This value can be retrieved with \fBTcl_ChannelName\fR, which returns
+a pointer to the string.
+.SS VERSION
+.PP
+
+The \fIversion\fR field should be set to the version of the structure
+that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
+\fBTCL_CHANNEL_VERSION_3\fR must be set to specify the \fIwideSeekProc\fR member.
+\fBTCL_CHANNEL_VERSION_4\fR must be set to specify the \fIthreadActionProc\fR member
+(includes \fIwideSeekProc\fR).
+\fBTCL_CHANNEL_VERSION_5\fR must be set to specify the
+\fItruncateProc\fR members (includes
+\fIwideSeekProc\fR and \fIthreadActionProc\fR).
+If it is not set to any of these, then this
+\fBTcl_ChannelType\fR is assumed to have the original structure.  See
+\fBOLD CHANNEL TYPES\fR for more details.  While Tcl will recognize
+and function with either structures, stacked channels must be of at
+least \fBTCL_CHANNEL_VERSION_2\fR to function correctly.
+.PP
+This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
+one of
+\fBTCL_CHANNEL_VERSION_5\fR,
+\fBTCL_CHANNEL_VERSION_4\fR,
+\fBTCL_CHANNEL_VERSION_3\fR,
+\fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
+.SS BLOCKMODEPROC
+.PP
+The \fIblockModeProc\fR field contains the address of a function called by
+the generic layer to set blocking and nonblocking mode on the device.
+\fIBlockModeProc\fR should match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverBlockModeProc\fR(
+        ClientData \fIinstanceData\fR,
+        int \fImode\fR);
+.CE
+.PP
+The \fIinstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created.  The \fImode\fR
+argument is either \fBTCL_MODE_BLOCKING\fR or \fBTCL_MODE_NONBLOCKING\fR to
+set the device into blocking or nonblocking mode. The function should
+return zero if the operation was successful, or a nonzero POSIX error code
+if the operation failed.
+.PP
+If the operation is successful, the function can modify the supplied
+\fIinstanceData\fR to record that the channel entered blocking or
+nonblocking mode and to implement the blocking or nonblocking behavior.
+For some device types, the blocking and nonblocking behavior can be
+implemented by the underlying operating system; for other device types, the
+behavior must be emulated in the channel driver.
+.PP
+This value can be retrieved with \fBTcl_ChannelBlockModeProc\fR, which returns
+a pointer to the function.
+.PP
+A channel driver \fBnot\fR supplying a \fIblockModeProc\fR has to be
+very, very careful. It has to tell the generic layer exactly which
+blocking mode is acceptable to it, and should this also document for
+the user so that the blocking mode of the channel is not changed to an
+unacceptable value. Any confusion here may lead the interpreter into a
+(spurious and difficult to find) deadlock.
+.SS "CLOSEPROC AND CLOSE2PROC"
+.PP
+The \fIcloseProc\fR field contains the address of a function called by the
+generic layer to clean up driver-related information when the channel is
+closed. \fICloseProc\fR must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverCloseProc\fR(
+        ClientData \fIinstanceData\fR,
+        Tcl_Interp *\fIinterp\fR);
+.CE
+.PP
+The \fIinstanceData\fR argument is the same as the value provided to
+\fBTcl_CreateChannel\fR when the channel was created. The function should
+release any storage maintained by the channel driver for this channel, and
+close the input and output devices encapsulated by this channel. All queued
+output will have been flushed to the device before this function is called,
+and no further driver operations will be invoked on this instance after
+calling the \fIcloseProc\fR. If the close operation is successful, the
+procedure should return zero; otherwise it should return a nonzero POSIX
+error code. In addition, if an error occurs and \fIinterp\fR is not NULL,
+the procedure should store an error message in the interpreter's result.
+.PP
+Alternatively, channels that support closing the read and write sides
+independently may set \fIcloseProc\fR to \fBTCL_CLOSE2PROC\fR and set
+\fIclose2Proc\fR to the address of a function that matches the
+following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverClose2Proc\fR(
+        ClientData \fIinstanceData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIflags\fR);
+.CE
+.PP
+The \fIclose2Proc\fR will be called with \fIflags\fR set to an OR'ed
+combination of \fBTCL_CLOSE_READ\fR or \fBTCL_CLOSE_WRITE\fR to
+indicate that the driver should close the read and/or write side of
+the channel.  The channel driver may be invoked to perform
+additional operations on the channel after \fIclose2Proc\fR is
+called to close one or both sides of the channel.  If \fIflags\fR is
+\fB0\fR (zero), the driver should close the channel in the manner
+described above for \fIcloseProc\fR.  No further operations will be
+invoked on this instance after \fIclose2Proc\fR is called with all
+flags cleared.  In all cases, the \fIclose2Proc\fR function should
+return zero if the close operation was successful; otherwise it should
+return a nonzero POSIX error code. In addition, if an error occurs and
+\fIinterp\fR is not NULL, the procedure should store an error message
+in the interpreter's result.
+.PP
+The \fIcloseProc\fR and \fIclose2Proc\fR values can be retrieved with
+\fBTcl_ChannelCloseProc\fR or \fBTcl_ChannelClose2Proc\fR, which
+return a pointer to the respective function.
+.SS INPUTPROC
+.PP
+The \fIinputProc\fR field contains the address of a function called by the
+generic layer to read data from the file or device and store it in an
+internal buffer. \fIInputProc\fR must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverInputProc\fR(
+        ClientData \fIinstanceData\fR,
+        char *\fIbuf\fR,
+        int \fIbufSize\fR,
+        int *\fIerrorCodePtr\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when the channel was created.  The \fIbuf\fR
+argument points to an array of bytes in which to store input from the
+device, and the \fIbufSize\fR argument indicates how many bytes are
+available at \fIbuf\fR.
+.PP
+The \fIerrorCodePtr\fR argument points to an integer variable provided by
+the generic layer. If an error occurs, the function should set the variable
+to a POSIX error code that identifies the error that occurred.
+.PP
+The function should read data from the input device encapsulated by the
+channel and store it at \fIbuf\fR.  On success, the function should return
+a nonnegative integer indicating how many bytes were read from the input
+device and stored at \fIbuf\fR. On error, the function should return -1. If
+an error occurs after some data has been read from the device, that data is
+lost.
+.PP
+If \fIinputProc\fR can determine that the input device has some data
+available but less than requested by the \fIbufSize\fR argument, the
+function should only attempt to read as much data as is available and
+return without blocking. If the input device has no data available
+whatsoever and the channel is in nonblocking mode, the function should
+return an \fBEAGAIN\fR error. If the input device has no data available
+whatsoever and the channel is in blocking mode, the function should block
+for the shortest possible time until at least one byte of data can be read
+from the device; then, it should return as much data as it can read without
+blocking.
+.PP
+This value can be retrieved with \fBTcl_ChannelInputProc\fR, which returns
+a pointer to the function.
+.SS OUTPUTPROC
+.PP
+The \fIoutputProc\fR field contains the address of a function called by the
+generic layer to transfer data from an internal buffer to the output device.
+\fIOutputProc\fR must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverOutputProc\fR(
+        ClientData \fIinstanceData\fR,
+        const char *\fIbuf\fR,
+        int \fItoWrite\fR,
+        int *\fIerrorCodePtr\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when the channel was created. The \fIbuf\fR
+argument contains an array of bytes to be written to the device, and the
+\fItoWrite\fR argument indicates how many bytes are to be written from the
+\fIbuf\fR argument.
+.PP
+The \fIerrorCodePtr\fR argument points to an integer variable provided by
+the generic layer. If an error occurs, the function should set this
+variable to a POSIX error code that identifies the error.
+.PP
+The function should write the data at \fIbuf\fR to the output device
+encapsulated by the channel. On success, the function should return a
+nonnegative integer indicating how many bytes were written to the output
+device.  The return value is normally the same as \fItoWrite\fR, but may be
+less in some cases such as if the output operation is interrupted by a
+signal. If an error occurs the function should return -1.  In case of
+error, some data may have been written to the device.
+.PP
+If the channel is nonblocking and the output device is unable to absorb any
+data whatsoever, the function should return -1 with an \fBEAGAIN\fR error
+without writing any data.
+.PP
+This value can be retrieved with \fBTcl_ChannelOutputProc\fR, which returns
+a pointer to the function.
+.SS "SEEKPROC AND WIDESEEKPROC"
+.PP
+The \fIseekProc\fR field contains the address of a function called by the
+generic layer to move the access point at which subsequent input or output
+operations will be applied. \fISeekProc\fR must match the following
+prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverSeekProc\fR(
+        ClientData \fIinstanceData\fR,
+        long \fIoffset\fR,
+        int \fIseekMode\fR,
+        int *\fIerrorCodePtr\fR);
+.CE
+.PP
+The \fIinstanceData\fR argument is the same as the value given to
+\fBTcl_CreateChannel\fR when this channel was created.  \fIOffset\fR and
+\fIseekMode\fR have the same meaning as for the \fBTcl_Seek\fR
+procedure (described in the manual entry for \fBTcl_OpenFileChannel\fR).
+.PP
+The \fIerrorCodePtr\fR argument points to an integer variable provided by
+the generic layer for returning \fBerrno\fR values from the function.  The
+function should set this variable to a POSIX error code if an error occurs.
+The function should store an \fBEINVAL\fR error code if the channel type
+does not implement seeking.
+.PP
+The return value is the new access point or -1 in case of error. If an
+error occurred, the function should not move the access point.
+.PP
+If there is a non-NULL \fIseekProc\fR field, the \fIwideSeekProc\fR
+field may contain the address of an alternative function to use which
+handles wide (i.e. larger than 32-bit) offsets, so allowing seeks
+within files larger than 2GB.  The \fIwideSeekProc\fR will be called
+in preference to the \fIseekProc\fR, but both must be defined if the
+\fIwideSeekProc\fR is defined.  \fIWideSeekProc\fR must match the
+following prototype:
+.PP
+.CS
+typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
+        ClientData \fIinstanceData\fR,
+        Tcl_WideInt \fIoffset\fR,
+        int \fIseekMode\fR,
+        int *\fIerrorCodePtr\fR);
+.CE
+.PP
+The arguments and return values mean the same thing as with
+\fIseekProc\fR above, except that the type of offsets and the return
+type are different.
+.PP
+The \fIseekProc\fR value can be retrieved with
+\fBTcl_ChannelSeekProc\fR, which returns a pointer to the function,
+and similarly the \fIwideSeekProc\fR can be retrieved with
+\fBTcl_ChannelWideSeekProc\fR.
+.SS SETOPTIONPROC
+.PP
+The \fIsetOptionProc\fR field contains the address of a function called by
+the generic layer to set a channel type specific option on a channel.
+\fIsetOptionProc\fR must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverSetOptionProc\fR(
+        ClientData \fIinstanceData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        const char *\fIoptionName\fR,
+        const char *\fInewValue\fR);
+.CE
+.PP
+\fIoptionName\fR is the name of an option to set, and \fInewValue\fR is
+the new value for that option, as a string. The \fIinstanceData\fR is the
+same as the value given to \fBTcl_CreateChannel\fR when this channel was
+created. The function should do whatever channel type specific action is
+required to implement the new value of the option.
+.PP
+Some options are handled by the generic code and this function is never
+called to set them, e.g. \fB\-blockmode\fR. Other options are specific to
+each channel type and the \fIsetOptionProc\fR procedure of the channel
+driver will get called to implement them. The \fIsetOptionProc\fR field can
+be NULL, which indicates that this channel type supports no type specific
+options.
+.PP
+If the option value is successfully modified to the new value, the function
+returns \fBTCL_OK\fR.
+It should call \fBTcl_BadChannelOption\fR which itself returns
+\fBTCL_ERROR\fR if the \fIoptionName\fR is
+unrecognized.
+If \fInewValue\fR specifies a value for the option that
+is not supported or if a system call error occurs,
+the function should leave an error message in the
+\fIresult\fR field of \fIinterp\fR if \fIinterp\fR is not NULL. The
+function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
+error code.
+.PP
+This value can be retrieved with \fBTcl_ChannelSetOptionProc\fR, which returns
+a pointer to the function.
+.SS GETOPTIONPROC
+.PP
+The \fIgetOptionProc\fR field contains the address of a function called by
+the generic layer to get the value of a channel type specific option on a
+channel. \fIgetOptionProc\fR must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverGetOptionProc\fR(
+        ClientData \fIinstanceData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        const char *\fIoptionName\fR,
+        Tcl_DString *\fIoptionValue\fR);
+.CE
+.PP
+\fIOptionName\fR is the name of an option supported by this type of
+channel. If the option name is not NULL, the function stores its current
+value, as a string, in the Tcl dynamic string \fIoptionValue\fR.
+If \fIoptionName\fR is NULL, the function stores in \fIoptionValue\fR an
+alternating list of all supported options and their current values.
+On success, the function returns \fBTCL_OK\fR.
+It should call \fBTcl_BadChannelOption\fR which itself returns
+\fBTCL_ERROR\fR if the \fIoptionName\fR is
+unrecognized. If a system call error occurs,
+the function should leave an error message in the
+result of \fIinterp\fR if \fIinterp\fR is not NULL. The
+function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
+error code.
+.PP
+Some options are handled by the generic code and this function is never
+called to retrieve their value, e.g. \fB\-blockmode\fR. Other options are
+specific to each channel type and the \fIgetOptionProc\fR procedure of the
+channel driver will get called to implement them. The \fIgetOptionProc\fR
+field can be NULL, which indicates that this channel type supports no type
+specific options.
+.PP
+This value can be retrieved with \fBTcl_ChannelGetOptionProc\fR, which returns
+a pointer to the function.
+.SS WATCHPROC
+.PP
+The \fIwatchProc\fR field contains the address of a function called
+by the generic layer to initialize the event notification mechanism to
+notice events of interest on this channel.
+\fIWatchProc\fR should match the following prototype:
+.PP
+.CS
+typedef void \fBTcl_DriverWatchProc\fR(
+        ClientData \fIinstanceData\fR,
+        int \fImask\fR);
+.CE
+.PP
+The \fIinstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created. The \fImask\fR
+argument is an OR-ed combination of \fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR
+and \fBTCL_EXCEPTION\fR; it indicates events the caller is interested in
+noticing on this channel.
+.PP
+The function should initialize device type specific mechanisms to
+notice when an event of interest is present on the channel.  When one
+or more of the designated events occurs on the channel, the channel
+driver is responsible for calling \fBTcl_NotifyChannel\fR to inform
+the generic channel module.  The driver should take care not to starve
+other channel drivers or sources of callbacks by invoking
+Tcl_NotifyChannel too frequently.  Fairness can be insured by using
+the Tcl event queue to allow the channel event to be scheduled in sequence
+with other events.  See the description of \fBTcl_QueueEvent\fR for
+details on how to queue an event.
+.PP
+This value can be retrieved with \fBTcl_ChannelWatchProc\fR, which returns
+a pointer to the function.
+.SS GETHANDLEPROC
+.PP
+The \fIgetHandleProc\fR field contains the address of a function called by
+the generic layer to retrieve a device-specific handle from the channel.
+\fIGetHandleProc\fR should match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverGetHandleProc\fR(
+        ClientData \fIinstanceData\fR,
+        int \fIdirection\fR,
+        ClientData *\fIhandlePtr\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created. The \fIdirection\fR
+argument is either \fBTCL_READABLE\fR to retrieve the handle used
+for input, or \fBTCL_WRITABLE\fR to retrieve the handle used for
+output.
+.PP
+If the channel implementation has device-specific handles, the
+function should retrieve the appropriate handle associated with the
+channel, according the \fIdirection\fR argument.  The handle should be
+stored in the location referred to by \fIhandlePtr\fR, and
+\fBTCL_OK\fR should be returned.  If the channel is not open for the
+specified direction, or if the channel implementation does not use
+device handles, the function should return \fBTCL_ERROR\fR.
+.PP
+This value can be retrieved with \fBTcl_ChannelGetHandleProc\fR, which returns
+a pointer to the function.
+.SS FLUSHPROC
+.PP
+The \fIflushProc\fR field is currently reserved for future use.
+It should be set to NULL.
+\fIFlushProc\fR should match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverFlushProc\fR(
+        ClientData \fIinstanceData\fR);
+.CE
+.PP
+This value can be retrieved with \fBTcl_ChannelFlushProc\fR, which returns
+a pointer to the function.
+.SS HANDLERPROC
+.PP
+The \fIhandlerProc\fR field contains the address of a function called by
+the generic layer to notify the channel that an event occurred.  It should
+be defined for stacked channel drivers that wish to be notified of events
+that occur on the underlying (stacked) channel.
+\fIHandlerProc\fR should match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_DriverHandlerProc\fR(
+        ClientData \fIinstanceData\fR,
+        int \fIinterestMask\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to \fBTcl_CreateChannel\fR
+when this channel was created.  The \fIinterestMask\fR is an OR-ed
+combination of \fBTCL_READABLE\fR or \fBTCL_WRITABLE\fR; it indicates what
+type of event occurred on this channel.
+.PP
+This value can be retrieved with \fBTcl_ChannelHandlerProc\fR, which returns
+a pointer to the function.
+
+.SS "THREADACTIONPROC"
+.PP
+The \fIthreadActionProc\fR field contains the address of the function
+called by the generic layer when a channel is created, closed, or
+going to move to a different thread, i.e. whenever thread-specific
+driver state might have to initialized or updated. It can be NULL.
+The action \fITCL_CHANNEL_THREAD_REMOVE\fR is used to notify the
+driver that it should update or remove any thread-specific data it
+might be maintaining for the channel.
+.PP
+The action \fITCL_CHANNEL_THREAD_INSERT\fR is used to notify the
+driver that it should update or initialize any thread-specific data it
+might be maintaining using the calling thread as the associate. See
+\fBTcl_CutChannel\fR and \fBTcl_SpliceChannel\fR for more detail.
+.PP
+.CS
+typedef void \fBTcl_DriverThreadActionProc\fR(
+        ClientData \fIinstanceData\fR,
+        int \fIaction\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created.
+.PP
+These values can be retrieved with \fBTcl_ChannelThreadActionProc\fR,
+which returns a pointer to the function.
+.SS "TRUNCATEPROC"
+.PP
+The \fItruncateProc\fR field contains the address of the function
+called by the generic layer when a channel is truncated to some
+length. It can be NULL.
+.PP
+.CS
+typedef int \fBTcl_DriverTruncateProc\fR(
+        ClientData \fIinstanceData\fR,
+        Tcl_WideInt \fIlength\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created, and
+\fIlength\fR is the new length of the underlying file, which should
+not be negative. The result should be 0 on success or an errno code
+(suitable for use with \fBTcl_SetErrno\fR) on failure.
+.PP
+These values can be retrieved with \fBTcl_ChannelTruncateProc\fR,
+which returns a pointer to the function.
+.SH TCL_BADCHANNELOPTION
+.PP
+This procedure generates a
+.QW "bad option"
+error message in an
+(optional) interpreter.  It is used by channel drivers when
+an invalid Set/Get option is requested. Its purpose is to concatenate
+the generic options list to the specific ones and factorize
+the generic options error message string.
+.PP
+It always returns \fBTCL_ERROR\fR
+.PP
+An error message is generated in \fIinterp\fR's result value to
+indicate that a command was invoked with a bad option.
+The message has the form
+.CS
+    bad option "blah": should be one of
+    <...generic options...>+<...specific options...>
+.CE
+so you get for instance:
+.CS
+    bad option "-blah": should be one of -blocking,
+    -buffering, -buffersize, -eofchar, -translation,
+    -peername, or -sockname
+.CE
+when called with \fIoptionList\fR equal to
+.QW "peername sockname"
+.PP
+.QW blah
+is the \fIoptionName\fR argument and
+.QW "<specific options>"
+is a space separated list of specific option words.
+The function takes good care of inserting minus signs before
+each option, commas after, and an
+.QW or
+before the last option.
+.SH "OLD CHANNEL TYPES"
+The original (8.3.1 and below) \fBTcl_ChannelType\fR structure contains
+the following fields:
+.PP
+.CS
+typedef struct Tcl_ChannelType {
+    const char *\fItypeName\fR;
+    Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
+    Tcl_DriverCloseProc *\fIcloseProc\fR;
+    Tcl_DriverInputProc *\fIinputProc\fR;
+    Tcl_DriverOutputProc *\fIoutputProc\fR;
+    Tcl_DriverSeekProc *\fIseekProc\fR;
+    Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
+    Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
+    Tcl_DriverWatchProc *\fIwatchProc\fR;
+    Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
+    Tcl_DriverClose2Proc *\fIclose2Proc\fR;
+} \fBTcl_ChannelType\fR;
+.CE
+.PP
+It is still possible to create channel with the above structure.  The
+internal channel code will determine the version.  It is imperative to use
+the new \fBTcl_ChannelType\fR structure if you are creating a stacked
+channel driver, due to problems with the earlier stacked channel
+implementation (in 8.2.0 to 8.3.1).
+.PP
+Prior to 8.4.0 (i.e. during the later releases of 8.3 and early part
+of the 8.4 development cycle) the \fBTcl_ChannelType\fR structure
+contained the following fields:
+.PP
+.CS
+typedef struct Tcl_ChannelType {
+    const char *\fItypeName\fR;
+    Tcl_ChannelTypeVersion \fIversion\fR;
+    Tcl_DriverCloseProc *\fIcloseProc\fR;
+    Tcl_DriverInputProc *\fIinputProc\fR;
+    Tcl_DriverOutputProc *\fIoutputProc\fR;
+    Tcl_DriverSeekProc *\fIseekProc\fR;
+    Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
+    Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
+    Tcl_DriverWatchProc *\fIwatchProc\fR;
+    Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
+    Tcl_DriverClose2Proc *\fIclose2Proc\fR;
+    Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
+    Tcl_DriverFlushProc *\fIflushProc\fR;
+    Tcl_DriverHandlerProc *\fIhandlerProc\fR;
+    Tcl_DriverTruncateProc *\fItruncateProc\fR;
+} \fBTcl_ChannelType\fR;
+.CE
+.PP
+When the above structure is registered as a channel type, the
+\fIversion\fR field should always be \fBTCL_CHANNEL_VERSION_2\fR.
+.SH "SEE ALSO"
+Tcl_Close(3), Tcl_OpenFileChannel(3), Tcl_SetErrno(3), Tcl_QueueEvent(3), Tcl_StackChannel(3), Tcl_GetStdChannel(3)
+.SH KEYWORDS
+blocking, channel driver, channel registration, channel type, nonblocking

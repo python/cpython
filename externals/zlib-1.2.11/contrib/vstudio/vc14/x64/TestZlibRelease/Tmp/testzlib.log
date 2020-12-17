@@ -1,0 +1,20 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  Assembler code may have bugs -- use at your own risk
+  infback.c
+  inffas8664.c
+  inffast.c
+  Assembler code may have bugs -- use at your own risk
+  inflate.c
+  inftrees.c
+  testzlib.c
+  trees.c
+  uncompr.c
+  zutil.c
+  Generating code
+  All 68 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  testzlib.vcxproj -> C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc14\x64\TestZlibRelease\testzlib.exe
+  testzlib.vcxproj -> x64\TestZlibRelease\testzlib.pdb (Full PDB)

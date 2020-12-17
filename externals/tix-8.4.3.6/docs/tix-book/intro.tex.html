@@ -1,0 +1,854 @@
+<!-- $Id: intro.tex.html,v 1.2 2000/11/11 23:34:36 idiscovery Exp $ -->
+<H1><A NAME=1>1 Introduction</H1>
+
+<p><H2><A NAME=1.1>1.1 What is Tix</H2>
+
+<p><H3><A NAME=1.1.1>1.1.1 Tix for Application Programmers</H3>
+
+<p>  The acronym Tix stands for Tk Interface Extension. Tix is different
+  things for different people.
+
+<p>  If you are a GUI application programmer, that is, if you earn a
+  living by building graphical applications, you will appreciate Tix
+  as a library of <i> mega-widgets</i>: widgets made out of other
+  widgets. To use a crude analogy, if the widgets in the standard TK
+  library are bricks and mortars for a builder, the mega-widgets in
+  the Tix library are walls, windows or even pre-build kitchens. Of
+  course, these ``bigger components'' are themselves made of bricks
+  and mortars, but it will take much less effort to put them together
+  than planting bricks on top of each other.
+
+<p>  The Tix widgets not only help you speed up the development of your
+  applications, they also help you in the design process. Since the
+  standard Tk widgets are too primitive, they force you to think of
+  your house as, by using the same analogy, millions of bricks. With
+  the help of the Tix mega-widgets, you can design your application is
+  a more structural and coherent manner.
+
+<p>  Moreover, the Tix library provides a rich set of widgets. Figure
+  <a href=intro.tex.html#1-1>1-1 </a> shows all Tix widgets -- there are more than 40
+  of them! Although the standard Tk library has many useful widgets,
+  they are far from complete. The Tix library provides most of the
+  commonly needed widgets that are missing from standard Tk:
+  FileSelectBox, ComboBox, Control (a.k.a. SpinBox) and an assortment
+  of scroll-able widgets. Tix also includes many more widgets that are
+  generally useful in a wide range of applications: NoteBook,
+  FileEntry, PanedWindow, MDIWindow, etc.
+
+<p>  With all these new widgets, you can introduce new interaction
+  techniques into applications, creating more useful and more
+  intuitive user interfaces.  You can design your application by
+  choosing the most appropriate widgets to match the special needs of
+  your application and users.
+
+<p><blockquote><a name=1-1>
+<center><img src=fig/intro/hierarchy.gif></center>
+<hr><center><h3>(Figure 1-1) The Class Hierarchy of Tix Widgets</center></h3>
+</blockquote>
+
+<p><H3><A NAME=1.1.2>1.1.2 Tix for Widget Developers</H3>
+
+<p>  On the other hand, if you are a widget developer, Tix provides an
+  object oriented programming environment, the Tix Intrinsics, that is
+  carefully designed for the development of mega-widgets. If you have
+  developed widgets in C, you will know how slow and painful such a
+  process would be. In recognition of the difficulties in widget
+  development, the Tix Intrinsics includes many tools that
+  dramatically cuts down the efforts required to develop new widgets.
+  With the Tix Intrinsics, the rapid prototyping/development of
+  widgets is finally feasible: you can write a new widgets in the
+  matter of hours or even minutes.
+
+<p>  With the Tix Intrinsics, you widget code can readily become
+  reusable.  Tix also provides a set of rules and mechanisms that
+  allow you to develop widgets that are inter-operable with other
+  widgets.
+
+<p>  In Part I of this manual, we will talk about using the Tix widgets.
+  The discussion of writing new Tix widgets will be carried out in
+  Part II.
+
+<p><H2><A NAME=1.2>1.2 Getting Started: the TixControl Widget</H2>
+
+<p>  <i> Pre-requisites: you should be familiar with Tk widgets and
+  programming, or read the Tk book along with this book</i>
+
+<p>  Before delving into the deep philosophy of the Tix widgets, let us
+  first have a quick example to demonstrate the usefulness and
+  convenience of an Tix widget: the TixControl is basically an entry
+  widget that displays a value. Next to the entry, there are two up
+  and down arrow buttons for you to adjust the value inside the entry
+  widget.
+
+<p><H3><A NAME=1.2.1>1.2.1 Creating a TixControl Widget</H3>
+
+<p>  The following code demonstrates how to create a TixControl widget and
+  specify its options:
+
+<p><pre>
+    tixControl .lawyers -label Lawyers: -max 10 -min 0
+    .lawyers config -integer true -step 2
+</pre>
+  This example creates a TixControl widget that let us to select the
+  numbers of lawyers we wish to be allowed in this country.  (Figure
+  <a href=intro.tex.html#1-2>1-2 </a>)
+
+<p>  Let us examine the options: the <code> -label</code> option specifies a
+  caption for this widget. The <code> -max</code> option specifies the maximum
+  number of lawyers we can choose. The <code> -min</code> option specifies the
+  minimum number of lawyers we can choose: although we would love to
+  enter a negative number, reality dictate that the lower limit must
+  be zero. The <code> -integer</code> option indicates that the number of
+  lawyers must be an integer; that is, we respect the lawyers' rights
+  not to be chopped up into decimal points. Finally, since lawyers
+  seem to go in pairs, we set the <code> -step</code> option to <code> 2</code>, which
+  indicates that when we press the up/down arrow buttons, we want the
+  number of lawyers to go up and down by two each time.
+
+<p>
+<blockquote><a name=1-2>
+<center><img src=fig/intro/lawyer.gif></center>
+<hr><center><h3>(Figure 1-2) The TixControl Widget</center></h3>
+</blockquote>
+
+<p>  As shown in the example, you can create and manipulate a Tix widget
+  in the same manner as the standard Tk widgets. The options of the
+  widget can be specified during the creation of the widget.
+  Alternatively, they can be changed by the <code> configure</code> widget
+  command.  In addition, options can also be specified in the option
+  database or as X resources. Here is an example that produces the
+  same result as the previous code fragment:
+
+<p><pre>
+    option add *lawyers.max 10
+    option add *lawyers.min 0
+    tixControl .lawyers -label Lawyers: -integer true
+    .lawyers config -step 2
+</pre>
+
+<p>  <!ignored:nind> In figure <a href=intro.tex.html#1-3>1-3 </a>, you can see the composition of
+  TixControl: it is made out of a label widget, an entry widget and
+  two button widgets. Widgets that are composed of other widgets, like
+  TixControl, are called <i> mega-widgets</i>. Most widgets in the Tix
+  library are mega-widgets (xx: and as you know this book is about
+  them!).
+
+<p><blockquote><a name=1-3>
+<center><img src=fig/intro/law_comp.gif></center>
+<hr><center><h3>(Figure 1-3) The Composition of TixControl</center></h3>
+</blockquote>
+
+<p><H3><A NAME=1.2.2>1.2.2 Accessing The Value of a TixControl Widget</H3>
+
+
+<p>  The TixControl widget allows the user to input a value. There are
+  several ways to read this value in your program. First of all,
+  TixControl stores the current value in the <code> -value</code> option.  You
+  can use query the <code> -value</code> option by calling the command
+
+<p><pre>
+    .c cget -value
+</pre>
+
+<p>  this command will return the current value of the tixContro widget
+  <code> .c</code>.  The following command sets the value of the widget to a
+  new number (100):
+
+<p><pre>
+    .c config -value 100
+</pre>
+  The second way to access the value of TixControl is to use the <code>
+  -variable</code> option. This options instructs the TixControl widget to
+  store the its value into a global variable so that you can read it
+  at any time. Also, by assigning a new value to this global variable,
+  you can change the value of the TixControl widget. Here is an
+  example:
+
+<p><pre>
+    .c config -variable myvar
+    set myvar 100
+</pre>
+  
+  <!ignored:nind> In some situations, you may want to be informed immediately
+  when the value of the TixControl widget changes. To accomplish this,
+  you can use the <code> -command</code> option.  The following line causes
+  the TCL procedure <code> valueChanged</code> to be called whenever the value
+  of <code> .c</code> changes:
+
+<p><pre>
+    tixControl .c -command valueChanged
+</pre>
+
+<p><H4><A NAME=1.2.2.1> Disabling Callbacks Temporarily</H4>
+
+<p>
+  Now, if you want to change a value from within the program, you have
+  to disable the callback. The reason is that the callback runs
+  whenever you (as well as the user) makes a change. In particular, if
+  you make a change within the callback procedure and forget to
+  disable the callback, it will recursively call itself and enter an
+  infinite loop. To avoid this problem, you should use the <code>
+  -disablecallback</code> option. Here is an example:
+
+<p><pre>
+    tixControl .c -command addOne
+
+<p>    proc addOne {value} {
+        .c config -disablecallback true
+        .c config -value [incr value]
+        .c config -disablecallback false
+    }
+</pre>
+  The procedure <code> addOne</code> adjusts the value of <code> .c</code> by one
+  whenever the user enters a new value into <code> .c</code>. Notice that it
+  is necessary to set <code> -disablecallback</code> here or otherwise <code>
+  addOne</code> will be infinitely recursed! That is because <code> addOne</code> is
+  called <i> every time</i> the value changes, either by the user or by
+  the program.
+
+<p><H3><A NAME=1.2.3>1.2.3 Validating User Inputs</H3>
+
+<p>  Sometimes it may be necessary to check the user input against
+  certain criteria. For example, you may want to allow only even
+  numbers in a TixControl widget. To do this, you can use the <code>
+  -validatecmd</code> option, which specifies a Tcl command to call whenever
+  the user enters a new value. Here is an example:
+
+<p><pre>
+    tixControl .c -value 0 -step 2 -validatecmd evenOnly
+
+<p>    proc evenOnly {value} {
+        return [expr $value - ($value %2)]
+    }
+</pre>
+  The value parameter to <code> evenOnly</code> is the new value entered by
+  the user.  The <code> evenOnly</code> procedure makes sure that the new
+  value is even by returning a modified, even number. The Tcl command
+  specified by the <code> -validatecmd</code> must return a value which it
+  deems valid and this value will be stored in the <code> -value</code> option
+  of the TixControl widget.
+
+<p>
+<H2><A NAME=1.3>1.3 Accessing The Components Inside Mega Widgets</H2>
+
+<p><H3><A NAME=1.3.1>1.3.1 Subwidgets</H3>
+
+<p>  As we have seen in section <a href=intro.tex.html#1.2.1>1.2.1 </a>, the TixControl
+  widget is composed of several widgets: one label widget, one entry
+  widget and two button widgets. These ``widgets inside mega-widgets''
+  are called <i> subwidgets</i> in the Tix terminology. We will often
+  have the need to access these subwidgets. For example, sometimes we
+  need to change the configuration options of the subwidgets. In other
+  cases, we may need to interact with the subwidgets directly.
+
+<p><H3><A NAME=1.3.2>1.3.2 Subwidget Names</H3>
+
+<p>  Each subwidget inside a mega is identified by a <i> subwidget
+  name</i>. Naturally, the label and entry subwidgets inside a TixSelect
+  widget are called <code> label</code> and <code> entry</code>, respectively. The two
+  button widgets are called <code> incr</code> and <code> decr</code> because they are
+  used to <code> incr</code>ement and <code> decr</code>ement the value inside the
+  TixControl widget (see figure <a href=intro.tex.html#1-4>1-4 </a>).
+
+<p><blockquote><a name=1-4>
+<center><img src=fig/intro/ctl_subw.gif></center>
+<hr><center><h3>(Figure 1-4) Subwidgets inside TixControl Widget</center></h3>
+</blockquote>
+
+<p>
+<H3><A NAME=1.3.3>1.3.3 The <code> subwidget</code> Method</H3>
+
+<p>  All Tix mega-widgets support the <code> subwidget</code> method. This method
+  takes at least one argument, the name of a subwidget. When you pass
+  only one argument to this method, it returns the pathname of the
+  subwidget which is identified by that name. For example, if .c is
+  the pathname of a TixControl widget, the command:
+
+<p><blockquote><pre>
+  .c subwidget entry
+</pre></blockquote>
+  returns the pathname of the <code> entry</code> subwidget, which is <code>
+  .c.frame.entry</code> in this case.
+
+<p>  If you call the <code> subwidget</code> method with additional arguments,
+  the widget command of the specified subwidget will be called with
+  these arguments. For example, if <code> .c</code> is, again, the pathname of
+  a TixControl widget, the command:
+
+<p><blockquote><pre>
+  .c subwidget entry configure -bg gray
+</pre></blockquote>
+  will cause the widget command of the <code> entry</code> subwidget of <code>
+  .c</code> to be called with the arguments <code> configure -bg gray</code>. So
+  actually this command will be translated into the following call:
+
+<p><blockquote><pre>
+  .c.frame.entry configure -bg gray
+</pre></blockquote>
+  which calls the <code> configure</code> method of the <code> entry</code> subwidget
+  with the arguments <code> -bg gray</code> and changes its background color
+  to <code> gray</code>.
+
+<p>  We can call the <code> subwidget</code> method with other types of arguments
+  to access different methods of the specified subwidget. For example,
+  the following call:
+
+<p><blockquote><pre>
+  .c subwidget entry icursor end
+</pre></blockquote>
+  calls the <code> icursor</code> method of the <code> entry</code> subwidget with the
+  argument <code> end</code> and sets the insert cursor of the <code> entry</code>
+  subwidget to the end of its input string.
+
+<p><H3><A NAME=1.3.4>1.3.4 Chaining the <code> subwidget</code> Method</H3>
+
+<p>  Some Tix mega-widgets may have subwidgets that in turn contain
+  subwidgets. For example, the TixExFileSelectDialog (section
+  <a href=filesel.tex.html#5.1.3>5.1.3 </a>) widget contains a TixExFileSelectBox subwidget
+  called <code> fsbox</code>, which in turn contains a TixComboBox (section
+  <a href=intro.tex.html#1.4>1.4 </a>) subwidget called <code> dir</code>. If we want to access
+  the <code> dir</code> subwidget, we can just ``chain'' the <code> subwidget</code>
+  method. For example, if we have a TixExFileSelectDialog called <code>
+  .file</code>, the following command will return the pathname of the <code>
+  dir</code> subwidget of the <code> fsbox</code> subwidget of <code> .file</code>:
+
+<p><blockquote><pre>
+  .file subwidget fsbox subwidget dir
+</pre></blockquote>
+  Moreover, the following command configures the <code> dir</code> subwidget to
+  have a border of the groove type with a border width of 2 pixels:
+
+<p><blockquote><pre>
+  .file subwidget fsbox subwidget dir configure -bd 2 -relief groove
+</pre></blockquote>
+
+<p>  The chaining of the subwidget command can be applied for arbitrarily
+  many levels, depending whether your widget has a subwidget that has
+  a subwidget that has a subwidget that has a subwidget ... and so on.
+
+<p><H3><A NAME=1.3.5>1.3.5 Configuring Subwidget Options Using the <code> -options</code> Switch</H3>
+
+<p>  As we have seen above, we can use commands like ``<code> subwidget</code>
+  <i> name</i> <code> configure ...</code>'' to set the configuration options
+  of subwidgets. However, this can get quite tedious if we want to
+  configure many options of many subwidgets.
+
+<p>  There is a more convenient and terse way to configure the subwidget
+  options without using the <code> subwidget</code> method: the <code> -options</code>
+  switch. All Tix mega-widgets support the <code> -option</code> switch, which
+  can be used during the creation of the mega-widget.
+
+<p><blockquote><a name=1-5>
+<blockquote><pre>
+tixControl .income -label "Income: " -variable income -options {
+    label.width       8
+    label.anchor      e
+    entry.width       10
+    entry.borderWidth 3
+}
+tixControl .age    -label "Age: "    -variable age    -options {
+    label.width       8
+    label.anchor      e
+    entry.width       10
+    entry.borderWidth 3
+}
+pack .income .age -side top
+</pre></blockquote>
+<hr><center><h3>(Figure 1-5) Using the <code> -options</code> switch</center></h3>
+</blockquote>
+
+<p>
+<blockquote><a name=1-6>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/intro/ctl_noopt.gif><p><h4><center>Unaligned Labels</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/intro/ctl_wopt.gif> <p><h4><center>Aligned Labels</center></h4></td>
+ </TR></TABLE></center>
+<hr><center><h3>(Figure 1-6) Using the <code> -options</code> Switch to Align the Labels</center></h3>
+</blockquote>
+
+<p>
+  The use of the <code> -options</code> switch is illustrated in program
+  <a href=intro.tex.html#1-5>1-5 </a>, which creates two TixControl widgets for
+  the user to enter his income and age. Because of the different sizes
+  of the labels of these two widgets, if we create them haphazardly,
+  the output may look like fig <a href=intro.tex.html#1-6>1-6 </a>.
+
+<p>  To avoid this problem, we set the width of the <code> label</code>
+  subwidgets of the <code> .income</code> and <code> .age</code> widgets to be the
+  same (8 characters wide) and set their <code> -anchor</code> option to <code>
+  e</code> (flushed to right), so that the labels appear to be
+  well-aligned. Program <a href=intro.tex.html#1-5>1-5 </a> also does other
+  things such as setting the <code> entry</code> subwidgets to have a width of
+  10 characters and a border-width of 3 pixels so that they appear
+  wider and ``deeper''. A better result is shown in figure
+  <a href=intro.tex.html#1-6>1-6 </a>.
+  
+  As we can see from program <a href=intro.tex.html#1-5>1-5 </a>, the value for
+  the <code> -options</code> switch is a list of one or more pairs of
+
+<p><blockquote>
+  <i> subwidget-option-spec</i> <i> value</i> ..
+</blockquote>
+
+<p> <i> subwidget-option-spec</i> is in the form <i> subwidget-name</i><code>
+ .</code><i> option-name</i>. For example, <code> label.anchor</code> identifies the
+ <code> anchor</code> option of the <code> label</code> subwidget, <code> entry.width</code>
+ identifies the <code> width</code> option of the entry subwidget, and so on.
+
+<p> Notice we must use the <i> name</i> of the option, not the <i>
+ command-line switch</i> of the option. For example, the option that
+ specifies the border-width of the <code> entry</code> subwidget has the
+ command-line switch <code> -borderwidth</code> but its name is <code>
+ borderWidth</code> (notice the capitalization on the name but not on the
+ command-line switch). Therefore, we have used the capitalized version
+ of ``<code> entry.borderWidth 3</code>'' in program
+ <a href=intro.tex.html#1-5>1-5 </a> and not ``<code> entry.borderwidth 3</code>''. To
+ find out the names of the options of the respective subwidgets,
+ please refer to their manual pages.
+
+<p><H3><A NAME=1.3.6>1.3.6 Configuring Subwidget Options Using the Tk Option Database</H3>
+
+<p>  The <code> -options</code> switch is good if you want to specify subwidget
+  options for one or a few mega-widgets. If you want to specify the
+  subwidget for many mega-widgets, it is easier to use the Tk Option
+  Database.
+
+<p>  Options in the Tk Option Database can be specified using the <code>
+  option</code> command and the pathname of the widget. For all the Tix
+  mega-widgets, it is guaranteed that the pathname of their subwidgets
+  ends with the <i> name</i> of the subwidgets. For example, if we have
+  a mega widget called <code> .a.b.megaw</code> and it has a subwidget whose
+  name is <code> subw</code>, then we can be sure that the pathname of the
+  subwidget will be something like
+
+<p><blockquote><pre>
+  .a.b.megaw.foo.bar.subw
+</pre></blockquote>
+  Therefore, if we want to specify options for it in the Option
+  Database, we can issue commands like:
+
+<p><blockquote><pre>
+  option add *a.b.megaw*subw.option1 value1
+  option add *a.b.megaw*subw.option2 value2
+</pre></blockquote>
+  Notice that it will be wrong to issue the commands as:
+
+<p><blockquote><pre>
+  option add *a.b.megaw.subw.option1 value1
+  option add *a.b.megaw.subw.option2 value2
+</pre></blockquote>
+  because in general we will not know whether the subwidget is an
+  immediate child window of <code> .a.b.megaw</code> (<i>such a decision
+  is left to the mega-widget implementor and may vary in different
+  versions of the same mega-widget</i>).
+
+<p>  Program <a href=intro.tex.html#1-7>1-7 </a> demonstrates how the Tk Option
+  Database can be used to achieve the same effect as program
+  <a href=intro.tex.html#1-5>1-5 </a>.
+
+<p><blockquote><a name=1-7>
+<blockquote><pre>
+option add *TixControl*label.width       8
+option add *TixControl*label.anchor      e
+option add *TixControl*entry.width       10
+option add *TixControl*entry.borderWidth 3
+
+<p>tixControl .income -label "Income: " -variable income
+tixControl .age    -label "Age: "    -variable age
+
+<p>pack .income .age -side top
+</pre></blockquote>
+<hr><center><h3>(Figure 1-7) Using the Tk Option Database in Place of the <code> -options</code>
+  switch</center></h3>
+</blockquote>
+
+<p><H3><A NAME=1.3.7>1.3.7 Caution: Restricted Access</H3>
+
+<p>  In the current implementation of Tix, there is no limits on how you
+  can access the options of the subwidgets. However, many options of
+  the subwidgets may be already used by the mega-widget in special
+  ways. For example, the <code> -textvariable</code> option of the <code> entry</code>
+  subwidget of TixControl may be used to store some private
+  information for the mega widget. Therefore, you should access the
+  options of the subwidgets with great care. In general you should
+  only access those options that affect the appearance of the
+  subwidgets (such as <code> -font</code> or <code> -foreground</code>) and leave
+  everything else intact. (<i></i>) { In future versions of Tix, there
+  will be explicit restrictions on which subwidget options you can
+  access. Errors will be generated if you try to access restricted
+  subwidget options}
+
+<p>
+
+<p><H2><A NAME=1.4>1.4 Another Tix Widget: TixComboBox</H2>
+
+<p>  The <i> TixComboBox</i> widget is very similar to the ComboBox widgets
+  available in MS Windows and Motif 2.0. A TixComboBox consists of an
+  entry widget and a listbox widget. Usually, the ComboBox contains a
+  list of possible values for the user to select. The user may also
+  choose an alternative value by typing it in the entry widget. Figure
+  <a href=intro.tex.html#1-8>1-8 </a> shows two ComboBoxes for the user to choose fonts and
+  character sizes. You can see fro the figure that a listbox is popped
+  down from the ComboBox for fonts for the user to choose among a list
+  of possible fonts.
+
+<p>
+<blockquote><a name=1-8>
+<center><img src=fig/intro/combobox.gif></center>
+<hr><center><h3>(Figure 1-8) The TixComboBox Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=1.4.1>1.4.1 Creating a TixComboBox Widget</H3>
+
+<p><blockquote><a name=1-9>
+<blockquote><pre>
+tixComboBox .c -label "Animal:" -editable true
+.c insert end cat
+.c insert end dog
+.c insert end pig
+</pre></blockquote>
+<hr><center><h3>(Figure 1-9) Creating a ComboBox</center></h3>
+</blockquote>
+
+<p>  In program <a href=intro.tex.html#1-9>1-9 </a>, we set up a ComboBox <code> .c</code>
+  for the user to select an animal to play with. If the user is just a
+  dull person like you and me, he would just press the arrow button
+  and select a pre-designated animal such as ``dog''.  However, if he
+  wants to try something new, he could type ``micky'' or ``sloth''
+  into the entry widget and he will get to play with his favorite
+  animal.
+
+<p>  Of course, sometimes we don't want too many sloths around us and we
+  want to limit the range of the user's selections. In this case we
+  can do one of two things. First, we can set the <code> -editable</code>
+  option to <code> false</code> so that the user cannot type in the entry
+  widget at all.  Alternatively, we can use the <code> -validatecmd</code>
+  option (see section <a href=intro.tex.html#1.4.3>1.4.3 </a>) to check input the input.
+
+<p><H3><A NAME=1.4.2>1.4.2 Controlling the Style of the TixComboBox</H3>
+
+<p>  The TixComboBox widget can appear in many different styles. If we
+  set the <code> -dropdown</code> option to <code> true</code> (which is the default),
+  the listbox will only appear when the user presses the arrow button.
+  When <code> -dropdown</code> is set to <code> false</code>, the listbox is always
+  shown and the arrow button will disappear because it is not needed
+  anymore.
+
+<p>  There is also an option called <code> -fancy</code>. It is set to <code>
+  false</code> by default. When set to <code> true</code>, a tick button and a cross
+  button will appear next to the entry widget. The tick button allows
+  you to select again the value that's already in the ComboBox. If you
+  press the cross button, the entry widget will be cleared.
+
+<p><H3><A NAME=1.4.3>1.4.3 Static Options</H3>
+
+<p>  The <code> -dropdown</code> and <code> -fancy</code> options are so-called ``static
+  options''.  They can only be set during the creation of the
+  ComboBox. Hence this code is valid:
+
+<p><pre>
+    tixComboBox .c -dropdown true
+</pre>
+
+<p>  But the following code will generate an error because it attempts to
+  set the <code> -dropdown</code> option <i> after</i> the ComboBox has already
+  been created.
+
+<p><pre>
+    TixComboBox .c
+    .c config -dropdown true
+</pre>
+
+<p>  The restrictions of the static options, although annoying,
+  nevertheless make sense because we don't want our interface to
+  suddenly change its style. If sometimes a button is there and
+  sometimes it disappear all by itself, that will certainly create a
+  lot of confusion and makes the user wonder why he should buy our
+  software. Also, as you will see in chapter <a href=oop.tex.html#6>6 </a>, having some
+  static options will make the life of widget writers a lot easier.
+
+<p>  Accessing the value of the ComboBox is very similar to accessing the
+  value of the TixControl widget. The ComboBox has these four options,
+  which we discussed in section <a href=intro.tex.html#1.2.2>1.2.2 </a>: <code> -value</code>,
+  <code> -variable</code>, <code> -command</code> and <code> -validatecmd</code>. You can use
+  these four options to access the user input and respond to user
+  actions in exactly the same way as discussed in section
+  <a href=intro.tex.html#1.2.2>1.2.2 </a>.
+
+<p><H3><A NAME=1.4.4>1.4.4 Monitoring the User's Browsing Actions</H3>
+
+<p>  When the user drags the mouse pointer over the listbox, the listbox
+  item under the pointer will be highlighted and a ``browse event''
+  will be generated. If you want to keep track of what items the user
+  has browses through, you can use the <code> -browsecmd</code> option. Here
+  is an example:
+
+<p><pre>
+    tixComboBox .c -browsecmd mybrowse
+    ....
+
+<p>    proc mybrowse {item} {
+        puts "user has browsed $item"
+    }
+</pre>
+
+<p>  When the Tcl command specified by the <code> -browsecmd</code> option is
+  called, it will be called with one parameter: the current item that
+  the user has highlighted.
+
+<p>  The <code> -browsecmd</code> is useful because it gives the user the
+  possibility of temporarily seeing the results of several choices
+  before committing to a final choice.
+
+<p>  For example, we can list a set of image files in a ComboBox. When
+  the user single-clicks on an item on the ComboBox, we want to show a
+  simplified view of that image. After the user has browsed through
+  several images, he can finally decide on which image he wants by
+  double-clicking on that item in the listbox.
+
+<p>  The following is some pseudo Tcl code that does this. Please notice
+  that the <code> -browsecmd</code> procedure is called every time the user
+  single-clicks on an item or drags the mouse pointer in the listbox.
+  The <code> -command</code> procedure is only called when the user
+  double-clicks on an item.
+
+<p><pre>
+tixComboBox .c -dropdown false -browsecmd show_simple -command load_fullsize 
+.c insert end "/pkg/images/flowers.gif"
+.c insert end "/pkg/images/jimmy.gif"
+.c insert end "/pkg/images/ncsa.gif"
+
+<p>proc show_simple {filename} {
+    # Load in a simplified version of $filename
+}
+
+<p>proc load_fullsize {filename} {
+    # Load in the full size image in $filename
+}
+</pre>
+
+<p>  As we shall see, all Tix widgets that let us do some sort of
+  selections have the <code> -browsecmd</code> option. The <code> -browsecmd</code>
+  option allows us to respond to user events in a simple,
+  straight-forward manner. Of course, you can do the same thing with
+  the Tk <code> bind</code> command, but you don't want to do that unless you
+  are very fond of things like <code> &lt;Control-Shift-ButtonRelease-1&gt;</code>
+  and <code> "%x %X $w %W %w"</code>.
+
+<p>
+
+<p><H2><A NAME=1.5>1.5 The TixSelect Widget</H2>
+
+<p>  The TixSelect widget figure <a href=intro.tex.html#1-10>1-10 </a> provides you the same
+  kind of facility that is available with the Tk <code> radiobutton</code> and
+  <code> checkbutton</code> widgets. That is, TixSelect allows the user to
+  select one or a few values out of many choices. However, TixSelect
+  is superior because it allows you to layout the choices in much less
+  space than what is required by the Tk <code> radiobutton</code>
+  widgets. Also, TixSelect supports complicated selection
+  rules. Because of these reasons, TixSelect is a primary choice for
+  implementing toolbar buttons, which often have strict space
+  requirements and complicated selection rules.
+
+<p><blockquote><a name=1-10>
+<center><img src=fig/intro/select.gif></center>
+<hr><center><h3>(Figure 1-10) The TixSelect Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=1.5.1>1.5.1 Creating A TixSelect Widget</H3>
+
+<p>  Program <a href=intro.tex.html#1-11>1-11 </a> shows how to create a TixSelect
+  widget. At line 1 of program <a href=intro.tex.html#1-11>1-11 </a>, we create a
+  TixSelect using the the <code> tixSelect</code> command.
+
+<p><blockquote><a name=1-11>
+<pre>
+  tixSelect .fruits -label "Fruits: " -orientation horizontal
+  .fruits add apple  -text Apple  -width 6
+  .fruits add orange -text Orange -width 6
+  .fruits add banana -text Banana -width 6
+  pack .fruits
+</pre>
+<hr><center><h3>(Figure 1-11) Creating a TixSelect Widget</center></h3>
+</blockquote>
+
+<p><H4><A NAME=1.5.1.1> Label and Orientation</H4>
+
+<p>  As shown in program <a href=intro.tex.html#1-11>1-11 </a>, with the <code> -label</code>
+  option, we can put a label next to the button subwidgets as the
+  caption of the TixSelect widget. We can also control the layout of
+  the button subwidgets using the <code> -orientation</code> option. The <code>
+  -orientation</code> option can have two values: <code> horizontal</code> (the
+  default value) or <code> vertical</code>, and the buttons are lied up
+  accordingly. Figure <a href=intro.tex.html#1-12>1-12 </a> shows the output of a
+  TixSelect widget whose <code> -orientation</code> is set to <code> vertical</code>.
+
+<p><H4><A NAME=1.5.1.2> Creating the Button Subwidgets and Configuring
+Their Appearance</H4>
+
+<p>  After we have created the TixSelect widget, we can create the button
+  subwidgets inside the TixSelect widget by the <code> add</code> widget
+  command (lines 2-4 of program <a href=intro.tex.html#1-11>1-11 </a>).
+
+<p>  The first argument to the <code> add</code> command is the name of the
+  button subwidget. Additional arguments can be given in <i>
+  option-value</i> pairs to configure the appearance of the button
+  subwidget. These <i> option-value</i> pairs can be any of those
+  accepted by a normal TK button widget. As shown in program
+  <a href=intro.tex.html#1-11>1-11 </a>, we use the <code> -text</code> option to put
+  appropriate text strings over the three button subwidgets.
+
+<p>  Notice that we also set the <code> -width</code> option of all the button
+  subwidgets to 6 characters. This way, the three buttons will have
+  the same width. If we didn't set the <code> -width</code> option for the
+  button widgets, they will have different widths, depending on their
+  text string, and the result would look less esthetically pleasing
+  than buttons with same widths.
+
+<p>  The output of program <a href=intro.tex.html#1-11>1-11 </a> is shown in figure
+  <a href=intro.tex.html#1-12>1-12 </a>
+
+<p>
+<blockquote><a name=1-12>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/intro/select1.gif>
+    <p><h4><center>Horizontal Orientation</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/intro/select-vert.gif>
+    <p><h4><center>Vertical Orientation</center></h4></td>
+ </TR></TABLE></center>
+<hr><center><h3>(Figure 1-12) The TixSelect Widget</center></h3>
+</blockquote>
+
+<p><H4><A NAME=1.5.1.3> Accessing the Button Subwidgets</H4>
+
+<p>  We have already seen the concept of subwidgets and how they can be
+  accessed in section <a href=intro.tex.html#1.3.1>1.3.1 </a> --- when we create a Tix
+  mega-widget, some subwidgets are created for us automatically. For
+  example, the label and entry subwidgets inside a TixControl widget.
+  We can access these subwidgets in a multitude of ways, including
+  using the subwidget method.
+
+<p>  One thing about the subwidgets we saw in section
+  <a href=intro.tex.html#1.3.1>1.3.1 </a> is that they are ``static'', meaning they are
+  created when the mega-widget is created and they remain there for
+  the whole lifetime of the mega-widget.
+
+<p>  The TixSelect widget takes us to a new concept: <i> dynamic
+  subwidgets</i> are subwidgets that can be created on-the-fly. After we
+  add a new button into the TixSelect widget, we get a new
+  subwidget. The name of this new subwidget is given by the first
+  parameter passed to the <code> add</code> method. As the following code
+  demonstrates, we can access this new subwidget using the <code>
+  subwidget</code> method:
+
+<p><blockquote><pre>
+tixSelect .s
+.s add apple  -text Apple
+.s add orange -text Orange
+#   Mmmm..., let's make the widget look more educated
+#   by using French words
+.s subwidget apple  config -text Pomme
+.s subwidget orange config -text Orange
+</pre></blockquote>
+
+<p>
+<H3><A NAME=1.5.2>1.5.2 Specifying Selection Rules</H3>
+
+<p>  For simple selection rules, you can use the <code> -allowzero</code> and
+  <code> -radio</code> options. The <code> -allowzero</code> option specifies whether
+  the user can select none of the choices inside the TixSelect
+  widget. The <code> -radio</code> option controls how many buttons can be
+  selected at once: when set to true, the user can select only one
+  button at a time; when set to false, the user can select as many
+  buttons as he desires.
+
+<p>  With these two options, we can write a program using two TixSelect
+  widgets for little Jimmy to fill up his lunch box. On the Sandwich
+  side, we set <code> -radio</code> to true and <code> -allowzero</code> <code>
+  false</code>. That means Jimmy can select one and only one sandwich among
+  beef, cheese or ham sandwiches. On the Veggie side, we want to
+  encourage Jimmy to consume as much veggie as possible, so we set the
+  <code> -allowzero</code> option to <code> false</code>. We also set the <code>
+  -allowzero</code> option to <code> false</code> so that Jimmy cannot get away with
+  eating none of the vegetables (see program <a href=intro.tex.html#1-13>1-13 </a>).
+
+<p><blockquote><a name=1-13>
+<blockquote><pre>
+tixSelect .sandwich -allowzero false -radio true -label "Sandwich :"
+.sandwich add beef   -text Beef
+.sandwich add cheese -text Cheese
+.sandwich add ham    -text Ham
+
+<p>tixSelect .vege -allowzero false -radio false -label "Vegetable :"
+.vege add bean    -text Bean
+.vege add carrot  -text Carrot
+.vege add lettuce -text Lettuce
+</pre></blockquote>
+<hr><center><h3>(Figure 1-13) Specifying Simple Selection Rules</center></h3>
+</blockquote>
+
+<p>
+<H3><A NAME=1.5.3>1.5.3 Accessing the Value of a TixSelect Widget</H3>
+
+<p>  The <i> value</i> of a TixSelect widget is a list of the names of the
+  button subwidgets that are currently selected. For example, in
+  program <a href=intro.tex.html#1-11>1-11 </a>, if the user has selected the apple
+  button, then the value of the TixSelect widget will be <code>
+  apple</code>. If the user has selected both the apple and the orange
+  buttons, then the value will be the list <code> "apple orange"</code>.
+
+<p>  The TixSelect widget supports same set of options as the TixControl
+  widget for you to access its value: the <code> -value</code> option stores
+  the current value, which can be queried and modified using the cget
+  and configure methods. You can also use the <code> -variable</code> option
+  to specify a global variable to store the value of the TixSelect
+  widget. The <code> -command</code> option specifies a TCL command to be
+  called whenever the user changes the selection inside a TixSelect
+  widget. This command is called with one argument: the new value of
+  the TixSelect widget. There is also the <code> -disablecallback</code>
+  option which you can use to control whether the command specified by
+  the <code> -command</code> option should be called when the value of the
+  TixSelect changes.
+
+<p><H3><A NAME=1.5.4>1.5.4 Specifying Complex Selection Rules</H3>
+
+<p>  If you want to have more complex selection rules for the
+  TixSelect widget, you can use the <code> -validatecmd</code> option. This
+  option works the same as the <code> -validatecmd</code> option of the
+  TixControl widget which we discusses in section
+  <a href=intro.tex.html#1.2>1.2 </a>: it specifies a command to be called every
+  time the user attempts to change the selection inside a TixSelect
+  widget.
+
+<p>  In the example program <a href=intro.tex.html#1-14>1-14 </a>, the procedure
+  <code> TwoMax</code> will be called every time the user tries to change the
+  selection of the <code> .fruits</code> widget. <code> TwoMax</code> limits the
+  maximum number of fruits that the user to choose to be 2 by always
+  truncating the value of the TixSelect widget to have no more than
+  two items. If you run this program, you will find out that you can
+  never select a third fruit after you have select two fruits.
+
+<p><blockquote><a name=1-14>
+<pre>
+  tixSelect .fruits -label "Fruits: " -radio false -validatecmd TwoMax
+  .fruits add apple  -text Apple  -width 6
+  .fruits add orange -text Orange -width 6
+  .fruits add banana -text Banana -width 6
+  pack .fruits
+
+<p>  proc TwoMax {value} {
+     if {[llength $value] &gt; 2} {
+        return [lrange $value 0 1]
+     } else {
+        return $value
+     }
+  }
+</pre>
+<hr><center><h3>(Figure 1-14) Specifying More Complex Selection Rules</center></h3>
+</blockquote>

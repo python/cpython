@@ -1,0 +1,34 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_Sleep 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_Sleep \- delay execution for a given number of milliseconds
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_Sleep\fR(\fIms\fR)
+.SH ARGUMENTS
+.AS int ms
+.AP int ms in
+Number of milliseconds to sleep.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure delays the calling process by the number of
+milliseconds given by the \fIms\fR parameter and returns
+after that time has elapsed.  It is typically used for things
+like flashing a button, where the delay is short and the
+application need not do anything while it waits.  For longer
+delays where the application needs to respond to other events
+during the delay, the procedure \fBTcl_CreateTimerHandler\fR
+should be used instead of \fBTcl_Sleep\fR.
+.SH KEYWORDS
+sleep, time, wait

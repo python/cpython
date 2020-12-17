@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Pohnpei) {
+    {-9223372036854775808 37972 0 LMT}
+    {-2177490772 39600 0 +11}
+}

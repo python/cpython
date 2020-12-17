@@ -1,0 +1,53 @@
+# This file is a Tcl script to test out Tk's "bell" command.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1998-2000 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+test bell-1.1 {bell command} -body {
+    bell a
+} -returnCodes {error} -result {bad option "a": must be -displayof or -nice}
+
+test bell-1.2 {bell command} -body {
+    bell a b 
+} -returnCodes {error} -result {bad option "a": must be -displayof or -nice}
+
+test bell-1.3 {bell command} -body {
+    bell -displayof gorp
+} -returnCodes {error} -result {bad window path name "gorp"}
+
+test bell-1.4 {bell command} -body {
+    bell -nice -displayof
+} -returnCodes {error} -result {wrong # args: should be "bell ?-displayof window? ?-nice?"}
+
+test bell-1.5 {bell command} -body {
+    bell -nice -nice -nice
+} -returnCodes {ok} -result {}  ;#keep -result {} and -retutnCodes {ok} for clarity?
+
+test bell-1.6 {bell command} -body {
+    bell -displayof . -nice
+} -returnCodes {ok} -result {}
+
+test bell-1.7 {bell command} -body {
+    bell -nice -displayof . -nice
+} -returnCodes {error} -result {wrong # args: should be "bell ?-displayof window? ?-nice?"}
+
+test bell-1.8 {bell command} -body {
+    puts "Bell should ring now ..."
+    flush stdout
+    after 200
+    bell -displayof .
+    after 200
+    bell -nice
+    after 200
+    bell
+} -result {}
+
+cleanupTests
+return

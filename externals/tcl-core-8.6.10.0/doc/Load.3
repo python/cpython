@@ -1,0 +1,70 @@
+'\"
+'\" Copyright (c) 2009-2010 Kevin B. Kenny
+'\" Copyright (c) 2010 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Load 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_LoadFile, Tcl_FindSymbol \- platform-independent dynamic library loading
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_LoadFile\fR(\fIinterp, pathPtr, symbols, flags, procPtrs, loadHandlePtr\fR)
+.sp
+void *
+\fBTcl_FindSymbol\fR(\fIinterp, loadHandle, symbol\fR)
+.SH ARGUMENTS
+.AS Tcl_LoadHandle loadHandle in
+.AP Tcl_Interp *interp in
+Interpreter to use for reporting error messages.
+.AP Tcl_Obj *pathPtr in
+The name of the file to load. If it is a single name, the library search path
+of the current environment will be used to resolve it.
+.AP "const char *const" symbols[] in
+Array of names of symbols to be resolved during the load of the library, or
+NULL if no symbols are to be resolved. If an array is given, the last entry in
+the array must be NULL.
+.AP int flags in
+The value should normally be 0, but \fITCL_LOAD_GLOBAL\fR or \fITCL_LOAD_LAZY\fR
+or a combination of those two is allowed as well.
+.AP void *procPtrs out
+Points to an array that will hold the addresses of the functions described in
+the \fIsymbols\fR argument. Should be NULL if no symbols are to be resolved.
+.AP Tcl_LoadHandle *loadHandlePtr out
+Points to a variable that will hold the handle to the abstract token
+describing the library that has been loaded.
+.AP Tcl_LoadHandle loadHandle in
+Abstract token describing the library to look up a symbol in.
+.AP "const char" *symbol in
+The name of the symbol to look up.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_LoadFile\fR loads a file from the filesystem (including potentially any
+virtual filesystem that has been installed) and provides a handle to it that
+may be used in further operations. The \fIsymbols\fR array, if non-NULL,
+supplies a set of names of symbols (typically functions) that must be resolved
+from the library and which will be stored in the array indicated by
+\fIprocPtrs\fR. If any of the symbols is not resolved, the loading of the file
+will fail with an error message left in the interpreter (if that is non-NULL).
+The result of \fBTcl_LoadFile\fR is a standard Tcl error code. The library may
+be unloaded with \fBTcl_FSUnloadFile\fR.
+.PP
+\fBTcl_FindSymbol\fR locates a symbol in a loaded library and returns it. If
+the symbol cannot be found, it returns NULL and sets an error message in the
+given \fIinterp\fR (if that is non-NULL). Note that it is unsafe to use this
+operation on a handle that has been passed to \fBTcl_FSUnloadFile\fR.
+.SH "SEE ALSO"
+Tcl_FSLoadFile(3), Tcl_FSUnloadFile(3), load(n), unload(n)
+.SH KEYWORDS
+binary code, loading, shared library
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

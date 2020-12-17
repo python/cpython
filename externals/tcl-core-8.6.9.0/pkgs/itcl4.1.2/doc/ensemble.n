@@ -1,0 +1,178 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH ensemble n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::ensemble \- create or modify a composite command
+.SH SYNOPSIS
+.nf
+\fBitcl::ensemble \fIensName\fR ?\fIcommand arg arg...\fR?
+.fi
+or
+.nf
+\fBensemble \fIensName\fR {
+    \fBpart \fIpartName args body\fR
+    \fI...\fR
+    \fBensemble \fIpartName\fR {
+        \fBpart \fIsubPartName args body\fR
+        \fBpart \fIsubPartName args body\fR
+    \fI...\fR
+    }
+}
+.fi
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBensemble\fR command is used to create or modify a composite
+command.  See the section \fBWHAT IS AN ENSEMBLE?\fR below for a
+brief overview of ensembles.
+.PP
+If the \fBensemble\fR command finds an existing ensemble called
+\fIensName\fR, it updates that ensemble.  Otherwise, it creates an
+ensemble called \fIensName\fR.  If the \fIensName\fR is a simple name
+like "foo", then an ensemble command named "foo" is added to the
+current namespace context.  If a command named "foo" already exists
+in that context, then it is deleted.  If the \fIensName\fR contains
+namespace qualifiers like "a::b::foo", then the namespace path is
+resolved, and the ensemble command is added that namespace context.
+Parent namespaces like "a" and "b" are created automatically, as needed.
+.PP
+If the \fIensName\fR contains spaces like "a::b::foo bar baz", then
+additional words like "bar" and "baz" are treated as sub-ensembles.
+Sub-ensembles are merely parts within an ensemble; they do not have
+a Tcl command associated with them.  An ensemble like "foo" can
+have a sub-ensemble called "foo bar", which in turn can have a
+sub-ensemble called "foo bar baz".  In this case, the sub-ensemble
+"foo bar" must be created before the sub-ensemble "foo bar baz"
+that resides within it.
+.PP
+If there are any arguments following \fIensName\fR, then they are
+treated as commands, and they are executed to update the ensemble.
+The following commands are recognized in this context:  \fBpart\fR
+and \fBensemble\fR.
+.PP
+The \fBpart\fR command defines a new part for the ensemble.
+Its syntax is identical to the usual \fBproc\fR command, but
+it defines a part within an ensemble, instead of a Tcl command.
+If a part called \fIpartName\fR already exists within the ensemble,
+then the \fBpart\fR command returns an error.
+.PP
+The \fBensemble\fR command can be nested inside another \fBensemble\fR
+command to define a sub-ensemble.
+
+.SH "WHAT IS AN ENSEMBLE?"
+.PP
+The usual "info" command is a composite command--the command name
+\fBinfo\fR must be followed by a sub-command like \fBbody\fR or \fBglobals\fR.
+We will refer to a command like \fBinfo\fR as an \fIensemble\fR, and to
+sub-commands like \fBbody\fR or \fBglobals\fR as its \fIparts\fR.
+.PP
+Ensembles can be nested.  For example, the \fBinfo\fR command has
+an ensemble \fBinfo namespace\fR within it.  This ensemble has parts
+like \fBinfo namespace all\fR and \fBinfo namespace children\fR.
+.PP
+With ensembles, composite commands can be created and extended
+in an automatic way.  Any package can find an existing ensemble
+and add new parts to it.  So extension writers can add their
+own parts, for example, to the \fBinfo\fR command.
+.PP
+The ensemble facility manages all of the part names and keeps
+track of unique abbreviations.  Normally, you can abbreviate
+\fBinfo complete\fR to \fBinfo comp\fR.  But if an extension adds the
+part \fBinfo complexity\fR, the minimum abbreviation for \fBinfo complete\fR
+becomes \fBinfo complet\fR.
+.PP
+The ensemble facility not only automates the construction of
+composite commands, but it automates the error handling as well.
+If you invoke an ensemble command without specifying a part name,
+you get an automatically generated error message that summarizes
+the usage information.  For example, when the \fBinfo\fR command
+is invoked without any arguments, it produces the following error
+message:
+.PP
+.CS
+wrong # args: should be one of...
+  info args procname
+  info body procname
+  info cmdcount
+  info commands ?pattern?
+  info complete command
+  info context
+  info default procname arg varname
+  info exists varName
+  info globals ?pattern?
+  info level ?number?
+  info library
+  info locals ?pattern?
+  info namespace option ?arg arg ...?
+  info patchlevel
+  info procs ?pattern?
+  info protection ?-command? ?-variable? name
+  info script
+  info tclversion
+  info vars ?pattern?
+  info which ?-command? ?-variable? ?-namespace? name
+.CE
+.PP
+You can also customize the way an ensemble responds to errors.
+When an ensemble encounters an unspecified or ambiguous part
+name, it looks for a part called \fB@error\fR.  If it exists,
+then it is used to handle the error.  This part will receive all
+of the arguments on the command line starting with the offending
+part name.  It can find another way of resolving the command,
+or generate its own error message.
+
+.SH EXAMPLE
+.PP
+We could use an ensemble to clean up the syntax of the various
+"wait" commands in Tcl/Tk.  Instead of using a series of
+strange commands like this:
+.PP
+.CS
+vwait x
+tkwait visibility .top
+tkwait window .
+.CE
+.PP
+we could use commands with a uniform syntax, like this:
+.PP
+.CS
+wait variable x
+wait visibility .top
+wait window .
+.CE
+.PP
+The Tcl package could define the following ensemble:
+.PP
+.CS
+itcl::ensemble wait part variable {name} {
+    uplevel vwait $name
+}
+.CE
+.PP
+The Tk package could add some options to this ensemble, with a
+command like this:
+.PP
+.CS
+itcl::ensemble wait {
+    part visibility {name} {
+        tkwait visibility $name
+    }
+    part window {name} {
+        tkwait window $name
+    }
+}
+.CE
+.PP
+Other extensions could add their own parts to the \fBwait\fR command
+too.
+
+.SH KEYWORDS
+ensemble, part, info

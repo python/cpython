@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+    targetNamespace="http://schemas.microsoft.com/wix/2009/Lux"
+              xmlns="http://schemas.microsoft.com/wix/2009/Lux">
+  <xs:annotation>
+    <xs:documentation>
+      The source code schema for the Windows Installer XML Toolset Lux Extension.
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+    <xs:element name="Mutation">
+        <xs:annotation>
+            <xs:documentation>
+              Test mutations let you author unit tests with different expected results. The mutation 
+              id is passed as the value of the WIXLUX_RUNNING_MUTATION property. Your custom action, 
+              typically in an '#ifdef DEBUG' block, can retrieve the WIXLUX_RUNNING_MUTATION property 
+              and hard-code different behavior based on the mutation. To author test mutations, use 
+              the Mutation element with UnitTest elements as children.            
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Child UnitTest elements are validated when the parent mutation is being executed.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:element ref="UnitTest"/>
+            </xs:choice>
+
+            <xs:attribute name="Id" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Value of the WIXLUX_RUNNING_MUTATION property set by the mutation.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="UnitTest">
+        <xs:annotation>
+            <xs:documentation>
+                Describes a unit test to be executed against a particular custom action, resulting in a
+                particular property value. Single-value properties, multi-value properties, and
+                name/value-pair properties can all be tested declaratively.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2009/Lux" ref="Mutation" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Child UnitTest elements are used to test multi-value properties. Note that Property
+                        and ValueDelimiter or NameValueDelimiter must be specified in the parent element.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:element ref="Condition"/>
+                <xs:element ref="Expression"/>
+                <xs:element ref="UnitTest"/>
+            </xs:choice>
+
+            <xs:attribute name="Id" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Identifier of the unit test. If you omit this attribute, a stable identifier is generated for you.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="CustomAction" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Identifier of the custom action to be tested.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="Property" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the property set by the custom action.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="Operator" default="equal">
+                <xs:annotation>
+                    <xs:documentation>
+                        The operator to apply to the property and value. Default is "equal."
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:NMTOKEN">
+                        <xs:enumeration value="equal">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    (Default) Compares Property to Value and succeeds if they are equal.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="notEqual">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Compares Property to Value and succeeds if they are NOT equal.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="caseInsensitiveEqual">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Compares Property to Value and succeeds if they are equal (ignoring case).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="caseInsensitiveNotEqual">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Compares Property to Value and succeeds if they are NOT equal (ignoring case).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+
+            <xs:attribute name="Value" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The value to compare to the property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="ValueSeparator" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        One character that is used to separate values in a multi-value property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="NameValueSeparator" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        One character that is used to separate values in a name/value-pair multi-value property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="Index" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        A formatted string that evaluates to either an integer index into a multi-value property or a string name of a name/value-pair multi-value property.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Condition">
+    <xs:annotation>
+      <xs:documentation>
+        Conditions for a unit test.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string" />
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="Expression">
+    <xs:annotation>
+      <xs:documentation>
+        An expression that must evaluate to true to succeed. Cannot be specified if Property is specified.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string" />
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="UnitTestRef">
+    <xs:annotation>
+      <xs:documentation>
+        Identifies a unit test to be linked into a project.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Identifier of the unit test to be included.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

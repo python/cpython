@@ -1,0 +1,116 @@
+#!/usr/local/bin/wish -f
+#
+# This script displays provides visual tests for many of Tk's features.
+# Each test displays a window with various information in it, along
+# with instructions about how the window should appear.  You can look
+# at the window to make sure it appears as expected.  Individual tests
+# are kept in separate ".tcl" files in this directory.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+
+set auto_path ". $auto_path"
+wm title . "Visual Tests for Tk"
+
+set testNum 1
+
+# Each menu entry invokes a visual test file
+
+proc runTest {file} {
+    global testNum
+
+    test "2.$testNum" "testing $file" {userInteraction} {
+    uplevel \#0 source [file join [testsDirectory] $file]
+    concat ""
+    } {}
+    incr testNum
+}
+
+# The following procedure is invoked to print the contents of a canvas:
+
+proc lpr {c args} {
+    exec lpr <<[eval [list $c postscript] $args]
+}
+
+proc end {} {
+    cleanupTests
+    set ::EndOfVisualTests 1
+}
+
+# ----------------------------------------------------------------------
+
+test 1.1 {running visual tests} -constraints userInteraction -body {
+    #-------------------------------------------------------
+    # The code below create the main window, consisting of a
+    # menu bar and a message explaining the basic operation
+    # of the program.
+    #-------------------------------------------------------
+
+    frame .menu -relief raised -borderwidth 1
+    message .msg -font {Times 18} -relief raised -width 4i \
+        -borderwidth 1 -text "This application provides a collection of visual tests for the Tk toolkit.  Each menu entry invokes a test, which displays information on the screen.  You can then verify visually that the information is being displayed in the correct way.  The tests under the \"Postscript\" menu exercise the Postscript-generation capabilities of canvas widgets."
+   
+    pack .menu -side top -fill x
+    pack .msg -side bottom -expand yes -fill both
+
+    #-------------------------------------------------------
+    # The code below creates all the menus, which invoke procedures
+    # to create particular demonstrations of various widgets.
+    #-------------------------------------------------------
+
+    menubutton .menu.file -text "File" -menu .menu.file.m
+    menu .menu.file.m
+    .menu.file.m add command -label "Quit" -command end
+   
+    menubutton .menu.group1 -text "Group 1" -menu .menu.group1.m
+    menu .menu.group1.m
+    .menu.group1.m add command -label "Canvas arcs" -command {runTest arc.tcl}
+    .menu.group1.m add command -label "Beveled borders in text widgets" \
+        -command {runTest bevel.tcl}
+    .menu.group1.m add command -label "Colormap management" \
+        -command {runTest cmap.tcl}
+    .menu.group1.m add command -label "Label/button geometry" \
+        -command {runTest butGeom.tcl}
+    .menu.group1.m add command -label "Label/button colors" \
+        -command {runTest butGeom2.tcl}
+   
+    menubutton .menu.ps -text "Canvas Postscript" -menu .menu.ps.m
+    menu .menu.ps.m
+    .menu.ps.m add command -label "Rectangles and other graphics" \
+        -command {runTest canvPsGrph.tcl}
+    .menu.ps.m add command -label "Text" \
+        -command {runTest canvPsText.tcl}
+    .menu.ps.m add command -label "Bitmaps" \
+        -command {runTest canvPsBmap.tcl}
+    .menu.ps.m add command -label "Images" \
+        -command {runTest canvPsImg.tcl}
+    .menu.ps.m add command -label "Arcs" \
+        -command {runTest canvPsArc.tcl}
+   
+    pack .menu.file .menu.group1 .menu.ps -side left -padx 1m
+   
+    # Set up for keyboard-based menu traversal
+   
+    bind . <Any-FocusIn> {
+    if {("%d" == "NotifyVirtual") && ("%m" == "NotifyNormal")} {
+        focus .menu
+    }
+    }
+    tk_menuBar .menu .menu.file .menu.group1 .menu.ps
+
+    # Set up a class binding to allow objects to be deleted from a canvas
+    # by clicking with mouse button 1:
+
+    bind Canvas <1> {%W delete [%W find closest %x %y]}
+
+    concat ""
+} -result {}
+
+if {![testConstraint userInteraction]} {
+    cleanupTests
+} else {
+    vwait EndOfVisualTests
+}

@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_RecordAndEval 3 7.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_RecordAndEval \- save command on history list before evaluating
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_RecordAndEval\fR(\fIinterp, cmd, flags\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Tcl interpreter in which to evaluate command.
+.AP "const char" *cmd in
+Command (or sequence of commands) to execute.
+.AP int flags in
+An OR'ed combination of flag bits.  \fBTCL_NO_EVAL\fR means record the
+command but do not evaluate it.  \fBTCL_EVAL_GLOBAL\fR means evaluate
+the command at global level instead of the current stack level.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_RecordAndEval\fR is invoked to record a command as an event
+on the history list and then execute it using \fBTcl_Eval\fR
+(or \fBTcl_GlobalEval\fR if the \fBTCL_EVAL_GLOBAL\fR bit is set in \fIflags\fR).
+It returns a completion code such as \fBTCL_OK\fR just like \fBTcl_Eval\fR
+and it leaves information in the interpreter's result.
+If you do not want the command recorded on the history list then
+you should invoke \fBTcl_Eval\fR instead of \fBTcl_RecordAndEval\fR.
+Normally \fBTcl_RecordAndEval\fR is only called with top-level
+commands typed by the user, since the purpose of history is to
+allow the user to re-issue recently-invoked commands.
+If the \fIflags\fR argument contains the \fBTCL_NO_EVAL\fR bit then
+the command is recorded without being evaluated.
+.PP
+Note that \fBTcl_RecordAndEval\fR has been largely replaced by the
+value-based procedure \fBTcl_RecordAndEvalObj\fR.
+That value-based procedure records and optionally executes
+a command held in a Tcl value instead of a string.
+
+.SH "SEE ALSO"
+Tcl_RecordAndEvalObj
+
+.SH KEYWORDS
+command, event, execute, history, interpreter, record

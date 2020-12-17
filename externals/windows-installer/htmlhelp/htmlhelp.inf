@@ -1,0 +1,131 @@
+[Version]
+Signature="$Chicago$"				; Required for 95 and NT
+[SourceDisksNames]
+1="%AppName%",,1
+[DefaultInstall]
+CustomDestination=HHWDestinationDir
+UnRegisterOCXs=RegisterItccDLL
+UpdateInis=HHWDelShortcuts
+DelFiles=HHWCopy, HHWCopyInc, HHWCopyLib, HHWCopyJava, HHWCopyHelp, HHWCopyRedist, HHWCopySystem
+DelDirs=HHWDirectories
+DelReg=UninstallKey
+RunPostSetupCommands=HHWGrpConv
+BeginPrompt=BeginUninstallPrompt
+EndPrompt=EndUninstallPrompt
+Cleanup=1
+[DefaultInstall.NT5]
+CustomDestination=HHWDestinationDir
+UnRegisterOCXs=RegisterItccDLL
+DelFiles=HHWCopy, HHWCopyInc, HHWCopyLib, HHWCopyJava, HHWCopyHelp, HHWCopyRedist, HHWCopySystem
+DelDirs=HHWDirectories
+DelReg=UninstallKey
+ProfileItems=HHWDelNT5Group
+BeginPrompt=BeginUninstallPrompt
+EndPrompt=EndUninstallPrompt
+Cleanup=1
+[BeginUninstallPrompt]
+Prompt="Do you wish to uninstall %AppName% now?"
+Title="%AppName% Uninstall"
+[EndUninstallPrompt]
+Prompt="%AppName% uninstalled"
+[HHWDirectories]
+%49000%\java
+%49000%\include
+%49000%\lib
+%49000%\redist
+%49000%
+[DestinationDirs]
+HHWCopy=49000
+HHWCopyInc=49000,include
+HHWCopyLib=49000,lib
+HHWCopyJava=49000,java
+HHWCopyHelp=18
+HHWCopyRedist=49000,redist
+HHWCopySystem=11
+[HHWCopy]
+_instpgm.exe,,,1
+_iwdinst.exe,,,1
+readme.htm,,,1
+htmlhelp.lib,,,1
+htmlhelp.h,,,1
+setup.exe,,,1
+setup.ini,,,1
+advpack.dll,,,1
+cnvcnt.dll,,,1
+cnvtoc.dll,,,1
+gencnv.dll,,,1
+hhcout.dll,,,1
+hhkout.dll,,,1
+navout.dll,,,1
+spcom.dll,,,1
+sprbuild.dll,,,1
+spredit.dll,,,1
+sprfile.dll,,,1
+sprlog.dll,,,1
+hhc.exe,,,1
+hhw.exe,,,1
+hhw.gif,,,1
+flash.exe,,,1
+flash256.gif,,,1
+itcc.dll,,,1
+license.txt,,,1
+readme.txt,,,1
+[HHWCopyInc]
+htmlhelp.h,,,1
+[HHWCopyLib]
+htmlhelp.lib,,,1
+[HHWCopyJava]
+dialog~1.cla,,,1
+elemen~1.cla,,,1
+elemen~2.cla,,,1
+HHCtrl.cab,,,1
+hhctrl~1.cla,,,1
+indexp~1.cla,,,1
+relate~1.cla,,,1
+sitema~1.cla,,,1
+treeca~1.cla,,,1
+treevi~1.cla,,,1
+cntimage.gif,,,1
+[HHWCopyHelp]
+api.chm,,,1
+hhaxref.chm,,,1
+htmlref.chm,,,1
+htmlhelp.chm,,,1
+[HHWCopyRedist]
+hhupd.exe,,,1
+[HHWCopySystem]
+hha.dll,,,1
+[HHWDestinationDir]
+49000=CustomLDID49000, 7
+[RegisterItccDLL]
+%49000%\itcc.dll
+%49000%\sprbuild.dll
+%49000%\sprlog.dll
+%49000%\sprfile.dll
+%49000%\spredit.dll
+%49000%\spcom.dll
+%49000%\cnvcnt.dll
+%49000%\cnvtoc.dll
+%49000%\gencnv.dll
+%49000%\hhkout.dll
+%49000%\hhcout.dll
+%49000%\navout.dll
+[CustomLDID49000]
+"HKCU","Software\Microsoft\HTML Help Workshop","InstallDir","The previous installation was incomplete.",
+[UninstallKey]
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\HTML Help Workshop", "DisplayName"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\HTML Help Workshop", "UninstallString"
+[HHWDelShortcuts]
+setup.ini, progman.groups,, "group0=""%GroupName%"""
+setup.ini, group0,, """%AppName%"""
+setup.ini, group0,, """%FlashName%"""
+[HHWDelNT5Group]
+Name=%GroupName%,7
+[HHWGrpConv]
+"grpconv -o"
+[Strings]
+AppName="HTML Help Workshop"
+GroupName="HTML Help Workshop"
+FlashName="HTML Help Image Editor"
+DefaultInstallDir="C:\Program Files\HTML Help Workshop"
+AdvpackError="You need a newer version of advpack.dll"

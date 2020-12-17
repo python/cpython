@@ -1,0 +1,1626 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:html="http://www.w3.org/1999/xhtml" xmlns:wix="http://schemas.microsoft.com/wix/2006/wi" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension" targetNamespace="http://schemas.microsoft.com/wix/UtilExtension" xmlns="http://schemas.microsoft.com/wix/UtilExtension">
+  <xs:annotation>
+    <xs:documentation>
+            The source code schema for the Windows Installer XML Toolset Utility Extension.
+        </xs:documentation>
+  </xs:annotation>
+  <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+  <xs:element name="CloseApplication">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+      <xs:documentation>Closes applications or schedules a reboot if application cannot be closed.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:annotation>
+            <xs:documentation>
+              Condition that determines if the application should be closed.  Must be blank or evaluate to true
+              for the application to be scheduled for closing.
+            </xs:documentation>
+          </xs:annotation>
+          <xs:attribute name="Id" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Identifier for the close application (primary key). If the Id is not specified, one will be generated.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Target" type="xs:string" use="required">
+            <xs:annotation>
+              <xs:documentation>Name of the exectuable to be closed.  This should only be the file name.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Description" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Description to show if application is running and needs to be closed.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Sequence" type="xs:integer">
+            <xs:annotation>
+              <xs:documentation>Optionally orders the applications to be closed.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="CloseMessage" type="YesNoType">
+            <xs:annotation>
+              <xs:documentation>Optionally sends a close message to the application. Default is no.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="EndSessionMessage" type="YesNoType">
+            <xs:annotation>
+              <xs:documentation>Sends WM_QUERYENDSESSION then WM_ENDSESSION messages to the application. Default is "no".</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="ElevatedCloseMessage" type="YesNoType">
+            <xs:annotation>
+              <xs:documentation>Optionally sends a close message to the application from deffered action without impersonation. Default is no.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="ElevatedEndSessionMessage" type="YesNoType">
+            <xs:annotation>
+              <xs:documentation>Sends WM_QUERYENDSESSION then WM_ENDSESSION messages to the application from a deffered action without impersonation. Default is "no".</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="RebootPrompt" type="YesNoType">
+            <xs:annotation>
+              <xs:documentation>Optionally prompts for reboot if application is still running. The default is "yes". The TerminateProcess attribute must be "no" or not specified if this attribute is "yes".</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="PromptToContinue" type="YesNoType">
+            <xs:annotation>
+              <xs:documentation>
+                When this attribute is set to "yes", the user will be prompted when the application is still running. The Description attribute must contain the message to
+                display in the prompt. The prompt occurs before executing any of the other options and gives the options to "Abort", "Retry", or "Ignore". Abort will cancel
+                the install. Retry will attempt the check again and if the application is still running, prompt again. "Ignore" will continue and execute any other options
+                set on the CloseApplication element. The default is "no".
+              </xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Property" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Property to be set if application is still running. Useful for launch conditions or to conditionalize custom UI to ask user to shut down apps.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="TerminateProcess" type="xs:integer">
+            <xs:annotation>
+              <xs:documentation>
+                Attempts to terminates process and return the specified exit code if application is still running after sending any requested close and/or end session messages.
+                If this attribute is specified, the RebootPrompt attribute must be "no". The default is "no".
+              </xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Timeout" type="xs:integer">
+            <xs:annotation>
+              <xs:documentation>
+                Optional time in seconds to wait for the application to exit after the close and/or end session messages. If the application is still running after the timeout then
+                the RebootPrompt or TerminateProcess attributes will be considered. The default value is "5" seconds.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ComponentSearch">
+    <xs:annotation>
+      <xs:documentation>Describes a component search.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attributeGroup ref="SearchCommonAttributes" />
+      <xs:attribute name="Guid" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Component to search for.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ProductCode" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Optional ProductCode to determine if the component is installed.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Result">
+        <xs:annotation>
+          <xs:documentation>
+                        Rather than saving the matching key path into the variable, a ComponentSearch can save an attribute of the component instead.
+                    </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="directory">
+              <xs:annotation>
+                <xs:documentation>Saves the parent directory for the component's file key path; other types of key path are returned unmodified.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="state">
+              <xs:annotation>
+                <xs:documentation>Saves the state of the component: absent (2), locally installed (3), will run from source (4), or installed in default location (either local or from source) (5)</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="keyPath">
+              <xs:annotation>
+                <xs:documentation>Saves the key path of the component if installed. This is the default.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ComponentSearchRef">
+    <xs:annotation>
+      <xs:documentation>References a ComponentSearch.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DirectorySearch">
+    <xs:annotation>
+      <xs:documentation>Describes a directory search.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attributeGroup ref="SearchCommonAttributes" />
+      <xs:attribute name="Path" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Directory path to search for.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Result">
+        <xs:annotation>
+          <xs:documentation>
+            Rather than saving the matching directory path into the variable, a DirectorySearch can save an
+            attribute of the matching directory instead.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="exists">
+              <xs:annotation>
+                <xs:documentation>Saves true if a matching directory is found; false otherwise.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DirectorySearchRef">
+    <xs:annotation>
+      <xs:documentation>References a DirectorySearch.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EventSource">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>Creates an event source.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="CategoryCount" type="xs:integer">
+        <xs:annotation>
+          <xs:documentation>
+                        The number of categories in CategoryMessageFile. CategoryMessageFile
+                        must be specified too.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CategoryMessageFile" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+                        Name of the category message file. CategoryCount must be specified too.
+                        Note that this is a formatted field, so you can use [#fileId] syntax to
+                        refer to a file being installed. It is also written as a REG_EXPAND_SZ
+                        string, so you can use %environment_variable% syntax to refer to a file
+                        already present on the user's machine.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="EventMessageFile" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>
+                        Name of the event message file.
+                        Note that this is a formatted field, so you can use [#fileId] syntax to
+                        refer to a file being installed. It is also written as a REG_EXPAND_SZ
+                        string, so you can use %environment_variable% syntax to refer to a file
+                        already present on the user's machine.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="KeyPath" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>
+                        Marks the EventSource registry as the key path of the component it belongs to.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Log" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Name of the event source's log.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Name of the event source.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ParameterMessageFile" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+                        Name of the parameter message file.
+                        Note that this is a formatted field, so you can use [#fileId] syntax to
+                        refer to a file being installed. It is also written as a REG_EXPAND_SZ
+                        string, so you can use %environment_variable% syntax to refer to a file
+                        already present on the user's machine.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SupportsErrors" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>
+                        Equivalent to EVENTLOG_ERROR_TYPE.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SupportsFailureAudits" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>
+                        Equivalent to EVENTLOG_AUDIT_FAILURE.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SupportsInformationals" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>
+                        Equivalent to EVENTLOG_INFORMATION_TYPE.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SupportsSuccessAudits" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>
+                        Equivalent to EVENTLOG_AUDIT_SUCCESS.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SupportsWarnings" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>
+                        Equivalent to EVENTLOG_WARNING_TYPE.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="FileSearch">
+    <xs:annotation>
+      <xs:documentation>Describes a file search.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attributeGroup ref="SearchCommonAttributes" />
+      <xs:attribute name="Path" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>File path to search for.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Result">
+        <xs:annotation>
+          <xs:documentation>
+                        Rather than saving the matching file path into the variable, a FileSearch can save an attribute of the matching file instead.
+                    </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="exists">
+              <xs:annotation>
+                <xs:documentation>Saves true if a matching file is found; false otherwise.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="version">
+              <xs:annotation>
+                <xs:documentation>Saves the version information for files that have it (.exe, .dll); zero-version (0.0.0.0) otherwise.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="FileSearchRef">
+    <xs:annotation>
+      <xs:documentation>References a FileSearch.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="FileShare">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>Creates a file share out of the component's directory.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="FileSharePermission" minOccurs="1" maxOccurs="unbounded">
+          <xs:annotation>
+            <xs:documentation>ACL permission</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Id" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Identifier for the file share (primary key).</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Name of the file share.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Description" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Description of the file share.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="FileSharePermission">
+    <xs:annotation>
+      <xs:documentation>
+                Sets ACLs on a FileShare.  This element has no Id attribute.
+                The table and key are taken from the parent element.
+            </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="User" use="required" type="xs:string"></xs:attribute>
+      <!-- Common ACLs -->
+      <xs:attribute name="Read" type="YesNoType"></xs:attribute>
+      <xs:attribute name="Delete" type="YesNoType"></xs:attribute>
+      <xs:attribute name="ReadPermission" type="YesNoType"></xs:attribute>
+      <xs:attribute name="ChangePermission" type="YesNoType"></xs:attribute>
+      <xs:attribute name="TakeOwnership" type="YesNoType"></xs:attribute>
+      <!-- Folder and File ACLs -->
+      <xs:attribute name="ReadAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="WriteAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="ReadExtendedAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="WriteExtendedAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="Synchronize" type="YesNoType"></xs:attribute>
+      <!-- Folder only ACLs -->
+      <xs:attribute name="CreateFile" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to create a file in the directory.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CreateChild" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to create a subdirectory.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DeleteChild" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to delete a directory and all the files it contains, including read-only files.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Traverse" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to traverse the directory.  By default, users are assigned the BYPASS_TRAVERSE_CHECKING privilege, which ignores the FILE_TRAVERSE access right.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <!-- Generic ACLs, mapped by system to appropriate permissions -->
+      <xs:attribute name="GenericAll" type="YesNoType"></xs:attribute>
+      <xs:attribute name="GenericExecute" type="YesNoType"></xs:attribute>
+      <xs:attribute name="GenericWrite" type="YesNoType"></xs:attribute>
+      <xs:attribute name="GenericRead" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>specifying this will fail to grant read access</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Group">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+      <xs:documentation>
+                Finds user groups on the local machine or specified Active Directory domain. The local machine will be
+                searched for the group first then fallback to looking in Active Directory. This element is not capable
+                of creating new groups but can be used to add new or existing users to an existing group.
+            </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Unique identifier in your installation package for this group.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>A <html:a href="http://msdn.microsoft.com/library/aa368609.aspx" target="_blank">Formatted</html:a> string that contains the name of the group to be found.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Domain" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>An optional <html:a href="http://msdn.microsoft.com/library/aa368609.aspx" target="_blank">Formatted</html:a> string that specifies the domain for the group.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GroupRef">
+    <xs:annotation>
+      <xs:documentation>Used to join a user to a group</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="InternetShortcut">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:howtoRef href="files_and_registry/create_internet_shortcut.html">How To: Create a shortcut to a webpage</xse:howtoRef>
+      </xs:appinfo>
+      <xs:documentation>Creates a shortcut to a URL.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Unique identifier in your installation package for this Internet shortcut.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Directory" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Identifier reference to Directory element where shortcut is to be created. This attribute's value defaults to the parent Component directory.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>
+                        The name of the shortcut file, which is visible to the user. (The .lnk 
+                        extension is added automatically and by default, is not shown to the user.)
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Target" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>
+                        URL that should be opened when the user selects the shortcut. Windows
+                        opens the URL in the appropriate handler for the protocol specified 
+                        in the URL. Note that this is a formatted field, so you can use 
+                        [#fileId] syntax to refer to a file being installed (using the file: 
+                        protocol).
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Type">
+        <xs:annotation>
+          <xs:documentation>Which type of shortcut should be created.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="url">
+              <xs:annotation>
+                <xs:documentation>Creates .url files using IUniformResourceLocatorW.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="link">
+              <xs:annotation>
+                <xs:documentation>Creates .lnk files using IShellLinkW (default).</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="IconFile" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>
+            Icon file that should be displayed. Note that this is a formatted field, so you can use
+            [#fileId] syntax to refer to a file being installed (using the file:
+            protocol).
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="IconIndex" type="xs:integer" use="optional">
+        <xs:annotation>
+          <xs:documentation>
+            Index of the icon being referenced
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PerformanceCategory">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+      <xs:documentation>Used to create performance categories and configure performance counters.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="PerformanceCounter" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="Id" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Unique identifier in your installation package for this performance counter category.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>Name for the performance counter category.  If this attribute is not provided the Id attribute is used as the name of the performance counter category.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Help" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>Optional help text for the performance counter category.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="MultiInstance" type="YesNoType" use="optional">
+        <xs:annotation>
+          <xs:documentation>Flag that specifies whether the performance counter category is multi or single instanced.  Default is single instance.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Library" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>DLL that contains the performance counter.  The default is "netfxperf.dll" which should be used for all managed code performance counters.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Open" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>Function entry point in to the Library DLL called when opening the performance counter.  The default is "OpenPerformanceData" which should be used for all managed code performance counters.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Close" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>Function entry point in to the Library DLL called when closing the performance counter.  The default is "ClosePerformanceData" which should be used for all managed code performance counters.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Collect" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>Function entry point in to the Library DLL called when collecting data from the performance counter.  The default is "CollectPerformanceData" which should be used for all managed code performance counters.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DefaultLanguage" type="PerformanceCounterLanguageType">
+        <xs:annotation>
+          <xs:documentation>Default language for the performance category and contained counters' names and help text.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PerformanceCounter">
+    <xs:annotation>
+      <xs:documentation>Creates a performance counter in a performance category.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Name for the performance counter.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Help" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>Optional help text for the performance counter.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Type" type="PerformanceCounterTypesType">
+        <xs:annotation>
+          <xs:documentation>Type of the performance counter.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Language" type="PerformanceCounterLanguageType" use="optional">
+        <xs:annotation>
+          <xs:documentation>Language for the peformance counter name and help.  The default is to use the parent PerformanceCategory element's DefaultLanguage attribute.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PerfCounter">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+        <xse:deprecated ref="PerformanceCounter" />
+      </xs:appinfo>
+      <xs:documentation>Used to install Perfmon counters.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Name" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PerfCounterManifest">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+      </xs:appinfo>
+      <xs:documentation>
+        Used to install Perfmon Counter Manifests.
+        Note that this functionality cannot be used with major upgrades that are scheduled after the InstallExecute,
+        InstallExecuteAgain, or InstallFinalize actions. For more information on major upgrade scheduling, see
+        <html:a href="http://msdn.microsoft.com/en-us/library/aa371197.aspx">RemoveExistingProducts Action</html:a>.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="ResourceFileDirectory" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>The directory that holds the resource file of the providers in the perfmon counter manifest. Often the resource file path cannot be determined until setup time. Put the directory here and during perfmon manifest registrtion the path will be updated in the registry. If not specified, Perfmon will look for the resource file in the same directory of the perfmon counter manifest file.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EventManifest">
+    <xs:annotation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+      </xs:appinfo>
+      <xs:documentation>Used to install Event Manifests.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="MessageFile" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>The message file (including path) of all the providers in the event manifest. Often the message file path cannot be determined until setup time. Put your MessageFile here and the messageFileName attribute of the all the providers in the manifest will be updated with the path before it is registered. </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ParameterFile" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>The parameter file (including path) of all the providers in the event manifest. Often the parameter file path cannot be determined until setup time. Put your ParameterFile here and the parameterFileName attribute of the all the providers in the manifest will be updated with the path before it is registered. </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ResourceFile" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>The resource file (including path) of all the providers in the event manifest. Often the resource file path cannot be determined until setup time. Put your ResourceFile here and the resourceFileName attribute of the all the providers in the manifest will be updated with the path before it is registered. </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="PermissionEx">
+    <xs:annotation>
+      <xs:documentation>
+          Sets ACLs on File, Registry, CreateFolder, or ServiceInstall.  When under a Registry element, this cannot be used
+          if the Action attribute's value is remove or removeKeyOnInstall.  This element has no Id attribute.
+          The table and key are taken from the parent element.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="CreateFolder" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="File" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Registry" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="RegistryKey" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="RegistryValue" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Domain" type="xs:string"></xs:attribute>
+      <xs:attribute name="User" use="required" type="xs:string"></xs:attribute>
+      <!-- Common ACLs -->
+      <xs:attribute name="Read" type="YesNoType"></xs:attribute>
+      <xs:attribute name="Delete" type="YesNoType"></xs:attribute>
+      <xs:attribute name="ReadPermission" type="YesNoType"></xs:attribute>
+      <xs:attribute name="ChangePermission" type="YesNoType"></xs:attribute>
+      <xs:attribute name="TakeOwnership" type="YesNoType"></xs:attribute>
+      <!-- Folder and File ACLs -->
+      <xs:attribute name="ReadAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="WriteAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="ReadExtendedAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="WriteExtendedAttributes" type="YesNoType"></xs:attribute>
+      <xs:attribute name="Synchronize" type="YesNoType"></xs:attribute>
+      <!-- Folder only ACLs -->
+      <xs:attribute name="CreateFile" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to create a file in the directory.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CreateChild" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to create a subdirectory.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DeleteChild" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to delete a directory and all the files it contains, including read-only files.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Traverse" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>For a directory, the right to traverse the directory.  By default, users are assigned the BYPASS_TRAVERSE_CHECKING privilege, which ignores the FILE_TRAVERSE access right.  Only valid under a 'CreateFolder' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <!-- File only ACLs -->
+      <xs:attribute name="Append" type="YesNoType"></xs:attribute>
+      <xs:attribute name="Execute" type="YesNoType"></xs:attribute>
+      <!-- File and Registry ACLs -->
+      <xs:attribute name="Write" type="YesNoType"></xs:attribute>
+      <!-- Registry only ACLs -->
+      <xs:attribute name="CreateSubkeys" type="YesNoType"></xs:attribute>
+      <xs:attribute name="EnumerateSubkeys" type="YesNoType"></xs:attribute>
+      <xs:attribute name="Notify" type="YesNoType"></xs:attribute>
+      <xs:attribute name="CreateLink" type="YesNoType"></xs:attribute>
+      <!-- Generic ACLs, mapped by system to appropriate permissions -->
+      <xs:attribute name="GenericAll" type="YesNoType"></xs:attribute>
+      <xs:attribute name="GenericExecute" type="YesNoType"></xs:attribute>
+      <xs:attribute name="GenericWrite" type="YesNoType"></xs:attribute>
+      <xs:attribute name="GenericRead" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>specifying this will fail to grant read access</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <!-- Service only ACLs -->
+      <xs:attribute name="ServiceQueryConfig" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the QueryServiceConfig and QueryServiceConfig2 functions to query the service configuration.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceChangeConfig" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the ChangeServiceConfig or ChangeServiceConfig2 function to change the service configuration.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceQueryStatus" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the QueryServiceStatus function to ask the service control manager about the status of the service.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceEnumerateDependents" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the EnumDependentServices function to enumerate all the services dependent on the service.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceStart" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the StartService function to start the service.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceStop" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the ControlService function to stop the service.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServicePauseContinue" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the ControlService function to pause or continue the service.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceInterrogate" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the ControlService function to ask the service to report its status immediately.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceUserDefinedControl" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Required to call the ControlService function to specify a user-defined control code.  Only valid under a 'ServiceInstall' parent.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProductSearch">
+    <xs:annotation>
+      <xs:documentation>Describes a product search.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attributeGroup ref="SearchCommonAttributes" />
+      <xs:attribute name="Guid" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The Guid attribute has been deprecated; use the ProductCode or UpgradeCode attribute instead. If this attribute is used, it is assumed to be a ProductCode.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ProductCode" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The ProductCode to use for the search. This attribute must be omitted if UpgradeCode is specified.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="UpgradeCode" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The UpgradeCode to use for the search. This attribute must be omitted if ProductCode is specified. Note that if multiple products are found, the highest versioned product will be used for the result.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Result">
+        <xs:annotation>
+          <xs:documentation>
+                        Rather than saving the product version into the variable, a ProductSearch can save another attribute of the matching product instead.
+                    </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="version">
+              <xs:annotation>
+                <xs:documentation>Saves the version of a matching product if found; 0.0.0.0 otherwise. This is the default.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="language">
+              <xs:annotation>
+                <xs:documentation>Saves the language of a matching product if found; empty otherwise.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="state">
+              <xs:annotation>
+                <xs:documentation>Saves the state of the product: advertised (1), absent (2), or locally installed (5).</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="assignment">
+              <xs:annotation>
+                <xs:documentation>Saves the assignment type of the product: per-user (0), or per-machine (1).</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ProductSearchRef">
+    <xs:annotation>
+      <xs:documentation>References a ProductSearch.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RemoveFolderEx">
+      <xs:annotation>
+          <xs:appinfo>
+              <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+              <xse:msiRef table="RemoveFile" href="http://msdn.microsoft.com/library/aa371201.aspx"/>
+              <xse:remarks>
+                <html:p>The custom action that implements RemoveFolderEx does so by writing temporary rows to the RemoveFile table
+                for each subfolder of the root folder you specify. Because it might dramatically affect Windows Installer's
+                <html:a href="http://msdn.microsoft.com/en-us/library/aa368593.aspx">File Costing</html:a>, 
+                the temporary rows must be written before the CostInitialize standard action. Unfortunately, MSI doesn't
+                create properties for the Directory hierarchy in your package until later, in the CostFinalize action.</html:p>
+                <html:p>An easy workaround for a typical use case of removing a folder during uninstall is to write the directory
+                path to the registry and to load it during uninstall. See 
+                <html:a href="http://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern">The WiX toolset's "Remember Property" pattern</html:a>
+                for an example.</html:p>
+                <html:p>If you use custom actions to set properties, ensure that they are scheduled before the WixRemoveFoldersEx custom action.</html:p>
+              </xse:remarks>
+          </xs:appinfo>
+          <xs:documentation>
+              Remove a folder and all contained files and folders if the parent component is selected for installation or removal.
+              The folder must be specified in the Property attribute as the name of a property that will have a value that resolves 
+              to the full path of the folder before the CostInitialize action. Note that Directory ids cannot be used. 
+              For more details, see the Remarks.
+          </xs:documentation>
+      </xs:annotation>
+      <xs:complexType>
+          <xs:attribute name="Id" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>Primary key used to identify this particular entry. If this is not specified, a stable identifier
+                  will be generated at compile time based on the other attributes.</xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Property" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The id of a property that resolves to the full path of the source directory.  The property does not have
+                      to exist in the installer database at creation time; it could be created at installation time by a custom
+                      action, on the command line, etc. The property value can contain environment variables surrounded by 
+                      percent signs such as from a REG_EXPAND_SZ registry value; environment variables will be expanded before 
+                      being evaluated for a full path.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="On">
+              <xs:annotation>
+                  <xs:documentation>
+                      This value determines when the folder may be removed.
+                  </xs:documentation>
+              </xs:annotation>
+              <xs:simpleType>
+                  <xs:restriction base="xs:NMTOKEN">
+                      <xs:enumeration value="install">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  Removes the folder only when the parent component is being installed (msiInstallStateLocal or msiInstallStateSource).
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:enumeration>
+                      <xs:enumeration value="uninstall">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  Default: Removes the folder only when the parent component is being removed (msiInstallStateAbsent).
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:enumeration>
+                      <xs:enumeration value="both">
+                          <xs:annotation>
+                              <xs:documentation>
+                                  Removes the folder when the parent component is being installed or removed.
+                              </xs:documentation>
+                          </xs:annotation>
+                      </xs:enumeration>
+                  </xs:restriction>
+              </xs:simpleType>
+          </xs:attribute>
+      </xs:complexType>
+  </xs:element>
+  <xs:element name="RestartResource">
+    <xs:annotation>
+      <xs:documentation>Registers a resource with the Restart Manager.</xs:documentation>
+      <xs:appinfo>
+          <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+          <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+          <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+          <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The unique identifier for this resource. A unique identifier will
+                    be generated automatically if not specified.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Path" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The full path to the process module to register with the Restart Manager.
+                    This can be a formatted value that resolves to a full path.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ProcessName" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The name of a process to register with the Restart Manager.
+                    This can be a formatted value that resolves to a process name.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ServiceName" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The name of a Windows service to register with the Restart Manager.
+                    This can be a formatted value that resolves to a service name.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RegistrySearch">
+    <xs:annotation>
+      <xs:documentation>Describes a registry search.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attributeGroup ref="SearchCommonAttributes" />
+      <xs:attribute name="Root" use="required">
+        <xs:annotation>
+          <xs:documentation>Registry root hive to search under.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="HKLM">
+              <xs:annotation>
+                <xs:documentation>HKEY_LOCAL_MACHINE</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="HKCU">
+              <xs:annotation>
+                <xs:documentation>HKEY_CURRENT_USER</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="HKCR">
+              <xs:annotation>
+                <xs:documentation>HKEY_CLASSES_ROOT</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="HKU">
+              <xs:annotation>
+                <xs:documentation>HKEY_USERS</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Key" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>Key to search for.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Value" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Optional value to search for under the given Key.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Format">
+        <xs:annotation>
+          <xs:documentation>What format to return the value in.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="raw">
+              <xs:annotation>
+                <xs:documentation>Returns the unformatted value directly from the registry. For example, a REG_DWORD value of '1' is returned as '1', not '#1'.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="compatible">
+              <xs:annotation>
+                <xs:documentation>Returns the value formatted as Windows Installer would. For example, a REG_DWORD value of '1' is returned as '#1', not '1'.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="ExpandEnvironmentVariables" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Whether to expand any environment variables in REG_SZ, REG_EXPAND_SZ, or REG_MULTI_SZ values.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Result">
+        <xs:annotation>
+          <xs:documentation>
+                        Rather than saving the matching registry value into the variable, a RegistrySearch can save an attribute of the matching entry instead.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:NMTOKEN">
+                        <xs:enumeration value="exists">
+                            <xs:annotation>
+                                <xs:documentation>Saves true if a matching registry entry is found; false otherwise.</xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="value">
+                            <xs:annotation>
+                                <xs:documentation>Saves the value of the registry key in the variable. This is the default.</xs:documentation>
+                            </xs:annotation>
+                        </xs:enumeration>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="Win64" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>Instructs the search to look in the 64-bit registry when the value is 'yes'. When the value is 'no', the search looks in the 32-bit registry. The default value is 'no'.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+  <xs:element name="RegistrySearchRef">
+    <xs:annotation>
+      <xs:documentation>References a RegistrySearch.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ServiceConfig">
+    <xs:annotation>
+      <xs:documentation>Service configuration information for failure actions.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="ServiceInstall" />
+        <xse:remarks>
+          <html:dl>
+            <html:dd>Nesting a ServiceConfig element under a ServiceInstall element will result in the service being installed to be configured.</html:dd>
+            <html:dd>Nesting a ServiceConfig element under a component element will result in an already installed service to be configured.  If the service does not exist prior to the install of the MSI package, the install will fail.</html:dd>
+          </html:dl>
+        </xse:remarks>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="ServiceName" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Required if not under a ServiceInstall element.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="FirstFailureActionType" use="required">
+        <xs:annotation>
+          <xs:documentation>Action to take on the first failure of the service.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="none" />
+            <xs:enumeration value="reboot" />
+            <xs:enumeration value="restart" />
+            <xs:enumeration value="runCommand" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="SecondFailureActionType" use="required">
+        <xs:annotation>
+          <xs:documentation>Action to take on the second failure of the service.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="none" />
+            <xs:enumeration value="reboot" />
+            <xs:enumeration value="restart" />
+            <xs:enumeration value="runCommand" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="ThirdFailureActionType" use="required">
+        <xs:annotation>
+          <xs:documentation>Action to take on the third failure of the service.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="none" />
+            <xs:enumeration value="reboot" />
+            <xs:enumeration value="restart" />
+            <xs:enumeration value="runCommand" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="ResetPeriodInDays" type="xs:integer">
+        <xs:annotation>
+          <xs:documentation>Number of days after which to reset the failure count to zero if there are no failures.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="RestartServiceDelayInSeconds" type="xs:integer">
+        <xs:annotation>
+          <xs:documentation>If any of the three *ActionType attributes is "restart", this specifies the number of seconds to wait before doing so.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ProgramCommandLine" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>If any of the three *ActionType attributes is "runCommand", this specifies the command to run when doing so.  This value is formatted.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="RebootMessage" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>If any of the three *ActionType attributes is "reboot", this specifies the message to broadcast to server users before doing so.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="User">
+    <xs:annotation>
+      <xs:documentation>User for all kinds of things.  When it is not nested under a component it is included in the MSI so it can be referenced by other elements such as the User attribute in the AppPool element.  When it is nested under a Component element, the User will be created on install and can also be used for reference.</xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Module" />
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+        <xse:seeAlso ref="Group" />
+        <xse:seeAlso ref="GroupRef" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="GroupRef" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="Id" type="xs:string" use="required" />
+      <xs:attribute name="Name" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>A <a href="http://msdn.microsoft.com/library/aa368609.aspx" target="_blank">Formatted</a> string that contains the name of the user account.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Domain" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>A <a href="http://msdn.microsoft.com/library/aa368609.aspx" target="_blank">Formatted</a> string that contains the local machine or Active Directory domain for the user.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Password" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Usually a Property that is passed in on the command-line to keep it more secure.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PasswordNeverExpires" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>The account's password never expires. Equivalent to UF_DONT_EXPIRE_PASSWD.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CanNotChangePassword" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>The user cannot change the account's password. Equivalent to UF_PASSWD_CANT_CHANGE.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="RemoveOnUninstall" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates whether the user account should be removed or left behind on uninstall.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="FailIfExists" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates if the install should fail if the user already exists.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="LogonAsService" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates whether or not the user can logon as a serivce.  User creation can be skipped if all that is desired is to set this access right on the user.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="LogonAsBatchJob" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates whether or not the user can logon as a batch job.  User creation can be skipped if all that is desired is to set this access right on the user.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="UpdateIfExists" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates if the user account properties should be updated if the user already exists.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PasswordExpired" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates whether the user must change their password on their first login.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Disabled" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>The account is disabled. Equivalent to UF_ACCOUNTDISABLE.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="CreateUser" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Indicates whether or not to create the user.  User creation can be skipped if all that is desired is to join a user to groups.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Vital" type="YesNoType" default="yes">
+        <xs:annotation>
+          <xs:documentation>Indicates whether failure to create the user or add the user to a group fails the installation. The default value is "yes".</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="XmlFile">
+    <xs:annotation>
+      <xs:documentation>
+                Adds or removes .xml file entries.  If you use the XmlFile element you must reference WixUtilExtension.dll as it contains the XmlFile custom actions.
+            </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Identifier for xml file modification.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ElementPath" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The XPath of the element to be modified.  Note that this is a formatted field and therefore, square brackets in the XPath must be escaped. In addition, XPaths allow backslashes to be used to escape characters, so if you intend to include literal backslashes, you must escape them as well by doubling them in this attribute. The string is formatted by MSI first, and the result is consumed as the XPath.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="File" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Path of the .xml file to configure.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Name of XML node to set/add to the specified element.  Not setting this attribute causes the element's text value to be set.  Otherwise this specified the attribute name that is set.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Value" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+                        The value to be written.  See the <html:a href="http://msdn.microsoft.com/library/aa368609(VS.85).aspx" target="_blank">Formatted topic</html:a> for information how to escape square brackets in the value.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Action" use="required">
+        <xs:annotation>
+          <xs:documentation>The type of modification to be made to the XML file when the component is installed.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="createElement">
+              <xs:annotation>
+                <xs:documentation>Creates a new element under the element specified in ElementPath.  The Name attribute is required in this case and specifies the name of the new element.  The Value attribute is not necessary when createElement is specified as the action.  If the Value attribute is set, it will cause the new element's text value to be set.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="deleteValue">
+              <xs:annotation>
+                <xs:documentation>Deletes a value from the element specified in the ElementPath.  If Name is specified, the attribute with that name is deleted.  If Name is not specified, the text value of the element specified in the ElementPath is deleted.  The Value attribute is ignored if deleteValue is the action specified.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="setValue">
+              <xs:annotation>
+                <xs:documentation>Sets a value in the element specified in the ElementPath.  If Name is specified, and attribute with that name is set to the value specified in Value.  If Name is not specified, the text value of the element is set.  Value is a required attribute if setValue is the action specified.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="bulkSetValue">
+              <xs:annotation>
+                <xs:documentation>Sets all the values in the elements that match the ElementPath.  If Name is specified, attributes with that name are set to the same value specified in Value.  If Name is not specified, the text values of the elements are set.  Value is a required attribute if setBulkValue is the action specified.</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="Permanent" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Specifies whether or not the modification should be removed on uninstall.  This has no effect on uninstall if the action was deleteValue.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PreserveModifiedDate" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Specifies wheter or not the modification should preserve the modified date.  Preserving the modified date will allow the file to be patched if no other modifications have been made.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Sequence" use="optional" type="xs:integer">
+        <xs:annotation>
+          <xs:documentation>Specifies the order in which the modification is to be attempted on the XML file.  It is important to ensure that new elements are created before you attempt to add an attribute to them.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SelectionLanguage">
+        <xs:annotation>
+          <xs:documentation>
+                        Specify whether the DOM object should use XPath language or the old XSLPattern language (default) as the query language.                        
+                    </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="XPath" />
+            <xs:enumeration value="XSLPattern" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="XmlConfig">
+    <xs:annotation>
+      <xs:documentation>
+                Adds or removes .xml file entries.  If you use the XmlConfig element you must reference WixUtilExtension.dll as it contains the XmlConfig custom actions.
+            </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:element ref="XmlConfig" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="Id" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Identifier for xml file modification.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Action">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="create" />
+            <xs:enumeration value="delete" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="ElementId" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The Id of another XmlConfig to add attributes to.  In this case, the 'ElementPath', 'Action', 'Node', and 'On' attributes must be omitted.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ElementPath" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The XPath of the parent element being modified.  Note that this is a formatted field and therefore, square brackets in the XPath must be escaped. In addition, XPaths allow backslashes to be used to escape characters, so if you intend to include literal backslashes, you must escape them as well by doubling them in this attribute. The string is formatted by MSI first, and the result is consumed as the XPath.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="File" use="required" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Path of the .xml file to configure.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Name" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Name of XML node to set/add to the specified element.  Not setting this attribute causes the element's text value to be set.  Otherwise this specified the attribute name that is set.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Node">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="element" />
+            <xs:enumeration value="value" />
+            <xs:enumeration value="document" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="On">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="install" />
+            <xs:enumeration value="uninstall" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="PreserveModifiedDate" type="YesNoType">
+        <xs:annotation>
+          <xs:documentation>Specifies wheter or not the modification should preserve the modified date.  Preserving the modified date will allow the file to be patched if no other modifications have been made.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Sequence" use="optional" type="xs:integer">
+        <xs:annotation>
+          <xs:documentation>Specifies the order in which the modification is to be attempted on the XML file.  It is important to ensure that new elements are created before you attempt to add an attribute to them.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Value" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+                        The value to be written.  See the <html:a href="http://msdn.microsoft.com/library/aa368609(VS.85).aspx" target="_blank">Formatted topic</html:a> for information how to escape square brackets in the value.
+                    </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="VerifyPath" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>The XPath to the element being modified.  This is required for 'delete' actions.  For 'create' actions, VerifyPath is used to decide if the element already exists. Note that this is a formatted field and therefore, square brackets in the XPath must be escaped. In addition, XPaths allow backslashes to be used to escape characters, so if you intend to include literal backslashes, you must escape them as well by doubling them in this attribute. The string is formatted by MSI first, and the result is consumed as the XPath.</xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="SearchCommonAttributes">
+    <xs:attribute name="Id" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Id of the search for ordering and dependency.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Variable" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>Name of the variable in which to place the result of the search.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Condition" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Condition for evaluating the search. If this evaluates to false, the search is not executed at all.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="After" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>Id of the search that this one should come after.</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:simpleType name="YesNoType">
+    <xs:annotation>
+      <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="no" />
+      <xs:enumeration value="yes" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PerformanceCounterLanguageType">
+    <xs:annotation>
+      <xs:documentation>Enumeration of valid languages for performance counters.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="afrikaans" />
+      <xs:enumeration value="albanian" />
+      <xs:enumeration value="arabic" />
+      <xs:enumeration value="armenian" />
+      <xs:enumeration value="assamese" />
+      <xs:enumeration value="azeri" />
+      <xs:enumeration value="basque" />
+      <xs:enumeration value="belarusian" />
+      <xs:enumeration value="bengali" />
+      <xs:enumeration value="bulgarian" />
+      <xs:enumeration value="catalan" />
+      <xs:enumeration value="chinese" />
+      <xs:enumeration value="croatian" />
+      <xs:enumeration value="czech" />
+      <xs:enumeration value="danish" />
+      <xs:enumeration value="divehi" />
+      <xs:enumeration value="dutch" />
+      <xs:enumeration value="english" />
+      <xs:enumeration value="estonian" />
+      <xs:enumeration value="faeroese" />
+      <xs:enumeration value="farsi" />
+      <xs:enumeration value="finnish" />
+      <xs:enumeration value="french" />
+      <xs:enumeration value="galician" />
+      <xs:enumeration value="georgian" />
+      <xs:enumeration value="german" />
+      <xs:enumeration value="greek" />
+      <xs:enumeration value="gujarati" />
+      <xs:enumeration value="hebrew" />
+      <xs:enumeration value="hindi" />
+      <xs:enumeration value="hungarian" />
+      <xs:enumeration value="icelandic" />
+      <xs:enumeration value="indonesian" />
+      <xs:enumeration value="italian" />
+      <xs:enumeration value="japanese" />
+      <xs:enumeration value="kannada" />
+      <xs:enumeration value="kashmiri" />
+      <xs:enumeration value="kazak" />
+      <xs:enumeration value="konkani" />
+      <xs:enumeration value="korean" />
+      <xs:enumeration value="kyrgyz" />
+      <xs:enumeration value="latvian" />
+      <xs:enumeration value="lithuanian" />
+      <xs:enumeration value="macedonian" />
+      <xs:enumeration value="malay" />
+      <xs:enumeration value="malayalam" />
+      <xs:enumeration value="manipuri" />
+      <xs:enumeration value="marathi" />
+      <xs:enumeration value="mongolian" />
+      <xs:enumeration value="nepali" />
+      <xs:enumeration value="norwegian" />
+      <xs:enumeration value="oriya" />
+      <xs:enumeration value="polish" />
+      <xs:enumeration value="portuguese" />
+      <xs:enumeration value="punjabi" />
+      <xs:enumeration value="romanian" />
+      <xs:enumeration value="russian" />
+      <xs:enumeration value="sanskrit" />
+      <xs:enumeration value="serbian" />
+      <xs:enumeration value="sindhi" />
+      <xs:enumeration value="slovak" />
+      <xs:enumeration value="slovenian" />
+      <xs:enumeration value="spanish" />
+      <xs:enumeration value="swahili" />
+      <xs:enumeration value="swedish" />
+      <xs:enumeration value="syriac" />
+      <xs:enumeration value="tamil" />
+      <xs:enumeration value="tatar" />
+      <xs:enumeration value="telugu" />
+      <xs:enumeration value="thai" />
+      <xs:enumeration value="turkish" />
+      <xs:enumeration value="ukrainian" />
+      <xs:enumeration value="urdu" />
+      <xs:enumeration value="uzbek" />
+      <xs:enumeration value="vietnamese" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PerformanceCounterTypesType">
+    <xs:annotation>
+      <xs:documentation>Enumeration of valid types for performance counters.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="averageBase" />
+      <xs:enumeration value="averageCount64" />
+      <xs:enumeration value="averageTimer32" />
+      <xs:enumeration value="counterDelta32" />
+      <xs:enumeration value="counterTimerInverse" />
+      <xs:enumeration value="sampleFraction" />
+      <xs:enumeration value="timer100Ns" />
+      <xs:enumeration value="counterTimer" />
+      <xs:enumeration value="rawFraction" />
+      <xs:enumeration value="timer100NsInverse" />
+      <xs:enumeration value="counterMultiTimer" />
+      <xs:enumeration value="counterMultiTimer100Ns" />
+      <xs:enumeration value="counterMultiTimerInverse" />
+      <xs:enumeration value="counterMultiTimer100NsInverse" />
+      <xs:enumeration value="elapsedTime" />
+      <xs:enumeration value="sampleBase" />
+      <xs:enumeration value="rawBase" />
+      <xs:enumeration value="counterMultiBase" />
+      <xs:enumeration value="rateOfCountsPerSecond64" />
+      <xs:enumeration value="rateOfCountsPerSecond32" />
+      <xs:enumeration value="countPerTimeInterval64" />
+      <xs:enumeration value="countPerTimeInterval32" />
+      <xs:enumeration value="sampleCounter" />
+      <xs:enumeration value="counterDelta64" />
+      <xs:enumeration value="numberOfItems64" />
+      <xs:enumeration value="numberOfItems32" />
+      <xs:enumeration value="numberOfItemsHEX64" />
+      <xs:enumeration value="numberOfItemsHEX32" />
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

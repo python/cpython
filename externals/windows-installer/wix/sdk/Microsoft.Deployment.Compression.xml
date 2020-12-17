@@ -1,0 +1,1966 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.Deployment.Compression</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Deployment.Compression.ArchiveException">
+            <summary>
+            Base exception class for compression operations. Compression libraries should
+            derive subclass exceptions with more specific error information relevent to the
+            file format.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveException.#ctor(System.String,System.Exception)">
+            <summary>
+            Creates a new ArchiveException with a specified error message and a reference to the
+            inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+            <param name="innerException">The exception that is the cause of the current exception. If the
+            innerException parameter is not a null reference (Nothing in Visual Basic), the current exception
+            is raised in a catch block that handles the inner exception.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveException.#ctor(System.String)">
+            <summary>
+            Creates a new ArchiveException with a specified error message.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveException.#ctor">
+            <summary>
+            Creates a new ArchiveException.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the ArchiveException class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.ArchiveFileInfo">
+            <summary>
+            Abstract object representing a compressed file within an archive;
+            provides operations for getting the file properties and unpacking
+            the file.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.#ctor(Microsoft.Deployment.Compression.ArchiveInfo,System.String)">
+            <summary>
+            Creates a new ArchiveFileInfo object representing a file within
+            an archive in a specified path.
+            </summary>
+            <param name="archiveInfo">An object representing the archive
+            containing the file.</param>
+            <param name="filePath">The path to the file within the archive.
+            Usually, this is a simple file name, but if the archive contains
+            a directory structure this may include the directory.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.#ctor(System.String,System.Int32,System.IO.FileAttributes,System.DateTime,System.Int64)">
+            <summary>
+            Creates a new ArchiveFileInfo object with all parameters specified;
+            used by subclasses when reading the metadata out of an archive.
+            </summary>
+            <param name="filePath">The internal path and name of the file in
+            the archive.</param>
+            <param name="archiveNumber">The archive number where the file
+            starts.</param>
+            <param name="attributes">The stored attributes of the file.</param>
+            <param name="lastWriteTime">The stored last write time of the
+            file.</param>
+            <param name="length">The uncompressed size of the file.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the ArchiveFileInfo class with
+            serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized
+            object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual
+            information about the source or destination.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.Name">
+            <summary>
+            Gets the name of the file.
+            </summary>
+            <value>The name of the file, not including any path.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.Path">
+            <summary>
+            Gets the internal path of the file in the archive.
+            </summary>
+            <value>The internal path of the file in the archive, not including
+            the file name.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.FullName">
+            <summary>
+            Gets the full path to the file.
+            </summary>
+            <value>The full path to the file, including the full path to the
+            archive, the internal path in the archive, and the file name.</value>
+            <remarks>
+            For example, the path <c>"C:\archive.cab\file.txt"</c> refers to
+            a file "file.txt" inside the archive "archive.cab".
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.Archive">
+            <summary>
+            Gets or sets the archive that contains this file.
+            </summary>
+            <value>
+            The ArchiveInfo instance that retrieved this file information -- this
+            may be null if the ArchiveFileInfo object was returned directly from
+            a stream.
+            </value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.ArchiveName">
+            <summary>
+            Gets the full path of the archive that contains this file.
+            </summary>
+            <value>The full path of the archive that contains this file.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.ArchiveNumber">
+            <summary>
+            Gets the number of the archive where this file starts.
+            </summary>
+            <value>The number of the archive where this file starts.</value>
+            <remarks>A single archive or the first archive in a chain is
+            numbered 0.</remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.Exists">
+            <summary>
+            Checks if the file exists within the archive.
+            </summary>
+            <value>True if the file exists, false otherwise.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.Length">
+            <summary>
+            Gets the uncompressed size of the file.
+            </summary>
+            <value>The uncompressed size of the file in bytes.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.Attributes">
+            <summary>
+            Gets the attributes of the file.
+            </summary>
+            <value>The attributes of the file as stored in the archive.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileInfo.LastWriteTime">
+            <summary>
+            Gets the last modification time of the file.
+            </summary>
+            <value>The last modification time of the file as stored in the
+            archive.</value>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the SerializationInfo with information about the archive.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized
+            object data.</param>
+            <param name="context">The StreamingContext that contains contextual
+            information about the source or destination.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.ToString">
+            <summary>
+            Gets the full path to the file.
+            </summary>
+            <returns>The same as <see cref="P:Microsoft.Deployment.Compression.ArchiveFileInfo.FullName"/></returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.Delete">
+            <summary>
+            Deletes the file. NOT SUPPORTED.
+            </summary>
+            <exception cref="T:System.NotSupportedException">Files cannot be deleted
+            from an existing archive.</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.Refresh">
+            <summary>
+            Refreshes the attributes and other cached information about the file,
+            by re-reading the information from the archive.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.CopyTo(System.String)">
+            <summary>
+            Extracts the file.
+            </summary>
+            <param name="destFileName">The destination path where the file
+            will be extracted.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.CopyTo(System.String,System.Boolean)">
+            <summary>
+            Extracts the file, optionally overwriting any existing file.
+            </summary>
+            <param name="destFileName">The destination path where the file
+            will be extracted.</param>
+            <param name="overwrite">If true, <paramref name="destFileName"/>
+            will be overwritten if it exists.</param>
+            <exception cref="T:System.IO.IOException"><paramref name="overwrite"/> is false
+            and <paramref name="destFileName"/> exists.</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.OpenRead">
+            <summary>
+            Opens the archive file for reading without actually extracting the
+            file to disk.
+            </summary>
+            <returns>
+            A stream for reading directly from the packed file. Like any stream
+            this should be closed/disposed as soon as it is no longer needed.
+            </returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.OpenText">
+            <summary>
+            Opens the archive file reading text with UTF-8 encoding without
+            actually extracting the file to disk.
+            </summary>
+            <returns>
+            A reader for reading text directly from the packed file. Like any reader
+            this should be closed/disposed as soon as it is no longer needed.
+            </returns>
+            <remarks>
+            To open an archived text file with different encoding, use the
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileInfo.OpenRead" /> method and pass the returned stream to one of
+            the <see cref="T:System.IO.StreamReader" /> constructor overloads.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileInfo.Refresh(Microsoft.Deployment.Compression.ArchiveFileInfo)">
+            <summary>
+            Refreshes the information in this object with new data retrieved
+            from an archive.
+            </summary>
+            <param name="newFileInfo">Fresh instance for the same file just
+            read from the archive.</param>
+            <remarks>
+            Subclasses may override this method to refresh sublcass fields.
+            However they should always call the base implementation first.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.ArchiveInfo">
+            <summary>
+            Abstract object representing a compressed archive on disk;
+            provides access to file-based operations on the archive.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.#ctor(System.String)">
+            <summary>
+            Creates a new ArchiveInfo object representing an archive in a
+            specified path.
+            </summary>
+            <param name="path">The path to the archive. When creating an archive,
+            this file does not necessarily exist yet.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the ArchiveInfo class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object
+            data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual
+            information about the source or destination.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveInfo.Directory">
+            <summary>
+            Gets the directory that contains the archive.
+            </summary>
+            <value>A DirectoryInfo object representing the parent directory of the
+            archive.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveInfo.DirectoryName">
+            <summary>
+            Gets the full path of the directory that contains the archive.
+            </summary>
+            <value>The full path of the directory that contains the archive.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveInfo.Length">
+            <summary>
+            Gets the size of the archive.
+            </summary>
+            <value>The size of the archive in bytes.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveInfo.Name">
+            <summary>
+            Gets the file name of the archive.
+            </summary>
+            <value>The file name of the archive, not including any path.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveInfo.Exists">
+            <summary>
+            Checks if the archive exists.
+            </summary>
+            <value>True if the archive exists; else false.</value>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.ToString">
+            <summary>
+            Gets the full path of the archive.
+            </summary>
+            <returns>The full path of the archive.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.Delete">
+            <summary>
+            Deletes the archive.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.CopyTo(System.String)">
+            <summary>
+            Copies an existing archive to another location.
+            </summary>
+            <param name="destFileName">The destination file path.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.CopyTo(System.String,System.Boolean)">
+            <summary>
+            Copies an existing archive to another location, optionally
+            overwriting the destination file.
+            </summary>
+            <param name="destFileName">The destination file path.</param>
+            <param name="overwrite">If true, the destination file will be
+            overwritten if it exists.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.MoveTo(System.String)">
+            <summary>
+            Moves an existing archive to another location.
+            </summary>
+            <param name="destFileName">The destination file path.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.IsValid">
+            <summary>
+            Checks if the archive contains a valid archive header.
+            </summary>
+            <returns>True if the file is a valid archive; false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.GetFiles">
+            <summary>
+            Gets information about the files contained in the archive.
+            </summary>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.ArchiveFileInfo"/> objects, each
+            containing information about a file in the archive.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.GetFiles(System.String)">
+            <summary>
+            Gets information about the certain files contained in the archive file.
+            </summary>
+            <param name="searchPattern">The search string, such as
+            &quot;*.txt&quot;.</param>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.ArchiveFileInfo"/> objects, each containing
+            information about a file in the archive.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.Unpack(System.String)">
+            <summary>
+            Extracts all files from an archive to a destination directory.
+            </summary>
+            <param name="destDirectory">Directory where the files are to be
+            extracted.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.Unpack(System.String,System.EventHandler{Microsoft.Deployment.Compression.ArchiveProgressEventArgs})">
+            <summary>
+            Extracts all files from an archive to a destination directory,
+            optionally extracting only newer files.
+            </summary>
+            <param name="destDirectory">Directory where the files are to be
+            extracted.</param>
+            <param name="progressHandler">Handler for receiving progress
+            information; this may be null if progress is not desired.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.UnpackFile(System.String,System.String)">
+            <summary>
+            Extracts a single file from the archive.
+            </summary>
+            <param name="fileName">The name of the file in the archive. Also
+            includes the internal path of the file, if any. File name matching
+            is case-insensitive.</param>
+            <param name="destFileName">The path where the file is to be
+            extracted on disk.</param>
+            <remarks>If <paramref name="destFileName"/> already exists,
+            it will be overwritten.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.UnpackFiles(System.Collections.Generic.IList{System.String},System.String,System.Collections.Generic.IList{System.String})">
+            <summary>
+            Extracts multiple files from the archive.
+            </summary>
+            <param name="fileNames">The names of the files in the archive.
+            Each name includes the internal path of the file, if any. File name
+            matching is case-insensitive.</param>
+            <param name="destDirectory">This parameter may be null, but if
+            specified it is the root directory for any relative paths in
+            <paramref name="destFileNames"/>.</param>
+            <param name="destFileNames">The paths where the files are to be
+            extracted on disk. If this parameter is null, the files will be
+            extracted with the names from the archive.</param>
+            <remarks>
+            If any extracted files already exist on disk, they will be overwritten.
+            <p>The <paramref name="destDirectory"/> and
+            <paramref name="destFileNames"/> parameters cannot both be null.</p>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.UnpackFiles(System.Collections.Generic.IList{System.String},System.String,System.Collections.Generic.IList{System.String},System.EventHandler{Microsoft.Deployment.Compression.ArchiveProgressEventArgs})">
+            <summary>
+            Extracts multiple files from the archive, optionally extracting
+            only newer files.
+            </summary>
+            <param name="fileNames">The names of the files in the archive.
+            Each name includes the internal path of the file, if any. File name
+            matching is case-insensitive.</param>
+            <param name="destDirectory">This parameter may be null, but if
+            specified it is the root directory for any relative paths in
+            <paramref name="destFileNames"/>.</param>
+            <param name="destFileNames">The paths where the files are to be
+            extracted on disk. If this parameter is null, the files will be
+            extracted with the names from the archive.</param>
+            <param name="progressHandler">Handler for receiving progress information;
+            this may be null if progress is not desired.</param>
+            <remarks>
+            If any extracted files already exist on disk, they will be overwritten.
+            <p>The <paramref name="destDirectory"/> and
+            <paramref name="destFileNames"/> parameters cannot both be null.</p>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.UnpackFileSet(System.Collections.Generic.IDictionary{System.String,System.String},System.String)">
+            <summary>
+            Extracts multiple files from the archive.
+            </summary>
+            <param name="fileNames">A mapping from internal file paths to
+            external file paths. Case-senstivity when matching internal paths
+            depends on the IDictionary implementation.</param>
+            <param name="destDirectory">This parameter may be null, but if
+            specified it is the root directory for any relative external paths
+            in <paramref name="fileNames"/>.</param>
+            <remarks>
+            If any extracted files already exist on disk, they will be overwritten.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.UnpackFileSet(System.Collections.Generic.IDictionary{System.String,System.String},System.String,System.EventHandler{Microsoft.Deployment.Compression.ArchiveProgressEventArgs})">
+            <summary>
+            Extracts multiple files from the archive.
+            </summary>
+            <param name="fileNames">A mapping from internal file paths to
+            external file paths. Case-senstivity when matching internal
+            paths depends on the IDictionary implementation.</param>
+            <param name="destDirectory">This parameter may be null, but if
+            specified it is the root directory for any relative external
+            paths in <paramref name="fileNames"/>.</param>
+            <param name="progressHandler">Handler for receiving progress
+            information; this may be null if progress is not desired.</param>
+            <remarks>
+            If any extracted files already exist on disk, they will be overwritten.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.OpenRead(System.String)">
+            <summary>
+            Opens a file inside the archive for reading without actually
+            extracting the file to disk.
+            </summary>
+            <param name="fileName">The name of the file in the archive. Also
+            includes the internal path of the file, if any. File name matching
+            is case-insensitive.</param>
+            <returns>
+            A stream for reading directly from the packed file. Like any stream
+            this should be closed/disposed as soon as it is no longer needed.
+            </returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.OpenText(System.String)">
+            <summary>
+            Opens a file inside the archive for reading text with UTF-8 encoding
+            without actually extracting the file to disk.
+            </summary>
+            <param name="fileName">The name of the file in the archive. Also
+            includes the internal path of the file, if any. File name matching
+            is case-insensitive.</param>
+            <returns>
+            A reader for reading text directly from the packed file. Like any reader
+            this should be closed/disposed as soon as it is no longer needed.
+            </returns>
+            <remarks>
+            To open an archived text file with different encoding, use the
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveInfo.OpenRead(System.String)" /> method and pass the returned stream to one of
+            the <see cref="T:System.IO.StreamReader" /> constructor overloads.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.Pack(System.String)">
+            <summary>
+            Compresses all files in a directory into the archive.
+            Does not include subdirectories.
+            </summary>
+            <param name="sourceDirectory">The directory containing the
+            files to be included.</param>
+            <remarks>
+            Uses maximum compression level.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.Pack(System.String,System.Boolean,Microsoft.Deployment.Compression.CompressionLevel,System.EventHandler{Microsoft.Deployment.Compression.ArchiveProgressEventArgs})">
+            <summary>
+            Compresses all files in a directory into the archive, optionally
+            including subdirectories.
+            </summary>
+            <param name="sourceDirectory">This is the root directory
+            for to pack all files.</param>
+            <param name="includeSubdirectories">If true, recursively include
+            files in subdirectories.</param>
+            <param name="compLevel">The compression level used when creating
+            the archive.</param>
+            <param name="progressHandler">Handler for receiving progress information;
+            this may be null if progress is not desired.</param>
+            <remarks>
+            The files are stored in the archive using their relative file paths in
+            the directory tree, if supported by the archive file format.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.PackFiles(System.String,System.Collections.Generic.IList{System.String},System.Collections.Generic.IList{System.String})">
+            <summary>
+            Compresses files into the archive, specifying the names used to
+            store the files in the archive.
+            </summary>
+            <param name="sourceDirectory">This parameter may be null, but
+            if specified it is the root directory
+            for any relative paths in <paramref name="sourceFileNames"/>.</param>
+            <param name="sourceFileNames">The list of files to be included in
+            the archive.</param>
+            <param name="fileNames">The names of the files as they are stored
+            in the archive. Each name
+            includes the internal path of the file, if any. This parameter may
+            be null, in which case the files are stored in the archive with their
+            source file names and no path information.</param>
+            <remarks>
+            Uses maximum compression level.
+            <p>Duplicate items in the <paramref name="fileNames"/> array will cause
+            an <see cref="T:Microsoft.Deployment.Compression.ArchiveException"/>.</p>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.PackFiles(System.String,System.Collections.Generic.IList{System.String},System.Collections.Generic.IList{System.String},Microsoft.Deployment.Compression.CompressionLevel,System.EventHandler{Microsoft.Deployment.Compression.ArchiveProgressEventArgs})">
+            <summary>
+            Compresses files into the archive, specifying the names used to
+            store the files in the archive.
+            </summary>
+            <param name="sourceDirectory">This parameter may be null, but if
+            specified it is the root directory
+            for any relative paths in <paramref name="sourceFileNames"/>.</param>
+            <param name="sourceFileNames">The list of files to be included in
+            the archive.</param>
+            <param name="fileNames">The names of the files as they are stored in
+            the archive. Each name includes the internal path of the file, if any.
+            This parameter may be null, in which case the files are stored in the
+            archive with their source file names and no path information.</param>
+            <param name="compLevel">The compression level used when creating the
+            archive.</param>
+            <param name="progressHandler">Handler for receiving progress information;
+            this may be null if progress is not desired.</param>
+            <remarks>
+            Duplicate items in the <paramref name="fileNames"/> array will cause
+            an <see cref="T:Microsoft.Deployment.Compression.ArchiveException"/>.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.PackFileSet(System.String,System.Collections.Generic.IDictionary{System.String,System.String})">
+            <summary>
+            Compresses files into the archive, specifying the names used
+            to store the files in the archive.
+            </summary>
+            <param name="sourceDirectory">This parameter may be null, but if
+            specified it is the root directory
+            for any relative paths in <paramref name="fileNames"/>.</param>
+            <param name="fileNames">A mapping from internal file paths to
+            external file paths.</param>
+            <remarks>
+            Uses maximum compression level.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.PackFileSet(System.String,System.Collections.Generic.IDictionary{System.String,System.String},Microsoft.Deployment.Compression.CompressionLevel,System.EventHandler{Microsoft.Deployment.Compression.ArchiveProgressEventArgs})">
+            <summary>
+            Compresses files into the archive, specifying the names used to
+            store the files in the archive.
+            </summary>
+            <param name="sourceDirectory">This parameter may be null, but if
+            specified it is the root directory
+            for any relative paths in <paramref name="fileNames"/>.</param>
+            <param name="fileNames">A mapping from internal file paths to
+            external file paths.</param>
+            <param name="compLevel">The compression level used when creating
+            the archive.</param>
+            <param name="progressHandler">Handler for receiving progress information;
+            this may be null if progress is not desired.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.GetRelativeFilePathsInDirectoryTree(System.String,System.Boolean)">
+            <summary>
+            Given a directory, gets the relative paths of all files in the
+            directory, optionally including all subdirectories.
+            </summary>
+            <param name="dir">The directory to search.</param>
+            <param name="includeSubdirectories">True to include subdirectories
+            in the search.</param>
+            <returns>A list of file paths relative to the directory.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.GetFile(System.String)">
+            <summary>
+            Retrieves information about one file from this archive.
+            </summary>
+            <param name="path">Path of the file in the archive.</param>
+            <returns>File information, or null if the file was not found
+            in the archive.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.CreateCompressionEngine">
+            <summary>
+            Creates a compression engine that does the low-level work for
+            this object.
+            </summary>
+            <returns>A new compression engine instance that matches the specific
+            subclass of archive.</returns>
+            <remarks>
+            Each instance will be <see cref="M:Microsoft.Deployment.Compression.CompressionEngine.Dispose"/>d
+            immediately after use.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.CreateStringDictionary(System.Collections.Generic.IList{System.String},System.Collections.Generic.IList{System.String})">
+            <summary>
+            Creates a case-insensitive dictionary mapping from one list of
+            strings to the other.
+            </summary>
+            <param name="keys">List of keys.</param>
+            <param name="values">List of values that are mapped 1-to-1 to
+            the keys.</param>
+            <returns>A filled dictionary of the strings.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.RecursiveGetRelativeFilePathsInDirectoryTree(System.String,System.String,System.Boolean,System.Collections.Generic.IList{System.String})">
+            <summary>
+            Recursive-descent helper function for
+            GetRelativeFilePathsInDirectoryTree.
+            </summary>
+            <param name="dir">The root directory of the search.</param>
+            <param name="relativeDir">The relative directory to be
+            processed now.</param>
+            <param name="includeSubdirectories">True to descend into
+            subdirectories.</param>
+            <param name="fileList">List of files found so far.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveInfo.InternalGetFiles(System.Predicate{System.String})">
+            <summary>
+            Uses a CompressionEngine to get ArchiveFileInfo objects from this
+            archive, and then associates them with this ArchiveInfo instance.
+            </summary>
+            <param name="fileFilter">Optional predicate that can determine
+            which files to process.</param>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.ArchiveFileInfo"/> objects, each
+            containing information about a file in the archive.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.ArchiveProgressEventArgs">
+            <summary>
+            Contains the data reported in an archive progress event.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.#ctor(Microsoft.Deployment.Compression.ArchiveProgressType,System.String,System.Int32,System.Int32,System.Int64,System.Int64,System.String,System.Int32,System.Int32,System.Int64,System.Int64,System.Int64,System.Int64)">
+            <summary>
+            Creates a new ArchiveProgressEventArgs object from specified event parameters.
+            </summary>
+            <param name="progressType">type of status message</param>
+            <param name="currentFileName">name of the file being processed</param>
+            <param name="currentFileNumber">number of the current file being processed</param>
+            <param name="totalFiles">total number of files to be processed</param>
+            <param name="currentFileBytesProcessed">number of bytes processed so far when compressing or extracting a file</param>
+            <param name="currentFileTotalBytes">total number of bytes in the current file</param>
+            <param name="currentArchiveName">name of the current Archive</param>
+            <param name="currentArchiveNumber">current Archive number, when processing a chained set of Archives</param>
+            <param name="totalArchives">total number of Archives in a chained set</param>
+            <param name="currentArchiveBytesProcessed">number of compressed bytes processed so far during an extraction</param>
+            <param name="currentArchiveTotalBytes">total number of compressed bytes to be processed during an extraction</param>
+            <param name="fileBytesProcessed">number of uncompressed file bytes processed so far</param>
+            <param name="totalFileBytes">total number of uncompressed file bytes to be processed</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.ProgressType">
+            <summary>
+            Gets the type of status message.
+            </summary>
+            <value>A <see cref="T:Microsoft.Deployment.Compression.ArchiveProgressType"/> value indicating what type of progress event occurred.</value>
+            <remarks>
+            The handler may choose to ignore some types of progress events.
+            For example, if the handler will only list each file as it is
+            compressed/extracted, it can ignore events that
+            are not of type <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishFile"/>.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentFileName">
+            <summary>
+            Gets the name of the file being processed. (The name of the file within the Archive; not the external
+            file path.) Also includes the internal path of the file, if any.  Valid for
+            <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.StartFile"/>, <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.PartialFile"/>,
+            and <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishFile"/> messages.
+            </summary>
+            <value>The name of the file currently being processed, or null if processing
+            is currently at the stream or archive level.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentFileNumber">
+            <summary>
+            Gets the number of the current file being processed. The first file is number 0, and the last file
+            is <see cref="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.TotalFiles"/>-1. Valid for <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.StartFile"/>,
+            <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.PartialFile"/>, and <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishFile"/> messages.
+            </summary>
+            <value>The number of the file currently being processed, or the most recent
+            file processed if processing is currently at the stream or archive level.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.TotalFiles">
+            <summary>
+            Gets the total number of files to be processed.  Valid for all message types.
+            </summary>
+            <value>The total number of files to be processed that are known so far.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentFileBytesProcessed">
+            <summary>
+            Gets the number of bytes processed so far when compressing or extracting a file.  Valid for
+            <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.StartFile"/>, <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.PartialFile"/>,
+            and <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishFile"/> messages.
+            </summary>
+            <value>The number of uncompressed bytes processed so far for the current file,
+            or 0 if processing is currently at the stream or archive level.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentFileTotalBytes">
+            <summary>
+            Gets the total number of bytes in the current file.  Valid for <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.StartFile"/>,
+            <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.PartialFile"/>, and <see cref="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishFile"/> messages.
+            </summary>
+            <value>The uncompressed size of the current file being processed,
+            or 0 if processing is currently at the stream or archive level.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentArchiveName">
+            <summary>
+            Gets the name of the current archive.  Not necessarily the name of the archive on disk.
+            Valid for all message types.
+            </summary>
+            <value>The name of the current archive, or an empty string if no name was specified.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentArchiveNumber">
+            <summary>
+            Gets the current archive number, when processing a chained set of archives. Valid for all message types.
+            </summary>
+            <value>The number of the current archive.</value>
+            <remarks>The first archive is number 0, and the last archive is
+            <see cref="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.TotalArchives"/>-1.</remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.TotalArchives">
+            <summary>
+            Gets the total number of known archives in a chained set. Valid for all message types.
+            </summary>
+            <value>The total number of known archives in a chained set.</value>
+            <remarks>
+            When using the compression option to auto-split into multiple archives based on data size,
+            this value will not be accurate until the end.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentArchiveBytesProcessed">
+            <summary>
+            Gets the number of compressed bytes processed so far during extraction
+            of the current archive. Valid for all extraction messages.
+            </summary>
+            <value>The number of compressed bytes processed so far during extraction
+            of the current archive.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.CurrentArchiveTotalBytes">
+            <summary>
+            Gets the total number of compressed bytes to be processed during extraction
+            of the current archive. Valid for all extraction messages.
+            </summary>
+            <value>The total number of compressed bytes to be processed during extraction
+            of the current archive.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.FileBytesProcessed">
+            <summary>
+            Gets the number of uncompressed bytes processed so far among all files. Valid for all message types.  
+            </summary>
+            <value>The number of uncompressed file bytes processed so far among all files.</value>
+            <remarks>
+            When compared to <see cref="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.TotalFileBytes"/>, this can be used as a measure of overall progress.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveProgressEventArgs.TotalFileBytes">
+            <summary>
+            Gets the total number of uncompressed file bytes to be processed.  Valid for all message types.
+            </summary>
+            <value>The total number of uncompressed bytes to be processed among all files.</value>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.ArchiveProgressType">
+            <summary>
+            The type of progress event.
+            </summary>
+            <remarks>
+            <p>PACKING EXAMPLE: The following sequence of events might be received when
+            extracting a simple archive file with 2 files.</p>
+            <list type="table">
+            <listheader><term>Message Type</term><description>Description</description></listheader>
+            <item><term>StartArchive</term> <description>Begin extracting archive</description></item>
+            <item><term>StartFile</term>    <description>Begin extracting first file</description></item>
+            <item><term>PartialFile</term>  <description>Extracting first file</description></item>
+            <item><term>PartialFile</term>  <description>Extracting first file</description></item>
+            <item><term>FinishFile</term>   <description>Finished extracting first file</description></item>
+            <item><term>StartFile</term>    <description>Begin extracting second file</description></item>
+            <item><term>PartialFile</term>  <description>Extracting second file</description></item>
+            <item><term>FinishFile</term>   <description>Finished extracting second file</description></item>
+            <item><term>FinishArchive</term><description>Finished extracting archive</description></item>
+            </list>
+            <p></p>
+            <p>UNPACKING EXAMPLE:  Packing 3 files into 2 archive chunks, where the second file is
+            continued to the second archive chunk.</p>
+            <list type="table">
+            <listheader><term>Message Type</term><description>Description</description></listheader>
+            <item><term>StartFile</term>     <description>Begin compressing first file</description></item>
+            <item><term>FinishFile</term>    <description>Finished compressing first file</description></item>
+            <item><term>StartFile</term>     <description>Begin compressing second file</description></item>
+            <item><term>PartialFile</term>   <description>Compressing second file</description></item>
+            <item><term>PartialFile</term>   <description>Compressing second file</description></item>
+            <item><term>FinishFile</term>    <description>Finished compressing second file</description></item>
+            <item><term>StartArchive</term>  <description>Begin writing first archive</description></item>
+            <item><term>PartialArchive</term><description>Writing first archive</description></item>
+            <item><term>FinishArchive</term> <description>Finished writing first archive</description></item>
+            <item><term>StartFile</term>     <description>Begin compressing third file</description></item>
+            <item><term>PartialFile</term>   <description>Compressing third file</description></item>
+            <item><term>FinishFile</term>    <description>Finished compressing third file</description></item>
+            <item><term>StartArchive</term>  <description>Begin writing second archive</description></item>
+            <item><term>PartialArchive</term><description>Writing second archive</description></item>
+            <item><term>FinishArchive</term> <description>Finished writing second archive</description></item>
+            </list>
+            </remarks>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.ArchiveProgressType.StartFile">
+            <summary>Status message before beginning the packing or unpacking an individual file.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.ArchiveProgressType.PartialFile">
+            <summary>Status message (possibly reported multiple times) during the process of packing or unpacking a file.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishFile">
+            <summary>Status message after completion of the packing or unpacking an individual file.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.ArchiveProgressType.StartArchive">
+            <summary>Status message before beginning the packing or unpacking an archive.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.ArchiveProgressType.PartialArchive">
+            <summary>Status message (possibly reported multiple times) during the process of packing or unpacking an archiv.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.ArchiveProgressType.FinishArchive">
+            <summary>Status message after completion of the packing or unpacking of an archive.</summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.ArchiveFileStreamContext">
+            <summary>
+            Provides a basic implementation of the archive pack and unpack stream context
+            interfaces, based on a list of archive files, a default directory, and an
+            optional mapping from internal to external file paths.
+            </summary>
+            <remarks>
+            This class can also handle creating or extracting chained archive packages.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.#ctor(System.String)">
+            <summary>
+            Creates a new ArchiveFileStreamContext with a archive file and
+            no default directory or file mapping.
+            </summary>
+            <param name="archiveFile">The path to a archive file that will be
+            created or extracted.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.#ctor(System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.String})">
+            <summary>
+            Creates a new ArchiveFileStreamContext with a archive file, default
+            directory and mapping from internal to external file paths.
+            </summary>
+            <param name="archiveFile">The path to a archive file that will be
+            created or extracted.</param>
+            <param name="directory">The default root directory where files will be
+            located, optional.</param>
+            <param name="files">A mapping from internal file paths to external file
+            paths, optional.</param>
+            <remarks>
+            If the mapping is not null and a file is not included in the mapping,
+            the file will be skipped.
+            <para>If the external path in the mapping is a simple file name or
+            relative file path, it will be concatenated onto the default directory,
+            if one was specified.</para>
+            <para>For more about how the default directory and files mapping are
+            used, see <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/>.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.#ctor(System.Collections.Generic.IList{System.String},System.String,System.Collections.Generic.IDictionary{System.String,System.String})">
+            <summary>
+            Creates a new ArchiveFileStreamContext with a list of archive files,
+            a default directory and a mapping from internal to external file paths.
+            </summary>
+            <param name="archiveFiles">A list of paths to archive files that will be
+            created or extracted.</param>
+            <param name="directory">The default root directory where files will be
+            located, optional.</param>
+            <param name="files">A mapping from internal file paths to external file
+            paths, optional.</param>
+            <remarks>
+            When creating chained archives, the <paramref name="archiveFiles"/> list
+            should include at least enough archives to handle the entire set of
+            input files, based on the maximum archive size that is passed to the
+            <see cref="T:Microsoft.Deployment.Compression.CompressionEngine"/>.<see
+            cref="M:Microsoft.Deployment.Compression.CompressionEngine.Pack(Microsoft.Deployment.Compression.IPackStreamContext,System.Collections.Generic.IEnumerable{System.String},System.Int64)"/>.
+            <para>If the mapping is not null and a file is not included in the mapping,
+            the file will be skipped.</para>
+            <para>If the external path in the mapping is a simple file name or
+            relative file path, it will be concatenated onto the default directory,
+            if one was specified.</para>
+            <para>For more about how the default directory and files mapping are used,
+            see <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/>.</para>
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.ArchiveFiles">
+            <summary>
+            Gets or sets the list of archive files that are created or extracted.
+            </summary>
+            <value>The list of archive files that are created or extracted.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory">
+            <summary>
+            Gets or sets the default root directory where files are located.
+            </summary>
+            <value>The default root directory where files are located.</value>
+            <remarks>
+            For details about how the default directory is used,
+            see <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/>.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files">
+            <summary>
+            Gets or sets the mapping from internal file paths to external file paths.
+            </summary>
+            <value>A mapping from internal file paths to external file paths.</value>
+            <remarks>
+            For details about how the files mapping is used,
+            see <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/>.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.ExtractOnlyNewerFiles">
+            <summary>
+            Gets or sets a flag that can prevent extracted files from overwriting
+            newer files that already exist.
+            </summary>
+            <value>True to prevent overwriting newer files that already exist
+            during extraction; false to always extract from the archive regardless
+            of existing files.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.EnableOffsetOpen">
+            <summary>
+            Gets or sets a flag that enables creating or extracting an archive
+            at an offset within an existing file. (This is typically used to open
+            archive-based self-extracting packages.)
+            </summary>
+            <value>True to search an existing package file for an archive offset
+            or the end of the file;/ false to always create or open a plain
+            archive file.</value>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.GetArchiveName(System.Int32)">
+            <summary>
+            Gets the name of the archive with a specified number.
+            </summary>
+            <param name="archiveNumber">The 0-based index of the archive within
+            the chain.</param>
+            <returns>The name of the requested archive. May be an empty string
+            for non-chained archives, but may never be null.</returns>
+            <remarks>This method returns the file name of the archive from the
+            <see cref="F:Microsoft.Deployment.Compression.ArchiveFileStreamContext.archiveFiles"/> list with the specified index, or an empty
+            string if the archive number is outside the bounds of the list. The
+            file name should not include any directory path.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenArchiveWriteStream(System.Int32,System.String,System.Boolean,Microsoft.Deployment.Compression.CompressionEngine)">
+            <summary>
+            Opens a stream for writing an archive.
+            </summary>
+            <param name="archiveNumber">The 0-based index of the archive within
+            the chain.</param>
+            <param name="archiveName">The name of the archive that was returned
+            by <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.GetArchiveName(System.Int32)"/>.</param>
+            <param name="truncate">True if the stream should be truncated when
+            opened (if it already exists); false if an existing stream is being
+            re-opened for writing additional data.</param>
+            <param name="compressionEngine">Instance of the compression engine
+            doing the operations.</param>
+            <returns>A writable Stream where the compressed archive bytes will be
+            written, or null to cancel the archive creation.</returns>
+            <remarks>
+            This method opens the file from the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.ArchiveFiles"/> list
+            with the specified index. If the archive number is outside the bounds
+            of the list, this method returns null.
+            <para>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.EnableOffsetOpen"/> flag is set, this method
+            will seek to the start of any existing archive in the file, or to the
+            end of the file if the existing file is not an archive.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.CloseArchiveWriteStream(System.Int32,System.String,System.IO.Stream)">
+            <summary>
+            Closes a stream where an archive package was written.
+            </summary>
+            <param name="archiveNumber">The 0-based index of the archive within
+            the chain.</param>
+            <param name="archiveName">The name of the archive that was previously
+            returned by <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.GetArchiveName(System.Int32)"/>.</param>
+            <param name="stream">A stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenArchiveWriteStream(System.Int32,System.String,System.Boolean,Microsoft.Deployment.Compression.CompressionEngine)"/> and is now ready to be closed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)">
+            <summary>
+            Opens a stream to read a file that is to be included in an archive.
+            </summary>
+            <param name="path">The path of the file within the archive.</param>
+            <param name="attributes">The returned attributes of the opened file,
+            to be stored in the archive.</param>
+            <param name="lastWriteTime">The returned last-modified time of the
+            opened file, to be stored in the archive.</param>
+            <returns>A readable Stream where the file bytes will be read from
+            before they are compressed, or null to skip inclusion of the file and
+            continue to the next file.</returns>
+            <remarks>
+            This method opens a file using the following logic:
+            <list>
+            <item>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> and the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/> mapping
+            are both null, the path is treated as relative to the current directory,
+            and that file is opened.</item>
+            <item>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> is not null but the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/>
+            mapping is null, the path is treated as relative to that directory, and
+            that file is opened.</item>
+            <item>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> is null but the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/>
+            mapping is not null, the path parameter is used as a key into the mapping,
+            and the resulting value is the file path that is opened, relative to the
+            current directory (or it may be an absolute path). If no mapping exists,
+            the file is skipped.</item>
+            <item>If both the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> and the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/>
+            mapping are specified, the path parameter is used as a key into the
+            mapping, and the resulting value is the file path that is opened, relative
+            to the specified directory (or it may be an absolute path). If no mapping
+            exists, the file is skipped.</item>
+            </list>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.CloseFileReadStream(System.String,System.IO.Stream)">
+            <summary>
+            Closes a stream that has been used to read a file.
+            </summary>
+            <param name="path">The path of the file within the archive; the same as
+            the path provided when the stream was opened.</param>
+            <param name="stream">A stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and is now ready to be closed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.GetOption(System.String,System.Object[])">
+            <summary>
+            Gets extended parameter information specific to the compression format
+            being used.
+            </summary>
+            <param name="optionName">Name of the option being requested.</param>
+            <param name="parameters">Parameters for the option; for per-file options,
+            the first parameter is typically the internal file path.</param>
+            <returns>Option value, or null to use the default behavior.</returns>
+            <remarks>
+            This implementation does not handle any options. Subclasses may override
+            this method to allow for non-default behavior.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenArchiveReadStream(System.Int32,System.String,Microsoft.Deployment.Compression.CompressionEngine)">
+            <summary>
+            Opens the archive stream for reading.
+            </summary>
+            <param name="archiveNumber">The zero-based index of the archive to
+            open.</param>
+            <param name="archiveName">The name of the archive being opened.</param>
+            <param name="compressionEngine">Instance of the compression engine
+            doing the operations.</param>
+            <returns>A stream from which archive bytes are read, or null to cancel
+            extraction of the archive.</returns>
+            <remarks>
+            This method opens the file from the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.ArchiveFiles"/> list with
+            the specified index. If the archive number is outside the bounds of the
+            list, this method returns null.
+            <para>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.EnableOffsetOpen"/> flag is set, this method will
+            seek to the start of any existing archive in the file, or to the end of
+            the file if the existing file is not an archive.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.CloseArchiveReadStream(System.Int32,System.String,System.IO.Stream)">
+            <summary>
+            Closes a stream where an archive was read.
+            </summary>
+            <param name="archiveNumber">The archive number of the stream
+            to close.</param>
+            <param name="archiveName">The name of the archive being closed.</param>
+            <param name="stream">The stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenArchiveReadStream(System.Int32,System.String,Microsoft.Deployment.Compression.CompressionEngine)"/> and is now ready to be closed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)">
+            <summary>
+            Opens a stream for writing extracted file bytes.
+            </summary>
+            <param name="path">The path of the file within the archive.</param>
+            <param name="fileSize">The uncompressed size of the file to be
+            extracted.</param>
+            <param name="lastWriteTime">The last write time of the file to be
+            extracted.</param>
+            <returns>A stream where extracted file bytes are to be written, or null
+            to skip extraction of the file and continue to the next file.</returns>
+            <remarks>
+            This method opens a file using the following logic:
+            <list>
+            <item>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> and the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/> mapping
+            are both null, the path is treated as relative to the current directory,
+            and that file is opened.</item>
+            <item>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> is not null but the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/>
+            mapping is null, the path is treated as relative to that directory, and
+            that file is opened.</item>
+            <item>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> is null but the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/>
+            mapping is not null, the path parameter is used as a key into the mapping,
+            and the resulting value is the file path that is opened, relative to the
+            current directory (or it may be an absolute path). If no mapping exists,
+            the file is skipped.</item>
+            <item>If both the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> and the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/>
+            mapping are specified, the path parameter is used as a key into the
+            mapping, and the resulting value is the file path that is opened,
+            relative to the specified directory (or it may be an absolute path).
+            If no mapping exists, the file is skipped.</item>
+            </list>
+            <para>If the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.ExtractOnlyNewerFiles"/> flag is set, the file
+            is skipped if a file currently exists in the same path with an equal
+            or newer write time.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.CloseFileWriteStream(System.String,System.IO.Stream,System.IO.FileAttributes,System.DateTime)">
+            <summary>
+            Closes a stream where an extracted file was written.
+            </summary>
+            <param name="path">The path of the file within the archive.</param>
+            <param name="stream">The stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/> and is now ready to be closed.</param>
+            <param name="attributes">The attributes of the extracted file.</param>
+            <param name="lastWriteTime">The last write time of the file.</param>
+            <remarks>
+            After closing the extracted file stream, this method applies the date
+            and attributes to that file.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.TranslateFilePath(System.String)">
+            <summary>
+            Translates an internal file path to an external file path using the
+            <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Directory"/> and the <see cref="P:Microsoft.Deployment.Compression.ArchiveFileStreamContext.Files"/> mapping, according to
+            rules documented in <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and
+            <see cref="M:Microsoft.Deployment.Compression.ArchiveFileStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/>.
+            </summary>
+            <param name="path">The path of the file with the archive.</param>
+            <returns>The external path of the file, or null if there is no
+            valid translation.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.BasicUnpackStreamContext">
+            <summary>
+            Stream context used to extract a single file from an archive into a memory stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.BasicUnpackStreamContext.#ctor(System.IO.Stream)">
+            <summary>
+            Creates a new BasicExtractStreamContext that reads from the specified archive stream.
+            </summary>
+            <param name="archiveStream">Archive stream to read from.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.BasicUnpackStreamContext.FileStream">
+            <summary>
+            Gets the stream for the extracted file, or null if no file was extracted.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.BasicUnpackStreamContext.OpenArchiveReadStream(System.Int32,System.String,Microsoft.Deployment.Compression.CompressionEngine)">
+            <summary>
+            Opens the archive stream for reading. Returns a DuplicateStream instance,
+            so the stream may be virtually opened multiple times.
+            </summary>
+            <param name="archiveNumber">The archive number to open (ignored; 0 is assumed).</param>
+            <param name="archiveName">The name of the archive being opened.</param>
+            <param name="compressionEngine">Instance of the compression engine doing the operations.</param>
+            <returns>A stream from which archive bytes are read.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.BasicUnpackStreamContext.CloseArchiveReadStream(System.Int32,System.String,System.IO.Stream)">
+            <summary>
+            Does *not* close the stream. The archive stream should be managed by
+            the code that invokes the archive extraction.
+            </summary>
+            <param name="archiveNumber">The archive number of the stream to close.</param>
+            <param name="archiveName">The name of the archive being closed.</param>
+            <param name="stream">The stream being closed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.BasicUnpackStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)">
+            <summary>
+            Opens a stream for writing extracted file bytes. The returned stream is a MemoryStream
+            instance, so the file is extracted straight into memory.
+            </summary>
+            <param name="path">Path of the file within the archive.</param>
+            <param name="fileSize">The uncompressed size of the file to be extracted.</param>
+            <param name="lastWriteTime">The last write time of the file.</param>
+            <returns>A stream where extracted file bytes are to be written.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.BasicUnpackStreamContext.CloseFileWriteStream(System.String,System.IO.Stream,System.IO.FileAttributes,System.DateTime)">
+            <summary>
+            Does *not* close the file stream. The file stream is saved in memory so it can
+            be read later.
+            </summary>
+            <param name="path">Path of the file within the archive.</param>
+            <param name="stream">The file stream to be closed.</param>
+            <param name="attributes">The attributes of the extracted file.</param>
+            <param name="lastWriteTime">The last write time of the file.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.CompressionEngine">
+            <summary>
+            Base class for an engine capable of packing and unpacking a particular
+            compressed file format.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.#ctor">
+            <summary>
+            Creates a new instance of the compression engine base class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Finalize">
+            <summary>
+            Disposes the compression engine.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Deployment.Compression.CompressionEngine.Progress">
+            <summary>
+            Occurs when the compression engine reports progress in packing
+            or unpacking an archive.
+            </summary>
+            <seealso cref="T:Microsoft.Deployment.Compression.ArchiveProgressType"/>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CompressionEngine.UseTempFiles">
+            <summary>
+            Gets or sets a flag indicating whether temporary files are created
+            and used during compression.
+            </summary>
+            <value>True if temporary files are used; false if compression is done
+            entirely in-memory.</value>
+            <remarks>The value of this property is true by default. Using temporary
+            files can greatly reduce the memory requirement of compression,
+            especially when compressing large archives. However, setting this property
+            to false may yield slightly better performance when creating small
+            archives. Or it may be necessary if the process does not have sufficient
+            privileges to create temporary files.</remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CompressionEngine.CompressionLevel">
+            <summary>
+            Compression level to use when compressing files.
+            </summary>
+            <value>A compression level ranging from minimum to maximum compression,
+            or no compression.</value>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Dispose">
+            <summary>
+            Disposes of resources allocated by the compression engine.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Pack(Microsoft.Deployment.Compression.IPackStreamContext,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Creates an archive.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="files">The paths of the files in the archive
+            (not external file paths).</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive could not be
+            created.</exception>
+            <remarks>
+            The stream context implementation may provide a mapping from the
+            file paths within the archive to the external file paths.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Pack(Microsoft.Deployment.Compression.IPackStreamContext,System.Collections.Generic.IEnumerable{System.String},System.Int64)">
+            <summary>
+            Creates an archive or chain of archives.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="files">The paths of the files in the archive (not
+            external file paths).</param>
+            <param name="maxArchiveSize">The maximum number of bytes for one
+            archive before the contents are chained to the next archive, or zero
+            for unlimited archive size.</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive could not be
+            created.</exception>
+            <remarks>
+            The stream context implementation may provide a mapping from the file
+            paths within the archive to the external file paths.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.IsArchive(System.IO.Stream)">
+            <summary>
+            Checks whether a Stream begins with a header that indicates
+            it is a valid archive.
+            </summary>
+            <param name="stream">Stream for reading the archive file.</param>
+            <returns>True if the stream is a valid archive
+            (with no offset); false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.FindArchiveOffset(System.IO.Stream)">
+            <summary>
+            Gets the offset of an archive that is positioned 0 or more bytes
+            from the start of the Stream.
+            </summary>
+            <param name="stream">A stream for reading the archive.</param>
+            <returns>The offset in bytes of the archive,
+            or -1 if no archive is found in the Stream.</returns>
+            <remarks>The archive must begin on a 4-byte boundary.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.GetFileInfo(System.IO.Stream)">
+            <summary>
+            Gets information about all files in an archive stream.
+            </summary>
+            <param name="stream">A stream for reading the archive.</param>
+            <returns>Information about all files in the archive stream.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The stream is not a valid
+            archive.</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.GetFileInfo(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Gets information about files in an archive or archive chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="fileFilter">A predicate that can determine
+            which files to process, optional.</param>
+            <returns>Information about files in the archive stream.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.GetFiles(System.IO.Stream)">
+            <summary>
+            Gets the list of files in an archive Stream.
+            </summary>
+            <param name="stream">A stream for reading the archive.</param>
+            <returns>A list of the paths of all files contained in the
+            archive.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The stream is not a valid
+            archive.</exception>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.GetFiles(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Gets the list of files in an archive or archive chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="fileFilter">A predicate that can determine
+            which files to process, optional.</param>
+            <returns>An array containing the names of all files contained in
+            the archive or archive chain.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Unpack(System.IO.Stream,System.String)">
+            <summary>
+            Reads a single file from an archive stream.
+            </summary>
+            <param name="stream">A stream for reading the archive.</param>
+            <param name="path">The path of the file within the archive
+            (not the external file path).</param>
+            <returns>A stream for reading the extracted file, or null
+            if the file does not exist in the archive.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The stream is not a valid
+            archive.</exception>
+            <remarks>The entire extracted file is cached in memory, so this
+            method requires enough free memory to hold the file.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Unpack(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Extracts files from an archive or archive chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of archive and file streams.</param>
+            <param name="fileFilter">An optional predicate that can determine
+            which files to process.</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The archive provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.OnProgress(Microsoft.Deployment.Compression.ArchiveProgressEventArgs)">
+            <summary>
+            Called by sublcasses to distribute a packing or unpacking progress
+            event to listeners.
+            </summary>
+            <param name="e">Event details.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.Dispose(System.Boolean)">
+            <summary>
+            Disposes of resources allocated by the compression engine.
+            </summary>
+            <param name="disposing">If true, the method has been called
+            directly or indirectly by a user's code, so managed and unmanaged
+            resources will be disposed. If false, the method has been called by
+            the runtime from inside the finalizer, and only unmanaged resources
+            will be disposed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.DosDateAndTimeToDateTime(System.Int16,System.Int16,System.DateTime@)">
+            <summary>
+            Compresion utility function for converting old-style
+            date and time values to a DateTime structure.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CompressionEngine.DateTimeToDosDateAndTime(System.DateTime,System.Int16@,System.Int16@)">
+            <summary>
+            Compresion utility function for converting a DateTime structure
+            to old-style date and time values.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.CompressionLevel">
+            <summary>
+            Specifies the compression level ranging from minimum compresion to
+            maximum compression, or no compression at all.
+            </summary>
+            <remarks>
+            Although only four values are enumerated, any integral value between
+            <see cref="F:Microsoft.Deployment.Compression.CompressionLevel.Min"/> and <see cref="F:Microsoft.Deployment.Compression.CompressionLevel.Max"/> can also be used.
+            </remarks>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.CompressionLevel.None">
+            <summary>Do not compress files, only store.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.CompressionLevel.Min">
+            <summary>Minimum compression; fastest.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.CompressionLevel.Normal">
+            <summary>A compromize between speed and compression efficiency.</summary>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.CompressionLevel.Max">
+            <summary>Maximum compression; slowest.</summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.CargoStream">
+            <summary>
+            Wraps a source stream and carries additional items that are disposed when the stream is closed.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.#ctor(System.IO.Stream,System.IDisposable[])">
+            <summary>
+            Creates a new a cargo stream.
+            </summary>
+            <param name="source">source of the stream</param>
+            <param name="cargo">List of additional items that are disposed when the stream is closed.
+            The order of the list is the order in which the items are disposed.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.Source">
+            <summary>
+            Gets the source stream of the cargo stream.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.Cargo">
+            <summary>
+            Gets the list of additional items that are disposed when the stream is closed.
+            The order of the list is the order in which the items are disposed. The contents can be modified any time.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.CanRead">
+            <summary>
+            Gets a value indicating whether the source stream supports reading.
+            </summary>
+            <value>true if the stream supports reading; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.CanWrite">
+            <summary>
+            Gets a value indicating whether the source stream supports writing.
+            </summary>
+            <value>true if the stream supports writing; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.CanSeek">
+            <summary>
+            Gets a value indicating whether the source stream supports seeking.
+            </summary>
+            <value>true if the stream supports seeking; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.Length">
+            <summary>
+            Gets the length of the source stream.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.CargoStream.Position">
+            <summary>
+            Gets or sets the position of the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.Flush">
+            <summary>
+            Flushes the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.SetLength(System.Int64)">
+            <summary>
+            Sets the length of the source stream.
+            </summary>
+            <param name="value">The desired length of the stream in bytes.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.Close">
+            <summary>
+            Closes the source stream and also closes the additional objects that are carried.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.Read(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads from the source stream.
+            </summary>
+            <param name="buffer">An array of bytes. When this method returns, the buffer
+            contains the specified byte array with the values between offset and
+            (offset + count - 1) replaced by the bytes read from the source.</param>
+            <param name="offset">The zero-based byte offset in buffer at which to begin
+            storing the data read from the stream.</param>
+            <param name="count">The maximum number of bytes to be read from the stream.</param>
+            <returns>The total number of bytes read into the buffer. This can be less
+            than the number of bytes requested if that many bytes are not currently available,
+            or zero (0) if the end of the stream has been reached.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.Write(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Writes to the source stream.
+            </summary>
+            <param name="buffer">An array of bytes. This method copies count
+            bytes from buffer to the stream.</param>
+            <param name="offset">The zero-based byte offset in buffer at which
+            to begin copying bytes to the stream.</param>
+            <param name="count">The number of bytes to be written to the stream.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.CargoStream.Seek(System.Int64,System.IO.SeekOrigin)">
+            <summary>
+            Changes the position of the source stream.
+            </summary>
+            <param name="offset">A byte offset relative to the origin parameter.</param>
+            <param name="origin">A value of type SeekOrigin indicating the reference
+            point used to obtain the new position.</param>
+            <returns>The new position within the stream.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.DuplicateStream">
+            <summary>
+            Duplicates a source stream by maintaining a separate position.
+            </summary>
+            <remarks>
+            WARNING: duplicate streams are not thread-safe with respect to each other or the original stream.
+            If multiple threads use duplicate copies of the same stream, they must synchronize for any operations.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.#ctor(System.IO.Stream)">
+            <summary>
+            Creates a new duplicate of a stream.
+            </summary>
+            <param name="source">source of the duplicate</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.DuplicateStream.Source">
+            <summary>
+            Gets the original stream that was used to create the duplicate.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.DuplicateStream.CanRead">
+            <summary>
+            Gets a value indicating whether the source stream supports reading.
+            </summary>
+            <value>true if the stream supports reading; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.DuplicateStream.CanWrite">
+            <summary>
+            Gets a value indicating whether the source stream supports writing.
+            </summary>
+            <value>true if the stream supports writing; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.DuplicateStream.CanSeek">
+            <summary>
+            Gets a value indicating whether the source stream supports seeking.
+            </summary>
+            <value>true if the stream supports seeking; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.DuplicateStream.Length">
+            <summary>
+            Gets the length of the source stream.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.DuplicateStream.Position">
+            <summary>
+            Gets or sets the position of the current stream,
+            ignoring the position of the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.OriginalStream(System.IO.Stream)">
+            <summary>
+            Retrieves the original stream from a possible duplicate stream.
+            </summary>
+            <param name="stream">Possible duplicate stream.</param>
+            <returns>If the stream is a DuplicateStream, returns
+            the duplicate's source; otherwise returns the same stream.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.Flush">
+            <summary>
+            Flushes the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.SetLength(System.Int64)">
+            <summary>
+            Sets the length of the source stream.
+            </summary>
+            <param name="value">The desired length of the stream in bytes.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.Close">
+            <summary>
+            Closes the underlying stream, effectively closing ALL duplicates.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.Read(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads from the source stream while maintaining a separate position
+            and not impacting the source stream's position.
+            </summary>
+            <param name="buffer">An array of bytes. When this method returns, the buffer
+            contains the specified byte array with the values between offset and
+            (offset + count - 1) replaced by the bytes read from the current source.</param>
+            <param name="offset">The zero-based byte offset in buffer at which to begin
+            storing the data read from the current stream.</param>
+            <param name="count">The maximum number of bytes to be read from the current stream.</param>
+            <returns>The total number of bytes read into the buffer. This can be less
+            than the number of bytes requested if that many bytes are not currently available,
+            or zero (0) if the end of the stream has been reached.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.Write(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Writes to the source stream while maintaining a separate position
+            and not impacting the source stream's position.
+            </summary>
+            <param name="buffer">An array of bytes. This method copies count
+            bytes from buffer to the current stream.</param>
+            <param name="offset">The zero-based byte offset in buffer at which
+            to begin copying bytes to the current stream.</param>
+            <param name="count">The number of bytes to be written to the
+            current stream.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.DuplicateStream.Seek(System.Int64,System.IO.SeekOrigin)">
+            <summary>
+            Changes the position of this stream without impacting the
+            source stream's position.
+            </summary>
+            <param name="offset">A byte offset relative to the origin parameter.</param>
+            <param name="origin">A value of type SeekOrigin indicating the reference
+            point used to obtain the new position.</param>
+            <returns>The new position within the current stream.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.IPackStreamContext">
+            <summary>
+            This interface provides the methods necessary for the
+            <see cref="T:Microsoft.Deployment.Compression.CompressionEngine"/> to open and close streams for archives
+            and files. The implementor of this interface can use any kind of logic
+            to determine what kind of streams to open and where.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IPackStreamContext.GetArchiveName(System.Int32)">
+            <summary>
+            Gets the name of the archive with a specified number.
+            </summary>
+            <param name="archiveNumber">The 0-based index of the archive
+            within the chain.</param>
+            <returns>The name of the requested archive. May be an empty string
+            for non-chained archives, but may never be null.</returns>
+            <remarks>The archive name is the name stored within the archive, used for
+            identification of the archive especially among archive chains. That
+            name is often, but not necessarily the same as the filename of the
+            archive package.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IPackStreamContext.OpenArchiveWriteStream(System.Int32,System.String,System.Boolean,Microsoft.Deployment.Compression.CompressionEngine)">
+            <summary>
+            Opens a stream for writing an archive package.
+            </summary>
+            <param name="archiveNumber">The 0-based index of the archive within
+            the chain.</param>
+            <param name="archiveName">The name of the archive that was returned
+            by <see cref="M:Microsoft.Deployment.Compression.IPackStreamContext.GetArchiveName(System.Int32)"/>.</param>
+            <param name="truncate">True if the stream should be truncated when
+            opened (if it already exists); false if an existing stream is being
+            re-opened for writing additional data.</param>
+            <param name="compressionEngine">Instance of the compression engine
+            doing the operations.</param>
+            <returns>A writable Stream where the compressed archive bytes will be
+            written, or null to cancel the archive creation.</returns>
+            <remarks>
+            If this method returns null, the archive engine will throw a
+            FileNotFoundException.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IPackStreamContext.CloseArchiveWriteStream(System.Int32,System.String,System.IO.Stream)">
+            <summary>
+            Closes a stream where an archive package was written.
+            </summary>
+            <param name="archiveNumber">The 0-based index of the archive within
+            the chain.</param>
+            <param name="archiveName">The name of the archive that was previously
+            returned by
+            <see cref="M:Microsoft.Deployment.Compression.IPackStreamContext.GetArchiveName(System.Int32)"/>.</param>
+            <param name="stream">A stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.IPackStreamContext.OpenArchiveWriteStream(System.Int32,System.String,System.Boolean,Microsoft.Deployment.Compression.CompressionEngine)"/> and is now ready to be closed.</param>
+            <remarks>
+            If there is another archive package in the chain, then after this stream
+            is closed a new stream will be opened.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IPackStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)">
+            <summary>
+            Opens a stream to read a file that is to be included in an archive.
+            </summary>
+            <param name="path">The path of the file within the archive. This is often,
+            but not necessarily, the same as the relative path of the file outside
+            the archive.</param>
+            <param name="attributes">Returned attributes of the opened file, to be
+            stored in the archive.</param>
+            <param name="lastWriteTime">Returned last-modified time of the opened file,
+            to be stored in the archive.</param>
+            <returns>A readable Stream where the file bytes will be read from before
+            they are compressed, or null to skip inclusion of the file and continue to
+            the next file.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IPackStreamContext.CloseFileReadStream(System.String,System.IO.Stream)">
+            <summary>
+            Closes a stream that has been used to read a file.
+            </summary>
+            <param name="path">The path of the file within the archive; the same as
+            the path provided
+            when the stream was opened.</param>
+            <param name="stream">A stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.IPackStreamContext.OpenFileReadStream(System.String,System.IO.FileAttributes@,System.DateTime@)"/> and is now ready to be closed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IPackStreamContext.GetOption(System.String,System.Object[])">
+            <summary>
+            Gets extended parameter information specific to the compression
+            format being used.
+            </summary>
+            <param name="optionName">Name of the option being requested.</param>
+            <param name="parameters">Parameters for the option; for per-file options,
+            the first parameter is typically the internal file path.</param>
+            <returns>Option value, or null to use the default behavior.</returns>
+            <remarks>
+            This method provides a way to set uncommon options during packaging, or a
+            way to handle aspects of compression formats not supported by the base library.
+            <para>For example, this may be used by the zip compression library to
+            specify different compression methods/levels on a per-file basis.</para>
+            <para>The available option names, parameters, and expected return values
+            should be documented by each compression library.</para>
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.IUnpackStreamContext">
+            <summary>
+            This interface provides the methods necessary for the <see cref="T:Microsoft.Deployment.Compression.CompressionEngine"/> to open
+            and close streams for archives and files. The implementor of this interface can use any
+            kind of logic to determine what kind of streams to open and where 
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IUnpackStreamContext.OpenArchiveReadStream(System.Int32,System.String,Microsoft.Deployment.Compression.CompressionEngine)">
+            <summary>
+            Opens the archive stream for reading.
+            </summary>
+            <param name="archiveNumber">The zero-based index of the archive to open.</param>
+            <param name="archiveName">The name of the archive being opened.</param>
+            <param name="compressionEngine">Instance of the compression engine doing the operations.</param>
+            <returns>A stream from which archive bytes are read, or null to cancel extraction
+            of the archive.</returns>
+            <remarks>
+            When the first archive in a chain is opened, the name is not yet known, so the
+            provided value will be an empty string. When opening further archives, the
+            provided value is the next-archive name stored in the previous archive. This
+            name is often, but not necessarily, the same as the filename of the archive
+            package to be opened.
+            <para>If this method returns null, the archive engine will throw a
+            FileNotFoundException.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IUnpackStreamContext.CloseArchiveReadStream(System.Int32,System.String,System.IO.Stream)">
+            <summary>
+            Closes a stream where an archive package was read.
+            </summary>
+            <param name="archiveNumber">The archive number of the stream to close.</param>
+            <param name="archiveName">The name of the archive being closed.</param>
+            <param name="stream">The stream that was previously returned by
+            <see cref="M:Microsoft.Deployment.Compression.IUnpackStreamContext.OpenArchiveReadStream(System.Int32,System.String,Microsoft.Deployment.Compression.CompressionEngine)"/> and is now ready to be closed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IUnpackStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)">
+            <summary>
+            Opens a stream for writing extracted file bytes.
+            </summary>
+            <param name="path">The path of the file within the archive. This is often, but
+            not necessarily, the same as the relative path of the file outside the archive.</param>
+            <param name="fileSize">The uncompressed size of the file to be extracted.</param>
+            <param name="lastWriteTime">The last write time of the file to be extracted.</param>
+            <returns>A stream where extracted file bytes are to be written, or null to skip
+            extraction of the file and continue to the next file.</returns>
+            <remarks>
+            The implementor may use the path, size and date information to dynamically
+            decide whether or not the file should be extracted.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.IUnpackStreamContext.CloseFileWriteStream(System.String,System.IO.Stream,System.IO.FileAttributes,System.DateTime)">
+            <summary>
+            Closes a stream where an extracted file was written.
+            </summary>
+            <param name="path">The path of the file within the archive.</param>
+            <param name="stream">The stream that was previously returned by <see cref="M:Microsoft.Deployment.Compression.IUnpackStreamContext.OpenFileWriteStream(System.String,System.Int64,System.DateTime)"/>
+            and is now ready to be closed.</param>
+            <param name="attributes">The attributes of the extracted file.</param>
+            <param name="lastWriteTime">The last write time of the file.</param>
+            <remarks>
+            The implementor may wish to apply the attributes and date to the newly-extracted file.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.OffsetStream">
+            <summary>
+            Wraps a source stream and offsets all read/write/seek calls by a given value.
+            </summary>
+            <remarks>
+            This class is used to trick archive an packing or unpacking process
+            into reading or writing at an offset into a file, primarily for
+            self-extracting packages.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.#ctor(System.IO.Stream,System.Int64)">
+            <summary>
+            Creates a new OffsetStream instance from a source stream
+            and using a specified offset.
+            </summary>
+            <param name="source">Underlying stream for which all calls will be offset.</param>
+            <param name="offset">Positive or negative number of bytes to offset.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.Source">
+            <summary>
+            Gets the underlying stream that this OffsetStream calls into.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.Offset">
+            <summary>
+            Gets the number of bytes to offset all calls before
+            redirecting to the underlying stream.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.CanRead">
+            <summary>
+            Gets a value indicating whether the source stream supports reading.
+            </summary>
+            <value>true if the stream supports reading; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.CanWrite">
+            <summary>
+            Gets a value indicating whether the source stream supports writing.
+            </summary>
+            <value>true if the stream supports writing; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.CanSeek">
+            <summary>
+            Gets a value indicating whether the source stream supports seeking.
+            </summary>
+            <value>true if the stream supports seeking; otherwise, false.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.Length">
+            <summary>
+            Gets the effective length of the stream, which is equal to
+            the length of the source stream minus the offset.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.OffsetStream.Position">
+            <summary>
+            Gets or sets the effective position of the stream, which
+            is equal to the position of the source stream minus the offset.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.Read(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads a sequence of bytes from the source stream and advances
+            the position within the stream by the number of bytes read.
+            </summary>
+            <param name="buffer">An array of bytes. When this method returns, the buffer
+            contains the specified byte array with the values between offset and
+            (offset + count - 1) replaced by the bytes read from the current source.</param>
+            <param name="offset">The zero-based byte offset in buffer at which to begin
+            storing the data read from the current stream.</param>
+            <param name="count">The maximum number of bytes to be read from the current stream.</param>
+            <returns>The total number of bytes read into the buffer. This can be less
+            than the number of bytes requested if that many bytes are not currently available,
+            or zero (0) if the end of the stream has been reached.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.Write(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Writes a sequence of bytes to the source stream and advances the
+            current position within this stream by the number of bytes written.
+            </summary>
+            <param name="buffer">An array of bytes. This method copies count
+            bytes from buffer to the current stream.</param>
+            <param name="offset">The zero-based byte offset in buffer at which
+            to begin copying bytes to the current stream.</param>
+            <param name="count">The number of bytes to be written to the
+            current stream.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.ReadByte">
+            <summary>
+            Reads a byte from the stream and advances the position within the
+            source stream by one byte, or returns -1 if at the end of the stream.
+            </summary>
+            <returns>The unsigned byte cast to an Int32, or -1 if at the
+            end of the stream.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.WriteByte(System.Byte)">
+            <summary>
+            Writes a byte to the current position in the source stream and
+            advances the position within the stream by one byte.
+            </summary>
+            <param name="value">The byte to write to the stream.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.Flush">
+            <summary>
+            Flushes the source stream.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.Seek(System.Int64,System.IO.SeekOrigin)">
+            <summary>
+            Sets the position within the current stream, which is
+            equal to the position within the source stream minus the offset.
+            </summary>
+            <param name="offset">A byte offset relative to the origin parameter.</param>
+            <param name="origin">A value of type SeekOrigin indicating
+            the reference point used to obtain the new position.</param>
+            <returns>The new position within the current stream.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.SetLength(System.Int64)">
+            <summary>
+            Sets the effective length of the stream, which is equal to
+            the length of the source stream minus the offset.
+            </summary>
+            <param name="value">The desired length of the
+            current stream in bytes.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.OffsetStream.Close">
+            <summary>
+            Closes the underlying stream.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.WixDistribution">
+            <summary>
+            Distribution specific strings.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.NewsUrl">
+            <summary>
+            News URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.ShortProduct">
+            <summary>
+            Short product name for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.SupportUrl">
+            <summary>
+            Support URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.TelemetryUrlFormat">
+            <summary>
+            Telemetry URL format for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.VSExtensionsLandingUrl">
+            <summary>
+            VS Extensions Landing page Url for the distribution.
+            </summary>
+        </member>
+    </members>
+</doc>

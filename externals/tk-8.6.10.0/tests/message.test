@@ -1,0 +1,502 @@
+# This file is a Tcl script to test out the "message" command
+# of Tk.  It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 by Ajuba Solutions.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::loadTestedCommands
+eval tcltest::configure $argv
+
+
+test message-1.1 {configuration option: "anchor"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold} 
+    pack .m
+    update
+} -body {
+    .m configure -anchor w
+    .m cget -anchor
+} -cleanup {
+    destroy .m
+} -result {w}
+test message-1.2 {configuration option: "anchor"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -anchor bogus
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad anchor "bogus": must be n, ne, e, se, s, sw, w, nw, or center}
+
+test message-1.3 {configuration option: "aspect"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -aspect 3
+    .m cget -aspect
+} -cleanup {
+    destroy .m
+} -result {3}
+test message-1.4 {configuration option: "aspect"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -aspect bogus
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {expected integer but got "bogus"}
+
+test message-1.5 {configuration option: "background"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -background #ff0000
+    .m cget -background
+} -cleanup {
+    destroy .m
+} -result {#ff0000}
+test message-1.6 {configuration option: "background"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -background non-existent
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test message-1.7 {configuration option: "bd"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -bd 4
+    .m cget -bd
+} -cleanup {
+    destroy .m
+} -result {4}
+test message-1.8 {configuration option: "bd"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -bd badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+test message-1.9 {configuration option: "bg"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -bg #ff0000 
+    .m cget -bg
+} -cleanup {
+    destroy .m
+} -result {#ff0000}
+test message-1.10 {configuration option: "bg"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -bg non-existent
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test message-1.11 {configuration option: "borderwidth"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -borderwidth 1.3
+    .m cget -borderwidth
+} -cleanup {
+    destroy .m
+} -result {1}
+test message-1.12 {configuration option: "borderwidth"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -borderwidth badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+test message-1.13 {configuration option: "cursor"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -cursor arrow
+    .m cget -cursor
+} -cleanup {
+    destroy .m
+} -result {arrow}
+test message-1.14 {configuration option: "cursor"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -cursor badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad cursor spec "badValue"}
+
+test message-1.15 {configuration option: "fg"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -fg #00ff00
+    .m cget -fg
+} -cleanup {
+    destroy .m
+} -result {#00ff00}
+test message-1.16 {configuration option: "fg"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -fg badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {unknown color name "badValue"}
+
+test message-1.17 {configuration option: "font"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -font fixed
+    .m cget -font
+} -cleanup {
+    destroy .m
+} -result {fixed}
+test message-1.18 {configuration option: "font"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -font {}
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {font "" doesn't exist}
+
+test message-1.19 {configuration option: "-foreground"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -foreground  green
+    .m cget -foreground 
+} -cleanup {
+    destroy .m
+} -result {green}
+test message-1.20 {configuration option: "-foreground"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -foreground  badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {unknown color name "badValue"}
+
+test message-1.21 {configuration option: "highlightbackground"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -highlightbackground  #112233
+    .m cget -highlightbackground
+} -cleanup {
+    destroy .m
+} -result {#112233}
+test message-1.22 {configuration option: "highlightbackground"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -highlightbackground  ugly
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {unknown color name "ugly"}
+
+test message-1.23 {configuration option: "highlightcolor"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -highlightcolor #123456
+    .m cget -highlightcolor 
+} -cleanup {
+    destroy .m
+} -result {#123456}
+test message-1.24 {configuration option: "highlightcolor"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -highlightcolor non-existent
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test message-1.25 {configuration option: "highlightthickness"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -highlightthickness  2
+    .m cget -highlightthickness 
+} -cleanup {
+    destroy .m
+} -result {2}
+test message-1.26 {configuration option: "highlightthickness"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -highlightthickness  badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+test message-1.27 {configuration option: "justify"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -justify  right
+    .m cget -justify
+} -cleanup {
+    destroy .m
+} -result {right}
+test message-1.28 {configuration option: "justify"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -justify bogus
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad justification "bogus": must be left, right, or center}
+
+test message-1.29 {configuration option: "padx"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -padx  12m
+    .m cget -padx 
+} -cleanup {
+    destroy .m
+} -result {12m}
+test message-1.30 {configuration option: "padx"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -padx 420x
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad screen distance "420x"}
+
+test message-1.31 {configuration option: "pady"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -pady  12m
+    .m cget -pady
+} -cleanup {
+    destroy .m
+} -result {12m}
+test message-1.32 {configuration option: "pady"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -pady 420x
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad screen distance "420x"}
+
+test message-1.33 {configuration option: "relief"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -relief ridge
+    .m cget -relief 
+} -cleanup {
+    destroy .m
+} -result {ridge}
+test message-1.34 {configuration option: "relief"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -relief  badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad relief "badValue": must be flat, groove, raised, ridge, solid, or sunken}
+
+test message-1.35 {configuration options: "text"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -text "Sample text"
+    .m cget -text
+} -cleanup {
+    destroy .m
+} -result {Sample text}
+
+test message-1.36 {configuration option: "textvariable"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -textvariable  i
+    .m cget -textvariable 
+} -cleanup {
+    destroy .m
+} -result {i}
+
+test message-1.37 {configuration option: "width"} -setup { 
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update 
+} -body {
+    .m configure -width  2
+    .m cget -width 
+} -cleanup {
+    destroy .m
+} -result {2}
+test message-1.38 {configuration option: "width"} -setup {
+    message .m -borderwidth 2 -highlightthickness 2 -font {Helvetica -12 bold}
+    pack .m
+    update
+} -body {
+    .m configure -width badValue
+} -cleanup {
+    destroy .m
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+
+test message-2.1 {Tk_MessageObjCmd procedure} -body {
+    message
+} -returnCodes {error} -result {wrong # args: should be "message pathName ?-option value ...?"}
+
+test message-2.2 {Tk_MessageObjCmd procedure} -body {
+    message foo
+} -returnCodes {error} -result {bad window path name "foo"}
+test message-2.3 {Tk_MessageObjCmd procedure} -body {
+    catch {message foo}  
+    winfo child .
+} -result {}
+
+test message-2.4 {Tk_MessageObjCmd procedure} -body {
+    message .s -gorp dump
+} -returnCodes {error} -result {unknown option "-gorp"}
+test message-2.5 {Tk_MessageObjCmd procedure} -body {
+    catch {message .s -gorp dump}  
+    winfo child .
+} -result {} 
+
+
+test message-3.1 {MessageWidgetObjCmd procedure} -setup {
+    message .m
+} -body {
+    .m 
+} -cleanup {
+    destroy .m
+} -returnCodes error -result {wrong # args: should be ".m option ?arg ...?"}
+test message-3.2 {MessageWidgetObjCmd procedure, "cget"} -setup {
+    message .m
+} -body {
+    .m cget
+} -cleanup {
+    destroy .m
+} -returnCodes error -result {wrong # args: should be ".m cget option"}
+test message-3.3 {MessageWidgetObjCmd procedure, "cget"} -setup {
+    message .m
+} -body {
+    .m cget -gorp
+} -cleanup {
+    destroy .m
+} -returnCodes error -result {unknown option "-gorp"}
+
+test message-3.4 {MessageWidgetObjCmd procedure, "configure"} -setup {
+    message .m
+} -body {
+    .m configure -text foobar
+    lindex [.m configure -text] 4 
+} -cleanup {
+    destroy .m
+} -result {foobar}
+test message-3.5 {MessageWidgetObjCmd procedure, "configure"} -setup {
+    message .m
+} -body {
+    llength [.m configure]
+} -cleanup {
+    destroy .m
+} -result {21}
+test message-3.6 {MessageWidgetObjCmd procedure, "configure"} -setup {
+    message .m
+} -body {
+    .m configure -foo
+} -cleanup {
+    destroy .m
+} -returnCodes error -result {unknown option "-foo"}
+test message-3.7 {MessageWidgetObjCmd procedure, "configure"} -setup {
+    message .m
+} -body {
+    .m configure -bd 4
+    .m configure -bg #ffffff
+    lindex [.m configure -bd] 4
+} -cleanup {
+    destroy .m
+} -result {4}
+
+test message-4.1 {Bug [5d991b822e]} {
+    # Want this not to segfault, or write to variable with empty name
+    unset -nocomplain {}
+    set var INIT
+    message .b -textvariable var
+    trace add variable var unset {apply {args {
+        .b configure -textvariable {}
+    }}}
+    pack .b
+    bind .b <Configure> {unset var}
+    update
+    destroy .b
+    info exists {}
+} 0
+test message-4.2 {Bug [5d991b822e]} {
+    # Want this not to leak traces
+    set var INIT
+    message .b -textvariable var
+    trace add variable var unset {apply {args {
+        .b configure -textvariable new
+    }}}
+    pack .b
+    bind .b <Configure> {unset -nocomplain var}
+    update
+    destroy .b
+    unset new
+} {}
+
+cleanupTests
+return

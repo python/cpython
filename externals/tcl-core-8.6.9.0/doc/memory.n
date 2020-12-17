@@ -1,0 +1,115 @@
+'\"
+'\" Copyright (c) 1992-1999 by Karl Lehenbauer and Mark Diekhans
+'\" Copyright (c) 2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\"
+.TH memory n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+.SH NAME
+memory \- Control Tcl memory debugging capabilities
+.SH SYNOPSIS
+\fBmemory \fIoption \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBmemory\fR command gives the Tcl developer control of Tcl's memory
+debugging capabilities.  The memory command has several suboptions, which are
+described below.  It is only available when Tcl has been compiled with
+memory debugging enabled (when \fBTCL_MEM_DEBUG\fR is defined at
+compile time), and after \fBTcl_InitMemory\fR has been called.
+.TP
+\fBmemory active\fR \fIfile\fR
+.
+Write a list of all currently allocated memory to the specified \fIfile\fR.
+.TP
+\fBmemory break_on_malloc\fR \fIcount\fR
+.
+After the \fIcount\fR allocations have been performed, \fBckalloc\fR
+outputs a message to this effect and that it is now attempting to enter
+the C debugger.  Tcl will then issue a \fISIGINT\fR signal against itself.
+If you are running Tcl under a C debugger, it should then enter the debugger
+command mode.
+.TP
+\fBmemory info\fR
+.
+Returns a report containing the total allocations and frees since
+Tcl began, the current packets allocated (the current
+number of calls to \fBckalloc\fR not met by a corresponding call
+to \fBckfree\fR), the current bytes allocated, and the maximum number
+of packets and bytes allocated.
+.TP
+\fBmemory init \fR[\fBon\fR|\fBoff\fR]
+.
+Turn on or off the pre-initialization of all allocated memory
+with bogus bytes.  Useful for detecting the use of uninitialized
+values.
+.TP
+\fBmemory objs \fIfile\fR
+.
+Causes a list of all allocated Tcl_Obj values to be written to the specified
+\fIfile\fR immediately, together with where they were allocated.  Useful for
+checking for leaks of values.
+.TP
+\fBmemory onexit\fR \fIfile\fR
+.
+Causes a list of all allocated memory to be written to the specified \fIfile\fR
+during the finalization of Tcl's memory subsystem.  Useful for checking
+that memory is properly cleaned up during process exit.
+.TP
+\fBmemory tag\fR \fIstring\fR
+.
+Each packet of memory allocated by \fBckalloc\fR can have associated
+with it a string-valued tag.  In the lists of allocated memory generated
+by \fBmemory active\fR and \fBmemory onexit\fR, the tag for each packet
+is printed along with other information about the packet.  The
+\fBmemory tag\fR command sets the tag value for subsequent calls
+to \fBckalloc\fR to be \fIstring\fR.
+.TP
+\fBmemory trace \fR[\fBon\fR|\fBoff\fR]
+.
+Turns memory tracing on or off.  When memory tracing is on, every call
+to \fBckalloc\fR causes a line of trace information to be written to
+\fIstderr\fR, consisting of the word \fIckalloc\fR, followed by the
+address returned, the amount of memory allocated, and the C filename
+and line number of the code performing the allocation.  For example:
+.RS
+.PP
+.CS
+ckalloc 40e478 98 tclProc.c 1406
+.CE
+.PP
+Calls to \fBckfree\fR are traced in the same manner.
+.RE
+.TP
+\fBmemory trace_on_at_malloc\fR \fIcount\fR
+.
+Enable memory tracing after \fIcount\fR \fBckalloc\fRs have been performed.
+For example, if you enter \fBmemory trace_on_at_malloc 100\fR,
+after the 100th call to \fBckalloc\fR, memory trace information will begin
+being displayed for all allocations and frees.  Since there can be a lot
+of memory activity before a problem occurs, judicious use of this option
+can reduce the slowdown caused by tracing (and the amount of trace information
+produced), if you can identify a number of allocations that occur before
+the problem sets in.  The current number of memory allocations that have
+occurred since Tcl started is printed on a guard zone failure.
+.TP
+\fBmemory validate \fR[\fBon\fR|\fBoff\fR]
+.
+Turns memory validation on or off. When memory validation is enabled,
+on every call to \fBckalloc\fR or \fBckfree\fR, the guard zones are
+checked for every piece of memory currently in existence that was
+allocated by \fBckalloc\fR.  This has a large performance impact and
+should only be used when overwrite problems are strongly suspected.
+The advantage of enabling memory validation is that a guard zone
+overwrite can be detected on the first call to \fBckalloc\fR or
+\fBckfree\fR after the overwrite occurred, rather than when the
+specific memory with the overwritten guard zone(s) is freed, which may
+occur long after the overwrite occurred.
+.SH "SEE ALSO"
+ckalloc, ckfree, Tcl_ValidateAllMemory, Tcl_DumpActiveMemory, TCL_MEM_DEBUG
+.SH KEYWORDS
+memory, debug
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

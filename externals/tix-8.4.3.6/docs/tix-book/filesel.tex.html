@@ -1,0 +1,239 @@
+<!-- $Id: filesel.tex.html,v 1.1 2000/10/10 19:49:35 idiscovery Exp $ -->
+
+<p><H1><A NAME=5>5 Selecting Files and Directories</H1>
+
+<p>  One task that an application has to perform frequently is to ask the
+  user to select files or directories. To select files, you can use
+  the Tix <i> File Selection Widgets</i>: TixFileSelectDialog and
+  TixExFileSelectDialog. To select directories, you can use the Tix
+  <i> Directory Selection Widgets</i>: TixDirList and TixDirTree.
+
+<p><H2><A NAME=5.1>5.1 File Selection Dialog Widgets</H2>
+
+<p>  There are two file dialog widgets inside Tix: the
+  TixFileSelectDialog (figure <a href=filesel.tex.html#5-2>5-2 </a>) is similar to the
+  FileSelectionDialog widget in Motif; TixExFileSelectDialog (figure
+  <a href=filesel.tex.html#5-3>5-3 </a>) looks like its conunterpart in MS Windows. Both
+  widgets let the user navigate through the file system directories
+  and select a file.
+
+<p>  One advanced feature of both types of file selection boxes is they
+  use ComboBoxes to store the files, directories and patterns the user
+  has selected in the past. If the user wants to select the same files
+  again, he can simply open the ComboBoxes and click on his past
+  inputs. This saves a lot of keystrokes and is especially useful when
+  the user needs to switch among several files or directories.
+
+<p>
+<H3><A NAME=5.1.1>5.1.1 Using the TixFileSelectDialog Widget</H3>
+
+<p>  An example of using the TixFileSelectDialog widget is in figure
+  <a href=filesel.tex.html#5-1>5-1 </a>. At line 1, we create a TixFileSelectDialog
+  widget and set the title of the dialog to ``Select A File'' using
+  the <code> -title</code> option. We also use the <code> -command</code> option to
+  specify that the procedure <code> selectCmd</code> should be called when the
+  user has selected a file. <code> selectCmd</code> will be called with one
+  parameter, the filename selected by the user. When the
+  TixFileSelectDialog widget is created, it is initially not shown on
+  the screen. Therefore, at line 3, we call its <code> popup</code> widget
+  command to place the widget on the screen.
+
+<p><blockquote><a name=5-1>
+<pre>
+tixFileSelectDialog .file -title "Select A File" -command selectCmd
+.file subwidget fsbox config -pattern "*.txt" -directory /usr/info
+.file popup
+
+<p>proc selectCmd {filename} {
+    puts "You have selected $filename"
+}
+</pre>
+<hr><center><h3>(Figure 5-1) Using the TixFileSelectDialog</center></h3>
+</blockquote>
+
+<p><blockquote><a name=5-2>
+<center><img src=fig/filesel/fb_comp.gif></center>
+<hr><center><h3>(Figure 5-2) The Composition of a TixFileSelectDialog Widget</center></h3>
+</blockquote>
+
+<p><H3><A NAME=5.1.2>5.1.2 The Subwidget in the TixFileSelectDialog</H3>
+
+<p>  We may also want to set other options for the file dialog such as
+  its file filter and working directory. To do this, we must know the
+  composition of the TixFileSelectDialog widget. As shown in figure
+  <a href=filesel.tex.html#5-2>5-2 </a>, the TixFileSelectDialog contains a subwidget <code>
+  fsbox</code> of the type TixFileSelectBox and a subwidget <code> bbox</code> of
+  the type TixStdButtonBox.
+
+<p>  The <code> fsbox</code> subwidget supports the <code> -pattern</code> and <code>
+  -directory</code> options. At line 2 of figure <a href=filesel.tex.html#5-1>5-1 </a>, we
+  use the <code> -directory</code> option to tell the <code> fsbox</code> subwidget to
+  display files in the directory <code> /usr/info</code>; we also use the <code>
+  -pattern</code> option to specify we only want the filenames that has the
+  <code> txt</code> extension.
+
+<p>  The <code> fsbox</code> subwidget also supports the <code> -selection</code> option,
+  which stores the filename currently selected by the user. We can
+  query this value by the <code> cget</code> widget command of the <code> fsbox</code>
+  subwidget.
+
+<p>  Remember that the <code> -pattern</code>, <code> -directory</code> and <code>
+  -selection</code> options do not belong to the TixFileSelectDialog
+  widget. A common mistake that people make is to try to configure the
+  non-existent <code> -pattern</code> option of the TixFileSelectDialog, which
+  causes much despair, long error messages and great loss of
+  self-confidence. <i> Always remember:</i>, when you want to configure
+  an option, find out whether it belongs to the widget or its
+  subwidgets.
+
+<p><H3><A NAME=5.1.3>5.1.3 The TixExFileSelectDialog Widget</H3>
+
+<p>
+<blockquote><a name=5-3>
+<center><img src=fig/filesel/exfile.gif></center>
+<hr><center><h3>(Figure 5-3) The ExFileSelectDialog Widget</center></h3>
+</blockquote>
+
+<p>
+  The TixExFileSelectDialog widget is very similar to the
+  TixFileSelectDialog widget. It supports all the options and widget
+  commands of the latter, so essentially we can just take the program
+  <a href=filesel.tex.html#5-1>5-1 </a> and replace the command <code> tixFileSelectDialog</code>
+  in the first line to <code> tixExFileSelectDialog</code>.
+
+<p>  The composition of the TixExFileSelectDialog widget is a bit
+  different: it contains one contains one subwidget, which is also
+  called <code> fsbox</code>, of the type TixExFileSelectBox widget (figure
+  <a href=filesel.tex.html#5-3>5-3 </a>). Again this <code> fsbox</code> widgets supports all
+  widget options and commands of the <code> fsbox</code> subwidget in
+  TixFileSelectDialog, so the line 2 of program <a href=filesel.tex.html#5-1>5-1 </a>
+  can work for TixExFileSelectDialog widgets without any change.
+
+<p><H3><A NAME=5.1.4>5.1.4 Specifying File Types for TixExFileSelectDialog</H3>
+
+<p>  The TixExFileSelectBox widget has a ComboBox subwidget marked as
+  ``Select Files of Type:'' (see figure <a href=filesel.tex.html#5-3>5-3 </a>). This widget
+  contains some pre-set types of files for the user to choose
+  from. For example, a word processor program can include choices such
+  as ``Microsoft Word Documents'' and ``WordPerfect Documents''.
+
+<p>  The TixExFileSelectBox widget has a <code> -filetypes</code> option for this
+  purpose. As shown in line 3 through 7 in program
+  <a href=filesel.tex.html#5-4>5-4 </a>, the value for the <code> -filetypes</code> option is
+  a list. Each item in the list should contain two parts. The first
+  part is a list of file patterns and the second part is the textual
+  name for this type of files.
+
+<p><H3><A NAME=5.1.5>5.1.5 The <b> <code> tix filedialog</code></b> Command</H3>
+
+<p>  TixExFileSelectDialog and TixFileSelectDialog are very similar to
+  each other. So which one should we use? That is just a matter of
+  taste. However, since we know that programmers usually have bad
+  taste, clever programmers would rather step aside and let the users
+  exercise their own taste. To do this, we can use the <code> tix
+  filedialog</code> command.
+
+<p>  For any programs based on Tix, the user can choose his preferred
+  type of file dialog by setting the X resource <code> FileDialog</code> to
+  either <code> tixFileSelectDialog</code> or <code> tixExFileSelectDialog</code>.
+  This can usually be done by inserting a line similar to the
+  following into the user's <code> .Xdefaults</code> file:
+
+<p><blockquote><pre>
+*myapp*FileDialog: tixExFileSelectDialog
+</pre></blockquote>
+  When we call the command <code> tix filedialog</code>, it will return a file
+  dialog widget of the user's preferred type.
+
+<p>  The advantage of using <code> tix filedialog</code> is it makes coding
+  flexible. If the management suddenly mandates that we dump the Motif
+  look-and-feel in favor of the MS Windows look-and-feel, we don't
+  need to dig up every line of <code> tixFileSelectDialog</code> calls and
+  replace it with <code> tixExFileSelectDialog</code>. Also, <code> tix
+  filedialog</code> creates only one copy of the file dialog, which can be
+  shared by different parts of the program. Therefore, we can avoid
+  creating a separate file dialog widget for each of the ``Open'',
+  ``Save'' and ``Save As'' commands in our application. This way, we
+  can save resource since a file dialog is a large widget and it takes
+  up quite a bit of space.
+
+<p><blockquote><a name=5-4>
+<blockquote><pre>
+set dialog [tix filedialog]
+$dialog -title "Select A File" -command selectCmd
+$dialog subwidget fsbox config -pattern "*.txt" -directory /usr/info
+if {[winfo class $dialog] == "TixExFileSelectDialog"} {
+    $dialog subwidget fsbox config -filetypes {
+        {{*}            {*     -- All files}}
+        {{*.txt}        {*.txt -- Text files}}
+        {{*.c}          {*.c   -- C source files}}
+    }
+}
+$dialog popup
+
+<p>proc selectCmd {filename} {
+    puts "You have selected $filename"
+}
+</pre></blockquote>
+<hr><center><h3>(Figure 5-4) Using the <code> tix dialog</code> command</center></h3>
+</blockquote>
+
+<p>  The use of the <code> tix filedialog</code> command is shown in program
+  <a href=filesel.tex.html#5-4>5-4 </a>. This program is very similar to what we saw
+  in program <a href=filesel.tex.html#5-1>5-1 </a>, except now we aren't really sure
+  which type of file dialog the user have chosen. Therefore, if we
+  want to do something allowed for only one type of file dialogs, we
+  have to be careful. At line 4 of program <a href=filesel.tex.html#5-4>5-4 </a>, we
+  use the <code> winfo</code> command to see whether the type of the file
+  dialog is TixExFileSelectDialog. If so, we set the value for the
+  <code> -filetypes</code> option of its <code> fsbox</code> subwidget.
+
+<p>
+<H2><A NAME=5.2>5.2 Selecting Directories with the TixDirTree and TixDirList Widgets</H2>
+
+<p>  There are two Tix widgets for selecting a directory: TixDirList
+  (figure <a href=filesel.tex.html#5-6>5-6 </a>) and TixDirTree (figure
+  <a href=filesel.tex.html#5-6>5-6 </a>). Both of them display the directories in a
+  hierarchical format. The display in the TixDirList widget is more
+  compact: it shows only the parent- and child-directories of a
+  particular directory. The TixDirTree widget, on the other hand, can
+  display the whole tree structure of the file system.
+
+<p>  The programming interface of these two widgets are the same and you
+  can choose the which one to use depending on your application. As
+  shown in the following example, you can use the <code> -directory</code>
+  option of the TixDirList widget to specify a directory to
+  display. In the example, we set <code> -directory</code> to be <code>
+  /home/ioi/dev</code>. As a result, the TixDirList widget displays all the
+  subdirectories and all the ancestor directories of <code>
+  /home/ioi/dev</code>. You can use the <code> -command</code> and <code> -browsecmd</code>
+  options to handle the user events: a double click or Return
+  key-stroke will trigger the <code> -command</code> option and a single click
+  or space bar key stroke will trigger the <code> -browsecmd</code>
+  option. Normally, you would handle both type of events in the same
+  manner, as we have done in program <a href=filesel.tex.html#5-5>5-5 </a>
+
+<p><blockquote><a name=5-5>
+<blockquote><pre>
+tixDirList .d -value /home/ioi/dev <br>    -command "selectDir" -browsecmd "selectDir"
+pack .d
+
+<p>proc selectDir {dir} {
+    puts "now you select $dir"
+}
+</pre></blockquote>
+<hr><center><h3>(Figure 5-5) Using the TixDirList widget</center></h3>
+</blockquote>
+
+<p>
+<blockquote><a name=5-6>
+
+<center><TABLE BORDER=0><TR> 
+<p> <td valign=bottom>
+     <img src=fig/filesel/dirtree.gif><p><h4><center>DirTree</center></h4></td>
+<p> <td valign=bottom>
+     <img src=fig/filesel/dirlist.gif><p><h4><center>DirList</center></h4></td>
+ </TR></TABLE></center>
+
+<hr><center><h3>(Figure 5-6) The DirTree and DirList Widgets</center></h3>
+</blockquote>

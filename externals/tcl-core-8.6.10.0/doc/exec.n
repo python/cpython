@@ -1,0 +1,469 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2006 Donal K. Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH exec n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+exec \- Invoke subprocesses
+.SH SYNOPSIS
+\fBexec \fR?\fIswitches\fR? \fIarg \fR?\fIarg ...\fR? ?\fB&\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command treats its arguments as the specification
+of one or more subprocesses to execute.
+The arguments take the form of a standard shell pipeline
+where each \fIarg\fR becomes one word of a command, and
+each distinct command becomes a subprocess.
+.PP
+If the initial arguments to \fBexec\fR start with \fB\-\fR then
+they are treated as command-line switches and are not part
+of the pipeline specification.  The following switches are
+currently supported:
+.TP 13
+\fB\-ignorestderr\fR
+.
+Stops the \fBexec\fR command from treating the output of messages to the
+pipeline's standard error channel as an error case.
+.TP 13
+\fB\-keepnewline\fR
+.
+Retains a trailing newline in the pipeline's output.
+Normally a trailing newline will be deleted.
+.TP 13
+\fB\-\|\-\fR
+.
+Marks the end of switches.  The argument following this one will
+be treated as the first \fIarg\fR even if it starts with a \fB\-\fR.
+.PP
+If an \fIarg\fR (or pair of \fIarg\fRs) has one of the forms
+described below then it is used by \fBexec\fR to control the
+flow of input and output among the subprocess(es).
+Such arguments will not be passed to the subprocess(es).  In forms
+such as
+.QW "\fB<\fR \fIfileName\fR" ,
+\fIfileName\fR may either be in a separate argument from
+.QW \fB<\fR
+or in the same argument with no intervening space (i.e.
+.QW \fB<\fIfileName\fR ).
+.TP 15
+\fB|\fR
+.
+Separates distinct commands in the pipeline.  The standard output
+of the preceding command will be piped into the standard input
+of the next command.
+.TP 15
+\fB|&\fR
+.
+Separates distinct commands in the pipeline.  Both standard output
+and standard error of the preceding command will be piped into
+the standard input of the next command.
+This form of redirection overrides forms such as 2> and >&.
+.TP 15
+\fB<\0\fIfileName\fR
+.
+The file named by \fIfileName\fR is opened and used as the standard
+input for the first command in the pipeline.
+.TP 15
+\fB<@\0\fIfileId\fR
+.
+\fIFileId\fR must be the identifier for an open file, such as the return
+value from a previous call to \fBopen\fR.
+It is used as the standard input for the first command in the pipeline.
+\fIFileId\fR must have been opened for reading.
+.TP 15
+\fB<<\0\fIvalue\fR
+.
+\fIValue\fR is passed to the first command as its standard input.
+.TP 15
+\fB>\0\fIfileName\fR
+.
+Standard output from the last command is redirected to the file named
+\fIfileName\fR, overwriting its previous contents.
+.TP 15
+\fB2>\0\fIfileName\fR
+.
+Standard error from all commands in the pipeline is redirected to the
+file named \fIfileName\fR, overwriting its previous contents.
+.TP 15
+\fB>&\0\fIfileName\fR
+.
+Both standard output from the last command and standard error from all
+commands are redirected to the file named \fIfileName\fR, overwriting
+its previous contents.
+.TP 15
+\fB>>\0\fIfileName\fR
+.
+Standard output from the last command is
+redirected to the file named \fIfileName\fR, appending to it rather
+than overwriting it.
+.TP 15
+\fB2>>\0\fIfileName\fR
+.
+Standard error from all commands in the pipeline is
+redirected to the file named \fIfileName\fR, appending to it rather
+than overwriting it.
+.TP 15
+\fB>>&\0\fIfileName\fR
+.
+Both standard output from the last command and standard error from
+all commands are redirected to the file named \fIfileName\fR,
+appending to it rather than overwriting it.
+.TP 15
+\fB>@\0\fIfileId\fR
+.
+\fIFileId\fR must be the identifier for an open file, such as the return
+value from a previous call to \fBopen\fR.
+Standard output from the last command is redirected to \fIfileId\fR's
+file, which must have been opened for writing.
+.TP 15
+\fB2>@\0\fIfileId\fR
+.
+\fIFileId\fR must be the identifier for an open file, such as the return
+value from a previous call to \fBopen\fR.
+Standard error from all commands in the pipeline is
+redirected to \fIfileId\fR's file.
+The file must have been opened for writing.
+.TP 15
+\fB2>@1\0\fR
+.
+Standard error from all commands in the pipeline is redirected to the
+command result.  This operator is only valid at the end of the command
+pipeline.
+.TP 15
+\fB>&@\0\fIfileId\fR
+.
+\fIFileId\fR must be the identifier for an open file, such as the return
+value from a previous call to \fBopen\fR.
+Both standard output from the last command and standard error from
+all commands are redirected to \fIfileId\fR's file.
+The file must have been opened for writing.
+.PP
+If standard output has not been redirected then the \fBexec\fR
+command returns the standard output from the last command
+in the pipeline, unless
+.QW 2>@1
+was specified, in which case standard error is included as well.
+If any of the commands in the pipeline exit abnormally or
+are killed or suspended, then \fBexec\fR will return an error
+and the error message will include the pipeline's output followed by
+error messages describing the abnormal terminations; the
+\fB\-errorcode\fR return option will contain additional information
+about the last abnormal termination encountered.
+If any of the commands writes to its standard error file and that
+standard error is not redirected
+and \fB\-ignorestderr\fR is not specified,
+then \fBexec\fR will return an error;  the error message
+will include the pipeline's standard output, followed by messages
+about abnormal terminations (if any), followed by the standard error
+output.
+.PP
+If the last character of the result or error message
+is a newline then that character is normally deleted
+from the result or error message.
+This is consistent with other Tcl return values, which do not
+normally end with newlines.
+However, if \fB\-keepnewline\fR is specified then the trailing
+newline is retained.
+.PP
+If standard input is not redirected with
+.QW < ,
+.QW <<
+or
+.QW <@
+then the standard input for the first command in the
+pipeline is taken from the application's current standard input.
+.PP
+If the last \fIarg\fR is
+.QW &
+then the pipeline will be executed in background.
+In this case the \fBexec\fR command will return a list whose
+elements are the process identifiers for all of the subprocesses
+in the pipeline.
+The standard output from the last command in the pipeline will
+go to the application's standard output if it has not been
+redirected, and error output from all of
+the commands in the pipeline will go to the application's
+standard error file unless redirected.
+.PP
+The first word in each command is taken as the command name;
+tilde-substitution is performed on it, and if the result contains
+no slashes then the directories
+in the PATH environment variable are searched for
+an executable by the given name.
+If the name contains a slash then it must refer to an executable
+reachable from the current directory.
+No
+.QW glob
+expansion or other shell-like substitutions
+are performed on the arguments to commands.
+.SH "PORTABILITY ISSUES"
+.TP
+\fBWindows\fR (all versions)
+.
+Reading from or writing to a socket, using the
+.QW \fB@\0\fIfileId\fR
+notation, does not work.  When reading from a socket, a 16-bit DOS
+application will hang and a 32-bit application will return immediately with
+end-of-file.  When either type of application writes to a socket, the
+information is instead sent to the console, if one is present, or is
+discarded.
+.RS
+.PP
+Note that the current escape resp. quoting of arguments for windows works only
+with executables using CommandLineToArgv, CRT-library or similar, as well as
+with the windows batch files (excepting the newline, see below).
+Although it is the common escape algorithm, but, in fact, the way how the
+executable parses the command-line (resp. splits it into single arguments)
+is decisive.
+.PP
+Unfortunately, there is currently no way to supply newline character within
+an argument to the batch files (\fB.cmd\fR or \fB.bat\fR) or to the command
+processor (\fBcmd.exe /c\fR), because this causes truncation of command-line
+(also the argument chain) on the first newline character.
+But it works properly with an executable (using CommandLineToArgv, etc).
+.PP
+The Tk console text widget does not provide real standard IO capabilities.
+Under Tk, when redirecting from standard input, all applications will see an
+immediate end-of-file; information redirected to standard output or standard
+error will be discarded.
+.PP
+Either forward or backward slashes are accepted as path separators for
+arguments to Tcl commands.  When executing an application, the path name
+specified for the application may also contain forward or backward slashes
+as path separators.  Bear in mind, however, that most Windows applications
+accept arguments with forward slashes only as option delimiters and
+backslashes only in paths.  Any arguments to an application that specify a
+path name with forward slashes will not automatically be converted to use
+the backslash character.  If an argument contains forward slashes as the
+path separator, it may or may not be recognized as a path name, depending on
+the program.
+.PP
+Additionally, when calling a 16-bit DOS or Windows 3.X application, all path
+names must use the short, cryptic, path format (e.g., using
+.QW applba~1.def
+instead of
+.QW applbakery.default ),
+which can be obtained with the
+.QW "\fBfile attributes\fI fileName \fB\-shortname\fR"
+command.
+.PP
+Two or more forward or backward slashes in a row in a path refer to a
+network path.  For example, a simple concatenation of the root directory
+\fBc:/\fR with a subdirectory \fB/windows/system\fR will yield
+\fBc://windows/system\fR (two slashes together), which refers to the mount
+point called \fBsystem\fR on the machine called \fBwindows\fR (and the
+\fBc:/\fR is ignored), and is not equivalent to \fBc:/windows/system\fR,
+which describes a directory on the current computer.  The \fBfile join\fR
+command should be used to concatenate path components.
+.PP
+Note that there are two general types of Win32 console applications:
+.RS
+.IP [1]
+CLI \(em CommandLine Interface, simple stdio exchange. \fBnetstat.exe\fR for
+example.
+.IP [2]
+TUI \(em Textmode User Interface, any application that accesses the console
+API for doing such things as cursor movement, setting text color, detecting
+key presses and mouse movement, etc.  An example would be \fBtelnet.exe\fR
+from Windows 2000.  These types of applications are not common in a windows
+environment, but do exist.
+.RE
+.PP
+\fBexec\fR will not work well with TUI applications when a console is not
+present, as is done when launching applications under wish.  It is desirable
+to have console applications hidden and detached.  This is a designed-in
+limitation as \fBexec\fR wants to communicate over pipes.  The Expect
+extension addresses this issue when communicating with a TUI application.
+.PP
+When attempting to execute an application, \fBexec\fR first searches for
+the name as it was specified.  Then, in order,
+\fB.com\fR, \fB.exe\fR, \fB.bat\fR and \fB.cmd\fR
+are appended to the end of the specified name and it searches
+for the longer name.  If a directory name was not specified as part of the
+application name, the following directories are automatically searched in
+order when attempting to locate the application:
+.IP \(bu 3
+The directory from which the Tcl executable was loaded.
+.IP \(bu 3
+The current directory.
+.IP \(bu 3
+The Windows NT 32-bit system directory.
+.IP \(bu 3
+The Windows NT 16-bit system directory.
+.IP \(bu 3
+The Windows NT home directory.
+.IP \(bu 3
+The directories listed in the path.
+.PP
+In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
+the caller must prepend the desired command with
+.QW "\fBcmd.exe /c\0\fR"
+because built-in commands are not implemented using executables.
+.RE
+.TP
+\fBUnix\fR (including Mac OS X)
+.
+The \fBexec\fR command is fully functional and works as described.
+.SH "UNIX EXAMPLES"
+.PP
+Here are some examples of the use of the \fBexec\fR command on Unix.
+To execute a simple program and get its result:
+.PP
+.CS
+\fBexec\fR uname -a
+.CE
+.SS "WORKING WITH NON-ZERO RESULTS"
+.PP
+To execute a program that can return a non-zero result, you should
+wrap the call to \fBexec\fR in \fBcatch\fR and check the contents
+of the \fB\-errorcode\fR return option if you have an error:
+.PP
+.CS
+set status 0
+if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
+    set details [dict get $options -errorcode]
+    if {[lindex $details 0] eq "CHILDSTATUS"} {
+        set status [lindex $details 2]
+    } else {
+        # Some other error; regenerate it to let caller handle
+        return -options $options -level 0 $results
+    }
+}
+.CE
+.VS 8.6
+.PP
+This is more easily written using the \fBtry\fR command, as that makes
+it simpler to trap specific types of errors. This is
+done using code like this:
+.PP
+.CS
+try {
+    set results [\fBexec\fR grep foo bar.txt]
+    set status 0
+} trap CHILDSTATUS {results options} {
+    set status [lindex [dict get $options -errorcode] 2]
+}
+.CE
+.VE 8.6
+.SS "WORKING WITH QUOTED ARGUMENTS"
+.PP
+When translating a command from a Unix shell invocation, care should
+be taken over the fact that single quote characters have no special
+significance to Tcl.  Thus:
+.PP
+.CS
+awk '{sum += $1} END {print sum}' numbers.list
+.CE
+.PP
+would be translated into something like:
+.PP
+.CS
+\fBexec\fR awk {{sum += $1} END {print sum}} numbers.list
+.CE
+.SS "WORKING WITH GLOBBING"
+.PP
+If you are converting invocations involving shell globbing, you should
+remember that Tcl does not handle globbing or expand things into
+multiple arguments by default.  Instead you should write things like
+this:
+.PP
+.CS
+\fBexec\fR ls -l {*}[glob *.tcl]
+.CE
+.SS "WORKING WITH USER-SUPPLIED SHELL SCRIPT FRAGMENTS"
+.PP
+One useful technique can be to expose to users of a script the ability
+to specify a fragment of shell script to execute that will have some
+data passed in on standard input that was produced by the Tcl program.
+This is a common technique for using the \fIlpr\fR program for
+printing. By far the simplest way of doing this is to pass the user's
+script to the user's shell for processing, as this avoids a lot of
+complexity with parsing other languages.
+.PP
+.CS
+set lprScript [\fIget from user...\fR]
+set postscriptData [\fIgenerate somehow...\fR]
+
+\fBexec\fR $env(SHELL) -c $lprScript << $postscriptData
+.CE
+.SH "WINDOWS EXAMPLES"
+.PP
+Here are some examples of the use of the \fBexec\fR command on Windows.
+To start an instance of \fInotepad\fR editing a file without waiting
+for the user to finish editing the file:
+.PP
+.CS
+\fBexec\fR notepad myfile.txt &
+.CE
+.PP
+To print a text file using \fInotepad\fR:
+.PP
+.CS
+\fBexec\fR notepad /p myfile.txt
+.CE
+.SS "WORKING WITH CONSOLE PROGRAMS"
+.PP
+If a program calls other programs, such as is common with compilers,
+then you may need to resort to batch files to hide the console windows
+that sometimes pop up:
+.PP
+.CS
+\fBexec\fR cmp.bat somefile.c -o somefile
+.CE
+.PP
+With the file \fIcmp.bat\fR looking something like:
+.PP
+.CS
+@gcc %*
+.CE
+or like another variant using single parameters:
+.CS
+@gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
+.CE
+.SS "WORKING WITH COMMAND BUILT-INS"
+.PP
+Sometimes you need to be careful, as different programs may have the
+same name and be in the path. It can then happen that typing a command
+at the DOS prompt finds \fIa different program\fR than the same
+command run via \fBexec\fR. This is because of the (documented)
+differences in behaviour between \fBexec\fR and DOS batch files.
+.PP
+When in doubt, use the command \fBauto_execok\fR: it will return the
+complete path to the program as seen by the \fBexec\fR command.  This
+applies especially when you want to run
+.QW internal
+commands like
+\fIdir\fR from a Tcl script (if you just want to list filenames, use
+the \fBglob\fR command.)  To do that, use this:
+.PP
+.CS
+\fBexec\fR {*}[auto_execok dir] *.tcl
+.CE
+.SS "WORKING WITH NATIVE FILENAMES"
+.PP
+Many programs on Windows require filename arguments to be passed in with
+backslashes as pathname separators. This is done with the help of the
+\fBfile nativename\fR command. For example, to make a directory (on NTFS)
+encrypted so that only the current user can access it requires use of
+the \fICIPHER\fR command, like this:
+.PP
+.CS
+set secureDir "~/Desktop/Secure Directory"
+file mkdir $secureDir
+\fBexec\fR CIPHER /e /s:[file nativename $secureDir]
+.CE
+.SH "SEE ALSO"
+error(n), file(n), open(n)
+.SH KEYWORDS
+execute, pipeline, redirection, subprocess
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

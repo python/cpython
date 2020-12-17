@@ -1,0 +1,89 @@
+# Commands covered:  eval
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands.  Sourcing this file into Tcl runs the tests and generates output
+# for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+test eval-1.1 {single argument} {
+    eval {format 22}
+} 22
+test eval-1.2 {multiple arguments} {
+    set a {$b}
+    set b xyzzy
+    eval format $a
+} xyzzy
+test eval-1.3 {single argument} {
+    eval concat a b c d e f g
+} {a b c d e f g}
+
+test eval-2.1 {error: not enough arguments} {catch eval} 1
+test eval-2.2 {error: not enough arguments} {
+    catch eval msg
+    set msg
+} {wrong # args: should be "eval arg ?arg ...?"}
+test eval-2.3 {error in eval'ed command} {
+    catch {eval {error "test error"}}
+} 1
+test eval-2.4 {error in eval'ed command} {
+    catch {eval {error "test error"}} msg
+    set msg
+} {test error}
+test eval-2.5 {error in eval'ed command: setting errorInfo} {
+    catch {eval {
+	set a 1
+	error "test error"
+    }} msg
+    set ::errorInfo
+} "test error
+    while executing
+\"error \"test error\"\"
+    (\"eval\" body line 3)
+    invoked from within
+\"eval {
+	set a 1
+	error \"test error\"
+    }\""
+
+test eval-3.1 {eval and pure lists} {
+    eval [list list 1 2 3 4 5]
+} {1 2 3 4 5}
+test eval-3.2 {concatenating eval and pure lists} {
+    eval [list list 1] [list 2 3 4 5]
+} {1 2 3 4 5}
+test eval-3.3 {eval and canonical lists} {
+    set cmd [list list 1 2 3 4 5]
+    # Force existance of utf-8 rep
+    set dummy($cmd) $cmd
+    unset dummy
+    eval $cmd
+} {1 2 3 4 5}
+test eval-3.4 {concatenating eval and canonical lists} {
+    set cmd  [list list 1]
+    set cmd2 [list 2 3 4 5]
+    # Force existance of utf-8 rep
+    set dummy($cmd) $cmd
+    set dummy($cmd2) $cmd2
+    unset dummy
+    eval $cmd $cmd2
+} {1 2 3 4 5}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

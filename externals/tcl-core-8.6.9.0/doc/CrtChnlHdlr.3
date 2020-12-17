@@ -1,0 +1,89 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_CreateChannelHandler 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_CreateChannelHandler, Tcl_DeleteChannelHandler \- call a procedure when a channel becomes readable or writable
+.SH SYNOPSIS
+.nf
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_CreateChannelHandler\fR(\fIchannel, mask, proc, clientData\fR)
+.sp
+void
+\fBTcl_DeleteChannelHandler\fR(\fIchannel, proc, clientData\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_ChannelProc clientData
+.AP Tcl_Channel channel in
+Tcl channel such as returned by \fBTcl_CreateChannel\fR.
+.AP int mask in
+Conditions under which \fIproc\fR should be called: OR-ed combination of
+\fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR and \fBTCL_EXCEPTION\fR. Specify
+a zero value to temporarily disable an existing handler.
+.AP Tcl_FileProc *proc in
+Procedure to invoke whenever the channel indicated by \fIchannel\fR meets
+the conditions specified by \fImask\fR.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_CreateChannelHandler\fR arranges for \fIproc\fR to be called in the
+future whenever input or output becomes possible on the channel identified
+by \fIchannel\fR, or whenever an exceptional condition exists for
+\fIchannel\fR. The conditions of interest under which \fIproc\fR will be
+invoked are specified by the \fImask\fR argument.
+See the manual entry for \fBfileevent\fR for a precise description of
+what it means for a channel to be readable or writable.
+\fIProc\fR must conform to the following prototype:
+.PP
+.CS
+typedef void \fBTcl_ChannelProc\fR(
+        ClientData \fIclientData\fR,
+        int \fImask\fR);
+.CE
+.PP
+The \fIclientData\fR argument is the same as the value passed to
+\fBTcl_CreateChannelHandler\fR when the handler was created. Typically,
+\fIclientData\fR points to a data structure containing application-specific
+information about the channel. \fIMask\fR is an integer mask indicating
+which of the requested conditions actually exists for the channel; it will
+contain a subset of the bits from the \fImask\fR argument to
+\fBTcl_CreateChannelHandler\fR when the handler was created.
+.PP
+Each channel handler is identified by a unique combination of \fIchannel\fR,
+\fIproc\fR and \fIclientData\fR.
+There may be many handlers for a given channel as long as they do not
+have the same \fIchannel\fR, \fIproc\fR, and \fIclientData\fR.
+If \fBTcl_CreateChannelHandler\fR is invoked when there is already a handler
+for \fIchannel\fR, \fIproc\fR, and \fIclientData\fR, then no new
+handler is created;  instead, the \fImask\fR is changed for the
+existing handler.
+.PP
+\fBTcl_DeleteChannelHandler\fR deletes a channel handler identified by
+\fIchannel\fR, \fIproc\fR and \fIclientData\fR; if no such handler exists,
+the call has no effect.
+.PP
+Channel handlers are invoked via the Tcl event mechanism, so they
+are only useful in applications that are event-driven.
+Note also that the conditions specified in the \fImask\fR argument
+to \fIproc\fR may no longer exist when \fIproc\fR is invoked:  for
+example, if there are two handlers for \fBTCL_READABLE\fR on the same
+channel, the first handler could consume all of the available input
+so that the channel is no longer readable when the second handler
+is invoked.
+For this reason it may be useful to use nonblocking I/O on channels
+for which there are event handlers.
+.SH "SEE ALSO"
+Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n).
+.SH KEYWORDS
+blocking, callback, channel, events, handler, nonblocking.

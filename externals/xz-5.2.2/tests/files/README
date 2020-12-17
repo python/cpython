@@ -1,0 +1,240 @@
+
+.xz Test Files
+----------------
+
+0. Introduction
+
+    This directory contains bunch of files to test handling of .xz files
+    in .xz decoder implementations. Many of the files have been created
+    by hand with a hex editor, thus there is no better "source code" than
+    the files themselves. All the test files (*.xz) and this README have
+    been put into the public domain.
+
+
+1. File Types
+
+    Good files (good-*.xz) must decode successfully without requiring
+    a lot of CPU time or RAM.
+
+    Unsupported files (unsupported-*.xz) are good files, but headers
+    indicate features not supported by the current file format
+    specification.
+
+    Bad files (bad-*.xz) must cause the decoder to give an error. Like
+    with the good files, these files must not require a lot of CPU time
+    or RAM before they get detected to be broken.
+
+
+2. Descriptions of Individual Files
+
+2.1. Good Files
+
+    good-0-empty.xz has one Stream with no Blocks.
+
+    good-0pad-empty.xz has one Stream with no Blocks followed by
+    four-byte Stream Padding.
+
+    good-0cat-empty.xz has two zero-Block Streams concatenated without
+    Stream Padding.
+
+    good-0catpad-empty.xz has two zero-Block Streams concatenated with
+    four-byte Stream Padding between the Streams.
+
+    good-1-check-none.xz has one Stream with one Block with two
+    uncompressed LZMA2 chunks and no integrity check.
+
+    good-1-check-crc32.xz has one Stream with one Block with two
+    uncompressed LZMA2 chunks and CRC32 check.
+
+    good-1-check-crc64.xz is like good-1-check-crc32.xz but with CRC64.
+
+    good-1-check-sha256.xz is like good-1-check-crc32.xz but with
+    SHA256.
+
+    good-2-lzma2.xz has one Stream with two Blocks with one uncompressed
+    LZMA2 chunk in each Block.
+
+    good-1-block_header-1.xz has both Compressed Size and Uncompressed
+    Size in the Block Header. This has also four extra bytes of Header
+    Padding.
+
+    good-1-block_header-2.xz has known Compressed Size.
+
+    good-1-block_header-3.xz has known Uncompressed Size.
+
+    good-1-delta-lzma2.tiff.xz is an image file that compresses
+    better with Delta+LZMA2 than with plain LZMA2.
+
+    good-1-x86-lzma2.xz uses the x86 filter (BCJ) and LZMA2. The
+    uncompressed file is compress_prepared_bcj_x86 found from the tests
+    directory.
+
+    good-1-sparc-lzma2.xz uses the SPARC filter and LZMA. The
+    uncompressed file is compress_prepared_bcj_sparc found from the tests
+    directory.
+
+    good-1-lzma2-1.xz has two LZMA2 chunks, of which the second sets
+    new properties.
+
+    good-1-lzma2-2.xz has two LZMA2 chunks, of which the second resets
+    the state without specifying new properties.
+
+    good-1-lzma2-3.xz has two LZMA2 chunks, of which the first is
+    uncompressed and the second is LZMA. The first chunk resets dictionary
+    and the second sets new properties.
+
+    good-1-lzma2-4.xz has three LZMA2 chunks: First is LZMA, second is
+    uncompressed with dictionary reset, and third is LZMA with new
+    properties but without dictionary reset.
+
+    good-1-lzma2-5.xz has an empty LZMA2 stream with only the end of
+    payload marker. XZ Utils 5.0.1 and older incorrectly see this file
+    as corrupt.
+
+    good-1-3delta-lzma2.xz has three Delta filters and LZMA2.
+
+
+2.2. Unsupported Files
+
+    unsupported-check.xz uses Check ID 0x02 which isn't supported by
+    the current version of the file format. It is implementation-defined
+    how this file handled (it may reject it, or decode it possibly with
+    a warning).
+
+    unsupported-block_header.xz has a non-null byte in Header Padding,
+    which may indicate presence of a new unsupported field.
+
+    unsupported-filter_flags-1.xz has unsupported Filter ID 0x7F.
+
+    unsupported-filter_flags-2.xz specifies only Delta filter in the
+    List of Filter Flags, but Delta isn't allowed as the last filter in
+    the chain. It could be a little more correct to detect this file as
+    corrupt instead of unsupported, but saying it is unsupported is
+    simpler in case of liblzma.
+
+    unsupported-filter_flags-3.xz specifies two LZMA2 filters in the
+    List of Filter Flags. LZMA2 is allowed only as the last filter in the
+    chain. It could be a little more correct to detect this file as
+    corrupt instead of unsupported, but saying it is unsupported is
+    simpler in case of liblzma.
+
+
+2.3. Bad Files
+
+    bad-0pad-empty.xz has one Stream with no Blocks followed by
+    five-byte Stream Padding. Stream Padding must be a multiple of four
+    bytes, thus this file is corrupt.
+
+    bad-0catpad-empty.xz has two zero-Block Streams concatenated with
+    five-byte Stream Padding between the Streams.
+
+    bad-0cat-alone.xz is good-0-empty.xz concatenated with an empty
+    LZMA_Alone file.
+
+    bad-0cat-header_magic.xz is good-0cat-empty.xz but with one byte
+    wrong in the Header Magic Bytes field of the second Stream. liblzma
+    gives LZMA_DATA_ERROR for this. (LZMA_FORMAT_ERROR is used only if
+    the first Stream of a file has invalid Header Magic Bytes.)
+
+    bad-0-header_magic.xz is good-0-empty.xz but with one byte wrong
+    in the Header Magic Bytes field. liblzma gives LZMA_FORMAT_ERROR for
+    this.
+
+    bad-0-footer_magic.xz is good-0-empty.xz but with one byte wrong
+    in the Footer Magic Bytes field. liblzma gives LZMA_DATA_ERROR for
+    this.
+
+    bad-0-empty-truncated.xz is good-0-empty.xz without the last byte
+    of the file.
+
+    bad-0-nonempty_index.xz has no Blocks but Index claims that there is
+    one Block.
+
+    bad-0-backward_size.xz has wrong Backward Size in Stream Footer.
+
+    bad-1-stream_flags-1.xz has different Stream Flags in Stream Header
+    and Stream Footer.
+
+    bad-1-stream_flags-2.xz has wrong CRC32 in Stream Header.
+
+    bad-1-stream_flags-3.xz has wrong CRC32 in Stream Footer.
+
+    bad-1-vli-1.xz has two-byte variable-length integer in the
+    Uncompressed Size field in Block Header while one-byte would be enough
+    for that value. It's important that the file gets rejected due to too
+    big integer encoding instead of due to Uncompressed Size not matching
+    the value stored in the Block Header. That is, the decoder must not
+    try to decode the Compressed Data field.
+
+    bad-1-vli-2.xz has ten-byte variable-length integer as Uncompressed
+    Size in Block Header. It's important that the file gets rejected due
+    to too big integer encoding instead of due to Uncompressed Size not
+    matching the value stored in the Block Header. That is, the decoder
+    must not try to decode the Compressed Data field.
+
+    bad-1-block_header-1.xz has Block Header that ends in the middle of
+    the Filter Flags field.
+
+    bad-1-block_header-2.xz has Block Header that has Compressed Size and
+    Uncompressed Size but no List of Filter Flags field.
+
+    bad-1-block_header-3.xz has wrong CRC32 in Block Header.
+
+    bad-1-block_header-4.xz has too big Compressed Size in Block Header
+    (2^63 - 1 bytes while maximum is a little less, because the whole
+    Block must stay smaller than 2^63). It's important that the file
+    gets rejected due to invalid Compressed Size value; the decoder
+    must not try decoding the Compressed Data field.
+
+    bad-1-block_header-5.xz has zero as Compressed Size in Block Header.
+
+    bad-1-block_header-6.xz has corrupt Block Header which may crash
+    xz -lvv in XZ Utils 5.0.3 and earlier. It was fixed in the commit
+    c0297445064951807803457dca1611b3c47e7f0f.
+
+    bad-2-index-1.xz has wrong Unpadded Sizes in Index.
+
+    bad-2-index-2.xz has wrong Uncompressed Sizes in Index.
+
+    bad-2-index-3.xz has non-null byte in Index Padding.
+
+    bad-2-index-4.xz wrong CRC32 in Index.
+
+    bad-2-index-5.xz has zero as Unpadded Size. It is important that the
+    file gets rejected specifically due to Unpadded Size having an invalid
+    value.
+
+    bad-2-compressed_data_padding.xz has non-null byte in the padding of
+    the Compressed Data field of the first Block.
+
+    bad-1-check-crc32.xz has wrong Check (CRC32).
+
+    bad-1-check-crc64.xz has wrong Check (CRC64).
+
+    bad-1-check-sha256.xz has wrong Check (SHA-256).
+
+    bad-1-lzma2-1.xz has LZMA2 stream whose first chunk (uncompressed)
+    doesn't reset the dictionary.
+
+    bad-1-lzma2-2.xz has two LZMA2 chunks, of which the second chunk
+    indicates dictionary reset, but the LZMA compressed data tries to
+    repeat data from the previous chunk.
+
+    bad-1-lzma2-3.xz sets new invalid properties (lc=8, lp=0, pb=0) in
+    the middle of Block.
+
+    bad-1-lzma2-4.xz has two LZMA2 chunks, of which the first is
+    uncompressed and the second is LZMA. The first chunk resets dictionary
+    as it should, but the second chunk tries to reset state without
+    specifying properties for LZMA.
+
+    bad-1-lzma2-5.xz is like bad-1-lzma2-4.xz but doesn't try to reset
+    anything in the header of the second chunk.
+
+    bad-1-lzma2-6.xz has reserved LZMA2 control byte value (0x03).
+
+    bad-1-lzma2-7.xz has EOPM at LZMA level.
+
+    bad-1-lzma2-8.xz is like good-1-lzma2-4.xz but doesn't set new
+    properties in the third LZMA2 chunk.
+

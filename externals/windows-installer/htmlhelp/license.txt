@@ -1,0 +1,216 @@
+HTML Help
+END-USER LICENSE AGREEMENT FOR MICROSOFT SOFTWARE
+
+IMPORTANT-READ CAREFULLY: This Microsoft End-User License
+Agreement ("EULA") is a legal agreement between you (either an
+individual or a single entity) and Microsoft Corporation for the
+Microsoft software product identified above, which includes
+computer software and associated media and printed materials,
+and may include "online" or electronic documentation ("SOFTWARE
+PRODUCT" or "SOFTWARE"). By installing, copying, or otherwise
+using the SOFTWARE PRODUCT, you agree to be bound by the terms
+of this EULA. If you do not agree to the terms of this EULA, do
+not install, copy, or use the SOFTWARE PRODUCT.
+
+SOFTWARE PRODUCT LICENSE
+The SOFTWARE PRODUCT is protected by copyright laws and
+international copyright treaties, as well as other intellectual
+property laws and treaties. The SOFTWARE PRODUCT is licensed,
+not sold.
+
+1. GRANT OF LICENSE. This EULA grants you the following
+non-exclusive rights:
+
+    * Software Product. You may install and use the enclosed
+      SOFTWARE PRODUCT on your computers to design, develop, and
+      test help systems and Internet content ("Help").
+
+    * Sample Code. You may modify the sample source code
+      located in the SOFTWARE PRODUCT's online help files to
+      design, develop, and test your Help. You may also
+      reproduce and distribute the Sample Code in object code
+      form along with any modifications you make to the Sample
+      Code, provided that you comply with the Distribution
+      Requirements described below. For purposes of this
+      section, "modifications" shall mean enhancements to the
+      functionality of the Sample Code.
+
+    * Redistributable Code. The portions of the SOFTWARE
+      PRODUCT identified as "hhupd.exe" is designated as
+      "Redistributable Code." The Redistributable Code has been
+      designed, developed and tested to run on Windows 95 and
+      Windows NT and is intended to provide you with a way to
+      redistribute Microsoft Internet Explorer services such as HTML Help
+      functionality. You may redistribute the Redistributable
+      Code subject to the Distribution Requirements listed below
+      and the following additional provisions: you may only
+      permit installation of the Redistributable Code in the
+      "passive mode" without making it the default browser and
+      without adding the Internet icon to the desktop. If your
+      redistribution and installation of the Redistibutable Code
+      requires that you use the Internet icon on the desktop, or
+      to use Microsoft Internet Explorer as the default browser, you must
+      sign up and accept the terms of the Microsoft Internet Explorer
+      License and Distribution Agreement located at:
+      http://ieak.microsoft.com/release2/licenseProducts.asp.
+
+    * Distribution Requirements. You may copy and
+      redistribute the Sample Code and/or Redistributable Code
+      (collectively "REDISTRIBUTABLE COMPONENTS") as described
+      above, provided that (a) you distribute the
+      REDISTRIBUTABLE COMPONENTS only in conjunction with, and
+      as a part of, your Application; (b) your Application adds
+      significant and primary functionality to the
+      REDISTRIBUTABLE COMPONENTS; (c) you do not use Microsoft's
+      name, logo, or trademarks to market your Application,
+      except as expressly authorized by Microsoft in any other
+      agreement; (d) you include a valid copyright notice on
+      your Application; and (g) you agree to indemnify, hold
+      harmless, and defend Microsoft from and against any claims
+      or lawsuits, including attorneys' fees, that arise or
+      result from the use or distribution of your Application.
+      Microsoft reserves all rights not expressly granted to
+      you.
+
+2. COPYRIGHT. All rights, title, and copyrights in and to the
+SOFTWARE PRODUCT (including, but not limited to, any images,
+photographs, animations, video, audio, music, text, and
+"applets" incorporated into the SOFTWARE PRODUCT) and any copies
+of the SOFTWARE PRODUCT are owned by Microsoft or its suppliers.
+You may not copy the printed materials, if any, accompanying the
+SOFTWARE PRODUCT.
+
+3.  DESCRIPTION OF OTHER RIGHTS AND LIMITATIONS.
+    * Limitations on Reverse-Engineering, Decompilation, and
+      Disassembly. You may not reverse- engineer, decompile, or
+      disassemble the SOFTWARE PRODUCT, except and only to the
+      extent that such activity is expressly permitted by
+      applicable law notwithstanding this limitation.
+
+    * Rental. You may not rent or lease the SOFTWARE PRODUCT.
+
+    * Software Transfer. You may permanently transfer all of
+      your rights under this EULA, provided you retain no
+      copies, you transfer all of the SOFTWARE PRODUCT
+      (including all component parts, the media and printed
+      materials, any upgrades, this EULA, and, if applicable,
+      the Certificate of Authenticity), and the recipient agrees
+      to the terms of this EULA. If the SOFTWARE PRODUCT is an
+      upgrade, any transfer must include all prior versions of
+      the SOFTWARE PRODUCT.
+
+    * Termination. Without prejudice to any other rights,
+      Microsoft may terminate this EULA if you fail to comply
+      with the terms and conditions of this EULA. In such event,
+      you must destroy all copies of the SOFTWARE PRODUCT and
+      all of its component parts.
+
+5. EXPORT RESTRICTIONS. You agree that neither you nor your
+customers intend to or will, directly or indirectly, export or
+transmit (a) the SOFTWARE PRODUCT or related documentation and
+technical data, or (b) your Application as described in Section
+1 of this EULA (or any part thereof), or process, or service
+that is the direct product of the SOFTWARE PRODUCT to any
+country to which such export or transmission is restricted by
+any applicable U.S. regulation or statute, without the prior
+written consent, if required, of the Bureau of Export
+Administration of the U.S. Department of Commerce, or such other
+governmental entity as may have jurisdiction over such export
+or transmission.
+
+6. U.S. GOVERNMENT RESTRICTED RIGHTS. The SOFTWARE PRODUCT and
+documentation are provided with RESTRICTED RIGHTS. Use,
+duplication, or disclosure by the Government is subject to
+restrictions as set forth in subparagraph (c)(1)(ii) of The
+Rights in Technical Data and Computer Software clause at DFARS
+252.227-7013 or subparagraphs (c)(1) and (2) of the Commercial
+Computer Software - Restricted Rights at 48 CFR 52.227-19, as
+applicable. Manufacturer is Microsoft Corporation/One Microsoft
+Way/ Redmond, WA 98052-6399. MISCELLANEOUS
+
+If you acquired this product in the United States, this EULA is
+governed by the laws of the State of Washington.
+
+If you acquired this product in Canada, this EULA is governed by
+the laws of the Province of Ontario, Canada. Each of the parties
+hereto irrevocably attorns to the jurisdiction of the courts of
+the Province of Ontario and further agrees to commence any
+litigation that may arise hereunder in the courts located in the
+Judicial District of York, Province of Ontario.
+
+If this product was acquired outside the United States, local
+law may apply.
+
+Should you have any questions concerning this EULA, or if you
+desire to contact Microsoft for any reason, please contact the
+Microsoft subsidiary serving your country, or write: Microsoft
+Customer Sales and Service/One Microsoft Way/Redmond, WA
+98052-6399.
+
+NO WARRANTIES. To the maximum extent permitted by applicable
+law, Microsoft expressly disclaims any warranty for the SOFTWARE
+PRODUCT. The SOFTWARE PRODUCT and any related documentation are
+provided "as is" without warranty of any kind, either express or
+implied, including, without limitation, the implied warranties
+of merchantability or fitness for a particular purpose. The
+entire risk arising out of use or performance of the SOFTWARE
+PRODUCT remains with you.
+
+LIMITATION OF LIABILITY. Microsoft's entire liability and your
+exclusive remedy under this EULA shall not exceed five dollars
+(US$5.00).
+
+NO LIABILITY FOR CONSEQUENTIAL DAMAGES. To the maximum extent
+permitted by applicable law, in no event shall Microsoft or its
+suppliers be liable for any damages whatsoever (including,
+without limitation, damages for loss of business profit,
+business interruption, loss of business information, or any
+other pecuniary loss) arising out of the use of, or inability to
+use, this Microsoft product, even if Microsoft has been advised
+of the possibility of such damages. Because some
+states/jurisdictions do not allow the exclusion or limitation of
+liability for consequential or incidental damages, the above
+limitation may not apply to you.
+
+Si vous avez acquis votre produit Microsoft au CANADA, la
+garantie limitée suivante vous concerne:
+
+GARANTIE LIMITÉE
+EXCLUSION DE GARANTIES. Microsoft renonce entièrement à toute
+garantie pour le LOGICIEL. Le LOGICIEL et toute autre
+documentation s'y rapportant sont fournis « comme tels » sans
+aucune garantie quelle qu'elle soit, expresse ou implicite, y
+compris, mais ne se limitant pas aux garanties implicites de la
+qualité marchande ou un usage particulier. Le risque total
+découlant de l'utilisation ou de la performance du LOGICIEL est
+entre vos mains.
+
+RESPONSABILITÉ LIMITÉE. La seule obligation de Microsoft et votre
+recours exclusif concernant ce contrat n'excèderont (US$5.00).
+
+ABSENCE DE RESPONSABILITÉ POUR LES DOMMAGES INDIRECTS. Microsoft
+ou ses fournisseurs ne pourront être tenus responsables en
+aucune circonstance de tout dommage quel qu'il soit (y compris
+mais non de façon limitative les dommages directs ou indirects
+causés par la perte de bénéfices commerciaux, l'interruption des
+affaires, la perte d'information commerciale ou toute autre
+perte pécuniaire) résultant de l'utilisation ou de
+l'impossibilité d'utilisation de ce produit, et ce, même si la
+société Microsoft a été avisée de l'éventualité de tels
+dommages. Certains états/juridictions ne permettent pas
+l'exclusion ou la limitation de responsabilité relative aux
+dommages indirects ou consécutifs, et la limitation ci-dessus
+peut ne pas s'appliquer à votre égard. La présente Convention
+est régie par les lois de la province d'Ontario, Canada. Chacune
+des parties à la Convention reconnaît irrévocablement la
+compétence des tribunaux de la province d'Ontario et consent à
+instituer tout litige qui pourrait découler de la Convention
+auprès des tribunaux situés dans le district judiciaire de York,
+province d'Ontario.
+
+Au cas où vous auriez des questions concernant cette licence ou
+que vous désiriez vous mettre en rapport avec Microsoft pour
+quelque raison que ce soit, veuillez contacter la succursale
+Microsoft desservant votre pays, dont l'adresse est fournie dans
+ce produit, ou écrire à: Microsoft Customer Sales and Service,
+One Microsoft Way, Redmond, Washington 98052-6399.

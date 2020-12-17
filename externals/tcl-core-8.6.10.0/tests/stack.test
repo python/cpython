@@ -1,0 +1,62 @@
+# Tests that the stack size is big enough for the application.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+# Note that a failure in this test may result in a crash of the executable.
+
+test stack-1.1 {maxNestingDepth reached on infinite recursion} -body {
+    # do this in a sub process in case it segfaults
+    exec [interpreter] << {
+	proc recurse {} { recurse }
+	catch { recurse } rv
+	puts $rv
+    }
+} -result {too many nested evaluations (infinite loop?)}
+
+test stack-2.1 {maxNestingDepth reached on infinite recursion} -body {
+    # do this in a sub process in case it segfaults
+    exec [interpreter] << {
+	interp alias {} unknown {} notaknownproc
+	catch { unknown } msg
+	puts $msg
+    }
+} -result {too many nested evaluations (infinite loop?)}
+    
+# Make sure that there is enough stack to run regexp even if we're
+# close to the recursion limit. [Bug 947070] [Patch 746378]
+test stack-3.1 {enough room for regexp near recursion limit} -body {
+    # do this in a sub process in case it segfaults
+    exec [interpreter] << {
+	interp recursionlimit {} 10000
+	set depth 0
+	proc a { max } {
+	    if { [info level] < $max } {
+		set ::depth [info level]
+		a $max
+	    } else {
+		regexp {^ ?} x
+	    }
+	}
+	catch { a 10001 }
+	set depth2 $depth
+	puts [list [a $depth] [expr { $depth2 - $depth }]]
+    }
+} -result {1 1}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

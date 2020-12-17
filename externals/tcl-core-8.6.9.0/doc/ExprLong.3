@@ -1,0 +1,106 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_ExprLong, Tcl_ExprDouble, Tcl_ExprBoolean, Tcl_ExprString \- evaluate an expression
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_ExprLong\fR(\fIinterp, expr, longPtr\fR)
+.sp
+int
+\fBTcl_ExprDouble\fR(\fIinterp, expr, doublePtr\fR)
+.sp
+int
+\fBTcl_ExprBoolean\fR(\fIinterp, expr, booleanPtr\fR)
+.sp
+int
+\fBTcl_ExprString\fR(\fIinterp, expr\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *booleanPtr out
+.AP Tcl_Interp *interp in
+Interpreter in whose context to evaluate \fIexpr\fR.
+.AP "const char" *expr in
+Expression to be evaluated.
+.AP long *longPtr out
+Pointer to location in which to store the integer value of the
+expression.
+.AP int *doublePtr out
+Pointer to location in which to store the floating-point value of the
+expression.
+.AP int *booleanPtr out
+Pointer to location in which to store the 0/1 boolean value of the
+expression.
+.BE
+
+.SH DESCRIPTION
+.PP
+These four procedures all evaluate the expression
+given by the \fIexpr\fR argument
+and return the result in one of four different forms.
+The expression can have any of the forms accepted by the \fBexpr\fR command.
+Note that these procedures have been largely replaced by the
+value-based procedures \fBTcl_ExprLongObj\fR, \fBTcl_ExprDoubleObj\fR,
+\fBTcl_ExprBooleanObj\fR, and \fBTcl_ExprObj\fR.
+Those value-based procedures evaluate an expression held in a Tcl value
+instead of a string.
+The value argument can retain an internal representation
+that is more efficient to execute.
+.PP
+The \fIinterp\fR argument refers to an interpreter used to
+evaluate the expression (e.g. for variables and nested Tcl
+commands) and to return error information.
+.PP
+For all of these procedures the return value is a standard
+Tcl result: \fBTCL_OK\fR means the expression was successfully
+evaluated, and \fBTCL_ERROR\fR means that an error occurred while
+evaluating the expression.
+If \fBTCL_ERROR\fR is returned then
+the interpreter's result will hold a message describing the error.
+If an error occurs while executing a Tcl command embedded in
+the expression then that error will be returned.
+.PP
+If the expression is successfully evaluated, then its value is
+returned in one of four forms, depending on which procedure
+is invoked.
+\fBTcl_ExprLong\fR stores an integer value at \fI*longPtr\fR.
+If the expression's actual value is a floating-point number,
+then it is truncated to an integer.
+If the expression's actual value is a non-numeric string then
+an error is returned.
+.PP
+\fBTcl_ExprDouble\fR stores a floating-point value at \fI*doublePtr\fR.
+If the expression's actual value is an integer, it is converted to
+floating-point.
+If the expression's actual value is a non-numeric string then
+an error is returned.
+.PP
+\fBTcl_ExprBoolean\fR stores a 0/1 integer value at \fI*booleanPtr\fR.
+If the expression's actual value is an integer or floating-point
+number, then they store 0 at \fI*booleanPtr\fR if
+the value was zero and 1 otherwise.
+If the expression's actual value is a non-numeric string then
+it must be one of the values accepted by \fBTcl_GetBoolean\fR
+such as
+.QW yes
+or
+.QW no ,
+or else an error occurs.
+.PP
+\fBTcl_ExprString\fR returns the value of the expression as a
+string stored in the interpreter's result.
+
+.SH "SEE ALSO"
+Tcl_ExprLongObj, Tcl_ExprDoubleObj, Tcl_ExprBooleanObj, Tcl_ExprObj
+
+.SH KEYWORDS
+boolean, double, evaluate, expression, integer, value, string

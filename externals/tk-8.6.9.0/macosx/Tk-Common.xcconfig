@@ -1,0 +1,46 @@
+//
+// Tk-Common.xcconfig --
+//
+//	This file contains the Xcode build settings comon to all
+//	project configurations in Wish.xcodeproj.
+//
+// Copyright (c) 2007-2009 Daniel A. Steffen <das@users.sourceforge.net>
+// Copyright 2008-2009, Apple Inc.
+//
+// See the file "license.terms" for information on usage and redistribution
+// of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+HEADER_SEARCH_PATHS = $(TK_SRCROOT)/generic $(TK_SRCROOT)/xlib "$(DERIVED_FILE_DIR)/tcl" "$(DERIVED_FILE_DIR)/tk" $(HEADER_SEARCH_PATHS)
+REZ_SEARCH_PATHS = $(TK_SRCROOT)/generic $(TCL_SRCROOT)/generic $(REZ_SEARCH_PATHS)
+OTHER_LDFLAGS = -headerpad_max_install_names -sectcreate __TEXT __info_plist "$(DERIVED_FILE_DIR)/tk/Wish-Info.plist" $(OTHER_LDFLAGS)
+OTHER_LDFLAGS_AQUA =
+INSTALL_PATH = $(APPLICATION_INSTALL_PATH)
+INSTALL_MODE_FLAG = go-w,a+rX
+GCC_PREFIX_HEADER = $(DERIVED_FILE_DIR)/tk/tkConfig.h
+OTHER_CFLAGS = -imacros "$(DERIVED_FILE_DIR)/tcl/tclConfig.h" $(OTHER_CFLAGS)
+GCC_GENERATE_DEBUGGING_SYMBOLS = YES
+GCC_NO_COMMON_BLOCKS = YES
+GCC_DYNAMIC_NO_PIC = YES
+GCC_VERSION = 4.2
+GCC = gcc-$(GCC_VERSION)
+WARNING_CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unused-value -Winit-self -Wpointer-arith -Wcast-align -Wdisabled-optimization -Winline $(WARNING_CFLAGS)
+REZ_RESOURCE_MAP_READ_ONLY = YES
+APPLICATION_INSTALL_PATH = /Applications/Utilities
+BINDIR = $(PREFIX)/bin
+CFLAGS = $(CFLAGS)
+CPPFLAGS = -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET) $(CPPFLAGS)
+FRAMEWORK_INSTALL_PATH = /Library/Frameworks
+INCLUDEDIR = $(PREFIX)/include
+LIBDIR = $(PREFIX)/lib
+MANDIR = $(PREFIX)/man
+PER_ARCH_CFLAGS_ppc = -mcpu=G3 -mtune=G4 $(PER_ARCH_CFLAGS_ppc)
+PREFIX = /usr/local
+TCL_BUILD_DIR = $(OBJROOT)/../tcl/Tcl.build/$(CONFIGURATION)/Tcl.build/Objects
+TCL_CONFIGURE_ARGS = --enable-threads --enable-dtrace
+TCL_FRAMEWORK_DIR = $(SYMROOT)/../tcl/$(CONFIGURATION)
+TCL_LIBRARY = $(LIBDIR)/tcl$(VERSION)
+TCL_PACKAGE_PATH = "$(LIBDIR)"
+TCL_DEFS = HAVE_TCL_CONFIG_H
+TK_LIBRARY = $(LIBDIR)/tk$(VERSION)
+TK_DEFS = HAVE_TK_CONFIG_H
+VERSION = 8.6

@@ -1,0 +1,50 @@
+<HEAD>
+<TITLE> Static Options<A NAME=143>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html460 HREF=subsubsection3_3_4_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html458 HREF=subsection3_3_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html452 HREF=subsubsection3_3_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html462 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html461 HREF=subsubsection3_3_4_4.html> Monitoring the User's </A>
+<B>Up:</B> <A NAME=tex2html459 HREF=subsection3_3_4.html> Another Tix Widget: </A>
+<B> Previous:</B> <A NAME=tex2html453 HREF=subsubsection3_3_4_2.html> Controlling the Style </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00034300000000000000> Static Options<A NAME=143>&nbsp;</A></A></H3>
+<P>
+The <tt>-dropdown</tt> and <tt>-fancy</tt> options are so-called ``static
+  options''.  They can only be set during the creation of the
+  ComboBox. Hence this code is valid:
+<P>
+<tt>     tixComboBox .c -dropdown true
+</tt>
+<P>
+But the following code will generate an error because it attempts to
+  set the <tt>-dropdown</tt> option <em>after</em> the ComboBox has already
+  been created.
+<P>
+<tt>     TixComboBox .c<BR>
+    .c config -dropdown true
+</tt>
+<P>
+The restrictions of the static options, although annoying,
+  nevertheless make sense because we don't want our interface to
+  suddenly change its style. If sometimes a button is there and
+  sometimes it disappear all by itself, that will certainly create a
+  lot of confusion and makes the user wonder why he should buy our
+  software. Also, as you will see in chapter 6, having some
+  static options will make the life of widget writers a lot easier.
+<P>
+Accessing the value of the ComboBox is very similar to accessing the
+  value of the TixControl widget. The ComboBox has these four options,
+  which we discussed in section 1.2.2: <tt>-value</tt>,
+  <tt>-variable</tt>, <tt>-command</tt> and <tt>-validatecmd</tt>. You can use
+  these four options to access the user input and respond to user
+  actions in exactly the same way as discussed in section
+  1.2.2.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,39 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetRootCoords 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetRootCoords \- Compute root-window coordinates of window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_GetRootCoords\fR(\fItkwin, xPtr, yPtr\fR)
+.SH ARGUMENTS
+.AS Tk_Window tkwin
+.AP Tk_Window tkwin in
+Token for window.
+.AP int *xPtr out
+Pointer to location in which to store root-window x-coordinate
+corresponding to left edge of \fItkwin\fR's border.
+.AP int *yPtr out
+Pointer to location in which to store root-window y-coordinate
+corresponding to top edge of \fItkwin\fR's border.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure scans through the structural information maintained
+by Tk to compute the root-window coordinates corresponding to
+the upper-left corner of \fItkwin\fR's border.  If \fItkwin\fR has
+no border, then \fBTk_GetRootCoords\fR returns the root-window
+coordinates corresponding to location (0,0) in \fItkwin\fR.
+\fBTk_GetRootCoords\fR is relatively efficient, since it does not have to
+communicate with the X server.
+.SH KEYWORDS
+coordinates, root window

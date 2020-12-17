@@ -1,0 +1,25 @@
+﻿  extract.c
+C:\cpython\PC\bdist_wininst\extract.c(268,1): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  install.c
+C:\cpython\PC\bdist_wininst\install.c(315,1): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(909,1): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1164,50): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1166,50): warning C4267: 'function': conversion from 'size_t' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1514,66): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1598,59): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1649,61): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1675,79): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1719,57): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1833,44): warning C4267: 'function': conversion from 'size_t' to 'DWORD', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(1855,48): warning C4267: 'function': conversion from 'size_t' to 'DWORD', possible loss of data
+C:\cpython\PC\bdist_wininst\install.c(2222,47): warning C4311: 'type cast': pointer truncation from 'HINSTANCE' to 'int'
+C:\cpython\PC\bdist_wininst\install.c(2546,1): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  adler32.c
+  crc32.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  zutil.c
+  Generating code
+  Finished generating code
+  bdist_wininst.vcxproj -> C:\cpython\lib\distutils\command\wininst-16.0-amd64.exe

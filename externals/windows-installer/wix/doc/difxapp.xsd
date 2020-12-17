@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:html="http://www.w3.org/1999/xhtml"
+            xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+      targetNamespace="http://schemas.microsoft.com/wix/DifxAppExtension"
+                xmlns="http://schemas.microsoft.com/wix/DifxAppExtension">
+    <xs:annotation>
+        <xs:documentation>
+            The source code schema for the Windows Installer XML Toolset Driver Install Frameworks for Applications Extension.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+    <xs:element name="Driver">
+        <xs:annotation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Component" />
+            </xs:appinfo>
+            <xs:documentation>
+                Installs a driver. To use this element, you need to reference the WixDifxAppExtension extension and add the 
+                .wixlib appropriate for the target platform (difxapp_x86.wixlib or difxapp_x64.wixlib) 
+                to your project.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="AddRemovePrograms" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies that the DIFxApp CustomActions should add an entry in the Add/Remove Programs Control
+                        Panel applet.  The default is 'yes'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="DeleteFiles" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        If set to "yes", configures DIFxApp to delete binary files that were copied to the system from the driver
+                        store when a driver package was installed. If this attribute is set to "no" or not present, DIFxApp does not
+                        remove these files from a system. Note that configuring DIFxApp to delete these files is controlled by the
+                        Flags entry value of the component that represents the driver package in the MsiDriverPackages custom table.
+                        Setting DeleteFiles to "yes" sets the corresponding bit in the Flags entry value. Setting DeleteFiles to "no"
+                        clears the corresponding bit in the Flags entry value. If this attribute is not present, DIFxApp uses a
+                        default value of "no".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ForceInstall" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies that the DIFxApp CustomActions should force the installation of a new Plug and Play driver
+                        on a device, even if the currently installed driver on the device is a better match than the new driver.
+                        Specifying 'no' is an excellent way to ensure the DIFxApp CustomActions recognize the Component contains
+                        a driver for installation.  The default is null which means the Component does not install a driver via
+                        DIFxApp CustomActions. See <html:a href='http://www.microsoft.com/whdc/driver/install/difxtools.mspx'>http://www.microsoft.com/whdc/driver/install/difxtools.mspx</html:a>
+                        for more information.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Legacy" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        If set to "yes", configures DIFxApp to install unsigned driver packages and driver packages with missing
+                        files. For more information, see "Installing Unsigned Driver Packages in Legacy Mode" earlier in this paper.
+                        If this attribute is set to "no" or not present, DIFxApp will install only signed driver packages. Note
+                        that configuring DIFxApp to install unsigned drivers is controlled by the Flags entry value of the component
+                        that represents the driver package in the MsiDriverPackages custom table. Setting Legacy to "yes" sets
+                        the corresponding bit in the Flags entry value. Setting Legacy to "no" clears the bit in the Flags
+                        entry value that configures DIFxApp to install unsigned driver packages. If this attribute is not present,
+                        DIFxApp uses a default value of "no".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PlugAndPlayPrompt" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies that the DIFxApp CustomActions should prompt the user to connect the Plug and Play
+                        device if it is not connected.  The default is 'yes'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Sequence" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies an optional installation sequence number. DIFxApp CustomActions install the driver packages in
+                        an installation package in the order of increasing sequence numbers. The same sequence number can be used
+                        for more than one driver; however, the order in which packages with the same sequence number are actually
+                        installed cannot be determined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="YesNoType">
+        <xs:annotation>
+            <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base='xs:NMTOKEN'>
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

@@ -1,0 +1,44 @@
+'\"
+'\" Copyright (c) 2007 ActiveState Software Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_InitConsoleChannels 3 8.5 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_InitConsoleChannels \- Install the console channels as standard channels
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_InitConsoleChannels\fR(\fIinterp\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp in
+.AP Tcl_Interp *interp in
+Interpreter in which the console channels are created.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_InitConsoleChannels\fR is invoked to create a set of console
+channels and install them as the standard channels. All I/O on these
+channels will be discarded until \fBTk_CreateConsoleWindow\fR is
+called to attach the console to a text widget.
+.PP
+This function is for use by shell applications based on Tk, like
+\fBwish\fR, on platforms which have no standard channels in graphical
+mode, like Win32.
+.PP
+The \fIinterp\fR argument is the interpreter in which to create and
+install the console channels.
+.PP
+\fBNOTE:\fR If this function is used it has to be called before the
+first call to \fBTcl_RegisterChannel\fR, directly, or indirectly
+through other channel functions. Because otherwise the standard
+channels will be already initialized to the system defaults, which will
+be nonsensical for the case \fBTk_InitConsoleChannels\fR is for.
+.SH "SEE ALSO"
+console(n)
+.SH KEYWORDS
+standard channels, console

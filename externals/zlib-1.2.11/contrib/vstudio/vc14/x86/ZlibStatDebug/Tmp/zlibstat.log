@@ -1,0 +1,20 @@
+﻿  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  gzclose.c
+  gzlib.c
+  gzread.c
+  gzwrite.c
+  infback.c
+  inffast.c
+  inflate.c
+  inftrees.c
+  ioapi.c
+  trees.c
+  uncompr.c
+  unzip.c
+  zip.c
+  zutil.c
+  Generating Code...
+  zlibstat.vcxproj -> C:\CPython\externals\zlib-1.2.11\contrib\vstudio\vc14\x86\ZlibStatDebug\zlibstat.lib

@@ -1,0 +1,430 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH open n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+open \- Open a file-based or command pipeline channel
+.SH SYNOPSIS
+.sp
+\fBopen \fIfileName\fR
+.br
+\fBopen \fIfileName access\fR
+.br
+\fBopen \fIfileName access permissions\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command opens a file, serial port, or command pipeline and returns a
+channel identifier that may be used in future invocations of commands like
+\fBread\fR, \fBputs\fR, and \fBclose\fR.
+If the first character of \fIfileName\fR is not \fB|\fR then
+the command opens a file:
+\fIfileName\fR gives the name of the file to open, and it must conform to the
+conventions described in the \fBfilename\fR manual entry.
+.PP
+The \fIaccess\fR argument, if present, indicates the way in which the file
+(or command pipeline) is to be accessed.
+In the first form \fIaccess\fR may have any of the following values:
+.TP 15
+\fBr\fR
+.
+Open the file for reading only; the file must already exist. This is the
+default value if \fIaccess\fR is not specified.
+.TP 15
+\fBr+\fR
+.
+Open the file for both reading and writing; the file must
+already exist.
+.TP 15
+\fBw\fR
+.
+Open the file for writing only.  Truncate it if it exists.  If it does not
+exist, create a new file.
+.TP 15
+\fBw+\fR
+.
+Open the file for reading and writing.  Truncate it if it exists.
+If it does not exist, create a new file.
+.TP 15
+\fBa\fR
+.
+Open the file for writing only.  If the file does not exist,
+create a new empty file.
+Set the file pointer to the end of the file prior to each write.
+.TP 15
+\fBa+\fR
+.
+Open the file for reading and writing.  If the file does not exist,
+create a new empty file.
+Set the initial access position  to the end of the file.
+.PP
+All of the legal \fIaccess\fR values above may have the character
+\fBb\fR added as the second or third character in the value to
+indicate that the opened channel should be configured as if with the
+\fBfconfigure\fR \fB\-translation binary\fR option, making the channel suitable for
+reading or writing of binary data.
+.PP
+In the second form, \fIaccess\fR consists of a list of any of the
+following flags, all of which have the standard POSIX meanings.
+One of the flags must be either \fBRDONLY\fR, \fBWRONLY\fR or \fBRDWR\fR.
+.TP 15
+\fBRDONLY\fR
+.
+Open the file for reading only.
+.TP 15
+\fBWRONLY\fR
+.
+Open the file for writing only.
+.TP 15
+\fBRDWR\fR
+.
+Open the file for both reading and writing.
+.TP 15
+\fBAPPEND\fR
+.
+Set the file pointer to the end of the file prior to each write.
+.TP 15
+\fBBINARY\fR
+.
+Configure the opened channel with the \fB\-translation binary\fR option.
+.TP 15
+\fBCREAT\fR
+.
+Create the file if it does not already exist (without this flag it
+is an error for the file not to exist).
+.TP 15
+\fBEXCL\fR
+.
+If \fBCREAT\fR is also specified, an error is returned if the
+file already exists.
+.TP 15
+\fBNOCTTY\fR
+.
+If the file is a terminal device, this flag prevents the file from
+becoming the controlling terminal of the process.
+.TP 15
+\fBNONBLOCK\fR
+.
+Prevents the process from blocking while opening the file, and
+possibly in subsequent I/O operations.  The exact behavior of
+this flag is system- and device-dependent;  its use is discouraged
+(it is better to use the \fBfconfigure\fR command to put a file
+in nonblocking mode).
+For details refer to your system documentation on the \fBopen\fR system
+call's \fBO_NONBLOCK\fR flag.
+.TP 15
+\fBTRUNC\fR
+.
+If the file exists it is truncated to zero length.
+.PP
+If a new file is created as part of opening it, \fIpermissions\fR
+(an integer) is used to set the permissions for the new file in
+conjunction with the process's file mode creation mask.
+\fIPermissions\fR defaults to 0666.
+.SH "COMMAND PIPELINES"
+.PP
+If the first character of \fIfileName\fR is
+.QW \fB|\fR
+then the
+remaining characters of \fIfileName\fR are treated as a list of arguments
+that describe a command pipeline to invoke, in the same style as the
+arguments for \fBexec\fR.
+In this case, the channel identifier returned by \fBopen\fR may be used
+to write to the command's input pipe or read from its output pipe,
+depending on the value of \fIaccess\fR.
+If write-only access is used (e.g. \fIaccess\fR is
+.QW \fBw\fR ),
+then standard output for the pipeline is directed to the current standard
+output unless overridden by the command.
+If read-only access is used (e.g. \fIaccess\fR is
+.QW \fBr\fR ),
+standard input for the pipeline is taken from the current standard
+input unless overridden by the command.
+The id of the spawned process is accessible through the \fBpid\fR
+command, using the channel id returned by \fBopen\fR as argument.
+.PP
+If the command (or one of the commands) executed in the command
+pipeline returns an error (according to the definition in \fBexec\fR),
+a Tcl error is generated when \fBclose\fR is called on the channel
+unless the pipeline is in non-blocking mode then no exit status is
+returned (a silent \fBclose\fR with -blocking 0).
+.PP
+It is often useful to use the \fBfileevent\fR command with pipelines
+so other processing may happen at the same time as running the command
+in the background.
+.SH "SERIAL COMMUNICATIONS"
+.PP
+If \fIfileName\fR refers to a serial port, then the specified serial port
+is opened and initialized in a platform-dependent manner.  Acceptable
+values for the \fIfileName\fR to use to open a serial port are described in
+the PORTABILITY ISSUES section.
+.PP
+The \fBfconfigure\fR command can be used to query and set additional
+configuration options specific to serial ports (where supported):
+.TP
+\fB\-mode\fR \fIbaud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
+.
+This option is a set of 4 comma-separated values: the baud rate, parity,
+number of data bits, and number of stop bits for this serial port.  The
+\fIbaud\fR rate is a simple integer that specifies the connection speed.
+\fIParity\fR is one of the following letters: \fBn\fR, \fBo\fR, \fBe\fR,
+\fBm\fR, \fBs\fR; respectively signifying the parity options of
+.QW none ,
+.QW odd ,
+.QW even ,
+.QW mark ,
+or
+.QW space .
+\fIData\fR is the number of
+data bits and should be an integer from 5 to 8, while \fIstop\fR is the
+number of stop bits and should be the integer 1 or 2.
+.TP
+\fB\-handshake\fR \fItype\fR
+.
+(Windows and Unix). This option is used to setup automatic handshake
+control. Note that not all handshake types maybe supported by your operating
+system. The \fItype\fR parameter is case-independent.
+.RS
+.PP
+If \fItype\fR is \fBnone\fR then any handshake is switched off.
+\fBrtscts\fR activates hardware handshake. Hardware handshake signals
+are described below.
+For software handshake \fBxonxoff\fR the handshake characters can be redefined
+with \fB\-xchar\fR.
+An additional hardware handshake \fBdtrdsr\fR is available only under Windows.
+There is no default handshake configuration, the initial value depends
+on your operating system settings.
+The \fB\-handshake\fR option cannot be queried.
+.RE
+.TP
+\fB\-queue\fR
+.
+(Windows and Unix). The \fB\-queue\fR option can only be queried.
+It returns a list of two integers representing the current number
+of bytes in the input and output queue respectively.
+.TP
+\fB\-timeout\fR \fImsec\fR
+.
+(Windows and Unix). This option is used to set the timeout for blocking
+read operations. It specifies the maximum interval between the
+reception of two bytes in milliseconds.
+For Unix systems the granularity is 100 milliseconds.
+The \fB\-timeout\fR option does not affect write operations or
+nonblocking reads.
+This option cannot be queried.
+.TP
+\fB\-ttycontrol\fR \fI{signal boolean signal boolean ...}\fR
+.
+(Windows and Unix). This option is used to setup the handshake
+output lines (see below) permanently or to send a BREAK over the serial line.
+The \fIsignal\fR names are case-independent.
+\fB{RTS 1 DTR 0}\fR sets the RTS output to high and the DTR output to low.
+The BREAK condition (see below) is enabled and disabled with \fB{BREAK 1}\fR and
+\fB{BREAK 0}\fR respectively.
+It is not a good idea to change the \fBRTS\fR (or \fBDTR\fR) signal
+with active hardware handshake \fBrtscts\fR (or \fBdtrdsr\fR).
+The result is unpredictable.
+The \fB\-ttycontrol\fR option cannot be queried.
+.TP
+\fB\-ttystatus\fR
+.
+(Windows and Unix). The \fB\-ttystatus\fR option can only be
+queried.  It returns the current modem status and handshake input signals
+(see below).
+The result is a list of signal,value pairs with a fixed order,
+e.g. \fB{CTS 1 DSR 0 RING 1 DCD 0}\fR.
+The \fIsignal\fR names are returned upper case.
+.TP
+\fB\-xchar\fR \fI{xonChar xoffChar}\fR
+.
+(Windows and Unix). This option is used to query or change the software
+handshake characters. Normally the operating system default should be
+DC1 (0x11) and DC3 (0x13) representing the ASCII standard
+XON and XOFF characters.
+.TP
+\fB\-pollinterval\fR \fImsec\fR
+.
+(Windows only). This option is used to set the maximum time between
+polling for fileevents.
+This affects the time interval between checking for events throughout the Tcl
+interpreter (the smallest value always wins).  Use this option only if
+you want to poll the serial port more or less often than 10 msec
+(the default).
+.TP
+\fB\-sysbuffer\fR \fIinSize\fR
+.TP
+\fB\-sysbuffer\fR \fI{inSize outSize}\fR
+.
+(Windows only). This option is used to change the size of Windows
+system buffers for a serial channel. Especially at higher communication
+rates the default input buffer size of 4096 bytes can overrun
+for latent systems. The first form specifies the input buffer size,
+in the second form both input and output buffers are defined.
+.TP
+\fB\-lasterror\fR
+.
+(Windows only). This option is query only.
+In case of a serial communication error, \fBread\fR or \fBputs\fR
+returns a general Tcl file I/O error.
+\fBfconfigure\fR \fB\-lasterror\fR can be called to get a list of error details.
+See below for an explanation of the various error codes.
+.SH "SERIAL PORT SIGNALS"
+.PP
+RS-232 is the most commonly used standard electrical interface for serial
+communications. A negative voltage (-3V..-12V) define a mark (on=1) bit and
+a positive voltage (+3..+12V) define a space (off=0) bit (RS-232C).  The
+following signals are specified for incoming and outgoing data, status
+lines and handshaking. Here we are using the terms \fIworkstation\fR for
+your computer and \fImodem\fR for the external device, because some signal
+names (DCD, RI) come from modems. Of course your external device may use
+these signal lines for other purposes.
+.IP \fBTXD\fR(output)
+\fBTransmitted Data:\fR Outgoing serial data.
+.IP \fBRXD\fR(input)
+\fBReceived Data:\fRIncoming serial data.
+.IP \fBRTS\fR(output)
+\fBRequest To Send:\fR This hardware handshake line informs the modem that
+your workstation is ready to receive data. Your workstation may
+automatically reset this signal to indicate that the input buffer is full.
+.IP \fBCTS\fR(input)
+\fBClear To Send:\fR The complement to RTS. Indicates that the modem is
+ready to receive data.
+.IP \fBDTR\fR(output)
+\fBData Terminal Ready:\fR This signal tells the modem that the workstation
+is ready to establish a link. DTR is often enabled automatically whenever a
+serial port is opened.
+.IP \fBDSR\fR(input)
+\fBData Set Ready:\fR The complement to DTR. Tells the workstation that the
+modem is ready to establish a link.
+.IP \fBDCD\fR(input)
+\fBData Carrier Detect:\fR This line becomes active when a modem detects a
+.QW Carrier
+signal.
+.IP \fBRI\fR(input)
+\fBRing Indicator:\fR Goes active when the modem detects an incoming call.
+.IP \fBBREAK\fR
+A BREAK condition is not a hardware signal line, but a logical zero on the
+TXD or RXD lines for a long period of time, usually 250 to 500
+milliseconds.  Normally a receive or transmit data signal stays at the mark
+(on=1) voltage until the next character is transferred. A BREAK is sometimes
+used to reset the communications line or change the operating mode of
+communications hardware.
+.SH "ERROR CODES (Windows only)"
+.PP
+A lot of different errors may occur during serial read operations or during
+event polling in background. The external device may have been switched
+off, the data lines may be noisy, system buffers may overrun or your mode
+settings may be wrong.  That is why a reliable software should always
+\fBcatch\fR serial read operations.  In cases of an error Tcl returns a
+general file I/O error.  Then \fBfconfigure\fR \fB\-lasterror\fR may help to
+locate the problem.  The following error codes may be returned.
+.TP 10
+\fBRXOVER\fR
+.
+Windows input buffer overrun. The data comes faster than your scripts reads
+it or your system is overloaded. Use \fBfconfigure\fR \fB\-sysbuffer\fR to avoid a
+temporary bottleneck and/or make your script faster.
+.TP 10
+\fBTXFULL\fR
+.
+Windows output buffer overrun. Complement to RXOVER. This error should
+practically not happen, because Tcl cares about the output buffer status.
+.TP 10
+\fBOVERRUN\fR
+.
+UART buffer overrun (hardware) with data lost.
+The data comes faster than the system driver receives it.
+Check your advanced serial port settings to enable the FIFO (16550) buffer
+and/or setup a lower(1) interrupt threshold value.
+.TP 10
+\fBRXPARITY\fR
+.
+A parity error has been detected by your UART.
+Wrong parity settings with \fBfconfigure\fR \fB\-mode\fR or a noisy data line (RXD)
+may cause this error.
+.TP 10
+\fBFRAME\fR
+.
+A stop-bit error has been detected by your UART.
+Wrong mode settings with \fBfconfigure\fR \fB\-mode\fR or a noisy data line (RXD)
+may cause this error.
+.TP 10
+\fBBREAK\fR
+.
+A BREAK condition has been detected by your UART (see above).
+.SH "PORTABILITY ISSUES"
+.TP
+\fBWindows \fR
+.
+Valid values for \fIfileName\fR to open a serial port are of the form
+\fBcom\fIX\fB\fR, where \fIX\fR is a number, generally from 1 to 9.
+A legacy form accepted as well is \fBcom\fIX\fB:\fR. This notation only
+works for serial ports from 1 to 9.  An attempt to open a serial port that
+does not exist or has a number greater than 9 will fail.  An alternate
+form of opening serial ports is to use the filename \fB//./comX\fR,
+where X is any number that corresponds to a serial port.
+.PP
+.RS
+When running Tcl interactively, there may be some strange interactions
+between the real console, if one is present, and a command pipeline that uses
+standard input or output.  If a command pipeline is opened for reading, some
+of the lines entered at the console will be sent to the command pipeline and
+some will be sent to the Tcl evaluator.  If a command pipeline is opened for
+writing, keystrokes entered into the console are not visible until the
+pipe is closed.  These problems only occur because both Tcl and the child
+application are competing for the console at the same time.  If the command
+pipeline is started from a script, so that Tcl is not accessing the console,
+or if the command pipeline does not use standard input or output, but is
+redirected from or to a file, then the above problems do not occur.
+.RE
+.TP
+\fBUnix\fR\0\0\0\0\0\0\0
+.
+Valid values for \fIfileName\fR to open a serial port are generally of the
+form \fB/dev/tty\fIX\fR, where \fIX\fR is \fBa\fR or \fBb\fR, but the name
+of any pseudo-file that maps to a serial port may be used.
+Advanced configuration options are only supported for serial ports
+when Tcl is built to use the POSIX serial interface.
+.RS
+.PP
+When running Tcl interactively, there may be some strange interactions
+between the console, if one is present, and a command pipeline that uses
+standard input.  If a command pipeline is opened for reading, some
+of the lines entered at the console will be sent to the command pipeline and
+some will be sent to the Tcl evaluator.  This problem only occurs because
+both Tcl and the child application are competing for the console at the
+same time.  If the command pipeline is started from a script, so that Tcl is
+not accessing the console, or if the command pipeline does not use standard
+input, but is redirected from a file, then the above problem does not occur.
+.RE
+.PP
+See the \fBPORTABILITY ISSUES\fR section of the \fBexec\fR command for
+additional information not specific to command pipelines about executing
+applications on the various platforms
+.SH "EXAMPLE"
+.PP
+Open a command pipeline and catch any errors:
+.PP
+.CS
+set fl [\fBopen\fR "| ls this_file_does_not_exist"]
+set data [read $fl]
+if {[catch {close $fl} err]} {
+    puts "ls command failed: $err"
+}
+.CE
+.SH "SEE ALSO"
+file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
+puts(n), exec(n), pid(n), fopen(3)
+.SH KEYWORDS
+access mode, append, create, file, non-blocking, open, permissions,
+pipeline, process, serial
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

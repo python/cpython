@@ -1,0 +1,275 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 1999 Scriptics Corporation
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH lsort n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lsort \- Sort the elements of a list
+.SH SYNOPSIS
+\fBlsort \fR?\fIoptions\fR? \fIlist\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command sorts the elements of \fIlist\fR, returning a new
+list in sorted order.  The implementation of the \fBlsort\fR command
+uses the merge\-sort algorithm which is a stable sort that has O(n log
+n) performance characteristics.
+.PP
+By default ASCII sorting is used with the result returned in
+increasing order.  However, any of the following options may be
+specified before \fIlist\fR to control the sorting process (unique
+abbreviations are accepted):
+.TP
+\fB\-ascii\fR
+.
+Use string comparison with Unicode code-point collation order (the
+name is for backward-compatibility reasons.)  This is the default.
+.TP
+\fB\-dictionary\fR
+.
+Use dictionary-style comparison.  This is the same as \fB\-ascii\fR
+except (a) case is ignored except as a tie-breaker and (b) if two
+strings contain embedded numbers, the numbers compare as integers,
+not characters.  For example, in \fB\-dictionary\fR mode, \fBbigBoy\fR
+sorts between \fBbigbang\fR and \fBbigboy\fR, and \fBx10y\fR
+sorts between \fBx9y\fR and \fBx11y\fR. Overrides the \fB\-nocase\fR
+option.
+.TP
+\fB\-integer\fR
+.
+Convert list elements to integers and use integer comparison.
+.TP
+\fB\-real\fR
+.
+Convert list elements to floating-point values and use floating comparison.
+.TP
+\fB\-command\0\fIcommand\fR
+.
+Use \fIcommand\fR as a comparison command.
+To compare two elements, evaluate a Tcl script consisting of
+\fIcommand\fR with the two elements appended as additional
+arguments.  The script should return an integer less than,
+equal to, or greater than zero if the first element is to
+be considered less than, equal to, or greater than the second,
+respectively.
+.TP
+\fB\-increasing\fR
+.
+Sort the list in increasing order
+.PQ smallest "items first" .
+This is the default.
+.TP
+\fB\-decreasing\fR
+.
+Sort the list in decreasing order
+.PQ largest "items first" .
+.TP
+\fB\-indices\fR
+.
+Return a list of indices into \fIlist\fR in sorted order instead of
+the values themselves.
+.TP
+\fB\-index\0\fIindexList\fR
+.
+If this option is specified, each of the elements of \fIlist\fR must
+itself be a proper Tcl sublist (unless \fB\-stride\fR is used).
+Instead of sorting based on whole sublists, \fBlsort\fR will extract
+the \fIindexList\fR'th element from each sublist (as if the overall
+element and the \fIindexList\fR were passed to \fBlindex\fR) and sort
+based on the given element.
+For example,
+.RS
+.PP
+.CS
+\fBlsort\fR -integer -index 1 \e
+      {{First 24} {Second 18} {Third 30}}
+.CE
+.PP
+returns \fB{Second 18} {First 24} {Third 30}\fR,
+.PP
+'\"
+'\" This example is from the test suite!
+'\"
+.CS
+\fBlsort\fR -index end-1 \e
+        {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
+.CE
+.PP
+returns \fB{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}\fR,
+and
+.PP
+.CS
+\fBlsort\fR -index {0 1} {
+    {{b i g} 12345}
+    {{d e m o} 34512}
+    {{c o d e} 54321}
+}
+.CE
+.PP
+returns \fB{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}\fR
+(because \fBe\fR sorts before \fBi\fR which sorts before \fBo\fR.)
+This option is much more efficient than using \fB\-command\fR
+to achieve the same effect.
+.RE
+.TP
+\fB\-stride\0\fIstrideLength\fR
+.
+If this option is specified, the list is treated as consisting of
+groups of \fIstrideLength\fR elements and the groups are sorted by
+either their first element or, if the \fB\-index\fR option is used,
+by the element within each group given by the first index passed to
+\fB\-index\fR (which is then ignored by \fB\-index\fR). Elements
+always remain in the same position within their group.
+.RS
+.PP
+The list length must be an integer multiple of \fIstrideLength\fR, which
+in turn must be at least 2.
+.PP
+For example,
+.PP
+.CS
+\fBlsort\fR \-stride 2 {carrot 10 apple 50 banana 25}
+.CE
+.PP
+returns
+.QW "apple 50 banana 25 carrot 10" ,
+and
+.PP
+.CS
+\fBlsort\fR \-stride 2 \-index 1 \-integer {carrot 10 apple 50 banana 25}
+.CE
+.PP
+returns
+.QW "carrot 10 banana 25 apple 50" .
+.RE
+.TP
+\fB\-nocase\fR
+.
+Causes comparisons to be handled in a case-insensitive manner.  Has no
+effect if combined with the \fB\-dictionary\fR, \fB\-integer\fR, or
+\fB\-real\fR options.
+.TP
+\fB\-unique\fR
+.
+If this option is specified, then only the last set of duplicate
+elements found in the list will be retained.  Note that duplicates are
+determined relative to the comparison used in the sort.  Thus if
+\fB\-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
+considered duplicates and only the second element, \fB{1 b}\fR, would
+be retained.
+.SH "NOTES"
+.PP
+The options to \fBlsort\fR only control what sort of comparison is
+used, and do not necessarily constrain what the values themselves
+actually are.  This distinction is only noticeable when the list to be
+sorted has fewer than two elements.
+.PP
+The \fBlsort\fR command is reentrant, meaning it is safe to use as
+part of the implementation of a command used in the \fB\-command\fR
+option.
+.SH "EXAMPLES"
+.PP
+Sorting a list using ASCII sorting:
+.PP
+.CS
+\fI%\fR \fBlsort\fR {a10 B2 b1 a1 a2}
+B2 a1 a10 a2 b1
+.CE
+.PP
+Sorting a list using Dictionary sorting:
+.PP
+.CS
+\fI%\fR \fBlsort\fR -dictionary {a10 B2 b1 a1 a2}
+a1 a2 a10 b1 B2
+.CE
+.PP
+Sorting lists of integers:
+.PP
+.CS
+\fI%\fR \fBlsort\fR -integer {5 3 1 2 11 4}
+1 2 3 4 5 11
+\fI%\fR \fBlsort\fR -integer {1 2 0x5 7 0 4 -1}
+-1 0 1 2 4 0x5 7
+.CE
+.PP
+Sorting lists of floating-point numbers:
+.PP
+.CS
+\fI%\fR \fBlsort\fR -real {5 3 1 2 11 4}
+1 2 3 4 5 11
+\fI%\fR \fBlsort\fR -real {.5 0.07e1 0.4 6e-1}
+0.4 .5 6e-1 0.07e1
+.CE
+.PP
+Sorting using indices:
+.PP
+.CS
+\fI%\fR # Note the space character before the c
+\fI%\fR \fBlsort\fR {{a 5} { c 3} {b 4} {e 1} {d 2}}
+{ c 3} {a 5} {b 4} {d 2} {e 1}
+\fI%\fR \fBlsort\fR -index 0 {{a 5} { c 3} {b 4} {e 1} {d 2}}
+{a 5} {b 4} { c 3} {d 2} {e 1}
+\fI%\fR \fBlsort\fR -index 1 {{a 5} { c 3} {b 4} {e 1} {d 2}}
+{e 1} {d 2} { c 3} {b 4} {a 5}
+.CE
+.PP
+.VS 8.6
+Sorting a dictionary:
+.PP
+.CS
+\fI%\fR set d [dict create c d a b h i f g c e]
+c e a b h i f g
+\fI%\fR \fBlsort\fR -stride 2 $d
+a b c e f g h i
+.CE
+.PP
+Sorting using striding and multiple indices:
+.PP
+.CS
+\fI%\fR # Note the first index value is relative to the group
+\fI%\fR \fBlsort\fR \-stride 3 \-index {0 1} \e
+     {{Bob Smith} 25 Audi {Jane Doe} 40 Ford}
+{{Jane Doe} 40 Ford {Bob Smith} 25 Audi}
+.CE
+.VE 8.6
+.PP
+Stripping duplicate values using sorting:
+.PP
+.CS
+\fI%\fR \fBlsort\fR -unique {a b c a b c a b c}
+a b c
+.CE
+.PP
+More complex sorting using a comparison function:
+.PP
+.CS
+\fI%\fR proc compare {a b} {
+    set a0 [lindex $a 0]
+    set b0 [lindex $b 0]
+    if {$a0 < $b0} {
+        return -1
+    } elseif {$a0 > $b0} {
+        return 1
+    }
+    return [string compare [lindex $a 1] [lindex $b 1]]
+}
+\fI%\fR \fBlsort\fR -command compare \e
+        {{3 apple} {0x2 carrot} {1 dingo} {2 banana}}
+{1 dingo} {2 banana} {0x2 carrot} {3 apple}
+.CE
+.SH "SEE ALSO"
+list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
+lset(n), lrange(n), lreplace(n)
+.SH KEYWORDS
+element, list, order, sort
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

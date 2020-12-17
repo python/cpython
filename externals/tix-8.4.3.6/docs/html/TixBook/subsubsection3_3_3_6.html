@@ -1,0 +1,71 @@
+<HEAD>
+<TITLE> Configuring Subwidget Options Using the Tk Option Database<A NAME=136>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html403 HREF=subsubsection3_3_3_7.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html401 HREF=subsection3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html395 HREF=subsubsection3_3_3_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html405 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html404 HREF=subsubsection3_3_3_7.html> Caution: Restricted Access</A>
+<B>Up:</B> <A NAME=tex2html402 HREF=subsection3_3_3.html> Accessing The Components </A>
+<B> Previous:</B> <A NAME=tex2html396 HREF=subsubsection3_3_3_5.html> Configuring Subwidget Options </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00033600000000000000> Configuring Subwidget Options Using the Tk Option Database<A NAME=136>&nbsp;</A></A></H3>
+<P>
+The <tt>-options</tt> switch is good if you want to specify subwidget
+  options for one or a few mega-widgets. If you want to specify the
+  subwidget for many mega-widgets, it is easier to use the Tk Option
+  Database.
+<P>
+Options in the Tk Option Database can be specified using the <tt>option</tt> command and the pathname of the widget. For all the Tix
+  mega-widgets, it is guaranteed that the pathname of their subwidgets
+  ends with the <em>name</em> of the subwidgets. For example, if we have
+  a mega widget called <tt>.a.b.megaw</tt> and it has a subwidget whose
+  name is <tt>subw</tt>, then we can be sure that the pathname of the
+  subwidget will be something like
+<P>
+<blockquote> <tt>   .a.b.megaw.foo.bar.subw
+</tt>
+</blockquote>
+<P>
+Therefore, if we want to specify options for it in the Option
+  Database, we can issue commands like:
+<P>
+<blockquote> <tt>   option add *a.b.megaw*subw.option1 value1<BR>
+  option add *a.b.megaw*subw.option2 value2
+</tt>
+</blockquote>
+<P>
+Notice that it will be wrong to issue the commands as:
+<P>
+<blockquote> <tt>   option add *a.b.megaw.subw.option1 value1<BR>
+  option add *a.b.megaw.subw.option2 value2
+</tt>
+</blockquote>
+<P>
+because in general we will not know whether the subwidget is an
+  immediate child window of <tt>.a.b.megaw</tt> (<em>such a decision
+  is left to the mega-widget implementor and may vary in different
+  versions of the same mega-widget</em>).
+<P>
+Program 1-7 demonstrates how the Tk Option Database can be
+  used to achieve the same effect as program 1-5.
+<P>
+<blockquote> <tt> option add *TixControl*label.width       8<BR>
+option add *TixControl*label.anchor      e<BR>
+option add *TixControl*entry.width       10<BR>
+option add *TixControl*entry.borderWidth 3<BR>
+<BR>
+tixControl .income -label &quot;Income: &quot; -variable income<BR>
+tixControl .age    -label &quot;Age: &quot;    -variable age<BR>
+<BR>
+pack .income .age -side top
+</tt>
+</blockquote>
+(Figure 1-7) Using the Tk Option Database in Place of the <tt>-options</tt>  switch<A NAME=17>&nbsp;</A>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,439 @@
+# Commands covered:  none
+#
+# This file contains a collection of tests for Tcl's dynamic string library
+# procedures. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testdstring [llength [info commands testdstring]]
+if {[testConstraint testdstring]} {
+    testdstring free
+}
+
+test dstring-1.1 {appending and retrieving} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "abc" -1
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {abc 3}
+test dstring-1.2 {appending and retrieving} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "abc" -1
+    testdstring append " xyzzy" 3
+    testdstring append " 12345" -1
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {{abc xy 12345} 12}
+test dstring-1.3 {appending and retrieving} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    foreach l {a b c d e f g h i j k l m n o p} {
+	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
+    }
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {{aaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbb
+ccccccccccccccccccccc
+ddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeee
+fffffffffffffffffffff
+ggggggggggggggggggggg
+hhhhhhhhhhhhhhhhhhhhh
+iiiiiiiiiiiiiiiiiiiii
+jjjjjjjjjjjjjjjjjjjjj
+kkkkkkkkkkkkkkkkkkkkk
+lllllllllllllllllllll
+mmmmmmmmmmmmmmmmmmmmm
+nnnnnnnnnnnnnnnnnnnnn
+ooooooooooooooooooooo
+ppppppppppppppppppppp
+} 352}
+
+test dstring-2.1 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "abc"
+    testdstring element "d e f"
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {{abc {d e f}} 11}
+test dstring-2.2 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "x"
+    testdstring element "\{"
+    testdstring element "ab\}"
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x \{ ab\}}
+test dstring-2.3 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    foreach l {a b c d e f g h i j k l m n o p} {
+	testdstring element $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l
+    }
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {aaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbb ccccccccccccccccccccc ddddddddddddddddddddd eeeeeeeeeeeeeeeeeeeee fffffffffffffffffffff ggggggggggggggggggggg hhhhhhhhhhhhhhhhhhhhh iiiiiiiiiiiiiiiiiiiii jjjjjjjjjjjjjjjjjjjjj kkkkkkkkkkkkkkkkkkkkk lllllllllllllllllllll mmmmmmmmmmmmmmmmmmmmm nnnnnnnnnnnnnnnnnnnnn ooooooooooooooooooooo ppppppppppppppppppppp}
+test dstring-2.4 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "a\{" -1
+    testdstring element abc
+    testdstring append "	\{" -1
+    testdstring element xyzzy
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result "a{ abc	{xyzzy"
+test dstring-2.5 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append " \{" -1
+    testdstring element abc
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result " {abc"
+test dstring-2.6 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append " " -1
+    testdstring element abc
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result { abc}
+test dstring-2.7 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "\\ " -1
+    testdstring element abc
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result "\\  abc"
+test dstring-2.8 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "x " -1
+    testdstring element abc
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x abc}
+test dstring-2.9 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {{#}}
+test dstring-2.10 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append " " -1
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result { {#}}
+test dstring-2.11 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append \t -1
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result \t{#}
+test dstring-2.12 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append x -1
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x #}
+test dstring-2.13 {appending list elements} -constraints testdstring -body {
+    # This test shows lack of sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring free
+    testdstring append "x " -1
+    testdstring element #
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x {#}}
+
+test dstring-3.1 {nested sublists} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring start
+    testdstring element foo
+    testdstring element bar
+    testdstring end
+    testdstring element another
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {{foo bar} another}
+test dstring-3.2 {nested sublists} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring start
+    testdstring start
+    testdstring element abc
+    testdstring element def
+    testdstring end
+    testdstring end
+    testdstring element ghi
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {{{abc def}} ghi}
+test dstring-3.3 {nested sublists} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring start
+    testdstring start
+    testdstring start
+    testdstring element foo
+    testdstring element foo2
+    testdstring end
+    testdstring end
+    testdstring element foo3
+    testdstring end
+    testdstring element foo4
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {{{{foo foo2}} foo3} foo4}
+test dstring-3.4 {nested sublists} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element before
+    testdstring start
+    testdstring element during
+    testdstring element more
+    testdstring end
+    testdstring element last
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {before {during more} last}
+test dstring-3.5 {nested sublists} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring element "\{"
+    testdstring start
+    testdstring element first
+    testdstring element second
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {\{ {first second}}
+test dstring-3.6 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append x -1
+    testdstring start
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x {{#}}}
+test dstring-3.7 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append x -1
+    testdstring start
+    testdstring append " " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x { {#}}}
+test dstring-3.8 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append x -1
+    testdstring start
+    testdstring append \t -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result "x {\t{#}}"
+test dstring-3.9 {appending list elements} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append x -1
+    testdstring start
+    testdstring append x -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x {x #}}
+test dstring-3.10 {appending list elements} -constraints testdstring -body {
+    # This test shows lack of sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append "x " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} -cleanup {
+    testdstring free
+} -result {x {x {#}}}
+
+test dstring-4.1 {truncation} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "abcdefg" -1
+    testdstring trunc 3
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {abc 3}
+test dstring-4.2 {truncation} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append "xyzzy" -1
+    testdstring trunc 0
+    list [testdstring get] [testdstring length]
+} -cleanup {
+    testdstring free
+} -result {{} 0}
+
+test dstring-5.1 {copying to result} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    testdstring append xyz -1
+    testdstring result
+} -cleanup {
+    testdstring free
+} -result xyz
+test dstring-5.2 {copying to result} -constraints testdstring -setup {
+    testdstring free
+    unset -nocomplain a
+} -body {
+    foreach l {a b c d e f g h i j k l m n o p} {
+	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
+    }
+    set a [testdstring result]
+    testdstring append abc -1
+    list $a [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{aaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbb
+ccccccccccccccccccccc
+ddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeee
+fffffffffffffffffffff
+ggggggggggggggggggggg
+hhhhhhhhhhhhhhhhhhhhh
+iiiiiiiiiiiiiiiiiiiii
+jjjjjjjjjjjjjjjjjjjjj
+kkkkkkkkkkkkkkkkkkkkk
+lllllllllllllllllllll
+mmmmmmmmmmmmmmmmmmmmm
+nnnnnnnnnnnnnnnnnnnnn
+ooooooooooooooooooooo
+ppppppppppppppppppppp
+} abc}
+
+test dstring-6.1 {Tcl_DStringGetResult} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    list [testdstring gresult staticsmall] [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{} short}
+test dstring-6.2 {Tcl_DStringGetResult} -constraints testdstring -setup {
+    testdstring free
+} -body {
+    foreach l {a b c d e f g h i j k l m n o p} {
+	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
+    }
+    list [testdstring gresult staticsmall] [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{} short}
+test dstring-6.3 {Tcl_DStringGetResult} -constraints testdstring -body {
+    set result {}
+    lappend result [testdstring gresult staticlarge]
+    testdstring append x 1
+    lappend result [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{} {first0 first1 first2 first3 first4 first5 first6 first7 first8 first9
+second0 second1 second2 second3 second4 second5 second6 second7 second8 second9
+third0 third1 third2 third3 third4 third5 third6 third7 third8 third9
+fourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9
+fifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9
+sixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9
+seventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9
+x}}
+test dstring-6.4 {Tcl_DStringGetResult} -constraints testdstring -body {
+    set result {}
+    lappend result [testdstring gresult free]
+    testdstring append y 1
+    lappend result [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{} {This is a malloc-ed stringy}}
+test dstring-6.5 {Tcl_DStringGetResult} -constraints testdstring -body {
+    set result {}
+    lappend result [testdstring gresult special]
+    testdstring append z 1
+    lappend result [testdstring get]
+} -cleanup {
+    testdstring free
+} -result {{} {This is a specially-allocated stringz}}
+
+# cleanup
+if {[testConstraint testdstring]} {
+    testdstring free
+}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

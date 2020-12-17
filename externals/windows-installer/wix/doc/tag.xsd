@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+    targetNamespace="http://schemas.microsoft.com/wix/TagExtension"
+              xmlns="http://schemas.microsoft.com/wix/TagExtension">
+    <xs:annotation>
+        <xs:documentation>
+            The source code schema for the WiX Toolset Software Id Tag Extension.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+  <xs:element name="Tag">
+      <xs:annotation>
+          <xs:documentation>
+              This extension implements the ISO/IEC 19770-2:2015 specification. A SWID tag file
+              will be generated an inserted into the Product or Bundle.
+          </xs:documentation>
+          <xs:appinfo>
+              <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+              <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Product" />
+          </xs:appinfo>
+      </xs:annotation>
+      <xs:complexType>
+          <xs:attribute name="Name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                    Name to use in the filename for the software id tag. By default the filename
+                    uses the Bundle/@Name or Product/@Name. If the bundle name or product name contains
+                    invalid filename characters such as ":" or "?", use this attribute to provide
+                    a valid filename.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Regid" type="xs:string" use="required">
+              <xs:annotation>
+                  <xs:documentation>
+                    The regid for the software manufacturer. A regid is a URI simplified for the common
+                    case. Namely, if the scheme is "http://", it can be removed. Additionally, the domain
+                    should be minimized as much as possible (for example, remove "www." prefix if unnecessary).
+
+                    For example, the WiX toolset regid is "wixtoolset.org".
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="InstallDirectory" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                    A reference to an existing Directory/@Id where the software is installed. The SWID tag file will be installed in a "swidtag" folder
+                    under that directory as per the specification. This attribute is required on a Tag element found under a Product element.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="InstallPath" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                    The path where the software is installed. The SWID tag file will be installed in a "swidtag" folder.
+                    This is a formatted attribute so it is possible to use Variables as the InstallPath by setting
+                    the value to, for example, "[ProgramFilesFolder]CompanyName\Product Name". This attribute is required
+                    on a Tag element found under a Bundle element.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Feature" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>Optional attribute to explicitly set the Feature when defining the software id tag
+                  in a Product. By default the software id tag will always be installed by a top-level hidden feature.
+                  It is recommended to <html:strong>not</html:strong> set this attribute.</xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Win64" type="YesNoTypeUnion">
+              <xs:annotation>
+                  <xs:documentation>
+                    This attribute facilitates the installation of packages that install both 32-bit and 64-bit files. Set this attribute to 'no'
+                    to indicate the software id tag is installed to a 32-bit location (such as "ProgramFilesFolder") or 'yes' when the tag is
+                    installed to a 64-bit location (such as "ProgramFiles64Folder"). The default default value is based on the platform set by
+                    the -arch switch to candle.exe or the InstallerPlatform property in a .wixproj MSBuild project:
+                    For x86 and ARM, the default value is 'no'.
+                    For x64 and IA64, the default value is 'yes'.
+
+                    This attribute is only allowed on a Tag element found under a Product element.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Licensed" type="xs:string">
+            <xs:annotation>
+              <xs:appinfo>
+                <xse:deprecated />
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="Type" type="xs:string">
+            <xs:annotation>
+              <xs:appinfo>
+                <xse:deprecated />
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:attribute>
+      </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TagRef">
+    <xs:annotation>
+      <xs:documentation>
+        Allows an ISO/IEC 19770-2:2015 SWID tag file to be referenced in a Patch.
+      </xs:documentation>
+      <xs:appinfo>
+        <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="PatchFamily" />
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="Regid" type="xs:string" use="required">
+        <xs:annotation>
+          <xs:documentation>
+            The regid for the software manufacturer. A regid is a URI simplified for the common
+            case. Namely, if the scheme is "http://", it can be removed. Additionally, the domain
+            should be minimized as much as possible (for example, remove "www." prefix if unnecessary).
+
+            For example, the WiX toolset regid is "wixtoolset.org".
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="YesNoTypeUnion">
+    <xs:annotation>
+      <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+    </xs:annotation>
+    <xs:union memberTypes="YesNoType PreprocessorVariables"/>
+  </xs:simpleType>
+  <xs:simpleType name="YesNoType">
+    <xs:annotation>
+      <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:NMTOKEN">
+      <xs:enumeration value="no" />
+      <xs:enumeration value="yes" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PreprocessorVariables">
+    <xs:annotation>
+      <xs:documentation>A type that represents that 1 or more preprocessor variables (as they appear in sources on disk, before preprocessor has run).</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(\$\(\w+\.(\w|[.])+\))+" />
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

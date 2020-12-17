@@ -1,0 +1,262 @@
+'\"
+'\" $Id: tixDirList.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixDirList n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixDirList \- Create and manipulate tixDirList widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixDirList \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixDirList\fR class is derived from the \fBTixScrolledHList\fR
+class and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+\fBTixDirList\fR supports all the standard options of a frame widget.
+See the \fBoptions(n)\fR manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-browsecmd browseCmd BrowseCmd
+Specifies a command to call whenever the user browses on a directory
+(usually by single-clicking on the name of the directory). The command
+is called with one argument, the complete pathname of the directory.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies the command to be called when the user activates on a directory
+(usually by double-clicking on the name of the directory). The command
+is called with one argument, the complete pathname of the directory.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-dircmd dircmd DirCmd
+Specifies the TCL command to be called when a directory listing is
+needed for a particular directory. If this option is not specified, by
+default the DirList widget will attempt to read the directory as a
+Unix directory. On special occasions, the application programmer may
+want to supply a special method for reading directories: for example,
+when he needs to list remote directories. In this case, the
+\fB\-dircmd\fR option can be used. The specified command accepts two
+arguments: the first is the name of the directory to be listed; the
+second is a Boolean value indicating whether hidden sub-directories
+should be listed. This command returns a list of names of the
+sub-directories of this directory. For example:
+.PP
+.CS
+proc read_dir {dir show_hidden} {
+    if {$dir == "C:\\"} {
+        return {DOS NORTON WINDOWS}
+    } else {
+        return {}
+    }
+}
+.CE
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-disablecallback disableCallback DisableCallback
+A boolean value indicating whether callbacks should be disabled. When
+set to true, the TCL command specified by the \fB\-command\fR option
+is not executed when the \fB\-value\fR of the DirList widget
+changes.
+'\"----------END
+'\"
+'\"----------BEGIN
+'\"
+.OP \-showhidden showHidden ShowHidden
+Specifies whether hidden directories should be shown. By default, a
+directory name starting with a period "." is considered as a hidden
+directory. This rule can be overridden by supplying an alternative
+\fB\-dircmd\fR option.
+'\"----------END
+'\"
+'\"----------END
+'\"
+.OP \-root root Root
+'\"
+Specifies the name of the root directory. Usually this is \fB"/"\fR
+under Unix machines, but can be changed to \fB"C:\\"\fR in DOS environments.
+'\"----------END
+'\"
+'\"----------END
+'\"
+.OP \-rootname rootName RootNAme
+'\"
+Specifies a text string to display at the root directory. If
+unspecified, the text string will be the same as the string specified
+by \fB\-root\fR.
+'\"----------END
+'\"
+'\"----------END
+'\"
+.LP
+.nf
+Name:		\fBvalue\fR
+Class:		\fBValue\fR
+Switch:		\fB\-value\fR
+Alias:		\fB\-directory\fR
+.fi
+.IP
+Specifies the name of the current directory to be displayed in the
+DirList widget.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhlist\fR
+Class:		\fBTixHList\fR
+.fi
+.IP
+The hierarchical listbox that displays the directory listing.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The horizontal scrollbar subwidget.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBvsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The vertical scrollbar subwidget.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixDirList\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a DirList widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+DirList such as its cursor and relief.
+
+The DirList widget displays a list view of a directory, its
+previous directories and its sub-directories. The user can choose one
+of the directories displayed in the list or change to another
+directory.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixDirList\fR command creates a new Tcl command whose name is
+the same as the path name of the DirList's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+DirList widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for DirList widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixDirList\fR command.
+'\"
+.TP
+\fIpathName \fBchdir\fR \fIdir\fR
+'\"
+Change the current directory to \fIdir\fR.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixDirList\fR command.
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+'\"
+The mouse and keyboard bindings of the DirList widget are the same as
+the bindings of the HList widget.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+

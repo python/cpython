@@ -1,0 +1,691 @@
+# registry.test --
+#
+# This file contains a collection of tests for the registry command.
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors.  No output means no errors were found.
+#
+# In order for these tests to run, the registry package must be on the
+# auto_path or the registry package must have been loaded already.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+testConstraint reg 0
+if {[testConstraint win]} {
+    if {![catch {
+	    ::tcltest::loadTestedCommands
+	    set ::regver [package require registry 1.3.4]
+	}]} {
+	testConstraint reg 1
+    }
+}
+
+# determine the current locale
+testConstraint english [expr {
+    [llength [info commands testlocale]]
+    && [string match "English*" [testlocale all ""]]
+}]
+
+test registry-1.0 {check if we are testing the right dll} {win reg} {
+    set ::regver
+} {1.3.4}
+test registry-1.1 {argument parsing for registry command} {win reg} {
+    list [catch {registry} msg] $msg
+} {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
+test registry-1.1a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit} msg] $msg
+} {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
+test registry-1.1b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit} msg] $msg
+} {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
+test registry-1.2 {argument parsing for registry command} {win reg} {
+    list [catch {registry foo} msg] $msg
+} {1 {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}}
+test registry-1.2a {argument parsing for registry command} {win reg} {
+    list [catch {registry -33bit foo} msg] $msg
+} {1 {bad mode "-33bit": must be -32bit or -64bit}}
+
+test registry-1.3 {argument parsing for registry command} {win reg} {
+    list [catch {registry d} msg] $msg
+} {1 {wrong # args: should be "registry delete keyName ?valueName?"}}
+test registry-1.3a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit d} msg] $msg
+} {1 {wrong # args: should be "registry -32bit delete keyName ?valueName?"}}
+test registry-1.3b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit d} msg] $msg
+} {1 {wrong # args: should be "registry -64bit delete keyName ?valueName?"}}
+test registry-1.4 {argument parsing for registry command} {win reg} {
+    list [catch {registry delete} msg] $msg
+} {1 {wrong # args: should be "registry delete keyName ?valueName?"}}
+test registry-1.5 {argument parsing for registry command} {win reg} {
+    list [catch {registry delete foo bar baz} msg] $msg
+} {1 {wrong # args: should be "registry delete keyName ?valueName?"}}
+
+test registry-1.6 {argument parsing for registry command} {win reg} {
+    list [catch {registry g} msg] $msg
+} {1 {wrong # args: should be "registry get keyName valueName"}}
+test registry-1.6a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit g} msg] $msg
+} {1 {wrong # args: should be "registry -32bit get keyName valueName"}}
+test registry-1.6b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit g} msg] $msg
+} {1 {wrong # args: should be "registry -64bit get keyName valueName"}}
+test registry-1.7 {argument parsing for registry command} {win reg} {
+    list [catch {registry get} msg] $msg
+} {1 {wrong # args: should be "registry get keyName valueName"}}
+test registry-1.8 {argument parsing for registry command} {win reg} {
+    list [catch {registry get foo} msg] $msg
+} {1 {wrong # args: should be "registry get keyName valueName"}}
+test registry-1.9 {argument parsing for registry command} {win reg} {
+    list [catch {registry get foo bar baz} msg] $msg
+} {1 {wrong # args: should be "registry get keyName valueName"}}
+
+test registry-1.10 {argument parsing for registry command} {win reg} {
+    list [catch {registry k} msg] $msg
+} {1 {wrong # args: should be "registry keys keyName ?pattern?"}}
+test registry-1.10a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit k} msg] $msg
+} {1 {wrong # args: should be "registry -32bit keys keyName ?pattern?"}}
+test registry-1.10b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit k} msg] $msg
+} {1 {wrong # args: should be "registry -64bit keys keyName ?pattern?"}}
+test registry-1.11 {argument parsing for registry command} {win reg} {
+    list [catch {registry keys} msg] $msg
+} {1 {wrong # args: should be "registry keys keyName ?pattern?"}}
+test registry-1.12 {argument parsing for registry command} {win reg} {
+    list [catch {registry keys foo bar baz} msg] $msg
+} {1 {wrong # args: should be "registry keys keyName ?pattern?"}}
+
+test registry-1.13 {argument parsing for registry command} {win reg} {
+    list [catch {registry s} msg] $msg
+} {1 {wrong # args: should be "registry set keyName ?valueName data ?type??"}}
+test registry-1.13a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit s} msg] $msg
+} {1 {wrong # args: should be "registry -32bit set keyName ?valueName data ?type??"}}
+test registry-1.13b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit s} msg] $msg
+} {1 {wrong # args: should be "registry -64bit set keyName ?valueName data ?type??"}}
+test registry-1.14 {argument parsing for registry command} {win reg} {
+    list [catch {registry set} msg] $msg
+} {1 {wrong # args: should be "registry set keyName ?valueName data ?type??"}}
+test registry-1.15 {argument parsing for registry command} {win reg} {
+    list [catch {registry set foo bar} msg] $msg
+} {1 {wrong # args: should be "registry set keyName ?valueName data ?type??"}}
+test registry-1.16 {argument parsing for registry command} {win reg} {
+    list [catch {registry set foo bar baz blat gorp} msg] $msg
+} {1 {wrong # args: should be "registry set keyName ?valueName data ?type??"}}
+
+test registry-1.17 {argument parsing for registry command} {win reg} {
+    list [catch {registry t} msg] $msg
+} {1 {wrong # args: should be "registry type keyName valueName"}}
+test registry-1.17a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit t} msg] $msg
+} {1 {wrong # args: should be "registry -32bit type keyName valueName"}}
+test registry-1.17b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit t} msg] $msg
+} {1 {wrong # args: should be "registry -64bit type keyName valueName"}}
+test registry-1.18 {argument parsing for registry command} {win reg} {
+    list [catch {registry type} msg] $msg
+} {1 {wrong # args: should be "registry type keyName valueName"}}
+test registry-1.19 {argument parsing for registry command} {win reg} {
+    list [catch {registry type foo} msg] $msg
+} {1 {wrong # args: should be "registry type keyName valueName"}}
+test registry-1.20 {argument parsing for registry command} {win reg} {
+    list [catch {registry type foo bar baz} msg] $msg
+} {1 {wrong # args: should be "registry type keyName valueName"}}
+
+test registry-1.21 {argument parsing for registry command} {win reg} {
+    list [catch {registry v} msg] $msg
+} {1 {wrong # args: should be "registry values keyName ?pattern?"}}
+test registry-1.21a {argument parsing for registry command} {win reg} {
+    list [catch {registry -32bit v} msg] $msg
+} {1 {wrong # args: should be "registry -32bit values keyName ?pattern?"}}
+test registry-1.21b {argument parsing for registry command} {win reg} {
+    list [catch {registry -64bit v} msg] $msg
+} {1 {wrong # args: should be "registry -64bit values keyName ?pattern?"}}
+test registry-1.22 {argument parsing for registry command} {win reg} {
+    list [catch {registry values} msg] $msg
+} {1 {wrong # args: should be "registry values keyName ?pattern?"}}
+test registry-1.23 {argument parsing for registry command} {win reg} {
+    list [catch {registry values foo bar baz} msg] $msg
+} {1 {wrong # args: should be "registry values keyName ?pattern?"}}
+
+test registry-2.1 {DeleteKey: bad key} {win reg} {
+    list [catch {registry delete foo} msg] $msg
+} {1 {bad root name "foo": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
+test registry-2.2 {DeleteKey: bad key} {win reg} {
+    list [catch {registry delete HKEY_CLASSES_ROOT} msg] $msg
+} {1 {bad key: cannot delete root keys}}
+test registry-2.3 {DeleteKey: bad key} {win reg} {
+    list [catch {registry delete HKEY_CLASSES_ROOT\\} msg] $msg
+} {1 {bad key: cannot delete root keys}}
+test registry-2.4 {DeleteKey: subkey at root level} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry keys HKEY_CURRENT_USER TclFoobar
+} {}
+test registry-2.5 {DeleteKey: subkey below root level} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\test
+    set result [registry keys HKEY_CURRENT_USER TclFoobar\\test]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {}
+test registry-2.6 {DeleteKey: recursive delete} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test1
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER TclFoobar]
+    set result
+} {}
+test registry-2.7 {DeleteKey: trailing backslashes} {win reg english} {
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz
+    list [catch {registry delete HKEY_CURRENT_USER\\TclFoobar\\} msg] $msg
+} {1 {unable to delete key: The configuration registry key is invalid.}}
+test registry-2.8 {DeleteKey: failure} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} {}
+test registry-2.9 {DeleteKey: unicode} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar\\a
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar\\b
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar
+    set result [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {}
+
+test registry-3.1 {DeleteValue} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz test1 blort
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz test2 blat
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\baz test1
+    set result [registry values HKEY_CURRENT_USER\\TclFoobar\\baz]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} test2
+test registry-3.2 {DeleteValue: bad key} {win reg english} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry delete HKEY_CURRENT_USER\\TclFoobar test} msg] $msg
+} {1 {unable to open key: The system cannot find the file specified.}}
+test registry-3.3 {DeleteValue: bad value} {win reg english} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz test2 blort
+    set result [list [catch {registry delete HKEY_CURRENT_USER\\TclFoobar test1} msg] $msg]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {1 {unable to delete value "test1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}}
+test registry-3.4 {DeleteValue: Unicode} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz \u00c7test1 blort
+    registry set HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz test2 blat
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz \u00c7test1
+    set result [registry values HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} test2
+
+test registry-4.1 {GetKeyNames: bad key} {win reg english} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry keys HKEY_CURRENT_USER\\TclFoobar} msg] $msg
+} {1 {unable to open key: The system cannot find the file specified.}}
+test registry-4.2 {GetKeyNames} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz
+    set result [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {baz}
+test registry-4.3 {GetKeyNames: remote key} {win reg nonPortable english} {
+    set hostname [info hostname]
+    registry set \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar\\baz
+    set result [registry keys \\\\gaspode\\HKEY_CURRENT_USER\\TclFoobar]
+    registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {baz}
+test registry-4.4 {GetKeyNames: empty key} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {}
+test registry-4.5 {GetKeyNames: patterns} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {baz blat}
+test registry-4.6 {GetKeyNames: names with spaces} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz\ bar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {{baz bar} blat}
+test registry-4.7 {GetKeyNames: Unicode} {win reg english} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u00c7bar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} "baz\u00c7bar blat"
+test registry-4.8 {GetKeyNames: Unicode} {win reg} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u30b7bar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} "baz\u30b7bar blat"
+test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} {*}{
+    -constraints {win reg}
+    -setup {
+	registry set HKEY_CURRENT_USER\\TclFoobar\\a
+	registry set HKEY_CURRENT_USER\\TclFoobar\\b[string repeat x 254]
+	registry set HKEY_CURRENT_USER\\TclFoobar\\c
+    }
+    -body {
+	lsort [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    }
+    -cleanup {
+	registry delete HKEY_CURRENT_USER\\TclFoobar
+    }} \
+    -result [list a b[string repeat x 254] c]
+
+test registry-5.1 {GetType} {win reg english} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry type HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
+} {1 {unable to open key: The system cannot find the file specified.}}
+test registry-5.2 {GetType} {win reg english} {
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry type HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
+} {1 {unable to get type of value "val1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}}
+test registry-5.3 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} none
+test registry-5.4 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} sz
+test registry-5.5 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar sz
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} sz
+test registry-5.6 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar expand_sz
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} expand_sz
+test registry-5.7 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 binary
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} binary
+test registry-5.8 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 dword
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} dword
+test registry-5.9 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 dword_big_endian
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} dword_big_endian
+test registry-5.10 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 link
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} link
+test registry-5.11 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar multi_sz
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} multi_sz
+test registry-5.12 {GetType} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 resource_list
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} resource_list
+test registry-5.13 {GetType: unknown types} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 24
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 24
+test registry-5.14 {GetType: Unicode} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar va\u00c7l1 1 24
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar va\u00c7l1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 24
+
+test registry-6.1 {GetValue} {win reg english} {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry get HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
+} {1 {unable to open key: The system cannot find the file specified.}}
+test registry-6.2 {GetValue} {win reg english} {
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry get HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
+} {1 {unable to get value "val1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}}
+test registry-6.3 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} foobar
+test registry-6.4 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} foobar
+test registry-6.5 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} foobar
+test registry-6.6 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar expand_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} foobar
+test registry-6.7 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 binary
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 1
+test registry-6.8 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 0x20 dword
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 32
+test registry-6.9 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 0x20 dword_big_endian
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 32
+test registry-6.10 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 link
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 1
+test registry-6.11 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} foobar
+test registry-6.12 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo\ bar baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {{foo bar} baz}
+test registry-6.13 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} {}
+test registry-6.14 {GetValue: truncation of multivalues with null elements} \
+	{win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {a {} b} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} a
+test registry-6.15 {GetValue} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 resource_list
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 1
+test registry-6.16 {GetValue: unknown types} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 24
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} 1
+test registry-6.17 {GetValue: Unicode value names} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val\u00c71 foobar multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val\u00c71]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} foobar
+test registry-6.18 {GetValue: values with Unicode strings} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} "foo ba\u30b7r baz"
+test registry-6.19 {GetValue: values with Unicode strings} {win reg english} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u00c7r baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} "foo ba\u00c7r baz"
+test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u0000r baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} "foo ba r baz"
+test registry-6.21 {GetValue: very long value names and values} {win reg} {
+    registry set HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383] [string repeat x 16383] multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar [string repeat k 16383]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result
+} [string repeat x 16383]
+
+test registry-7.1 {GetValueNames: bad key} -constraints {win reg english} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -body {
+    registry values HKEY_CURRENT_USER\\TclFoobar
+} -returnCodes error -result {unable to open key: The system cannot find the file specified.}
+test registry-7.2 {GetValueNames} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz foobar
+} -body {
+    registry values HKEY_CURRENT_USER\\TclFoobar
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result baz
+test registry-7.3 {GetValueNames} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz foobar1
+    registry set HKEY_CURRENT_USER\\TclFoobar blat foobar2
+    registry set HKEY_CURRENT_USER\\TclFoobar {} foobar3
+} -body {
+    lsort [registry values HKEY_CURRENT_USER\\TclFoobar]
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result {{} baz blat}
+test registry-7.4 {GetValueNames: remote key} -constraints {win reg nonPortable english} -body {
+    set hostname [info hostname]
+    registry set \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar baz blat
+    set result [registry values \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar]
+    registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
+    set result
+} -result baz
+test registry-7.5 {GetValueNames: empty key} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+} -body {
+    registry values HKEY_CURRENT_USER\\TclFoobar
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result {}
+test registry-7.6 {GetValueNames: patterns} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz foobar1
+    registry set HKEY_CURRENT_USER\\TclFoobar blat foobar2
+    registry set HKEY_CURRENT_USER\\TclFoobar foo foobar3
+} -body {
+    lsort [registry values HKEY_CURRENT_USER\\TclFoobar b*]
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result {baz blat}
+test registry-7.7 {GetValueNames: names with spaces} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz\ bar foobar1
+    registry set HKEY_CURRENT_USER\\TclFoobar blat foobar2
+    registry set HKEY_CURRENT_USER\\TclFoobar foo foobar3
+} -body {
+    lsort [registry values HKEY_CURRENT_USER\\TclFoobar b*]
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result {{baz bar} blat}
+
+test registry-8.1 {OpenSubKey} -constraints {win reg nonPortable english} \
+    -body {
+        # This test will only succeed if the current user does not have
+        # registry access on the specified machine.
+        registry keys {\\mom\HKEY_LOCAL_MACHINE}
+    } -returnCodes error -result "unable to open key: Access is denied."
+test registry-8.2 {OpenSubKey} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+} -body {
+    registry keys HKEY_CURRENT_USER TclFoobar
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result {TclFoobar}
+test registry-8.3 {OpenSubKey} -constraints {win reg english} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -body {
+    registry keys HKEY_CURRENT_USER\\TclFoobar
+} -returnCodes error \
+    -result "unable to open key: The system cannot find the file specified."
+
+test registry-9.1 {ParseKeyName: bad keys} -constraints {win reg} -body {
+    registry values \\
+} -returnCodes error -result "bad key \"\\\": must start with a valid root"
+test registry-9.2 {ParseKeyName: bad keys} -constraints {win reg} -body {
+    registry values \\foobar
+} -returnCodes error -result {bad key "\foobar": must start with a valid root}
+test registry-9.3 {ParseKeyName: bad keys} -constraints {win reg} -body {
+    registry values \\\\
+} -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+test registry-9.4 {ParseKeyName: bad keys} -constraints {win reg} -body {
+    registry values \\\\\\
+} -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english} -body {
+    registry values \\\\\\HKEY_CLASSES_ROOT
+} -returnCodes error -result {unable to open key: The network address is invalid.}
+test registry-9.6 {ParseKeyName: bad keys} -constraints {win reg} -body {
+    registry values \\\\gaspode
+} -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+test registry-9.7 {ParseKeyName: bad keys} -constraints {win reg} -body {
+    registry values foobar
+} -returnCodes error -result {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+test registry-9.8 {ParseKeyName: null keys} -constraints {win reg} -body {
+    registry delete HKEY_CLASSES_ROOT\\
+} -returnCodes error -result {bad key: cannot delete root keys}
+test registry-9.9 {ParseKeyName: null keys} \
+    -constraints {win reg english} \
+    -body {registry keys HKEY_CLASSES_ROOT\\TclFoobar\\baz} \
+    -returnCodes error \
+    -result {unable to open key: The system cannot find the file specified.}
+
+test registry-10.1 {RecursiveDeleteKey} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -body {
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test1
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER TclFoobar]
+    set result
+} -result {}
+test registry-10.2 {RecursiveDeleteKey} -constraints {win reg} -setup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test1
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
+} -body {
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\test2\\test4
+} -cleanup {
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+} -result {}
+
+test registry-11.1 {SetValue: recursive creation} \
+    -constraints {win reg} -setup {
+        registry delete HKEY_CURRENT_USER\\TclFoobar
+    } -body {
+        registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
+        set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
+    } -result {foobar}
+test registry-11.2 {SetValue: modification} -constraints {win reg} \
+    -setup {
+        registry delete HKEY_CURRENT_USER\\TclFoobar
+    } -body {
+        registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
+        registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat frob
+        set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
+    } -result {frob}
+test registry-11.3 {SetValue: failure} \
+    -constraints {win reg nonPortable english} \
+    -body {
+        # This test will only succeed if the current user does not have
+        # registry access on the specified machine.
+        registry set {\\mom\HKEY_CURRENT_USER\TclFoobar} bar foobar
+    } -returnCodes error -result {unable to open key: Access is denied.}
+
+test registry-12.1 {BroadcastValue} -constraints {win reg} -body {
+    registry broadcast
+} -returnCodes error -result "wrong # args: should be \"registry broadcast keyName ?-timeout milliseconds?\""
+test registry-12.2 {BroadcastValue} -constraints {win reg} -body {
+    registry broadcast "" -time
+} -returnCodes error -result "wrong # args: should be \"registry broadcast keyName ?-timeout milliseconds?\""
+test registry-12.3 {BroadcastValue} -constraints {win reg} -body {
+    registry broadcast "" - 500
+} -returnCodes error -result "wrong # args: should be \"registry broadcast keyName ?-timeout milliseconds?\""
+test registry-12.4 {BroadcastValue} -constraints {win reg} -body {
+    registry broadcast {Environment}
+} -result {1 0}
+test registry-12.5 {BroadcastValue} -constraints {win reg} -body {
+    registry b {}
+} -result {1 0}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# tcl-indent-level: 4
+# fill-column: 78
+# End:

@@ -1,0 +1,147 @@
+'\"
+'\" Copyright (c) 1990-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_ConfigureWindow 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_ConfigureWindow, Tk_MoveWindow, Tk_ResizeWindow, Tk_MoveResizeWindow, Tk_SetWindowBorderWidth, Tk_ChangeWindowAttributes, Tk_SetWindowBackground, Tk_SetWindowBackgroundPixmap, Tk_SetWindowBorder, Tk_SetWindowBorderPixmap, Tk_SetWindowColormap, Tk_DefineCursor, Tk_UndefineCursor \- change window configuration or attributes
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_ConfigureWindow\fR(\fItkwin, valueMask, valuePtr\fR)
+.sp
+\fBTk_MoveWindow\fR(\fItkwin, x, y\fR)
+.sp
+\fBTk_ResizeWindow\fR(\fItkwin, width, height\fR)
+.sp
+\fBTk_MoveResizeWindow\fR(\fItkwin, x,  y, width, height\fR)
+.sp
+\fBTk_SetWindowBorderWidth\fR(\fItkwin, borderWidth\fR)
+.sp
+\fBTk_ChangeWindowAttributes\fR(\fItkwin, valueMask, attsPtr\fR)
+.sp
+\fBTk_SetWindowBackground\fR(\fItkwin, pixel\fR)
+.sp
+\fBTk_SetWindowBackgroundPixmap\fR(\fItkwin, pixmap\fR)
+.sp
+\fBTk_SetWindowBorder\fR(\fItkwin, pixel\fR)
+.sp
+\fBTk_SetWindowBorderPixmap\fR(\fItkwin, pixmap\fR)
+.sp
+\fBTk_SetWindowColormap\fR(\fItkwin, colormap\fR)
+.sp
+\fBTk_DefineCursor\fR(\fItkwin, cursor\fR)
+.sp
+\fBTk_UndefineCursor\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS XSetWindowAttributes borderWidth
+.AP Tk_Window tkwin in
+Token for window.
+.AP "unsigned int" valueMask in
+OR-ed mask of values like \fBCWX\fR or \fBCWBorderPixel\fR,
+indicating which fields of \fI*valuePtr\fR or \fI*attsPtr\fR to use.
+.AP XWindowChanges *valuePtr in
+Points to a structure containing new values for the configuration
+parameters selected by \fIvalueMask\fR.  Fields not selected
+by \fIvalueMask\fR are ignored.
+.AP int x in
+New x-coordinate for \fItkwin\fR's top left pixel (including
+border, if any) within tkwin's parent.
+.AP int y in
+New y-coordinate for \fItkwin\fR's top left pixel (including
+border, if any) within tkwin's parent.
+.AP "int" width in
+New width for \fItkwin\fR (interior, not including border).
+.AP "int" height in
+New height for \fItkwin\fR (interior, not including border).
+.AP "int" borderWidth in
+New width for \fItkwin\fR's border.
+.AP XSetWindowAttributes *attsPtr in
+Points to a structure containing new values for the attributes
+given by the \fIvalueMask\fR argument.  Attributes not selected
+by \fIvalueMask\fR are ignored.
+.AP "unsigned long" pixel in
+New background or border color for window.
+.AP Pixmap pixmap in
+New pixmap to use for background or border of \fItkwin\fR.  WARNING:
+cannot necessarily be deleted immediately, as for Xlib calls.  See
+note below.
+.AP Colormap colormap in
+New colormap to use for \fItkwin\fR.
+.AP Tk_Cursor cursor in
+New cursor to use for \fItkwin\fR.  If \fBNone\fR is specified, then
+\fItkwin\fR will not have its own cursor;  it will use the cursor
+of its parent.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are analogous to the X library procedures
+with similar names, such as \fBXConfigureWindow\fR.  Each
+one of the above procedures calls the corresponding X procedure
+and also saves the configuration information in Tk's local
+structure for the window.  This allows the information to
+be retrieved quickly by the application (using macros such
+as \fBTk_X\fR and \fBTk_Height\fR) without having to contact
+the X server.  In addition, if no X window has actually been
+created for \fItkwin\fR yet, these procedures do not issue
+X operations or cause event handlers to be invoked;  they save
+the information in Tk's local
+structure for the window;  when the window is created later,
+the saved information will be used to configure the window.
+.PP
+See the X library documentation for details on what these
+procedures do and how they use their arguments.
+.PP
+In the procedures \fBTk_ConfigureWindow\fR, \fBTk_MoveWindow\fR,
+\fBTk_ResizeWindow\fR, \fBTk_MoveResizeWindow\fR, and
+\fBTk_SetWindowBorderWidth\fR,
+if \fItkwin\fR is an internal window then event handlers interested
+in configure events are invoked immediately, before the procedure
+returns.  If \fItkwin\fR is a top-level window
+then the event handlers will be invoked later, after X has seen
+the request and returned an event for it.
+.PP
+Applications using Tk should never call procedures like
+\fBXConfigureWindow\fR directly;  they should always use the
+corresponding Tk procedures.
+.PP
+The size and location of a window should only be modified by the
+appropriate geometry manager for that window and never by a window
+itself (but see \fBTk_MoveToplevelWindow\fR for moving a top-level
+window).
+.PP
+You may not use \fBTk_ConfigureWindow\fR to change the
+stacking order of a window (\fIvalueMask\fR may not contain the
+\fBCWSibling\fR or \fBCWStackMode\fR bits).
+To change the stacking order, use the procedure \fBTk_RestackWindow\fR.
+.PP
+The procedure \fBTk_SetWindowColormap\fR will automatically add
+\fItkwin\fR to the \fBTK_COLORMAP_WINDOWS\fR property of its
+nearest top-level ancestor if the new colormap is different from
+that of \fItkwin\fR's parent and \fItkwin\fR is not already in
+the \fBTK_COLORMAP_WINDOWS\fR property.
+.SH BUGS
+.PP
+\fBTk_SetWindowBackgroundPixmap\fR and \fBTk_SetWindowBorderPixmap\fR
+differ slightly from their Xlib counterparts in that the \fIpixmap\fR
+argument may not necessarily be deleted immediately after calling
+one of these procedures.  This is because \fItkwin\fR's window
+may not exist yet at the time of the call, in which case \fIpixmap\fR
+is merely saved and used later when \fItkwin\fR's window is actually
+created.  If you wish to delete \fIpixmap\fR, then call
+\fBTk_MakeWindowExist\fR first to be sure that \fItkwin\fR's window exists
+and \fIpixmap\fR has been passed to the X server.
+.PP
+A similar problem occurs for the \fIcursor\fR argument passed to
+\fBTk_DefineCursor\fR.  The solution is the same as for pixmaps above:
+call \fBTk_MakeWindowExist\fR before freeing the cursor.
+.SH "SEE ALSO"
+Tk_MoveToplevelWindow, Tk_RestackWindow
+.SH KEYWORDS
+attributes, border, color, configure, height, pixel, pixmap, width, window, x, y

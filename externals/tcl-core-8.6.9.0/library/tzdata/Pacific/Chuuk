@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Chuuk) {
+    {-9223372036854775808 36428 0 LMT}
+    {-2177489228 36000 0 +10}
+}

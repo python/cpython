@@ -1,0 +1,43 @@
+;
+; This file defines the virtual base addresses for the Dynamic Link Libraries
+; that are part of the Tcl system.  The first token on a line is the key (or name
+; of the DLL) and the second token is the virtual base address, in hexidecimal.
+; The third token is the maximum size of the DLL image file, including symbols.
+;
+; Using a specified "prefered load address" should speed loading time by avoiding
+; relocations (NT supported only).  It is assumed extension authors will contribute
+; their modules to this grand-master list.  You can use the dumpbin utility with
+; the /headers option to get the "size of image" data (already in hex).  If the
+; maximum size is too small a linker warning will occur.  Modules can overlap when
+; they're mutually exclusive.  This info is placed in the DLL's PE header by the
+; linker with the `-base:@$(TCLDIR)\win\coffbase.txt,<key>` option.
+
+tcl		0x10000000	0x00200000
+tcldde		0x10200000	0x00010000
+tclreg		0x10210000	0x00010000
+tk		0x10220000	0x00200000
+expect		0x10480000	0x00080000
+itcl		0x10500000	0x00080000
+itk		0x10580000	0x00080000
+bltlite		0x10600000	0x00080000
+blt		0x10680000	0x00080000
+iocpsock	0x10700000	0x00080000
+tls		0x10780000	0x00100000
+winico		0x10880000	0x00010000
+sample		0x108B0000	0x00010000
+tile		0x10900000	0x00080000
+memchan		0x109D0000	0x00010000
+tdom		0x109E0000	0x00080000
+tclvfs		0x10A70000	0x00010000
+tkvideo		0x10B00000	0x00010000
+tclsdl		0x10B20000	0x00080000
+vqtcl		0x10C00000	0x00010000
+tdbc		0x10C40000	0x00010000
+thread		0x10C80000	0x00020000
+nsf		0x10ca0000	0x00080000
+;
+; insert new packages here
+;
+snack		0x1E000000	0x00400000
+sound		0x1E400000	0x00400000
+snackogg	0x1E800000	0x00200000

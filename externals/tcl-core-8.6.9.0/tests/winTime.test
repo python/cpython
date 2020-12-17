@@ -1,0 +1,66 @@
+# This file tests the tclWinTime.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testwinclock [llength [info commands testwinclock]]
+
+# The next two tests will crash on Windows if the check for negative
+# clock values is not done properly.
+
+test winTime-1.1 {TclpGetDate} {win} {
+    set ::env(TZ) JST-9
+    set result [clock format -1 -format %Y]
+    unset ::env(TZ)
+    set result
+} {1970}
+test winTime-1.2 {TclpGetDate} {win} {
+    set ::env(TZ) PST8
+    set result [clock format 1 -format %Y]
+    unset ::env(TZ)
+    set result
+} {1969}
+
+# Next test tries to make sure that the Tcl clock stays in step
+# with the Windows clock.  30 sec really isn't enough,
+# but how much time does a tester have patience for?
+
+test winTime-2.1 {Synchronization of Tcl and Windows clocks} {testwinclock} {
+    # May fail due to OS/hardware discrepancies.  See:
+    # http://support.microsoft.com/default.aspx?scid=kb;en-us;274323
+    set failed {}
+    set ok 1
+    foreach start_sec [testwinclock] break
+    while { 1 } {
+	foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] break
+	set diff [expr { $tcl_sec - $sys_sec
+			 + 1.0e-6 * ( $tcl_usec - $sys_usec ) }]
+        if { abs($diff) > 0.06 } {
+	    set failed "Tcl clock differs from system clock by $diff sec"
+	    break
+	} else {
+	    testwinsleep 1
+	}
+	if { $sys_sec - $start_sec >= 30 } break
+    }
+    set failed
+} {}
+
+# cleanup
+::tcltest::cleanupTests
+return

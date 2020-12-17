@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH is n 3.3 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::is \- test argument to see if it is a class or an object
+.SH SYNOPSIS
+\fBitcl::is \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBis\fR command is used to check if the argument given is
+a class or an object; depending on the option given. If the argument
+if a class or object, then 1 is returned. Otherwise, 0 is returned.
+The \fBis\fR command also recognizes the commands wrapped in the
+itcl \fBcode\fR command.
+.PP
+The \fIoption\fR argument determines what action is carried out
+by the command.  The legal \fIoptions\fR (which may be abbreviated)
+are:
+.TP
+\fBis class \fIcommand\fR
+.
+Returns 1 if command is a class, and returns 0 otherwise.
+.RS
+.PP
+The fully qualified name of the class needs to be given as the \fIcommand\fR
+argument. So, if a class resides in a namespace, then the namespace needs to
+be specified as well. So, if a class \fBC\fR resides in a namespace \fBN\fR, then 
+the command should be called like:
+.PP
+.CS
+\fBis N::C\fR
+    or
+\fBis ::N::C\fR
+.CE
+.RE
+.TP
+\fBis\fR object ?\fB-class \fIclassName\fR? \fIcommand\fR
+.
+Returns 1 if \fIcommand\fR is an object, and returns 0 otherwise.
+.RS
+.PP
+If the optional "\fB-class\fR" parameter is specified, then the
+\fIcommand\fR will be checked within the context of the class
+given. Note that \fIclassName\fR has to exist. If not, then an
+error will be given. So, if \fIclassName\fR is uncertain to be
+a class, then the programmer will need to check it's existance
+beforehand, or wrap it in a catch statement.
+.PP
+So, if \fBc\fR is an object in the class \fBC\fR, in namespace N then
+these are the possibilities (all return 1):
+.PP
+.CS
+set obj [N::C c]
+itcl::is object N::c
+itcl::is object c
+itcl::is object $obj
+itcl::is object [itcl::code c]
+.CE
+.RE
+.SH KEYWORDS
+class, object
+

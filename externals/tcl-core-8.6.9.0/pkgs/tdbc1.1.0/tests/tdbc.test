@@ -1,0 +1,50 @@
+# tdbc.test --
+#
+#	Tests for convenience commands in TDBC
+#
+# Copyright (c) 2009 by Kevin B. Kenny.
+#
+# $Id: $
+
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+tcltest::loadTestedCommands
+package require tdbc
+
+test tdbc-1.1 {tdbc::mapSqlState, wrong args} {*}{
+     -body {
+	 list [catch {tdbc::mapSqlState} result] $result 
+     }
+    -match glob
+    -result {1 {wrong # args:*}}
+}
+	    
+test tdbc-1.2 {tdbc::mapSqlState, wrong args} {*}{
+     -body {
+	 list [catch {tdbc::mapSqlState 00000 ?} result] $result
+     }
+    -match glob
+    -result {1 {wrong # args:*}}
+}
+
+test tdbc-1.3 {tdbc::mapSqlState, known state} {*}{
+    -body {
+	tdbc::mapSqlState 22012
+    }
+    -result {DATA_EXCEPTION}
+}
+	    
+test tdbc-1.4 {tdbc::mapSqlState, known state} {*}{
+    -body {
+	tdbc::mapSqlState *****
+    }
+    -result {UNKNOWN_SQLSTATE}
+}
+	    
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

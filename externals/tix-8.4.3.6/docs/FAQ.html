@@ -1,0 +1,399 @@
+<HTML>
+
+<!--	$Id: FAQ.html,v 1.5 2004/12/24 01:27:22 hobbs Exp $	-->
+<HEAD>
+<TITLE>Tix Frequently Asked Questions</TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#800000" ALINK="#800080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+<center><h1>Tix Frequently Asked Questions</h1></center>
+
+
+<hr>
+
+<h3>
+    Legal Issues
+</h3>
+<DL>
+<DT> <b><a name=legal.1> [L.1] </a> 
+    Is Tix free software?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    Tix is distributed under the same license as Tcl/Tk (a.k.a. BSD
+    style license).  Application developers can freely redistribute
+    Tix along with their products. <p>
+
+<p>
+</DL>
+<hr>
+<h3>
+    General Questions About Using The Tix Library
+</h3>
+<DL>
+<DT> <b><a name=general.1> [G.1] </a> 
+    What does the "<code>-disablecallback</code>"
+    option do?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    Many Tix widgets have both a <code>-value</code> option and a
+    <code>-command</code> option. Any modification of the
+    <code>-value</code> will cause the <code>-command</code> callback
+    to be executed. Sometimes this is undesirable. For example,
+    calling "<code>config -value</code>" inside the callback procedure
+    will cause the callback to be re-entered and thus an infinite
+    recursion. <p>
+
+    The <code>-disablecallback</code> can be used to advoid this
+    problem. When this option is set, the <code>-command</code>
+    callback will not be executed even if the -value of a widget is
+    changed. Therefore, if you need to modify the -value of a widget
+    inside its callback, do this:
+
+    <blockquote><pre>
+    proc my_callback {w} {
+	$w config -disablecallback true
+	$w config value blah
+	$w config -disablecallback false
+    }
+    </pre></blockquote>
+
+    If you find this too troublesome, you can call the command tixSetSilent:
+
+    <blockquote><pre>
+    proc my_callback {w} {
+	tixSetSilent $w blah
+    }
+    </pre></blockquote>
+
+<p>
+<DT> <b><a name=general.2> [G.2] </a> 
+    How do I set the width of the entry subwidget inside the tixControl widget?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    You can use the option database or the -options flag to set the
+    configuration options of the subwidgets. E.g: <pre>
+
+option add *TixControl*entry.width 10
+</pre>
+
+  OR
+
+<pre>
+tixControl .c -options {
+   entry.width  10
+}
+</pre>
+
+<p>
+<DT> <b><a name=general.6> [G.6] </a> 
+
+    I am not using the tixForm geometry manager, but it is giving me
+errors about TixForm. What happened?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    When you get error messages like this:
+
+<pre> (TixForm) Error:Trying to use more than one geometry
+           manager for the same master window.
+           Giving up after 50 iterations.</pre>
+
+    Most likely, the problem is when using tixLabelFrame widgets, you
+    packed to the wrong frame: <p>
+
+    This is WRONG:
+
+<pre>   tixLabelFrame .d
+        button .d.b
+        pack .d.b </pre>
+
+This is the correct way:
+
+<pre>   tixLabelFrame .d
+        set f [.d subwidget frame]
+        button $f.b
+        pack $f.b
+        pack .d </pre>
+
+    Remember you don't pack directly into a TixLabelFrame
+    widget. Instead, you should pack into its <code>frame</code>
+    subwidget.
+
+<p>
+<DT> <b><a name=general.7> [G.7] </a> 
+    How do I generate the <code>tclIndex</code> file for Tix?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    Tix <code>tclIndex</code> files cannot be generated using the
+    standard auto_mkindex procedure. You must use the tixindex program
+    in the <code>tools/</code> subdirectory in the Tix
+    distribution. The syntax is 
+    <pre> tixindex *.tcl
+    </pre>
+
+<p>
+<DT> <b><a name=general.8> [G.8] </a> 
+    Can I ignore the default arguments passed by the various
+    <code>-command</code> and <code>-browsecmd</code> options?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+    You can use the <code>tixBreak</code> command. For example:
+<pre> tixFileSelectDialog .c -command "puts foo; tixBreak" </pre>
+
+<p>
+<DT> <b><a name=general.9> [G.9] </a> 
+    What does <code>tixWidgetDoWhenIdle</code> do?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    It does the same thing as tixDoWhileIdle (and "after -idle"). The
+    difference is it takes its second argument as the name of a widget
+    and executes this command only if the widget exists: i.e.: 
+
+
+<pre>  tixWidgetDoWhenIdle tixComboBox::Update $w blah blah ..</pre>
+
+    will execute tixComboBox::Update only if $w exists. $w may be
+    destroyed after tixWidgetDoWhenIdle is called but before an idle
+    event happens.
+
+<p>
+<DT> <b><a name=general.feature_req> [G.10] </a> 
+    Why isn't such a feature in Tix? Will it be implemented?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    Generally requests for new features are welcomed. You can submit
+    your requests to <a href=http://tix.sourceforge.net> http://tix.sourceforge.net </a> and
+    we'll be happy to hear from you. <p>
+
+    We can't guarantee to implement the requested features
+    immediately. Usually it depends on how important the features. If
+    the feature is requested by more people, it will usually get done
+    faster.
+
+    However, some frequently requested features probably won't be
+    imlemented. Usually these features are cosmetic changes and:
+
+    <ul>
+    <li> they do not add new capability to the widgets
+    <li> they are not universally liked
+    <li> they confuse the user.
+    </ul>
+
+    <p>
+    Some examples are:
+
+    <ul>
+
+    <li> <b>Different foreground and background colors for the
+    NoteBook tabs</b>: having a lot of colors may antagonize the users
+    that are "color haters"; also, the different colors don't make it
+    easier for the user to locate the desired tab.
+
+    <li> <b>Ring-binder metaphore for the NoteBook widget</b>: a waste
+    of screen real estate.
+
+    <li> <b>Rows of tabs for the NoteBook widget</b>: the user may be
+    confused when the rows of tabs are switched. If you need to have a
+    lot of tabs for the notebook, use the ListNoteBook widget instead.
+
+    </ul>
+
+
+<p>
+<DT> <b><a name=general.softwares> [G.11] </a> 
+    Who are using Tix in their software?
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+See <A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A>
+
+
+<p>
+<DT> <b><a name=general.twice> [G.12] </a> 
+
+    I am using a DirList widget. When the user clicks on an item, the
+    procedure of my <code>-browsecmd</code> gets called
+    twice. However, I just want it to be called once.
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    The <code>-browsecmd</code> procedure is triggered by three types
+    of events: <code>&lt;1&gt;</code>,
+    <code>&lt;ButtonRelease-1&gt;</code>, and
+    <code>&lt;B1-Motion&gt;</code>. When the user clicks on an entry,
+    a <code>&lt;1&gt;</code> and a
+    <code>&lt;ButtonRelease-1&gt;</code> event will happen in rapid
+    session, which causes your <code>-browsecmd</code> procedure to be
+    called twice. <p>
+
+    A crude fix for this problem is to ignore all the
+    <code>&lt;ButtonRelease-1&gt;</code> events. You can find out the
+    event that triggers the <code>-browsecmd</code> procedure by the
+    <code>tixEvent</code> command. Here is an example:
+
+    <blockquote><pre>
+    tixDirList .c -browsecmd Browse
+
+    proc Browse {args} {
+	if {[tixEvent type] == "<code>&lt;ButtonRelease-1&gt;</code>"} {
+	    return
+	}
+	# ....
+    }
+    </pre></blockquote>
+
+    However, the above solution is not perfect. For example, if the
+    user clicks down the button at entry one, drags it over entries
+    two and three and release it on top of entry three, the following
+    events may be caused: <p>
+
+    <ol>
+        <li> <code>&lt;1&gt;</code> on entry one.
+        <li> <code>&lt;B1-Motion&gt;</code> on entry two.
+        <li> <code>&lt;ButtonRelease-1&gt;</code> on entry three.
+    </ol> <p>
+
+    Therefore, if you use the above method, the browse event on entry
+    three will be lost! <p>
+
+    To devise a better solution, it's better to understand the basic
+    design conventions of a Tix-based GUI. Suppose we have a list of
+    entries displayed in a listbox (or DirList, or HList). When the
+    user clicks on an entry, the GUI usually responds by displaying a
+    "<b>detailed view</b>" of the entry. For example, if we put a list
+    of file names in a listbox, when the user clicks on a file name,
+    we display the contents of the file in a text window. If the user
+    then clicks on another file name, the text window will load in the
+    contents of the new file. <p>
+
+    Now what happens if the user clicks on the same entry twice? Do we
+    reload the contents of the file into the text window? This is
+    usually unnecessary, inefficient and probably not what the user
+    wants to do. The Tix convention is, when the user clicks on the
+    same entry again, the detail view is not updated. If the user
+    wants to force an update (e.g, the user knows the file's contents
+    has been changed and wants to see the new version), he or she can
+    double-click on the entry and the application will respond by
+    redisplaying the detail view (reloading the file). <p>
+
+    To implement this policy, the Browse procedure should be modified
+    as the following:
+
+    <blockquote><pre>
+    proc Browse {args} {
+	global currentView
+
+	set ent [tixEvent value]
+	if {$ent == $currentView} {
+	    # We have already displayed the detailed view of $ent.
+	    #
+	    return
+	} else {
+	    set currentView $ent
+	    DisplayDetail $ent
+	}
+    }
+    </pre></blockquote> <p>
+
+<p>
+<DT> <b><a name=general.destroy> [G.13] </a> 
+
+    I get an error <i>"can't read data(-value): no such element in
+    array</i>" when I use the tixExFileSelectDialog.
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+
+    If you use tixExFileSelectDialog like this:
+
+<pre>
+	tixExFileSelectDialog .f -command foo
+
+	foo {filename} {
+	    destroy .f
+	    do some other stuff ...
+	}
+</pre>
+
+ it will cause a Tcl error because the dialog assumes that it still
+ exists after calling your command. This usually result in errors like
+ this:
+
+<pre>
+	can't read "data(-value)": no such element in array
+	    while executing
+	"set data(-selection) $data(-value)..."
+	    (procedure "tixComboBox::SetValue" line 30)
+</pre>
+
+
+  This "feature" is built into many Tix widgets and can't be fixed
+  easily. To work around the problem, never destroy widgets inside
+  -command calls. Usually you should unmap toplevel windows
+  instead. If you must destroy widgets, do it with an "after"
+  command. For example, the foo procedure should be rewritten as:
+
+<pre>
+	foo {filename} {
+	    wm withdraw .f
+	    do some other stuff ...
+
+	    after idle {if [winfo exists .f] {destroy .f}}
+	}
+</pre>
+
+  Execute the "after" command at the very end of the
+  -command. Otherwise the idle handler may be activated by some
+  "update" calls.
+
+<p>
+</DL>
+<hr>
+<h3>
+    Question About Porting to Specific Platforms/Software
+</h3>
+<DL>
+<DT> <b><a name=port.1> [P.1] </a> 
+    The configure script gave me strange errors.
+</b><p>
+<DD>
+<b> ANSWER: </b> 
+    The problem may be you have several operating systems sharing the
+    same file system. Some people encounter error messages like this:
+
+<blockquote><pre>
+# ./configure --prefix=/usr/vendor/tcl
+loading cache ./config.cache
+checking for a BSD compatible install... /usr/bin/installbsd -c
+checking for ranlib... ranlib
+checking how to run the C preprocessor... cc -E
+checking for unistd.h... ./configure[603]: "${ac_cv_header_$ac_safe+set}": bad
+substitution
+</pre></blockquote>
+
+    The problem is at line 2, configure loaded in ./config.cache,
+    which may have been created by a different operating system, with
+    settings only usuable for that operating system. To get around
+    this, you should type
+
+<blockquote><pre>
+make distclean
+./configure
+make all
+</pre></blockquote>

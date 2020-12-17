@@ -1,0 +1,327 @@
+#  -*- tcl -*-
+#
+# notify.test --
+#
+# This file tests several functions in the file, 'generic/tclNotify.c'.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2003 by Kevin B. Kenny.  All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testevent [llength [info commands testevent]]
+
+test notify-1.1 {Tcl_QueueEvent and delivery of a single event} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {one}
+
+test notify-1.2 {Tcl_QueueEvent and delivery of events in order} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent queue three tail {lappend delivered three; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {one two three}
+
+test notify-1.3 {Tcl_QueueEvent at head} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one head {lappend delivered one; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result one
+
+test notify-1.4 {Tcl_QueueEvent multiple events at head} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one head {lappend delivered one; expr 1}
+	testevent queue two head {lappend delivered two; expr 1}
+	testevent queue three head {lappend delivered three; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {three two one}
+
+test notify-1.5 {Tcl_QueueEvent marker event into an empty queue} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result one
+
+test notify-1.6 {Tcl_QueueEvent first marker event in a nonempty queue} \
+    -constraints {testevent}  \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	testevent queue three head {lappend delivered three; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {three two one}
+
+test notify-1.7 {Tcl_QueueEvent second marker event} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {one two}
+
+test notify-1.8 {Tcl_QueueEvent preexisting event following second marker} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent queue three mark {lappend delivered three; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {one three two}
+
+test notify-2.1 {remove sole element, don't replace } \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent delete one
+	vwait done
+	set delivered
+    } \
+    -result {}
+
+test notify-2.2 {remove and replace sole element} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent delete one
+	testevent queue two tail {lappend delivered two; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result two
+
+test notify-2.3 {remove first element} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent delete one
+	vwait done
+	set delivered
+    } \
+    -result {two}
+
+test notify-2.4 {remove and replace first element} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent delete one
+	testevent queue three head {lappend delivered three; expr 1};
+	vwait done
+	set delivered
+    } \
+    -result {three two}
+
+test notify-2.5 {remove last element} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent delete two
+	vwait done
+	set delivered
+    } \
+    -result {one}
+
+
+test notify-2.6 {remove and replace last element} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent delete two
+	testevent queue three tail {lappend delivered three; expr 1};
+	vwait done
+	set delivered
+    } \
+    -result {one three}
+
+test notify-2.7 {remove a middle element} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one tail {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent queue three tail {lappend delivered three; expr 1}
+	testevent delete two
+	vwait done
+	set delivered
+    } \
+    -result {one three}
+
+test notify-2.8 {remove a marker event that's the sole event in the queue} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent delete one
+	vwait done
+	set delivered
+    } \
+    -result {}
+
+test notify-2.9 {remove and replace a marker event that's the sole event} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent delete one
+	testevent queue two mark {lappend delivered two; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result two
+
+test notify-2.10 {remove marker event from head} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	testevent delete one
+	vwait done
+	set delivered
+    } \
+    -result two
+
+test notify-2.11 {remove and replace marker event at head} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two tail {lappend delivered two; expr 1}
+	testevent delete one
+	testevent queue three mark {lappend delivered three; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {three two}
+
+test notify-2.12 {remove marker event at tail} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	testevent delete two
+	vwait done
+	set delivered
+    } \
+    -result {one}
+
+test notify-2.13 {remove and replace marker event at tail} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	testevent delete two
+	testevent queue three mark {lappend delivered three; expr 1}
+	vwait done
+	set delivered
+    } \
+    -result {one three}
+
+test notify-2.14 {remove marker event from middle} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	testevent queue three mark {lappend delivered three; expr 1}
+	testevent delete two
+	vwait done
+	set delivered
+    } \
+    -result {one three}
+
+test notify-2.15 {remove and replace marker event at middle} \
+    -constraints {testevent} \
+    -body {
+	set delivered {}
+	after 10 set done 1
+	testevent queue one mark {lappend delivered one; expr 1}
+	testevent queue two mark {lappend delivered two; expr 1}
+	testevent queue three tail {lappend delivered three; expr 1}
+	testevent delete two
+	testevent queue four mark {lappend delivered four; expr 1};
+	vwait done
+	set delivered
+    } \
+    -result {one four three}
+
+# cleanup
+::tcltest::cleanupTests
+return

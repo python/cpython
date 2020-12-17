@@ -1,0 +1,87 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetJustifyFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetJustifyFromObj, Tk_GetJustify, Tk_NameOfJustify \- translate between strings and justification styles
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_GetJustifyFromObj(\fIinterp, objPtr, justifyPtr\fB)\fR
+.sp
+int
+\fBTk_GetJustify(\fIinterp, string, justifyPtr\fB)\fR
+.sp
+const char *
+\fBTk_NameOfJustify(\fIjustify\fB)\fR
+.SH ARGUMENTS
+.AS "Tk_Justify" *justifyPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting, or NULL.
+.AP Tcl_Obj *objPtr in/out
+String value contains name of justification style \- one of
+.QW \fBleft\fR ,
+.QW \fBright\fR ,
+or
+.QW \fBcenter\fR
+\- or a unique abbreviation of one.
+The internal rep will be modified to cache corresponding justify value.
+.AP "const char" *string in
+Same as \fIobjPtr\fR except description of justification style is passed as
+a string.
+.AP int *justifyPtr out
+Pointer to location in which to store justify value corresponding to
+\fIobjPtr\fR or \fIstring\fR.
+.AP Tk_Justify justify in
+Justification style (one of the values listed below).
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetJustifyFromObj\fR places in \fI*justifyPtr\fR the justify value
+corresponding to \fIobjPtr\fR's value.
+This value will be one of the following:
+.TP
+\fBTK_JUSTIFY_LEFT\fR
+Means that the text on each line should start at the left edge of
+the line;  as a result, the right edges of lines may be ragged.
+.TP
+\fBTK_JUSTIFY_RIGHT\fR
+Means that the text on each line should end at the right edge of
+the line;  as a result, the left edges of lines may be ragged.
+.TP
+\fBTK_JUSTIFY_CENTER\fR
+Means that the text on each line should be centered;  as a result,
+both the left and right edges of lines may be ragged.
+.PP
+Under normal circumstances the return value is \fBTCL_OK\fR and
+\fIinterp\fR is unused.
+If \fIobjPtr\fR does not contain a valid justification style
+or an abbreviation of one of these names, \fBTCL_ERROR\fR is returned,
+\fI*justifyPtr\fR is unmodified, and an error message is
+stored in \fIinterp\fR's result if \fIinterp\fR is not NULL.
+\fBTk_GetJustifyFromObj\fR caches information about the return
+value in \fIobjPtr\fR, which speeds up future calls to
+\fBTk_GetJustifyFromObj\fR with the same \fIobjPtr\fR.
+.PP
+\fBTk_GetJustify\fR is identical to \fBTk_GetJustifyFromObj\fR except
+that the description of the justification is specified with a string instead
+of an object.  This prevents \fBTk_GetJustify\fR from caching the
+return value, so \fBTk_GetJustify\fR is less efficient than
+\fBTk_GetJustifyFromObj\fR.
+.PP
+\fBTk_NameOfJustify\fR is the logical inverse of \fBTk_GetJustify\fR.
+Given a justify value it returns a statically-allocated string
+corresponding to \fIjustify\fR.
+If \fIjustify\fR is not a legal justify value, then
+.QW "unknown justification style"
+is returned.
+.SH KEYWORDS
+center, fill, justification, string

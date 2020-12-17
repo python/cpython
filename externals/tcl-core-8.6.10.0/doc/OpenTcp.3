@@ -1,0 +1,169 @@
+'\"
+'\" Copyright (c) 1996-7 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_OpenTcpClient 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_OpenTcpClient, Tcl_MakeTcpClientChannel, Tcl_OpenTcpServer \- procedures to open channels using TCP sockets
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h> \fR
+.sp
+Tcl_Channel
+\fBTcl_OpenTcpClient\fR(\fIinterp, port, host, myaddr, myport, async\fR)
+.sp
+Tcl_Channel
+\fBTcl_MakeTcpClientChannel\fR(\fIsock\fR)
+.sp
+Tcl_Channel
+\fBTcl_OpenTcpServer\fR(\fIinterp, port, myaddr, proc, clientData\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_TcpAcceptProc clientData
+.AP Tcl_Interp *interp in
+Tcl interpreter to use for error reporting.  If non-NULL and an
+error occurs, an error message is left in the interpreter's result.
+.AP int port in
+A port number to connect to as a client or to listen on as a server.
+.AP "const char" *host in
+A string specifying a host name or address for the remote end of the connection.
+.AP int myport in
+A port number for the client's end of the socket.  If 0, a port number
+is allocated at random.
+.AP "const char" *myaddr in
+A string specifying the host name or address for network interface to use
+for the local end of the connection.  If NULL, a default interface is
+chosen.
+.AP int async in
+If nonzero, the client socket is connected asynchronously to the server.
+.AP ClientData sock in
+Platform-specific handle for client TCP socket.
+.AP Tcl_TcpAcceptProc *proc in
+Pointer to a procedure to invoke each time a new connection is
+accepted via the socket.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These functions are convenience procedures for creating
+channels that communicate over TCP sockets.
+The operations on a channel
+are described in the manual entry for \fBTcl_OpenFileChannel\fR.
+.SS TCL_OPENTCPCLIENT
+.PP
+\fBTcl_OpenTcpClient\fR opens a client TCP socket connected to a \fIport\fR
+on a specific \fIhost\fR, and returns a channel that can be used to
+communicate with the server. The host to connect to can be specified either
+as a domain name style name (e.g. \fBwww.sunlabs.com\fR), or as a string
+containing the alphanumeric representation of its four-byte address (e.g.
+\fB127.0.0.1\fR). Use the string \fBlocalhost\fR to connect to a TCP socket on
+the host on which the function is invoked.
+.PP
+The \fImyaddr\fR and \fImyport\fR arguments allow a client to specify an
+address for the local end of the connection.  If \fImyaddr\fR is NULL, then
+an interface is chosen automatically by the operating system.
+If \fImyport\fR is 0, then a port number is chosen at random by
+the operating system.
+.PP
+If \fIasync\fR is zero, the call to \fBTcl_OpenTcpClient\fR returns only
+after the client socket has either successfully connected to the server, or
+the attempted connection has failed.
+If \fIasync\fR is nonzero the socket is connected asynchronously and the
+returned channel may not yet be connected to the server when the call to
+\fBTcl_OpenTcpClient\fR returns. If the channel is in blocking mode and an
+input or output operation is done on the channel before the connection is
+completed or fails, that operation will wait until the connection either
+completes successfully or fails. If the channel is in nonblocking mode, the
+input or output operation will return immediately and a subsequent call to
+\fBTcl_InputBlocked\fR on the channel will return nonzero.
+.PP
+The returned channel is opened for reading and writing.
+If an error occurs in opening the socket, \fBTcl_OpenTcpClient\fR returns
+NULL and records a POSIX error code that can be retrieved
+with \fBTcl_GetErrno\fR.
+In addition, if \fIinterp\fR is non-NULL, an error message
+is left in the interpreter's result.
+.PP
+The newly created channel is not registered in the supplied interpreter; to
+register it, use \fBTcl_RegisterChannel\fR.
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
+previously closed, the act of creating the new channel also assigns it as a
+replacement for the standard channel.
+.SS TCL_MAKETCPCLIENTCHANNEL
+.PP
+\fBTcl_MakeTcpClientChannel\fR creates a \fBTcl_Channel\fR around an
+existing, platform specific, handle for a client TCP socket.
+.PP
+The newly created channel is not registered in the supplied interpreter; to
+register it, use \fBTcl_RegisterChannel\fR.
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
+previously closed, the act of creating the new channel also assigns it as a
+replacement for the standard channel.
+.SS TCL_OPENTCPSERVER
+.PP
+\fBTcl_OpenTcpServer\fR opens a TCP socket on the local host on a specified
+\fIport\fR and uses the Tcl event mechanism to accept requests from clients
+to connect to it. The \fImyaddr\fR argument specifies the network interface.
+If \fImyaddr\fR is NULL the special address INADDR_ANY should be used to
+allow connections from any network interface.
+Each time a client connects to this socket, Tcl creates a channel
+for the new connection and invokes \fIproc\fR with information about
+the channel. \fIProc\fR must match the following prototype:
+.PP
+.CS
+typedef void \fBTcl_TcpAcceptProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Channel \fIchannel\fR,
+        char *\fIhostName\fR,
+        int \fIport\fR);
+.CE
+.PP
+The \fIclientData\fR argument will be the same as the \fIclientData\fR
+argument to \fBTcl_OpenTcpServer\fR, \fIchannel\fR will be the handle
+for the new channel, \fIhostName\fR points to a string containing
+the name of the client host making the connection, and \fIport\fR
+will contain the client's port number.
+The new channel
+is opened for both input and output. 
+If \fIproc\fR raises an error, the connection is closed automatically.
+\fIProc\fR has no return value, but if it wishes to reject the
+connection it can close \fIchannel\fR.
+.PP
+\fBTcl_OpenTcpServer\fR normally returns a pointer to a channel
+representing the server socket.
+If an error occurs, \fBTcl_OpenTcpServer\fR returns NULL and
+records a POSIX error code that can be retrieved with \fBTcl_GetErrno\fR.
+In addition, if the interpreter is non-NULL, an error message
+is left in the interpreter's result.
+.PP
+The channel returned by \fBTcl_OpenTcpServer\fR cannot be used for
+either input or output.
+It is simply a handle for the socket used to accept connections.
+The caller can close the channel to shut down the server and disallow
+further connections from new clients.
+.PP
+TCP server channels operate correctly only in applications that dispatch
+events through \fBTcl_DoOneEvent\fR or through Tcl commands such as
+\fBvwait\fR; otherwise Tcl will never notice that a connection request from
+a remote client is pending.
+.PP
+The newly created channel is not registered in the supplied interpreter; to
+register it, use \fBTcl_RegisterChannel\fR.
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
+previously closed, the act of creating the new channel also assigns it as a
+replacement for the standard channel.
+.SH "PLATFORM ISSUES"
+.PP
+On Unix platforms, the socket handle is a Unix file descriptor as
+returned by the \fBsocket\fR system call.  On the Windows platform, the
+socket handle is a \fBSOCKET\fR as defined in the WinSock API.
+.SH "SEE ALSO"
+Tcl_OpenFileChannel(3), Tcl_RegisterChannel(3), vwait(n)
+.SH KEYWORDS
+channel, client, server, socket, TCP

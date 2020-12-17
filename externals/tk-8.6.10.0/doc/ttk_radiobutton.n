@@ -1,0 +1,104 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::radiobutton n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::radiobutton \- Mutually exclusive option widget
+.SH SYNOPSIS
+\fBttk::radiobutton\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+\fBttk::radiobutton\fR widgets are used in groups to show or change
+a set of mutually-exclusive options.
+Radiobuttons are linked to a Tcl variable,
+and have an associated value; when a radiobutton is clicked,
+it sets the variable to its associated value.
+.SO ttk_widget
+\-class	\-compound	\-cursor
+\-image	\-state	\-style
+\-takefocus	\-text	\-textvariable
+\-underline	\-width
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-command command Command
+A Tcl script to evaluate whenever the widget is invoked.
+.OP \-value Value Value
+The value to store in the associated \fB\-variable\fR
+when the widget is selected.
+.OP \-variable variable Variable
+The name of a global variable whose value is linked to the widget.
+Default value is \fB::selectedButton\fR.
+.SH "WIDGET COMMAND"
+.PP
+In addition to the standard
+\fBcget\fR, \fBconfigure\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR
+commands, radiobuttons support the following additional
+widget commands:
+.TP
+\fIpathname\fB invoke\fR
+Sets the \fB\-variable\fR to the \fB\-value\fR, selects the widget,
+and evaluates the associated \fB\-command\fR.
+Returns the result of the \fB\-command\fR, or the empty
+string if no \fB\-command\fR is specified.
+.\" Missing: select, deselect.  Useful?
+.\" Missing: flash.  This is definitely not useful.
+.SH "WIDGET STATES"
+.PP
+The widget does not respond to user input if the \fBdisabled\fR state is set.
+The widget sets the \fBselected\fR state whenever
+the linked \fB\-variable\fR is set to the widget's \fB\-value\fR,
+and clears it otherwise.
+The widget sets the \fBalternate\fR state whenever the
+linked \fB\-variable\fR is unset.
+(The \fBalternate\fR state may be used to indicate a
+.QW tri-state
+or
+.QW indeterminate
+selection.)
+.SH "STANDARD STYLES"
+.PP
+\fBTtk::radiobutton\fR widgets support the \fBToolbutton\fR style in all
+standard themes, which is useful for creating widgets for toolbars.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::radiobutton\fP is \fBTRadiobutton\fP.
+.PP
+Dynamic states: \fBactive\fP, \fBalternate\fP, \fBdisabled\fP,
+\fBpressed\fP, \fBreadonly\fP, \fBselected\fP.
+.PP
+\fBTRadiobutton\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-compound\fP \fIcompound\fP
+.br
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-indicatorbackground\fP \fIcolor\fP
+.br
+\fB\-indicatorcolor\fP \fIcolor\fP
+.br
+\fB\-indicatormargin\fP \fIpadding\fP
+.br
+\fB\-indicatorrelief\fP \fIrelief\fP
+.br
+\fB\-padding\fP \fIpadding\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), ttk::checkbutton(n), radiobutton(n)
+.SH "KEYWORDS"
+widget, button, option
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

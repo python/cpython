@@ -1,0 +1,240 @@
+'\"
+'\" $Id: tixFileSelectBox.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixFileSelectBox n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+tixFileSelectBox \- Create and manipulate Tix FileSelectBox widgets
+'\"
+'\"
+'\"
+.SH SYNOPSIS
+\fBtixFileSelectBox \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The FileSelectBox widget supports all the standard options of a frame
+widget.  See the \fBoptions(n)\fR manual entry for details on the standard
+options.
+'\"
+'\"
+'\"
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"----------
+.OP \-browsecmd browsecmd browseCmd
+Specifies the command to execute when the user browses through the
+files. By default, if the \fB\-browsecmd\fR is specified, the browse
+command will be executed when the user clicks on a filename in the
+\fIFiles\fR listbox.
+'\"----------
+.OP \-command command Command
+Specifies the command to execute when the FileSelectBox is
+invoked. This command is executed with one parameter : the filename
+selected by the user.
+'\"----------
+.LP
+.nf
+Name:		\fBdirectory\fR
+Class:		\fBDirectory\fR
+Switch:		\fB\-directory\fR
+Alias:		\fB\-dir\fR
+.fi
+.IP
+Specifies the directory to look for files. By default this will be the
+current working directory of the program and will be changed as the
+user browses through the directories.
+'\"
+'\"----------BEGIN
+.OP \-disablecallback disableCallback DisableCallback
+A boolean value indicating whether callbacks should be disabled. When
+set to true, the TCL command specified by the \fB\-command\fR option
+is not executed when the \fB\-value\fR of the ExFileSelectBox
+widget changes.
+'\"----------END
+'\"----------
+.OP \-pattern pattern Pattern
+Specifies the matching pattern of the file names that should be listed in
+the \fIFiles\fR listbox. For example "*.c" matches all the filenames that
+end with ".c". If this option is set to the empty string, the default
+pattern "*" will be used.
+'\"----------
+.LP
+.nf
+Name:		\fBvalue\fR
+Class:		\fBValue\fR
+Switch:		\fB\-value\fR
+Alias:		\fB\-selection\fR
+.fi
+.IP
+Specifies the name of the filename currently selected by the user.
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBdirlist\fR
+Class:		\fBTixScrolledListBox\fR
+.fi
+.IP
+The scrolled listbox that shows the directories.
+'\"----------END
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBfilelist\fR
+Class:		\fBTixScrolledListBox\fR
+.fi
+.IP
+The scrolled listbox that shows the files.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBfilter\fR
+Class:		\fBTixComboBox\fR
+.fi
+.IP
+The ComboBox listbox that shows the filter string.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBselection\fR
+Class:		\fBTixComboBox\fR
+.fi
+.IP
+The ComboBox listbox that shows the file selection.
+'\"----------END
+'\"
+.BE
+'\"======================
+'\"
+'\"
+'\"
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixFileSelectBox\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a FileSelectBox widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+FileSelectBox such as its cursor and relief.
+.PP
+The FileSelectBox is similar to the standard Motif(TM) file-selection
+box. It is generally used for the user to choose a file. FileSelectBox
+stores the files mostly recently selected into a ComboBox widget so
+that they can be quickly selected again. The \fBtixFileSelectDialog\fR
+widget is a combination of the FileSelectBox widget and a dialog
+widget.
+'\"
+.SH "WIDGET COMMAND"
+.PP
+'\"
+The \fBtixFileSelectBox\fR command creates a new Tcl command whose
+name is the same as the path name of the FileSelectBox's window.
+This command may be used to invoke various operations on the widget.
+It has the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+FileSelectBox widget's path name. \fIOption\fR and the
+\fIarg\fRs determine the exact behavior of the command.  The following
+commands are possible for FileSelectBox widgets:
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixFileSelectBox\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixFileSelectBox\fR command.
+'\"
+.TP
+\fIpathName \fBfilter\fR
+'\"
+Updates the files listed in the FileSelectBox according to the
+filtering pattern sepcified in the \fBfilter\fR subwidget.
+.TP
+\fIpathName \fBinvoke\fR
+Execute the command specified by the \fB\-command\fR option with the
+filename stored in the \fBselection\fR subwidget.
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+.SH "DEFAULT BINDINGS"
+TIX automatically creates class bindings for FileSelectBoxes that give them
+the following default behavior:
+.IP [1]
+Mouse button 1 in the \fIDirectory\fR listbox will change the filter
+string to the selected directory.
+.IP [2]
+Mouse button 1 in the \fIFiles\fR listbox will change the filename
+that appears in the \fISelection\fR entry. It will also trigger the
+\fB\-browsecmd\fR if the option has been specified.
+.IP [3]
+The current directory will be changed by (1) double clicking the
+\fIDirectory\fR listbox or (2) invoking the \fIFilter\fR ComboBox.
+Please refer to the man page of \fBtixComboBox\fR for the default
+bindings of the ComboBoxes and how they can be invoked.
+.IP [4]
+The command specified by the option -command will be invoked by (1)
+double clicking the \fIFiles\fR listbox or (2) invoking
+\fISelection\fR ComboBox.
+'\"
+'\"
+.SH KEYWORDS
+tixFileSelectBox, tixComboBox, tixFileSelectDialog, Tix(n), 
+
+
+

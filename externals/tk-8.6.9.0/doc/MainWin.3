@@ -1,0 +1,40 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_MainWindow 3 7.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_MainWindow, Tk_GetNumMainWindows \- functions for querying main window information
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Window
+\fBTk_MainWindow\fR(\fIinterp\fR)
+.sp
+int
+\fBTk_GetNumMainWindows\fR()
+.SH ARGUMENTS
+.AS Tcl_Interp *pathName
+.AP Tcl_Interp *interp in/out
+Interpreter associated with the application.
+.BE
+.SH DESCRIPTION
+.PP
+A main window is a special kind of toplevel window used as the
+outermost window in an application.
+.PP
+If \fIinterp\fR is associated with a Tk application then \fBTk_MainWindow\fR
+returns the application's main window. If there is no Tk application
+associated with \fIinterp\fR then \fBTk_MainWindow\fR returns NULL and
+leaves an error message in interpreter \fIinterp\fR's result.
+.PP
+\fBTk_GetNumMainWindows\fR returns a count of the number of main
+windows currently open in the current thread.
+.SH KEYWORDS
+application, main window

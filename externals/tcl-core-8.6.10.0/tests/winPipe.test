@@ -1,0 +1,621 @@
+#
+# winPipe.test --
+#
+# This file contains a collection of tests for tclWinPipe.c
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output (except for one message) means no errors were found.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest
+namespace import -force ::tcltest::*
+unset -nocomplain path
+
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+}
+
+set org_pwd [pwd]
+set bindir [file join $org_pwd [file dirname [info nameofexecutable]]]
+set cat32 [file join $bindir cat32.exe]
+
+# several test-cases here expect current directory == [temporaryDirectory]:
+cd [temporaryDirectory]
+
+testConstraint exec         [llength [info commands exec]]
+testConstraint cat32        [file exists $cat32]
+testConstraint AllocConsole [catch {puts console1 ""}]
+testConstraint RealConsole  [expr {![testConstraint AllocConsole]}]
+testConstraint testexcept   [llength [info commands testexcept]]
+testConstraint slowTest     0
+
+
+set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
+append big $big
+append big $big	
+append big $big
+append big $big
+append big $big
+append big $big
+
+set path(little) [makeFile {} little]
+set f [open $path(little) w]
+puts -nonewline $f "little"
+close $f
+
+set path(big) [makeFile {} big]
+set f [open $path(big) w]
+puts -nonewline $f $big
+close $f
+
+proc contents {file} {
+    set f [open $file r]
+    set r [read $f]
+    close $f
+    set r
+}
+
+set path(more) [makeFile {
+    while {[eof stdin] == 0} {
+	puts -nonewline [read stdin]
+    }
+} more]
+
+set path(stdout) [makeFile {} stdout]
+set path(stderr) [makeFile {} stderr]
+
+test winpipe-1.1 {32 bit comprehensive tests: from little file} {win exec cat32} {
+    exec $cat32 < $path(little) > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {little stderr32}
+test winpipe-1.2 {32 bit comprehensive tests: from big file} {win exec cat32} {
+    exec $cat32 < $path(big) > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} "{$big} stderr32"
+test winpipe-1.3 {32 bit comprehensive tests: a little from pipe} {win nt exec cat32} {
+    exec [interpreter] $path(more) < $path(little) | $cat32 > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {little stderr32}
+test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {win nt exec cat32} {
+    exec [interpreter] $path(more) < $path(big) | $cat32 > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} "{$big} stderr32"
+test winpipe-1.6 {32 bit comprehensive tests: from console} \
+	{win cat32 AllocConsole} {
+    # would block waiting for human input
+} {}
+test winpipe-1.7 {32 bit comprehensive tests: from NUL} {win exec cat32} {
+    exec $cat32 < nul > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {{} stderr32}
+test winpipe-1.8 {32 bit comprehensive tests: from socket} {win cat32} {
+    # doesn't work
+} {}
+test winpipe-1.9 {32 bit comprehensive tests: from nowhere} \
+	{win exec cat32 RealConsole} {
+    exec $cat32 > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {{} stderr32}
+test winpipe-1.10 {32 bit comprehensive tests: from file handle} \
+	{win exec cat32} {
+    set f [open $path(little) r]
+    exec $cat32 <@$f > $path(stdout) 2> $path(stderr)
+    close $f
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {little stderr32}
+test winpipe-1.11 {32 bit comprehensive tests: read from application} \
+	{win exec cat32} {
+    set f [open "|[list $cat32] < [list $path(little)]" r]
+    gets $f line
+    catch {close $f} msg
+    list $line $msg
+} {little stderr32}
+test winpipe-1.12 {32 bit comprehensive tests: a little to file} \
+	{win exec cat32} {
+    exec $cat32 < $path(little) > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {little stderr32}
+test winpipe-1.13 {32 bit comprehensive tests: a lot to file} \
+	{win exec cat32} {
+    exec $cat32 < $path(big) > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} "{$big} stderr32"
+test winpipe-1.14 {32 bit comprehensive tests: a little to pipe} \
+	{win exec stdio cat32} {
+    exec $cat32 < $path(little) | [interpreter] $path(more) > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {little stderr32}
+test winpipe-1.15 {32 bit comprehensive tests: a lot to pipe} \
+	{win exec stdio cat32} {
+    exec $cat32 < $path(big) | [interpreter] $path(more) > $path(stdout) 2> $path(stderr)
+    list [contents $path(stdout)] [contents $path(stderr)]
+} "{$big} stderr32"
+test winpipe-1.16 {32 bit comprehensive tests: to console} {win exec cat32} {
+    catch {exec $cat32 << "You should see this\n" >@stdout} msg
+    set msg
+} stderr32
+test winpipe-1.17 {32 bit comprehensive tests: to NUL} {win exec cat32} {
+    # some apps hang when sending a large amount to NUL.  $cat32 isn't one.
+    catch {exec $cat32 < $path(big) > nul} msg
+    set msg
+} stderr32
+test winpipe-1.18 {32 bit comprehensive tests: to nowhere} \
+	{win exec cat32 RealConsole} {
+    exec $cat32 < $path(big) >&@stdout
+} {}
+test winpipe-1.19 {32 bit comprehensive tests: to file handle} {win exec cat32} {
+    set f1 [open $path(stdout) w]
+    set f2 [open $path(stderr) w]
+    exec $cat32 < $path(little) >@$f1 2>@$f2
+    close $f1
+    close $f2
+    list [contents $path(stdout)] [contents $path(stderr)]
+} {little stderr32}
+test winpipe-1.20 {32 bit comprehensive tests: write to application} \
+	{win exec cat32} {
+    set f [open |[list $cat32 >$path(stdout)] w]
+    puts -nonewline $f "foo"
+    catch {close $f} msg
+    list [contents $path(stdout)] $msg
+} {foo stderr32}
+test winpipe-1.21 {32 bit comprehensive tests: read/write application} \
+	{win exec cat32} {
+    set f [open "|[list $cat32]" r+]
+    puts $f $big
+    puts $f \032
+    flush $f
+    set r [read $f 64]
+    catch {close $f}
+    set r
+} "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+test winpipe-4.1 {Tcl_WaitPid} {win nt exec cat32} {
+    proc readResults {f} {
+	global x result
+	if { [eof $f] } {
+	    close $f
+	    set x 1
+	} else {
+	    set line [read $f ]
+	    set result "$result$line"
+	}
+    }
+    set f [open "|[list $cat32] < $path(big) 2> $path(stderr)" r]
+    fconfigure $f  -buffering none -blocking 0
+    fileevent $f readable "readResults $f"
+    set x 0
+    set result ""
+    vwait x
+    list $result $x [contents $path(stderr)]
+} "{$big} 1 stderr32"
+test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec testexcept} {
+    set f [open "|[list [interpreter]]" w+]
+    set pid [pid $f]
+    puts $f "load $::tcltestlib Tcltest"
+    puts $f "testexcept float_underflow"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGFPE}
+test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec testexcept} {
+    set f [open "|[list [interpreter]]" w+]
+    set pid [pid $f]
+    puts $f "load $::tcltestlib Tcltest"
+    puts $f "testexcept access_violation"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGSEGV}
+test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec testexcept} {
+    set f [open "|[list [interpreter]]" w+]
+    set pid [pid $f]
+    puts $f "load $::tcltestlib Tcltest"
+    puts $f "testexcept illegal_instruction"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGILL}
+test winpipe-4.5 {Tcl_WaitPid: return of exception codes, SIGINT} {win exec testexcept} {
+    set f [open "|[list [interpreter]]" w+]
+    set pid [pid $f]
+    puts $f "load $::tcltestlib Tcltest"
+    puts $f "testexcept ctrl+c"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGINT}
+
+set path(nothing) [makeFile {} nothing]
+close [open $path(nothing) w]
+
+catch {set env_tmp $env(TMP)}
+catch {set env_temp $env(TEMP)}
+
+set env(TMP) c:/
+set env(TEMP) c:/
+
+test winpipe-5.1 {TclpCreateTempFile: cleanup temp files} {win exec} {
+    set x {}
+    set existing [glob -nocomplain c:/tcl*.tmp]
+    exec [interpreter] < $path(nothing)
+    foreach p [glob -nocomplain c:/tcl*.tmp] {
+	if {$p ni $existing} {
+	    lappend x $p
+	}
+    }
+    set x
+} {}
+test winpipe-5.2 {TclpCreateTempFile: TMP and TEMP not defined} {win exec} {
+    set tmp $env(TMP)
+    set temp $env(TEMP)
+    unset env(TMP)
+    unset env(TEMP)
+    exec [interpreter] < $path(nothing)
+    set env(TMP) $tmp
+    set env(TEMP) $temp
+    set x {}
+} {}
+test winpipe-5.3 {TclpCreateTempFile: TMP specifies non-existent directory} \
+	{win exec } {
+    set tmp $env(TMP)
+    set env(TMP) snarky
+    exec [interpreter] < $path(nothing)
+    set env(TMP) $tmp
+    set x {}
+} {}
+test winpipe-5.4 {TclpCreateTempFile: TEMP specifies non-existent directory} \
+	{win exec} {
+    set tmp $env(TMP)
+    set temp $env(TEMP)
+    unset env(TMP)
+    set env(TEMP) snarky
+    exec [interpreter] < $path(nothing)
+    set env(TMP) $tmp
+    set env(TEMP) $temp
+    set x {}
+} {}
+
+test winpipe-6.1 {PipeSetupProc & PipeCheckProc: read threads} \
+	{win exec cat32} {
+    set f [open "|[list $cat32]" r+]
+    fconfigure $f -blocking 0
+    fileevent $f writable { set x writable }
+    set x {}
+    vwait x
+    fileevent $f writable {}
+    fileevent $f readable { lappend x readable }
+    after 100 { lappend x timeout }
+    vwait x
+    puts $f foobar
+    flush $f
+    vwait x
+    lappend x [read $f]
+    after 100 { lappend x timeout }
+    vwait x
+    fconfigure $f -blocking 1
+    lappend x [catch {close $f} msg] $msg
+} {writable timeout readable {foobar
+} timeout 1 stderr32}
+test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
+	{win exec cat32} {
+    set f [open "|[list $cat32]" r+]
+    fconfigure $f -blocking 0
+    fileevent $f writable { set x writable }
+    set x {}
+    vwait x
+    puts -nonewline $f $big$big$big$big
+    flush $f
+    after 100 { lappend x timeout }
+    vwait x
+    lappend x [catch {close $f} msg] $msg
+} {writable timeout 0 {}}
+
+proc _testExecArgs {single args} {
+    variable path
+    if {![info exists path(echoArgs.tcl)] || ![file exists $path(echoArgs.tcl)]} {
+	set path(echoArgs.tcl) [makeFile {
+	    puts "[list [file tail $argv0] {*}$argv]"
+	} echoArgs.tcl]
+    }
+    if {![info exists path(echoArgs.bat)] || ![file exists $path(echoArgs.bat)]} {
+	set path(echoArgs.bat) [makeFile "@[file native [interpreter]] $path(echoArgs.tcl) %*" "echoArgs.bat"]
+    }
+    set cmds [list [list [interpreter] $path(echoArgs.tcl)]]
+    if {!($single & 2)} {
+	lappend cmds [list $path(echoArgs.bat)]
+    } else {
+	if {![info exists path(echoArgs2.bat)] || ![file exists $path(echoArgs2.bat)]} {
+	    set path(echoArgs2.bat) [makeFile \
+		"@[file native [interpreter]] $path(echoArgs.tcl) %*" \
+		"echo(Cmd)Test Args & Batch.bat" [makeDirectory test(Dir)Check]]
+	}
+	lappend cmds [list $path(echoArgs2.bat)]
+    }
+    set broken {}
+    foreach args $args {
+	if {$single & 1} {
+	    # enclose single test-arg between 1st/3rd to be sure nothing is truncated
+	    # (e. g. to cover unexpected trim by nts-zero case, and args don't recombined):
+	    set args [list "1st" $args "3rd"]
+	}
+	set args [list {*}$args]; # normalized canonical list
+	foreach cmd $cmds {
+	    set e [linsert $args 0 [file tail $path(echoArgs.tcl)]]
+	    tcltest::DebugPuts 4 "  ## test exec [file extension [lindex $cmd 0]] ($cmd) for\n  ##   $args"
+	    if {[catch {
+		exec {*}$cmd {*}$args
+	    } r]} {
+		set r "ERROR: $r"
+	    }
+	    if {$r ne $e} {
+		append broken "\[ERROR\]: exec [file extension [lindex $cmd 0]] on $args\n  -- result:\n$r\n  -- expected:\n$e\n"
+	    }
+	    if {$single & 8} {
+		# if test exe only:
+		break
+	    }
+	}
+    }
+    return $broken
+}
+
+### validate the raw output of BuildCommandLine().
+###
+test winpipe-7.1 {BuildCommandLine: null arguments} {win exec} {
+    exec $env(COMSPEC) /c echo foo "" bar
+} {foo "" bar}
+test winpipe-7.2 {BuildCommandLine: null arguments} {win exec} {
+    exec $env(COMSPEC) /c echo foo {} bar
+} {foo "" bar}
+test winpipe-7.3 {BuildCommandLine: dbl quote quoting #1} {win exec} {
+    exec $env(COMSPEC) /c echo foo "\"" bar
+} {foo \" bar}
+test winpipe-7.4 {BuildCommandLine: dbl quote quoting #2} {win exec} {
+    exec $env(COMSPEC) /c echo foo {""} bar
+} {foo \"\" bar}
+test winpipe-7.5 {BuildCommandLine: dbl quote quoting #3} {win exec} {
+    exec $env(COMSPEC) /c echo foo "\" " bar
+} {foo "\" " bar}
+test winpipe-7.6 {BuildCommandLine: dbl quote quoting #4} {win exec} {
+    exec $env(COMSPEC) /c echo foo {a="b"} bar
+} {foo a=\"b\" bar}
+test winpipe-7.7 {BuildCommandLine: dbl quote quoting #5} {win exec} {
+    exec $env(COMSPEC) /c echo foo {a = "b"} bar
+} {foo "a = \"b\"" bar}
+test winpipe-7.8 {BuildCommandLine: dbl quote quoting #6} {win exec} {
+    exec $env(COMSPEC) /c echo {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} "he \" llo"
+} {\"hello\" \"\"hello\"\" \"\"\"hello\"\"\" \"\\\"hello\\\"\" "he llo" "he \" llo"}
+test winpipe-7.9 {BuildCommandLine: N backslashes followed a quote rule #1} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\ bar
+} {foo \ bar}
+test winpipe-7.10 {BuildCommandLine: N backslashes followed a quote rule #2} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\\ bar
+} {foo \\ bar}
+test winpipe-7.11 {BuildCommandLine: N backslashes followed a quote rule #3} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\ bar
+} {foo "\ \\" bar}
+test winpipe-7.12 {BuildCommandLine: N backslashes followed a quote rule #4} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\ bar
+} {foo "\ \\\\" bar}
+test winpipe-7.13 {BuildCommandLine: N backslashes followed a quote rule #5} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\\\ bar
+} {foo "\ \\\\\\" bar}
+test winpipe-7.14 {BuildCommandLine: N backslashes followed a quote rule #6} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\" bar
+} {foo "\ \\\"" bar}
+test winpipe-7.15 {BuildCommandLine: N backslashes followed a quote rule #7} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\\" bar
+} {foo "\ \\\\\"" bar}
+test winpipe-7.16 {BuildCommandLine: N backslashes followed a quote rule #8} {win exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\\\\" bar
+} {foo "\ \\\\\\\"" bar}
+test winpipe-7.17 {BuildCommandLine: special chars #4} {win exec} {
+    exec $env(COMSPEC) /c echo foo \{ bar
+} "foo \{ bar"
+test winpipe-7.18 {BuildCommandLine: special chars #5} {win exec} {
+    exec $env(COMSPEC) /c echo foo \} bar
+} "foo \} bar"
+
+set injectList {
+    {test"whoami}     {test""whoami}
+    {test"""whoami}   {test""""whoami}
+
+    "test\"whoami\\"     "test\"\"whoami\\"
+    "test\"\"\"whoami\\" "test\"\"\"\"whoami\\"
+
+    {test\\&\\test}    {test"\\&\\test}
+    {"test\\&\\test}   {"test"\\&\\"test"}
+    {test\\"&"\\test}  {test"\\"&"\\test}
+    {"test\\"&"\\test} {"test"\\"&"\\"test"}
+
+    {test\"&whoami}    {test"\"&whoami}
+    {test""\"&whoami}  {test"""\"&whoami}
+    {test\"\&whoami}   {test"\"\&whoami}
+    {test""\"\&whoami} {test"""\"\&whoami}
+
+    {test&whoami}    {test|whoami}
+    {"test&whoami}   {"test|whoami}
+    {test"&whoami}   {test"|whoami}
+    {"test"&whoami}  {"test"|whoami}
+    {""test"&whoami} {""test"|whoami}
+
+    {test&echo "}    {test|echo "}
+    {"test&echo "}   {"test|echo "}
+    {test"&echo "}   {test"|echo "}
+    {"test"&echo "}  {"test"|echo "}
+    {""test"&echo "} {""test"|echo "}
+
+    {test&echo ""}    {test|echo ""}
+    {"test&echo ""}   {"test|echo ""}
+    {test"&echo ""}   {test"|echo ""}
+    {"test"&echo ""}  {"test"|echo ""}
+    {""test"&echo ""} {""test"|echo ""}
+
+    {test>whoami}    {test<whoami}
+    {"test>whoami}   {"test<whoami}
+    {test">whoami}   {test"<whoami}
+    {"test">whoami}  {"test"<whoami}
+    {""test">whoami} {""test"<whoami}
+    {test(whoami)}   {test(whoami)}
+    {test"(whoami)}  {test"(whoami)}
+    {test^whoami}    {test^^echo ^^^}
+    {test"^whoami}   {test"^^echo ^^^}
+    {test"^echo ^^^"} {test""^echo" ^^^"}
+
+    {test%USERDOMAIN%\%USERNAME%}
+    {test" %USERDOMAIN%\%USERNAME%}
+    {test%USERDOMAIN%\\%USERNAME%}
+    {test" %USERDOMAIN%\\%USERNAME%}
+    {test%USERDOMAIN%&%USERNAME%}
+    {test" %USERDOMAIN%&%USERNAME%}
+    {test%USERDOMAIN%\&\%USERNAME%}
+    {test" %USERDOMAIN%\&\%USERNAME%}
+
+    {test%USERDOMAIN%\&\test}
+    {test" %USERDOMAIN%\&\test}
+    {test%USERDOMAIN%\\&\\test}
+    {test" %USERDOMAIN%\\&\\test}
+
+    {test%USERDOMAIN%\&\"test}
+    {test" %USERDOMAIN%\&\"test}
+    {test%USERDOMAIN%\\&\\"test}
+    {test" %USERDOMAIN%\\&\\"test}
+}
+
+### validate the pass-thru from BuildCommandLine() to the crt's parse_cmdline().
+###
+test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: dumped arguments are equal original} \
+-constraints {win exec} -body {
+    _testExecArgs 0 \
+	[list foo "" bar] \
+	[list foo {} bar] \
+	[list foo "\"" bar] \
+	[list foo {""} bar] \
+	[list foo "\" " bar] \
+	[list foo {a="b"} bar] \
+	[list foo {a = "b"} bar] \
+	[list {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}] \
+	[list foo \\ bar] \
+	[list foo \\\\ bar] \
+	[list foo \\\ \\ bar] \
+	[list foo \\\ \\\\ bar] \
+	[list foo \\\ \\\\\\ bar] \
+	[list foo \\\ \\\" bar] \
+	[list foo \\\ \\\\\" bar] \
+	[list foo \\\ \\\\\\\" bar] \
+	[list foo \{ bar] \
+	[list foo \} bar] \
+	[list foo * makefile.?c bar]
+} -result {}
+
+test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (particular)} \
+-constraints {win exec slowTest} -body {
+    _testExecArgs 1 {*}$injectList
+} -result {}
+
+test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (jointly)} \
+-constraints {win exec} -body {
+    _testExecArgs 0 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
+test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (command/jointly args)} \
+-constraints {win exec} -body {
+    _testExecArgs 2 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
+test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (random mix)} \
+-constraints {win exec} -body {
+    set lst {}
+    set maps {
+	{\&|^<>!()%}
+	{\&|^<>!()% }
+	{"\&|^<>!()%}
+	{"\&|^<>!()% }
+	{"""""\\\\\&|^<>!()%}
+	{"""""\\\\\&|^<>!()% }
+    }
+    set i 0
+    time {
+	set args {[incr i].}
+	time {
+	    set map [lindex $maps [expr {int(rand()*[llength $maps])}]]
+	    # be sure arg has some prefix (avoid special handling, like |& etc)
+	    set a {x}
+	    while {[string length $a] < 50} {
+		append a [string index $map [expr {int(rand()*[string length $map])}]]
+	    }
+	    lappend args $a
+	} 20
+	lappend lst $args
+    } 10
+    _testExecArgs 0 {*}$lst
+} -result {} -cleanup {
+    unset -nocomplain lst args a map maps
+}
+
+set injectList {
+    "test\"\nwhoami"     "test\"\"\nwhoami"
+    "test\"\"\"\nwhoami" "test\"\"\"\"\nwhoami"
+    "test;\n&echo \""    "\"test;\n&echo \""
+    "test\";\n&echo \""  "\"test\";\n&echo \""
+    "\"\"test\";\n&echo \""
+}
+
+test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args} \
+-constraints {win exec} -body {
+    # test exe only, because currently there is no proper way to escape a new-line char resp.
+    # to supply a new-line to the batch-files within arguments (command line is truncated).
+    _testExecArgs 8 \
+	[list START     {*}$injectList END] \
+	[list "START\"" {*}$injectList END] \
+	[list START     {*}$injectList "\"END"] \
+	[list "START\"" {*}$injectList "\"END"]
+} -result {}
+
+test winpipe-8.7 {BuildCommandLine/parse_cmdline pass-thru: check new-line quoted in args (batch)} \
+-constraints {win exec knownBug} -body {
+    # this will fail if executed batch-file, because currently there is no proper way to escape a new-line char.
+    _testExecArgs 0 $injectList
+} -result {}
+
+
+rename _testExecArgs {}
+
+# restore old values for env(TMP) and env(TEMP)
+
+if {[catch {set env(TMP) $env_tmp}]} {
+    unset env(TMP)
+}
+if {[catch {set env(TEMP) $env_temp}]} {
+    unset env(TEMP)
+}
+
+# cleanup
+removeFile little
+removeFile big
+removeFile more
+removeFile stdout
+removeFile stderr
+removeFile nothing
+if {[info exists path(echoArgs.tcl)]} { removeFile echoArgs.tcl }
+if {[info exists path(echoArgs.bat)]} { removeFile echoArgs.bat }
+if {[info exists path(echoArgs2.bat)]} { removeDirectory test(Dir)Check }
+::tcltest::cleanupTests
+# back to original directory:
+cd $org_pwd; unset org_pwd
+return
+
+# Local Variables:
+# mode: tcl
+# End:

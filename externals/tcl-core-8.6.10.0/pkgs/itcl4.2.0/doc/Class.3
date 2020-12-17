@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Itcl_CreateClass 3 3.0 itcl "[incr\ Tcl] Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Itcl_CreateClass, Itcl_DeleteClass, Itcl_FindClass, Itcl_IsClass, Itcl_IsClassNamespace \- Manipulate classes.
+.SH SYNOPSIS
+.nf
+\fB#include <itclInt.h>\fR
+
+int
+\fBItcl_CreateClass\fR(\fIinterp, path, info, rPtr\fR)
+
+int
+\fBItcl_DeleteClass\fR(\fIinterp, cdefnPtr\fR)
+
+ItclClass *
+\fBItcl_FindClass\fR(\fIinterp, path, autoload\fR)
+
+int
+\fBItcl_IsClass\fR(\fIcmd\fR)
+
+int
+\fBItcl_IsClassNamespace\fR(\fInamesp\fR)
+.fi
+.SH ARGUMENTS
+.AP Tcl_Interp *interp in
+Interpreter to modify.
+.AP "CONST char" *path in
+Path of the class.
+.AP ItclObjectInfo *info in
+TODO.
+.AP ItclClass **rPtr in/out
+The address of the pointer to modify.
+.AP ItclClass *cdefnPtr in
+Pointer to class info struct.
+.AP int autoload in
+Flag value for if the class should be autoloaded
+.AP Tcl_Command cmd in
+Command to check.
+.AP Tcl_Namespace *namesp in
+Namespace to check.
+.BE
+
+.SH DESCRIPTION
+.PP
+
+.SH KEYWORDS
+class, find

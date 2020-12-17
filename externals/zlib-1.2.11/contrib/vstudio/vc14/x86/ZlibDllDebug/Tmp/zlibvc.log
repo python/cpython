@@ -1,0 +1,35 @@
+﻿  Microsoft (R) Macro Assembler Version 14.00.24210.0
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+   Assembling: match686.asm
+  Microsoft (R) Macro Assembler Version 14.00.24210.0
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+   Assembling: inffas32.asm
+  adler32.c
+  compress.c
+  crc32.c
+  deflate.c
+  Assembler code may have bugs -- use at your own risk
+  gzclose.c
+  gzlib.c
+  gzread.c
+  gzwrite.c
+  infback.c
+  inffast.c
+  Assembler code may have bugs -- use at your own risk
+  inflate.c
+  inftrees.c
+  ioapi.c
+  iowin32.c
+..\..\minizip\iowin32.c(31): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  trees.c
+  uncompr.c
+  unzip.c
+  zip.c
+  zutil.c
+  Generating Code...
+match686.obj : error LNK2026: module unsafe for SAFESEH image.
+inffas32.obj : error LNK2026: module unsafe for SAFESEH image.
+     Creating library x86\ZlibDllDebug\zlibwapi.lib and object x86\ZlibDllDebug\zlibwapi.exp
+x86\ZlibDllDebug\zlibwapi.dll : fatal error LNK1281: Unable to generate SAFESEH image.

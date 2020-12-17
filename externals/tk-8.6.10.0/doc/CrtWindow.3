@@ -1,0 +1,146 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_CreateWindow 3 4.2 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CreateWindow, Tk_CreateWindowFromPath, Tk_DestroyWindow, Tk_MakeWindowExist \- create or delete window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Window
+\fBTk_CreateWindow\fR(\fIinterp, parent, name, topLevScreen\fR)
+.sp
+Tk_Window
+\fBTk_CreateAnonymousWindow\fR(\fIinterp, parent, topLevScreen\fR)
+.sp
+Tk_Window
+\fBTk_CreateWindowFromPath\fR(\fIinterp, tkwin, pathName, topLevScreen\fR)
+.sp
+\fBTk_DestroyWindow\fR(\fItkwin\fR)
+.sp
+\fBTk_MakeWindowExist\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *topLevScreen
+.AP Tcl_Interp *interp out
+Tcl interpreter to use for error reporting.  If no error occurs,
+then \fI*interp\fR is not modified.
+.AP Tk_Window parent in
+Token for the window that is to serve as the logical parent of
+the new window.
+.AP "const char" *name in
+Name to use for this window.  Must be unique among all children of
+the same \fIparent\fR.
+.AP "const char" *topLevScreen in
+Has same format as \fIscreenName\fR.  If NULL, then new window is
+created as an internal window.  If non-NULL, new window is created as
+a top-level window on screen \fItopLevScreen\fR.  If \fItopLevScreen\fR
+is an empty string
+.PQ ""
+then new window is created as top-level window of \fIparent\fR's screen.
+.AP Tk_Window tkwin in
+Token for window.
+.AP "const char" *pathName in
+Name of new window, specified as path name within application
+(e.g. \fB.a.b.c\fR).
+.BE
+.SH DESCRIPTION
+.PP
+The procedures \fBTk_CreateWindow\fR,
+\fBTk_CreateAnonymousWindow\fR, and \fBTk_CreateWindowFromPath\fR
+are used to create new windows for
+use in Tk-based applications.  Each of the procedures returns a token
+that can be used to manipulate the window in other calls to the Tk
+library.  If the window could not be created successfully, then NULL
+is returned and the result of interpreter \fIinterp\fR is modified to
+hold an error message.
+.PP
+Tk supports two different kinds of windows:  internal
+windows and top-level windows.
+An internal window is an interior window of a Tk application, such as a
+scrollbar or menu bar or button.  A top-level window is one that is
+created as a child of a screen's root window, rather than as an
+interior window, but which is logically part of some existing main
+window.  Examples of top-level windows are pop-up menus and dialog boxes.
+.PP
+New windows may be created by calling
+\fBTk_CreateWindow\fR.  If the \fItopLevScreen\fR argument is
+NULL, then the new window will be an internal window.  If
+\fItopLevScreen\fR is non-NULL, then the new window will be a
+top-level window: \fItopLevScreen\fR indicates the name of
+a screen and the new window will be created as a child of the
+root window of \fItopLevScreen\fR.  In either case Tk will
+consider the new window to be the logical child of \fIparent\fR:
+the new window's path name will reflect this fact, options may
+be specified for the new window under this assumption, and so on.
+The only difference is that new X window for a top-level window
+will not be a child of \fIparent\fR's X window.  For example, a pull-down
+menu's \fIparent\fR would be the button-like window used to invoke it,
+which would in turn be a child of the menu bar window.  A dialog box might
+have the application's main window as its parent.
+.PP
+\fBTk_CreateAnonymousWindow\fR differs from \fBTk_CreateWindow\fR in
+that it creates an unnamed window.  This window will be manipulatable
+only using C interfaces, and will not be visible to Tcl scripts.  Both
+interior windows and top-level windows may be created with
+\fBTk_CreateAnonymousWindow\fR.
+.PP
+\fBTk_CreateWindowFromPath\fR offers an alternate way of specifying
+new windows.  In \fBTk_CreateWindowFromPath\fR the new
+window is specified with a token for any window in the target
+application (\fItkwin\fR), plus a path name for the new window.
+It produces the same effect as \fBTk_CreateWindow\fR and allows
+both top-level and internal windows to be created, depending on
+the value of \fItopLevScreen\fR.  In calls to \fBTk_CreateWindowFromPath\fR,
+as in calls to \fBTk_CreateWindow\fR, the parent of the new window
+must exist at the time of the call, but the new window must not
+already exist.
+.PP
+The window creation procedures do not
+actually issue the command to X to create a window.
+Instead, they create a local data structure associated with
+the window and defer the creation of the X window.
+The window will actually be created by the first call to
+\fBTk_MapWindow\fR.  Deferred window creation allows various
+aspects of the window (such as its size, background color,
+etc.) to be modified after its creation without incurring
+any overhead in the X server.  When the window is finally
+mapped all of the window attributes can be set while creating
+the window.
+.PP
+The value returned by a window-creation procedure is not the
+X token for the window (it cannot be, since X has not been
+asked to create the window yet).  Instead, it is a token
+for Tk's local data structure for the window.  Most
+of the Tk library procedures take Tk_Window tokens, rather
+than X identifiers.  The actual
+X window identifier can be retrieved from the local
+data structure using the \fBTk_WindowId\fR macro;  see
+the manual entry for \fBTk_WindowId\fR for details.
+.PP
+\fBTk_DestroyWindow\fR deletes a window and all the data
+structures associated with it, including any event handlers
+created with \fBTk_CreateEventHandler\fR.  In addition,
+\fBTk_DestroyWindow\fR will delete any children of \fItkwin\fR
+recursively (where children are defined in the Tk sense, consisting
+of all windows that were created with the given window as \fIparent\fR).
+If \fItkwin\fR is an internal window, then event
+handlers interested in destroy events
+are invoked immediately.  If \fItkwin\fR is a top-level or main window,
+then the event handlers will be invoked later, after X has seen
+the request and returned an event for it.
+.PP
+If a window has been created
+but has not been mapped, so no X window exists, it is
+possible to force the creation of the X window by
+calling \fBTk_MakeWindowExist\fR.  This procedure issues
+the X commands to instantiate the window given by \fItkwin\fR.
+.SH KEYWORDS
+create, deferred creation, destroy, display, internal window,
+screen, top-level window, window

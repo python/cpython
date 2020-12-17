@@ -1,0 +1,56 @@
+#
+# Tests for "auto_mkindex" and autoloading facility
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.1
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Test "auto_mkindex" in the presence of class definitions
+# ----------------------------------------------------------------------
+test mkindex-1.1 {remove any existing tclIndex file} {
+    file delete tclIndex
+    file exists tclIndex
+} {0}
+
+test mkindex-1.2 {build tclIndex based on a test file} {
+    if {[pwd] != $::tcltest::testsDirectory} {
+	file copy -force [file join $::tcltest::testsDirectory mkindex.itcl] \
+		./mkindex.itcl
+    }
+    auto_mkindex . mkindex.itcl
+    if {[pwd] != $::tcltest::testsDirectory} {
+	file delete -force ./mkindex.itcl
+    }
+    file exists tclIndex
+} {1}
+
+set element "{source [file join . mkindex.itcl]}"
+
+test mkindex-1.3 {examine tclIndex} {
+    namespace eval itcl_mkindex_tmp {
+        set dir "."
+        variable auto_index
+        source tclIndex
+        set result ""
+        foreach elem [lsort [array names auto_index]] {
+            lappend result [list $elem $auto_index($elem)]
+        }
+        set result
+    }
+} "{::Simple2::bump $element} {::Simple2::by $element} {::buried::deep::within $element} {::buried::ens $element} {::buried::inside $element} {::buried::inside::bump $element} {::buried::inside::by $element} {::buried::inside::find $element} {::buried::under::neath $element} {::top::find $element} {::top::notice $element} {Simple1 $element} {Simple2 $element} {ens $element} {top $element}"
+
+file delete tclIndex
+::tcltest::cleanupTests
+return

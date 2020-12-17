@@ -1,0 +1,41 @@
+README:  Tk
+    This is the Tk 8.6.9 source distribution.
+	http://sourceforge.net/projects/tcl/files/Tcl/
+    You can get any source release of Tk from the URL above.
+
+1. Introduction
+---------------
+
+This directory contains the sources and documentation for Tk, an X11
+toolkit implemented with the Tcl scripting language.
+
+For details on features, incompatibilities, and potential problems with
+this release, see the Tcl/Tk 8.6 Web page at
+
+	http://www.tcl-lang.org/software/tcltk/8.6.html
+
+or refer to the "changes" file in this directory, which contains a
+historical record of all changes to Tk.
+
+Tk is maintained, enhanced, and distributed freely by the Tcl community.
+Source code development and tracking of bug reports and feature requests
+takes place at:
+
+	http://core.tcl-lang.org/tk/
+
+with the Tcl Developer Xchange at:
+
+	http://www.tcl-lang.org/
+
+Tk is a freely available open source package.  You can do virtually
+anything you like with it, such as modifying it, redistributing it,
+and selling it either in whole or in part.  See the file
+"license.terms" for complete information.
+
+2. See Tcl README
+-----------------
+
+Please see the README file that comes with the associated Tcl release
+for more information.  There are pointers there to extensive
+documentation.  In addition, there are additional README files
+in the subdirectories of this distribution.

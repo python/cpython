@@ -1,0 +1,778 @@
+# This file contains a collection of tests for the procedures in the file
+# tclCmdIL.c. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+testConstraint testobj [llength [info commands testobj]]
+
+test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
+    lsort
+} -result {wrong # args: should be "lsort ?-option value ...? list"}
+test cmdIL-1.2 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
+    lsort -foo {1 3 2 5}
+} -result {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, -stride, or -unique}
+test cmdIL-1.3 {Tcl_LsortObjCmd procedure, default options} {
+    lsort {d e c b a \{ d35 d300}
+} {a b c d d300 d35 e \{}
+test cmdIL-1.4 {Tcl_LsortObjCmd procedure, -ascii option} {
+    lsort -integer -ascii {d e c b a d35 d300}
+} {a b c d d300 d35 e}
+test cmdIL-1.5 {Tcl_LsortObjCmd procedure, -command option} -body {
+    lsort -command {1 3 2 5}
+} -returnCodes error -result {"-command" option must be followed by comparison command}
+test cmdIL-1.6 {Tcl_LsortObjCmd procedure, -command option} -setup {
+    proc cmp {a b} {
+	expr {[string match x* $b] - [string match x* $a]}
+    }
+} -body {
+    lsort -command cmp {x1 abc x2 def x3 x4}
+} -result {x1 x2 x3 x4 abc def} -cleanup {
+    rename cmp ""
+}
+test cmdIL-1.7 {Tcl_LsortObjCmd procedure, -decreasing option} {
+    lsort -decreasing {d e c b a d35 d300}
+} {e d35 d300 d c b a}
+test cmdIL-1.8 {Tcl_LsortObjCmd procedure, -dictionary option} {
+    lsort -dictionary {d e c b a d35 d300}
+} {a b c d d35 d300 e}
+test cmdIL-1.9 {Tcl_LsortObjCmd procedure, -dictionary option} {
+    lsort -dictionary {1k 0k 10k}
+} {0k 1k 10k}
+test cmdIL-1.10 {Tcl_LsortObjCmd procedure, -increasing option} {
+    lsort -decreasing -increasing {d e c b a d35 d300}
+} {a b c d d300 d35 e}
+test cmdIL-1.11 {Tcl_LsortObjCmd procedure, -index option} -body {
+    lsort -index {1 3 2 5}
+} -returnCodes error -result {"-index" option must be followed by list index}
+test cmdIL-1.12 {Tcl_LsortObjCmd procedure, -index option} -body {
+    lsort -index foo {1 3 2 5}
+} -returnCodes error -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
+test cmdIL-1.13 {Tcl_LsortObjCmd procedure, -index option} {
+    lsort -index end -integer {{2 25} {10 20 50 100} {3 16 42} 1}
+} {1 {2 25} {3 16 42} {10 20 50 100}}
+test cmdIL-1.14 {Tcl_LsortObjCmd procedure, -index option} {
+    lsort -index 1 -integer {{1 25 100} {3 16 42} {10 20 50}}
+} {{3 16 42} {10 20 50} {1 25 100}}
+test cmdIL-1.15 {Tcl_LsortObjCmd procedure, -integer option} {
+    lsort -integer {24 6 300 18}
+} {6 18 24 300}
+test cmdIL-1.16 {Tcl_LsortObjCmd procedure, -integer option} -body {
+    lsort -integer {1 3 2.4}
+} -returnCodes error -result {expected integer but got "2.4"}
+test cmdIL-1.17 {Tcl_LsortObjCmd procedure, -real option} {
+    lsort -real {24.2 6e3 150e-1}
+} {150e-1 24.2 6e3}
+test cmdIL-1.18 {Tcl_LsortObjCmd procedure, bogus list} -body {
+    lsort "1 2 3 \{ 4"
+} -returnCodes error -result {unmatched open brace in list}
+test cmdIL-1.19 {Tcl_LsortObjCmd procedure, empty list} {
+    lsort {}
+} {}
+test cmdIL-1.22 {Tcl_LsortObjCmd procedure, unique sort} {
+    lsort -integer -unique {3 1 2 3 1 4 3}
+} {1 2 3 4}
+test cmdIL-1.23 {Tcl_LsortObjCmd procedure, unique sort with index} {
+    # lsort -unique should return the last unique item
+    lsort -unique -index 0 {{a b} {c b} {a c} {d a}}
+} {{a c} {c b} {d a}}
+test cmdIL-1.24 {Tcl_LsortObjCmd procedure, order of -index and -command} -setup {
+    catch {rename 1 ""}
+    proc testcmp {a b} {return [string compare $a $b]}
+} -body {
+    set l [list [list a b] [list c d]]
+    lsort -command testcmp -index 1 $l
+} -cleanup {
+    rename testcmp ""
+} -result [list [list a b] [list c d]]
+test cmdIL-1.25 {Tcl_LsortObjCmd procedure, order of -index and -command} -setup {
+    catch {rename 1 ""}
+    proc testcmp {a b} {return [string compare $a $b]}
+} -body {
+    set l [list [list a b] [list c d]]
+    lsort -index 1 -command testcmp $l
+} -cleanup {
+    rename testcmp ""
+} -result [list [list a b] [list c d]]
+# Note that the required order only exists in the end-1'th element; indexing
+# using the end element or any fixed offset from the start will not work...
+test cmdIL-1.26 {Tcl_LsortObjCmd procedure, offset indexing from end} {
+    lsort -index end-1 {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
+} {{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}}
+test cmdIL-1.27 {Tcl_LsortObjCmd procedure, returning indices} {
+    lsort -indices {a c b}
+} {0 2 1}
+test cmdIL-1.28 {Tcl_LsortObjCmd procedure, returning indices} {
+    lsort -indices -unique -decreasing -real {1.2 34.5 34.5 5.6}
+} {2 3 0}
+test cmdIL-1.29 {Tcl_LsortObjCmd procedure, loss of list rep during sorting} {
+    set l {1 2 3}
+    string length [lsort -command {apply {args {string length $::l}}} $l]
+} 5
+test cmdIL-1.30 {Tcl_LsortObjCmd procedure, -stride option} {
+    lsort -stride 2 {f e d c b a}
+} {b a d c f e}
+test cmdIL-1.31 {Tcl_LsortObjCmd procedure, -stride option} {
+    lsort -stride 3 {f e d c b a}
+} {c b a f e d}
+test cmdIL-1.32 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride foo bar
+} -result {expected integer but got "foo"}
+test cmdIL-1.33 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 1 bar
+} -result {stride length must be at least 2}
+test cmdIL-1.34 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 2 {a b c}
+} -result {list size must be a multiple of the stride length}
+test cmdIL-1.35 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 2 -index 3 {a b c d}
+} -result {when used with "-stride", the leading "-index" value must be within the group}
+test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
+    lsort -stride 2 -index {0 1} {
+	{{c o d e} 54321} {{b l a h} 94729}
+	{{b i g} 12345} {{d e m o} 34512}
+    }
+} {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
+test cmdIL-1.41 {lsort -stride and -index} -body {
+    lsort -stride 2 -index -2 {a 2 b 1}
+} -returnCodes error -result {index "-2" cannot select an element from any list}
+test cmdIL-1.42 {lsort -stride and-index} -body {
+    lsort -stride 2 -index -1-1 {a 2 b 1}
+} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+
+# Can't think of any good tests for the MergeSort and MergeLists procedures,
+# except a bunch of random lists to sort.
+
+test cmdIL-2.1 {MergeSort and MergeLists procedures} -setup {
+    set result {}
+    set r 1435753299
+    proc rand {} {
+	global r
+	set r [expr {(16807 * $r) % (0x7fffffff)}]
+    }
+} -body {
+    for {set i 0} {$i < 150} {incr i} {
+	set x {}
+	for {set j 0} {$j < $i} {incr j} {
+	    lappend x [expr {[rand] & 0xfff}]
+	}
+	set y [lsort -integer $x]
+	set old -1
+	foreach el $y {
+	    if {$el < $old} {
+		append result "list {$x} sorted to {$y}, element $el out of order\n"
+		break
+	    }
+	    set old $el
+	}
+    }
+    string trim $result
+} -cleanup {
+    rename rand ""
+} -result {}
+
+test cmdIL-3.1 {SortCompare procedure, skip comparisons after error} -body {
+    set ::x 0
+    list [catch {
+	lsort -integer -command {apply {{a b} {
+	    incr ::x
+	    error "error #$::x"
+	}}} {48 6 28 190 16 2 3 6 1}
+    } msg] $msg $::x
+} -result {1 {error #1} 1}
+test cmdIL-3.2 {SortCompare procedure, -index option} -body {
+    lsort -integer -index 2 "\\\{ {30 40 50}"
+} -returnCodes error -result {unmatched open brace in list}
+test cmdIL-3.3 {SortCompare procedure, -index option} -body {
+    lsort -integer -index 2 {{20 10} {15 30 40}}
+} -returnCodes error -result {element 2 missing from sublist "20 10"}
+test cmdIL-3.4 {SortCompare procedure, -index option} -body {
+    lsort -integer -index 2 "{a b c} \\\{"
+} -returnCodes error -result {expected integer but got "c"}
+test cmdIL-3.4.1 {SortCompare procedure, -index option} -body {
+    lsort -integer -index 2 "{1 2 3} \\\{"
+} -returnCodes error -result {unmatched open brace in list}
+test cmdIL-3.5 {SortCompare procedure, -index option} -body {
+    lsort -integer -index 2 {{20 10 13} {15}}
+} -returnCodes error -result {element 2 missing from sublist "15"}
+test cmdIL-3.5.1 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index 1+3 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {element 4 missing from sublist "1 . c"}
+test cmdIL-3.5.2 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index -1-1 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+test cmdIL-3.5.3 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index -2 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "-2" cannot select an element from any list}
+test cmdIL-3.5.4 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end-4 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {element -2 missing from sublist "1 . c"}
+test cmdIL-3.5.5 {SortCompare procedure, -index option} {
+    lsort -index {} {a b}
+} {a b}
+test cmdIL-3.5.6 {SortCompare procedure, -index option} {
+    lsort -index {} [list a \{]
+} {a \{}
+test cmdIL-3.5.7 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end--1 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "end--1" cannot select an element from any list}
+test cmdIL-3.5.8 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end+1 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "end+1" cannot select an element from any list}
+test cmdIL-3.5.9 {SortCompare procedure, -index option (out of range, calculated index)} -body {
+    lsort -index end+2 {{1 . c} {2 . b} {3 . a}}
+} -returnCodes error -result {index "end+2" cannot select an element from any list}
+test cmdIL-3.6 {SortCompare procedure, -index option} {
+    lsort -integer -index 2 {{1 15 30} {2 5 25} {3 25 20}}
+} {{3 25 20} {2 5 25} {1 15 30}}
+test cmdIL-3.7 {SortCompare procedure, -ascii option} {
+    lsort -ascii {d e c b a d35 d300 100 20}
+} {100 20 a b c d d300 d35 e}
+test cmdIL-3.8 {SortCompare procedure, -dictionary option} {
+    lsort -dictionary {d e c b a d35 d300 100 20}
+} {20 100 a b c d d35 d300 e}
+test cmdIL-3.9 {SortCompare procedure, -integer option} -body {
+    lsort -integer {x 3}
+} -returnCodes error -result {expected integer but got "x"}
+test cmdIL-3.10 {SortCompare procedure, -integer option} -body {
+    lsort -integer {3 q}
+} -returnCodes error -result {expected integer but got "q"}
+test cmdIL-3.11 {SortCompare procedure, -integer option} {
+    lsort -integer {35 21 0x20 30 0o23 100 8}
+} {8 0o23 21 30 0x20 35 100}
+test cmdIL-3.12 {SortCompare procedure, -real option} -body {
+    lsort -real {6...4 3}
+} -returnCodes error -result {expected floating-point number but got "6...4"}
+test cmdIL-3.13 {SortCompare procedure, -real option} -body {
+    lsort -real {3 1x7}
+} -returnCodes error -result {expected floating-point number but got "1x7"}
+test cmdIL-3.14 {SortCompare procedure, -real option} {
+    lsort -real {24 2.5e01 16.7 85e-1 10.004}
+} {85e-1 10.004 16.7 24 2.5e01}
+test cmdIL-3.15 {SortCompare procedure, -command option} -body {
+    proc cmp {a b} {
+	error "comparison error"
+    }
+    list [catch {lsort -command cmp {48 6}} msg] $msg $::errorInfo
+} -cleanup {
+    rename cmp ""
+} -result {1 {comparison error} {comparison error
+    while executing
+"error "comparison error""
+    (procedure "cmp" line 2)
+    invoked from within
+"cmp 48 6"
+    (-compare command)
+    invoked from within
+"lsort -command cmp {48 6}"}}
+test cmdIL-3.16 {SortCompare procedure, -command option, long command} -body {
+    proc cmp {dummy a b} {
+	string compare $a $b
+    }
+    lsort -command {cmp {this argument is very very long in order to make the dstring overflow its statically allocated space}} {{this first element is also long in order to help expand the dstring} {the second element, last but not least, is quite long also, in order to make absolutely sure that space is allocated dynamically for the dstring}}
+} -cleanup {
+    rename cmp ""
+} -result {{the second element, last but not least, is quite long also, in order to make absolutely sure that space is allocated dynamically for the dstring} {this first element is also long in order to help expand the dstring}}
+test cmdIL-3.17 {SortCompare procedure, -command option, non-integer result} -body {
+    proc cmp {a b} {
+	return foow
+    }
+    lsort -command cmp {48 6}
+} -returnCodes error -cleanup {
+    rename cmp ""
+} -result {-compare command returned non-integer result}
+test cmdIL-3.18 {SortCompare procedure, -command option} -body {
+    proc cmp {a b} {
+	expr {$b - $a}
+    }
+    lsort -command cmp {48 6 18 22 21 35 36}
+} -cleanup {
+    rename cmp ""
+} -result {48 36 35 22 21 18 6}
+test cmdIL-3.19 {SortCompare procedure, -decreasing option} {
+    lsort -decreasing -integer {35 21 0x20 30 0o23 100 8}
+} {100 35 0x20 30 21 0o23 8}
+
+test cmdIL-4.1 {DictionaryCompare procedure, numerics, leading zeros} {
+    lsort -dictionary {a003b a03b}
+} {a03b a003b}
+test cmdIL-4.2 {DictionaryCompare procedure, numerics, leading zeros} {
+    lsort -dictionary {a3b a03b}
+} {a3b a03b}
+test cmdIL-4.3 {DictionaryCompare procedure, numerics, leading zeros} {
+    lsort -dictionary {a3b A03b}
+} {A03b a3b}
+test cmdIL-4.4 {DictionaryCompare procedure, numerics, leading zeros} {
+    lsort -dictionary {a3b a03B}
+} {a3b a03B}
+test cmdIL-4.5 {DictionaryCompare procedure, numerics, leading zeros} {
+    lsort -dictionary {00000 000}
+} {000 00000}
+test cmdIL-4.6 {DictionaryCompare procedure, numerics, different lengths} {
+    lsort -dictionary {a321b a03210b}
+} {a321b a03210b}
+test cmdIL-4.7 {DictionaryCompare procedure, numerics, different lengths} {
+    lsort -dictionary {a03210b a321b}
+} {a321b a03210b}
+test cmdIL-4.8 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {48 6a 18b 22a 21aa 35 36}
+} {6a 18b 21aa 22a 35 36 48}
+test cmdIL-4.9 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {a123x a123b}
+} {a123b a123x}
+test cmdIL-4.10 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {a123b a123x}
+} {a123b a123x}
+test cmdIL-4.11 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {a1b aab}
+} {a1b aab}
+test cmdIL-4.12 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {a1b a!b}
+} {a!b a1b}
+test cmdIL-4.13 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {a1b2c a1b1c}
+} {a1b1c a1b2c}
+test cmdIL-4.14 {DictionaryCompare procedure, numerics} {
+    lsort -dictionary {a1b2c a1b3c}
+} {a1b2c a1b3c}
+test cmdIL-4.15 {DictionaryCompare procedure, long numbers} {
+    lsort -dictionary {a7654884321988762b a7654884321988761b}
+} {a7654884321988761b a7654884321988762b}
+test cmdIL-4.16 {DictionaryCompare procedure, long numbers} {
+    lsort -dictionary {a8765488432198876b a7654884321988761b}
+} {a7654884321988761b a8765488432198876b}
+test cmdIL-4.17 {DictionaryCompare procedure, case} {
+    lsort -dictionary {aBCd abcc}
+} {abcc aBCd}
+test cmdIL-4.18 {DictionaryCompare procedure, case} {
+    lsort -dictionary {aBCd abce}
+} {aBCd abce}
+test cmdIL-4.19 {DictionaryCompare procedure, case} {
+    lsort -dictionary {abcd ABcc}
+} {ABcc abcd}
+test cmdIL-4.20 {DictionaryCompare procedure, case} {
+    lsort -dictionary {abcd ABce}
+} {abcd ABce}
+test cmdIL-4.21 {DictionaryCompare procedure, case} {
+    lsort -dictionary {abCD ABcd}
+} {ABcd abCD}
+test cmdIL-4.22 {DictionaryCompare procedure, case} {
+    lsort -dictionary {ABcd aBCd}
+} {ABcd aBCd}
+test cmdIL-4.23 {DictionaryCompare procedure, case} {
+    lsort -dictionary {ABcd AbCd}
+} {ABcd AbCd}
+test cmdIL-4.24 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
+    ::tcltest::set_iso8859_1_locale
+    set result [lsort -dictionary "a b c A B C \xe3 \xc4"]
+    ::tcltest::restore_locale
+    set result
+} "A a B b C c \xe3 \xc4"
+test cmdIL-4.25 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
+    ::tcltest::set_iso8859_1_locale
+    set result [lsort -dictionary "a23\xe3 a23\xc5 a23\xe4"]
+    ::tcltest::restore_locale
+    set result
+} "a23\xe3 a23\xe4 a23\xc5"
+test cmdIL-4.26 {DefaultCompare procedure, signed characters} {
+    set l [lsort [list "abc\200" "abc"]]
+    set viewlist {}
+    foreach s $l {
+	set viewelem ""
+	set len [string length $s]
+	for {set i 0} {$i < $len} {incr i} {
+	    set c [string index $s $i]
+	    scan $c %c d
+	    if {$d > 0 && $d < 128} {
+		append viewelem $c
+	    } else {
+		append viewelem "\\[format %03o $d]"
+	    }
+	}
+	lappend viewlist $viewelem
+    }
+    set viewlist
+} [list "abc" "abc\\200"]
+test cmdIL-4.27 {DictionaryCompare procedure, signed characters} {
+    set l [lsort -dictionary [list "abc\200" "abc"]]
+    set viewlist {}
+    foreach s $l {
+	set viewelem ""
+	set len [string length $s]
+	for {set i 0} {$i < $len} {incr i} {
+	    set c [string index $s $i]
+	    scan $c %c d
+	    if {$d > 0 && $d < 128} {
+		append viewelem $c
+	    } else {
+		append viewelem "\\[format %03o $d]"
+	    }
+	}
+	lappend viewlist $viewelem
+    }
+    set viewlist
+} [list "abc" "abc\\200"]
+test cmdIL-4.28 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ` c CC]
+} [list ` AA c CC]
+test cmdIL-4.29 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ` c ^ \\ CC \[ \]]
+} [list \[ \\ \] ^ ` AA c CC]
+test cmdIL-4.30 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ` c ^ _ \\ CC \[ dude \] funky]
+} [list \[ \\ \] ^ _ ` AA c CC dude funky]
+test cmdIL-4.31 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA c ` CC]
+} [list ` AA c CC]
+test cmdIL-4.32 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA c CC `]
+} [list ` AA c CC]
+test cmdIL-4.33 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ! c CC `]
+} [list ! ` AA c CC]
+test cmdIL-4.34 {SortCompare procedure, -ascii option with -nocase option} {
+    lsort -ascii -nocase {d e c b a d35 d300 100 20}
+} {100 20 a b c d d300 d35 e}
+test cmdIL-4.35 {SortCompare procedure, -ascii option with -nocase option} {
+    lsort -ascii -nocase {d E c B a D35 d300 100 20}
+} {100 20 a B c d d300 D35 E}
+test cmdIL-4.36 {SortCompare procedure, UTF-8 with -nocase option} {
+    scan [lsort -ascii -nocase [list \u101 \u100]] %c%c%c
+} {257 32 256}
+test cmdIL-4.37 {SortCompare procedure, UTF-8 with -nocase option} {
+    scan [lsort -ascii -nocase [list a\u0000a a]] %c%c%c%c%c
+} {97 32 97 0 97}
+test cmdIL-4.38 {SortCompare procedure, UTF-8 with -nocase option} {
+    scan [lsort -ascii -nocase [list a a\u0000a]] %c%c%c%c%c
+} {97 32 97 0 97}
+
+test cmdIL-5.1 {lsort with list style index} {
+    lsort -ascii -decreasing -index {0 1} {
+	{{Jim Alpha} 20000410}
+	{{Joe Bravo} 19990320}
+	{{Jacky Charlie} 19390911}
+    }
+} {{{Jacky Charlie} 19390911} {{Joe Bravo} 19990320} {{Jim Alpha} 20000410}}
+test cmdIL-5.2 {lsort with list style index} {
+    lsort -decreasing -index {0 1} {
+	{{Jim Alpha} 20000410}
+	{{Joe Bravo} 19990320}
+	{{Jacky Charlie} 19390911}
+    }
+} {{{Jacky Charlie} 19390911} {{Joe Bravo} 19990320} {{Jim Alpha} 20000410}}
+test cmdIL-5.3 {lsort with list style index} {
+    lsort -integer -increasing -index {1 end} {
+	{{Jim Alpha} 20000410}
+	{{Joe Bravo} 19990320}
+	{{Jacky Charlie} 19390911}
+    }
+} {{{Jacky Charlie} 19390911} {{Joe Bravo} 19990320} {{Jim Alpha} 20000410}}
+test cmdIL-5.4 {lsort with list style index} {
+    lsort -integer -index {1 end-1} {
+	{the {0 1 2 3 4 5} quick}
+	{brown {0 1 2 3 4} fox}
+	{jumps {30 31 2 33} over}
+	{the {0 1 2} lazy}
+	{dogs {0 1}}
+    }
+} {{dogs {0 1}} {the {0 1 2} lazy} {jumps {30 31 2 33} over} {brown {0 1 2 3 4} fox} {the {0 1 2 3 4 5} quick}}
+test cmdIL-5.5 {lsort with list style index and sharing} -body {
+    proc test_lsort {l} {
+	set n $l
+	foreach e $l {lappend n [list [expr {rand()}] $e]}
+	lindex [lsort -real -index $l $n] 1 1
+    }
+    expr srand(1)
+    test_lsort 0
+} -result 0 -cleanup {
+    rename test_lsort ""
+}
+test cmdIL-5.6 {lsort with multiple list-style index options} {
+    lsort -index {1 2 3} -index 0 {{a b} {c d} {b e}}
+} {{a b} {b e} {c d}}
+
+# Compiled version
+test cmdIL-6.1 {lassign command syntax} -returnCodes error -body {
+    apply {{} { lassign }}
+} -result {wrong # args: should be "lassign list ?varName ...?"}
+test cmdIL-6.2 {lassign command syntax} {
+    apply {{} { lassign x }}
+} x
+test cmdIL-6.3 {lassign command} -body {
+    apply {{} {
+	set x FAIL
+	list [lassign a x] $x
+    }}
+} -result {{} a}
+test cmdIL-6.4 {lassign command} -body {
+    apply {{} {
+	set x FAIL
+	set y FAIL
+	list [lassign a x y] $x $y
+    }}
+} -result {{} a {}}
+test cmdIL-6.5 {lassign command} -body {
+    apply {{} {
+	set x FAIL
+	set y FAIL
+	list [lassign {a b} x y] $x $y
+    }}
+} -result {{} a b}
+test cmdIL-6.6 {lassign command} -body {
+    apply {{} {
+	set x FAIL
+	set y FAIL
+	list [lassign {a b c} x y] $x $y
+    }}
+} -result {c a b}
+test cmdIL-6.7 {lassign command} -body {
+    apply {{} {
+	set x FAIL
+	set y FAIL
+	list [lassign {a b c d} x y] $x $y
+    }}
+} -result {{c d} a b}
+test cmdIL-6.8 {lassign command - list format error} -body {
+    apply {{} {
+	set x FAIL
+	set y FAIL
+	list [catch {lassign {a {b}c d} x y} msg] $msg $x $y
+    }}
+} -result {1 {list element in braces followed by "c" instead of space} FAIL FAIL}
+test cmdIL-6.9 {lassign command - assignment to arrays} -body {
+    apply {{} {
+	list [lassign {a b} x(x)] $x(x)
+    }}
+} -result {b a}
+test cmdIL-6.10 {lassign command - variable update error} -body {
+    apply {{} {
+	set x(x) {}
+	lassign a x
+    }}
+} -returnCodes error -result {can't set "x": variable is array}
+test cmdIL-6.11 {lassign command - variable update error} -body {
+    apply {{} {
+	set x(x) {}
+	set y FAIL
+	list [catch {lassign a y x} msg] $msg $y
+    }}
+} -result {1 {can't set "x": variable is array} a}
+test cmdIL-6.12 {lassign command - memory leak testing} -setup {
+    unset -nocomplain x y
+    set x(x) {}
+    set y FAIL
+    proc getbytes {} {
+        set lines [split [memory info] "\n"]
+        lindex [lindex $lines 3] 3
+    }
+    proc stress {} {
+	global x y
+	lassign {} y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y
+	catch {lassign {} y y y y y y y y y y y y y y y y y y y y y y y y y x}
+	catch {lassign {} x}
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	stress
+	set tmp $end
+	set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -result 0 -cleanup {
+    unset -nocomplain x y i tmp end
+    rename getbytes {}
+    rename stress {}
+}
+# Force non-compiled version
+test cmdIL-6.13 {lassign command syntax} -returnCodes error -body {
+    apply {{} {
+	set lassign lassign
+	$lassign
+    }}
+} -result {wrong # args: should be "lassign list ?varName ...?"}
+test cmdIL-6.14 {lassign command syntax} {
+    apply {{} {
+	set lassign lassign
+	$lassign x
+    }}
+} x
+test cmdIL-6.15 {lassign command} -body {
+    apply {{} {
+	set lassign lassign
+	set x FAIL
+	list [$lassign a x] $x
+    }}
+} -result {{} a}
+test cmdIL-6.16 {lassign command} -body {
+    apply {{} {
+	set lassign lassign
+	set x FAIL
+	set y FAIL
+	list [$lassign a x y] $x $y
+    }}
+} -result {{} a {}}
+test cmdIL-6.17 {lassign command} -body {
+    apply {{} {
+	set lassign lassign
+	set x FAIL
+	set y FAIL
+	list [$lassign {a b} x y] $x $y
+    }}
+} -result {{} a b}
+test cmdIL-6.18 {lassign command} -body {
+    apply {{} {
+	set lassign lassign
+	set x FAIL
+	set y FAIL
+	list [$lassign {a b c} x y] $x $y
+    }}
+} -result {c a b}
+test cmdIL-6.19 {lassign command} -body {
+    apply {{} {
+	set lassign lassign
+	set x FAIL
+	set y FAIL
+	list [$lassign {a b c d} x y] $x $y
+    }}
+} -result {{c d} a b}
+test cmdIL-6.20 {lassign command - list format error} -body {
+    apply {{} {
+	set lassign lassign
+	set x FAIL
+	set y FAIL
+	list [catch {$lassign {a {b}c d} x y} msg] $msg $x $y
+    }}
+} -result {1 {list element in braces followed by "c" instead of space} FAIL FAIL}
+test cmdIL-6.21 {lassign command - assignment to arrays} -body {
+    apply {{} {
+	set lassign lassign
+	list [$lassign {a b} x(x)] $x(x)
+    }}
+} -result {b a}
+test cmdIL-6.22 {lassign command - variable update error} -body {
+    apply {{} {
+	set lassign lassign
+	set x(x) {}
+	$lassign a x
+    }}
+} -returnCodes 1 -result {can't set "x": variable is array}
+test cmdIL-6.23 {lassign command - variable update error} -body {
+    apply {{} {
+	set lassign lassign
+	set x(x) {}
+	set y FAIL
+	list [catch {$lassign a y x} msg] $msg $y
+    }}
+} -result {1 {can't set "x": variable is array} a}
+test cmdIL-6.24 {lassign command - memory leak testing} -setup {
+    set x(x) {}
+    set y FAIL
+    proc getbytes {} {
+        set lines [split [memory info] "\n"]
+        lindex [lindex $lines 3] 3
+    }
+    proc stress {} {
+	global x y
+	set lassign lassign
+	$lassign {} y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y
+	catch {$lassign {} y y y y y y y y y y y y y y y y y y y y y y y y y x}
+	catch {$lassign {} x}
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	stress
+	set tmp $end
+	set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -result 0 -cleanup {
+    unset -nocomplain x y i tmp end
+    rename getbytes {}
+    rename stress {}
+}
+# Assorted shimmering problems
+test cmdIL-6.25 {lassign command - shimmering protection} -body {
+    apply {{} {
+	set x {a b c}
+	list [lassign $x $x y] $x [set $x] $y
+    }}
+} -result {c {a b c} a b}
+test cmdIL-6.26 {lassign command - shimmering protection} -body {
+    apply {{} {
+	set x {a b c}
+	set lassign lassign
+	list [$lassign $x $x y] $x [set $x] $y
+    }}
+} -result {c {a b c} a b}
+
+test cmdIL-7.1 {lreverse command} -body {
+    lreverse
+} -returnCodes error -result "wrong # args: should be \"lreverse list\""
+test cmdIL-7.2 {lreverse command} -body {
+    lreverse a b
+} -returnCodes error -result "wrong # args: should be \"lreverse list\""
+test cmdIL-7.3 {lreverse command} -body {
+    lreverse "not \{a list"
+} -returnCodes error -result {unmatched open brace in list}
+test cmdIL-7.4 {lreverse command - shared object} {
+    set x {a b {c d} e f}
+    lreverse $x
+} {f e {c d} b a}
+test cmdIL-7.5 {lreverse command - unshared object} {
+    lreverse [list a b {c d} e f]
+} {f e {c d} b a}
+test cmdIL-7.6 {lreverse command - unshared object [Bug 1672585]} {
+    lreverse [set x {1 2 3}][unset x]
+} {3 2 1}
+test cmdIL-7.7 {lreverse command - empty object [Bug 1876793]} {
+    lreverse [list]
+} {}
+test cmdIL-7.8 {lreverse command - shared intrep [Bug 1675044]} -setup {
+    teststringobj set 1 {1 2 3}
+    testobj convert 1 list
+    testobj duplicate 1 2
+    variable x [teststringobj get 1]
+    variable y [teststringobj get 2]
+    testobj freeallvars
+    proc K {a b} {return $a}
+} -constraints testobj -body {
+    lreverse [K $y [unset y]]
+    lindex $x 0
+} -cleanup {
+    unset -nocomplain x y
+    rename K {}
+} -result 1
+
+# This belongs in info test, but adding tests there breaks tests
+# that compute source file line numbers.
+test info-20.6 {Bug 3587651} -setup {
+    namespace eval my {namespace eval tcl {namespace eval mathfunc {
+        proc demo x {return 42}
+    }}}} -body {    namespace eval my {expr {"demo" in [info functions]}}} -cleanup {
+    namespace delete my
+} -result 1
+
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

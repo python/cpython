@@ -1,0 +1,261 @@
+'\"
+'\" $Id: TixIntro.n,v 1.4 2001/01/22 07:59:48 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+.TH TixIntro n 8.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+.SH NAME
+TixIntro \- Introduction to the Tix library
+.BE
+'\"
+'\"
+.SH DESCRIPTION
+'\"
+Tix, which stands for Tk Interface Extension, is an extension library
+for Tcl/Tk. Tix adds many new widgets, image types and other commands that
+allows you to create compelling Tcl/Tk-based GUI applications.
+.PP
+One advantage of Tix over other Tk widget libraries is many of the Tix
+standard widgets are implemented in native code. This enhances
+performance and provides native look-and-feel for your applications.
+.PP
+This version of Tix works with Tcl/Tk version 8.0 or above.
+If Tix has been installed properly on your system, you can load the
+package into any Tk script by invoking the command
+.CS
+package require Tix
+.CE
+After this command has successfully returned, you can start using the
+functionalities of the Tix library. See the \fBEXAMPLES\fR section
+below for example scripts that use Tix.
+.PP
+If the "package require Tix" command fails, you
+probably need to install a new copy of Tix on your system. You can
+download the latest version of Tix from the web site
+http://tix.sourceforge.net/.
+.PP
+'\"
+.SH STANDARD WIDGETS
+Tix includes the following standard widgets which, like their counterparts in
+Tk, are implemented in native code to achieve high performance and
+native look-and-feel.
+.TP
+\fBtixGrid\fR
+The \fBtixGrid\fR widget displays items in a spread-sheet format.
+.TP
+\fBtixHList\fR
+Hierarchical listbox widget. This widget display entries in a
+tree-like format.
+.TP
+\fBtixInputOnly\fR
+A transparent window that can be used to cover another widget so as to
+disable mouse input.
+.TP
+\fBtixNBFrame\fR
+The \fBtixNBFrame\fR widget is used internally by the
+\fBtixNoteBook\fR widget to display choices among a set of overlapping
+pages.
+.TP
+\fBtixTList\fR
+Tabular listbox widget. This widget is similar to the built-in Tk
+\fBlistbox\fR widget but provides more flexibility in displaying the
+list entries. 
+.SH MEGA WIDGETS
+Tix provides many new types of \fImega widgets\fR: these are widgets
+that are composed of built-in Tk widgets and the Tix standard widgets
+mentioned above.
+.TP
+\fBtixBalloon\fR
+The \fBtixBalloon\fR widget provides context-sensitive on-screen
+help.
+.TP
+\fBtixButtonBox\fR
+A convenience class for creating a box of \fBbutton\fR widgets.
+.TP
+\fBtixCheckList\fR
+A subclass of \fBtixTree\fR that presents single- or multiple
+choices to the user in a tree-like format.
+.TP
+\fBtixComboBox\fR
+A combination of the \fBlistbox\fR and \fBentry\fR widgets that allows
+the user to input an item by typing or by selecting from a list of
+items.
+.TP
+\fBtixControl\fR
+The \fBtixControl\fR widget allows the user to adjust a value using
+arrow buttons.
+.TP
+\fBtixDirList\fR
+A directory selection widget that displays the file system as a
+cascading list.
+.TP
+\fBtixDirSelectDialog\fR
+A dialog for selecting a directory. \fIThis widget is
+deprecated.\fR Use \fBtk_chooseDirectory\fR instead.
+.TP
+\fBtixDirTree\fR
+A directory selection widget that displays the file system in a tree
+format.
+.TP
+\fBtixExFileSelectBox\fR
+A widget for selecting a file. \fIThis widget is
+deprecated.\fR Use \fBtk_getOpenFile\fR instead.
+.TP
+\fBtixExFileSelectDialog\fR
+A dialog for selecting a file. \fIThis widget is
+deprecated.\fR Use \fBtk_getOpenFile\fR instead.
+.TP
+\fBtixFileEntry\fR
+A special entry widget that allows the user to choose a file by typing
+in its name or by selecting from a file dialog.
+.TP
+\fBtixFileSelectBox\fR
+A widget for selecting a file. \fIThis widget is
+deprecated.\fR Use \fBtk_getOpenFile\fR instead.
+.TP
+\fBtixFileSelectDialog\fR
+A dialog for selecting a file. \fIThis widget is
+deprecated.\fR Use \fBtk_getOpenFile\fR instead.
+.TP
+\fBtixLabelEntry\fR
+A convenience class for creating an \fBentry\fR with an associated
+\fBlabel\fR widget.
+.TP
+\fBtixLabelFrame\fR
+A labelled \fBframe\fR widget for grouping together a set of related
+widgets.
+.TP
+\fBtixListNoteBook\fR
+The \fBtixListNoteBook\fR widget allows the user to choose from a
+set of over-lapping pages by selecting from a list box.
+.TP
+\fBtixMeter\fR
+The \fBtixMeter\fR widget displays a bar graph to indicate progress.
+.TP
+\fBtixNoteBook\fR
+The \fBtixNoteBook\fR widget allows the user to choose from a
+set of over-lapping pages with a tabbed notebook metaphore.
+.TP
+\fBtixOptionMenu\fR
+The \fBtixOptionMenu\fR widget allows the user to choose a value from
+a pop-up menu.
+.TP
+\fBtixPanedWindow\fR
+The \fBtixPanedWindow\fR widgets allows the user to adjust the
+visible size of several \fBframe\fR widgets with handle bars.
+.TP
+\fBtixPopupMenu\fR
+The \fBtixPopupMenu\fR widget can be used to implement
+context-sensitive pop-up menu.
+.TP
+\fBtixScrolledHList\fR
+A \fBtixHList\fR widget with smart scrollbars. Like other Tix scrolled
+widgets, the scroll bars can be displayed on an as-needed basis.
+.TP
+\fBtixScrolledListBox\fR
+A Tk \fBlistbox\fR widget with smart scrollbars.
+.TP
+\fBtixScrolledText\fR
+A Tk \fBtext\fR widget with smart scrollbars.
+.TP
+\fBtixScrolledWindow\fR
+A Tk \fBframe\fR widget with smart scrollbars.
+.TP
+\fBtixSelect\fR
+The \fBtixSelect\fR widget uses a set of buttons to present
+single- or multiple selection options to the user.
+.TP
+\fBtixStdButtonBox\fR
+A subclass of \fBtixButtonBox\fR that provides four standard
+buttons (OK, Apply, Cancel Help) for Motif(TM)-like dialog boxes.
+.TP
+\fBtixTree\fR
+A subclass of \fBtixScrolledHList\fR that supports expanding and collapsing
+of entries in a hierarchical list.
+.SH DISPLAY ITEMS
+Three Tix standard widgets \fBtixGrid\fR, \fBtixHList\fR and
+\fBtixTList\fR support the \fIDisplay Items\fR mechanism. Display
+items are created by the widget command of these standard widgets. You can
+customize the items using \fIstyles\fR objects.
+.TP
+\fBtixDisplayStyle\fR
+Create style objects to customize display items.
+.SH IMAGE TYPES
+Tix provides two additional image types to the Tk \fBimage\fR
+framework.
+.TP
+\fBcompound\fR
+The \fBcompound\fR image type allows you to combine images, widgets,
+and text strings into a single Tk \fBimage\fR object.
+.TP
+\fBpixmap\fR
+The \fBpixmap\fR image type supports the XPM format.
+.SH OTHER COMMANDS
+The following Tcl command are also included in the Tix library to
+perform various functions.
+.TP
+\fBtixDestroy\fR
+Destroy Tix objects instances of classes defined by \fBtixClass\fR construct.
+.TP
+\fBtixForm\fR
+A geometry manager based on attachment rules. \fIThis geometry manager
+is deprecated\fR. Use the Tk \fBgrid\fR geometry manager instead.
+.TP
+\fBtixMwm\fR
+A command to communicate with the Mwm, the Motif(TM) Window
+Manager. Works on Unix only.
+.TP
+\fBtix\fR
+The \fBtix\fR command controls the Tix application context.
+.TP
+\fBtixGetBoolean\fR
+The \fBtixGetBoolean\fR command converts a string to a boolean value.
+.TP
+\fBtixGetInt\fR
+The \fBtixGetInt\fR command converts a string to a integer value.
+.TP
+\fBtixUtils\fR
+The \fBtixUtils\fR manual page describes some utility Tix commands.
+.SH EXECUTABLE PROGRAM
+.TP
+\fBtixwish\fR
+The \fBtixwish\fR program can be used to execute Tix-based
+applications. \fBtixwish\fR \fIis deprecated\fR. You shuld use the
+standard wish program from Tk and access Tix via the "package require
+Tix" command.
+.SH EXAMPLES
+The following is an example script that uses a \fBtixTree\fR widget.
+.PP
+.CS
+set tree [tixTree .t]
+pack $tree -expand yes -fill both
+for {set i 0} {$i < 2} {incr i} {
+    $tree subwidget hlist add $i -itemtype imagetext \\
+        -text "Folder $i" -image [tix getimage folder]
+    for {set j 0} {$j < 5} {incr j} {
+        $tree subwidget hlist add $i.$j -itemtype imagetext \\
+            -text "File $i.$j" -image [tix getimage textfile]
+    }
+}
+$tree autosetmode
+.CE
+.SH KEYWORDS
+'\"
+Tix, mega widgets
+
+
+

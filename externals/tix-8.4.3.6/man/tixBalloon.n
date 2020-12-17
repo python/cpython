@@ -1,0 +1,225 @@
+'\"
+'\" $Id: tixBalloon.n,v 1.1 2001/01/22 00:37:59 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixBalloon n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixBalloon \- Create and manipulate tixBalloon widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixBalloon \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBtixBalloon\fR class is derived from the \fBTixShell\fR
+class and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+The Balloon widget supports all the standard options of a frame widget.
+See the \fBoptions(n)\fR manual entry for details on the standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-initwait initWait InitWait
+In milliseconds. Specifies how long the balloon should wait before
+popping up in a widget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-state state State
+Specifies the which help message to display when the mouse pointer
+enters a widget associated with this balloon. Valid options are
+\fBboth\fR: display both the balloon message and the status bar
+message, \fBballoon\fR: display only the balloon message,
+\fBstatus\fR: display only the status bar message and \fBnone\fR:
+display no messages.
+'\"----------END
+'\"
+'\"
+'\"----------BEGIN
+.OP \-statusbar statusBar statusBar
+Specifies the widget to use as the status bar of this balloon. This
+widget must have a "-text" option. Usually a label widget is used.
+'\"----------END
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBlabel\fR
+Class:		\fBLabel\fR
+.fi
+.IP
+The label widget that shows the little arrow bitmap in the pop-up
+balloon window.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBmessage\fR
+Class:		\fBLabel\fR
+.fi
+.IP
+The message widget that shows the descriptive message in the the pop-up
+balloon window.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixBalloon\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a Balloon widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the
+Balloon widget such as its cursor and relief.
+
+The Balloon widget can be used to show popped-up messages
+that describe the functions of the widgets in an application. A
+Balloon widget can be bound to a number of widgets. When the user
+moves the cursor inside a widget to which a Balloon widget has been
+bound, a small pop-up window with a descriptive message will be shown
+on the screen.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixBalloon\fR command creates a new Tcl command whose name is
+the same as the path name of the Balloon widget's window.  This
+command may be used to invoke various operations on the widget. It has
+the following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+Balloon widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for Balloon widgets:
+.TP
+\fIpathName \fBbind\fR widget ?\fIoption value ... \fR?
+'\"
+Binds the Balloon widget to the \fIwidget\fR. The messages to be
+shown can be passed as extra arguments to this command in \fIoption
+value\fR pairs. Possible options: \fB\-balloonmsg\fR specifies the
+string to show on the pop-up balloon window; \fB\-statusmsg\fR
+specifies the string to show on the status bar; \fB\-msg\fR specifies a
+string to show on both the balloon window and the stats bar window.
+When used together, the \fB\-msg\fR option has a lower precedence than
+the \fB\-balloonmsg\fR and \fB\-statusmsg\fR options.
+
+The \fBbind\fR command can also be used to change the messages after
+the initial bindings were set. Example:
+.PP
+.nf
+	button .b
+	tixBalloon .bal
+
+	# Add balloon binding
+	.bal bind .b -msg "This is a button"
+
+	...
+
+	# Change the balloon binding
+	.bal bind .b -msg "This is a useful button"
+.fi
+'\"
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+'\"
+Returns the current value of the configuration option given by
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBtixBalloon\fR command.
+'\"
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+'\"
+Query or modify the configuration options of the widget.  If no
+\fIoption\fR is specified, returns a list describing all of the
+available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s); in
+this case the command returns an empty string.  \fIOption\fR may have
+any of the values accepted by the \fBtixBalloon\fR command.
+'\"
+'\"
+'\"
+.TP
+\fIpathName \fBunbind\fI widget\fR
+'\"
+Cancels the Balloon widget's binding with \fIwidget\fR.
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+After a widget has be bound to a Balloon widget, when the user moves
+the cursor into this widget, the Balloon widget is activated: if the
+\fB\-balloonmsg\fR option of this widget is set, the balloon window
+pops up; if the \fB\-statusmsg\fR option of this widget is set, the
+message will be displayed in the status bar widget.
+.PP
+When the user moves the cursor out of the widget, the Balloon widget
+is de-activated: the balloon window is withdrawn and the status-bar
+message removed.
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n)
+
+
+

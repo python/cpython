@@ -1,0 +1,48 @@
+<HEAD>
+<TITLE>  Type Checker<A NAME=6511>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1302 HREF=subsubsection3_8_5_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1300 HREF=subsection3_8_5.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1294 HREF=subsubsection3_8_5_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1304 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1303 HREF=subsubsection3_8_5_3.html> Public Variable Configuration </A>
+<B>Up:</B> <A NAME=tex2html1301 HREF=subsection3_8_5.html> Declaring and Using </A>
+<B> Previous:</B> <A NAME=tex2html1295 HREF=subsubsection3_8_5_1.html> Initialization of Public </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00085200000000000000>  Type Checker<A NAME=6511>&nbsp;</A></A></H3>
+<P>
+You can use a <em>type ckecker procedure</em> to check whether the user
+  has supplied a value of the correct type for a public variable. The
+  type checker is specified in the <tt>-configspec</tt> section of the
+  class declaration after the default value. The following code
+  specifies the type checker procedure <tt>CheckDirection</tt> for the
+  <tt>-direction</tt> variable:
+<P>
+<blockquote> <P><tt>     -configspec {<BR>
+        {-direction direction Direction e CheckDirection}<BR>
+        {-state state State normal}<BR>
+    }<BR>
+    ...<BR>
+}<BR>
+<BR>
+proc CheckDirection {dir} {<BR>
+    if {[lsearch {n s w e} $dir] != -1} {<BR>
+        return $dir<BR>
+    } else {<BR>
+        error &quot;wrong direction value $<BR>$&quot;$dir$<BR>$&quot;&quot;<BR>
+}</tt>
+<P></blockquote>
+<P>
+   Notice that no type checker has been specified for the <tt>-state</tt>
+  variable and thus its value will not be checked.
+<P>
+   If a type checker procedure is specified for a public variable, this
+  procedure will be called once the value of a public variable is
+  determined by the three steps mentioned above.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

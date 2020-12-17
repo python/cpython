@@ -1,0 +1,844 @@
+#---------------------------------------------------------------------
+# TITLE:
+#       typefunction.test
+#
+# AUTHOR:
+#       Arnulf Wiedemann with a lot of code form the snit tests by
+#       Will Duquette
+#
+# DESCRIPTION:
+#       Test cases for ::itcl::type proc, method, typemethod commands.
+#       Uses the ::tcltest:: harness.
+#
+#    The tests assume tcltest 2.2
+#-----------------------------------------------------------------------
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+::tcltest::loadTestedCommands
+package require itcl
+
+interp alias {} type {} ::itcl::type
+
+if {1} {
+#-----------------------------------------------------------------------
+# Typemethod delegation
+
+test dtypemethod-1.1 {delegate typemethod to non-existent component} -body {
+    set result ""
+
+    type dog {
+        delegate typemethod foo to bar
+    }
+
+    dog foo
+} -returnCodes {
+    error
+} -result {::dog delegates typemethod "foo" to undefined typecomponent "bar"}
+
+test dtypemethod-1.2 {delegating to existing typecomponent} -body {
+    type dog {
+        delegate typemethod length to string
+
+        typeconstructor {
+            set string string
+        }
+    }
+
+    dog length foo
+} -cleanup {
+    dog destroy
+} -result {3}
+
+test dtypemethod-1.4 {delegating to existing typecomponent with error} -body {
+    type dog {
+        delegate typemethod length to string
+
+        typeconstructor {
+            set string string
+        }
+    }
+
+    dog length foo bar
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -result {wrong # args: should be "dog length string"}
+
+test dtypemethod-1.5 {delegating unknown typemethods to existing typecomponent} -body {
+    type dog {
+        delegate typemethod * to string
+
+        typeconstructor {
+            set string string
+        }
+    }
+
+    dog length foo
+} -cleanup {
+    dog destroy
+} -result {3}
+
+test dtypemethod-1.6a {delegating unknown typemethod to existing typecomponent with error} -body {
+    type dog {
+        delegate typemethod * to stringhandler
+
+        typeconstructor {
+            set stringhandler string
+        }
+    }
+
+    dog foo bar
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -match glob -result {unknown or ambiguous subcommand "foo": must be *}
+
+test dtypemethod-1.7 {can't delegate local typemethod: order 1} -body {
+    type dog {
+        typemethod foo {} {}
+        delegate typemethod foo to bar
+    }
+} -returnCodes {
+    error
+} -result {Error in "delegate typemethod foo...", "foo" has been defined locally.}
+
+test dtypemethod-1.8 {can't delegate local typemethod: order 2} -body {
+    type dog {
+        delegate typemethod foo to bar
+        typemethod foo {} {}
+    }
+} -returnCodes {
+    error
+} -result {Error in "typemethod foo...", "foo" has been delegated}
+
+test dtypemethod-1.10 {excepted methods are caught properly} -body {
+    type dog {
+        delegate typemethod * to string except {match index}
+
+        typeconstructor {
+            set string string
+        }
+    }
+
+    catch {dog length foo} a
+    catch {dog match foo}  b
+    catch {dog index foo}  c
+
+    list $a $b $c
+} -cleanup {
+    dog destroy
+} -result {3 {unknown subcommand "match": must be length} {unknown subcommand "index": must be length}}
+
+test dtypemethod-1.11 {as clause can include arguments} -body {
+    proc tail {a b} {
+        return "<$a $b>"
+    }
+
+    type dog {
+        delegate typemethod wag to tail as {wag briskly}
+
+        typeconstructor {
+            set tail tail
+        }
+    }
+
+    dog wag
+} -cleanup {
+    dog destroy
+    rename tail ""
+} -result {<wag briskly>}
+
+test dtypemethod-2.1 {'using "%c %m"' gets normal behavior} -body {
+    type dog {
+        delegate typemethod length to string using {%c %m}
+
+        typeconstructor {
+            set string string
+        }
+    }
+
+    dog length foo
+} -cleanup {
+    dog destroy
+} -result {3}
+
+test dtypemethod-2.2 {All relevant 'using' conversions are converted} -body {
+    proc echo {args} {
+        return $args
+    }
+
+    type dog {
+        delegate typemethod tail using {echo %% %t %M %m %j %n %w %s %c}
+    }
+
+    dog tail
+} -cleanup {
+    dog destroy
+    rename echo ""
+} -result {% ::dog tail tail tail %n %w %s %c}
+
+test dtypemethod-2.3 {"%%" is handled properly} -body {
+    proc echo {args} { join $args "|" }
+
+    type dog {
+        delegate typemethod wag using {echo %%m %%%m}
+    }
+
+    dog wag
+} -cleanup {
+    dog destroy
+    rename echo ""
+} -result {%m|%wag}
+
+test dtypemethod-2.4 {Method "*" and "using"} -body {
+    proc echo {args} { join $args "|" }
+
+    type dog {
+        delegate typemethod * using {echo %m}
+    }
+
+    list [dog wag] [dog bark loudly]
+} -cleanup {
+    dog destroy
+    rename echo ""
+} -result {wag bark|loudly}
+
+test dtypemethod-3.1 {typecomponent names can be changed dynamically} -body {
+    proc echo {args} { join $args "|" }
+
+    type dog {
+        delegate typemethod length to mycomp
+
+        typeconstructor {
+            set mycomp string
+        }
+
+        typemethod switchit {} {
+            set mycomp echo
+        }
+    }
+
+    set a [dog length foo]
+    dog switchit
+    set b [dog length foo]
+
+    list $a $b
+} -cleanup {
+    dog destroy
+    rename echo ""
+} -result {3 length|foo}
+
+test dtypemethod-4.4 {redefinition is OK} -body {
+    type wag {
+        method tail    {} {return "wags tail"}
+        method briskly {} {return "wags tail briskly"}
+    }
+
+    type dog {
+        typeconstructor {
+            set wag [wag #auto]
+        }
+        delegate typemethod tail to wag as tail
+        delegate typemethod tail to wag as briskly
+    }
+
+    dog tail
+} -cleanup {
+    dog destroy
+    wag destroy
+} -result {wags tail briskly}
+
+#-----------------------------------------------------------------------
+# delegate: general syntax tests
+
+test delegate-1.1 {can only delegate methods or options} -body {
+    type dog {
+        delegate foo bar to baz
+    }
+} -returnCodes {
+    error
+} -result {bad option "foo": should be one of...
+  delegate method name to targetName as scipt using script
+  delegate option option to targetOption as script
+  delegate typemethod name to targetName as scipt using script}
+
+test delegate-1.2 {"to" must appear in the right place} -body {
+    type dog {
+        delegate method foo from bar
+    }
+} -returnCodes {
+    error
+} -result {bad option "from" should be delegate method <methodName> to <componentName> ?as <targetName>?
+delegate method <methodName> ?to <componentName>? using <pattern>
+delegate method * ?to <componentName>? ?using <pattern>? ?except <methods>?}
+
+test delegate-1.3 {"as" must have a target} -body {
+    type dog {
+        delegate method foo to bar as
+    }
+} -returnCodes {
+    error
+} -result {wrong # args should be delegate method <methodName> to <componentName> ?as <targetName>?
+delegate method <methodName> ?to <componentName>? using <pattern>
+delegate method * ?to <componentName>? ?using <pattern>? ?except <methods>?}
+
+test delegate-1.4 {"as" must have a single target} -body {
+    type dog {
+        delegate method foo to bar as baz quux
+    }
+} -returnCodes {
+    error
+} -result {wrong # args should be delegate method <methodName> to <componentName> ?as <targetName>?
+delegate method <methodName> ?to <componentName>? using <pattern>
+delegate method * ?to <componentName>? ?using <pattern>? ?except <methods>?}
+
+test delegate-1.5 {"as" doesn't work with "*"} -body {
+    type dog {
+        delegate method * to hull as foo
+    }
+} -returnCodes {
+    error
+} -result {cannot specify "as" with "delegate method *"}
+
+test delegate-1.6 {"except" must have a target} -body {
+    type dog {
+        delegate method * to bar except
+    }
+} -returnCodes {
+    error
+} -result {wrong # args should be delegate method <methodName> to <componentName> ?as <targetName>?
+delegate method <methodName> ?to <componentName>? using <pattern>
+delegate method * ?to <componentName>? ?using <pattern>? ?except <methods>?}
+
+test delegate-1.7 {"except" must have a single target} -body {
+    type dog {
+        delegate method * to bar except baz quux
+    }
+} -returnCodes {
+    error
+} -result {wrong # args should be delegate method <methodName> to <componentName> ?as <targetName>?
+delegate method <methodName> ?to <componentName>? using <pattern>
+delegate method * ?to <componentName>? ?using <pattern>? ?except <methods>?}
+
+test delegate-1.8 {"except" works only with "*"} -body {
+    type dog {
+        delegate method foo to hull except bar
+    }
+} -returnCodes {
+    error
+} -result {can only specify "except" with "delegate method *"}
+
+test delegate-1.9 {only "as" or "except"} -body {
+    type dog {
+        delegate method foo to bar with quux
+    }
+} -returnCodes {
+    error
+} -result {bad option "with" should be delegate method <methodName> to <componentName> ?as <targetName>?
+delegate method <methodName> ?to <componentName>? using <pattern>
+delegate method * ?to <componentName>? ?using <pattern>? ?except <methods>?}
+
+#-----------------------------------------------------------------------
+# delegated methods
+
+test dmethod-1.1 {delegate method to non-existent component} -body {
+    type dog {
+        delegate method foo to bar
+    }
+
+    dog create spot
+    spot foo
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {::dog ::spot delegates method "foo" to undefined component "bar"}
+
+test dmethod-1.2 {delegating to existing component} -body {
+    type dog {
+        constructor {args} {
+            set string string
+        }
+
+        delegate method length to string
+    }
+
+    dog create spot
+    spot length foo
+} -cleanup {
+    dog destroy
+} -result {3}
+
+test dmethod-1.4 {delegating to existing component with error} -body {
+    type dog {
+        constructor {args} {
+            set string string
+        }
+
+        delegate method length to string
+    }
+
+    dog create spot
+    spot length foo bar
+} -cleanup {
+    dog destroy
+} -returnCodes {
+    error
+} -result {wrong # args: should be "spot length string"}
+
+test dmethod-1.5 {delegating unknown methods to existing component} -body {
+    type dog {
+        constructor {args} {
+            set string string
+        }
+
+        delegate method * to string
+    }
+
+    dog create spot
+    spot length foo
+} -cleanup {
+    dog destroy
+} -result {3}
+
+test dmethod-1.6a {delegating unknown method to existing component with error} -body {
+    type dog {
+        constructor {args} {
+            set stringhandler string
+        }
+
+        delegate method * to stringhandler
+    }
+
+    dog create spot
+    spot foo bar
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -match glob -result {unknown or ambiguous subcommand "foo": must be *}
+
+test dmethod-1.7 {can't delegate local method: order 1} -body {
+    type cat {
+        method foo {} {}
+        delegate method foo to hull
+    }
+} -returnCodes {
+    error
+} -result {method "foo" has been defined locally}
+
+test dmethod-1.8 {can't delegate local method: order 2} -body {
+    type cat {
+        delegate method foo to hull
+        method foo {} {}
+    }
+} -returnCodes {
+    error
+} -result {method "foo" has been delegated}
+
+test dmethod-1.10 {excepted methods are caught properly} -body {
+    type tail {
+        method wag {}    {return "wagged"}
+        method flaunt {} {return "flaunted"}
+        method tuck {}   {return "tuck"}
+    }
+
+    type cat {
+        method meow {} {}
+        delegate method * to tail except {wag tuck}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    cat fifi
+
+    catch {fifi flaunt} a
+    catch {fifi wag}    b
+    catch {fifi tuck}   c
+
+    list $a $b $c
+} -cleanup {
+    cat destroy
+    tail destroy
+} -result {flaunted {unknown subcommand "wag": must be flaunt} {unknown subcommand "tuck": must be flaunt}}
+
+test dmethod-1.11 {as clause can include arguments} -body {
+    type tail {
+        method wag {adverb}    {return "wagged $adverb"}
+    }
+
+    type dog {
+        delegate method wag to tail as {wag briskly}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    dog spot
+
+    spot wag
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {wagged briskly}
+
+test dmethod-2.1 {'using "%c %m"' gets normal behavior} -body {
+    type tail {
+        method wag {adverb}    {return "wagged $adverb"}
+    }
+
+    type dog {
+        delegate method wag to tail using {%c %m}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    dog spot
+
+    spot wag briskly
+} -cleanup {
+    dog destroy
+    tail destroy
+} -result {wagged briskly}
+
+test dmethod-2.3 {"%%" is handled properly} -body {
+    proc echo {args} { join $args "|" }
+
+    type dog {
+        delegate method wag using {echo %%m %%%m}
+    }
+
+    dog spot
+
+    spot wag
+} -cleanup {
+    dog destroy
+    rename echo ""
+} -result {%m|%wag}
+
+test dmethod-2.4 {Method "*" and "using"} -body {
+    proc echo {args} { join $args "|" }
+
+    type dog {
+        delegate method * using {echo %m}
+    }
+
+    dog spot
+
+    list [spot wag] [spot bark loudly]
+} -cleanup {
+    dog destroy
+    rename echo ""
+} -result {wag bark|loudly}
+
+test dmethod-3.1 {component names can be changed dynamically} -body {
+    type tail1 {
+        method wag {}    {return "wagged"}
+    }
+
+    type tail2 {
+        method wag {}    {return "drooped"}
+    }
+
+    type dog {
+        delegate method wag to tail
+
+        constructor {args} {
+            set tail [tail1 #auto]
+        }
+
+        method switchit {} {
+            set tail [tail2 #auto]
+        }
+    }
+
+    dog fido
+
+    set a [fido wag]
+    fido switchit
+    set b [fido wag]
+
+    list $a $b
+} -cleanup {
+    dog destroy
+    tail1 destroy
+    tail2 destroy
+} -result {wagged drooped}
+
+#-----------------------------------------------------------------------
+# delegated options
+
+test doption-1.1 {delegate option to non-existent component} -body {
+    type dog {
+        delegate option -foo to bar
+    }
+
+    dog create spot
+    spot cget -foo
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+} -result {component "bar" is undefined, needed for option "-foo"}
+
+test doption-1.2 {delegating option to existing component: cget} -body {
+    type cat {
+        option -color "black"
+    }
+
+    cat create hershey
+
+    type dog {
+        constructor {args} {
+            set catthing ::hershey
+        }
+
+        delegate option -color to catthing
+    }
+
+    dog create spot
+    spot cget -color
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {black}
+
+test doption-1.3 {delegating option to existing component: configure} -body {
+    type cat {
+        option -color "black"
+    }
+
+    cat create hershey
+
+    type dog {
+        constructor {args} {
+            set catthing ::hershey
+            $self configure {*}$args
+        }
+
+        delegate option -color to catthing
+    }
+
+    dog create spot -color blue
+    list [spot cget -color] [hershey cget -color]
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {blue blue}
+
+test doption-1.4 {delegating unknown options to existing component} -body {
+    type cat {
+        option -color "black"
+    }
+
+    cat create hershey
+
+    type dog {
+        constructor {args} {
+            set catthing ::hershey
+
+            # Note: must do this after components are defined; this
+            # may be a problem.
+            $self configure {*}$args
+        }
+
+        delegate option * to catthing
+    }
+
+    dog create spot -color blue
+    list [spot cget -color] [hershey cget -color]
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {blue blue}
+
+test doption-1.7 {delegating unknown options to existing component: error} -body {
+    type cat {
+        option -color "black"
+    }
+
+    cat create hershey
+
+    type dog {
+        constructor {args} {
+            set catthing ::hershey
+            $self configure {*}$args
+        }
+
+        delegate option * to catthing
+    }
+
+    dog create spot -colour blue
+} -returnCodes {
+    error
+} -cleanup {
+    dog destroy
+    cat destroy
+} -result {unknown option "-colour"}
+
+test doption-1.8 {can't delegate local option: order 1} -body {
+    type cat {
+        option -color "black"
+        delegate option -color to hull
+    }
+} -returnCodes {
+    error
+} -result {option "-color" has been defined locally}
+
+test doption-1.9 {can't delegate local option: order 2} -body {
+    type cat {
+        delegate option -color to hull
+        option -color "black"
+    }
+} -returnCodes {
+    error
+} -result {cannot define option "-color" locally, it has already been delegated}
+
+test doption-1.10 {excepted options are caught properly on cget} -body {
+    type tail {
+        option -a a
+        option -b b
+        option -c c
+    }
+
+    type cat {
+        delegate option * to tail except {-b -c}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    cat fifi
+
+    catch {fifi cget -a} a
+    catch {fifi cget -b} b
+    catch {fifi cget -c} c
+
+    list $a $b $c
+} -cleanup {
+    cat destroy
+    tail destroy
+} -result {a {unknown option "-b"} {unknown option "-c"}}
+
+test doption-1.11 {excepted options are caught properly on configurelist} -body {
+    type tail {
+        option -a a
+        option -b b
+        option -c c
+    }
+
+    type cat {
+        delegate option * to tail except {-b -c}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    cat fifi
+
+    catch {fifi configure {*}{-a 1}} a
+    catch {fifi configure {*}{-b 1}} b
+    catch {fifi configure {*}{-c 1}} c
+
+    list $a $b $c
+} -cleanup {
+    cat destroy
+    tail destroy
+} -result {{} {unknown option "-b"} {unknown option "-c"}}
+
+test doption-1.12 {excepted options are caught properly on configure, 1} -body {
+    type tail {
+        option -a a
+        option -b b
+        option -c c
+    }
+
+    type cat {
+        delegate option * to tail except {-b -c}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    cat fifi
+
+    catch {fifi configure -a 1} a
+    catch {fifi configure -b 1} b
+    catch {fifi configure -c 1} c
+
+    list $a $b $c
+} -cleanup {
+    cat destroy
+    tail destroy
+} -result {{} {unknown option "-b"} {unknown option "-c"}}
+
+test doption-1.13 {excepted options are caught properly on configure, 2} -body {
+    type tail {
+        option -a a
+        option -b b
+        option -c c
+    }
+
+    type cat {
+        delegate option * to tail except {-b -c}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    cat fifi
+
+    catch {fifi configure -a} a
+    catch {fifi configure -b} b
+    catch {fifi configure -c} c
+
+    list $a $b $c
+} -cleanup {
+    cat destroy
+    tail destroy
+} -result {{-a a A a a} {unknown option "-b"} {unknown option "-c"}}
+
+test doption-1.14 {configure query skips excepted options} -body {
+    type tail {
+        option -a a
+        option -b b
+        option -c c
+    }
+
+    type cat {
+        option -d d
+        delegate option * to tail except {-b -c}
+
+        constructor {args} {
+            set tail [tail #auto]
+        }
+    }
+
+    cat fifi
+
+    fifi configure
+} -cleanup {
+    cat destroy
+    tail destroy
+} -result {{-d d D d d} {-a a A a a}}
+
+# end
+}
+
+#---------------------------------------------------------------------
+# Clean up
+
+cleanupTests
+return

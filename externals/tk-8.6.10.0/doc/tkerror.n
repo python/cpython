@@ -1,0 +1,37 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH tkerror n 4.1 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tkerror \- Command invoked to process background errors
+.SH SYNOPSIS
+\fBtkerror \fImessage\fR
+.BE
+.SH DESCRIPTION
+.PP
+Note: as of Tk 4.1 the \fBtkerror\fR command has been renamed to
+\fBbgerror\fR because the event loop (which is what usually invokes
+it) is now part of Tcl.  For backward compatibility
+the \fBbgerror\fR provided by the current Tk version still
+tries to call \fBtkerror\fR if there is one (or an auto loadable one),
+so old script defining that error handler should still work, but you
+should anyhow modify your scripts to use \fBbgerror\fR instead
+of \fBtkerror\fR because that support for the old name might vanish
+in the near future. If that call fails, \fBbgerror\fR
+posts a dialog showing the error and offering to see the stack trace
+to the user. If you want your own error management you should
+directly override \fBbgerror\fR instead of \fBtkerror\fR.
+Documentation for \fBbgerror\fR is available as part of Tcl's
+documentation.
+.SH KEYWORDS
+background error, reporting
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

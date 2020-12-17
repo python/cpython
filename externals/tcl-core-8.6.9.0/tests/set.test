@@ -1,0 +1,568 @@
+# Commands covered:  set
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testset2 [llength [info commands testset2]]
+
+catch {unset x}
+catch {unset i}
+
+test set-1.1 {TclCompileSetCmd: missing variable name} {
+    list [catch {set} msg] $msg
+} {1 {wrong # args: should be "set varName ?newValue?"}}
+test set-1.2 {TclCompileSetCmd: simple variable name} {
+    set i 10
+    list [set i] $i
+} {10 10}
+test set-1.3 {TclCompileSetCmd: error compiling variable name} {
+    set i 10
+    catch {set "i"xxx} msg
+    set msg
+} {extra characters after close-quote}
+test set-1.4 {TclCompileSetCmd: simple variable name in quotes} {
+    set i 17
+    list [set "i"] $i
+} {17 17}
+test set-1.5 {TclCompileSetCmd: simple variable name in braces} -setup {
+    catch {unset {a simple var}}
+} -body {
+    set {a simple var} 27
+    list [set {a simple var}] ${a simple var}
+} -result {27 27}
+test set-1.6 {TclCompileSetCmd: simple array variable name} -setup {
+    catch {unset a}
+} -body {
+    set a(foo) 37
+    list [set a(foo)] $a(foo)
+} -result {37 37}
+test set-1.7 {TclCompileSetCmd: non-simple (computed) variable name} {
+    set x "i"
+    set i 77
+    list [set $x] $i
+} {77 77}
+test set-1.8 {TclCompileSetCmd: non-simple (computed) variable name} {
+    set x "i"
+    set i 77
+    list [set [set x] 2] $i
+} {2 2}
+
+test set-1.9 {TclCompileSetCmd: 3rd arg => assignment} {
+    set i "abcdef"
+    list [set i] $i
+} {abcdef abcdef}
+test set-1.10 {TclCompileSetCmd: only two args => just getting value} {
+    set i {one two}
+    set i
+} {one two}
+
+test set-1.11 {TclCompileSetCmd: simple global name} {
+    proc p {} {
+        global i
+        set i 54
+        set i
+    }
+    p
+} {54}
+test set-1.12 {TclCompileSetCmd: simple local name} {
+    proc p {bar} {
+        set foo $bar
+        set foo
+    }
+    p 999
+} {999}
+test set-1.13 {TclCompileSetCmd: simple but new (unknown) local name} {
+    proc p {} {
+        set bar
+    }
+    catch {p} msg
+    set msg
+} {can't read "bar": no such variable}
+test set-1.14 {TclCompileSetCmd: simple local name, >255 locals} {
+    proc 260locals {} {
+        # create 260 locals (the last ones with index > 255)
+        set a0 0; set a1 0; set a2 0; set a3 0; set a4 0
+        set a5 0; set a6 0; set a7 0; set a8 0; set a9 0
+        set b0 0; set b1 0; set b2 0; set b3 0; set b4 0
+        set b5 0; set b6 0; set b7 0; set b8 0; set b9 0
+        set c0 0; set c1 0; set c2 0; set c3 0; set c4 0
+        set c5 0; set c6 0; set c7 0; set c8 0; set c9 0
+        set d0 0; set d1 0; set d2 0; set d3 0; set d4 0
+        set d5 0; set d6 0; set d7 0; set d8 0; set d9 0
+        set e0 0; set e1 0; set e2 0; set e3 0; set e4 0
+        set e5 0; set e6 0; set e7 0; set e8 0; set e9 0
+        set f0 0; set f1 0; set f2 0; set f3 0; set f4 0
+        set f5 0; set f6 0; set f7 0; set f8 0; set f9 0
+        set g0 0; set g1 0; set g2 0; set g3 0; set g4 0
+        set g5 0; set g6 0; set g7 0; set g8 0; set g9 0
+        set h0 0; set h1 0; set h2 0; set h3 0; set h4 0
+        set h5 0; set h6 0; set h7 0; set h8 0; set h9 0
+        set i0 0; set i1 0; set i2 0; set i3 0; set i4 0
+        set i5 0; set i6 0; set i7 0; set i8 0; set i9 0
+        set j0 0; set j1 0; set j2 0; set j3 0; set j4 0
+        set j5 0; set j6 0; set j7 0; set j8 0; set j9 0
+        set k0 0; set k1 0; set k2 0; set k3 0; set k4 0
+        set k5 0; set k6 0; set k7 0; set k8 0; set k9 0
+        set l0 0; set l1 0; set l2 0; set l3 0; set l4 0
+        set l5 0; set l6 0; set l7 0; set l8 0; set l9 0
+        set m0 0; set m1 0; set m2 0; set m3 0; set m4 0
+        set m5 0; set m6 0; set m7 0; set m8 0; set m9 0
+        set n0 0; set n1 0; set n2 0; set n3 0; set n4 0
+        set n5 0; set n6 0; set n7 0; set n8 0; set n9 0
+        set o0 0; set o1 0; set o2 0; set o3 0; set o4 0
+        set o5 0; set o6 0; set o7 0; set o8 0; set o9 0
+        set p0 0; set p1 0; set p2 0; set p3 0; set p4 0
+        set p5 0; set p6 0; set p7 0; set p8 0; set p9 0
+        set q0 0; set q1 0; set q2 0; set q3 0; set q4 0
+        set q5 0; set q6 0; set q7 0; set q8 0; set q9 0
+        set r0 0; set r1 0; set r2 0; set r3 0; set r4 0
+        set r5 0; set r6 0; set r7 0; set r8 0; set r9 0
+        set s0 0; set s1 0; set s2 0; set s3 0; set s4 0
+        set s5 0; set s6 0; set s7 0; set s8 0; set s9 0
+        set t0 0; set t1 0; set t2 0; set t3 0; set t4 0
+        set t5 0; set t6 0; set t7 0; set t8 0; set t9 0
+        set u0 0; set u1 0; set u2 0; set u3 0; set u4 0
+        set u5 0; set u6 0; set u7 0; set u8 0; set u9 0
+        set v0 0; set v1 0; set v2 0; set v3 0; set v4 0
+        set v5 0; set v6 0; set v7 0; set v8 0; set v9 0
+        set w0 0; set w1 0; set w2 0; set w3 0; set w4 0
+        set w5 0; set w6 0; set w7 0; set w8 0; set w9 0
+        set x0 0; set x1 0; set x2 0; set x3 0; set x4 0
+        set x5 0; set x6 0; set x7 0; set x8 0; set x9 0
+        set y0 0; set y1 0; set y2 0; set y3 0; set y4 0
+        set y5 0; set y6 0; set y7 0; set y8 0; set y9 0
+        set z0 0; set z1 0; set z2 0; set z3 0; set z4 0
+        set z5 0; set z6 0; set z7 0; set z8 0; set z9 1234
+    }
+    260locals
+} {1234}
+test set-1.15 {TclCompileSetCmd: variable is array} -setup {
+    catch {unset a}
+} -body {
+    set x 27
+    set x [set a(foo) 11]
+    catch {unset a}
+    set x
+} -result 11
+test set-1.16 {TclCompileSetCmd: variable is array, elem substitutions} -setup {
+    catch {unset a}
+} -body {
+    set i 5
+    set x 789
+    set a(foo5) 27
+    set x [set a(foo$i)]
+    catch {unset a}
+    set x
+} -result 27
+
+test set-1.17 {TclCompileSetCmd: doing assignment, simple int} {
+    set i 5
+    set i 123
+} 123
+test set-1.18 {TclCompileSetCmd: doing assignment, simple int} {
+    set i 5
+    set i -100
+} -100
+test set-1.19 {TclCompileSetCmd: doing assignment, simple but not int} {
+    set i 5
+    set i 0x12MNOP
+    set i
+} {0x12MNOP}
+test set-1.20 {TclCompileSetCmd: doing assignment, in quotes} {
+    set i 25
+    set i "-100"
+} -100
+test set-1.21 {TclCompileSetCmd: doing assignment, in braces} {
+    set i 24
+    set i {126}
+} 126
+test set-1.22 {TclCompileSetCmd: doing assignment, large int} {
+    set i 5
+    set i 200000
+} 200000
+test set-1.23 {TclCompileSetCmd: doing assignment, formatted int != int} {
+    set i 25
+    set i 0o00012345     ;# an octal literal == 5349 decimal
+    list $i [incr i]
+} {0o00012345 5350}
+
+test set-1.24 {TclCompileSetCmd: too many arguments} {
+    set i 10
+    catch {set i 20 30} msg
+    set msg
+} {wrong # args: should be "set varName ?newValue?"}
+
+test set-1.25 {TclCompileSetCmd: var is array, braced (no subs)} {
+    # This was a known error in 8.1a* - 8.2.1
+    catch {unset array}
+    set {array($foo)} 5
+} 5
+test set-1.26 {TclCompileSetCmd: various array constructs} {
+    # Test all kinds of array constructs that TclCompileSetCmd
+    # may feel inclined to tamper with.
+    apply {{} {
+	set a x
+	set be(hej) 1					; # hej
+	set be($a) 1					; # x
+	set {be($a)} 1					; # $a
+	set be($a,hej) 1				; # x,hej
+	set be($a,$a) 5					; # x,x
+	set be(c($a) 1					; # c(x
+	set be(\w\w) 1					; # ww
+	set be(a:$a) [set be(x,$a)]			; # a:x
+	set be(hej,$be($a,hej),hej) 1			; # hej,1,hej
+	set be([string range hugge 0 2]) 1		; # hug
+	set be(a\ a) 1					; # a a
+	set be($a\ ,[string range hugge 1 3],hej) 1	; # x ,ugg,hej
+	set be($a,h"ej) 1				; # x,h"ej
+	set be([string range "a b c" 2 end]) 1		; # b c
+	set [string range bet 0 1](foo) 1		; # foo
+	set be([set be(a:$a)][set b\e($a)]) 1		; # 51
+	return [lsort [array names be]]
+    }}
+} [lsort {hej x $a x,hej x,x c(x ww a:x hej,1,hej hug {a a} {x ,ugg,hej} x,h"ej
+{b c} foo 51}]; # " just a matching end quote
+
+test set-2.1 {set command: runtime error, bad variable name} -setup {
+    unset -nocomplain {"foo}
+} -body {
+    list [catch {set {"foo}} msg] $msg $::errorInfo
+} -result {1 {can't read ""foo": no such variable} {can't read ""foo": no such variable
+    while executing
+"set {"foo}"}}
+# Stop my editor highlighter " from being confused
+test set-2.2 {set command: runtime error, not array variable} -setup {
+    unset -nocomplain b
+} -body {
+    set b 44
+    list [catch {set b(123)} msg] $msg
+} -result {1 {can't read "b(123)": variable isn't array}}
+test set-2.3 {set command: runtime error, errors in reading variables} -setup {
+    unset -nocomplain a
+} -body {
+    set a(6) 44
+    list [catch {set a(18)} msg] $msg
+} -result {1 {can't read "a(18)": no such element in array}}
+test set-2.4 {set command: runtime error, readonly variable} -setup {
+    unset -nocomplain x
+} -body {
+    proc readonly args {error "variable is read-only"}
+    set x 123
+    trace var x w readonly
+    list [catch {set x 1} msg] $msg $::errorInfo
+} -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
+    while executing
+*
+"set x 1"}}
+test set-2.5 {set command: runtime error, basic array operations} -setup {
+    unset -nocomplain a
+} -body {
+    array set a {}
+    list [catch {set a(other)} msg] $msg
+} -result {1 {can't read "a(other)": no such element in array}}
+test set-2.6 {set command: runtime error, basic array operations} -setup {
+    unset -nocomplain a
+} -body {
+    array set a {}
+    list [catch {set a} msg] $msg
+} -result {1 {can't read "a": variable is array}}
+
+# Test the uncompiled version of set
+
+catch {unset a}
+catch {unset b}
+catch {unset i}
+catch {unset x}
+
+test set-3.1 {uncompiled set command: missing variable name} {
+    set z set
+    list [catch {$z} msg] $msg
+} {1 {wrong # args: should be "set varName ?newValue?"}}
+test set-3.2 {uncompiled set command: simple variable name} {
+    set z set
+    $z i 10
+    list [$z i] $i
+} {10 10}
+test set-3.3 {uncompiled set command: error compiling variable name} {
+    set z set
+    $z i 10
+    catch {$z "i"xxx} msg
+    $z msg
+} {extra characters after close-quote}
+test set-3.4 {uncompiled set command: simple variable name in quotes} {
+    set z set
+    $z i 17
+    list [$z "i"] $i
+} {17 17}
+test set-3.5 {uncompiled set command: simple variable name in braces} {
+    set z set
+    catch {unset {a simple var}}
+    $z {a simple var} 27
+    list [$z {a simple var}] ${a simple var}
+} {27 27}
+test set-3.6 {uncompiled set command: simple array variable name} {
+    set z set
+    catch {unset a}
+    $z a(foo) 37
+    list [$z a(foo)] $a(foo)
+} {37 37}
+test set-3.7 {uncompiled set command: non-simple (computed) variable name} {
+    set z set
+    $z x "i"
+    $z i 77
+    list [$z $x] $i
+} {77 77}
+test set-3.8 {uncompiled set command: non-simple (computed) variable name} {
+    set z set
+    $z x "i"
+    $z i 77
+    list [$z [$z x] 2] $i
+} {2 2}
+
+test set-3.9 {uncompiled set command: 3rd arg => assignment} {
+    set z set
+    $z i "abcdef"
+    list [$z i] $i
+} {abcdef abcdef}
+test set-3.10 {uncompiled set command: only two args => just getting value} {
+    set z set
+    $z i {one two}
+    $z i
+} {one two}
+
+test set-3.11 {uncompiled set command: simple global name} {
+    proc p {} {
+	set z set
+        global i
+        $z i 54
+        $z i
+    }
+    p
+} {54}
+test set-3.12 {uncompiled set command: simple local name} {
+    proc p {bar} {
+	set z set
+        $z foo $bar
+        $z foo
+    }
+    p 999
+} {999}
+test set-3.13 {uncompiled set command: simple but new (unknown) local name} {
+    set z set
+    proc p {} {
+	set z set
+        $z bar
+    }
+    catch {p} msg
+    $z msg
+} {can't read "bar": no such variable}
+test set-3.14 {uncompiled set command: simple local name, >255 locals} {
+    proc 260locals {} {
+	set z set
+        # create 260 locals (the last ones with index > 255)
+        $z a0 0; $z a1 0; $z a2 0; $z a3 0; $z a4 0
+        $z a5 0; $z a6 0; $z a7 0; $z a8 0; $z a9 0
+        $z b0 0; $z b1 0; $z b2 0; $z b3 0; $z b4 0
+        $z b5 0; $z b6 0; $z b7 0; $z b8 0; $z b9 0
+        $z c0 0; $z c1 0; $z c2 0; $z c3 0; $z c4 0
+        $z c5 0; $z c6 0; $z c7 0; $z c8 0; $z c9 0
+        $z d0 0; $z d1 0; $z d2 0; $z d3 0; $z d4 0
+        $z d5 0; $z d6 0; $z d7 0; $z d8 0; $z d9 0
+        $z e0 0; $z e1 0; $z e2 0; $z e3 0; $z e4 0
+        $z e5 0; $z e6 0; $z e7 0; $z e8 0; $z e9 0
+        $z f0 0; $z f1 0; $z f2 0; $z f3 0; $z f4 0
+        $z f5 0; $z f6 0; $z f7 0; $z f8 0; $z f9 0
+        $z g0 0; $z g1 0; $z g2 0; $z g3 0; $z g4 0
+        $z g5 0; $z g6 0; $z g7 0; $z g8 0; $z g9 0
+        $z h0 0; $z h1 0; $z h2 0; $z h3 0; $z h4 0
+        $z h5 0; $z h6 0; $z h7 0; $z h8 0; $z h9 0
+        $z i0 0; $z i1 0; $z i2 0; $z i3 0; $z i4 0
+        $z i5 0; $z i6 0; $z i7 0; $z i8 0; $z i9 0
+        $z j0 0; $z j1 0; $z j2 0; $z j3 0; $z j4 0
+        $z j5 0; $z j6 0; $z j7 0; $z j8 0; $z j9 0
+        $z k0 0; $z k1 0; $z k2 0; $z k3 0; $z k4 0
+        $z k5 0; $z k6 0; $z k7 0; $z k8 0; $z k9 0
+        $z l0 0; $z l1 0; $z l2 0; $z l3 0; $z l4 0
+        $z l5 0; $z l6 0; $z l7 0; $z l8 0; $z l9 0
+        $z m0 0; $z m1 0; $z m2 0; $z m3 0; $z m4 0
+        $z m5 0; $z m6 0; $z m7 0; $z m8 0; $z m9 0
+        $z n0 0; $z n1 0; $z n2 0; $z n3 0; $z n4 0
+        $z n5 0; $z n6 0; $z n7 0; $z n8 0; $z n9 0
+        $z o0 0; $z o1 0; $z o2 0; $z o3 0; $z o4 0
+        $z o5 0; $z o6 0; $z o7 0; $z o8 0; $z o9 0
+        $z p0 0; $z p1 0; $z p2 0; $z p3 0; $z p4 0
+        $z p5 0; $z p6 0; $z p7 0; $z p8 0; $z p9 0
+        $z q0 0; $z q1 0; $z q2 0; $z q3 0; $z q4 0
+        $z q5 0; $z q6 0; $z q7 0; $z q8 0; $z q9 0
+        $z r0 0; $z r1 0; $z r2 0; $z r3 0; $z r4 0
+        $z r5 0; $z r6 0; $z r7 0; $z r8 0; $z r9 0
+        $z s0 0; $z s1 0; $z s2 0; $z s3 0; $z s4 0
+        $z s5 0; $z s6 0; $z s7 0; $z s8 0; $z s9 0
+        $z t0 0; $z t1 0; $z t2 0; $z t3 0; $z t4 0
+        $z t5 0; $z t6 0; $z t7 0; $z t8 0; $z t9 0
+        $z u0 0; $z u1 0; $z u2 0; $z u3 0; $z u4 0
+        $z u5 0; $z u6 0; $z u7 0; $z u8 0; $z u9 0
+        $z v0 0; $z v1 0; $z v2 0; $z v3 0; $z v4 0
+        $z v5 0; $z v6 0; $z v7 0; $z v8 0; $z v9 0
+        $z w0 0; $z w1 0; $z w2 0; $z w3 0; $z w4 0
+        $z w5 0; $z w6 0; $z w7 0; $z w8 0; $z w9 0
+        $z x0 0; $z x1 0; $z x2 0; $z x3 0; $z x4 0
+        $z x5 0; $z x6 0; $z x7 0; $z x8 0; $z x9 0
+        $z y0 0; $z y1 0; $z y2 0; $z y3 0; $z y4 0
+        $z y5 0; $z y6 0; $z y7 0; $z y8 0; $z y9 0
+        $z z0 0; $z z1 0; $z z2 0; $z z3 0; $z z4 0
+        $z z5 0; $z z6 0; $z z7 0; $z z8 0; $z z9 1234
+    }
+    260locals
+} {1234}
+test set-3.15 {uncompiled set command: variable is array} {
+    set z set
+    catch {unset a}
+    $z x 27
+    $z x [$z a(foo) 11]
+    catch {unset a}
+    $z x
+} 11
+test set-3.16 {uncompiled set command: variable is array, elem substitutions} {
+    set z set
+    catch {unset a}
+    $z i 5
+    $z x 789
+    $z a(foo5) 27
+    $z x [$z a(foo$i)]
+    catch {unset a}
+    $z x
+} 27
+
+test set-3.17 {uncompiled set command: doing assignment, simple int} {
+    set z set
+    $z i 5
+    $z i 123
+} 123
+test set-3.18 {uncompiled set command: doing assignment, simple int} {
+    set z set
+    $z i 5
+    $z i -100
+} -100
+test set-3.19 {uncompiled set command: doing assignment, simple but not int} {
+    set z set
+    $z i 5
+    $z i 0x12MNOP
+    $z i
+} {0x12MNOP}
+test set-3.20 {uncompiled set command: doing assignment, in quotes} {
+    set z set
+    $z i 25
+    $z i "-100"
+} -100
+test set-3.21 {uncompiled set command: doing assignment, in braces} {
+    set z set
+    $z i 24
+    $z i {126}
+} 126
+test set-3.22 {uncompiled set command: doing assignment, large int} {
+    set z set
+    $z i 5
+    $z i 200000
+} 200000
+test set-3.23 {uncompiled set command: doing assignment, formatted int != int} {
+    set z set
+    $z i 25
+    $z i 0o00012345     ;# an octal literal == 5349 decimal
+    list $i [incr i]
+} {0o00012345 5350}
+
+test set-3.24 {uncompiled set command: too many arguments} {
+    set z set
+    $z i 10
+    catch {$z i 20 30} msg
+    $z msg
+} {wrong # args: should be "set varName ?newValue?"}
+
+test set-4.1 {uncompiled set command: runtime error, bad variable name} -setup {
+    unset -nocomplain {"foo}
+} -body {
+    set z set
+    list [catch {$z {"foo}} msg] $msg $::errorInfo
+} -result {1 {can't read ""foo": no such variable} {can't read ""foo": no such variable
+    while executing
+"$z {"foo}"}}
+# Stop my editor highlighter " from being confused
+test set-4.2 {uncompiled set command: runtime error, not array variable} -setup {
+    catch {unset b}
+} -body {
+    set z set
+    $z b 44
+    list [catch {$z b(123)} msg] $msg
+} -result {1 {can't read "b(123)": variable isn't array}}
+test set-4.3 {uncompiled set command: runtime error, errors in reading variables} -setup {
+    catch {unset a}
+} -body {
+    set z set
+    $z a(6) 44
+    list [catch {$z a(18)} msg] $msg
+} -result {1 {can't read "a(18)": no such element in array}}
+test set-4.4 {uncompiled set command: runtime error, readonly variable} -body {
+    set z set
+    proc readonly args {error "variable is read-only"}
+    $z x 123
+    trace var x w readonly
+    list [catch {$z x 1} msg] $msg $::errorInfo
+} -match glob -result {1 {can't set "x": variable is read-only} {*variable is read-only
+    while executing
+*
+"$z x 1"}}
+test set-4.5 {uncompiled set command: runtime error, basic array operations} -setup {
+    unset -nocomplain a
+    array set a {}
+} -body {
+    set z set
+    list [catch {$z a(other)} msg] $msg
+} -result {1 {can't read "a(other)": no such element in array}}
+test set-4.6 {set command: runtime error, basic array operations} -setup {
+    unset -nocomplain a
+    array set a {}
+} -body {
+    set z set
+    list [catch {$z a} msg] $msg
+} -result {1 {can't read "a": variable is array}}
+
+test set-5.1 {error on malformed array name} -constraints testset2 -setup {
+    unset -nocomplain z
+} -body {
+    catch {testset2 z(a) b} msg
+    catch {testset2 z(b) a} msg1
+    list $msg $msg1
+} -result {{can't read "z(a)(b)": variable isn't array} {can't read "z(b)(a)": variable isn't array}}
+# In a mem-debug build, this test will crash unless Bug 3602706 is fixed.
+test set-5.2 {Bug 3602706} -body {
+    testset2 ::tcl_platform not-in-there
+} -returnCodes error -result * -match glob
+
+# cleanup
+catch {unset a}
+catch {unset b}
+catch {unset i}
+catch {unset x}
+catch {unset z}
+::tcltest::cleanupTests
+return 
+
+# Local Variables:
+# mode: tcl
+# End:

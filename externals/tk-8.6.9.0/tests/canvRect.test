@@ -1,0 +1,475 @@
+# This file is a Tcl script to test out the procedures in tkRectOval.c,
+# which implement canvas "rectangle" and "oval" items.  It is organized
+# in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# Canvas used in every test case of the whole file
+canvas .c -width 400 -height 300 -bd 2 -relief sunken
+pack .c
+update
+
+# Rectangle used in canvRect-1.* tests
+.c create rectangle 20 20 80 80 -tag test
+test canvRect-1.1 {configuration options: good value for -fill} -body {
+    .c itemconfigure test -fill #ff0000
+    list [.c itemcget test -fill] [lindex [.c itemconfigure test -fill] 4]
+} -result {{#ff0000} #ff0000}
+test canvRect-1.2 {configuration options: bad value for -fill} -body {
+    .c itemconfigure test -fill non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test canvRect-1.3 {configuration options: good value for -outline} -body {
+    .c itemconfigure test -outline #123456
+    list [.c itemcget test -outline] [lindex [.c itemconfigure test -outline] 4]
+} -result {{#123456} #123456}
+test canvRect-1.4 {configuration options: bad value for -outline} -body {
+    .c itemconfigure test -outline non-existent
+} -returnCodes error -result {unknown color name "non-existent"}
+test canvRect-1.5 {configuration options: good value for -stipple } -body {
+    .c itemconfigure test -stipple  gray50
+    list [.c itemcget test -stipple ] [lindex [.c itemconfigure test -stipple ] 4]
+} -result {gray50 gray50}
+test canvRect-1.6 {configuration options: bad value for -stipple } -body {
+    .c itemconfigure test -stipple  bogus
+} -returnCodes error -result {bitmap "bogus" not defined}
+test canvRect-1.7 {configuration options: good value for -tags} -body {
+    .c itemconfigure test -tags {test a b c}
+    list [.c itemcget test -tags] [lindex [.c itemconfigure test -tags] 4]
+} -result {{test a b c} {test a b c}}
+test canvRect-1.8 {configuration options} -body {
+    .c itemconfigure test -tags {test xyz}
+    .c itemcget xyz -tags
+} -result {test xyz}
+test canvRect-1.9 {configuration options: good value for -width} -body {
+    .c itemconfigure test -width 6.0
+    list [.c itemcget test -width] [lindex [.c itemconfigure test -width] 4]
+} -result {6.0 6.0}
+test canvRect-1.10 {configuration options: bad value for -width} -body {
+    .c itemconfigure test -width abc
+} -returnCodes error -result {bad screen distance "abc"}
+.c delete withtag all
+
+
+test canvRect-2.1 {CreateRectOval procedure} -body {
+    .c create rect
+} -returnCodes error -result {wrong # args: should be ".c create rect coords ?arg ...?"}
+test canvRect-2.2 {CreateRectOval procedure} -body {
+    .c create oval x y z
+} -returnCodes error -result {wrong # coordinates: expected 0 or 4, got 3}
+test canvRect-2.3 {CreateRectOval procedure} -body {
+    .c create rectangle x 2 3 4
+} -returnCodes error -result {bad screen distance "x"}
+test canvRect-2.4 {CreateRectOval procedure} -body {
+    .c create rectangle 1 y 3 4
+} -returnCodes error -result {bad screen distance "y"}
+test canvRect-2.5 {CreateRectOval procedure} -body {
+    .c create rectangle 1 2 z 4
+} -returnCodes error -result {bad screen distance "z"}
+test canvRect-2.6 {CreateRectOval procedure} -body {
+    .c create rectangle 1 2 3 q
+} -returnCodes error -result {bad screen distance "q"}
+test canvRect-2.7 {CreateRectOval procedure} -body {
+    .c create rectangle 1 2 3 4 -tags x
+    set result {}
+    foreach element [.c coords x] {
+	    lappend result [format %.1f $element]
+    }
+    set result
+} -result {1.0 2.0 3.0 4.0}
+test canvRect-2.8 {CreateRectOval procedure} -body {
+    .c create rectangle 1 2 3 4 -gorp foo
+} -returnCodes error -result {unknown option "-gorp"}
+.c delete withtag all
+
+
+test canvRect-3.1 {RectOvalCoords procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    set result {}
+    foreach element [.c coords x] {
+	    lappend result [format %.1f $element]
+    }
+    return $result
+} -cleanup {
+    .c delete withtag all
+} -result {10.0 20.0 30.0 40.0}
+test canvRect-3.2 {RectOvalCoords procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    .c coords x a 2 3 4
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {bad screen distance "a"}
+test canvRect-3.3 {RectOvalCoords procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    .c coords x 1 b 3 4
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {bad screen distance "b"}
+test canvRect-3.4 {RectOvalCoords procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    .c coords x 1 2 c 4
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {bad screen distance "c"}
+test canvRect-3.5 {RectOvalCoords procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    .c coords x 1 2 3 d
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {bad screen distance "d"}
+test canvRect-3.6 {RectOvalCoords procedure} -constraints {
+    nonPortable
+} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    # Non-portable due to rounding differences.
+    .c coords x 10 25 15 40
+    .c bbox x
+} -cleanup {
+    .c delete withtag all
+} -result {9 24 16 41}
+test canvRect-3.7 {RectOvalCoords procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x
+    .c coords x 1 2 3 4 5
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {wrong # coordinates: expected 0 or 4, got 5}
+
+
+test canvRect-4.1 {ConfigureRectOval procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x -width 1
+    .c itemconfigure x -width abc
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {bad screen distance "abc"}
+test canvRect-4.2 {ConfigureRectOval procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x -width 1
+    catch {.c itemconfigure x -width abc}
+	.c itemcget x -width
+} -cleanup {
+    .c delete withtag all
+} -result {1.0}
+test canvRect-4.3 {ConfigureRectOval procedure} -body {
+    .c create rectangle 10 20 30 40 -tags x -width 1
+    .c itemconfigure x -width -5
+} -cleanup {
+    .c delete withtag all
+} -returnCodes error -result {bad screen distance "-5"}
+test canvRect-4.4 {ConfigureRectOval procedure} -constraints nonPortable -body {
+    # Non-portable due to rounding differences
+    .c create rectangle 10 20 30 40 -tags x -width 1
+    .c itemconfigure x -width 10
+    .c bbox x
+} -cleanup {
+    .c delete withtag all
+} -result {5 15 35 45}
+
+# I can't come up with any good tests for DeleteRectOval.
+
+test canvRect-5.1 {ComputeRectOvalBbox procedure} -constraints nonPortable -body {
+    # Non-portable due to rounding differences:
+    .c create rectangle 10 20 30 40 -tags x -width 1 -outline {}
+    .c coords x 20 15 10 5
+    .c bbox x
+} -cleanup {
+    .c delete withtag all
+} -result {10 5 20 15}
+test canvRect-5.2 {ComputeRectOvalBbox procedure} -constraints nonPortable -body {
+    # Non-portable due to rounding differences:
+    .c create rectangle 10 20 30 40 -tags x -width 1 -outline {}
+    .c coords x 10 20 30 10
+    .c itemconfigure x -width 1 -outline red
+    .c bbox x
+} -cleanup {
+    .c delete withtag all
+} -result {9 9 31 21}
+test canvRect-5.3 {ComputeRectOvalBbox procedure} -constraints nonPortable -body {
+    # Non-portable due to rounding differences:
+    .c create rectangle 10 20 30 40 -tags x -width 1 -outline {}
+    .c coords x 10 20 30 10
+    .c itemconfigure x -width 2 -outline red
+    .c bbox x
+} -cleanup {
+    .c delete withtag all
+} -result {9 9 31 21}
+test canvRect-5.4 {ComputeRectOvalBbox procedure} -constraints nonPortable -body {
+    # Non-portable due to rounding differences:
+    .c create rectangle 10 20 30 40 -tags x -width 1 -outline {}
+    .c coords x 10 20 30 10
+    .c itemconfigure x -width 3 -outline red
+    .c bbox x
+} -cleanup {
+    .c delete withtag all
+} -result {8 8 32 22}
+
+# I can't come up with any good tests for DisplayRectOval.
+
+test canvRect-6.1 {RectToPoint procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -tags x -fill green]
+	set yId [.c create rectangle 15 25 25 30  -tags y -fill red]
+    .c itemconfigure y -outline {}
+    list [expr {[.c find closest 14.9 28] eq $xId}] \
+		[expr {[.c find closest 15.1 28] eq $yId}] \
+		[expr {[.c find closest 24.9 28] eq $yId}] \
+		[expr {[.c find closest 25.1 28] eq $xId}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+test canvRect-6.2 {RectToPoint procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -tags x -fill green]
+	set yId [.c create rectangle 15 25 25 30  -tags y -fill red]
+    .c itemconfigure y -outline {}
+    list [expr {[.c find closest 20 24.9] eq $xId}] \
+		 [expr {[.c find closest 20 25.1] eq $yId}] \
+	    [expr {[.c find closest 20 29.9] eq $yId}] \
+		 [expr {[.c find closest 20 30.1] eq $xId}]
+		
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+test canvRect-6.3 {RectToPoint procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -tags x -fill green]
+	set yId [.c create rectangle 15 25 25 30  -tags y -fill red]
+    .c itemconfigure y -width 1 -outline black
+    list [expr {[.c find closest 14.4 28] eq $xId}] \
+		 [expr {[.c find closest 14.6 28] eq $yId}] \
+	    [expr {[.c find closest 25.4 28] eq $yId}] \
+		 [expr {[.c find closest 25.6 28] eq $xId}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+test canvRect-6.4 {RectToPoint procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -tags x -fill green]
+	set yId [.c create rectangle 15 25 25 30  -tags y -fill red]
+    .c itemconfigure  y -width 1 -outline black
+    list [expr {[.c find closest 20 24.4] eq $xId}] \
+		 [expr {[.c find closest 20 24.6] eq $yId}] \
+	    [expr {[.c find closest 20 30.4] eq $yId}] \
+		 [expr {[.c find closest 20 30.6] eq $xId}]		
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+
+test canvRect-6.5 {RectToPoint procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -tags x -fill green]
+	set yId [.c create rectangle 15 25 25 30  -tags y -fill red]
+	.c itemconfigure x -fill {} -outline black -width 3
+	.c itemconfigure y -outline {}
+    list [expr {[.c find closest 13.2 28] eq $xId}] \
+		 [expr {[.c find closest 13.3 28] eq $yId}] \
+	    [expr {[.c find closest 26.7 28] eq $yId}] \
+		 [expr {[.c find closest 26.8 28] eq $xId}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+test canvRect-6.6 {RectToPoint procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -tags x -fill green]
+	set yId [.c create rectangle 15 25 25 30  -tags y -fill red]
+	.c itemconfigure x -fill {} -outline black -width 3
+	.c itemconfigure y -outline {}
+    list [expr {[.c find closest 20 23.2] eq $xId}] \
+		 [expr {[.c find closest 20 23.3] eq $yId}] \
+	    [expr {[.c find closest 20 31.7] eq $yId}] \
+		 [expr {[.c find closest 20 31.8] eq $xId}] 
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+		
+test canvRect-6.7 {RectToPoint procedure} -body {
+	set xId [.c create rectangle 10 20 30 40 -outline {} -fill black]		
+	set yId [.c create rectangle 40 40 50 50 -outline {} -fill black]
+    list [expr {[.c find closest 35 35] eq $xId}] \
+		 [expr {[.c find closest 36 36] eq $yId}] \
+	    [expr {[.c find closest 37 37] eq $yId}] \
+		 [expr {[.c find closest 38 38] eq $yId}] 
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1}
+
+
+test canvRect-7.1 {RectToArea procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -fill green -outline {}]
+	set yId [.c create rectangle 40 45 60 70 -fill red -outline black -width 3]
+	set zId [.c create rectangle 100 150 120 170 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 20 50 38 60] eq {}}] \
+	    [expr {[.c find overlapping 20 50 39 60] eq $yId}] \
+	    [expr {[.c find overlapping 20 50 70 60] eq $yId}] \
+	    [expr {[.c find overlapping 61 50 70 60] eq $yId}] \
+	    [expr {[.c find overlapping 62 50 70 60] eq {}}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1}
+test canvRect-7.2 {RectToArea procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -fill green -outline {}]
+	set yId [.c create rectangle 40 45 60 70 -fill red -outline black -width 3]
+	set zId [.c create rectangle 100 150 120 170 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 45 20 55 43] eq {}}] \
+	    [expr {[.c find overlapping 45 20 55 44] eq $yId}] \
+	    [expr {[.c find overlapping 45 20 55 80] eq $yId}] \
+	    [expr {[.c find overlapping 45 71 55 80] eq $yId}] \
+	    [expr {[.c find overlapping 45 72 55 80] eq {}}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1}
+test canvRect-7.3 {RectToArea procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -fill green -outline {}]
+	set yId [.c create rectangle 40 45 60 70 -fill red -outline black -width 3]
+	set zId [.c create rectangle 100 150 120 170 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 5 25 9.9 30] eq {}}] \
+		[expr {[.c find overlapping 5 25 10.1 30] eq $xId}]
+} -cleanup {
+	.c delete all
+} -result {1 1}
+test canvRect-7.4 {RectToArea procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -fill green -outline {}]
+	set yId [.c create rectangle 40 45 60 70 -fill red -outline black -width 3]
+	set zId [.c create rectangle 100 150 120 170 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 102 152 118 168]  eq {}}]\
+	    [expr {[.c find overlapping 101 152 118 168] eq $zId}] \
+	    [expr {[.c find overlapping 102 151 118 168] eq $zId}] \
+	    [expr {[.c find overlapping 102 152 119 168] eq $zId}] \
+	    [expr {[.c find overlapping 102 152 118 169] eq $zId}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1}
+test canvRect-7.5 {RectToArea procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -fill green -outline {}]
+	set yId [.c create rectangle 40 45 60 70 -fill red -outline black -width 3]
+	set zId [.c create rectangle 100 150 120 170 -fill {} -outline black -width 3]
+    list [expr {[.c find enclosed 20 40 38 80] eq {}}] \
+	    [expr {[.c find enclosed 20 40 39 80] eq {}}] \
+	    [expr {[.c find enclosed 20 40 70 80] eq $yId}] \
+	    [expr {[.c find enclosed 61 40 70 80] eq {}}] \
+	    [expr {[.c find enclosed 62 40 70 80] eq {}}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1}
+test canvRect-7.6 {RectToArea procedure} -body {
+	set xId  [.c create rectangle 10 20 30 35 -fill green -outline {}]
+	set yId [.c create rectangle 40 45 60 70 -fill red -outline black -width 3]
+	set zId [.c create rectangle 100 150 120 170 -fill {} -outline black -width 3]
+    list [expr {[.c find enclosed 20 20 65 43] eq {}}] \
+	    [expr {[.c find enclosed 20 20 65 44] eq {}}] \
+	    [expr {[.c find enclosed 20 20 65 80] eq $yId}] \
+	    [expr {[.c find enclosed 20 71 65 80] eq {}}] \
+	    [expr {[.c find enclosed 20 72 65 80] eq {}}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1}
+
+
+test canvRect-8.1 {OvalToArea procedure} -body {
+	set xId  [.c create oval 50 100 200 150 -fill green -outline {}]
+	set yId [.c create oval 50 100 200 150 -fill red -outline black -width 3]
+	set zId [.c create oval 50 100 200 150 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 20 120 48 130] eq {}}] \
+	    [expr {[.c find overlapping 20 120 49 130] eq "$yId $zId"}] \
+	    [expr {[.c find overlapping 20 120 50.2 130] eq "$xId $yId $zId"}] \
+	    [expr {[.c find overlapping 20 120 300 130] eq "$xId $yId $zId"}] \
+	    [expr {[.c find overlapping 60 120 190 130] eq "$xId $yId"}] \
+	    [expr {[.c find overlapping 199.9 120 300 130] eq "$xId $yId $zId"}] \
+	    [expr {[.c find overlapping 201 120 300 130] eq "$yId $zId"}] \
+	    [expr {[.c find overlapping 202 120 300 130] eq {}}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1 1 1 1}
+test canvRect-8.2 {OvalToArea procedure} -body {
+	set xId  [.c create oval 50 100 200 150 -fill green -outline {}]
+	set yId [.c create oval 50 100 200 150 -fill red -outline black -width 3]
+	set zId [.c create oval 50 100 200 150 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 100 50 150 98] eq {}}] \
+	    [expr {[.c find overlapping 100 50 150 99] eq "$yId $zId"}] \
+	    [expr {[.c find overlapping 100 50 150 100.1] eq "$xId $yId $zId"}] \
+	    [expr {[.c find overlapping 100 50 150 200] eq "$xId $yId $zId"}] \
+	    [expr {[.c find overlapping 100 110 150 140] eq "$xId $yId"}] \
+	    [expr {[.c find overlapping 100 149.9 150 200] eq "$xId $yId $zId"}] \
+	    [expr {[.c find overlapping 100 151 150 200] eq "$yId $zId"}] \
+	    [expr {[.c find overlapping 100 152 150 200] eq {}}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1 1 1 1}
+test canvRect-8.3 {OvalToArea procedure} -body {
+	set xId  [.c create oval 50 100 200 150 -fill green -outline {}]
+	set yId [.c create oval 50 100 200 150 -fill red -outline black -width 3]
+	set zId [.c create oval 50 100 200 150 -fill {} -outline black -width 3]
+    list [expr {[.c find overlapping 176 104 177 105] eq {}}] \
+	    [expr {[.c find overlapping 187 116 188 117] eq "$xId $yId"}] \
+	    [expr {[.c find overlapping 192 142 193 143] eq {}}] \
+	    [expr {[.c find overlapping 180 138 181 139] eq "$xId $yId"}] \
+	    [expr {[.c find overlapping 61 142 62 143] eq {}}] \
+	    [expr {[.c find overlapping 65 137 66 136] eq "$xId $yId"}] \
+	    [expr {[.c find overlapping 62 108 63 109] eq {}}] \
+	    [expr {[.c find overlapping 68 115 69 116] eq "$xId $yId"}]
+} -cleanup {
+	.c delete all
+} -result {1 1 1 1 1 1 1 1}
+
+
+test canvRect-9.1 {ScaleRectOval procedure} -setup {
+    .c delete withtag all
+} -body {
+    .c create rect 100 300 200 350 -tags x
+    .c scale x 50 100 2 4
+    format {%.6g %.6g %.6g %.6g} {*}[.c coords x]
+} -result {150 900 350 1100}
+
+test canvRect-10.1 {TranslateRectOval procedure} -setup {
+    .c delete withtag all
+} -body {
+    .c create rect 100 300 200 350 -tags x
+    .c move x 100 -10
+    format {%.6g %.6g %.6g %.6g} {*}[.c coords x]
+} -result {200 290 300 340}
+
+
+test canvRect-11.1 {RectOvalToPostscript procedure} -constraints {
+     nonPortable macCrash
+} -setup {
+    .c delete withtag all
+} -body {
+    # Crashes on Mac because the XGetImage() call isn't implemented, causing a
+    # dereference of NULL.
+    # This test is non-portable because different color information
+	# will get generated on different displays (e.g. mono displays
+	# vs. color).
+    .c configure -bd 0 -highlightthickness 0
+    .c create rect 50 60 90 80 -fill black -stipple gray50 -outline {}
+    .c create oval 100 150 200 200 -fill {} -outline #ff0000 -width 5
+    update
+    set x [.c postscript]
+    string range $x [string first "-200 -150 translate" $x] end
+} -result {-200 -150 translate
+0 300 moveto 400 300 lineto 400 0 lineto 0 0 lineto closepath clip newpath
+gsave
+50 240 moveto 40 0 rlineto 0 -20 rlineto -40 0 rlineto closepath
+0.000 0.000 0.000 setrgbcolor AdjustColor
+clip 16 16 <5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555aaaa5555
+aaaa> StippleFill
+grestore
+gsave
+matrix currentmatrix
+150 125 translate 50 25 scale 1 0 moveto 0 0 1 0 360 arc
+setmatrix
+5 setlinewidth 0 setlinejoin 2 setlinecap
+1.000 0.000 0.000 setrgbcolor AdjustColor
+stroke
+grestore
+restore showpage
+
+%%Trailer
+end
+%%EOF
+}
+
+# cleanup
+cleanupTests
+return
+
+
+
+

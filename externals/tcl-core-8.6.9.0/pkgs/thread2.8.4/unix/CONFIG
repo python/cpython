@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# This file contains collection of configure directives
+# for building the Threading extension.
+#
+# Comment-out next line if building with GCC compiler.
+#
+# CC=gcc; export CC
+#
+#
+# Tcl on Unix (uses public Tcl library)
+# ----------------------------------------------------
+# ../configure --enable-threads
+#
+# As of 2.6, the threading extension supports persistent
+# shared variables. As an working example of this, there
+# is a simple wrapper for the popular Gdbm library.
+# Uncomment the following line if you like to compile the
+# Gdbm wrapper for persistent shared variables.
+#
+# ../configure --enable-threads --with-gdbm
+#
+# If your Gdbm library is not installed in one of the
+# default system locations (/usr/lib, /usr/local/lib ...)
+# please use following directive. Note that both library
+# file *and* includes should be located in "/my/gdbm".
+# Of course, you have to replace the "/my/gdbm" below
+# with the exact location, as found in your system:
+#
+# ../configure --enable-threads --with-gdbm=/my/gdbm
+#
+#
+# AOLserver 4.X; Uses public Tcl library.
+# ----------------------------------------------------
+# nsdir="/usr/local/naviserver"
+# ../configure --enable-threads \
+#   --with-naviserver=$nsdir \
+#   --prefix=$nsdir --exec-prefix=$nsdir
+#
+# NaviServer/AOLserver uses its own package loading mechanism.
+# To load, just do "ns_eval package require Thread"
+# at the NaviServer/AOLserver startup or later from any thread.
+#
+#
+# Mac OS X; Uses public Tcl library.
+# ----------------------------------------------------
+# ../configure --enable-threads \
+#   --mandir=/usr/local/share/man \
+#   --libdir=/Library/Tcl \
+#   --with-tcl=/Library/Frameworks/Tcl.framework \
+#   --with-tclinclude=/Library/Frameworks/Tcl.framework/Headers
+#
+# EOF

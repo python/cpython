@@ -1,0 +1,50 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\"
+.TH Tk_AddOption 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_AddOption \- Add an option to the option database
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+void
+\fBTk_AddOption\fR(\fItkwin, name, value, priority\fR)
+.SH ARGUMENTS
+.AP Tk_Window tkwin in
+Token for window.
+.AP "const char" *name in
+Multi-element name of option.
+.AP "const char" *value in
+Value of option.
+.AP int priority in
+Overall priority level to use for option.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure is invoked to add an option to the database
+associated with \fItkwin\fR's main window.  \fIName\fR
+contains the option being specified and consists of names and/or
+classes separated by asterisks or dots, in the usual X format.
+\fIValue\fR contains the text string to associate with \fIname\fR;
+this value will be returned in calls to \fBTk_GetOption\fR.
+\fIPriority\fR specifies the priority of the value; when options are
+queried using \fBTk_GetOption\fR, the value with the highest priority
+is returned.  \fIPriority\fR must be between 0 and \fBTK_MAX_PRIO\fR.  Some
+common priority values are:
+.IP 20
+Used for default values hard-coded into widgets.
+.IP 40
+Used for options specified in application-specific startup files.
+.IP 60
+Used for options specified in user-specific defaults files, such as
+\fB.Xdefaults\fR, resource databases loaded into the X server, or
+user-specific startup files.
+.IP 80
+Used for options specified interactively after the application starts
+running.
+.SH KEYWORDS
+class, name, option, add

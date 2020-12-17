@@ -1,0 +1,409 @@
+
+<html><head>
+<title>tsv - Tcl Threading</title>
+<style type="text/css"><!--
+    HTML {
+	background: 	#FFFFFF;
+	color: 		black;
+    }
+    BODY {
+	background: 	#FFFFFF;
+	color:	 	black;
+    }
+    DIV.doctools {
+	margin-left:	10%;
+	margin-right:	10%;
+    }
+    DIV.doctools H1,DIV.doctools H2 {
+	margin-left:	-5%;
+    }
+    H1, H2, H3, H4 {
+	margin-top: 	1em;
+	font-family:	sans-serif;
+	font-size:	large;
+	color:		#005A9C;
+	background: 	transparent;
+	text-align:		left;
+    }
+    H1.doctools_title {
+	text-align: center;
+    }
+    UL,OL {
+	margin-right: 0em;
+	margin-top: 3pt;
+	margin-bottom: 3pt;
+    }
+    UL LI {
+	list-style: disc;
+    }
+    OL LI {
+	list-style: decimal;
+    }
+    DT {
+	padding-top: 	1ex;
+    }
+    UL.doctools_toc,UL.doctools_toc UL, UL.doctools_toc UL UL {
+	font:		normal 12pt/14pt sans-serif;
+	list-style:	none;
+    }
+    LI.doctools_section, LI.doctools_subsection {
+	list-style: 	none;
+	margin-left: 	0em;
+	text-indent:	0em;
+	padding: 	0em;
+    }
+    PRE {
+	display: 	block;
+	font-family:	monospace;
+	white-space:	pre;
+	margin:		0%;
+	padding-top:	0.5ex;
+	padding-bottom:	0.5ex;
+	padding-left:	1ex;
+	padding-right:	1ex;
+	width:		100%;
+    }
+    PRE.doctools_example {
+	color: 		black;
+	background: 	#f5dcb3;
+	border:		1px solid black;
+    }
+    UL.doctools_requirements LI, UL.doctools_syntax LI {
+	list-style: 	none;
+	margin-left: 	0em;
+	text-indent:	0em;
+	padding:	0em;
+    }
+    DIV.doctools_synopsis {
+	color: 		black;
+	background: 	#80ffff;
+	border:		1px solid black;
+	font-family:	serif;
+	margin-top: 	1em;
+	margin-bottom: 	1em;
+    }
+    UL.doctools_syntax {
+	margin-top: 	1em;
+	border-top:	1px solid black;
+    }
+    UL.doctools_requirements {
+	margin-bottom: 	1em;
+	border-bottom:	1px solid black;
+    }
+--></style>
+</head>
+<! -- Generated from file '' by tcllib/doctools with format 'html'
+   -->
+<! -- tsv.n
+   -->
+<body><div class="doctools">
+<h1 class="doctools_title">tsv(n) 2.8  &quot;Tcl Threading&quot;</h1>
+<div id="name" class="doctools_section"><h2><a name="name">Name</a></h2>
+<p>tsv - Part of the Tcl threading extension allowing script level manipulation of data shared between threads.</p>
+</div>
+<div id="toc" class="doctools_section"><h2><a name="toc">Table Of Contents</a></h2>
+<ul class="doctools_toc">
+<li class="doctools_section"><a href="#toc">Table Of Contents</a></li>
+<li class="doctools_section"><a href="#synopsis">Synopsis</a></li>
+<li class="doctools_section"><a href="#section1">Description</a></li>
+<li class="doctools_section"><a href="#section2">ELEMENT COMMANDS</a></li>
+<li class="doctools_section"><a href="#section3">LIST COMMANDS</a></li>
+<li class="doctools_section"><a href="#section4">ARRAY COMMANDS</a></li>
+<li class="doctools_section"><a href="#section5">KEYED LIST COMMANDS</a></li>
+<li class="doctools_section"><a href="#section6">DISCUSSION</a></li>
+<li class="doctools_section"><a href="#section7">CREDITS</a></li>
+<li class="doctools_section"><a href="#see-also">See Also</a></li>
+<li class="doctools_section"><a href="#keywords">Keywords</a></li>
+</ul>
+</div>
+<div id="synopsis" class="doctools_section"><h2><a name="synopsis">Synopsis</a></h2>
+<div class="doctools_synopsis">
+<ul class="doctools_requirements">
+<li>package require <b class="pkgname">Tcl 8.4</b></li>
+<li>package require <b class="pkgname">Thread <span class="opt">?2.8?</span></b></li>
+</ul>
+<ul class="doctools_syntax">
+<li><a href="#1"><b class="cmd">tsv::names</b> <span class="opt">?pattern?</span></a></li>
+<li><a href="#2"><b class="cmd">tsv::object</b> <i class="arg">varname</i> <i class="arg">element</i></a></li>
+<li><a href="#3"><b class="cmd">tsv::set</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?value?</span></a></li>
+<li><a href="#4"><b class="cmd">tsv::get</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?namedvar?</span></a></li>
+<li><a href="#5"><b class="cmd">tsv::unset</b> <i class="arg">varname</i> <span class="opt">?element?</span></a></li>
+<li><a href="#6"><b class="cmd">tsv::exists</b> <i class="arg">varname</i> <i class="arg">element</i></a></li>
+<li><a href="#7"><b class="cmd">tsv::pop</b> <i class="arg">varname</i> <i class="arg">element</i></a></li>
+<li><a href="#8"><b class="cmd">tsv::move</b> <i class="arg">varname</i> <i class="arg">oldname</i> <i class="arg">newname</i></a></li>
+<li><a href="#9"><b class="cmd">tsv::incr</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?count?</span></a></li>
+<li><a href="#10"><b class="cmd">tsv::append</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">value</i> <span class="opt">?value ...?</span></a></li>
+<li><a href="#11"><b class="cmd">tsv::lock</b> <i class="arg">varname</i> <i class="arg">arg</i> <span class="opt">?arg ...?</span></a></li>
+<li><a href="#12"><b class="cmd">tsv::handlers</b></a></li>
+<li><a href="#13"><b class="cmd">tsv::lappend</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">value</i> <span class="opt">?value ...?</span></a></li>
+<li><a href="#14"><b class="cmd">tsv::linsert</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">index</i> <i class="arg">value</i> <span class="opt">?value ...?</span></a></li>
+<li><a href="#15"><b class="cmd">tsv::lreplace</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">first</i> <i class="arg">last</i> <span class="opt">?value ...?</span></a></li>
+<li><a href="#16"><b class="cmd">tsv::llength</b> <i class="arg">varname</i> <i class="arg">element</i></a></li>
+<li><a href="#17"><b class="cmd">tsv::lindex</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?index?</span></a></li>
+<li><a href="#18"><b class="cmd">tsv::lrange</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">from</i> <i class="arg">to</i></a></li>
+<li><a href="#19"><b class="cmd">tsv::lsearch</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?options?</span> <i class="arg">pattern</i></a></li>
+<li><a href="#20"><b class="cmd">tsv::lset</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">index</i> <span class="opt">?index ...?</span> <i class="arg">value</i></a></li>
+<li><a href="#21"><b class="cmd">tsv::lpop</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?index?</span></a></li>
+<li><a href="#22"><b class="cmd">tsv::lpush</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?index?</span></a></li>
+<li><a href="#23"><b class="cmd">tsv::array set</b> <i class="arg">varname</i> <i class="arg">list</i></a></li>
+<li><a href="#24"><b class="cmd">tsv::array get</b> <i class="arg">varname</i> <span class="opt">?pattern?</span></a></li>
+<li><a href="#25"><b class="cmd">tsv::array names</b> <i class="arg">varname</i> <span class="opt">?pattern?</span></a></li>
+<li><a href="#26"><b class="cmd">tsv::array size</b> <i class="arg">varname</i></a></li>
+<li><a href="#27"><b class="cmd">tsv::array reset</b> <i class="arg">varname</i> <i class="arg">list</i></a></li>
+<li><a href="#28"><b class="cmd">tsv::array bind</b> <i class="arg">varname</i> <i class="arg">handle</i></a></li>
+<li><a href="#29"><b class="cmd">tsv::array unbind</b> <i class="arg">varname</i></a></li>
+<li><a href="#30"><b class="cmd">tsv::array isbound</b> <i class="arg">varname</i></a></li>
+<li><a href="#31"><b class="cmd">tsv::keyldel</b> <i class="arg">varname</i> <i class="arg">keylist</i> <i class="arg">key</i></a></li>
+<li><a href="#32"><b class="cmd">tsv::keylget</b> <i class="arg">varname</i> <i class="arg">keylist</i> <i class="arg">key</i> <span class="opt">?retvar?</span></a></li>
+<li><a href="#33"><b class="cmd">tsv::keylkeys</b> <i class="arg">varname</i> <i class="arg">keylist</i> <span class="opt">?key?</span></a></li>
+<li><a href="#34"><b class="cmd">tsv::keylset</b> <i class="arg">varname</i> <i class="arg">keylist</i> <i class="arg">key</i> <i class="arg">value</i> <span class="opt">?key value..?</span></a></li>
+</ul>
+</div>
+</div>
+<div id="section1" class="doctools_section"><h2><a name="section1">Description</a></h2>
+<p>This section describes commands implementing thread shared variables.
+A thread shared variable is very similar to a Tcl array but in
+contrast to a Tcl array it is created in shared memory and can
+be accessed from many threads at the same time. Important feature of
+thread shared variable is that each access to the variable is internaly
+protected by a mutex so script programmer does not have to take care
+about locking the variable himself.</p>
+<p>Thread shared variables are not bound to any thread explicitly. That
+means that when a thread which created any of thread shared variables
+exits, the variable and associated memory is not unset/reclaimed.
+User has to explicitly unset the variable to reclaim the memory
+consumed by the variable.</p>
+</div>
+<div id="section2" class="doctools_section"><h2><a name="section2">ELEMENT COMMANDS</a></h2>
+<dl class="doctools_definitions">
+<dt><a name="1"><b class="cmd">tsv::names</b> <span class="opt">?pattern?</span></a></dt>
+<dd><p>Returns names of shared variables matching optional <span class="opt">?pattern?</span>
+or all known variables if pattern is ommited.</p></dd>
+<dt><a name="2"><b class="cmd">tsv::object</b> <i class="arg">varname</i> <i class="arg">element</i></a></dt>
+<dd><p>Creates object accessor command for the <i class="arg">element</i> in the
+shared variable <i class="arg">varname</i>. Using this command, one can apply most
+of the other shared variable commands as method functions of
+the element object command. The object command is automatically
+deleted when the element which this command is pointing to is unset.</p>
+<pre class="doctools_example">
+    % tsv::set foo bar &quot;A shared string&quot;
+    % set string [tsv::object foo bar]
+    % $string append &quot; appended&quot;
+    =&gt; A shared string appended
+</pre>
+</dd>
+<dt><a name="3"><b class="cmd">tsv::set</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?value?</span></a></dt>
+<dd><p>Sets the value of the <i class="arg">element</i> in the shared variable <i class="arg">varname</i>
+to <i class="arg">value</i> and returns the value to caller. The <i class="arg">value</i>
+may be ommited, in which case the command will return the current
+value of the element. If the element cannot be found, error is triggered.</p></dd>
+<dt><a name="4"><b class="cmd">tsv::get</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?namedvar?</span></a></dt>
+<dd><p>Retrieves the value of the <i class="arg">element</i> from the shared variable <i class="arg">varname</i>.
+If the optional argument <i class="arg">namedvar</i> is given, the value is
+stored in the named variable. Return value of the command depends
+of the existence of the optional argument <i class="arg">namedvar</i>.
+If the argument is ommited and the requested element cannot be found
+in the shared array, the command triggers error. If, however, the
+optional argument is given on the command line, the command returns
+true (1) if the element is found or false (0) if the element is not found.</p></dd>
+<dt><a name="5"><b class="cmd">tsv::unset</b> <i class="arg">varname</i> <span class="opt">?element?</span></a></dt>
+<dd><p>Unsets the <i class="arg">element</i> from the shared variable <i class="arg">varname</i>.
+If the optional element is not given, it deletes the variable.</p></dd>
+<dt><a name="6"><b class="cmd">tsv::exists</b> <i class="arg">varname</i> <i class="arg">element</i></a></dt>
+<dd><p>Checks wether the <i class="arg">element</i> exists in the shared variable <i class="arg">varname</i>
+and returns true (1) if it does or false (0) if it doesn't.</p></dd>
+<dt><a name="7"><b class="cmd">tsv::pop</b> <i class="arg">varname</i> <i class="arg">element</i></a></dt>
+<dd><p>Returns value of the <i class="arg">element</i> in the shared variable <i class="arg">varname</i>
+and unsets the element, all in one atomic operation.</p></dd>
+<dt><a name="8"><b class="cmd">tsv::move</b> <i class="arg">varname</i> <i class="arg">oldname</i> <i class="arg">newname</i></a></dt>
+<dd><p>Renames the element <i class="arg">oldname</i> to the <i class="arg">newname</i> in the
+shared variable <i class="arg">varname</i>. This effectively performs an get/unset/set
+sequence of operations but all in one atomic step.</p></dd>
+<dt><a name="9"><b class="cmd">tsv::incr</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?count?</span></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">incr</b> command but increments the value
+of the <i class="arg">element</i> in shared variaboe <i class="arg">varname</i> instead of
+the Tcl variable.</p></dd>
+<dt><a name="10"><b class="cmd">tsv::append</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">value</i> <span class="opt">?value ...?</span></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">append</b> command but appends one or more
+values to the <i class="arg">element</i> in shared variable <i class="arg">varname</i> instead of the
+Tcl variable.</p></dd>
+<dt><a name="11"><b class="cmd">tsv::lock</b> <i class="arg">varname</i> <i class="arg">arg</i> <span class="opt">?arg ...?</span></a></dt>
+<dd><p>This command concatenates passed arguments and evaluates the
+resulting script under the internal mutex protection. During the
+script evaluation, the entire shared variable is locked. For shared
+variable commands within the script, internal locking is disabled
+so no deadlock can occur. It is also allowed to unset the shared
+variable from within the script. The shared variable is automatically
+created if it did not exists at the time of the first lock operation.</p>
+<pre class="doctools_example">
+    % tsv::lock foo {
+        tsv::lappend foo bar 1
+        tsv::lappend foo bar 2
+        puts stderr [tsv::set foo bar]
+        tsv::unset foo
+    }
+</pre>
+</dd>
+<dt><a name="12"><b class="cmd">tsv::handlers</b></a></dt>
+<dd><p>Returns the names of all persistent storage handlers enabled at compile time.
+See <span class="sectref"><a href="#section4">ARRAY COMMANDS</a></span> for details.</p></dd>
+</dl>
+</div>
+<div id="section3" class="doctools_section"><h2><a name="section3">LIST COMMANDS</a></h2>
+<p>Those command are similar to the equivalently named Tcl command. The difference
+is that they operate on elements of shared arrays.</p>
+<dl class="doctools_definitions">
+<dt><a name="13"><b class="cmd">tsv::lappend</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">value</i> <span class="opt">?value ...?</span></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">lappend</b> command but appends one
+or more values to the <i class="arg">element</i> in shared variable <i class="arg">varname</i>
+instead of the Tcl variable.</p></dd>
+<dt><a name="14"><b class="cmd">tsv::linsert</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">index</i> <i class="arg">value</i> <span class="opt">?value ...?</span></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">linsert</b> command but inserts one
+or more values at the <i class="arg">index</i> list position in the
+<i class="arg">element</i> in the shared variable <i class="arg">varname</i> instead of the Tcl variable.</p></dd>
+<dt><a name="15"><b class="cmd">tsv::lreplace</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">first</i> <i class="arg">last</i> <span class="opt">?value ...?</span></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">lreplace</b> command but replaces one
+or more values between the <i class="arg">first</i> and <i class="arg">last</i> position
+in the <i class="arg">element</i> of the shared variable <i class="arg">varname</i> instead of
+the Tcl variable.</p></dd>
+<dt><a name="16"><b class="cmd">tsv::llength</b> <i class="arg">varname</i> <i class="arg">element</i></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">llength</b> command but returns length
+of the <i class="arg">element</i> in the shared variable <i class="arg">varname</i> instead of the Tcl
+variable.</p></dd>
+<dt><a name="17"><b class="cmd">tsv::lindex</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?index?</span></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">lindex</b> command but returns the value
+at the <i class="arg">index</i> list position of the <i class="arg">element</i> from
+the shared variable <i class="arg">varname</i> instead of the Tcl variable.</p></dd>
+<dt><a name="18"><b class="cmd">tsv::lrange</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">from</i> <i class="arg">to</i></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">lrange</b> command but returns values
+between <i class="arg">from</i> and <i class="arg">to</i> list positions from the
+<i class="arg">element</i> in the shared variable <i class="arg">varname</i> instead of the Tcl variable.</p></dd>
+<dt><a name="19"><b class="cmd">tsv::lsearch</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?options?</span> <i class="arg">pattern</i></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">lsearch</b> command but searches the <i class="arg">element</i>
+in the shared variable <i class="arg">varname</i> instead of the Tcl variable.</p></dd>
+<dt><a name="20"><b class="cmd">tsv::lset</b> <i class="arg">varname</i> <i class="arg">element</i> <i class="arg">index</i> <span class="opt">?index ...?</span> <i class="arg">value</i></a></dt>
+<dd><p>Similar to standard Tcl <b class="cmd">lset</b> command but sets the <i class="arg">element</i>
+in the shared variable <i class="arg">varname</i> instead of the Tcl variable.</p></dd>
+<dt><a name="21"><b class="cmd">tsv::lpop</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?index?</span></a></dt>
+<dd><p>Similar to the standard Tcl <b class="cmd">lindex</b> command but in addition to
+returning, it also splices the value out of the <i class="arg">element</i>
+from the shared variable <i class="arg">varname</i> in one atomic operation.
+In contrast to the Tcl <b class="cmd">lindex</b> command, this command returns
+no value to the caller.</p></dd>
+<dt><a name="22"><b class="cmd">tsv::lpush</b> <i class="arg">varname</i> <i class="arg">element</i> <span class="opt">?index?</span></a></dt>
+<dd><p>This command performes the opposite of the <b class="cmd">tsv::lpop</b> command.
+As its counterpart, it returns no value to the caller.</p></dd>
+</dl>
+</div>
+<div id="section4" class="doctools_section"><h2><a name="section4">ARRAY COMMANDS</a></h2>
+<p>This command supports most of the options of the standard Tcl
+<b class="cmd">array</b> command. In addition to those, it allows binding
+a shared variable to some persisten storage databases. Currently the persistent
+options supported are the famous GNU Gdbm and LMDB. These options have to be
+selected during the package compilation time.
+The implementation provides hooks for defining other persistency layers, if
+needed.</p>
+<dl class="doctools_definitions">
+<dt><a name="23"><b class="cmd">tsv::array set</b> <i class="arg">varname</i> <i class="arg">list</i></a></dt>
+<dd><p>Does the same as standard Tcl <b class="cmd">array set</b>.</p></dd>
+<dt><a name="24"><b class="cmd">tsv::array get</b> <i class="arg">varname</i> <span class="opt">?pattern?</span></a></dt>
+<dd><p>Does the same as standard Tcl <b class="cmd">array get</b>.</p></dd>
+<dt><a name="25"><b class="cmd">tsv::array names</b> <i class="arg">varname</i> <span class="opt">?pattern?</span></a></dt>
+<dd><p>Does the same as standard Tcl <b class="cmd">array names</b>.</p></dd>
+<dt><a name="26"><b class="cmd">tsv::array size</b> <i class="arg">varname</i></a></dt>
+<dd><p>Does the same as standard Tcl <b class="cmd">array size</b>.</p></dd>
+<dt><a name="27"><b class="cmd">tsv::array reset</b> <i class="arg">varname</i> <i class="arg">list</i></a></dt>
+<dd><p>Does the same as standard Tcl <b class="cmd">array set</b> but it clears
+the <i class="arg">varname</i> and sets new values from the list atomically.</p></dd>
+<dt><a name="28"><b class="cmd">tsv::array bind</b> <i class="arg">varname</i> <i class="arg">handle</i></a></dt>
+<dd><p>Binds the <i class="arg">varname</i> to the persistent storage <i class="arg">handle</i>.
+The format of the <i class="arg">handle</i> is &lt;handler&gt;:&lt;address&gt;, where &lt;handler&gt; is
+&quot;gdbm&quot; for GNU Gdbm and &quot;lmdb&quot; for LMDB and &lt;address&gt; is the path to the
+database file.</p></dd>
+<dt><a name="29"><b class="cmd">tsv::array unbind</b> <i class="arg">varname</i></a></dt>
+<dd><p>Unbinds the shared <i class="arg">array</i> from its bound persistent storage.</p></dd>
+<dt><a name="30"><b class="cmd">tsv::array isbound</b> <i class="arg">varname</i></a></dt>
+<dd><p>Returns true (1) if the shared <i class="arg">varname</i> is bound to some
+persistent storage or zero (0) if not.</p></dd>
+</dl>
+</div>
+<div id="section5" class="doctools_section"><h2><a name="section5">KEYED LIST COMMANDS</a></h2>
+<p>Keyed list commands are borrowed from the TclX package. Keyed lists provide
+a structured data type built upon standard Tcl lists. This is a functionality
+similar to structs in the C programming language.</p>
+<p>A keyed list is a list in which each element contains a key and value
+pair. These element pairs are stored as lists themselves, where the key
+is the first element of the list, and the value is the second. The
+key-value pairs are referred to as fields.  This is an example of a
+keyed list:</p>
+<pre class="doctools_example">
+    {{NAME  {Frank  Zappa}} {JOB {musician and composer}}}
+</pre>
+<p>Fields may contain subfields; `.' is the separator character. Subfields
+are actually fields  where the value is another keyed list. Thus the
+following list has the top level fields ID and NAME, and subfields
+NAME.FIRST and NAME.LAST:</p>
+<pre class="doctools_example">
+    {ID 106} {NAME {{FIRST Frank} {LAST Zappa}}}
+</pre>
+<p>There is no limit to the recursive depth of subfields,
+allowing one to build complex data structures. Keyed lists are constructed
+and accessed via a number of commands. All  keyed  list management
+commands take the name of the variable containing the keyed list as an
+argument (i.e. passed by reference), rather than passing the list directly.</p>
+<dl class="doctools_definitions">
+<dt><a name="31"><b class="cmd">tsv::keyldel</b> <i class="arg">varname</i> <i class="arg">keylist</i> <i class="arg">key</i></a></dt>
+<dd><p>Delete the field specified by <i class="arg">key</i> from the keyed list <i class="arg">keylist</i>
+in the shared variable <i class="arg">varname</i>.
+This removes both the key and the value from the keyed list.</p></dd>
+<dt><a name="32"><b class="cmd">tsv::keylget</b> <i class="arg">varname</i> <i class="arg">keylist</i> <i class="arg">key</i> <span class="opt">?retvar?</span></a></dt>
+<dd><p>Return the value associated with <i class="arg">key</i> from the keyed list <i class="arg">keylist</i>
+in the shared variable <i class="arg">varname</i>.
+If the optional <i class="arg">retvar</i> is not specified, then the value will be
+returned as the result of the command. In this case, if key is not found
+in the list, an error will result.</p>
+<p>If <i class="arg">retvar</i> is specified and <i class="arg">key</i> is in the list, then the value
+is returned in the variable <i class="arg">retvar</i> and the command returns 1 if the
+key was present within the list. If <i class="arg">key</i> isn't in the list, the
+command will return 0, and <i class="arg">retvar</i> will be left unchanged. If {} is
+specified for <i class="arg">retvar</i>, the value is not returned, allowing the Tcl
+programmer to determine if a <i class="arg">key</i> is present in a keyed list without
+setting a variable as a side-effect.</p></dd>
+<dt><a name="33"><b class="cmd">tsv::keylkeys</b> <i class="arg">varname</i> <i class="arg">keylist</i> <span class="opt">?key?</span></a></dt>
+<dd><p>Return  the a list of the keys in the keyed list <i class="arg">keylist</i> in the
+shared variable <i class="arg">varname</i>. If <i class="arg">key</i> is specified, then it is
+the name of a key field who's subfield keys are to be retrieved.</p></dd>
+<dt><a name="34"><b class="cmd">tsv::keylset</b> <i class="arg">varname</i> <i class="arg">keylist</i> <i class="arg">key</i> <i class="arg">value</i> <span class="opt">?key value..?</span></a></dt>
+<dd><p>Set the value associated with <i class="arg">key</i>, in the keyed list <i class="arg">keylist</i>
+to <i class="arg">value</i>. If the <i class="arg">keylist</i> does not exists, it is created.
+If <i class="arg">key</i> is not currently in the list, it will be added. If it already
+exists, <i class="arg">value</i> replaces the existing value. Multiple keywords and
+values may be specified, if desired.</p></dd>
+</dl>
+</div>
+<div id="section6" class="doctools_section"><h2><a name="section6">DISCUSSION</a></h2>
+<p>The current implementation of thread shared variables allows for easy and
+convenient access to data shared between different threads.
+Internally, the data is stored in Tcl objects and all package commands
+operate on internal data representation, thus minimizing shimmering and
+improving performance. Special care has been taken to assure that all
+object data is properly locked and deep-copied when moving objects between
+threads.</p>
+<p>Due to the internal design of the Tcl core, there is no provision of full
+integration of shared variables within the Tcl syntax, unfortunately. All
+access to shared data must be performed with the supplied package commands.
+Also, variable traces are not supported. But even so, benefits of easy,
+simple and safe shared data manipulation outweights imposed limitations.</p>
+</div>
+<div id="section7" class="doctools_section"><h2><a name="section7">CREDITS</a></h2>
+<p>Thread shared variables are inspired by the nsv interface found in
+AOLserver, a highly scalable Web server from America Online.</p>
+</div>
+<div id="see-also" class="doctools_section"><h2><a name="see-also">See Also</a></h2>
+<p>thread, tpool, ttrace</p>
+</div>
+<div id="keywords" class="doctools_section"><h2><a name="keywords">Keywords</a></h2>
+<p>locking, synchronization, thread shared data, threads</p>
+</div>
+</div></body></html>
+

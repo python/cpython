@@ -1,0 +1,91 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_CreateFileHandler 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CreateFileHandler, Tcl_DeleteFileHandler \- associate procedure callbacks with files or devices (Unix only)
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_CreateFileHandler\fR(\fIfd, mask, proc, clientData\fR)
+.sp
+\fBTcl_DeleteFileHandler\fR(\fIfd\fR)
+.SH ARGUMENTS
+.AS Tcl_FileProc clientData
+.AP int fd in
+Unix file descriptor for an open file or device.
+.AP int mask in
+Conditions under which \fIproc\fR should be called:
+OR-ed combination of \fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR,
+and \fBTCL_EXCEPTION\fR.  May be set to 0 to temporarily disable
+a handler.
+.AP Tcl_FileProc *proc in
+Procedure to invoke whenever the file or device indicated
+by \fIfile\fR meets the conditions specified by \fImask\fR.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_CreateFileHandler\fR arranges for \fIproc\fR to be
+invoked in the future whenever I/O becomes possible on a file
+or an exceptional condition exists for the file.  The file
+is indicated by \fIfd\fR, and the conditions of interest
+are indicated by \fImask\fR.  For example, if \fImask\fR
+is \fBTCL_READABLE\fR, \fIproc\fR will be called when
+the file is readable.
+The callback to \fIproc\fR is made by \fBTcl_DoOneEvent\fR, so
+\fBTcl_CreateFileHandler\fR is only useful in programs that dispatch
+events through \fBTcl_DoOneEvent\fR or through Tcl commands such
+as \fBvwait\fR.
+.PP
+\fIProc\fR should have arguments and result that match the
+type \fBTcl_FileProc\fR:
+.PP
+.CS
+typedef void \fBTcl_FileProc\fR(
+        ClientData \fIclientData\fR,
+        int \fImask\fR);
+.CE
+.PP
+The \fIclientData\fR parameter to \fIproc\fR is a copy
+of the \fIclientData\fR
+argument given to \fBTcl_CreateFileHandler\fR when the callback
+was created.  Typically, \fIclientData\fR points to a data
+structure containing application-specific information about
+the file.  \fIMask\fR is an integer mask indicating which
+of the requested conditions actually exists for the file;  it
+will contain a subset of the bits in the \fImask\fR argument
+to \fBTcl_CreateFileHandler\fR.
+.PP
+There may exist only one handler for a given file at a given time.
+If \fBTcl_CreateFileHandler\fR is called when a handler already
+exists for \fIfd\fR, then the new callback replaces the information
+that was previously recorded.
+.PP
+\fBTcl_DeleteFileHandler\fR may be called to delete the
+file handler for \fIfd\fR;  if no handler exists for the
+file given by \fIfd\fR then the procedure has no effect.
+.PP
+The purpose of file handlers is to enable an application to respond to
+events while waiting for files to become ready for I/O.  For this to work
+correctly, the application may need to use non-blocking I/O operations on
+the files for which handlers are declared.  Otherwise the application may
+block if it reads or writes too much data; while waiting for the I/O to
+complete the application will not be able to service other events. Use
+\fBTcl_SetChannelOption\fR with \fB\-blocking\fR to set the channel into
+blocking or nonblocking mode as required.
+.PP
+Note that these interfaces are only supported by the Unix
+implementation of the Tcl notifier.
+.SH "SEE ALSO"
+fileevent(n), Tcl_CreateTimerHandler(3), Tcl_DoWhenIdle(3)
+.SH KEYWORDS
+callback, file, handler

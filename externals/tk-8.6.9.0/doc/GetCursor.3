@@ -1,0 +1,231 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_AllocCursorFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_AllocCursorFromObj, Tk_GetCursor, Tk_GetCursorFromObj, Tk_GetCursorFromData, Tk_NameOfCursor, Tk_FreeCursorFromObj, Tk_FreeCursor \- maintain database of cursors
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Cursor
+\fBTk_AllocCursorFromObj(\fIinterp, tkwin, objPtr\fB)\fR
+.sp
+Tk_Cursor
+\fBTk_GetCursor(\fIinterp, tkwin, name\fB)\fR
+.sp
+Tk_Cursor
+\fBTk_GetCursorFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+Tk_Cursor
+\fBTk_GetCursorFromData(\fIinterp, tkwin, source, mask, width, height, xHot, yHot, fg, bg\fB)\fR
+.sp
+const char *
+\fBTk_NameOfCursor(\fIdisplay, cursor\fB)\fR
+.sp
+\fBTk_FreeCursorFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+\fBTk_FreeCursor(\fIdisplay, cursor\fB)\fR
+.SH ARGUMENTS
+.AS "unsigned long" *pixelPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
+.AP Tk_Window tkwin in
+Token for window in which the cursor will be used.
+.AP Tcl_Obj *objPtr in/out
+Description of cursor;  see below for possible values.  Internal rep will be
+modified to cache pointer to corresponding Tk_Cursor.
+.AP char *name in
+Same as \fIobjPtr\fR except description of cursor is passed as a string and
+resulting Tk_Cursor is not cached.
+.AP "const char" *source in
+Data for cursor cursor, in standard cursor format.
+.AP "const char" *mask in
+Data for mask cursor, in standard cursor format.
+.AP "int" width in
+Width of \fIsource\fR and \fImask\fR.
+.AP "int" height in
+Height of \fIsource\fR and \fImask\fR.
+.AP "int" xHot in
+X-location of cursor hot-spot.
+.AP "int" yHot in
+Y-location of cursor hot-spot.
+.AP Tk_Uid fg in
+Textual description of foreground color for cursor.
+.AP Tk_Uid bg in
+Textual description of background color for cursor.
+.AP Display *display in
+Display for which \fIcursor\fR was allocated.
+.AP Tk_Cursor cursor in
+Opaque Tk identifier for cursor.  If passed to \fBTk_FreeCursor\fR, must
+have been returned by some previous call to \fBTk_GetCursor\fR or
+\fBTk_GetCursorFromData\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures manage a collection of cursors
+being used by an application.  The procedures allow cursors to be
+re-used efficiently, thereby avoiding server overhead, and also
+allow cursors to be named with character strings.
+.PP
+\fBTk_AllocCursorFromObj\fR takes as argument an object describing a
+cursor, and returns an opaque Tk identifier for a cursor corresponding
+to the description.  It re-uses an existing cursor if possible and
+creates a new one otherwise.  \fBTk_AllocCursorFromObj\fR caches
+information about the return value in \fIobjPtr\fR, which speeds up
+future calls to procedures such as \fBTk_AllocCursorFromObj\fR and
+\fBTk_GetCursorFromObj\fR. If an error occurs in creating the cursor,
+such as when \fIobjPtr\fR refers to a non-existent file, then \fBNone\fR
+is returned and an error message will be stored in \fIinterp\fR's result
+if \fIinterp\fR is not NULL.  \fIObjPtr\fR must contain a standard Tcl
+list with one of the following forms:
+.TP
+\fIname\fR\0[\fIfgColor\fR\0[\fIbgColor\fR]]
+\fIName\fR is the name of a cursor in the standard X cursor cursor,
+i.e., any of the names defined in \fBcursorcursor.h\fR, without
+the \fBXC_\fR.  Some example values are \fBX_cursor\fR, \fBhand2\fR,
+or \fBleft_ptr\fR.  Appendix B of
+.QW "The X Window System"
+by Scheifler & Gettys has illustrations showing what each of these
+cursors looks like.  If \fIfgColor\fR and \fIbgColor\fR are both
+specified, they give the foreground and background colors to use
+for the cursor (any of the forms acceptable to \fBTk_GetColor\fR
+may be used).  If only \fIfgColor\fR is specified, then there
+will be no background color:  the background will be transparent.
+If no colors are specified, then the cursor
+will use black for its foreground color and white for its background
+color.
+.RS
+.PP
+The Macintosh version of Tk supports all of the X cursors and
+will also accept any of the standard Mac cursors
+including \fBibeam\fR, \fBcrosshair\fR, \fBwatch\fR, \fBplus\fR, and
+\fBarrow\fR.  In addition, Tk will load Macintosh cursor resources of
+the types \fBcrsr\fR (color) and \fBCURS\fR (black and white) by the
+name of the resource.  The application and all its open
+dynamic library's resource files will be searched for the named
+cursor.  If there are conflicts color cursors will always be loaded
+in preference to black and white cursors.
+.RE
+.TP
+\fB@\fIsourceName\0maskName\0fgColor\0bgColor\fR
+In this form, \fIsourceName\fR and \fImaskName\fR are the names of
+files describing cursors for the cursor's source bits and mask.
+Each file must be in standard X11 cursor format.
+\fIFgColor\fR and \fIbgColor\fR
+indicate the colors to use for the
+cursor, in any of the forms acceptable to \fBTk_GetColor\fR.  This
+form of the command will not work on Macintosh or Windows computers.
+.TP
+\fB@\fIsourceName\0fgColor\fR
+This form is similar to the one above, except that the source is
+used as mask also.  This means that the cursor's background is
+transparent.  This form of the command will not work on Macintosh
+or Windows computers.
+.TP
+\fB@\fIsourceName\fR
+This form only works on Windows, and will load a Windows system
+cursor (\fB.ani\fR or \fB.cur\fR) from the file specified in
+\fIsourceName\fR.
+.PP
+\fBTk_GetCursor\fR is identical to \fBTk_AllocCursorFromObj\fR except
+that the description of the cursor is specified with a string instead
+of an object.  This prevents \fBTk_GetCursor\fR from caching the
+return value, so \fBTk_GetCursor\fR is less efficient than
+\fBTk_AllocCursorFromObj\fR.
+.PP
+\fBTk_GetCursorFromObj\fR returns the token for an existing cursor, given
+the window and description used to create the cursor.
+\fBTk_GetCursorFromObj\fR does not actually create the cursor; the cursor
+must already have been created with a previous call to
+\fBTk_AllocCursorFromObj\fR or \fBTk_GetCursor\fR.  The return
+value is cached in \fIobjPtr\fR, which speeds up
+future calls to \fBTk_GetCursorFromObj\fR with the same \fIobjPtr\fR
+and \fItkwin\fR.
+.PP
+\fBTk_GetCursorFromData\fR allows cursors to be created from
+in-memory descriptions of their source and mask cursors.  \fISource\fR
+points to standard cursor data for the cursor's source bits, and
+\fImask\fR points to standard cursor data describing
+which pixels of \fIsource\fR are to be drawn and which are to be
+considered transparent.  \fIWidth\fR and \fIheight\fR give the
+dimensions of the cursor, \fIxHot\fR and \fIyHot\fR indicate the
+location of the cursor's hot-spot (the point that is reported when
+an event occurs), and \fIfg\fR and \fIbg\fR describe the cursor's
+foreground and background colors textually (any of the forms
+suitable for \fBTk_GetColor\fR may be used).  Typically, the
+arguments to \fBTk_GetCursorFromData\fR are created by including
+a cursor file directly into the source code for a program, as in
+the following example:
+.CS
+Tk_Cursor cursor;
+#include "source.cursor"
+#include "mask.cursor"
+cursor = Tk_GetCursorFromData(interp, tkwin, source_bits,
+    mask_bits, source_width, source_height, source_x_hot,
+    source_y_hot, Tk_GetUid("red"), Tk_GetUid("blue"));
+.CE
+.PP
+Under normal conditions \fBTk_GetCursorFromData\fR
+will return an identifier for the requested cursor.  If an error
+occurs in creating the cursor then \fBNone\fR is returned and an error
+message will be stored in \fIinterp\fR's result.
+.PP
+\fBTk_AllocCursorFromObj\fR, \fBTk_GetCursor\fR, and
+\fBTk_GetCursorFromData\fR maintain a
+database of all the cursors they have created.  Whenever possible,
+a call to \fBTk_AllocCursorFromObj\fR, \fBTk_GetCursor\fR, or
+\fBTk_GetCursorFromData\fR will
+return an existing cursor rather than creating a new one.  This
+approach can substantially reduce server overhead, so the Tk
+procedures should generally be used in preference to Xlib procedures
+like \fBXCreateFontCursor\fR or \fBXCreatePixmapCursor\fR, which
+create a new cursor on each call.  The Tk procedures are also more
+portable than the lower-level X procedures.
+.PP
+The procedure \fBTk_NameOfCursor\fR is roughly the inverse of
+\fBTk_GetCursor\fR.  If its \fIcursor\fR argument was created
+by \fBTk_GetCursor\fR, then the return value is the \fIname\fR
+argument that was passed to \fBTk_GetCursor\fR to create the
+cursor.  If \fIcursor\fR was created by a call to \fBTk_GetCursorFromData\fR,
+or by any other mechanism, then the return value is a hexadecimal string
+giving the X identifier for the cursor.
+Note:  the string returned by \fBTk_NameOfCursor\fR is
+only guaranteed to persist until the next call to
+\fBTk_NameOfCursor\fR.  Also, this call is not portable except for
+cursors returned by \fBTk_GetCursor\fR.
+.PP
+When a cursor returned by \fBTk_AllocCursorFromObj\fR, \fBTk_GetCursor\fR,
+or \fBTk_GetCursorFromData\fR
+is no longer needed, \fBTk_FreeCursorFromObj\fR or
+\fBTk_FreeCursor\fR should be called to release it.
+For \fBTk_FreeCursorFromObj\fR the cursor to release is specified
+with the same information used to create it; for
+\fBTk_FreeCursor\fR the cursor to release is specified
+with its Tk_Cursor token.
+There should be exactly one call to \fBTk_FreeCursor\fR for
+each call to \fBTk_AllocCursorFromObj\fR, \fBTk_GetCursor\fR,
+or \fBTk_GetCursorFromData\fR.
+.SH BUGS
+.PP
+In determining whether an existing cursor can be used to satisfy
+a new request, \fBTk_AllocCursorFromObj\fR, \fBTk_GetCursor\fR,
+and \fBTk_GetCursorFromData\fR
+consider only the immediate values of their arguments.  For
+example, when a file name is passed to \fBTk_GetCursor\fR,
+\fBTk_GetCursor\fR will assume it is safe to re-use an existing
+cursor created from the same file name:  it will not check to
+see whether the file itself has changed, or whether the current
+directory has changed, thereby causing the name to refer to
+a different file.  Similarly, \fBTk_GetCursorFromData\fR assumes
+that if the same \fIsource\fR pointer is used in two different calls,
+then the pointers refer to the same data;  it does not check to
+see if the actual data values have changed.
+.SH KEYWORDS
+cursor

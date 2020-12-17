@@ -1,0 +1,27 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\"
+.TH Tcl_GetHostName 3 8.3 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetHostName \- get the name of the local host
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+const char *
+\fBTcl_GetHostName\fR()
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_GetHostName\fR is a utility procedure used by some of the
+Tcl commands.  It returns a pointer to a string containing the name
+for the current machine, or an empty string if the name cannot be
+determined.  The string is statically allocated, and the caller must
+not modify of free it.
+.PP
+.SH KEYWORDS
+hostname

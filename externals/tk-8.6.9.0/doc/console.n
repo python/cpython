@@ -1,0 +1,145 @@
+'\"
+'\" Copyright (c) 2001 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH console n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+console \- Control the console on systems without a real console
+.SH SYNOPSIS
+\fBconsole\fR \fIsubcommand\fR ?\fIarg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The console window is a replacement for a real console to allow input
+and output on the standard I/O channels on platforms that do not have
+a real console.  It is implemented as a separate interpreter with the
+Tk toolkit loaded, and control over this interpreter is given through
+the \fBconsole\fR command.  The behaviour of the console window is
+defined mainly through the contents of the \fIconsole.tcl\fR file in
+the Tk library. Except for TkAqua, this command is not available when
+Tk is loaded into a tclsh interpreter with
+.QW "\fBpackage require Tk\fR" ,
+as a conventional terminal is expected to be present in that case.
+In TkAqua, this command is only available when stdin is \fB/dev/null\fR
+(as is the case e.g. when the application embedding Tk is started
+from the Mac OS X Finder).
+.PP
+.TP
+\fBconsole eval \fIscript\fR
+Evaluate the \fIscript\fR argument as a Tcl script in the console
+interpreter.  The normal interpreter is accessed through the
+\fBconsoleinterp\fR command in the console interpreter.
+.TP
+\fBconsole hide\fR
+Hide the console window from view.  Precisely equivalent to
+withdrawing the \fB.\fR window in the console interpreter.
+.TP
+\fBconsole show\fR
+Display the console window.  Precisely equivalent to deiconifying the
+\fB.\fR window in the console interpreter.
+.TP
+\fBconsole title \fR?\fIstring\fR?
+Query or modify the title of the console window.  If \fIstring\fR is
+not specified, queries the title of the console window, and sets the
+title of the console window to \fIstring\fR otherwise.  Precisely
+equivalent to using the \fBwm title\fR command in the console
+interpreter.
+.SH "ACCESS TO THE MAIN INTERPRETER"
+.PP
+The \fBconsoleinterp\fR command in the console interpreter allows
+scripts to be evaluated in the main interpreter.  It supports two
+subcommands: \fBeval\fR and \fBrecord\fR.
+.PP
+.TP
+\fBconsoleinterp eval \fIscript\fR
+Evaluates \fIscript\fR as a Tcl script at the global level in the main
+interpreter.
+.TP
+\fBconsoleinterp record \fIscript\fR
+Records and evaluates \fIscript\fR as a Tcl script at the global level
+in the main interpreter as if \fIscript\fR had been typed in at the
+console.
+.SH "ADDITIONAL TRAP CALLS"
+.PP
+There are several additional commands in the console interpreter that
+are called in response to activity in the main interpreter.
+\fIThese are documented here for completeness only; they form part of
+the internal implementation of the console and are likely to change or
+be modified without warning.\fR
+.PP
+Output to the console from the main interpreter via the stdout and
+stderr channels is handled by invoking the \fBtk::ConsoleOutput\fR
+command in the console interpreter with two arguments.  The first
+argument is the name of the channel being written to, and the second
+argument is the string being written to the channel (after encoding
+and end-of-line translation processing has been performed.)
+.PP
+When the \fB.\fR window of the main interpreter is destroyed, the
+\fBtk::ConsoleExit\fR command in the console interpreter is called
+(assuming the console interpreter has not already been deleted itself,
+that is.)
+.SH "DEFAULT BINDINGS"
+.PP
+The default script creates a console window (implemented using a text
+widget) that has the following behaviour:
+.IP [1]
+Pressing the tab key inserts a TAB character (as defined by the Tcl
+\et escape.)
+.IP [2]
+Pressing the return key causes the current line (if complete by the
+rules of \fBinfo complete\fR) to be passed to the main interpreter for
+evaluation.
+.IP [3]
+Pressing the delete key deletes the selected text (if any text is
+selected) or the character to the right of the cursor (if not at the
+end of the line.)
+.IP [4]
+Pressing the backspace key deletes the selected text (if any text is
+selected) or the character to the left of the cursor (of not at the
+start of the line.)
+.IP [5]
+Pressing either Control+A or the home key causes the cursor to go to
+the start of the line (but after the prompt, if a prompt is present on
+the line.)
+.IP [6]
+Pressing either Control+E or the end key causes the cursor to go to
+the end of the line.
+.IP [7]
+Pressing either Control+P or the up key causes the previous entry in
+the command history to be selected.
+.IP [8]
+Pressing either Control+N or the down key causes the next entry in the
+command history to be selected.
+.IP [9]
+Pressing either Control+B or the left key causes the cursor to move
+one character backward as long as the cursor is not at the prompt.
+.IP [10]
+Pressing either Control+F or the right key causes the cursor to move
+one character forward.
+.IP [11]
+Pressing F9 rebuilds the console window by destroying all its children
+and reloading the Tcl script that defined the console's behaviour.
+.PP
+Most other behaviour is the same as a conventional text widget except
+for the way that the \fI<<Cut>>\fR event is handled identically to the
+\fI<<Copy>>\fR event.
+.SH EXAMPLE
+.PP
+Not all platforms have the \fBconsole\fR command, so debugging code
+often has the following code fragment in it so output produced by
+\fBputs\fR can be seen while during development:
+.CS
+catch {\fBconsole show\fR}
+.CE
+.SH "SEE ALSO"
+destroy(n), fconfigure(n), history(n), interp(n), puts(n), text(n), wm(n)
+.SH KEYWORDS
+console, interpreter, window, interactive, output channels
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

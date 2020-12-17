@@ -1,0 +1,407 @@
+# This file is a Tcl script to test out the "send" command and the
+# other procedures in the file tkSend.c.  It is organized in the
+# standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# Compute a script that will load Tk into a child interpreter.
+
+foreach pkg [info loaded] {
+    if {[lindex $pkg 1] == "Tk"} {
+	set loadTk "load $pkg"
+	break
+    }
+}
+
+# Procedure to create a new application with a given name and class.
+
+proc newApp {name {safe {}}} {
+    global loadTk
+    if {[string compare $safe "-safe"] == 0} {
+	interp create -safe $name
+    } else {
+	interp create $name
+    }
+    $name eval [list set argv [list -name $name]]
+    catch {eval $loadTk $name}
+}
+
+set currentInterps [winfo interps]
+if {
+    [testConstraint win] &&
+    [llength [info commands send]] &&
+    [catch {exec [interpreter] &}] == 0
+} then {
+    # Wait until the child application has launched.
+    while {[llength [winfo interps]] == [llength $currentInterps]} {}
+
+    # Now find an interp to send to
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch -exact $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+
+    # Now we have found our interpreter we are going to send to.
+    # Make sure that it works first.
+    testConstraint winSend [expr {![catch {
+	send $interp {
+	    console hide
+	    update
+	}
+    }]}]
+} else {
+    testConstraint winSend 0
+}
+
+# setting up dde server is done when the first interp is created and
+# cannot be tested very easily.
+test winSend-1.1 {Tk_SetAppName - changing name of interp} winSend {
+    newApp testApp
+    list [testApp eval tk appname testApp2] [interp delete testApp]
+} {testApp2 {}}
+test winSend-1.2 {Tk_SetAppName - changing name - not front of linked list} winSend {
+    newApp testApp
+    newApp testApp2
+    list [testApp eval tk appname testApp3] [interp delete testApp] [interp delete testApp2]
+} {testApp3 {} {}}
+test winSend-1.3 {Tk_SetAppName - unique name - no conflicts} winSend {
+    newApp testApp
+    list [testApp eval tk appname testApp] [interp delete testApp]
+} {testApp {}}
+test winSend-1.4 {Tk_SetAppName - unique name - one conflict} winSend {
+    newApp testApp
+    newApp foobar
+    list [foobar eval tk appname testApp] [interp delete foobar] [interp delete testApp]
+} {{testApp #2} {} {}}
+test winSend-1.5 {Tk_SetAppName - unique name - one conflict} winSend {
+    newApp testApp
+    newApp foobar
+    newApp blaz
+    foobar eval tk appname testApp
+    list [blaz eval tk appname testApp] [interp delete foobar] [interp delete testApp] [interp delete blaz]
+} {{testApp #3} {} {} {}}
+test winSend-1.6 {Tk_SetAppName - safe interps} winSend {
+    newApp testApp -safe
+    list [catch {testApp eval send testApp {set foo a}} msg] $msg [interp delete testApp]
+} {1 {invalid command name "send"} {}}
+
+test winSend-2.1 {Tk_SendObjCmd - # of args} winSend {
+    list [catch {send tktest} msg] $msg
+} {1 {wrong # args: should be "send ?-option value ...? interpName arg ?arg ...?"}}
+test winSend-2.1a {Tk_SendObjCmd: arguments} winSend {
+    list [catch {send -bogus tktest} msg] $msg
+} {1 {bad option "-bogus": must be -async, -displayof, or --}}
+test winSend-2.1b {Tk_SendObjCmd: arguments} winSend {
+    list [catch {send -async bogus foo} msg] $msg
+} {1 {no registered server named "bogus"}}
+test winSend-2.1c {Tk_SendObjCmd: arguments} winSend {
+    list [catch {send -displayof . bogus foo} msg] $msg
+} {1 {no registered server named "bogus"}}
+test winSend-2.1d {Tk_SendObjCmd: arguments} winSend {
+    list [catch {send -- -bogus foo} msg] $msg
+} {1 {no registered server named "-bogus"}}
+test winSend-2.2 {Tk_SendObjCmd - sending to ourselves} winSend {
+    list [send [tk appname] {set foo a}]
+} {a}
+test winSend-2.3 {Tk_SendObjCmd - sending to ourselves in a different interpreter} winSend {
+    newApp testApp
+    list [catch {send testApp {set foo b}} msg] $msg [interp delete testApp]
+} {0 b {}}
+test winSend-2.4 {Tk_SendObjCmd - sending to ourselves in a different interp with errors} winSend {
+    newApp testApp
+    list [catch {send testApp {expr {2 / 0}}} msg] $msg $errorCode $errorInfo [interp delete testApp]
+} "1 {divide by zero} {ARITH DIVZERO {divide by zero}} {divide by zero\n    while executing\n\"expr {2 / 0}\"\n    invoked from within\n\"send testApp {expr {2 / 0}}\"} {}"
+test winSend-2.5 {Tk_SendObjCmd - sending to another app async} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {send -async $interp {set foo a}} msg] $msg
+} {0 {}}
+test winSend-2.6 {Tk_SendObjCmd - sending to another app sync - no error} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {send $interp {set foo a}} msg] $msg
+} {0 a}
+test winSend-2.7 {Tk_SendObjCmd - sending to another app - error} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {send $interp {expr {2 / 0}}} msg] $msg $errorCode $errorInfo
+} "1 {divide by zero} {ARITH DIVZERO {divide by zero}} {divide by zero\n    while executing\n\"expr {2 / 0}\"\n    invoked from within\n\"send \$interp {expr {2 / 0}}\"}"
+
+test winSend-3.1 {TkGetInterpNames} winSend {
+    set origLength [llength $currentInterps]
+    set newLength [llength [winfo interps]]
+    expr {($newLength - 2) == $origLength}
+} {1}
+
+test winSend-4.1 {DeleteProc - changing name of app} winSend {
+    newApp a
+    list [a eval tk appname foo] [interp delete a]
+} {foo {}}
+test winSend-4.2 {DeleteProc - normal} winSend {
+    newApp a
+    list [interp delete a]
+} {{}}
+
+test winSend-5.1 {ExecuteRemoteObject - no error} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [send $interp {send [tk appname] {expr {2 / 1}}}]
+} {2}
+test winSend-5.2 {ExecuteRemoteObject - error} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {send $interp {send [tk appname] {expr {2 / 0}}}} msg] $msg
+} {1 {divide by zero}}
+
+test winSend-6.1 {SendDDEServer - XTYP_CONNECT} winSend {
+    set foo "Hello, World"
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "dde request Tk [tk appname] foo"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg
+} {0 {Hello, World}}
+test winSend-6.2 {SendDDEServer - XTYP_CONNECT_CONFIRM} winSend {
+    set foo "Hello, World"
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "dde request Tk [tk appname] foo"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg
+} {0 {Hello, World}}
+test winSend-6.3 {SendDDEServer - XTYP_DISCONNECT} winSend {
+    set foo "Hello, World"
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "dde request Tk [tk appname] foo"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg
+} {0 {Hello, World}}
+test winSend-6.4 {SendDDEServer - XTYP_REQUEST variable} winSend {
+    set foo "Hello, World"
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "dde request Tk [tk appname] foo"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg
+} {0 {Hello, World}}
+test winSend-6.5 {SendDDEServer - XTYP_REQUEST array} winSend {
+    catch {unset foo}
+    set foo(test) "Hello, World"
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "dde request Tk [tk appname] foo(test)"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg [catch {unset foo}]
+} {0 {Hello, World} 0}
+test winSend-6.6 {SendDDEServer - XTYP_REQUEST return results} winSend {
+    set foo 3
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "send [tk appname] {expr {$foo + 1}}"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg
+} {0 4}
+test winSend-6.7 {SendDDEServer - XTYP_EXECUTE} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "send [tk appname] {expr {4 / 2}}"
+    list [catch "send \{$interp\} \{$command\}" msg] $msg
+} {0 2}
+test winSend-6.8 {SendDDEServer - XTYP_WILDCONNECT} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    set command "dde services Tk {}"
+    list [catch "send \{$interp\} \{$command\}"]
+} {0}
+
+test winSend-7.1 {DDEExitProc} winSend {
+    newApp testApp
+    list [interp delete testApp]
+} {{}}
+
+test winSend-8.1 {SendDdeConnect} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [send $interp {set tk foo}]
+} {foo}
+
+test winSend-9.1 {SetDDEError} winSend {
+    list [catch {dde execute Tk foo {set foo hello}} msg] $msg
+} {1 {dde command failed}}
+
+test winSend-10.1 {Tk_DDEObjCmd - wrong num args} winSend {
+    list [catch {dde} msg] $msg
+} {1 {wrong # args: should be "dde ?-async? serviceName topicName value"}}
+test winSend-10.2 {Tk_DDEObjCmd - unknown subcommand} winSend {
+    list [catch {dde foo} msg] $msg
+} {1 {bad command "foo": must be execute, request, or services}}
+test winSend-10.3 {Tk_DDEObjCmd - execute - wrong num args} winSend {
+    list [catch {dde execute} msg] $msg
+} {1 {wrong # args: should be "dde execute ?-async? serviceName topicName value"}}
+test winSend-10.4 {Tk_DDEObjCmd - execute - wrong num args} winSend {
+    list [catch {dde execute 3 4 5 6 7} msg] $msg
+} {1 {wrong # args: should be "dde execute ?-async? serviceName topicName value"}}
+test winSend-10.5 {Tk_DDEObjCmd - execute async - wrong num args} winSend {
+    list [catch {dde execute -async} msg] $msg
+} {1 {wrong # args: should be "dde execute ?-async? serviceName topicName value"}}
+test winSend-10.6 {Tk_DDEObjCmd - request - wrong num args} winSend {
+    list [catch {dde request} msg] $msg
+} {1 {wrong # args: should be "dde request serviceName topicName value"}}
+test winSend-10.7 {Tk_DDEObjCmd - services wrong num args} winSend {
+    list [catch {dde services} msg] $msg
+} {1 {wrong # args: should be "dde services serviceName topicName"}}
+test winSend-10.8 {Tk_DDEObjCmd - null service name} winSend {
+    list [catch {dde services {} {tktest #2}}]
+} {0}
+test winSend-10.9 {Tk_DDEObjCmd - null topic name} winSend {
+    list [catch {dde services {Tk} {}}]
+} {0}
+test winSend-10.10 {Tk_DDEObjCmd - execute - nothing to execute} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {dde execute Tk $interp {}} msg] $msg
+} {1 {cannot execute null data}}
+test winSend-10.11 {Tk_DDEObjCmd - execute - no such conversation} winSend {
+    list [catch {dde execute Tk foo {set foo hello}} msg] $msg
+} {1 {dde command failed}}
+test winSend-10.12 {Tk_DDEObjCmd - execute - async} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {dde execute -async Tk $interp {set foo hello}} msg] $msg
+} {0 {}}
+test winSend-10.13 {Tk_DDEObjCmd - execute} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {dde execute Tk $interp {set foo goodbye}} msg] $msg
+} {0 {}}
+test winSend-10.14 {Tk_DDEObjCmd - request - nothing to request} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {dde request Tk $interp {}} msg] $msg
+} {1 {cannot request value of null data}}
+test winSend-10.15 {Tk_DDEObjCmd - request - invalid interp} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    list [catch {dde request Tk foo foo} msg] $msg
+} {1 {dde command failed}}
+test winSend-10.16 {Tk_DDEObjCmd - invalid variable} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    send $interp {unset foo}
+    list [catch {dde request Tk $interp foo} msg] $msg
+} {1 {remote server cannot handle this command}}
+test winSend-10.17 {Tk_DDEObjCmd - valid variable} winSend {
+    set newInterps [winfo interps]
+    foreach interp $newInterps {
+	if {[lsearch $currentInterps $interp] < 0} {
+	    break
+	}
+    }
+    send $interp {set foo winSend-10.17}
+    list [catch {dde request Tk $interp foo} msg] $msg
+} {0 winSend-10.17}
+test winSend-10.18 {Tk_DDEObjCmd - services} winSend {
+    set currentService [list Tk [tk appname]]
+    list [catch {dde services Tk {}} msg] [expr {[lsearch $msg $currentService] >= 0}]
+} {0 1}
+
+# Get rid of the other app and all of its interps
+
+set newInterps [winfo interps]
+while {[llength $newInterps] != [llength $currentInterps]} {
+    foreach interp $newInterps {
+	if {[lsearch -exact $currentInterps $interp] < 0} {
+	    catch {send $interp exit}
+	    set newInterps [winfo interps]
+	    break
+	}
+    }
+}
+
+# cleanup
+cleanupTests
+return

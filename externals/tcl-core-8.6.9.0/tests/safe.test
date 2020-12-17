@@ -1,0 +1,842 @@
+# safe.test --
+#
+# This file contains a collection of tests for safe Tcl, packages loading, and
+# using safe interpreters. Sourcing this file into tcl runs the tests and
+# generates output for errors. No output means no errors were found.
+#
+# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require Tcl 8.5-
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+foreach i [interp slaves] {
+    interp delete $i
+}
+
+set saveAutoPath $::auto_path
+set ::auto_path [info library]
+
+# Force actual loading of the safe package because we use un exported (and
+# thus un-autoindexed) APIs in this test result arguments:
+catch {safe::interpConfigure}
+
+# testing that nested and statics do what is advertised (we use a static
+# package - Tcltest - but it might be absent if we're in standard tclsh)
+
+testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
+
+test safe-1.1 {safe::interpConfigure syntax} -returnCodes error -body {
+    safe::interpConfigure
+} -result {no value given for parameter "slave" (use -help for full usage) :
+    slave name () name of the slave}
+test safe-1.2 {safe::interpCreate syntax} -returnCodes error -body {
+    safe::interpCreate -help
+} -result {Usage information:
+    Var/FlagName  Type     Value   Help
+    ------------  ----     -----   ----
+    (-help                         gives this help)
+    ?slave?       name     ()      name of the slave (optional)
+    -accessPath   list     ()      access path for the slave
+    -noStatics    boolflag (false) prevent loading of statically linked pkgs
+    -statics      boolean  (true)  loading of statically linked pkgs
+    -nestedLoadOk boolflag (false) allow nested loading
+    -nested       boolean  (false) nested loading
+    -deleteHook   script   ()      delete hook}
+test safe-1.3 {safe::interpInit syntax} -returnCodes error -body {
+    safe::interpInit -noStatics
+} -result {bad value "-noStatics" for parameter
+    slave name () name of the slave}
+
+test safe-2.1 {creating interpreters, should have no aliases} emptyTest {
+    # Disabled this test.  It tests nothing sensible.  [Bug 999612]
+    # interp aliases
+} ""
+test safe-2.2 {creating interpreters, should have no aliases} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    interp create a
+    a aliases
+} -cleanup {
+    safe::interpDelete a
+} -result ""
+test safe-2.3 {creating safe interpreters, should have no unexpected aliases} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    interp create a -safe
+    lsort [a aliases]
+} -cleanup {
+    interp delete a
+} -result {::tcl::mathfunc::max ::tcl::mathfunc::min clock}
+
+test safe-3.1 {calling safe::interpInit is safe} -setup {
+    catch {safe::interpDelete a}
+    interp create a -safe
+} -body {
+    safe::interpInit a
+    interp eval a exec ls
+} -returnCodes error -cleanup {
+    safe::interpDelete a
+} -result {invalid command name "exec"}
+test safe-3.2 {calling safe::interpCreate on trusted interp} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    lsort [a aliases]
+} -cleanup {
+    safe::interpDelete a
+} -result {::tcl::file::atime ::tcl::file::attributes ::tcl::file::copy ::tcl::file::delete ::tcl::file::dirname ::tcl::file::executable ::tcl::file::exists ::tcl::file::extension ::tcl::file::isdirectory ::tcl::file::isfile ::tcl::file::link ::tcl::file::lstat ::tcl::file::mkdir ::tcl::file::mtime ::tcl::file::nativename ::tcl::file::normalize ::tcl::file::owned ::tcl::file::readable ::tcl::file::readlink ::tcl::file::rename ::tcl::file::rootname ::tcl::file::size ::tcl::file::stat ::tcl::file::tail ::tcl::file::tempfile ::tcl::file::type ::tcl::file::volumes ::tcl::file::writable ::tcl::info::nameofexecutable clock encoding exit glob load source}
+test safe-3.3 {calling safe::interpCreate on trusted interp} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    interp eval a {source [file join $tcl_library init.tcl]}
+} -cleanup {
+    safe::interpDelete a
+} -result ""
+test safe-3.4 {calling safe::interpCreate on trusted interp} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    interp eval a {source [file join $tcl_library init.tcl]}
+} -cleanup {
+    safe::interpDelete a
+} -result {}
+
+test safe-4.1 {safe::interpDelete} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    interp create a
+    safe::interpDelete a
+} -result ""
+test safe-4.2 {safe::interpDelete, indirectly} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    interp create a
+    a alias exit safe::interpDelete a
+    a eval exit
+} -result ""
+test safe-4.5 {safe::interpDelete} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    safe::interpCreate a
+} -returnCodes error -cleanup {
+    safe::interpDelete a
+} -result {interpreter named "a" already exists, cannot create}
+test safe-4.6 {safe::interpDelete, indirectly} -setup {
+    catch {safe::interpDelete a}
+} -body {
+    safe::interpCreate a
+    a eval exit
+} -result ""
+
+# The following test checks whether the definition of tcl_endOfWord can be
+# obtained from auto_loading.
+
+test safe-5.1 {test auto-loading in safe interpreters} -setup {
+    catch {safe::interpDelete a}
+    safe::interpCreate a
+} -body {
+    interp eval a {tcl_endOfWord "" 0}
+} -cleanup {
+    safe::interpDelete a
+} -result -1
+
+# test safe interps 'information leak'
+proc SafeEval {script} {
+    # Helper procedure that ensures the safe interp is cleaned up even if
+    # there is a failure in the script.
+    set SafeInterp [interp create -safe]
+    catch {$SafeInterp eval $script} msg opts
+    interp delete $SafeInterp
+    return -options $opts $msg
+}
+
+test safe-6.1 {test safe interpreters knowledge of the world} {
+    lsort [SafeEval {info globals}]
+} {tcl_interactive tcl_patchLevel tcl_platform tcl_version}
+test safe-6.2 {test safe interpreters knowledge of the world} {
+    SafeEval {info script}
+} {}
+test safe-6.3 {test safe interpreters knowledge of the world} {
+    set r [SafeEval {array names tcl_platform}]
+    # If running a windows-debug shell, remove the "debug" element from r.
+    if {[testConstraint win]} {
+	set r [lsearch -all -inline -not -exact $r "debug"]
+    }
+    set r [lsearch -all -inline -not -exact $r "threaded"]
+    lsort $r
+} {byteOrder engine pathSeparator platform pointerSize wordSize}
+
+# More test should be added to check that hostname, nameofexecutable, aren't
+# leaking infos, but they still do...
+
+# high level general test
+test safe-7.1 {tests that everything works at high level} -body {
+    set i [safe::interpCreate]
+    # no error shall occur:
+    # (because the default access_path shall include 1st level sub dirs so
+    #  package require in a slave works like in the master)
+    set v [interp eval $i {package require http 2}]
+    # no error shall occur:
+    interp eval $i {http::config}
+    safe::interpDelete $i
+    set v
+} -match glob -result 2.*
+test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
+    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
+    # should not add anything (p0)
+    set token1 [safe::interpAddToAccessPath $i [info library]]
+    # should add as p1
+    set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
+    # an error shall occur (http is not anymore in the secure 0-level
+    # provided deep path)
+    list $token1 $token2 \
+	    [catch {interp eval $i {package require http 1}} msg] $msg \
+	    [safe::interpConfigure $i]\
+	    [safe::interpDelete $i]
+} -match glob -result "{\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+test safe-7.3 {check that safe subinterpreters work} {
+    set i [safe::interpCreate]
+    set j [safe::interpCreate [list $i x]]
+    list [interp eval $j {join {o k} ""}] [safe::interpDelete $i] [interp exists $j]
+} {ok {} 0}
+
+# test source control on file name
+set i "a"
+test safe-8.1 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+} -body {
+    safe::interpCreate $i
+    $i eval {source}
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {wrong # args: should be "source ?-encoding E? fileName"}
+test safe-8.2 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+} -body {
+    safe::interpCreate $i
+    $i eval {source a b c d e}
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {wrong # args: should be "source ?-encoding E? fileName"}
+test safe-8.3 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+    set log {}
+    proc safe-test-log {str} {lappend ::log $str}
+    set prevlog [safe::setLogCmd]
+} -body {
+    safe::interpCreate $i
+    safe::setLogCmd safe-test-log
+    list [catch {$i eval {source .}} msg] $msg $log
+} -cleanup {
+    safe::setLogCmd $prevlog
+    unset log
+    safe::interpDelete $i
+} -result {1 {permission denied} {{ERROR for slave a : ".": is a directory}}}
+test safe-8.4 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+    set log {}
+    proc safe-test-log {str} {global log; lappend log $str}
+    set prevlog [safe::setLogCmd]
+} -body {
+    safe::interpCreate $i
+    safe::setLogCmd safe-test-log
+    list [catch {$i eval {source /abc/def}} msg] $msg $log
+} -cleanup {
+    safe::setLogCmd $prevlog
+    unset log
+    safe::interpDelete $i
+} -result {1 {permission denied} {{ERROR for slave a : "/abc/def": not in access_path}}}
+test safe-8.5 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+    set log {}
+    proc safe-test-log {str} {global log; lappend log $str}
+    set prevlog [safe::setLogCmd]
+} -body {
+    # This tested filename == *.tcl or tclIndex, but that restriction was
+    # removed in 8.4a4 - hobbs
+    safe::interpCreate $i
+    safe::setLogCmd safe-test-log
+    list [catch {
+	$i eval {source [file join [info lib] blah]}
+    } msg] $msg $log
+} -cleanup {
+    safe::setLogCmd $prevlog
+    unset log
+    safe::interpDelete $i
+} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah]:no such file or directory"]]
+test safe-8.6 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+    set log {}
+    proc safe-test-log {str} {global log; lappend log $str}
+    set prevlog [safe::setLogCmd]
+} -body {
+    safe::interpCreate $i
+    safe::setLogCmd safe-test-log
+    list [catch {
+	$i eval {source [file join [info lib] blah.tcl]}
+    } msg] $msg $log
+} -cleanup {
+    safe::setLogCmd $prevlog
+    unset log
+    safe::interpDelete $i
+} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah.tcl]:no such file or directory"]]
+test safe-8.7 {safe source control on file} -setup {
+    catch {safe::interpDelete $i}
+    set log {}
+    proc safe-test-log {str} {global log; lappend log $str}
+    set prevlog [safe::setLogCmd]
+} -body {
+    safe::interpCreate $i
+    # This tested length of filename, but that restriction was removed in
+    # 8.4a4 - hobbs
+    safe::setLogCmd safe-test-log
+    list [catch {
+	$i eval {source [file join [info lib] xxxxxxxxxxx.tcl]}
+    } msg] $msg $log
+} -cleanup {
+    safe::setLogCmd $prevlog
+    unset log
+    safe::interpDelete $i
+} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
+test safe-8.8 {safe source forbids -rsrc} emptyTest {
+    # Disabled this test.  It was only useful for long unsupported
+    # Mac OS 9 systems. [Bug 860a9f1945]
+} {}
+test safe-8.9 {safe source and return} -setup {
+    set returnScript [makeFile {return "ok"} return.tcl]
+    catch {safe::interpDelete $i}
+} -body {
+    safe::interpCreate $i
+    set token [safe::interpAddToAccessPath $i [file dirname $returnScript]]
+    $i eval [list source $token/[file tail $returnScript]]
+} -cleanup {
+    catch {safe::interpDelete $i}
+    removeFile $returnScript
+} -result ok
+test safe-8.10 {safe source and return} -setup {
+    set returnScript [makeFile {return -level 2 "ok"} return.tcl]
+    catch {safe::interpDelete $i}
+} -body {
+    safe::interpCreate $i
+    set token [safe::interpAddToAccessPath $i [file dirname $returnScript]]
+    $i eval [list apply {filename {
+	source $filename
+	error boom
+    }} $token/[file tail $returnScript]]
+} -cleanup {
+    catch {safe::interpDelete $i}
+    removeFile $returnScript
+} -result ok
+
+set i "a"
+test safe-9.1 {safe interps' deleteHook} -setup {
+    catch {safe::interpDelete $i}
+    set res {}
+} -body {
+    proc testDelHook {args} {
+	global res
+	# the interp still exists at that point
+	interp eval a {set delete 1}
+	# mark that we've been here (successfully)
+	set res $args
+    }
+    safe::interpCreate $i -deleteHook "testDelHook arg1 arg2"
+    list [interp eval $i exit] $res
+} -result {{} {arg1 arg2 a}}
+test safe-9.2 {safe interps' error in deleteHook} -setup {
+    catch {safe::interpDelete $i}
+    set res {}
+    set log {}
+    proc safe-test-log {str} {lappend ::log $str}
+    set prevlog [safe::setLogCmd]
+} -body {
+    proc testDelHook {args} {
+	global res
+	# the interp still exists at that point
+	interp eval a {set delete 1}
+	# mark that we've been here (successfully)
+	set res $args
+	# create an exception
+	error "being catched"
+    }
+    safe::interpCreate $i -deleteHook "testDelHook arg1 arg2"
+    safe::setLogCmd safe-test-log
+    list [safe::interpDelete $i] $res $log
+} -cleanup {
+    safe::setLogCmd $prevlog
+    unset log
+} -result {{} {arg1 arg2 a} {{NOTICE for slave a : About to delete} {ERROR for slave a : Delete hook error (being catched)} {NOTICE for slave a : Deleted}}}
+test safe-9.3 {dual specification of statics} -returnCodes error -body {
+    safe::interpCreate -stat true -nostat
+} -result {conflicting values given for -statics and -noStatics}
+test safe-9.4 {dual specification of statics} {
+    # no error shall occur
+    safe::interpDelete [safe::interpCreate -stat false -nostat]
+} {}
+test safe-9.5 {dual specification of nested} -returnCodes error -body {
+    safe::interpCreate -nested 0 -nestedload
+} -result {conflicting values given for -nested and -nestedLoadOk}
+test safe-9.6 {interpConfigure widget like behaviour} -body {
+   # this test shall work, don't try to "fix it" unless you *really* know what
+   # you are doing (ie you are me :p) -- dl
+   list [set i [safe::interpCreate \
+		    -noStatics \
+		    -nestedLoadOk \
+		    -deleteHook {foo bar}]
+         safe::interpConfigure $i -accessPath /foo/bar
+         safe::interpConfigure $i]\
+	[safe::interpConfigure $i -aCCess]\
+	[safe::interpConfigure $i -nested]\
+	[safe::interpConfigure $i -statics]\
+	[safe::interpConfigure $i -DEL]\
+	[safe::interpConfigure $i -accessPath /blah -statics 1
+	 safe::interpConfigure $i]\
+	[safe::interpConfigure $i -deleteHook toto -nosta -nested 0
+	 safe::interpConfigure $i]
+} -match glob -result {{-accessPath * -statics 0 -nested 1 -deleteHook {foo bar}} {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}} {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}} {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
+
+catch {teststaticpkg Safepkg1 0 0}
+test safe-10.1 {testing statics loading} -constraints TcltestPackage -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i {load {} Safepkg1}
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
+test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
+    set i [safe::interpCreate]
+} -body {
+    catch {interp eval $i {load {} Safepkg1}} m o
+    dict get $o -errorinfo
+} -returnCodes ok -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
+    invoked from within
+"load {} Safepkg1"
+    invoked from within
+"interp eval $i {load {} Safepkg1}"}
+test safe-10.2 {testing statics loading / -nostatics} -constraints TcltestPackage -body {
+    set i [safe::interpCreate -nostatics]
+    interp eval $i {load {} Safepkg1}
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {permission denied (static package)}
+test safe-10.3 {testing nested statics loading / no nested by default} -setup {
+    set i [safe::interpCreate]
+} -constraints TcltestPackage -body {
+    interp eval $i {interp create x; load {} Safepkg1 x}
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {permission denied (nested load)}
+test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints TcltestPackage -body {
+    set i [safe::interpCreate -nestedloadok]
+    interp eval $i {interp create x; load {} Safepkg1 x}
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
+test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints TcltestPackage -body {
+    set i [safe::interpCreate -nestedloadok]
+    catch {interp eval $i {interp create x; load {} Safepkg1 x}} m o
+    dict get $o -errorinfo
+} -returnCodes ok -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
+    invoked from within
+"load {} Safepkg1 x"
+    invoked from within
+"interp eval $i {interp create x; load {} Safepkg1 x}"}
+
+test safe-11.1 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding option ?arg ...?"}
+test safe-11.1a {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding foobar
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -match glob -result {bad option "foobar": must be *}
+test safe-11.2 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding system cp775
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding system"}
+test safe-11.3 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding system
+} -cleanup {
+    safe::interpDelete $i
+} -result [encoding system]
+test safe-11.4 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding names
+} -cleanup {
+    safe::interpDelete $i
+} -result [encoding names]
+test safe-11.5 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding convertfrom cp1258 foobar
+} -cleanup {
+    safe::interpDelete $i
+} -result foobar
+test safe-11.6 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding convertto cp1258 foobar
+} -cleanup {
+    safe::interpDelete $i
+} -result foobar
+test safe-11.7 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding convertfrom
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding convertfrom ?encoding? data"}
+test safe-11.7.1 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    catch {interp eval $i encoding convertfrom} m o
+    dict get $o -errorinfo
+} -returnCodes ok -match glob -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding convertfrom ?encoding? data"
+    while executing
+"encoding convertfrom"
+    invoked from within
+"::interp invokehidden interp* encoding convertfrom"
+    invoked from within
+"encoding convertfrom"
+    invoked from within
+"interp eval $i encoding convertfrom"}
+test safe-11.8 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    interp eval $i encoding convertto
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding convertto ?encoding? data"}
+test safe-11.8.1 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    catch {interp eval $i encoding convertto} m o
+    dict get $o -errorinfo
+} -returnCodes ok -match glob -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding convertto ?encoding? data"
+    while executing
+"encoding convertto"
+    invoked from within
+"::interp invokehidden interp* encoding convertto"
+    invoked from within
+"encoding convertto"
+    invoked from within
+"interp eval $i encoding convertto"}
+
+test safe-12.1 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob ../*
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result "permission denied"
+test safe-12.2 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -directory .. *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result "permission denied"
+test safe-12.3 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -join .. *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result "permission denied"
+test safe-12.4 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -nocomplain ../*
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
+test safe-12.5 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -directory .. -nocomplain *
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
+test safe-12.6 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -nocomplain -join .. *
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
+test safe-12.7 {glob is restricted} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {permission denied}
+
+proc buildEnvironment {filename} {
+    upvar 1 testdir testdir testdir2 testdir2 testfile testfile
+    set testdir [makeDirectory deletethisdir]
+    set testdir2 [makeDirectory deletemetoo $testdir]
+    set testfile [makeFile {} $filename $testdir2]
+}
+#### New tests for Safe base glob, with patches @ Bug 2964715
+test safe-13.1 {glob is restricted [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result {permission denied}
+test safe-13.2 {mimic the valid glob call by ::tcl::tm::UnknownHandler [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment deleteme.tm
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir2
+    set result [$i eval glob -nocomplain -directory $testdir2 *.tm]
+    if {$result eq [list $testfile]} {
+        return "glob match"
+    } else {
+        return "no match: $result"
+    }
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {glob match}
+test safe-13.3 {cf 13.2 but test glob failure when -directory is outside access path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment deleteme.tm
+} -body {
+    $i eval glob -directory $testdir2 *.tm
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {permission denied}
+test safe-13.4 {another valid glob call [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment deleteme.tm
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir
+    ::safe::interpAddToAccessPath $i $testdir2
+    set result [$i eval \
+	    glob -nocomplain -directory $testdir [file join deletemetoo *.tm]]
+    if {$result eq [list $testfile]} {
+        return "glob match"
+    } else {
+        return "no match: $result"
+    }
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {glob match}
+test safe-13.5 {as 13.4 but test glob failure when -directory is outside access path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment deleteme.tm
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir2
+    $i eval \
+	glob -directory $testdir [file join deletemetoo *.tm]
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {permission denied}
+test safe-13.6 {as 13.4 but test silent failure when result is outside access_path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment deleteme.tm
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir
+    $i eval \
+	glob -nocomplain -directory $testdir [file join deletemetoo *.tm]
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {}
+test safe-13.7 {mimic the glob call by tclPkgUnknown which gives a deliberate error in a safe interpreter [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment pkgIndex.tcl
+} -body {
+    set safeTD [::safe::interpAddToAccessPath $i $testdir]
+    ::safe::interpAddToAccessPath $i $testdir2
+    string map [list $safeTD EXPECTED] [$i eval [list \
+	glob -directory $safeTD -join * pkgIndex.tcl]]
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {{EXPECTED/deletemetoo/pkgIndex.tcl}}
+# Note the extra {} around the result above; that's *expected* because of the
+# format of virtual path roots.
+test safe-13.8 {mimic the glob call by tclPkgUnknown without the deliberate error that is specific to pkgIndex.tcl [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment notIndex.tcl
+} -body {
+    set safeTD [::safe::interpAddToAccessPath $i $testdir]
+    ::safe::interpAddToAccessPath $i $testdir2
+    $i eval [list glob -directory $safeTD -join -nocomplain * notIndex.tcl]
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {}
+test safe-13.9 {as 13.8 but test glob failure when -directory is outside access path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment notIndex.tcl
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir2
+    set result [$i eval \
+	    glob -directory $testdir -join -nocomplain * notIndex.tcl]
+    if {$result eq [list $testfile]} {
+        return {glob match}
+    } else {
+        return "no match: $result"
+    }
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {no match: }
+test safe-13.10 {as 13.8 but test silent failure when result is outside access_path [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+    buildEnvironment notIndex.tcl
+} -body {
+    ::safe::interpAddToAccessPath $i $testdir
+    $i eval glob -directory $testdir -join -nocomplain * notIndex.tcl
+} -cleanup {
+    safe::interpDelete $i
+    removeDirectory $testdir
+} -result {}
+rename buildEnvironment {}
+
+#### Test for the module path
+test safe-14.1 {Check that module path is the same as in the master interpreter [Bug 2964715]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    set tm {}
+    foreach token [$i eval ::tcl::tm::path list] {
+        lappend tm [dict get [set ::safe::S${i}(access_path,map)] $token]
+    }
+    return $tm
+} -cleanup {
+    safe::interpDelete $i
+} -result [::tcl::tm::path list]
+
+test safe-15.1 {safe file ensemble does not surprise code} -setup {
+    set i [interp create -safe]
+} -body {
+    set result [expr {"file" in [interp hidden $i]}]
+    lappend result [interp eval $i {tcl::file::split a/b/c}]
+    lappend result [catch {interp eval $i {tcl::file::isdirectory .}}]
+    lappend result [interp invokehidden $i file split a/b/c]
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp invokehidden $i file isdirectory .}]
+    interp expose $i file
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp eval $i {file isdirectory .}} msg] $msg
+} -cleanup {
+    unset -nocomplain msg
+    interp delete $i
+} -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file}}
+test safe-15.1.1 {safe file ensemble does not surprise code} -setup {
+    set i [interp create -safe]
+} -body {
+    set result [expr {"file" in [interp hidden $i]}]
+    lappend result [interp eval $i {tcl::file::split a/b/c}]
+    lappend result [catch {interp eval $i {tcl::file::isdirectory .}}]
+    lappend result [interp invokehidden $i file split a/b/c]
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp invokehidden $i file isdirectory .}]
+    interp expose $i file
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp eval $i {file isdirectory .}} msg o] [dict get $o -errorinfo]
+} -cleanup {
+    unset -nocomplain msg o
+    interp delete $i
+} -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file
+    while executing
+"file isdirectory ."
+    invoked from within
+"interp eval $i {file isdirectory .}"}}
+
+### ~ should have no special meaning in paths in safe interpreters
+test safe-16.1 {Bug 3529949: defang ~ in paths} -setup {
+    set savedHOME $env(HOME)
+    set env(HOME) /foo/bar
+    set i [safe::interpCreate]
+} -body {
+    $i eval {
+	set d [format %c 126]
+	list [file join [file dirname $d] [file tail $d]]
+    }
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+} -result {./~}
+test safe-16.2 {Bug 3529949: defang ~user in paths} -setup {
+    set i [safe::interpCreate]
+    set user $tcl_platform(user)
+} -body {
+    string map [list $user USER] [$i eval \
+	    "file join \[file dirname ~$user\] \[file tail ~$user\]"]
+} -cleanup {
+    safe::interpDelete $i
+} -result {./~USER}
+test safe-16.3 {Bug 3529949: defang ~ in globs} -setup {
+    set syntheticHOME [makeDirectory foo]
+    makeFile {} bar $syntheticHOME
+    set savedHOME $env(HOME)
+    set env(HOME) $syntheticHOME
+    set i [safe::interpCreate]
+} -body {
+    ::safe::interpAddToAccessPath $i $syntheticHOME
+    $i eval {glob -nocomplain ~/*}
+} -cleanup {
+    safe::interpDelete $i
+    set env(HOME) $savedHOME
+    removeDirectory $syntheticHOME
+} -result {}
+test safe-16.4 {Bug 3529949: defang ~user in globs} -setup {
+    set i [safe::interpCreate]
+} -body {
+    ::safe::interpAddToAccessPath $i $~$tcl_platform(user)
+    $i eval [list glob -nocomplain ~$tcl_platform(user)/*]
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
+
+set ::auto_path $saveAutoPath
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

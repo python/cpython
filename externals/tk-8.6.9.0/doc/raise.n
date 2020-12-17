@@ -1,0 +1,57 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH raise n 3.3 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+raise \- Change a window's position in the stacking order
+.SH SYNOPSIS
+\fBraise \fIwindow \fR?\fIaboveThis\fR?
+.BE
+.SH DESCRIPTION
+.PP
+If the \fIaboveThis\fR argument is omitted then the command raises
+\fIwindow\fR so that it is above all of its siblings in the stacking
+order (it will not be obscured by any siblings and will obscure
+any siblings that overlap it).
+If \fIaboveThis\fR is specified then it must be the path name of
+a window that is either a sibling of \fIwindow\fR or the descendant
+of a sibling of \fIwindow\fR.
+In this case the \fBraise\fR command will insert
+\fIwindow\fR into the stacking order just above \fIaboveThis\fR
+(or the ancestor of \fIaboveThis\fR that is a sibling of \fIwindow\fR);
+this could end up either raising or lowering \fIwindow\fR.
+.PP
+All \fBtoplevel\fR windows may be restacked with respect to each
+other, whatever their relative path names, but the window manager is
+not obligated to strictly honor requests to restack.
+.PP
+On macOS raising an iconified \fBtoplevel\fR window causes it to be
+deiconified.
+.SH EXAMPLE
+.PP
+Make a button appear to be in a sibling frame that was created after
+it. This is is often necessary when building GUIs in the style where
+you create your activity widgets first before laying them out on the
+display:
+.CS
+button .b \-text "Hi there!"
+pack [frame .f \-background blue]
+pack [label .f.l1 \-text "This is above"]
+pack .b \-in .f
+pack [label .f.l2 \-text "This is below"]
+\fBraise\fR .b
+.CE
+.SH "SEE ALSO"
+lower(n)
+.SH KEYWORDS
+obscure, raise, stacking order
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

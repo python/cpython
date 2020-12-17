@@ -1,0 +1,192 @@
+# Commands covered:  rename
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testdel [llength [info commands testdel]]
+
+# Must eliminate the "unknown" command while the test is running, especially
+# if the test is being run in a program with its own special-purpose unknown
+# command.
+catch {rename unknown unknown.old}
+
+catch {rename r2 {}}
+proc r1 {} {return "procedure r1"}
+rename r1 r2
+
+test rename-1.1 {simple renaming} {
+    r2
+} {procedure r1}
+test rename-1.2 {simple renaming} {
+    list [catch r1 msg] $msg
+} {1 {invalid command name "r1"}}
+rename r2 {}
+test rename-1.3 {simple renaming} {
+    list [catch r2 msg] $msg
+} {1 {invalid command name "r2"}}
+
+# The test below is tricky because it renames a built-in command. It's
+# possible that the test procedure uses this command, so must restore the
+# command before calling test again.
+rename list l.new
+set a [catch list msg1]
+set b [l.new a b c]
+rename l.new list
+set c [catch l.new msg2]
+set d [list 111 222]
+test rename-2.1 {renaming built-in command} {
+    list $a $msg1 $b $c $msg2 $d
+} {1 {invalid command name "list"} {a b c} 1 {invalid command name "l.new"} {111 222}}
+
+test rename-3.1 {error conditions} {
+    list [catch {rename r1} msg] $msg $errorCode
+} {1 {wrong # args: should be "rename oldName newName"} {TCL WRONGARGS}}
+test rename-3.2 {error conditions} {
+    list [catch {rename r1 r2 r3} msg] $msg $errorCode
+} {1 {wrong # args: should be "rename oldName newName"} {TCL WRONGARGS}}
+test rename-3.3 {error conditions} -setup {
+    proc r1 {} {}
+    proc r2 {} {}
+} -returnCodes error -body {
+    rename r1 r2
+} -result {can't rename to "r2": command already exists}
+test rename-3.4 {error conditions} -setup {
+    catch {rename r1 {}}
+    catch {rename r2 {}}
+} -returnCodes error -body {
+    rename r1 r2
+} -result {can't rename "r1": command doesn't exist}
+test rename-3.5 {error conditions} -setup {
+    catch {rename _non_existent_command {}}
+} -returnCodes error -body {
+    rename _non_existent_command {}
+} -result {can't delete "_non_existent_command": command doesn't exist}
+
+catch {rename unknown {}}
+catch {rename unknown.old unknown}
+catch {rename bar {}}
+
+test rename-4.1 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; rename bar {}; lappend x [info command bar]}
+    rename foo bar
+    lappend x |
+    rename bar {}
+    set x
+} {| deleted {}}
+test rename-4.2 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; rename foo bar}
+    rename foo {}
+    set x
+} {deleted}
+test rename-4.3 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; testdel {} foo {lappend x deleted2}}
+    rename foo {}
+    lappend x |
+    rename foo {}
+    set x
+} {deleted | deleted2}
+test rename-4.4 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; rename foo bar}
+    rename foo {}
+    lappend x | [info command bar]
+} {deleted | {}}
+test rename-4.5 {reentrancy issues with command deletion and renaming} testdel {
+    set env(value) before
+    interp create foo
+    testdel foo cmd {set env(value) deleted}
+    interp delete foo
+    set env(value)
+} {deleted}
+test rename-4.6 {reentrancy issues with command deletion and renaming} testdel {
+    proc kill args {
+	interp delete foo
+    }
+    set env(value) before
+    interp create foo
+    foo alias kill kill
+    testdel foo cmd {set env(value) deleted; kill}
+    list [catch {foo eval {rename cmd {}}} msg] $msg $env(value)
+} {0 {} deleted}
+test rename-4.7 {reentrancy issues with command deletion and renaming} testdel {
+    proc kill args {
+	interp delete foo
+    }
+    set env(value) before
+    interp create foo
+    foo alias kill kill
+    testdel foo cmd {set env(value) deleted; kill}
+    list [catch {interp delete foo} msg] $msg $env(value)
+} {0 {} deleted}
+if {[info exists env(value)]} {
+    unset env(value)
+}
+test rename-4.8 {Bug a16752c252} testdel {
+    set x broken
+    testdel {} foo {set x ok}
+    proc foo args {}
+    rename foo {}
+    return -level 0 $x[unset x]
+} ok
+
+# Save the unknown procedure which is modified by the following test.
+
+catch {rename unknown unknown.old}
+
+set SAVED_UNKNOWN "proc unknown "
+append SAVED_UNKNOWN [list [info args unknown.old] [info body unknown.old]]
+test rename-5.1 {repeated rename deletion and redefinition of same command} {
+    for {set i 0} {$i < 10} {incr i} {
+        eval $SAVED_UNKNOWN
+        tcl_wordBreakBefore "" 0
+        rename tcl_wordBreakBefore {}
+        rename unknown {}
+    }
+} {}
+
+catch {rename unknown {}}
+catch {rename unknown.old unknown}
+
+test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile proc is renamed} -body {
+    proc x {} {
+        set a 123
+        set b [incr a]
+    }
+    x
+    rename incr incr.old
+    proc incr {} {puts "new incr called!"}
+    x
+} -cleanup {
+    rename incr {}
+    rename incr.old incr
+} -returnCodes error -result {wrong # args: should be "incr"}
+
+if {[info commands incr.old] != {}} {
+    catch {rename incr {}}
+    catch {rename incr.old incr}
+}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

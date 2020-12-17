@@ -1,0 +1,105 @@
+'\"
+'\" Copyright (c) 1993-1997 Bell Labs Innovations for Lucent Technologies
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH variable n 8.0 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+variable \- create and initialize a namespace variable
+.SH SYNOPSIS
+\fBvariable \fR\fIname\fR
+.sp
+\fBvariable \fR?\fIname value...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command is normally used within a
+\fBnamespace eval\fR command to create one or more variables
+within a namespace.
+Each variable \fIname\fR is initialized with \fIvalue\fR.
+The \fIvalue\fR for the last variable is optional.
+.PP
+If a variable \fIname\fR does not exist, it is created.
+In this case, if \fIvalue\fR is specified,
+it is assigned to the newly created variable.
+If no \fIvalue\fR is specified, the new variable is left undefined.
+If the variable already exists,
+it is set to \fIvalue\fR if \fIvalue\fR is specified
+or left unchanged if no \fIvalue\fR is given.
+Normally, \fIname\fR is unqualified
+(does not include the names of any containing namespaces),
+and the variable is created in the current namespace.
+If \fIname\fR includes any namespace qualifiers,
+the variable is created in the specified namespace.  If the variable
+is not defined, it will be visible to the \fBnamespace which\fR
+command, but not to the \fBinfo exists\fR command.
+.PP
+If the \fBvariable\fR command is executed inside a Tcl procedure,
+it creates local variables
+linked to the corresponding namespace variables (and therefore these
+variables are listed by \fBinfo vars\fR.)
+In this way the \fBvariable\fR command resembles the \fBglobal\fR command,
+although the \fBglobal\fR command
+resolves variable names with respect to the global namespace instead
+of the current namespace of the procedure.
+If any \fIvalue\fRs are given,
+they are used to modify the values of the associated namespace variables.
+If a namespace variable does not exist,
+it is created and optionally initialized.
+.PP
+A \fIname\fR argument cannot reference an element within an array.
+Instead, \fIname\fR should reference the entire array,
+and the initialization \fIvalue\fR should be left off.
+After the variable has been declared,
+elements within the array can be set using ordinary
+\fBset\fR or \fBarray\fR commands.
+.SH EXAMPLES
+.PP
+Create a variable in a namespace:
+.PP
+.CS
+namespace eval foo {
+    \fBvariable\fR bar 12345
+}
+.CE
+.PP
+Create an array in a namespace:
+.PP
+.CS
+namespace eval someNS {
+    \fBvariable\fR someAry
+    array set someAry {
+        someName  someValue
+        otherName otherValue
+    }
+}
+.CE
+.PP
+Access variables in namespaces from a procedure:
+.PP
+.CS
+namespace eval foo {
+    proc spong {} {
+        # Variable in this namespace
+        \fBvariable\fR bar
+        puts "bar is $bar"
+
+        # Variable in another namespace
+        \fBvariable\fR ::someNS::someAry
+        parray someAry
+    }
+}
+.CE
+.SH "SEE ALSO"
+global(n), namespace(n), upvar(n)
+.SH KEYWORDS
+global, namespace, procedure, variable
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

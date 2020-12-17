@@ -1,0 +1,43 @@
+<HEAD>
+<TITLE> Using the TixFileSelectDialog Widget<A NAME=511>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1002 HREF=subsubsection3_7_1_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1000 HREF=subsection3_7_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html994 HREF=subsection3_7_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1004 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1003 HREF=subsubsection3_7_1_2.html> The Subwidget in </A>
+<B>Up:</B> <A NAME=tex2html1001 HREF=subsection3_7_1.html> File Selection Dialog </A>
+<B> Previous:</B> <A NAME=tex2html995 HREF=subsection3_7_1.html> File Selection Dialog </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00071100000000000000> Using the TixFileSelectDialog Widget<A NAME=511>&nbsp;</A></A></H3>
+<P>
+An example of using the TixFileSelectDialog widget is in figure 5-1
+. At line 1, we create a TixFileSelectDialog widget and set
+  the title of the dialog to ``Select A File'' using the <tt>-title</tt>
+  option. We also use the <tt>-command</tt> option to specify that the
+  procedure <tt>selectCmd</tt> should be called when the user has selected a
+  file. <tt>selectCmd</tt> will be called with one parameter, the filename
+  selected by the user. When the TixFileSelectDialog widget is created, it
+  is initially not shown on the screen. Therefore, at line 3, we call its
+  <tt>popup</tt> widget command to place the widget on the screen.
+<P>
+<P><tt> tixFileSelectDialog .file -title &quot;Select A File&quot; -command selectCmd<BR>
+.file subwidget fsbox config -pattern &quot;*.txt&quot; -directory /usr/info<BR>
+.file popup<BR>
+<BR>
+proc selectCmd {filename} {<BR>
+    puts &quot;You have selected $filename&quot;<BR>
+}</tt>
+<P><P><CENTER>(Figure 5-1) Using the TixFileSelectDialog<A NAME=51>&nbsp;</A>
+  </CENTER>
+<P>
+<blockquote> <P><P><CENTER><IMG SRC="../gif/tix/filesel/fb_comp.gif">
+  </CENTER>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

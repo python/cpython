@@ -1,0 +1,127 @@
+﻿  tuklib_cpucores.c
+  tuklib_physmem.c
+..\src\common\tuklib_physmem.c(82): warning C4996: 'GetVersion': was declared deprecated
+          C:\Program Files (x86)\Windows Kits\8.1\Include\um\sysinfoapi.h(110) : see declaration of 'GetVersion'
+..\src\common\tuklib_physmem.c(90): warning C4113: 'FARPROC' differs in parameter lists from 'BOOL (__cdecl *)(LPMEMORYSTATUSEX)'
+..\src\common\tuklib_physmem.c(90): warning C4133: 'initializing' : incompatible types - from 'FARPROC' to 'BOOL (__cdecl *)(LPMEMORYSTATUSEX)'
+  check.c
+  crc32_fast.c
+  crc32_table.c
+  crc64_fast.c
+..\src\liblzma\check\crc64_fast.c(52): warning C4244: 'initializing' : conversion from 'uint64_t' to 'const uint32_t', possible loss of data
+  crc64_table.c
+  sha256.c
+  alone_decoder.c
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(133): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(160): warning C4267: 'initializing' : conversion from 'size_t' to 'const uint32_t', possible loss of data
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(161): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+  alone_encoder.c
+  auto_decoder.c
+  block_buffer_decoder.c
+  block_buffer_encoder.c
+..\src\liblzma\common\block_buffer_encoder.c(147): warning C4267: '=' : conversion from 'size_t' to 'uint8_t', possible loss of data
+  block_decoder.c
+  block_encoder.c
+  block_header_decoder.c
+  block_header_encoder.c
+..\src\liblzma\common\block_header_encoder.c(85): warning C4267: '=' : conversion from 'size_t' to 'uint8_t', possible loss of data
+  block_util.c
+  common.c
+  easy_buffer_encoder.c
+  Generating Code...
+  Compiling...
+  easy_decoder_memusage.c
+  easy_encoder.c
+  easy_encoder_memusage.c
+  easy_preset.c
+  filter_buffer_decoder.c
+  filter_buffer_encoder.c
+  filter_common.c
+  filter_decoder.c
+  filter_encoder.c
+  filter_flags_decoder.c
+  filter_flags_encoder.c
+  hardware_cputhreads.c
+  hardware_physmem.c
+  index.c
+..\src\liblzma\common\index.c(769): warning C4028: formal parameter 1 different from declaration
+..\src\liblzma\common\index.c(769): warning C4028: formal parameter 2 different from declaration
+  index_decoder.c
+  index_encoder.c
+  index_hash.c
+  outqueue.c
+  stream_buffer_decoder.c
+  stream_buffer_encoder.c
+  Generating Code...
+  Compiling...
+  stream_decoder.c
+  stream_encoder.c
+  stream_encoder_mt.c
+  stream_flags_common.c
+  stream_flags_decoder.c
+  stream_flags_encoder.c
+  vli_decoder.c
+..\src\liblzma\common\vli_decoder.c(20): warning C4028: formal parameter 1 different from declaration
+..\src\liblzma\common\vli_decoder.c(20): warning C4028: formal parameter 3 different from declaration
+..\src\liblzma\common\vli_decoder.c(20): warning C4028: formal parameter 4 different from declaration
+  vli_encoder.c
+..\src\liblzma\common\vli_encoder.c(20): warning C4028: formal parameter 3 different from declaration
+..\src\liblzma\common\vli_encoder.c(20): warning C4028: formal parameter 4 different from declaration
+  vli_size.c
+  delta_common.c
+  delta_decoder.c
+  delta_encoder.c
+  fastpos_table.c
+  lzma2_decoder.c
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(133): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(160): warning C4267: 'initializing' : conversion from 'size_t' to 'const uint32_t', possible loss of data
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(161): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+  lzma2_encoder.c
+..\src\liblzma\lzma\lzma2_encoder.c(85): warning C4267: '+=' : conversion from 'size_t' to 'uint8_t', possible loss of data
+..\src\liblzma\lzma\lzma2_encoder.c(91): warning C4267: '=' : conversion from 'size_t' to 'uint8_t', possible loss of data
+..\src\liblzma\lzma\lzma2_encoder.c(126): warning C4267: '=' : conversion from 'size_t' to 'uint8_t', possible loss of data
+..\src\liblzma\lzma\lzma2_encoder.c(168): warning C4267: 'initializing' : conversion from 'size_t' to 'const uint32_t', possible loss of data
+  lzma_decoder.c
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(133): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(160): warning C4267: 'initializing' : conversion from 'size_t' to 'const uint32_t', possible loss of data
+C:\CPython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(161): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+  lzma_encoder.c
+  lzma_encoder_optimum_fast.c
+  lzma_encoder_optimum_normal.c
+  lzma_encoder_presets.c
+  Generating Code...
+  Compiling...
+  lz_decoder.c
+c:\cpython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(133): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+c:\cpython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(160): warning C4267: 'initializing' : conversion from 'size_t' to 'const uint32_t', possible loss of data
+c:\cpython\externals\xz-5.2.2\src\liblzma\lz\lz_decoder.h(161): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+  lz_encoder.c
+..\src\liblzma\lz\lz_encoder.c(111): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(203): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(206): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(219): warning C4267: 'initializing' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(224): warning C4267: '+=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(237): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(238): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(255): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder.c(308): warning C4267: '=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+  lz_encoder_mf.c
+..\src\liblzma\lz\lz_encoder_mf.c(333): warning C4244: '=' : conversion from '__int64' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder_mf.c(412): warning C4244: '=' : conversion from '__int64' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder_mf.c(596): warning C4244: '=' : conversion from '__int64' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder_mf.c(648): warning C4244: '=' : conversion from '__int64' to 'uint32_t', possible loss of data
+..\src\liblzma\lz\lz_encoder_mf.c(721): warning C4244: '=' : conversion from '__int64' to 'uint32_t', possible loss of data
+  price_table.c
+  arm.c
+  armthumb.c
+  ia64.c
+  powerpc.c
+  simple_coder.c
+..\src\liblzma\simple\simple_coder.c(63): warning C4267: '+=' : conversion from 'size_t' to 'uint32_t', possible loss of data
+  simple_decoder.c
+  simple_encoder.c
+  sparc.c
+  x86.c
+  Generating Code...
+     Creating library C:\CPython\externals\xz-5.2.2\windows\ReleaseMT\x64\liblzma_dll\liblzma.lib and object C:\CPython\externals\xz-5.2.2\windows\ReleaseMT\x64\liblzma_dll\liblzma.exp
+  liblzma_dll.vcxproj -> C:\CPython\externals\xz-5.2.2\windows\ReleaseMT\x64\liblzma_dll\liblzma.dll

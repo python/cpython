@@ -1,0 +1,196 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH load n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+load \- Load machine code and initialize new commands
+.SH SYNOPSIS
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName\fR
+.br
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName\fR
+.br
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName interp\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command loads binary code from a file into the
+application's address space and calls an initialization procedure
+in the package to incorporate it into an interpreter.  \fIfileName\fR
+is the name of the file containing the code;  its exact form varies
+from system to system but on most systems it is a shared library,
+such as a \fB.so\fR file under Solaris or a DLL under Windows.
+\fIpackageName\fR is the name of the package, and is used to
+compute the name of an initialization procedure.
+\fIinterp\fR is the path name of the interpreter into which to load
+the package (see the \fBinterp\fR manual entry for details);
+if \fIinterp\fR is omitted, it defaults to the
+interpreter in which the \fBload\fR command was invoked.
+.PP
+Once the file has been loaded into the application's address space,
+one of two initialization procedures will be invoked in the new code.
+Typically the initialization procedure will add new commands to a
+Tcl interpreter.
+The name of the initialization procedure is determined by
+\fIpackageName\fR and whether or not the target interpreter
+is a safe one.  For normal interpreters the name of the initialization
+procedure will have the form \fIpkg\fB_Init\fR, where \fIpkg\fR
+is the same as \fIpackageName\fR except that the first letter is
+converted to upper case and all other letters
+are converted to lower case.  For example, if \fIpackageName\fR is
+\fBfoo\fR or \fBFOo\fR, the initialization procedure's name will
+be \fBFoo_Init\fR.
+.PP
+If the target interpreter is a safe interpreter, then the name
+of the initialization procedure will be \fIpkg\fB_SafeInit\fR
+instead of \fIpkg\fB_Init\fR.
+The \fIpkg\fB_SafeInit\fR function should be written carefully, so that it
+initializes the safe interpreter only with partial functionality provided
+by the package that is safe for use by untrusted code. For more information
+on Safe\-Tcl, see the \fBsafe\fR manual entry.
+.PP
+The initialization procedure must match the following prototype:
+.PP
+.CS
+typedef int \fBTcl_PackageInitProc\fR(
+        Tcl_Interp *\fIinterp\fR);
+.CE
+.PP
+The \fIinterp\fR argument identifies the interpreter in which the
+package is to be loaded.  The initialization procedure must return
+\fBTCL_OK\fR or \fBTCL_ERROR\fR to indicate whether or not it completed
+successfully;  in the event of an error it should set the interpreter's result
+to point to an error message.  The result of the \fBload\fR command
+will be the result returned by the initialization procedure.
+.PP
+The actual loading of a file will only be done once for each \fIfileName\fR
+in an application.  If a given \fIfileName\fR is loaded into multiple
+interpreters, then the first \fBload\fR will load the code and
+call the initialization procedure;  subsequent \fBload\fRs will
+call the initialization procedure without loading the code again.
+For Tcl versions lower than 8.5, it is not possible to unload or reload a
+package. From version 8.5 however, the \fBunload\fR command allows the unloading
+of libraries loaded with \fBload\fR, for libraries that are aware of the
+Tcl's unloading mechanism.
+.PP
+The \fBload\fR command also supports packages that are statically
+linked with the application, if those packages have been registered
+by calling the \fBTcl_StaticPackage\fR procedure.
+If \fIfileName\fR is an empty string, then \fIpackageName\fR must
+be specified.
+.PP
+If \fIpackageName\fR is omitted or specified as an empty string,
+Tcl tries to guess the name of the package.
+This may be done differently on different platforms.
+The default guess, which is used on most UNIX platforms, is to
+take the last element of \fIfileName\fR, strip off the first
+three characters if they are \fBlib\fR, and use any following
+alphabetic and underline characters as the module name.
+For example, the command \fBload libxyz4.2.so\fR uses the module
+name \fBxyz\fR and the command \fBload bin/last.so {}\fR uses the
+module name \fBlast\fR.
+.PP
+If \fIfileName\fR is an empty string, then \fIpackageName\fR must
+be specified.
+The \fBload\fR command first searches for a statically loaded package
+(one that has been registered by calling the \fBTcl_StaticPackage\fR
+procedure) by that name; if one is found, it is used.
+Otherwise, the \fBload\fR command searches for a dynamically loaded
+package by that name, and uses it if it is found.  If several
+different files have been \fBload\fRed with different versions of
+the package, Tcl picks the file that was loaded first.
+.PP
+If \fB\-global\fR is specified preceding the filename, all symbols
+found in the shared library are exported for global use by other
+libraries. The option \fB\-lazy\fR delays the actual loading of
+symbols until their first actual use. The options may be abbreviated.
+The option \fB\-\-\fR indicates the end of the options, and should
+be used if you wish to use a filename which starts with \fB\-\fR
+and you provide a packageName to the \fBload\fR command.
+.PP
+On platforms which do not support the \fB\-global\fR or \fB\-lazy\fR
+options, the options still exist but have no effect. Note that use
+of the \fB\-global\fR or \fB\-lazy\fR option may lead to crashes
+in your application later (in case of symbol conflicts resp. missing
+symbols), which cannot be detected during the \fBload\fR. So, only
+use this when you know what you are doing, you will not get a nice
+error message when something is wrong with the loaded library.
+.SH "PORTABILITY ISSUES"
+.TP
+\fBWindows\fR\0\0\0\0\0
+.
+When a load fails with
+.QW "library not found"
+error, it is also possible
+that a dependent library was not found.  To see the dependent libraries,
+type
+.QW "dumpbin -imports <dllname>"
+in a DOS console to see what the library must import.
+When loading a DLL in the current directory, Windows will ignore
+.QW ./
+as a path specifier and use a search heuristic to find the DLL instead.
+To avoid this, load the DLL with:
+.RS
+.PP
+.CS
+\fBload\fR [file join [pwd] mylib.DLL]
+.CE
+.RE
+.SH BUGS
+.PP
+If the same file is \fBload\fRed by different \fIfileName\fRs, it will
+be loaded into the process's address space multiple times.  The
+behavior of this varies from system to system (some systems may
+detect the redundant loads, others may not).
+.SH EXAMPLE
+.PP
+The following is a minimal extension:
+.PP
+.CS
+#include <tcl.h>
+#include <stdio.h>
+static int fooCmd(ClientData clientData,
+        Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
+    printf("called with %d arguments\en", objc);
+    return TCL_OK;
+}
+int Foo_Init(Tcl_Interp *interp) {
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    printf("creating foo command");
+    Tcl_CreateObjCommand(interp, "foo", fooCmd, NULL, NULL);
+    return TCL_OK;
+}
+.CE
+.PP
+When built into a shared/dynamic library with a suitable name
+(e.g. \fBfoo.dll\fR on Windows, \fBlibfoo.so\fR on Solaris and Linux)
+it can then be loaded into Tcl with the following:
+.PP
+.CS
+# Load the extension
+switch $tcl_platform(platform) {
+    windows {
+        \fBload\fR [file join [pwd] foo.dll]
+    }
+    unix {
+        \fBload\fR [file join [pwd] libfoo[info sharedlibextension]]
+    }
+}
+
+# Now execute the command defined by the extension
+foo
+.CE
+.SH "SEE ALSO"
+info sharedlibextension, package(n), Tcl_StaticPackage(3), safe(n)
+.SH KEYWORDS
+binary code, dynamic library, load, safe interpreter, shared library
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

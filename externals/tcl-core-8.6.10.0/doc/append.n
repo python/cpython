@@ -1,0 +1,49 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH append n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+append \- Append to variable
+.SH SYNOPSIS
+\fBappend \fIvarName \fR?\fIvalue value value ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Append all of the \fIvalue\fR arguments to the current value
+of variable \fIvarName\fR.  If \fIvarName\fR does not exist,
+it is given a value equal to the concatenation of all the
+\fIvalue\fR arguments.
+The result of this command is the new value stored in variable
+\fIvarName\fR.
+This command provides an efficient way to build up long
+variables incrementally.
+For example,
+.QW "\fBappend a $b\fR"
+is much more efficient than
+.QW "\fBset a $a$b\fR"
+if \fB$a\fR is long.
+.SH EXAMPLE
+Building a string of comma-separated numbers piecemeal using a loop.
+.PP
+.CS
+set var 0
+for {set i 1} {$i<=10} {incr i} {
+    \fBappend\fR var "," $i
+}
+puts $var
+# Prints 0,1,2,3,4,5,6,7,8,9,10
+.CE
+.SH "SEE ALSO"
+concat(n), lappend(n)
+.SH KEYWORDS
+append, variable
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

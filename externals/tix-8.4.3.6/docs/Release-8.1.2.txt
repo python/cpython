@@ -1,0 +1,30 @@
+# -*- mode: text; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+# $Id: Release-8.1.2.txt,v 1.2 2001/12/09 04:52:04 idiscovery Exp $
+
+Release notes for 8.1.2
+
+	See also Release-8.1.1.txt
+
+Changes for 8.1.2
+
+	1) Added lib/pref/WmDefault.* files, a Package for making Tix
+	   apps use the CDE/GNOME/KDE/Windows scheme
+	2) Many minor bug fixes to the library files.
+	3) Removed font and color overrides from the demos, so that
+	   the native look and feel would be preserved.
+	4) In the past, the interactive initialization file was inconsistent,
+	and on Windows, $env(HOME) is undefined or most users don't even
+	know where there HOME is (Profiles\User\Application Data\)!
+	So a site wide initialization file tixwishrc.tcl is now used,
+	which must be in the same directory as the executable. To restore
+	the past behaviour, simply add the following line to that file:
+		if {[file isfile [set file ~/.tixwishrc]]} {source $file}
+	5) 	On Windows, initialize the console even if there is no script.
+	The problem here is that frozen/wrapped exes never have a script.
+	To invoke this,  simply set the environment variable TIX_CONSOLE
+	to 1 if you want the console shown, and -1 if you want it hidden.
+	6) Added pkgIndex.tcl for Windows to the install.
+	7) Removed the patches to Tkinter.py as it is now standard in Python.
+	8) Updated README files to say that Tix should now build under 8.3.
+
+

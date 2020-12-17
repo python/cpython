@@ -1,0 +1,152 @@
+'\"
+'\" Copyright (c) 1996-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_IntObj 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_NewIntObj, Tcl_NewLongObj, Tcl_NewWideIntObj, Tcl_SetIntObj, Tcl_SetLongObj, Tcl_SetWideIntObj, Tcl_GetIntFromObj, Tcl_GetLongFromObj, Tcl_GetWideIntFromObj, Tcl_NewBignumObj, Tcl_SetBignumObj, Tcl_GetBignumFromObj, Tcl_TakeBignumFromObj \- manipulate Tcl values as integers
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_NewIntObj\fR(\fIintValue\fR)
+.sp
+Tcl_Obj *
+\fBTcl_NewLongObj\fR(\fIlongValue\fR)
+.sp
+Tcl_Obj *
+\fBTcl_NewWideIntObj\fR(\fIwideValue\fR)
+.sp
+\fBTcl_SetIntObj\fR(\fIobjPtr, intValue\fR)
+.sp
+\fBTcl_SetLongObj\fR(\fIobjPtr, longValue\fR)
+.sp
+\fBTcl_SetWideIntObj\fR(\fIobjPtr, wideValue\fR)
+.sp
+int
+\fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
+.sp
+int
+\fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
+.sp
+int
+\fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
+.sp
+.sp
+\fB#include <tclTomMath.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_NewBignumObj\fR(\fIbigValue\fR)
+.sp
+\fBTcl_SetBignumObj\fR(\fIobjPtr, bigValue\fR)
+.sp
+int
+\fBTcl_GetBignumFromObj\fR(\fIinterp, objPtr, bigValue\fR)
+.sp
+int
+\fBTcl_TakeBignumFromObj\fR(\fIinterp, objPtr, bigValue\fR)
+.sp
+int
+\fBTcl_InitBignumFromDouble\fR(\fIinterp, doubleValue, bigValue\fR)
+.SH ARGUMENTS
+.AS Tcl_WideInt doubleValue in/out
+.AP int intValue in
+Integer value used to initialize or set a Tcl value.
+.AP long longValue in
+Long integer value used to initialize or set a Tcl value.
+.AP Tcl_WideInt wideValue in
+Wide integer value used to initialize or set a Tcl value.
+.AP Tcl_Obj *objPtr in/out
+For \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
+and \fBTcl_SetBignumObj\fR, this points to the value in which to store an
+integral value.  For \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_TakeBignumFromObj\fR, this refers to the value from which
+to retrieve an integral value.
+.AP Tcl_Interp *interp in/out
+When non-NULL, an error message is left here when integral value
+retrieval fails.
+.AP int *intPtr out
+Points to place to store the integer value retrieved from \fIobjPtr\fR.
+.AP long *longPtr out
+Points to place to store the long integer value retrieved from \fIobjPtr\fR.
+.AP Tcl_WideInt *widePtr out
+Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
+.AP mp_int *bigValue in/out
+Points to a multi-precision integer structure declared by the LibTomMath
+library.
+.AP double doubleValue in
+Double value from which the integer part is determined and
+used to initialize a multi-precision integer value.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are used to create, modify, and read Tcl values
+that hold integral values.
+.PP
+The different routines exist to accommodate different integral types in C
+with which values might be exchanged.  The C integral types for which Tcl
+provides value exchange routines are \fBint\fR, \fBlong int\fR,
+\fBTcl_WideInt\fR, and \fBmp_int\fR.  The \fBint\fR and \fBlong int\fR types
+are provided by the C language standard.  The \fBTcl_WideInt\fR type is a
+typedef defined to be whatever signed integral type covers at least the
+64-bit integer range (-9223372036854775808 to 9223372036854775807).  Depending
+on the platform and the C compiler, the actual type might be
+\fBlong int\fR, \fBlong long int\fR, \fB__int64\fR, or something else.
+The \fBmp_int\fR type is a multiple-precision integer type defined
+by the LibTomMath multiple-precision integer library.
+.PP
+The \fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR, \fBTcl_NewWideIntObj\fR,
+and \fBTcl_NewBignumObj\fR routines each create and return a new
+Tcl value initialized to the integral value of the argument.  The
+returned Tcl value is unshared.
+.PP
+The \fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR,
+and \fBTcl_SetBignumObj\fR routines each set the value of an existing
+Tcl value pointed to by \fIobjPtr\fR to the integral value provided
+by the other argument.  The \fIobjPtr\fR argument must point to an
+unshared Tcl value.  Any attempt to set the value of a shared Tcl value
+violates Tcl's copy-on-write policy.  Any existing string representation
+or internal representation in the unshared Tcl value will be freed
+as a consequence of setting the new value.
+.PP
+The \fBTcl_GetIntFromObj\fR, \fBTcl_GetLongFromObj\fR,
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_TakeBignumFromObj\fR routines attempt to retrieve an integral
+value of the appropriate type from the Tcl value \fIobjPtr\fR.  If the
+attempt succeeds, then \fBTCL_OK\fR is returned, and the value is
+written to the storage provided by the caller.  The attempt might
+fail if \fIobjPtr\fR does not hold an integral value, or if the
+value exceeds the range of the target type.  If the attempt fails,
+then \fBTCL_ERROR\fR is returned, and if \fIinterp\fR is non-NULL,
+an error message is left in \fIinterp\fR.  The \fBTcl_ObjType\fR
+of \fIobjPtr\fR may be changed to make subsequent calls to the
+same routine more efficient. Unlike the other functions,
+\fBTcl_TakeBignumFromObj\fR may set the content of the Tcl value
+\fIobjPtr\fR to an empty string in the process of retrieving the
+multiple-precision integer value.
+.PP
+The choice between \fBTcl_GetBignumFromObj\fR and
+\fBTcl_TakeBignumFromObj\fR is governed by how the caller will
+continue to use \fIobjPtr\fR.  If after the \fBmp_int\fR value
+is retrieved from \fIobjPtr\fR, the caller will make no more
+use of \fIobjPtr\fR, then using \fBTcl_TakeBignumFromObj\fR
+permits Tcl to detect when an unshared \fIobjPtr\fR permits the
+value to be moved instead of copied, which should be more efficient.
+If anything later in the caller requires
+\fIobjPtr\fR to continue to hold the same value, then
+\fBTcl_GetBignumFromObj\fR must be chosen.
+.PP
+The \fBTcl_InitBignumFromDouble\fR routine is a utility procedure
+that extracts the integer part of \fIdoubleValue\fR and stores that
+integer value in the \fBmp_int\fR value \fIbigValue\fR.
+.SH "SEE ALSO"
+Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
+.SH KEYWORDS
+integer, integer value, integer type, internal representation, value,
+value type, string representation

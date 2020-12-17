@@ -1,0 +1,53 @@
+'\"
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_RecordAndEvalObj 3 8.0 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_RecordAndEvalObj \- save command on history list before evaluating
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_RecordAndEvalObj\fR(\fIinterp, cmdPtr, flags\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp *interp
+.AP Tcl_Interp *interp in
+Tcl interpreter in which to evaluate command.
+.AP Tcl_Obj *cmdPtr in
+Points to a Tcl value containing a command (or sequence of commands)
+to execute.
+.AP int flags in
+An OR'ed combination of flag bits.  \fBTCL_NO_EVAL\fR means record the
+command but do not evaluate it.  \fBTCL_EVAL_GLOBAL\fR means evaluate
+the command at global level instead of the current stack level.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_RecordAndEvalObj\fR is invoked to record a command as an event
+on the history list and then execute it using \fBTcl_EvalObjEx\fR
+(or \fBTcl_GlobalEvalObj\fR if the \fBTCL_EVAL_GLOBAL\fR bit is set
+in \fIflags\fR).
+It returns a completion code such as \fBTCL_OK\fR just like \fBTcl_EvalObjEx\fR,
+as well as a result value containing additional information
+(a result value or error message)
+that can be retrieved using \fBTcl_GetObjResult\fR.
+If you do not want the command recorded on the history list then
+you should invoke \fBTcl_EvalObjEx\fR instead of \fBTcl_RecordAndEvalObj\fR.
+Normally \fBTcl_RecordAndEvalObj\fR is only called with top-level
+commands typed by the user, since the purpose of history is to
+allow the user to re-issue recently invoked commands.
+If the \fIflags\fR argument contains the \fBTCL_NO_EVAL\fR bit then
+the command is recorded without being evaluated.
+
+.SH "SEE ALSO"
+Tcl_EvalObjEx, Tcl_GetObjResult
+
+.SH KEYWORDS
+command, event, execute, history, interpreter, value, record

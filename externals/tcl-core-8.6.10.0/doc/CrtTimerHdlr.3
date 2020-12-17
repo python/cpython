@@ -1,0 +1,76 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_CreateTimerHandler 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CreateTimerHandler, Tcl_DeleteTimerHandler \- call a procedure at a given time
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_TimerToken
+\fBTcl_CreateTimerHandler\fR(\fImilliseconds, proc, clientData\fR)
+.sp
+\fBTcl_DeleteTimerHandler\fR(\fItoken\fR)
+.SH ARGUMENTS
+.AS Tcl_TimerToken milliseconds
+.AP int milliseconds  in
+How many milliseconds to wait before invoking \fIproc\fR.
+.AP Tcl_TimerProc *proc in
+Procedure to invoke after \fImilliseconds\fR have elapsed.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to \fIproc\fR.
+.AP Tcl_TimerToken token in
+Token for previously created timer handler (the return value
+from some previous call to \fBTcl_CreateTimerHandler\fR).
+.BE
+.SH DESCRIPTION
+.PP
+\fBTcl_CreateTimerHandler\fR arranges for \fIproc\fR to be
+invoked at a time \fImilliseconds\fR milliseconds in the
+future.
+The callback to \fIproc\fR will be made by \fBTcl_DoOneEvent\fR,
+so \fBTcl_CreateTimerHandler\fR is only useful in programs that
+dispatch events through \fBTcl_DoOneEvent\fR or through Tcl commands
+such as \fBvwait\fR.
+The call to \fIproc\fR may not be made at the exact time given by
+\fImilliseconds\fR:  it will be made at the next opportunity
+after that time.  For example, if \fBTcl_DoOneEvent\fR is not
+called until long after the time has elapsed, or if there
+are other pending events to process before the call to
+\fIproc\fR, then the call to \fIproc\fR will be delayed.
+.PP
+\fIProc\fR should have arguments and return value that match
+the type \fBTcl_TimerProc\fR:
+.PP
+.CS
+typedef void \fBTcl_TimerProc\fR(
+        ClientData \fIclientData\fR);
+.CE
+.PP
+The \fIclientData\fR parameter to \fIproc\fR is a
+copy of the \fIclientData\fR argument given to
+\fBTcl_CreateTimerHandler\fR when the callback
+was created.  Typically, \fIclientData\fR points to a data
+structure containing application-specific information about
+what to do in \fIproc\fR.
+.PP
+\fBTcl_DeleteTimerHandler\fR may be called to delete a
+previously created timer handler.  It deletes the handler
+indicated by \fItoken\fR so that no call to \fIproc\fR
+will be made;  if that handler no longer exists
+(e.g. because the time period has already elapsed and \fIproc\fR
+has been invoked then \fBTcl_DeleteTimerHandler\fR does nothing.
+The tokens returned by \fBTcl_CreateTimerHandler\fR never have
+a value of NULL, so if NULL is passed to \fBTcl_DeleteTimerHandler\fR
+then the procedure does nothing.
+.SH "SEE ALSO"
+after(n), Tcl_CreateFileHandler(3), Tcl_DoWhenIdle(3)
+.SH KEYWORDS
+callback, clock, handler, timer

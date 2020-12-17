@@ -1,0 +1,492 @@
+# This file contains a collection of tests for tclUtf.c
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
+
+catch {unset x}
+
+# Some tests require support for 4-byte UTF-8 sequences
+testConstraint fullutf [expr {[format %c 0x010000] != "\ufffd"}]
+
+test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} testbytestring {
+    expr {"\x01" eq [testbytestring "\x01"]}
+} 1
+test utf-1.2 {Tcl_UniCharToUtf: 2 byte sequences} testbytestring {
+    expr {"\x00" eq [testbytestring "\xc0\x80"]}
+} 1
+test utf-1.3 {Tcl_UniCharToUtf: 2 byte sequences} testbytestring {
+    expr {"\xe0" eq [testbytestring "\xc3\xa0"]}
+} 1
+test utf-1.4 {Tcl_UniCharToUtf: 3 byte sequences} testbytestring {
+    expr {"\u4e4e" eq [testbytestring "\xe4\xb9\x8e"]}
+} 1
+test utf-1.5 {Tcl_UniCharToUtf: overflowed Tcl_UniChar} testbytestring {
+    expr {[format %c 0x110000] eq [testbytestring "\xef\xbf\xbd"]}
+} 1
+test utf-1.6 {Tcl_UniCharToUtf: negative Tcl_UniChar} testbytestring {
+    expr {[format %c -1] eq [testbytestring "\xef\xbf\xbd"]}
+} 1
+test utf-1.7 {Tcl_UniCharToUtf: 4 byte sequences} -constraints {fullutf testbytestring} -body {
+    expr {"\U014e4e" eq [testbytestring "\xf0\x94\xb9\x8e"]}
+} -result 1
+
+test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
+    string length "abc"
+} {3}
+test utf-2.2 {Tcl_UtfToUniChar: naked trail bytes} testbytestring {
+    string length [testbytestring "\x82\x83\x84"]
+} {3}
+test utf-2.3 {Tcl_UtfToUniChar: lead (2-byte) followed by non-trail} testbytestring {
+    string length [testbytestring "\xC2"]
+} {1}
+test utf-2.4 {Tcl_UtfToUniChar: lead (2-byte) followed by trail} testbytestring {
+    string length [testbytestring "\xC2\xa2"]
+} {1}
+test utf-2.5 {Tcl_UtfToUniChar: lead (3-byte) followed by non-trail} testbytestring {
+    string length [testbytestring "\xE2"]
+} {1}
+test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestring {
+    string length [testbytestring "\xE2\xA2"]
+} {2}
+test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
+    string length [testbytestring "\xE4\xb9\x8e"]
+} {1}
+test utf-2.8 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
+    string length [testbytestring "\xF0\x90\x80\x80"]
+} -result {2}
+test utf-2.9 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} -constraints {fullutf testbytestring} -body {
+    string length [testbytestring "\xF4\x8F\xBF\xBF"]
+} -result {2}
+test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
+    string length [testbytestring "\xF0\x8F\xBF\xBF"]
+} {4}
+test utf-2.11 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, overflow} testbytestring {
+    string length [testbytestring "\xF4\x90\x80\x80"]
+} {4}
+test utf-2.12 {Tcl_UtfToUniChar: longer UTF sequences not supported} testbytestring {
+    string length [testbytestring "\xF8\xA2\xA2\xA2\xA2"]
+} {5}
+
+test utf-3.1 {Tcl_UtfCharComplete} {
+} {}
+
+testConstraint testnumutfchars [llength [info commands testnumutfchars]]
+testConstraint testfindfirst [llength [info commands testfindfirst]]
+testConstraint testfindlast [llength [info commands testfindlast]]
+
+test utf-4.1 {Tcl_NumUtfChars: zero length} testnumutfchars {
+    testnumutfchars ""
+} {0}
+test utf-4.2 {Tcl_NumUtfChars: length 1} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\xC2\xA2"]
+} {1}
+test utf-4.3 {Tcl_NumUtfChars: long string} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"]
+} {7}
+test utf-4.4 {Tcl_NumUtfChars: #u0000} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\xC0\x80"]
+} {1}
+test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} testnumutfchars {
+    testnumutfchars "" 0
+} {0}
+test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\xC2\xA2"] 2
+} {1}
+test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 10
+} {7}
+test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\xC0\x80"] 2
+} {1}
+# Bug [2738427]: Tcl_NumUtfChars(...) no overflow check
+test utf-4.9 {Tcl_NumUtfChars: #u20AC, calc len, incomplete} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\xE2\x82\xAC"] 2
+} {2}
+test utf-4.10 {Tcl_NumUtfChars: #u0000, calc len, overcomplete} {testnumutfchars testbytestring} {
+    testnumutfchars [testbytestring "\x00"] 2
+} {2}
+
+test utf-5.1 {Tcl_UtfFindFirst} {testfindfirst testbytestring} {
+    testfindfirst [testbytestring "abcbc"] 98
+} {bcbc}
+test utf-5.2 {Tcl_UtfFindLast} {testfindlast testbytestring} {
+    testfindlast [testbytestring "abcbc"] 98
+} {bc}
+
+test utf-6.1 {Tcl_UtfNext} {
+} {}
+
+test utf-7.1 {Tcl_UtfPrev} {
+} {}
+
+test utf-8.1 {Tcl_UniCharAtIndex: index = 0} {
+    string index abcd 0
+} {a}
+test utf-8.2 {Tcl_UniCharAtIndex: index = 0} {
+    string index \u4e4e\u25a 0
+} "\u4e4e"
+test utf-8.3 {Tcl_UniCharAtIndex: index > 0} {
+    string index abcd 2
+} {c}
+test utf-8.4 {Tcl_UniCharAtIndex: index > 0} {
+    string index \u4e4e\u25a\xff\u543 2
+} "\uff"
+
+test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
+    string range abcd 0 2
+} {abc}
+test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
+    string range \u4e4e\u25a\xff\u543klmnop 1 5
+} "\u25a\xff\u543kl"
+
+
+test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
+    set x \n
+} {
+}
+test utf-10.2 {Tcl_UtfBackslash: \u subst} testbytestring {
+    expr {"\ua2" eq [testbytestring "\xc2\xa2"]}
+} 1
+test utf-10.3 {Tcl_UtfBackslash: longer \u subst} testbytestring {
+    expr {"\u4e21" eq [testbytestring "\xe4\xb8\xa1"]}
+} 1
+test utf-10.4 {Tcl_UtfBackslash: stops at first non-hex} testbytestring {
+    expr {"\u4e2k" eq "[testbytestring \xd3\xa2]k"}
+} 1
+test utf-10.5 {Tcl_UtfBackslash: stops after 4 hex chars} testbytestring {
+    expr {"\u4e216" eq "[testbytestring \xe4\xb8\xa1]6"}
+} 1
+proc bsCheck {char num} {
+    global errNum
+    test utf-10.$errNum {backslash substitution} {
+	scan $char %c value
+	set value
+    } $num
+    incr errNum
+}
+set errNum 6
+bsCheck \b	8
+bsCheck \e	101
+bsCheck \f	12
+bsCheck \n	10
+bsCheck \r	13
+bsCheck \t	9
+bsCheck \v	11
+bsCheck \{	123
+bsCheck \}	125
+bsCheck \[	91
+bsCheck \]	93
+bsCheck \$	36
+bsCheck \ 	32
+bsCheck \;	59
+bsCheck \\	92
+bsCheck \Ca	67
+bsCheck \Ma	77
+bsCheck \CMa	67
+# prior to 8.3, this returned 8, as \8 as accepted as an
+# octal value - but it isn't! [Bug: 3975]
+bsCheck \8a	56
+bsCheck \14	12
+bsCheck \141	97
+bsCheck b\0	98
+bsCheck \x	120
+bsCheck \xa	10
+bsCheck \xA	10
+bsCheck \x41	65
+bsCheck \x541	84
+bsCheck \u	117
+bsCheck \uk	117
+bsCheck \u41	65
+bsCheck \ua	10
+bsCheck \uA	10
+bsCheck \340	224
+bsCheck \ua1	161
+bsCheck \u4e21	20001
+bsCheck \741	60
+bsCheck \U	85
+bsCheck \Uk	85
+bsCheck \U41	65
+bsCheck \Ua	10
+bsCheck \UA	10
+bsCheck \Ua1	161
+bsCheck \U4e21	20001
+bsCheck \U004e21	20001
+bsCheck \U00004e21	20001
+bsCheck \U0000004e21	78
+if {[testConstraint fullutf]} {
+    bsCheck \U00110000	69632
+    bsCheck \U01100000	69632
+    bsCheck \U11000000	69632
+    bsCheck \U0010FFFF	1114111
+    bsCheck \U010FFFF0	1114111
+    bsCheck \U10FFFF00	1114111
+    bsCheck \UFFFFFFFF	1048575
+}
+
+test utf-11.1 {Tcl_UtfToUpper} {
+    string toupper {}
+} {}
+test utf-11.2 {Tcl_UtfToUpper} {
+    string toupper abc
+} ABC
+test utf-11.3 {Tcl_UtfToUpper} {
+    string toupper \u00e3ab
+} \u00c3AB
+test utf-11.4 {Tcl_UtfToUpper} {
+    string toupper \u01e3ab
+} \u01e2AB
+
+test utf-12.1 {Tcl_UtfToLower} {
+    string tolower {}
+} {}
+test utf-12.2 {Tcl_UtfToLower} {
+    string tolower ABC
+} abc
+test utf-12.3 {Tcl_UtfToLower} {
+    string tolower \u00c3AB
+} \u00e3ab
+test utf-12.4 {Tcl_UtfToLower} {
+    string tolower \u01e2AB
+} \u01e3ab
+
+test utf-13.1 {Tcl_UtfToTitle} {
+    string totitle {}
+} {}
+test utf-13.2 {Tcl_UtfToTitle} {
+    string totitle abc
+} Abc
+test utf-13.3 {Tcl_UtfToTitle} {
+    string totitle \u00e3ab
+} \u00c3ab
+test utf-13.4 {Tcl_UtfToTitle} {
+    string totitle \u01f3ab
+} \u01f2ab
+
+test utf-14.1 {Tcl_UtfNcasecmp} {
+    string compare -nocase a b
+} -1
+test utf-14.2 {Tcl_UtfNcasecmp} {
+    string compare -nocase b a
+} 1
+test utf-14.3 {Tcl_UtfNcasecmp} {
+    string compare -nocase B a
+} 1
+test utf-14.4 {Tcl_UtfNcasecmp} {
+    string compare -nocase aBcB abca
+} 1
+
+test utf-15.1 {Tcl_UniCharToUpper, negative delta} {
+    string toupper aA
+} AA
+test utf-15.2 {Tcl_UniCharToUpper, positive delta} {
+    string toupper \u0178\u00ff
+} \u0178\u0178
+test utf-15.3 {Tcl_UniCharToUpper, no delta} {
+    string toupper !
+} !
+
+test utf-16.1 {Tcl_UniCharToLower, negative delta} {
+    string tolower aA
+} aa
+test utf-16.2 {Tcl_UniCharToLower, positive delta} {
+    string tolower \u0178\u00ff\uA78D\u01c5\U10400
+} \u00ff\u00ff\u0265\u01c6\U10428
+
+test utf-17.1 {Tcl_UniCharToLower, no delta} {
+    string tolower !
+} !
+
+test utf-18.1 {Tcl_UniCharToTitle, add one for title} {
+    string totitle \u01c4
+} \u01c5
+test utf-18.2 {Tcl_UniCharToTitle, subtract one for title} {
+    string totitle \u01c6
+} \u01c5
+test utf-18.3 {Tcl_UniCharToTitle, subtract delta for title (positive)} {
+    string totitle \u017f
+} \u0053
+test utf-18.4 {Tcl_UniCharToTitle, subtract delta for title (negative)} {
+    string totitle \u00ff
+} \u0178
+test utf-18.5 {Tcl_UniCharToTitle, no delta} {
+    string totitle !
+} !
+
+test utf-19.1 {TclUniCharLen} -body {
+    list [regexp \\d abc456def foo] $foo
+} -cleanup {
+    unset -nocomplain foo
+} -result {1 4}
+
+test utf-20.1 {TclUniCharNcmp} {
+} {}
+
+test utf-21.1 {TclUniCharIsAlnum} {
+    # this returns 1 with Unicode 7 compliance
+    string is alnum \u1040\u021f\u0220
+} {1}
+test utf-21.2 {unicode alnum char in regc_locale.c} {
+    # this returns 1 with Unicode 7 compliance
+    list [regexp {^[[:alnum:]]+$} \u1040\u021f\u0220] [regexp {^\w+$} \u1040\u021f\u0220_\u203f\u2040\u2054\ufe33\ufe34\ufe4d\ufe4e\ufe4f\uff3f]
+} {1 1}
+test utf-21.3 {unicode print char in regc_locale.c} {
+    # this returns 1 with Unicode 7 compliance
+    regexp {^[[:print:]]+$} \ufbc1
+} 1
+test utf-21.4 {TclUniCharIsGraph} {
+    # [Bug 3464428]
+    string is graph \u0120
+} {1}
+test utf-21.5 {unicode graph char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {^[[:graph:]]+$} \u0120
+} {1}
+test utf-21.6 {TclUniCharIsGraph} {
+    # [Bug 3464428]
+    string is graph \u00a0
+} {0}
+test utf-21.7 {unicode graph char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {[[:graph:]]} \u0020\u00a0\u2028\u2029
+} {0}
+test utf-21.8 {TclUniCharIsPrint} {
+    # [Bug 3464428]
+    string is print \u0009
+} {0}
+test utf-21.9 {unicode print char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {[[:print:]]} \u0009
+} {0}
+test utf-21.10 {unicode print char in regc_locale.c} {
+    # [Bug 3464428]
+    regexp {[[:print:]]} \u0009
+} {0}
+test utf-21.11 {TclUniCharIsControl} {
+    # [Bug 3464428]
+    string is control \u0000\u001f\u00ad\u0605\u061c\u180e\u2066\ufeff
+} {1}
+test utf-21.12 {unicode control char in regc_locale.c} {
+    # [Bug 3464428], [Bug a876646efe]
+    regexp {^[[:cntrl:]]*$} \u0000\u001f\u00ad\u0605\u061c\u180e\u2066\ufeff
+} {1}
+
+test utf-22.1 {TclUniCharIsWordChar} {
+    string wordend "xyz123_bar fg" 0
+} 10
+test utf-22.2 {TclUniCharIsWordChar} {
+    string wordend "x\u5080z123_bar\u203c fg" 0
+} 10
+
+test utf-23.1 {TclUniCharIsAlpha} {
+    # this returns 1 with Unicode 7 compliance
+    string is alpha \u021f\u0220\u037f\u052f
+} {1}
+test utf-23.2 {unicode alpha char in regc_locale.c} {
+    # this returns 1 with Unicode 7 compliance
+    regexp {^[[:alpha:]]+$} \u021f\u0220\u037f\u052f
+} {1}
+
+test utf-24.1 {TclUniCharIsDigit} {
+    # this returns 1 with Unicode 7 compliance
+    string is digit \u1040\uabf0
+} {1}
+test utf-24.2 {unicode digit char in regc_locale.c} {
+    # this returns 1 with Unicode 7 compliance
+    list [regexp {^[[:digit:]]+$} \u1040\uabf0] [regexp {^\d+$} \u1040\uabf0]
+} {1 1}
+
+test utf-24.3 {TclUniCharIsSpace} {
+    # this returns 1 with Unicode 7/TIP 413 compliance
+    string is space \u0085\u1680\u180e\u200b\u202f\u2060
+} {1}
+test utf-24.4 {unicode space char in regc_locale.c} {
+    # this returns 1 with Unicode 7/TIP 413 compliance
+    list [regexp {^[[:space:]]+$} \u0085\u1680\u180e\u200b\u202f\u2060] [regexp {^\s+$} \u0085\u1680\u180e\u200b\u202f\u2060]
+} {1 1}
+
+testConstraint teststringobj [llength [info commands teststringobj]]
+
+test utf-25.1 {Tcl_UniCharNcasecmp} -constraints teststringobj \
+    -setup {
+	testobj freeallvars
+    } \
+    -body {
+	teststringobj set 1 a
+	teststringobj set 2 b
+	teststringobj getunicode 1
+	teststringobj getunicode 2
+	string compare -nocase [teststringobj get 1] [teststringobj get 2]
+    } \
+    -cleanup {
+	testobj freeallvars
+    } \
+    -result -1
+test utf-25.2 {Tcl_UniCharNcasecmp} -constraints teststringobj \
+    -setup {
+	testobj freeallvars
+    } \
+    -body {
+	teststringobj set 1 b
+	teststringobj set 2 a
+	teststringobj getunicode 1
+	teststringobj getunicode 2
+	string compare -nocase [teststringobj get 1] [teststringobj get 2]
+    } \
+    -cleanup {
+	testobj freeallvars
+    } \
+    -result 1
+test utf-25.3 {Tcl_UniCharNcasecmp} -constraints teststringobj \
+    -setup {
+	testobj freeallvars
+    } \
+    -body {
+	teststringobj set 1 B
+	teststringobj set 2 a
+	teststringobj getunicode 1
+	teststringobj getunicode 2
+	string compare -nocase [teststringobj get 1] [teststringobj get 2]
+    } \
+    -cleanup {
+	testobj freeallvars
+    } \
+    -result 1
+
+test utf-25.4 {Tcl_UniCharNcasecmp} -constraints teststringobj \
+    -setup {
+	testobj freeallvars
+    } \
+    -body {
+	teststringobj set 1 aBcB
+	teststringobj set 2 abca
+	teststringobj getunicode 1
+	teststringobj getunicode 2
+	string compare -nocase [teststringobj get 1] [teststringobj get 2]
+    } \
+    -cleanup {
+	testobj freeallvars
+    } \
+    -result 1
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

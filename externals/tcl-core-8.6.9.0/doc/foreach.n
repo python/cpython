@@ -1,0 +1,104 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH foreach n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+foreach \- Iterate over all elements in one or more lists
+.SH SYNOPSIS
+\fBforeach \fIvarname list body\fR
+.br
+\fBforeach \fIvarlist1 list1\fR ?\fIvarlist2 list2 ...\fR? \fIbody\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBforeach\fR command implements a loop where the loop
+variable(s) take on values from one or more lists.
+In the simplest case there is one loop variable, \fIvarname\fR,
+and one list, \fIlist\fR, that is a list of values to assign to \fIvarname\fR.
+The \fIbody\fR argument is a Tcl script.
+For each element of \fIlist\fR (in order
+from first to last), \fBforeach\fR assigns the contents of the
+element to \fIvarname\fR as if the \fBlindex\fR command had been used
+to extract the element, then calls the Tcl interpreter to execute
+\fIbody\fR.
+.PP
+In the general case there can be more than one value list
+(e.g., \fIlist1\fR and \fIlist2\fR),
+and each value list can be associated with a list of loop variables
+(e.g., \fIvarlist1\fR and \fIvarlist2\fR).
+During each iteration of the loop
+the variables of each \fIvarlist\fR are assigned
+consecutive values from the corresponding \fIlist\fR.
+Values in each \fIlist\fR are used in order from first to last,
+and each value is used exactly once.
+The total number of loop iterations is large enough to use
+up all the values from all the value lists.
+If a value list does not contain enough
+elements for each of its loop variables in each iteration,
+empty values are used for the missing elements.
+.PP
+The \fBbreak\fR and \fBcontinue\fR statements may be
+invoked inside \fIbody\fR, with the same effect as in the \fBfor\fR
+command.  \fBForeach\fR returns an empty string.
+.SH EXAMPLES
+.PP
+This loop prints every value in a list together with the square and
+cube of the value:
+.PP
+.CS
+'\" Maintainers: notice the tab hacking below!
+.ta 3i
+set values {1 3 5 7 2 4 6 8}	;# Odd numbers first, for fun!
+puts "Value\etSquare\etCube"	;# Neat-looking header
+\fBforeach\fR x $values {	;# Now loop and print...
+    puts " $x\et [expr {$x**2}]\et [expr {$x**3}]"
+}
+.CE
+.PP
+The following loop uses i and j as loop variables to iterate over
+pairs of elements of a single list.
+.PP
+.CS
+set x {}
+\fBforeach\fR {i j} {a b c d e f} {
+    lappend x $j $i
+}
+# The value of x is "b a d c f e"
+# There are 3 iterations of the loop.
+.CE
+.PP
+The next loop uses i and j to iterate over two lists in parallel.
+.PP
+.CS
+set x {}
+\fBforeach\fR i {a b c} j {d e f g} {
+    lappend x $i $j
+}
+# The value of x is "a d b e c f {} g"
+# There are 4 iterations of the loop.
+.CE
+.PP
+The two forms are combined in the following example.
+.PP
+.CS
+set x {}
+\fBforeach\fR i {a b c} {j k} {d e f g} {
+    lappend x $i $j $k
+}
+# The value of x is "a d e b f g c {} {}"
+# There are 3 iterations of the loop.
+.CE
+
+.SH "SEE ALSO"
+for(n), while(n), break(n), continue(n)
+
+.SH KEYWORDS
+foreach, iteration, list, loop

@@ -1,0 +1,447 @@
+# This file is a Tcl script to test out Tk's "tk_messageBox" command.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+
+test msgbox-1.1.1 {tk_messageBox command} -constraints notAqua -body {
+    tk_messageBox -foo
+} -returnCodes error -result {bad option "-foo": must be -default, -detail, -icon, -message, -parent, -title, or -type}
+test msgbox-1.1.2 {tk_messageBox command} -constraints aqua -body {
+    tk_messageBox -foo
+} -returnCodes error -result {bad option "-foo": must be -default, -detail, -icon, -message, -parent, -title, -type, or -command}
+test msgbox-1.2.1 {tk_messageBox command} -constraints notAqua -body {
+    tk_messageBox -foo bar
+} -returnCodes error -result {bad option "-foo": must be -default, -detail, -icon, -message, -parent, -title, or -type}
+test msgbox-1.2.2 {tk_messageBox command} -constraints aqua -body {
+    tk_messageBox -foo bar
+} -returnCodes error -result {bad option "-foo": must be -default, -detail, -icon, -message, -parent, -title, -type, or -command}
+
+test msgbox-1.3 {tk_messageBox command} -body {
+    tk_messageBox -default
+} -returnCodes error -result {value for "-default" missing}
+test msgbox-1.4 {tk_messageBox command} -body {
+    tk_messageBox -detail
+} -returnCodes error -result {value for "-detail" missing}
+test msgbox-1.5 {tk_messageBox command} -body {
+    tk_messageBox -icon
+} -returnCodes error -result {value for "-icon" missing}
+test msgbox-1.6 {tk_messageBox command} -body {
+    tk_messageBox -message
+} -returnCodes error -result {value for "-message" missing}
+test msgbox-1.7 {tk_messageBox command} -body {
+    tk_messageBox -parent
+} -returnCodes error -result {value for "-parent" missing}
+test msgbox-1.8 {tk_messageBox command} -body {
+    tk_messageBox -title
+} -returnCodes error -result {value for "-title" missing}
+test msgbox-1.9 {tk_messageBox command} -body {
+    tk_messageBox -type
+} -returnCodes error -result {value for "-type" missing}
+
+test msgbox-1.10 {tk_messageBox command} -body {
+    tk_messageBox -default
+} -returnCodes error -result {value for "-default" missing}
+
+test msgbox-1.11 {tk_messageBox command} -body {
+    tk_messageBox -type foo
+} -returnCodes error -result {bad -type value "foo": must be abortretryignore, ok, okcancel, retrycancel, yesno, or yesnocancel}
+
+test msgbox-1.13 {tk_messageBox command} -body {
+    tk_messageBox -default 1.1
+} -returnCodes error -result {bad -default value "1.1": must be abort, retry, ignore, ok, cancel, no, or yes}
+
+test msgbox-1.14 {tk_messageBox command} -body {
+    tk_messageBox -default foo
+} -returnCodes error -result {bad -default value "foo": must be abort, retry, ignore, ok, cancel, no, or yes}
+
+test msgbox-1.16 {tk_messageBox command} -body {
+    tk_messageBox -type yesno -default 3
+} -returnCodes error -result {bad -default value "3": must be abort, retry, ignore, ok, cancel, no, or yes}
+
+test msgbox-1.18 {tk_messageBox command} -body {
+    tk_messageBox -icon foo
+} -returnCodes error -result {bad -icon value "foo": must be error, info, question, or warning}
+
+test msgbox-1.19 {tk_messageBox command} -body {
+    tk_messageBox -parent foo.bar
+} -returnCodes error -result {bad window path name "foo.bar"}
+
+
+catch {tk_messageBox -foo bar}
+set isNative [expr {[info commands tk::MessageBox] == ""}]
+
+proc ChooseMsg {parent btn} {
+    global isNative
+    if {!$isNative} {
+	after 100 SendEventToMsg $parent $btn mouse
+    }
+}
+
+proc ChooseMsgByKey {parent btn} {
+    global isNative
+    if {!$isNative} {
+	after 100 SendEventToMsg $parent $btn key
+    }
+}
+
+proc PressButton {btn} {
+    event generate $btn <Enter>
+    event generate $btn <ButtonPress-1> -x 5 -y 5
+    event generate $btn <ButtonRelease-1> -x 5 -y 5
+}
+
+proc SendEventToMsg {parent btn type} {
+    if {$parent != "."} {
+	set w $parent.__tk__messagebox
+    } else {
+	set w .__tk__messagebox
+    }
+    if ![winfo ismapped $w.$btn] {
+	update
+    }
+    if {$type == "mouse"} {
+	PressButton $w.$btn
+    } else {
+	event generate $w <Enter>
+	focus $w
+	event generate $w.$btn <Enter>
+	event generate $w <KeyPress> -keysym Return
+    }
+}
+#
+# Try out all combinations of (type) x (default button) and
+# (type) x (icon).
+#
+test msgbox-2.1 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . abort
+    tk_messageBox -title Hi -message "Please press abort" -type abortretryignore
+} -result {abort}
+test msgbox-2.2 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . abort
+    tk_messageBox -title Hi -message "Please press abort" \
+        -type abortretryignore -icon warning
+} -result {abort}
+test msgbox-2.3 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . abort
+    tk_messageBox -title Hi -message "Please press abort" \
+        -type abortretryignore -icon error
+} -result {abort}
+test msgbox-2.4 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . abort
+    tk_messageBox -title Hi -message "Please press abort" \
+        -type abortretryignore -icon info
+} -result {abort}
+test msgbox-2.5 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . abort
+    tk_messageBox -title Hi -message "Please press abort" \
+        -type abortretryignore -icon question
+} -result {abort}
+test msgbox-2.6 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . abort
+    tk_messageBox -title Hi -message "Please press abort" \
+        -type abortretryignore -default abort
+} -result {abort}
+test msgbox-2.7 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" \
+        -type abortretryignore -default retry
+} -result {retry}
+test msgbox-2.8 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ignore
+    tk_messageBox -title Hi -message "Please press ignore" \
+        -type abortretryignore -default ignore
+} -result {ignore}
+test msgbox-2.9 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" -type ok
+} -result {ok}
+test msgbox-2.10 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type ok -icon warning
+} -result {ok}
+test msgbox-2.11 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type ok -icon error
+} -result {ok}
+test msgbox-2.12 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type ok -icon info
+} -result {ok}
+test msgbox-2.13 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type ok -icon question
+} -result {ok}
+test msgbox-2.14 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type ok -default ok
+} -result {ok}
+test msgbox-2.15 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" -type okcancel
+} -result {ok}
+test msgbox-2.16 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type okcancel -icon warning
+} -result {ok}
+test msgbox-2.17 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type okcancel -icon error
+} -result {ok}
+test msgbox-2.18 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type okcancel -icon info
+} -result {ok}
+test msgbox-2.19 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type okcancel -icon question
+} -result {ok}
+test msgbox-2.20 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . ok
+    tk_messageBox -title Hi -message "Please press ok" \
+        -type okcancel -default ok
+} -result {ok}
+test msgbox-2.21 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . cancel
+    tk_messageBox -title Hi -message "Please press cancel" \
+        -type okcancel -default cancel
+} -result {cancel}
+test msgbox-2.22 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" -type retrycancel
+} -result {retry}
+test msgbox-2.23 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" \
+        -type retrycancel -icon warning
+} -result {retry}
+test msgbox-2.24 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" \
+        -type retrycancel -icon error
+} -result {retry}
+test msgbox-2.25 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" \
+        -type retrycancel -icon info
+} -result {retry}
+test msgbox-2.26 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" \
+        -type retrycancel -icon question
+} -result {retry}
+test msgbox-2.27 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . retry
+    tk_messageBox -title Hi -message "Please press retry" \
+        -type retrycancel -default retry
+} -result {retry}
+test msgbox-2.28 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . cancel
+    tk_messageBox -title Hi -message "Please press cancel" \
+        -type retrycancel -default cancel
+} -result {cancel}
+test msgbox-2.29 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" -type yesno
+} -result {yes}
+test msgbox-2.30 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesno -icon warning
+} -result {yes}
+test msgbox-2.31 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesno -icon error
+} -result {yes}
+test msgbox-2.32 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesno -icon info
+} -result {yes}
+test msgbox-2.33 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesno -icon question
+} -result {yes}
+test msgbox-2.34 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesno -default yes
+} -result {yes}
+test msgbox-2.35 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . no
+    tk_messageBox -title Hi -message "Please press no" \
+        -type yesno -default no
+} -result {no}
+test msgbox-2.36 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" -type yesnocancel
+} -result {yes}
+test msgbox-2.37 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesnocancel -icon warning
+} -result {yes}
+test msgbox-2.38 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesnocancel -icon error
+} -result {yes}
+test msgbox-2.39 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesnocancel -icon info
+} -result {yes}
+test msgbox-2.40 {tk_messageBox command -icon option} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesnocancel -icon question
+} -result {yes}
+test msgbox-2.41 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . yes
+    tk_messageBox -title Hi -message "Please press yes" \
+        -type yesnocancel -default yes
+} -result {yes}
+test msgbox-2.42 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . no
+    tk_messageBox -title Hi -message "Please press no" \
+        -type yesnocancel -default no
+} -result {no}
+test msgbox-2.43 {tk_messageBox command} -constraints {
+    nonUnixUserInteraction 
+} -body {
+    ChooseMsg . cancel
+    tk_messageBox -title Hi -message "Please press cancel" \
+        -type yesnocancel -default cancel
+} -result {cancel}
+
+
+# These tests will hang your test suite if they fail.
+test msgbox-3.1 {tk_messageBox handles withdrawn parent} -constraints {
+	nonUnixUserInteraction 
+} -body {
+    wm withdraw .
+    ChooseMsg . "ok"
+    tk_messageBox -title Hi -message "Please press ok" \
+	    -type ok -default ok
+} -cleanup {
+    wm deiconify .
+} -result {ok}
+
+test msgbox-3.2 {tk_messageBox handles iconified parent} -constraints {
+	nonUnixUserInteraction 
+} -body {
+    wm iconify .
+    ChooseMsg . "ok"
+    tk_messageBox -title Hi -message "Please press ok" \
+	    -type ok -default ok
+} -cleanup {
+    wm deiconify .
+} -result {ok}
+
+# cleanup
+cleanupTests
+return
+
+

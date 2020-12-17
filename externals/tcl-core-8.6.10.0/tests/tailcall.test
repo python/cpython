@@ -1,0 +1,716 @@
+# Commands covered:  tailcall
+#
+# This file contains a collection of tests for experimental commands that are
+# found in ::tcl::unsupported. The tests will migrate to normal test files
+# if/when the commands find their way into the core.
+#
+# Copyright (c) 2008 by Miguel Sofer.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testnrelevels [llength [info commands testnrelevels]]
+
+#
+# The tests that risked blowing the C stack on failure have been removed: we
+# can now actually measure using testnrelevels.
+#
+
+if {[testConstraint testnrelevels]} {
+    namespace eval testnre {
+	#
+	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
+	# cmdFrame level, callFrame level, tosPtr and callback depth 
+	#
+	variable last [testnrelevels] 
+	proc depthDiff {} {
+	    variable last
+	    set depth [testnrelevels]
+	    set res {}
+	    foreach t $depth l $last {
+		lappend res [expr {$t-$l}]
+	    }
+	    set last $depth
+	    return $res
+	}
+	namespace export *
+    }
+    namespace import testnre::*
+}
+
+proc errorcode options {
+    dict get [dict merge {-errorcode NONE} $options] -errorcode
+}
+
+test tailcall-0.1 {tailcall is constant space} -constraints testnrelevels -setup {
+    proc a i {
+	#
+	# NOTE: there may be a diff in callback depth with the first call
+	# ($i==0) due to the fact that the first is from an eval. Successive
+	# calls should add nothing to any stack depths.
+	#
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall a $i
+    }
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.2 {tailcall is constant space} -constraints testnrelevels -setup {
+    set a { i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	upvar 1 a a
+	tailcall apply $a $i
+    }}
+} -body {
+    apply $a 0
+} -cleanup {
+    unset a
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.3 {tailcall is constant space} -constraints testnrelevels -setup {
+    proc a i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall b $i
+    }
+    interp alias {} b {} a
+} -body {
+    b 0
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.4 {tailcall is constant space} -constraints testnrelevels -setup {
+    namespace eval ::ns {
+	namespace export *
+    }
+    proc ::ns::a i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	set b [uplevel 1 [list namespace which b]]
+	tailcall $b $i
+    }
+    namespace import ::ns::a
+    rename a b
+} -body {
+    b 0
+} -cleanup {
+    rename b {}
+    namespace delete ::ns
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.5 {tailcall is constant space} -constraints testnrelevels -setup {
+    proc b i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall a b $i
+    }
+    namespace ensemble create -command a -map {b b}
+} -body {
+    a b 0
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.5.1 {tailcall is constant space} -constraints testnrelevels -setup {
+    # 
+    # This test is related to [bug d87cb182053fd79b3]: the fix to that bug was
+    # to remove a call to TclSkipTailcall, which caused a violation of the
+    # constant-space property of tailcall in that particular
+    # configuration. This test was added to detect that, and insure that the
+    # problem is fixed.
+    #
+
+    proc b i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall dict b $i
+    }
+    set map0 [namespace ensemble configure dict -map]
+    set map $map0
+    dict set map b b
+    namespace ensemble configure dict -map $map
+} -body {
+    dict b 0
+} -cleanup {
+    rename b {}
+    namespace ensemble configure dict -map $map0
+    unset map map0
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.6 {tailcall is constant space} -constraints {testnrelevels knownBug} -setup {
+    #
+    # This test fails because ns-unknown is not NR-enabled
+    #
+    proc c i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall a b $i
+    }
+    proc d {ens sub args} {
+	return [list $ens c]
+    }
+    namespace ensemble create -command a -unknown d
+} -body {
+    a b 0
+} -cleanup {
+    rename a {}
+    rename c {}
+    rename d {}
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.7 {tailcall is constant space} -constraints testnrelevels -setup {
+    catch {rename foo {}}
+    oo::class create foo {
+	method b i {
+	    if {$i == 1} {
+		depthDiff
+	    }
+	    if {[incr i] > 10} {
+		return [depthDiff]
+	    }
+	    tailcall [self] b $i
+	}
+    }
+} -body {
+    foo create a
+    a b 0
+} -cleanup {
+    rename a {}
+    rename foo {}
+} -result {0 0 0 0 0 0}
+
+test tailcall-1 {tailcall} -body {
+    namespace eval a {
+	variable x *::a
+	proc xset {} {
+	    set tmp {}
+	    set ns {[namespace current]}
+	    set level [info level]
+	    for {set i 0} {$i <= [info level]} {incr i} {
+		uplevel #$i "set x $i$ns"
+		lappend tmp "$i [info level $i]"
+	    }
+	    lrange $tmp 1 end
+	}
+	proc foo {} {tailcall xset; set x noreach}
+    }
+    namespace eval b {
+	variable x *::b
+	proc xset args {error b::xset}
+	proc moo {} {set x 0; variable y [::a::foo]; set x}
+    }
+    variable x *::
+    proc xset args {error ::xset}
+    list [::b::moo] | $x $a::x $b::x | $::b::y 
+} -cleanup {
+    unset x
+    rename xset {}
+    namespace delete a b
+} -result {1::b | 0:: *::a *::b | {{1 ::b::moo} {2 xset}}}
+
+
+test tailcall-2 {tailcall in non-proc} -body {
+    namespace eval a [list tailcall set x 1]
+} -match glob -result *tailcall* -returnCodes error
+
+test tailcall-3 {tailcall falls off tebc} -body {
+    unset -nocomplain x
+    proc foo {} {tailcall set x 1}
+    list [catch foo msg] $msg [set x]
+} -cleanup {
+    rename foo {}
+    unset x
+} -result {0 1 1}
+
+test tailcall-4 {tailcall falls off tebc} -body {
+    set x 2
+    proc foo {} {tailcall set x 1}
+    foo
+    set x
+} -cleanup {
+    rename foo {}
+    unset x
+} -result 1
+
+test tailcall-5 {tailcall falls off tebc} -body {
+    set x 2
+    namespace eval bar {
+	variable x 3
+	proc foo {} {tailcall set x 1}
+    }
+    bar::foo
+    list $x $bar::x
+} -cleanup {
+    unset x
+    namespace delete bar
+} -result {1 3}
+
+test tailcall-6 {tailcall does remove callframes} -body {
+    proc foo {} {info level}
+    proc moo {} {tailcall foo}
+    proc boo {} {expr {[moo] - [info level]}}
+    boo
+} -cleanup {
+    rename foo {}
+    rename moo {}
+    rename boo {}
+} -result 1
+
+test tailcall-7 {tailcall does return} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall set x 1
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+    }
+} -body {
+    namespace eval ::foo c
+} -cleanup {
+    namespace delete ::foo
+} -result cbabc
+
+test tailcall-8 {tailcall tailcall} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall tailcall set x 1
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+    }
+} -body {
+    namespace eval ::foo c
+} -cleanup {
+    namespace delete ::foo
+} -result cbac
+
+test tailcall-9 {tailcall factorial} -setup {
+    proc fact {n {b 1}} {
+	if {$n == 1} {
+	    return $b
+	}
+	tailcall fact [expr {$n-1}] [expr {$n*$b}]
+    }
+} -body {
+    list [fact 1] [fact 5] [fact 10] [fact 15]
+} -cleanup {
+    rename fact {}
+} -result {1 120 3628800 1307674368000}
+
+test tailcall-10a {tailcall and eval} -setup {
+    set ::x 0
+    proc a {} {
+	eval [list tailcall lappend ::x 2]
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {{0 2} {0 2}}
+
+test tailcall-10b {tailcall and eval} -setup {
+    set ::x 0
+    proc a {} {
+	eval {tailcall lappend ::x 2}
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {{0 2} {0 2}}
+
+test tailcall-11a {tailcall and uplevel} -setup {
+    proc a {} {
+	uplevel 1 [list tailcall set ::x 2]
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -match glob -result *tailcall* -returnCodes error
+
+test tailcall-11b {tailcall and uplevel} -setup {
+    proc a {} {
+	uplevel 1 {tailcall set ::x 2}
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -match glob -result *tailcall* -returnCodes error
+
+test tailcall-11c {tailcall and uplevel} -setup {
+    proc a {} {
+	uplevel 1 {tailcall lappend ::x 2}
+	set ::x 1
+    }
+    proc b {} {set ::x 0; a; lappend ::x 3}
+} -body {
+    list [b] $::x
+} -cleanup {
+    rename a {}
+    rename b {}
+    unset -nocomplain ::x
+} -result {{0 3 2} {0 3 2}}
+
+test tailcall-12.1 {[Bug 2649975]} -setup {
+    proc dump {{text {}}} {
+	set text [uplevel 1 [list subst $text]]
+	set l [expr {[info level] -1}]
+	if {$text eq {}} {
+	    set text [info level $l]
+	}
+	puts "$l: $text"
+    }
+    # proc dump args {}
+    proc bravo {} {
+	upvar 1 v w
+	dump {inside bravo, v -> $w}
+	set v "procedure bravo"
+	#uplevel 1 [list delta ::betty]
+	uplevel 1 {delta ::betty}
+	return $::resolution
+    }
+    proc delta name {
+	upvar 1 v w
+	dump {inside delta, v -> $w}
+	set v "procedure delta"
+	tailcall foxtrot
+    }
+    proc foxtrot {} {
+	upvar 1 v w
+	dump {inside foxtrot, v -> $w}
+	global resolution
+	set ::resolution $w
+    }
+    set v "global level"
+} -body {
+    set result [bravo]
+    if {$result ne $v} {
+	puts "v should have been found at $v but was found in $result"
+    }
+} -cleanup {
+    unset v
+    rename dump {}
+    rename bravo {}
+    rename delta {}
+    rename foxtrot {}
+} -output {1: inside bravo, v -> global level
+1: inside delta, v -> global level
+1: inside foxtrot, v -> global level
+}
+
+test tailcall-12.2 {[Bug 2649975]} -setup {
+    proc dump {{text {}}} {
+	set text [uplevel 1 [list subst $text]]
+	set l [expr {[info level] -1}]
+	if {$text eq {}} {
+	    set text [info level $l]
+	}
+	puts "$l: $text"
+    }
+    # proc dump args {}
+    set v "global level"
+    oo::class create foo { # like connection
+	method alpha {} {  # like connections 'tables' method
+	    dump
+	    upvar 1 v w
+	    dump {inside foo's alpha, v resolves to $w}
+	    set v "foo's method alpha"
+	    dump {foo's alpha is calling [self] bravo - v should resolve at global level}
+	    set result [uplevel 1 [list [self] bravo]]
+	    dump {exiting from foo's alpha}
+	    return $result
+	}
+	method bravo {} {  # like connections 'foreach' method
+	    dump
+	    upvar 1 v w
+	    dump {inside foo's bravo, v resolves to $w}
+	    set v "foo's method bravo"
+	    dump {foo's bravo is calling charlie to create barney}
+	    set barney [my charlie ::barney]
+	    dump {foo's bravo is calling bravo on $barney}
+	    dump {v should resolve at global scope there}
+	    set result [uplevel 1 [list $barney bravo]]
+	    dump {exiting from foo's bravo}
+	    return $result
+	}
+	method charlie {name} {  # like tdbc prepare
+	    dump
+	    set v "foo's method charlie"
+	    dump {tailcalling bar's constructor}
+	    tailcall ::bar create $name
+	}
+    }
+    oo::class create bar { # like statement
+	method  bravo {} {   # like statement foreach method
+	    dump
+	    upvar 1 v w
+	    dump {inside bar's bravo, v is resolving to $w}
+	    set v "bar's method bravo"
+	    dump {calling delta to construct betty - v should resolve global there}
+	    uplevel 1 [list [self] delta ::betty]
+	    dump {exiting from bar's bravo}
+	    return [::betty whathappened]
+	}
+	method delta {name} {    # like statement execute method
+	    dump
+	    upvar 1 v w
+	    dump {inside bar's delta, v is resolving to $w}
+	    set v "bar's method delta"
+	    dump {tailcalling to construct $name as instance of grill}
+	    dump {v should resolve at global level in grill's constructor}
+	    dump {grill's constructor should run at level [info level]}
+	    tailcall grill create $name
+	}
+    }
+    oo::class create grill {
+	variable resolution
+	constructor {} {
+	    dump
+	    upvar 1 v w
+	    dump "in grill's constructor, v resolves to $w"
+	    set resolution $w
+	}
+	method whathappened {} {
+	    return $resolution
+	}
+    }
+    foo create fred
+} -body {
+    set result [fred alpha]
+    if {$result ne "global level"} {
+	puts "v should have been found at global level but was found in $result"
+    }
+} -cleanup {
+    unset result
+    rename fred {}
+    rename dump {}
+    rename foo {}
+    rename bar {}
+    rename grill {}
+} -output {1: fred alpha
+1: inside foo's alpha, v resolves to global level
+1: foo's alpha is calling ::fred bravo - v should resolve at global level
+1: ::fred bravo
+1: inside foo's bravo, v resolves to global level
+1: foo's bravo is calling charlie to create barney
+2: my charlie ::barney
+2: tailcalling bar's constructor
+1: foo's bravo is calling bravo on ::barney
+1: v should resolve at global scope there
+1: ::barney bravo
+1: inside bar's bravo, v is resolving to global level
+1: calling delta to construct betty - v should resolve global there
+1: ::barney delta ::betty
+1: inside bar's delta, v is resolving to global level
+1: tailcalling to construct ::betty as instance of grill
+1: v should resolve at global level in grill's constructor
+1: grill's constructor should run at level 1
+1: grill create ::betty
+1: in grill's constructor, v resolves to global level
+1: exiting from bar's bravo
+1: exiting from foo's bravo
+1: exiting from foo's alpha
+}
+
+test tailcall-12.3a0 {[Bug 2695587]} -body {
+    apply {{} {
+	catch [list tailcall foo]
+    }}
+} -returnCodes 1 -result {invalid command name "foo"}
+
+test tailcall-12.3a1 {[Bug 2695587]} -body {
+    apply {{} {
+	catch [list tailcall foo]
+	tailcall
+    }}
+} -result {}
+
+test tailcall-12.3a2 {[Bug 2695587]} -body {
+    apply {{} {
+	catch [list tailcall foo]
+	tailcall moo
+    }}
+} -returnCodes 1 -result {invalid command name "moo"}
+
+test tailcall-12.3a3 {[Bug 2695587]} -body {
+    set x 0
+    apply {{} {
+	catch [list tailcall foo]
+	tailcall lappend x 1
+    }}
+    set x
+} -cleanup {
+    unset x
+} -result {0 1} 
+
+test tailcall-12.3b0 {[Bug 2695587]} -body {
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+    }}
+} -returnCodes 1 -result {invalid command name "foo"}
+
+test tailcall-12.3b1 {[Bug 2695587]} -body {
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+	tailcall
+    }}
+} -result {}
+
+test tailcall-12.3b2 {[Bug 2695587]} -body {
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+	tailcall moo
+    }}
+} -returnCodes 1 -result {invalid command name "moo"}
+
+test tailcall-12.3b3 {[Bug 2695587]} -body {
+    set x 0
+    apply {{} {
+	set catch catch
+	$catch [list tailcall foo]
+	tailcall lappend x 1
+    }}
+    set x
+} -cleanup {
+    unset x
+} -result {0 1} 
+
+# MORE VARIANTS MISSING: bc'ed caught script vs (bc'ed, not-bc'ed)
+# catch. Actually superfluous now, as tailcall just returns TCL_RETURN so that
+# standard catch behaviour is required.
+
+test tailcall-13.1 {directly tailcalling the tailcall command is ok} {
+    list [catch {
+	apply {{} {
+	    apply {{} {
+		tailcall tailcall subst ok
+		subst b
+	    }}
+	    subst c
+	}}
+    } msg opt] $msg [errorcode $opt]
+} {0 ok NONE}
+test tailcall-13.2 {indirectly tailcalling the tailcall command is ok} {
+    list [catch {
+	apply {{} {
+	    apply {{} {
+		tailcall eval tailcall subst ok
+		subst b
+	    }}
+	    subst c
+	}}
+    } msg opt] $msg [errorcode $opt]
+} {0 ok NONE}
+
+if {[testConstraint testnrelevels]} {
+    namespace forget testnre::*
+    namespace delete testnre
+}
+
+test tailcall-14.1 {in a deleted namespace} -body {
+    namespace eval ns {
+	proc p args {
+	    tailcall [namespace current] $args
+	}
+	namespace delete [namespace current]
+	p
+    }
+} -returnCodes 1 -result {namespace "::ns" not found}
+
+test tailcall-14.1-bc {{in a deleted namespace} {byte compiled}} -body {
+    namespace eval ns {
+	proc p args {
+	    tailcall [namespace current] {*}$args
+	}
+	namespace delete [namespace current]
+	p
+    }
+} -returnCodes 1 -result {namespace "::ns" not found}
+
+# cleanup
+::tcltest::cleanupTests
+
+# Local Variables:
+# mode: tcl
+# End:

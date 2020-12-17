@@ -1,0 +1,38 @@
+'\"
+'\" Copyright (c) 1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_menuBar n "" Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_menuBar, tk_bindForTraversal \- Obsolete support for menu bars
+.SH SYNOPSIS
+\fBtk_menuBar \fIframe \fR?\fImenu menu ...\fR?
+.sp
+\fBtk_bindForTraversal \fIarg arg ... \fR
+.BE
+.SH DESCRIPTION
+.PP
+These procedures were used in Tk 3.6 and earlier releases to help
+manage pulldown menus and to implement keyboard traversal of menus.
+In Tk 4.0 and later releases they are no
+longer needed.  Stubs for these procedures have been retained for
+backward compatibility, but they have no effect.  You should remove
+calls to these procedures from your code, since eventually the
+procedures will go away.
+.PP
+From Tk 8.0 onwards, you should instead construct your menubar as a
+normal \fBmenu\fR and then attach it to the \fBtoplevel\fR of your
+choice using the \fB\-menu\fR option of that widget.
+.SH "SEE ALSO"
+menu(n), toplevel(n)
+.SH KEYWORDS
+keyboard traversal, menu, menu bar, post
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

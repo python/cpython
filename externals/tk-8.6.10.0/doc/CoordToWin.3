@@ -1,0 +1,47 @@
+'\"
+'\" Copyright (c) 1990-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CoordsToWindow 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CoordsToWindow \- Find window containing a point
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Window
+\fBTk_CoordsToWindow\fR(\fIrootX, rootY, tkwin\fR)
+.SH ARGUMENTS
+.AS Tk_Window tkwin
+.AP int rootX in
+X-coordinate (in root window coordinates).
+.AP int rootY in
+Y-coordinate (in root window coordinates).
+.AP Tk_Window tkwin in
+Token for window that identifies application.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_CoordsToWindow\fR locates the window that contains a given point.
+The point is specified in root coordinates with \fIrootX\fR and
+\fIrootY\fR (if a virtual-root window manager is in use then
+\fIrootX\fR and \fIrootY\fR are in the coordinate system of the
+virtual root window).
+The return value from the procedure is a token for the window that
+contains the given point.
+If the point is not in any window, or if the containing window
+is not in the same application as \fItkwin\fR, then NULL is
+returned.
+.PP
+The containing window is decided using the same rules that determine
+which window contains the mouse cursor:  if a parent and a child both
+contain the point then the child gets preference, and if two siblings
+both contain the point then the highest one in the stacking order
+(i.e. the one that's visible on the screen) gets preference.
+.SH KEYWORDS
+containing, coordinates, root window

@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH linsert n 8.2 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+linsert \- Insert elements into a list
+.SH SYNOPSIS
+\fBlinsert \fIlist index \fR?\fIelement element ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command produces a new list from \fIlist\fR by inserting all of the
+\fIelement\fR arguments just before the \fIindex\fR'th element of
+\fIlist\fR.  Each \fIelement\fR argument will become a separate element of
+the new list.  If \fIindex\fR is less than or equal to zero, then the new
+elements are inserted at the beginning of the list, and if \fIindex\fR is
+greater or equal to the length of \fIlist\fR, it is as if it was \fBend\fR.
+As with \fBstring index\fR, the \fIindex\fR value supports both simple index
+arithmetic and end-relative indexing.
+.PP
+Subject to the restrictions that indices must refer to locations inside the
+list and that the \fIelement\fRs will always be inserted in order, insertions
+are done so that when \fIindex\fR is start-relative, the first \fIelement\fR
+will be at that index in the resulting list, and when \fIindex\fR is
+end-relative, the last \fIelement\fR will be at that index in the resulting
+list.
+.SH EXAMPLE
+.PP
+Putting some values into a list, first indexing from the start and
+then indexing from the end, and then chaining them together:
+.PP
+.CS
+set oldList {the fox jumps over the dog}
+set midList [\fBlinsert\fR $oldList 1 quick]
+set newList [\fBlinsert\fR $midList end-1 lazy]
+# The old lists still exist though...
+set newerList [\fBlinsert\fR [\fBlinsert\fR $oldList end-1 quick] 1 lazy]
+.CE
+.SH "SEE ALSO"
+list(n), lappend(n), lindex(n), llength(n), lsearch(n),
+lset(n), lsort(n), lrange(n), lreplace(n),
+string(n)
+.SH KEYWORDS
+element, insert, list
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

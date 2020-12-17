@@ -1,0 +1,471 @@
+# Commands covered:  lmap, continue, break
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 2011 Trevor Davel
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: $
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+unset -nocomplain a b i x
+
+# ----- Non-compiled operation -----------------------------------------------
+
+# Basic "lmap" operation (non-compiled)
+test lmap-1.1 {basic lmap tests} {
+    set a {}
+    lmap i {a b c d} {
+	set a [concat $a $i]
+    }
+} {a {a b} {a b c} {a b c d}}
+test lmap-1.2 {basic lmap tests} {
+    lmap i {a b {{c d} e} {123 {{x}}}} {
+	set i
+    }
+} {a b {{c d} e} {123 {{x}}}}
+test lmap-1.2a {basic lmap tests} {
+    lmap i {a b {{c d} e} {123 {{x}}}} {
+	return -level 0 $i
+    }
+} {a b {{c d} e} {123 {{x}}}}
+test lmap-1.4 {basic lmap tests} -returnCodes error -body {
+    lmap
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-1.6 {basic lmap tests} -returnCodes error -body {
+    lmap i
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-1.8 {basic lmap tests} -returnCodes error -body {
+    lmap i j
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-1.10 {basic lmap tests} -returnCodes error -body {
+    lmap i j k l
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-1.11 {basic lmap tests} {
+    lmap i {} {
+	set i
+    }
+} {}
+test lmap-1.12 {basic lmap tests} {
+    lmap i {} {
+	return -level 0 x
+    }
+} {}
+test lmap-1.13 {lmap errors} -returnCodes error -body {
+    lmap {{a}{b}} {1 2 3} {}
+} -result {list element in braces followed by "{b}" instead of space}
+test lmap-1.14 {lmap errors} -returnCodes error -body {
+    lmap a {{1 2}3} {}
+} -result {list element in braces followed by "3" instead of space}
+unset -nocomplain a
+test lmap-1.15 {lmap errors} -setup {
+    unset -nocomplain a
+} -body {
+    set a(0) 44
+    list [catch {lmap a {1 2 3} {}} msg o] $msg $::errorInfo
+} -result {1 {can't set "a": variable is array} {can't set "a": variable is array
+    (setting lmap loop variable "a")
+    invoked from within
+"lmap a {1 2 3} {}"}}
+test lmap-1.16 {lmap errors} -returnCodes error -body {
+    lmap {} {} {}
+} -result {lmap varlist is empty}
+unset -nocomplain a
+
+# Parallel "lmap" operation (non-compiled)
+test lmap-2.1 {parallel lmap tests} {
+    lmap {a b} {1 2 3 4} {
+	list $b $a
+    }
+} {{2 1} {4 3}}
+test lmap-2.2 {parallel lmap tests} {
+    lmap {a b} {1 2 3 4 5} {
+	list $b $a
+    }
+} {{2 1} {4 3} {{} 5}}
+test lmap-2.3 {parallel lmap tests} {
+    lmap a {1 2 3} b {4 5 6} {
+	list $b $a
+    }
+} {{4 1} {5 2} {6 3}}
+test lmap-2.4 {parallel lmap tests} {
+    lmap a {1 2 3} b {4 5 6 7 8} {
+	list $b $a
+    }
+} {{4 1} {5 2} {6 3} {7 {}} {8 {}}}
+test lmap-2.5 {parallel lmap tests} {
+    lmap {a b} {a b A B aa bb} c {c C cc CC} {
+	list $a $b $c
+    }
+} {{a b c} {A B C} {aa bb cc} {{} {} CC}}
+test lmap-2.6 {parallel lmap tests} {
+    lmap a {1 2 3} b {1 2 3} c {1 2 3} d {1 2 3} e {1 2 3} {
+	list $a$b$c$d$e
+    }
+} {11111 22222 33333}
+test lmap-2.7 {parallel lmap tests} {
+    lmap a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+	set x $a$b$c$d$e
+    }
+} {{1111 2} 222 33 4}
+test lmap-2.8 {parallel lmap tests} {
+    lmap a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+	join [list $a $b $c $d $e] .
+    }
+} {{.1.1.1.1 2} .2.2.2. .3..3. ...4.}
+test lmap-2.9 {lmap only sets vars if repeating loop} {
+    namespace eval ::lmap_test {
+	set rgb {65535 0 0}
+	lmap {r g b} [set rgb] {}
+	set ::x "r=$r, g=$g, b=$b"
+    }
+    namespace delete ::lmap_test
+    set x
+} {r=65535, g=0, b=0}
+test lmap-2.10 {lmap only supports local scalar variables} -setup {
+    unset -nocomplain a
+} -body {
+    lmap {a(3)} {1 2 3 4} {set {a(3)}}
+} -result {1 2 3 4}
+unset -nocomplain a
+
+# "lmap" with "continue" and "break" (non-compiled)
+test lmap-3.1 {continue tests} {
+    lmap i {a b c d} {
+	if {[string compare $i "b"] == 0} continue
+	set i
+    }
+} {a c d}
+test lmap-3.2 {continue tests} {
+    set x 0
+    list [lmap i {a b c d} {
+    	incr x
+    	if {[string compare $i "b"] != 0} continue
+    	set i
+    }] $x
+} {b 4}
+test lmap-3.3 {break tests} {
+    set x 0
+    list [lmap i {a b c d} {
+	incr x
+    	if {[string compare $i "c"] == 0} break
+    	set i
+    }] $x
+} {{a b} 3}
+# Check for bug similar to #406709
+test lmap-3.4 {break tests} {
+    set a 1
+    lmap b b {list [concat a; break]; incr a}
+    incr a
+} {2}
+
+# ----- Compiled operation ---------------------------------------------------
+
+# Basic "lmap" operation (compiled)
+test lmap-4.1 {basic lmap tests} {
+    apply {{} {
+	set a {}
+	lmap i {a b c d} {
+	    set a [concat $a $i]
+	}
+    }}
+} {a {a b} {a b c} {a b c d}}
+test lmap-4.2 {basic lmap tests} {
+    apply {{} {
+	lmap i {a b {{c d} e} {123 {{x}}}} {
+	    set i
+	}
+    }}
+} {a b {{c d} e} {123 {{x}}}}
+test lmap-4.2a {basic lmap tests} {
+    apply {{} {
+	lmap i {a b {{c d} e} {123 {{x}}}} {
+	    return -level 0 $i
+	}
+    }}
+} {a b {{c d} e} {123 {{x}}}}
+test lmap-4.4 {basic lmap tests} -returnCodes error -body {
+    apply {{} { lmap }}
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-4.6 {basic lmap tests} -returnCodes error -body {
+    apply {{} { lmap i }}
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-4.8 {basic lmap tests} -returnCodes error -body {
+    apply {{} { lmap i j }}
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-4.10 {basic lmap tests} -returnCodes error -body {
+    apply {{} { lmap i j k l }}
+} -result {wrong # args: should be "lmap varList list ?varList list ...? command"}
+test lmap-4.11 {basic lmap tests} {
+    apply {{} { lmap i {} { set i } }}
+} {}
+test lmap-4.12 {basic lmap tests} {
+    apply {{} { lmap i {} { return -level 0 x } }}
+} {}
+test lmap-4.13 {lmap errors} -returnCodes error -body {
+    apply {{} { lmap {{a}{b}} {1 2 3} {} }}
+} -result {list element in braces followed by "{b}" instead of space}
+test lmap-4.14 {lmap errors} -returnCodes error -body {
+    apply {{} { lmap a {{1 2}3} {} }}
+} -result {list element in braces followed by "3" instead of space}
+unset -nocomplain a
+test lmap-4.15 {lmap errors} {
+    apply {{} { 
+	set a(0) 44
+	list [catch {lmap a {1 2 3} {}} msg o] $msg $::errorInfo 
+    }} 
+} {1 {can't set "a": variable is array} {can't set "a": variable is array
+    while executing
+"lmap a {1 2 3} {}"}}
+test lmap-4.16 {lmap errors} -returnCodes error -body {
+    apply {{} {
+	lmap {} {} {}
+    }}
+} -result {lmap varlist is empty}
+unset -nocomplain a
+
+# Parallel "lmap" operation (compiled)
+test lmap-5.1 {parallel lmap tests} {
+    apply {{} {
+	lmap {a b} {1 2 3 4} {
+	    list $b $a
+	}
+    }}
+} {{2 1} {4 3}}
+test lmap-5.2 {parallel lmap tests} {
+    apply {{} {
+	lmap {a b} {1 2 3 4 5} {
+	    list $b $a
+	}
+    }}
+} {{2 1} {4 3} {{} 5}}
+test lmap-5.3 {parallel lmap tests} {
+    apply {{} {
+	lmap a {1 2 3} b {4 5 6} {
+	    list $b $a
+	}
+    }}
+} {{4 1} {5 2} {6 3}}
+test lmap-5.4 {parallel lmap tests} {
+    apply {{} {
+	lmap a {1 2 3} b {4 5 6 7 8} {
+	    list $b $a
+	}
+    }}
+} {{4 1} {5 2} {6 3} {7 {}} {8 {}}}
+test lmap-5.5 {parallel lmap tests} {
+    apply {{} {
+	lmap {a b} {a b A B aa bb} c {c C cc CC} {
+	    list $a $b $c
+	}
+    }}
+} {{a b c} {A B C} {aa bb cc} {{} {} CC}}
+test lmap-5.6 {parallel lmap tests} {
+    apply {{} {
+	lmap a {1 2 3} b {1 2 3} c {1 2 3} d {1 2 3} e {1 2 3} {
+	    list $a$b$c$d$e
+	}
+    }}
+} {11111 22222 33333}
+test lmap-5.7 {parallel lmap tests} {
+    apply {{} {
+	lmap a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+	    set x $a$b$c$d$e
+	}
+    }}
+} {{1111 2} 222 33 4}
+test lmap-5.8 {parallel lmap tests} {
+    apply {{} {
+	lmap a {} b {1 2 3} c {1 2} d {1 2 3 4} e {{1 2}} {
+	    join [list $a $b $c $d $e] .
+	}
+    }}
+} {{.1.1.1.1 2} .2.2.2. .3..3. ...4.}
+test lmap-5.9 {lmap only sets vars if repeating loop} {
+    apply {{} {
+        set rgb {65535 0 0}
+        lmap {r g b} [set rgb] {}
+        return "r=$r, g=$g, b=$b"
+    }}
+} {r=65535, g=0, b=0}
+test lmap-5.10 {lmap only supports local scalar variables} {
+    apply {{} {
+        lmap {a(3)} {1 2 3 4} {set {a(3)}}
+    }}
+} {1 2 3 4}
+
+# "lmap" with "continue" and "break" (compiled)
+test lmap-6.1 {continue tests} {
+    apply {{} {
+	lmap i {a b c d} {
+	    if {[string compare $i "b"] == 0} continue
+	    set i
+	}
+    }}
+} {a c d}
+test lmap-6.2 {continue tests} {
+    apply {{} {
+	list [lmap i {a b c d} {
+	    incr x
+	    if {[string compare $i "b"] != 0} continue
+	    set i
+	}] $x
+    }}
+} {b 4}
+test lmap-6.3 {break tests} {
+    apply {{} {
+	list [lmap i {a b c d} {
+	    incr x
+	    if {[string compare $i "c"] == 0} break
+	    set i
+	}] $x
+    }}
+} {{a b} 3}
+# Check for bug similar to #406709
+test lmap-6.4 {break tests} {
+    apply {{} {
+	set a 1
+	lmap b b {list [concat a; break]; incr a}
+	incr a
+    }}
+} {2}
+
+# ----- Special cases and bugs -----------------------------------------------
+test lmap-7.1 {compiled lmap backward jump works correctly} -setup {
+    unset -nocomplain x
+} -body {
+    array set x {0 zero 1 one 2 two 3 three}
+    lsort [apply {{arrayName} {
+        upvar 1 $arrayName a
+        lmap member [array names a] {
+            list $member [set a($member)]
+        }
+    }} x]
+} -result [lsort {{0 zero} {1 one} {2 two} {3 three}}]
+test lmap-7.2 {noncompiled lmap and shared variable or value list objects that are converted to another type} -setup {
+    unset -nocomplain x
+} -body {
+    lmap {12.0} {a b c} {
+        set x 12.0
+        set x [expr $x + 1]
+    }
+} -result {13.0 13.0 13.0}
+# Test for incorrect "double evaluation" semantics
+test lmap-7.3 {delayed substitution of body} {
+    apply {{} {
+       set a 0
+       lmap a [list 1 2 3] "
+           set x $a
+       "
+       return $x
+    }}
+} {0}
+# Related to "foreach" test for [Bug 1189274]; crash on failure
+test lmap-7.4 {empty list handling} {
+    proc crash {} {
+	rename crash {}
+	set a "x y z"
+	set b ""
+	lmap aa $a bb $b { set x "aa = $aa bb = $bb" }
+    }
+    crash
+} {{aa = x bb = } {aa = y bb = } {aa = z bb = }}
+# Related to [Bug 1671138]; infinite loop with empty var list in bytecompiled
+# version.
+test lmap-7.5 {compiled empty var list} -returnCodes error -body {
+    proc foo {} {
+	lmap {} x {
+	    error "reached body"
+	}
+    }
+    foo
+} -cleanup {
+    catch {rename foo ""}
+} -result {lmap varlist is empty}
+test lmap-7.6 {lmap: related to "foreach" [Bug 1671087]} -setup {
+    proc demo {} {
+	set vals {1 2 3 4}
+	trace add variable x write {string length $vals ;# }
+	lmap {x y} $vals {format $y}
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -result {2 4}
+# Huge lists must not overflow the bytecode interpreter (development bug)
+test lmap-7.7 {huge list non-compiled} -setup {
+    unset -nocomplain a b x
+} -body {
+    set x [lmap a [lrepeat 1000000 x] { set b y$a }]
+    list $b [llength $x] [string length $x]
+} -result {yx 1000000 2999999}
+test lmap-7.8 {huge list compiled} -setup {
+    unset -nocomplain a b x
+} -body {
+    set x [apply {{times} {
+	global b
+	lmap a [lrepeat $times x] { set b Y$a }
+    }} 1000000]
+    list $b [llength $x] [string length $x]
+} -result {Yx 1000000 2999999}
+test lmap-7.9 {error then dereference loop var (dev bug)} {
+    catch { lmap a 0 b {1 2 3} { error x } }
+    set a
+} 0
+test lmap-7.9a {error then dereference loop var (dev bug)} {
+    catch { lmap a 0 b {1 2 3} { incr a $b; error x } }
+    set a
+} 1
+
+# ----- Coroutines -----------------------------------------------------------
+test lmap-8.1 {lmap non-compiled with coroutines} -body {
+    coroutine coro apply {{} {
+	set values [yield [info coroutine]]
+	eval lmap i [list $values] {{ yield $i }}
+    }} ;# returns 'coro'
+    coro {a b c d e f} ;# -> a
+    coro 1 ;# -> b
+    coro 2 ;# -> c
+    coro 3 ;# -> d
+    coro 4 ;# -> e
+    coro 5 ;# -> f
+    list [coro 6] [info commands coro]
+} -cleanup {
+    catch {rename coro ""}
+} -result {{1 2 3 4 5 6} {}}
+test lmap-8.2 {lmap compiled with coroutines} -body {
+    coroutine coro apply {{} {
+	set values [yield [info coroutine]]
+	lmap i $values { yield $i }
+    }} ;# returns 'coro'
+    coro {a b c d e f} ;# -> a
+    coro 1 ;# -> b
+    coro 2 ;# -> c
+    coro 3 ;# -> d
+    coro 4 ;# -> e
+    coro 5 ;# -> f
+    list [coro 6] [info commands coro]
+} -cleanup {
+    catch {rename coro ""}
+} -result {{1 2 3 4 5 6} {}}
+
+# cleanup
+unset -nocomplain a x
+catch {rename foo {}}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

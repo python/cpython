@@ -1,0 +1,166 @@
+# xmfbox.test --
+#
+#	This file is a Tcl script to test the file dialog that's used
+#	when the tk_strictMotif flag is set. Because the file dialog
+#	runs in a modal loop, the only way to test it sufficiently is
+#	to call the internal Tcl procedures in xmfbox.tcl directly.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+set testPWD [pwd]
+catch {unset data foo}
+
+proc cleanup {} {
+    global testPWD
+
+    set err0 [catch {
+	    cd $testPWD
+    } msg0]
+
+    set err1 [catch {
+	    if [file exists ./~nosuchuser1] {
+	        file delete ./~nosuchuser1
+	    }
+    } msg1]
+
+    set err2 [catch {
+	    if [file exists ./~nosuchuser2] {
+	        file delete ./~nosuchuser2
+	    }
+    } msg2]
+
+    set err3 [catch {
+	    if [file exists ./~nosuchuser3] {
+	        file delete ./~nosuchuser3
+	    }
+    } msg3]
+
+    set err4 [catch {
+	    if [file exists ./~nosuchuser4] {
+	        file delete ./~nosuchuser4
+	    }
+    } msg4]
+
+    if {$err0 || $err1 || $err2 || $err3 || $err4} {
+	    error [list $msg0 $msg1 $msg2 $msg3 $msg4]
+    }
+    catch {unset foo}
+    destroy .foo
+}
+
+# ----------------------------------------------------------------------
+
+test xmfbox-1.1 {tk::MotifFDialog_Create, -parent switch} -constraints {
+    unix
+} -setup {
+    catch {unset foo}
+} -body {
+    set x [tk::MotifFDialog_Create foo open {-parent .}]
+} -cleanup {
+    destroy $x
+} -result {.foo}
+
+test xmfbox-1.2 {tk::MotifFDialog_Create, -parent switch} -constraints {
+    unix
+} -setup {
+    catch {unset foo}
+    deleteWindows
+} -body {
+    toplevel .bar
+    wm geometry .bar +0+0
+    set x [tk::MotifFDialog_Create foo open {-parent .bar}]
+} -cleanup {
+    destroy $x
+    destroy .bar
+}  -result {.bar.foo}
+
+
+test xmfbox-2.1 {tk::MotifFDialog_InterpFilter, ~ in dir names} -constraints {
+    unix
+} -body {
+    cleanup
+    file mkdir ./~nosuchuser1
+    set x [tk::MotifFDialog_Create foo open {}]
+    $::tk::dialog::file::foo(fEnt) delete 0 end
+    $::tk::dialog::file::foo(fEnt) insert 0 [pwd]/~nosuchuser1
+    set kk [tk::MotifFDialog_InterpFilter $x]
+} -result "$testPWD/~nosuchuser1 *"
+
+test xmfbox-2.2 {tk::MotifFDialog_InterpFilter, ~ in file names} -constraints {
+    unix
+} -body {
+    cleanup
+    close [open ./~nosuchuser1 {CREAT TRUNC WRONLY}]
+    set x [tk::MotifFDialog_Create foo open {}]
+    $::tk::dialog::file::foo(fEnt) delete 0 end
+    $::tk::dialog::file::foo(fEnt) insert 0 [pwd]/~nosuchuser1
+    set kk [tk::MotifFDialog_InterpFilter $x]
+} -result "$testPWD ./~nosuchuser1"
+
+test xmfbox-2.3 {tk::MotifFDialog_Update, ~ in file names} -constraints {
+    unix
+} -body {
+    cleanup
+    close [open ./~nosuchuser1 {CREAT TRUNC WRONLY}]
+    set x [tk::MotifFDialog_Create foo open {}]
+    $::tk::dialog::file::foo(fEnt) delete 0 end
+    $::tk::dialog::file::foo(fEnt) insert 0 [pwd]/~nosuchuser1
+    tk::MotifFDialog_InterpFilter $x
+    tk::MotifFDialog_Update $x
+    $::tk::dialog::file::foo(fList) get end
+} -result {~nosuchuser1}
+
+test xmfbox-2.4 {tk::MotifFDialog_LoadFile, ~ in file names} -constraints {
+    unix
+} -body {
+    cleanup
+    close [open ./~nosuchuser1 {CREAT TRUNC WRONLY}]
+    set x [tk::MotifFDialog_Create foo open {}]
+    set i [lsearch [$::tk::dialog::file::foo(fList) get 0 end] ~nosuchuser1]
+    expr {$i >= 0}
+} -result 1
+
+test xmfbox-2.5 {tk::MotifFDialog_BrowseFList, ~ in file names} -constraints {
+    unix
+} -body {
+    cleanup
+    close [open ./~nosuchuser1 {CREAT TRUNC WRONLY}]
+    set x [tk::MotifFDialog_Create foo open {}]
+    set i [lsearch [$::tk::dialog::file::foo(fList) get 0 end] ~nosuchuser1]
+    $::tk::dialog::file::foo(fList) selection clear 0 end
+    $::tk::dialog::file::foo(fList) selection set $i
+    tk::MotifFDialog_BrowseFList $x
+    $::tk::dialog::file::foo(sEnt) get
+} -result "$testPWD/~nosuchuser1"
+
+test xmfbox-2.6 {tk::MotifFDialog_ActivateFList, ~ in file names} -constraints {
+    unix
+} -body {
+    cleanup
+    close [open ./~nosuchuser1 {CREAT TRUNC WRONLY}]
+    set x [tk::MotifFDialog_Create foo open {}]
+    set i [lsearch [$::tk::dialog::file::foo(fList) get 0 end] ~nosuchuser1]
+    $::tk::dialog::file::foo(fList) selection clear 0 end
+    $::tk::dialog::file::foo(fList) selection set $i
+    tk::MotifFDialog_BrowseFList $x
+    tk::MotifFDialog_ActivateFList $x
+    list $::tk::dialog::file::foo(selectPath) \
+	    $::tk::dialog::file::foo(selectFile) $tk::Priv(selectFilePath)
+} -result "$testPWD ~nosuchuser1 $testPWD/~nosuchuser1"
+
+# cleanup
+cleanup
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

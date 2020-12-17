@@ -1,0 +1,38 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_StrictMotif 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_StrictMotif \- Return value of tk_strictMotif variable
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_StrictMotif\fR(\fItkwin\fR)
+.SH ARGUMENTS
+.AS Tk_Window tkwin
+.AP Tk_Window tkwin in
+Token for window.
+.BE
+.SH DESCRIPTION
+.PP
+This procedure returns the current value of the \fBtk_strictMotif\fR
+variable in the interpreter associated with \fItkwin\fR's application.
+The value is returned as an integer that is either 0 or 1.
+1 means that strict Motif compliance has been requested, so anything
+that is not part of the Motif specification should be avoided.
+0 means that
+.QW Motif-like
+is good enough, and extra features are welcome.
+.PP
+This procedure uses a link to the Tcl variable to provide much
+faster access to the variable's value than could be had by calling
+\fBTcl_GetVar\fR.
+.SH KEYWORDS
+Motif compliance, tk_strictMotif variable

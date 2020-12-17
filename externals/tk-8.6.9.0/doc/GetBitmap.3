@@ -1,0 +1,296 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1998 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_AllocBitmapFromObj 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_AllocBitmapFromObj, Tk_GetBitmap, Tk_GetBitmapFromObj, Tk_DefineBitmap, Tk_NameOfBitmap, Tk_SizeOfBitmap, Tk_FreeBitmapFromObj, Tk_FreeBitmap \- maintain database of single-plane pixmaps
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Pixmap
+\fBTk_AllocBitmapFromObj(\fIinterp, tkwin, objPtr\fB)\fR
+.sp
+Pixmap
+\fBTk_GetBitmap(\fIinterp, tkwin, info\fB)\fR
+.sp
+Pixmap
+\fBTk_GetBitmapFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+int
+\fBTk_DefineBitmap(\fIinterp, name, source, width, height\fB)\fR
+.sp
+const char *
+\fBTk_NameOfBitmap(\fIdisplay, bitmap\fB)\fR
+.sp
+\fBTk_SizeOfBitmap(\fIdisplay, bitmap, widthPtr, heightPtr\fB)\fR
+.sp
+\fBTk_FreeBitmapFromObj(\fItkwin, objPtr\fB)\fR
+.sp
+\fBTk_FreeBitmap(\fIdisplay, bitmap\fB)\fR
+.SH ARGUMENTS
+.AS "unsigned long" *pixelPtr
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting; if NULL then no error message
+is left after errors.
+.AP Tk_Window tkwin in
+Token for window in which the bitmap will be used.
+.AP Tcl_Obj *objPtr in/out
+String value describes desired bitmap; internal rep will be
+modified to cache pointer to corresponding Pixmap.
+.AP "const char" *info in
+Same as \fIobjPtr\fR except description of bitmap is passed as a string and
+resulting Pixmap is not cached.
+.AP "const char" *name in
+Name for new bitmap to be defined.
+.AP "const void" *source in
+Data for bitmap, in standard bitmap format.
+Must be stored in static memory whose value will never change.
+.AP "int" width in
+Width of bitmap.
+.AP "int" height in
+Height of bitmap.
+.AP "int" *widthPtr out
+Pointer to word to fill in with \fIbitmap\fR's width.
+.AP "int" *heightPtr out
+Pointer to word to fill in with \fIbitmap\fR's height.
+.AP Display *display in
+Display for which \fIbitmap\fR was allocated.
+.AP Pixmap bitmap in
+Identifier for a bitmap allocated by \fBTk_AllocBitmapFromObj\fR or
+\fBTk_GetBitmap\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures manage a collection of bitmaps (one-plane pixmaps)
+being used by an application.  The procedures allow bitmaps to be
+re-used efficiently, thereby avoiding server overhead, and also
+allow bitmaps to be named with character strings.
+.PP
+\fBTk_AllocBitmapFromObj\fR returns a Pixmap identifier for a bitmap
+that matches the description in \fIobjPtr\fR and is suitable for use
+in \fItkwin\fR.  It re-uses an existing bitmap, if possible, and
+creates a new one otherwise.  \fIObjPtr\fR's value must have one
+of the following forms:
+.TP 20
+\fB@\fIfileName\fR
+\fIFileName\fR must be the name of a file containing a bitmap
+description in the standard X11 format.
+.TP 20
+\fIname\fR
+\fIName\fR must be the name of a bitmap defined previously with
+a call to \fBTk_DefineBitmap\fR.  The following names are pre-defined
+by Tk:
+.RS
+.TP 12
+\fBerror\fR
+The international
+.QW don't
+symbol:  a circle with a diagonal line across it.
+.TP 12
+\fBgray75\fR
+75% gray: a checkerboard pattern where three out of four bits are on.
+.TP 12
+\fBgray50\fR
+50% gray: a checkerboard pattern where every other bit is on.
+.TP 12
+\fBgray25\fR
+25% gray: a checkerboard pattern where one out of every four bits is on.
+.TP 12
+\fBgray12\fR
+12.5% gray: a pattern where one-eighth of the bits are on, consisting of
+every fourth pixel in every other row.
+.TP 12
+\fBhourglass\fR
+An hourglass symbol.
+.TP 12
+\fBinfo\fR
+A large letter
+.QW i .
+.TP 12
+\fBquesthead\fR
+The silhouette of a human head, with a question mark in it.
+.TP 12
+\fBquestion\fR
+A large question-mark.
+.TP 12
+\fBwarning\fR
+A large exclamation point.
+.PP
+In addition, the following pre-defined names are available only on the
+\fBMacintosh\fR platform:
+.TP 12
+\fBdocument\fR
+A generic document.
+.TP 12
+\fBstationery\fR
+Document stationery.
+.TP 12
+\fBedition\fR
+The \fIedition\fR symbol.
+.TP 12
+\fBapplication\fR
+Generic application icon.
+.TP 12
+\fBaccessory\fR
+A desk accessory.
+.TP 12
+\fBfolder\fR
+Generic folder icon.
+.TP 12
+\fBpfolder\fR
+A locked folder.
+.TP 12
+\fBtrash\fR
+A trash can.
+.TP 12
+\fBfloppy\fR
+A floppy disk.
+.TP 12
+\fBramdisk\fR
+A floppy disk with chip.
+.TP 12
+\fBcdrom\fR
+A cd disk icon.
+.TP 12
+\fBpreferences\fR
+A folder with prefs symbol.
+.TP 12
+\fBquerydoc\fR
+A database document icon.
+.TP 12
+\fBstop\fR
+A stop sign.
+.TP 12
+\fBnote\fR
+A face with balloon words.
+.TP 12
+\fBcaution\fR
+A triangle with an exclamation point.
+.RE
+.LP
+Under normal conditions, \fBTk_AllocBitmapFromObj\fR
+returns an identifier for the requested bitmap.  If an error
+occurs in creating the bitmap, such as when \fIobjPtr\fR refers
+to a non-existent file, then \fBNone\fR is returned and an error
+message is left in \fIinterp\fR's result if \fIinterp\fR is not
+NULL. \fBTk_AllocBitmapFromObj\fR caches information about the return
+value in \fIobjPtr\fR, which speeds up future calls to procedures
+such as \fBTk_AllocBitmapFromObj\fR and \fBTk_GetBitmapFromObj\fR.
+.PP
+\fBTk_GetBitmap\fR is identical to \fBTk_AllocBitmapFromObj\fR except
+that the description of the bitmap is specified with a string instead
+of an object.  This prevents \fBTk_GetBitmap\fR from caching the
+return value, so \fBTk_GetBitmap\fR is less efficient than
+\fBTk_AllocBitmapFromObj\fR.
+.PP
+\fBTk_GetBitmapFromObj\fR returns the token for an existing bitmap, given
+the window and description used to create the bitmap.
+\fBTk_GetBitmapFromObj\fR does not actually create the bitmap; the bitmap
+must already have been created with a previous call to
+\fBTk_AllocBitmapFromObj\fR or \fBTk_GetBitmap\fR.  The return
+value is cached in \fIobjPtr\fR, which speeds up
+future calls to \fBTk_GetBitmapFromObj\fR with the same \fIobjPtr\fR
+and \fItkwin\fR.
+.PP
+\fBTk_DefineBitmap\fR associates a name with
+in-memory bitmap data so that the name can be used in later
+calls to \fBTk_AllocBitmapFromObj\fR or \fBTk_GetBitmap\fR.  The \fInameId\fR
+argument gives a name for the bitmap;  it must not previously
+have been used in a call to \fBTk_DefineBitmap\fR.
+The arguments \fIsource\fR, \fIwidth\fR, and \fIheight\fR
+describe the bitmap.
+\fBTk_DefineBitmap\fR normally returns \fBTCL_OK\fR; if an error occurs
+(e.g. a bitmap named \fInameId\fR has already been defined) then
+\fBTCL_ERROR\fR is returned and an error message is left in
+interpreter \fIinterp\fR's result.
+Note:  \fBTk_DefineBitmap\fR expects the memory pointed to by
+\fIsource\fR to be static:  \fBTk_DefineBitmap\fR does not make
+a private copy of this memory, but uses the bytes pointed to
+by \fIsource\fR later in calls to \fBTk_AllocBitmapFromObj\fR or
+\fBTk_GetBitmap\fR.
+.PP
+Typically \fBTk_DefineBitmap\fR is used by \fB#include\fR-ing a
+bitmap file directly into a C program and then referencing
+the variables defined by the file.
+For example, suppose there exists a file \fBstip.bitmap\fR,
+which was created by the \fBbitmap\fR program and contains
+a stipple pattern.
+The following code uses \fBTk_DefineBitmap\fR to define a
+new bitmap named \fBfoo\fR:
+.CS
+Pixmap bitmap;
+#include "stip.bitmap"
+Tk_DefineBitmap(interp, "foo", stip_bits,
+    stip_width, stip_height);
+\&...
+bitmap = Tk_GetBitmap(interp, tkwin, "foo");
+.CE
+This code causes the bitmap file to be read
+at compile-time and incorporates the bitmap information into
+the program's executable image.  The same bitmap file could be
+read at run-time using \fBTk_GetBitmap\fR:
+.CS
+Pixmap bitmap;
+bitmap = Tk_GetBitmap(interp, tkwin, "@stip.bitmap");
+.CE
+The second form is a bit more flexible (the file could be modified
+after the program has been compiled, or a different string could be
+provided to read a different file), but it is a little slower and
+requires the bitmap file to exist separately from the program.
+.PP
+Tk maintains a database of all the bitmaps that are currently in use.
+Whenever possible, it will return an existing bitmap rather
+than creating a new one.
+When a bitmap is no longer used, Tk will release it automatically.
+This approach can substantially reduce server overhead, so
+\fBTk_AllocBitmapFromObj\fR and \fBTk_GetBitmap\fR should generally
+be used in preference to Xlib procedures like \fBXReadBitmapFile\fR.
+.PP
+The bitmaps returned by \fBTk_AllocBitmapFromObj\fR and \fBTk_GetBitmap\fR
+are shared, so callers should never modify them.
+If a bitmap must be modified dynamically, then it should be
+created by calling Xlib procedures such as \fBXReadBitmapFile\fR
+or \fBXCreatePixmap\fR directly.
+.PP
+The procedure \fBTk_NameOfBitmap\fR is roughly the inverse of
+\fBTk_GetBitmap\fR.
+Given an X Pixmap argument, it returns the textual description that was
+passed to \fBTk_GetBitmap\fR when the bitmap was created.
+\fIBitmap\fR must have been the return value from a previous
+call to \fBTk_AllocBitmapFromObj\fR or \fBTk_GetBitmap\fR.
+.PP
+\fBTk_SizeOfBitmap\fR returns the dimensions of its \fIbitmap\fR
+argument in the words pointed to by the \fIwidthPtr\fR and
+\fIheightPtr\fR arguments.  As with \fBTk_NameOfBitmap\fR,
+\fIbitmap\fR must have been created by \fBTk_AllocBitmapFromObj\fR or
+\fBTk_GetBitmap\fR.
+.PP
+When a bitmap is no longer needed, \fBTk_FreeBitmapFromObj\fR or
+\fBTk_FreeBitmap\fR should be called to release it.
+For \fBTk_FreeBitmapFromObj\fR the bitmap to release is specified
+with the same information used to create it; for
+\fBTk_FreeBitmap\fR the bitmap to release is specified
+with its Pixmap token.
+There should be exactly one call to \fBTk_FreeBitmapFromObj\fR
+or \fBTk_FreeBitmap\fR for each call to \fBTk_AllocBitmapFromObj\fR or
+\fBTk_GetBitmap\fR.
+.SH BUGS
+.PP
+In determining whether an existing bitmap can be used to satisfy
+a new request, \fBTk_AllocBitmapFromObj\fR and \fBTk_GetBitmap\fR
+consider only the immediate value of the string description.  For
+example, when a file name is passed to \fBTk_GetBitmap\fR,
+\fBTk_GetBitmap\fR will assume it is safe to re-use an existing
+bitmap created from the same file name:  it will not check to
+see whether the file itself has changed, or whether the current
+directory has changed, thereby causing the name to refer to
+a different file.
+.SH KEYWORDS
+bitmap, pixmap

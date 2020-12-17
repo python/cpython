@@ -1,0 +1,111 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::button n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::button \- Widget that issues a command when pressed
+.SH SYNOPSIS
+\fBttk::button\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+A \fBttk::button\fR widget displays a textual label and/or image,
+and evaluates a command when pressed.
+.SO ttk_widget
+\-class	\-compound	\-cursor
+\-image	\-state	\-style
+\-takefocus	\-text	\-textvariable
+\-underline	\-width
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-command command Command
+A script to evaluate when the widget is invoked.
+.OP \-default default Default
+May be set to one of  \fBnormal\fR, \fBactive\fR, or \fBdisabled\fR.
+In a dialog box, one button may be designated the
+.QW default
+button (meaning, roughly,
+.QW "the one that gets invoked when the user presses <Enter>" ).
+\fBactive\fR indicates that this is currently the default button;
+\fBnormal\fR means that it may become the default button, and
+\fBdisabled\fR means that it is not defaultable.
+The default is \fBnormal\fR.
+.RS
+.PP
+Depending on the theme, the default button may be displayed
+with an extra highlight ring, or with a different border color.
+.RE
+.\" Not documented -- may go away
+.\" .OP \-padding padding Padding
+.\" .OP \-foreground foreground Foreground
+.\" .OP \-font font Font
+.\" .OP \-anchor anchor Anchor
+.\" .OP \-relief relief Relief
+.SH "WIDGET COMMAND"
+.PP
+In addition to the standard
+\fBcget\fR, \fBconfigure\fR, \fBidentify\fR, \fBinstate\fR, and \fBstate\fR
+commands, buttons support the following additional widget commands:
+.TP
+\fIpathName \fBinvoke\fR
+Invokes the command associated with the button.
+.SH "STANDARD STYLES"
+.PP
+\fBTtk::button\fR widgets support the \fBToolbutton\fR style in all standard
+themes, which is useful for creating widgets for toolbars.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::button\fP is \fBTButton\fP.
+.PP
+Dynamic states: \fBactive\fP, \fBdisabled\fP, \fBpressed\fP, \fBreadonly\fP.
+.PP
+\fBTButton\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-anchor\fP \fIanchor\fP
+.br
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-bordercolor\fP \fIcolor\fP
+.br
+\fB\-compound\fP \fIcompound\fP
+.br
+\fB\-darkcolor\fP \fIcolor\fP
+.br
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-font\fP \fIfont\fP
+.br
+\fB\-highlightcolor\fP \fIcolor\fP
+.br
+\fB\-highlightthickness\fP \fIamount\fP
+.br
+\fB\-lightcolor\fP \fIcolor\fP
+.br
+\fB\-padding\fP \fIpadding\fP
+.br
+\fB\-relief\fP \fIrelief\fP
+.br
+\fB\-shiftrelief\fP \fIamount\fP
+.RS
+\fB\-shiftrelief\fP specifies how far the button contents are
+shifted down and right in the \fIpressed\fP state.
+This action provides additional skeumorphic feedback.
+.RE
+\fB\-width\fP \fIamount\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), button(n)
+.SH "KEYWORDS"
+widget, button, default, command
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

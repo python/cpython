@@ -1,0 +1,77 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_ClipboardClear 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_ClipboardClear, Tk_ClipboardAppend \- Manage the clipboard
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_ClipboardClear\fR(\fIinterp, tkwin\fR)
+.sp
+int
+\fBTk_ClipboardAppend\fR(\fIinterp, tkwin, target, format, buffer\fR)
+.SH ARGUMENTS
+.AS Tk_ClipboardClear tkwin
+.AP Tcl_Interp *interp in
+Interpreter to use for reporting errors.
+.AP Tk_Window tkwin in
+Window that determines which display's clipboard to manipulate.
+.AP Atom target in
+Conversion type for this clipboard item;  has same meaning as
+\fItarget\fR argument to \fBTk_CreateSelHandler\fR.
+.AP Atom format in
+Representation to use when data is retrieved;  has same meaning as
+\fIformat\fR argument to \fBTk_CreateSelHandler\fR.
+.AP "const char" *buffer in
+Null terminated string containing the data to be appended to the clipboard.
+.BE
+.SH DESCRIPTION
+.PP
+These two procedures manage the clipboard for Tk.
+The clipboard is typically managed by calling \fBTk_ClipboardClear\fR
+once, then calling \fBTk_ClipboardAppend\fR to add data for any
+number of targets.
+.PP
+\fBTk_ClipboardClear\fR claims the CLIPBOARD selection and frees any
+data items previously stored on the clipboard in this application.
+It normally returns \fBTCL_OK\fR, but if an error occurs it returns
+\fBTCL_ERROR\fR and leaves an error message in interpreter
+\fIinterp\fR's result.
+\fBTk_ClipboardClear\fR must be called before a sequence of
+\fBTk_ClipboardAppend\fR calls can be issued.
+.PP
+\fBTk_ClipboardAppend\fR appends a buffer of data to the clipboard.
+The first buffer for a given \fItarget\fR determines the \fIformat\fR
+for that \fItarget\fR.
+Any successive appends for that \fItarget\fR must have
+the same format or an error will be returned.
+\fBTk_ClipboardAppend\fR returns \fBTCL_OK\fR if the buffer is
+successfully copied onto the clipboard.  If the clipboard is not
+currently owned by the application, either
+because \fBTk_ClipboardClear\fR has not been called or because
+ownership of the clipboard has changed since the last call to
+\fBTk_ClipboardClear\fR,
+\fBTk_ClipboardAppend\fR returns \fBTCL_ERROR\fR and leaves an error
+message in the result of interpreter \fIinterp\fR.
+.PP
+In order to guarantee atomicity, no event handling should occur
+between \fBTk_ClipboardClear\fR and the following
+\fBTk_ClipboardAppend\fR calls (otherwise someone could retrieve
+a partially completed clipboard or claim ownership away from
+this application).
+.PP
+\fBTk_ClipboardClear\fR may invoke callbacks, including arbitrary
+Tcl scripts, as a result of losing the CLIPBOARD selection, so
+any calling function should take care to be re-entrant at the point
+\fBTk_ClipboardClear\fR is invoked.
+.SH KEYWORDS
+append, clipboard, clear, format, type

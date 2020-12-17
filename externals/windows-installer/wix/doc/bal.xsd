@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          xmlns:xse="http://schemas.microsoft.com/wix/2005/XmlSchemaExtension"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+    targetNamespace="http://schemas.microsoft.com/wix/BalExtension"
+              xmlns="http://schemas.microsoft.com/wix/BalExtension">
+    <xs:annotation>
+        <xs:documentation>
+            The source code schema for the Windows Installer XML Toolset Burn User Experience Extension.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://schemas.microsoft.com/wix/2006/wi" />
+
+    <xs:element name="Condition">
+        <xs:annotation>
+            <xs:documentation>
+                Conditions for a bundle. The condition is specified in the inner text of the element.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Bundle" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Fragment" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The condition that must evaluate to true for the installation to continue.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="Message" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Set the value to the text to display when the condition fails and the installation must be terminated.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="WixStandardBootstrapperApplication">
+        <xs:annotation>
+            <xs:documentation>
+                Configures WixStandardBootstrapperApplication for a Bundle.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="BootstrapperApplicationRef" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="LaunchTarget" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        If set, the success page will show a Launch button the user can use to launch the application being installed.
+                        The string value can be formatted using Burn variables enclosed in brackets, 
+                        to refer to installation directories and so forth.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LaunchTargetElevatedId" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Id of the target ApprovedExeForElevation element.
+                        If set with LaunchTarget, WixStdBA will launch the application through the Engine's LaunchApprovedExe method instead of through ShellExecute.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LaunchArguments" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        If set, WixStdBA will supply these arguments when launching the application specified by the LaunchTarget attribute.
+                        The string value can be formatted using Burn variables enclosed in brackets,
+                        to refer to installation directories and so forth.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LaunchHidden" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>
+                        If set to "yes", WixStdBA will launch the application specified by the LaunchTarget attribute with the SW_HIDE flag.
+                        This attribute is ignored when the LaunchTargetElevatedId attribute is specified.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LaunchWorkingFolder" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        WixStdBA will use this working folder when launching the specified application.
+                        The string value can be formatted using Burn variables enclosed in brackets,
+                        to refer to installation directories and so forth.
+                        This attribute is ignored when the LaunchTargetElevatedId attribute is specified.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LicenseFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the RTF license file. Cannot be used simultaneously with LicenseUrl.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LicenseUrl" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>URL target of the license link. Cannot be used simultaneously with LicenseFile. This attribute can be empty to hide the license link completely.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LogoFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the logo graphic.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LogoSideFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the side logo graphic.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ThemeFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the theme XML.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LocalizationFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the theme localization .wxl file.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressOptionsUI" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>If set to "yes", the Options button will not be shown and the user will not be able to choose an installation directory.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressDowngradeFailure" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>If set to "yes", attempting to installer a downgraded version of a bundle will be treated as a successful do-nothing operation.
+                    The default behavior (or when explicitly set to "no") is to treat downgrade attempts as failures. </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="SuppressRepair" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>If set to "yes", the Repair button will not be shown in the maintenance-mode UI.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ShowVersion" type="YesNoType">
+                <xs:annotation>
+                    <xs:documentation>If set to "yes", the application version will be displayed on the UI.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+          <xs:attribute name="SupportCacheOnly" type="YesNoType">
+              <xs:annotation>
+                    <xs:documentation>If set to "yes", the bundle can be pre-cached using the /cache command line argument.</xs:documentation>
+              </xs:annotation>
+          </xs:attribute>
+            <xs:attribute name="ShowFilesInUse" type="YesNoType">
+              <xs:annotation>
+                <xs:documentation>If set to "yes", WixStdBA will show a page allowing the user to restart applications when files are in use.</xs:documentation>
+              </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:attribute name="PrereqSupportPackage" type="YesNoType">
+        <xs:annotation>
+            <xs:documentation>
+                When set to "yes", the Prereq BA will plan the package to be installed if its InstallCondition is "true" or empty.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="ExePackage" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="MsiPackage" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="MspPackage" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="MsuPackage" />
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="Overridable" type="YesNoType">
+        <xs:annotation>
+            <xs:documentation>
+                When set to "yes", lets the user override the variable's default value by specifying another value on the command line,
+                in the form Variable=Value. Otherwise, WixStdBA won't overwrite the default value and will log 
+                "Ignoring attempt to set non-overridable variable: 'BAR'."
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="Variable" />
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="UseUILanguages" type="YesNoType">
+        <xs:annotation>
+            <xs:documentation>
+                When set to "yes", causes WixStdBA/Prereq BA to use the user's control panel language settings. Otherwise, the previous API (which uses locale instead of language) is used to maintain compatiblity with previous versions of WiX.
+                On Vista and newer platforms, this value set to "yes" will search all specified user languages, including fallback languages, in order.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="BootstrapperApplication" />
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="BootstrapperApplicationRef" />
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:element name="WixManagedBootstrapperApplicationHost">
+        <xs:annotation>
+            <xs:documentation>
+                Configures the ManagedBootstrapperApplicationHost for a Bundle.
+            </xs:documentation>
+            <xs:appinfo>
+                <xse:parent namespace="http://schemas.microsoft.com/wix/2006/wi" ref="BootstrapperApplicationRef" />
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="LicenseFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the RTF license file. Cannot be used simultaneously with LicenseUrl.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LicenseUrl" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>URL target of the license link. Cannot be used simultaneously with LicenseFile.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LogoFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the logo graphic.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ThemeFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the theme XML.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="LocalizationFile" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Source file of the theme localization .wxl file.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="NetFxPackageId" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Identifier of the bundle package that contains the .NET Framework. ManagedBootstrapperApplicationHost uses
+                        this identifier to determine whether .NET needs to be installed before the managed bootstrapper application
+                        can be launched.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="YesNoType">
+        <xs:annotation>
+            <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

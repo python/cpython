@@ -1,0 +1,597 @@
+#
+# Basic tests for class definition and method/proc access
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.2
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+test basic-1.0 {empty string as class name should fail but not crash
+} -body {
+    list [catch {itcl::class "" {}} err] $err
+} -result {1 {invalid class name ""}}
+
+# ----------------------------------------------------------------------
+#  Simple class definition
+# ----------------------------------------------------------------------
+
+variable setup {
+    itcl::class Counter {
+        constructor {args} {
+            incr num
+            eval configure $args
+        }
+        destructor {
+            if {![info exists num]} {
+                lappend ::tcltest::itcl_basic_errors "unexpected: common deleted before destructor got called"
+            }
+            incr num -1
+        }
+
+        method ++ {} {
+            return [incr val $by]
+        }
+        proc num {} {
+            return $num
+        }
+        public variable by 1
+        protected variable val 0
+        private common num 0
+    }
+}
+
+variable cleanup {
+    itcl::delete class Counter
+}
+
+variable setup2 $setup
+append setup2 {
+    set x [Counter x]
+}
+
+variable cleanup2 $cleanup
+append cleanup2 {
+    unset x
+}
+
+variable setup3 $setup
+append setup3 {
+    Counter -foo
+}
+
+variable setup4 $setup
+append setup4 {
+    Counter c
+}
+
+proc check_itcl_basic_errors {} {
+    if {[info exists ::tcltest::itcl_basic_errors] && [llength $::tcltest::itcl_basic_errors]} {
+        error "following errors occurs during tests:\n  [join $::tcltest::itcl_basic_errors "\n  "]"
+    }
+}
+
+test basic-1.1 {define a simple class
+} -setup $setup -body {
+} -cleanup $cleanup -result {}
+
+test basic-1.2 {class is now defined
+} -setup $setup -body {
+    itcl::find classes Counter
+} -cleanup $cleanup -result Counter
+
+test basic-1.3 {access command exists with class name
+} -setup $setup -body {
+    namespace which -command Counter
+} -cleanup $cleanup -result ::Counter
+
+test basic-1.4 {create a simple object
+} -setup $setup2 -body {
+    return $x
+} -cleanup $cleanup2 -result x
+
+test basic-1.5a {object names cannot be duplicated
+} -setup $setup2 -body {
+    list [catch "Counter x" msg] $msg
+} -cleanup $cleanup2 -result {1 {command "x" already exists in namespace "::"}}
+
+test basic-1.5b {built-in commands cannot be clobbered
+} -setup $setup -body {
+    list [catch "Counter info" msg] $msg
+} -cleanup $cleanup -result {1 {command "info" already exists in namespace "::"}}
+
+test basic-1.6 {objects have an access command
+} -setup $setup2 -body {
+    namespace which -command x
+} -cleanup $cleanup2 -result ::x
+
+test basic-1.7a {objects are added to the master list
+} -setup $setup2 -body {
+    itcl::find objects x
+} -cleanup $cleanup2 -result x
+
+test basic-1.7b {objects are added to the master list
+} -setup $setup2 -body {
+    itcl::find objects -class Counter x
+} -cleanup $cleanup2 -result x
+
+test basic-1.8 {objects can be deleted
+} -setup $setup2 -body {
+    list [itcl::delete object x] [namespace which -command x]
+} -cleanup $cleanup2 -result {{} {}}
+
+test basic-1.9 {objects can be recreated with the same name
+} -setup $setup2 -body {
+    itcl::delete object x
+    Counter x
+} -cleanup $cleanup2 -result x
+
+test basic-1.10 {objects can be destroyed by deleting their access command
+} -setup $setup2 -body {
+    rename ::x {}
+    itcl::find objects x
+} -cleanup $cleanup2 -result {}
+
+test basic-1.11 {find command supports object names starting with -
+} -setup $setup3 -body {
+    itcl::find objects -class Counter -foo
+} -cleanup $cleanup -result -foo
+
+test basic-1.12 {is command with class argument
+} -setup $setup -body {
+    itcl::is class Counter
+} -cleanup $cleanup -result 1
+
+test basic-1.13 {is command with class argument (global namespace)
+} -setup $setup -body {
+    itcl::is class ::Counter
+} -cleanup $cleanup -result 1
+
+test basic-1.14 {is command with class argument (wrapped in code command)
+} -setup $setup -body {
+    itcl::is class [itcl::code Counter]
+} -cleanup $cleanup -result 1
+
+test basic-1.15 {is command with class argument (class does not exist)
+} -body {
+    itcl::is class Count
+} -result 0
+
+test basic-1.16 {is command with object argument
+} -setup $setup3 -body {
+    itcl::is object -foo
+} -cleanup $cleanup -result 1
+
+test basic-1.17 {is command with object argument (object does not exist)
+} -body {
+    itcl::is object xxx
+} -result 0
+
+test basic-1.18 {is command with object argument (with code command)
+} -setup $setup3 -body {
+    itcl::is object [itcl::code -- -foo]
+} -cleanup $cleanup -result 1
+
+test basic-1.19 {classes can be unicode
+} -body {
+    itcl::class \u6210bcd { method foo args { return "bar" } }
+    \u6210bcd #auto
+} -result "\u6210bcd0"
+
+test basic-1.20 {
+    classes can be unicode
+} -body {
+    \u6210bcd0 foo
+} -cleanup {
+    ::itcl::delete class \u6210bcd
+} -result {bar}
+
+# ----------------------------------------------------------------------
+#  #auto names
+# ----------------------------------------------------------------------
+test basic-2.1 {create an object with an automatic name
+} -setup $setup -body {
+    Counter #auto
+} -cleanup $cleanup -result {counter0}
+
+test basic-2.2 {bury "#auto" within object name
+} -setup $setup -body {
+    Counter x#autoy
+} -cleanup $cleanup -result {xcounter0y}
+
+test basic-2.3 {bury "#auto" within object name
+} -setup $setup -body {
+    Counter a#aut#autob
+} -cleanup $cleanup -result {a#autcounter0b}
+
+test basic-2.4 {"#auto" is smart enough to skip names that are taken
+} -setup $setup -body {
+    Counter counter3
+    Counter #auto
+} -cleanup $cleanup -result {counter0}
+
+test basic-2.5 {"#auto" with :: at front of name
+} -body {
+    itcl::class AutoCheck {}
+    set result [AutoCheck ::#auto]
+    rename AutoCheck {}
+    set result
+} -result {::autoCheck0}
+
+test basic-2.6 {"#auto" with :: at front of name inside method
+} -body {
+    itcl::class AutoCheck {
+        proc new {} {
+            return [AutoCheck ::#auto]
+        }
+    }
+    set result [AutoCheck::new]
+    rename AutoCheck {}
+    set result
+} -result {::autoCheck0}
+
+test basic-2.7 {"#auto" with :: at front of name inside method inside namespace
+} -body {
+    namespace eval AutoCheckNs {}
+    itcl::class AutoCheckNs::AutoCheck {
+        proc new {} {
+            return [AutoCheckNs::AutoCheck ::#auto]
+        }
+    }
+    set result [AutoCheckNs::AutoCheck::new]
+    namespace delete AutoCheckNs
+    set result
+} -cleanup {
+    namespace delete ::itcl::internal::variables::AutoCheckNs
+} -result {::autoCheck0}
+
+test basic-3.1 {object access command works
+} -setup $setup4 -body {
+    list [c ++] [c ++] [c ++]
+} -cleanup $cleanup -result {1 2 3}
+
+test basic-3.2 {errors produce usage info
+} -setup $setup4 -body {
+    list [catch "c xyzzy" msg] $msg
+} -cleanup $cleanup -result {1 {bad option "xyzzy": should be one of...
+  c ++
+  c cget -option
+  c configure ?-option? ?value -option value...?
+  c isa className}}
+
+test basic-3.3 {built-in configure can query public variables
+} -setup $setup4 -body {
+    c configure
+} -cleanup $cleanup -result {{-by 1 1}}
+
+test basic-3.4 {built-in configure can query one public variable
+} -setup $setup4 -body {
+    c configure -by
+} -cleanup $cleanup -result {-by 1 1}
+
+test basic-3.5 {built-in configure can set public variable
+} -setup $setup4 -body {
+    list [c configure -by 2] [c cget -by]
+} -cleanup $cleanup -result {{} 2}
+
+test basic-3.6 {configure actually changes public variable
+} -setup $setup4 -body {
+    list [c ++] [c ++]
+} -cleanup $cleanup -result {1 2}
+
+test basic-3.7 {class procs can be accessed
+} -setup $setup -body {
+    Counter::num
+} -cleanup $cleanup -result 0
+
+test basic-3.8 {obsolete syntax is no longer allowed
+} -setup $setup -body {
+    list [catch "Counter :: num" msg] $msg
+} -cleanup $cleanup -result {1 {syntax "class :: proc" is an anachronism
+[incr Tcl] no longer supports this syntax.
+Instead, remove the spaces from your procedure invocations:
+  Counter::num ?args?}}
+
+
+# ----------------------------------------------------------------------
+#  Classes can be destroyed and redefined
+# ----------------------------------------------------------------------
+test basic-4.1 {classes can be destroyed
+} -setup $setup -body {
+    list [itcl::delete class Counter] \
+         [itcl::find classes Counter] \
+         [namespace children :: Counter] \
+         [namespace which -command Counter]
+} -result {{} {} {} {}}
+
+test basic-4.2 {classes can be redefined
+} -body {
+    itcl::class Counter {
+        method ++ {} {
+            return [incr val $by]
+        }
+        public variable by 1
+        protected variable val 0
+    }
+} -result {}
+
+test basic-4.3 {the redefined class is actually different
+} -body {
+    list [catch "Counter::num" msg] $msg
+} -result {1 {invalid command name "Counter::num"}}
+
+test basic-4.4 {objects can be created from the new class
+} -body {
+    list [Counter #auto] [Counter #auto]
+} -result {counter0 counter1}
+
+test basic-4.5 {namespaces for #auto are prepended to the command name
+} -body {
+    namespace eval someNS1 {}
+    namespace eval someNS2 {}
+    list [Counter someNS1::#auto] [Counter someNS2::#auto]
+} -cleanup {
+    ::itcl::delete object someNS1::counter2 someNS2::counter3
+} -result "[list someNS1::counter2 someNS2::counter3]"
+
+test basic-4.6 {when a class is destroyed, its objects are deleted
+} -body {
+    list [lsort [itcl::find objects counter*]] \
+         [itcl::delete class Counter] \
+         [lsort [itcl::find objects counter*]]
+} -result {{counter0 counter1} {} {}}
+
+check_itcl_basic_errors
+
+test basic-4.7 {clean-up of internal facilities
+} -setup $setup4 -body {
+    # check callbacks are called if class gets removed using all possible ways:
+    # objects are properly destroyed,
+    # callback removing the namespace for the common private and protected variables
+    # (in ITCL_VARIABLES_NAMESPACE) is called, etc
+    set ::tcltest::itcl_basic_errors {}
+    set ivns ::itcl::internal::variables[namespace which Counter]
+    set result {}
+    lappend result [namespace exists $ivns] [expr {[namespace which -command c] ne ""}]
+    eval $cleanup
+    lappend result [namespace exists $ivns] [expr {[namespace which -command c] ne ""}]
+    eval $setup4
+    lappend result [namespace exists $ivns] [expr {[namespace which -command c] ne ""}]
+    rename Counter {}
+    lappend result [namespace exists $ivns] [expr {[namespace which -command c] ne ""}]
+    eval $setup4
+    lappend result [namespace exists $ivns] [expr {[namespace which -command c] ne ""}]
+    namespace delete Counter
+    lappend result [namespace exists $ivns] [expr {[namespace which -command c] ne ""}]
+    lappend result {*}$::tcltest::itcl_basic_errors
+} -cleanup {
+    unset -nocomplain ivns ::tcltest::itcl_basic_errors
+} -result [lrepeat 3 1 1 0 0]
+
+# ----------------------------------------------------------------------
+#  Namespace variables
+# ----------------------------------------------------------------------
+test basic-5.1 {define a simple class with variables in the namespace
+} -body {
+    itcl::class test_globals {
+        common g1 "global1"
+        proc getval {name} {
+            variable $name
+            return [set [namespace tail $name]]
+        }
+        proc setval {name val} {
+            variable $name
+            return [set [namespace tail $name] $val]
+        }
+        method do {args} {
+            return [eval $args]
+        }
+    }
+    namespace eval test_globals {
+        variable g2 "global2"
+    }
+} -result {}
+
+test basic-5.2 {create an object for the tests
+} -body {
+    test_globals #auto
+} -result {test_globals0}
+
+test basic-5.3 {common variables live in the namespace
+} -body {
+    lsort [info vars ::test_globals::*]
+} -result {::test_globals::g1 ::test_globals::g2}
+
+test basic-5.4 {common variables can be referenced transparently
+} -body {
+    list [catch {test_globals0 do set g1} msg] $msg
+} -result {0 global1}
+
+test basic-5.5 {namespace variables require a declaration
+} -body {
+    list [catch {test_globals0 do set g2} msg] $msg
+} -result {1 {can't read "g2": no such variable}}
+
+test basic-5.6a {variable accesses variables within namespace
+} -body {
+    list [catch {test_globals::getval g1} msg] $msg
+} -result {0 global1}
+
+test basic-5.6b {variable accesses variables within namespace
+} -body {
+    list [catch {test_globals::getval g2} msg] $msg
+} -result {0 global2}
+
+test basic-5.7 {variable command will not find vars in other namespaces
+} -body {
+    set ::test_global_0 "g0"
+    list [catch {test_globals::getval test_global_0} msg] $msg \
+         [catch {test_globals::getval ::test_global_0} msg] $msg \
+} -result {1 {can't read "test_global_0": no such variable} 0 g0}
+
+test basic-5.8 {to create globals in a namespace, use the full path
+} -body {
+    test_globals::setval ::test_global_1 g1
+    namespace eval :: {lsort [info globals test_global_*]}
+} -result {test_global_0 test_global_1}
+
+test basic-5.9 {variable names can have ":" in them
+} -body {
+    test_globals::setval ::test:global:2 g2
+    namespace eval :: {info globals test:global:2}
+} -result {test:global:2}
+
+if {[namespace which [namespace current]::test_globals] ne {}} {
+    ::itcl::delete class test_globals
+}
+
+
+
+# ----------------------------------------------------------------------
+#  Array variables
+# ----------------------------------------------------------------------
+test basic-6.1 {set up a class definition with array variables
+} -body {
+    proc test_arrays_get {name} {
+        upvar $name x
+        set rlist {}
+        foreach index [lsort [array names x]] {
+            lappend rlist [list $index $x($index)]
+        }
+        return $rlist
+    }
+    itcl::class test_arrays {
+        variable nums
+        common undefined
+
+        common colors
+        set colors(red)   #ff0000
+        set colors(green) #00ff00
+        set colors(blue)  #0000ff
+
+        constructor {} {
+            set nums(one) 1
+            set nums(two) 2
+            set nums(three) 3
+
+            set undefined(a) A
+            set undefined(b) B
+        }
+        method do {args} {
+            return [eval $args]
+        }
+    }
+    test_arrays #auto
+} -result {test_arrays0}
+
+test basic-6.2 {test array access for instance variables
+} -body {
+    lsort [test_arrays0 do array get nums]
+} -result {1 2 3 one three two}
+
+test basic-6.3 {test array access for commons
+} -body {
+    lsort [test_arrays0 do array get colors]
+} -result [list #0000ff #00ff00 #ff0000 blue green red]
+
+test basic-6.4 {test array access for instance variables via "upvar"
+} -body {
+    test_arrays0 do test_arrays_get nums
+} -result {{one 1} {three 3} {two 2}}
+
+test basic-6.5 {test array access for commons via "upvar"
+} -body {
+    test_arrays0 do test_arrays_get colors
+} -result {{blue #0000ff} {green #00ff00} {red #ff0000}}
+
+test basic-6.6a {test array access for commons defined in constructor
+} -body {
+    lsort [test_arrays0 do array get undefined]
+} -result {A B a b}
+
+test basic-6.6b {test array access for commons defined in constructor
+} -body {
+    test_arrays0 do test_arrays_get undefined
+} -result {{a A} {b B}}
+
+test basic-6.6c {test array access for commons defined in constructor
+} -body {
+    list [test_arrays0 do set undefined(a)] [test_arrays0 do set undefined(b)]
+} -result {A B}
+
+test basic-6.7 {common variables can be unset
+} -body {
+    test_arrays0 do unset undefined
+    test_arrays0 do array names undefined
+} -result {}
+
+test basic-6.8 {common variables can be redefined
+} -body {
+    test_arrays0 do set undefined "scalar"
+} -result {scalar}
+
+proc testVarResolver {{access private} {init 0}} {
+  eval [string map [list \$access $access \$init $init] {
+    itcl::class A {
+	$access common cv "A::cv"
+	public proc cv {} {set cv}
+    }
+    itcl::class B {
+	inherit A
+	public common res {}
+	lappend res [info exists cv]
+	if {$init} {
+	    $access common cv ""
+	} else {
+	    $access common cv
+	}
+	lappend res [info exists cv]
+	lappend cv "B::cv-add"
+	public proc cv {} {set cv}
+    }
+    lappend B::res [A::cv] [B::cv]
+    set B::res
+  }]
+}
+test basic-7.1-a {variable lookup before a common creation (bug [777ae99cfb])} -body {
+    # private uninitialized var:
+    testVarResolver private 0
+} -result {0 0 A::cv B::cv-add} -cleanup {
+    itcl::delete class B A
+}
+test basic-7.1-b {variable lookup before a common creation (bug [777ae99cfb])} -body {
+    # public uninitialized var:
+    testVarResolver public 0
+} -result {1 0 A::cv B::cv-add} -cleanup {
+    itcl::delete class B A
+}
+test basic-7.2-a {variable lookup before a common creation (bug [777ae99cfb])} -body {
+    # private initialized var:
+    testVarResolver private 1
+} -result {0 1 A::cv B::cv-add} -cleanup {
+    itcl::delete class B A
+}
+test basic-7.2-b {variable lookup before a common creation (bug [777ae99cfb])} -body {
+    # public initialized var:
+    testVarResolver public 1
+} -result {1 1 A::cv B::cv-add} -cleanup {
+    itcl::delete class B A
+}
+
+if {[namespace which test_arrays] ne {}} {
+    ::itcl::delete class test_arrays
+}
+check_itcl_basic_errors
+rename check_itcl_basic_errors {}
+
+::tcltest::cleanupTests
+return

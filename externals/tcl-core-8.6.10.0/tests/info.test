@@ -1,0 +1,2421 @@
+# -*- tcl -*-
+# Commands covered:  info
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2006      ActiveState
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# DO NOT DELETE THIS LINE
+
+if {{::tcltest} ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Set up namespaces needed to test operation of "info args", "info body",
+# "info default", and "info procs" with imported procedures.
+
+catch {namespace delete test_ns_info1 test_ns_info2}
+
+namespace eval test_ns_info1 {
+    namespace export *
+    proc p {x} {return "x=$x"}
+    proc q {{y 27} {z {}}} {return "y=$y"}
+}
+
+test info-1.1 {info args option} {
+    proc t1 {a bbb c} {return foo}
+    info args t1
+} {a bbb c}
+test info-1.2 {info args option} {
+    proc t1 {{a default1} {bbb default2} {c default3} args} {return foo}
+    info a t1
+} {a bbb c args}
+test info-1.3 {info args option} {
+    proc t1 "" {return foo}
+    info args t1
+} {}
+test info-1.4 {info args option} -body {
+    catch {rename t1 {}}
+    info args t1
+} -returnCodes error -result {"t1" isn't a procedure}
+test info-1.5 {info args option} -body {
+    info args set
+} -returnCodes error -result {"set" isn't a procedure}
+test info-1.6 {info args option} {
+    proc t1 {a b} {set c 123; set d $c}
+    t1 1 2
+    info args t1
+} {a b}
+test info-1.7 {info args option} {
+    catch {namespace delete test_ns_info2}
+    namespace eval test_ns_info2 {
+        namespace import ::test_ns_info1::*
+        list [info args p] [info args q]
+    }
+} {x {y z}}
+
+test info-2.1 {info body option} {
+    proc t1 {} {body of t1}
+    info body t1
+} {body of t1}
+test info-2.2 {info body option} -body {
+    info body set
+} -returnCodes error -result {"set" isn't a procedure}
+test info-2.3 {info body option} -body {
+    info args set 1
+} -returnCodes error -result {wrong # args: should be "info args procname"}
+test info-2.4 {info body option} {
+    catch {namespace delete test_ns_info2}
+    namespace eval test_ns_info2 {
+        namespace import ::test_ns_info1::*
+        list [info body p] [info body q]
+    }
+} {{return "x=$x"} {return "y=$y"}}
+# Prior to 8.3.0 this would cause a crash because [info body]
+# would return the bytecompiled version of foo, which the catch
+# would then try and eval out of the foo context, accessing
+# compiled local indices
+test info-2.5 {info body option, returning bytecompiled bodies} -body {
+    catch {unset args}
+    proc foo {args} {
+	foreach v $args {
+	    upvar $v var
+	    return "variable $v existence: [info exists var]"
+	}
+    }
+    foo a
+    eval [info body foo]
+} -returnCodes error -result {can't read "args": no such variable}
+# Fix for problem tested for in info-2.5 caused problems when
+# procedure body had no string rep (i.e. was not yet bytecode)
+# causing an empty string to be returned [Bug #545644]
+test info-2.6 {info body option, returning list bodies} {
+    proc foo args [list subst bar]
+    list [string bytelength [info body foo]] \
+	    [foo; string bytelength [info body foo]]
+} {9 9}
+
+proc testinfocmdcount {} {
+    set x [info cmdcount]
+    set y 12345
+    set z [info cm]
+    expr {$z-$x}
+}
+test info-3.1 {info cmdcount compiled} {
+    testinfocmdcount
+} 4
+test info-3.2 {info cmdcount evaled} -body {
+    set x [info cmdcount]
+    set y 12345
+    set z [info cm]
+    expr {$z-$x}
+} -cleanup {unset x y z} -result 4
+test info-3.3 {info cmdcount evaled} -body [info body testinfocmdcount] -cleanup {unset x y z} -result 4
+test info-3.4 {info cmdcount option} -body {
+    info cmdcount 1
+} -returnCodes error -result {wrong # args: should be "info cmdcount"}
+
+test info-4.1 {info commands option} -body {
+    proc t1 {} {}
+    proc t2 {} {}
+    set x " [info commands] "
+    list [string match {* t1 *} $x] [string match {* t2 *} $x] \
+            [string match {* set *} $x] [string match {* list *} $x]
+} -cleanup {unset x} -result {1 1 1 1}
+test info-4.2 {info commands option} -body {
+    proc t1 {} {}
+    rename t1 {}
+    string match {* t1 *} \
+	[info comm]
+} -result 0
+test info-4.3 {info commands option} {
+    proc _t1_ {} {}
+    proc _t2_ {} {}
+    info commands _t1_
+} _t1_
+test info-4.4 {info commands option} {
+    proc _t1_ {} {}
+    proc _t2_ {} {}
+    lsort [info commands _t*]
+} {_t1_ _t2_}
+catch {rename _t1_ {}}
+catch {rename _t2_ {}}
+test info-4.5 {info commands option} -returnCodes error -body {
+    info commands a b
+} -result {wrong # args: should be "info commands ?pattern?"}
+# Also some tests in namespace.test
+
+test info-5.1 {info complete option} -body {
+    info complete
+} -returnCodes error -result {wrong # args: should be "info complete command"}
+test info-5.2 {info complete option} {
+    info complete abc
+} 1
+test info-5.3 {info complete option} {
+    info complete "\{abcd "
+} 0
+test info-5.4 {info complete option} {
+    info complete {# Comment should be complete command}
+} 1
+test info-5.5 {info complete option} {
+    info complete {[a [b] }
+} 0
+test info-5.6 {info complete option} {
+    info complete {[a [b]}
+} 0
+
+test info-6.1 {info default option} {
+    proc t1 {a b {c d} {e "long default value"}} {}
+    info default t1 a value
+} 0
+test info-6.2 {info default option} -body {
+    proc t1 {a b {c d} {e "long default value"}} {}
+    set value 12345
+    info d t1 a value
+    return $value
+} -cleanup {unset value} -result {}
+test info-6.3 {info default option} -body {
+    proc t1 {a b {c d} {e "long default value"}} {}
+    info default t1 c value
+} -cleanup {unset value} -result 1
+test info-6.4 {info default option} -body {
+    proc t1 {a b {c d} {e "long default value"}} {}
+    set value 12345
+    info default t1 c value
+    return $value
+} -cleanup {unset value} -result d
+test info-6.5 {info default option} -body {
+    proc t1 {a b {c d} {e "long default value"}} {}
+    set value 12345
+    set x [info default t1 e value]
+    list $x $value
+} -cleanup {unset x value} -result {1 {long default value}}
+test info-6.6 {info default option} -returnCodes error -body {
+    info default a b
+} -result {wrong # args: should be "info default procname arg varname"}
+test info-6.7 {info default option} -returnCodes error -body {
+    info default _nonexistent_ a b
+} -result {"_nonexistent_" isn't a procedure}
+test info-6.8 {info default option} -returnCodes error -body {
+    proc t1 {a b} {}
+    info default t1 x value
+} -result {procedure "t1" doesn't have an argument "x"}
+test info-6.9 {info default option} -returnCodes error -setup {
+    catch {unset a}
+} -cleanup {unset a} -body {
+    set a(0) 88
+    proc t1 {a b} {}
+    info default t1 a a
+} -returnCodes error -result {can't set "a": variable is array}
+test info-6.10 {info default option} -setup {
+    catch {unset a}
+} -cleanup {unset a} -body {
+    set a(0) 88
+    proc t1 {{a 18} b} {}
+    info default t1 a a
+} -returnCodes error -result {can't set "a": variable is array}
+test info-6.11 {info default option} {
+    catch {namespace delete test_ns_info2}
+    namespace eval test_ns_info2 {
+        namespace import ::test_ns_info1::*
+        list [info default p x foo] $foo [info default q y bar] $bar
+    }
+} {0 {} 1 27}
+
+test info-7.1 {info exists option} -body {
+    set value foo
+    info exists value
+} -cleanup {unset value} -result 1
+
+test info-7.2 {info exists option} -setup {catch {unset _nonexistent_}} -body {
+    info exists _nonexistent_
+} -result 0
+test info-7.3 {info exists option} {
+    proc t1 {x} {return [info exists x]}
+    t1 2
+} 1
+test info-7.4 {info exists option} -body {
+    proc t1 {x} {
+        global _nonexistent_
+        return [info exists _nonexistent_]
+    }
+    t1 2
+} -setup {unset -nocomplain _nonexistent_} -result 0
+test info-7.5 {info exists option} {
+    proc t1 {x} {
+        set y 47
+        return [info exists y]
+    }
+    t1 2
+} 1
+test info-7.6 {info exists option} {
+    proc t1 {x} {return [info exists value]}
+    t1 2
+} 0
+test info-7.7 {info exists option} -setup {
+    catch {unset x}
+} -body {
+    set x(2) 44
+    list [info exists x] [info exists x(1)] [info exists x(2)]
+} -result {1 0 1}
+catch {unset x}
+test info-7.8 {info exists option} -body {
+    info exists
+} -returnCodes error -result {wrong # args: should be "info exists varName"}
+test info-7.9 {info exists option} -body {
+    info exists 1 2
+} -returnCodes error -result {wrong # args: should be "info exists varName"}
+
+test info-8.1 {info globals option} -body {
+    set x 1
+    set y 2
+    set value 23
+    set a " [info globals] "
+    list [string match {* x *} $a] [string match {* y *} $a] \
+            [string match {* value *} $a] [string match {* _foobar_ *} $a]
+} -cleanup {unset x y value a} -result {1 1 1 0}
+test info-8.2 {info globals option} -body {
+    set _xxx1 1
+    set _xxx2 2
+    lsort [info g _xxx*]
+} -cleanup {unset _xxx1 _xxx2} -result {_xxx1 _xxx2}
+test info-8.3 {info globals option} -returnCodes error -body {
+    info globals 1 2
+} -result {wrong # args: should be "info globals ?pattern?"}
+test info-8.4 {info globals option: may have leading namespace qualifiers} -body {
+    set x 0
+    list [info globals x] [info globals :x] [info globals ::x] [info globals :::x] [info globals ::::x]
+} -cleanup {unset x} -result {x {} x x x}
+test info-8.5 {info globals option: only return existing global variables} {
+    -setup {
+	unset -nocomplain ::NO_SUCH_VAR
+	proc evalInProc script {eval $script}
+    }
+    -body {
+	evalInProc {global NO_SUCH_VAR; info globals NO_SUCH_VAR}
+    }
+    -cleanup {
+	rename evalInProc {}
+    }
+    -result {}
+}
+
+test info-9.1 {info level option} {
+    info level
+} 0
+test info-9.2 {info level option} {
+    proc t1 {a b} {
+        set x [info le]
+        set y [info level 1]
+        list $x $y
+    }
+    t1 146 testString
+} {1 {t1 146 testString}}
+test info-9.3 {info level option} {
+    proc t1 {a b} {
+        t2 [expr $a*2] $b
+    }
+    proc t2 {x y} {
+        list [info level] [info level 1] [info level 2] [info level -1] \
+                [info level 0]
+    }
+    t1 146 {a {b c} {{{c}}}}
+} {2 {t1 146 {a {b c} {{{c}}}}} {t2 292 {a {b c} {{{c}}}}} {t1 146 {a {b c} {{{c}}}}} {t2 292 {a {b c} {{{c}}}}}}
+test info-9.4 {info level option} {
+    proc t1 {} {
+        set x [info level]
+        set y [info level 1]
+        list $x $y
+    }
+    t1
+} {1 t1}
+test info-9.5 {info level option} -body {
+    info level 1 2
+} -returnCodes error -result {wrong # args: should be "info level ?number?"}
+test info-9.6 {info level option} -body {
+    info level 123a
+} -returnCodes error -result {expected integer but got "123a"}
+test info-9.7 {info level option} -body {
+    info level 0
+} -returnCodes error -result {bad level "0"}
+test info-9.8 {info level option} -body {
+    proc t1 {} {info level -1}
+    t1
+} -returnCodes error -result {bad level "-1"}
+test info-9.9 {info level option} -body {
+    proc t1 {x} {info level $x}
+    t1 -3
+} -returnCodes error -result {bad level "-3"}
+test info-9.10 {info level option, namespaces} -body {
+    namespace eval t {info level 0}
+} -cleanup {
+    namespace delete t
+} -result {namespace eval t {info level 0}}
+test info-9.11 {info level option, aliases} -constraints knownBug -setup {
+    proc w {x y z} {info level 0}
+    interp alias {} a {} w a b
+} -body {
+    a c
+} -cleanup {
+    rename a {}
+    rename w {}
+} -result {a c}
+test info-9.12 {info level option, ensembles} -constraints knownBug -setup {
+    proc w {x y z} {info level 0}
+    namespace ensemble create -command a -map {foo ::w}
+} -body {
+    a foo 1 2 3
+} -cleanup {
+    rename a {}
+    rename w {}
+} -result {a foo 1 2 3}
+
+set savedLibrary $tcl_library
+test info-10.1 {info library option} -body {
+    info library x
+} -returnCodes error -result {wrong # args: should be "info library"}
+test info-10.2 {info library option} {
+    set tcl_library 12345
+    info library
+} {12345}
+test info-10.3 {info library option} -body {
+    unset tcl_library
+    info library
+} -returnCodes error -result {no library has been specified for Tcl}
+set tcl_library $savedLibrary; unset savedLibrary
+
+test info-11.1 {info loaded option} -body {
+    info loaded a b
+} -returnCodes error -result {wrong # args: should be "info loaded ?interp?"}
+test info-11.2 {info loaded option} -body {
+    info loaded {}; info loaded gorp
+} -returnCodes error -result {could not find interpreter "gorp"}
+
+test info-12.1 {info locals option} -body {
+    set a 22
+    proc t1 {x y} {
+        set b 13
+        set c testing
+        global a
+	global aa
+	set aa 23
+        return [info locals]
+    }
+    lsort [t1 23 24]
+} -cleanup {unset a aa} -result {b c x y}
+test info-12.2 {info locals option} {
+    proc t1 {x y} {
+        set xx1 2
+        set xx2 3
+        set y 4
+        return [info loc x*]
+    }
+    lsort [t1 2 3]
+} {x xx1 xx2}
+test info-12.3 {info locals option} -body {
+    info locals 1 2
+} -returnCodes error -result {wrong # args: should be "info locals ?pattern?"}
+test info-12.4 {info locals option} {
+    info locals
+} {}
+test info-12.5 {info locals option} {
+    proc t1 {} {return [info locals]}
+    t1
+} {}
+test info-12.6 {info locals vs unset compiled locals} {
+    proc t1 {lst} {
+        foreach $lst $lst {}
+        unset lst
+        return [info locals]
+    }
+    lsort [t1 {a b c c d e f}]
+} {a b c d e f}
+test info-12.7 {info locals with temporary variables} {
+    proc t1 {} {
+        foreach a {b c} {}
+        info locals
+    }
+    t1
+} {a}
+
+test info-13.1 {info nameofexecutable option} -returnCodes error -body {
+    info nameofexecutable foo
+} -result {wrong # args: should be "info nameofexecutable"}
+
+test info-14.1 {info patchlevel option} -body {
+    set a [info patchlevel]
+    regexp {[0-9]+\.[0-9]+([p[0-9]+)?} $a
+} -cleanup {unset a} -result 1
+test info-14.2 {info patchlevel option} -returnCodes error -body {
+    info patchlevel a
+} -result {wrong # args: should be "info patchlevel"}
+test info-14.3 {info patchlevel option} -setup {
+    set t $tcl_patchLevel
+} -body {
+    unset tcl_patchLevel
+    info patchlevel
+} -cleanup {
+    set tcl_patchLevel $t; unset t
+} -returnCodes error -result {can't read "tcl_patchLevel": no such variable}
+
+test info-15.1 {info procs option} -body {
+    proc t1 {} {}
+    proc t2 {} {}
+    set x " [info procs] "
+    list [string match {* t1 *} $x] [string match {* t2 *} $x] \
+            [string match {* _undefined_ *} $x]
+} -cleanup {unset x} -result {1 1 0}
+test info-15.2 {info procs option} {
+    proc _tt1 {} {}
+    proc _tt2 {} {}
+    lsort [info pr _tt*]
+} {_tt1 _tt2}
+catch {rename _tt1 {}}
+catch {rename _tt2 {}}
+test info-15.3 {info procs option} -body {
+    info procs 2 3
+} -returnCodes error -result {wrong # args: should be "info procs ?pattern?"}
+test info-15.4 {info procs option} -setup {
+    catch {namespace delete test_ns_info2}
+} -body {
+    namespace eval test_ns_info2 {
+        namespace import ::test_ns_info1::*
+        proc r {} {}
+        list [lsort [info procs]] [info procs p*]
+    }
+} -result {{p q r} p}
+test info-15.5 {info procs option with a proc in a namespace} -setup {
+    catch {namespace delete test_ns_info2}
+} -body {
+    namespace eval test_ns_info2 {
+	proc p1 { arg } {
+	    puts cmd
+	}
+        proc p2 { arg } {
+	    puts cmd
+	}
+    }
+    info procs ::test_ns_info2::p1
+} -result {::test_ns_info2::p1}
+test info-15.6 {info procs option with a pattern in a namespace} -setup {
+    catch {namespace delete test_ns_info2}
+} -body {
+    namespace eval test_ns_info2 {
+	proc p1 { arg } {
+	    puts cmd
+	}
+        proc p2 { arg } {
+	    puts cmd
+	}
+    }
+    lsort [info procs ::test_ns_info2::p*]
+} -result [lsort [list ::test_ns_info2::p1 ::test_ns_info2::p2]]
+test info-15.7 {info procs option with a global shadowing proc} -setup {
+    catch {namespace delete test_ns_info2}
+} -body {
+    proc string_cmd { arg } {
+        puts cmd
+    }
+    namespace eval test_ns_info2 {
+	proc string_cmd { arg } {
+	    puts cmd
+	}
+    }
+    info procs test_ns_info2::string*
+} -result {::test_ns_info2::string_cmd}
+# This regression test is currently commented out because it requires
+# that the implementation of "info procs" looks into the global namespace,
+# which it does not (in contrast to "info commands")
+test info-15.8 {info procs option with a global shadowing proc} -setup {
+    catch {namespace delete test_ns_info2}
+} -constraints knownBug -body {
+    proc string_cmd { arg } {
+        puts cmd
+    }
+    proc string_cmd2 { arg } {
+        puts cmd
+    }
+    namespace eval test_ns_info2 {
+	proc string_cmd { arg } {
+	    puts cmd
+	}
+    }
+    namespace eval test_ns_info2 {
+        lsort [info procs string*]
+    }
+} -result [lsort [list string_cmd string_cmd2]]
+
+test info-16.1 {info script option} -returnCodes error -body {
+    info script x x
+} -result {wrong # args: should be "info script ?filename?"}
+test info-16.2 {info script option} {
+    file tail [info sc]
+} "info.test"
+set gorpfile [makeFile "info script\n" gorp.info]
+test info-16.3 {info script option} {
+    list [source $gorpfile] [file tail [info script]]
+} [list $gorpfile info.test]
+test info-16.4 {resetting "info script" after errors} {
+    catch {source ~_nobody_/foo}
+    file tail [info script]
+} "info.test"
+test info-16.5 {resetting "info script" after errors} {
+    catch {source _nonexistent_}
+    file tail [info script]
+} "info.test"
+test info-16.6 {info script option} -body {
+    set script [info script]
+    list [file tail [info script]] \
+	    [info script newname.txt] \
+	    [file tail [info script $script]]
+} -result [list info.test newname.txt info.test] -cleanup {unset script}
+test info-16.7 {info script option} -body {
+    set script [info script]
+    info script newname.txt
+    list [source $gorpfile] [file tail [info script]] \
+	    [file tail [info script $script]]
+} -result [list $gorpfile newname.txt info.test] -cleanup {unset script}
+removeFile gorp.info
+set gorpfile [makeFile {list [info script] [info script foo.bar]} gorp.info]
+test info-16.8 {info script option} {
+    list [source $gorpfile] [file tail [info script]]
+} [list [list $gorpfile foo.bar] info.test]
+removeFile gorp.info; unset gorpfile
+
+test info-17.1 {info sharedlibextension option} -returnCodes error -body {
+    info sharedlibextension foo
+} -result {wrong # args: should be "info sharedlibextension"}
+
+test info-18.1 {info tclversion option} -body {
+    scan [info tclversion] "%d.%d%c" a b c
+} -cleanup {unset -nocomplain a b c} -result 2
+test info-18.2 {info tclversion option} -body {
+    info t 2
+} -returnCodes error -result {wrong # args: should be "info tclversion"}
+test info-18.3 {info tclversion option} -body {
+    unset tcl_version
+    info tclversion
+} -returnCodes error -setup {
+    set t $tcl_version
+} -cleanup {
+    set tcl_version $t; unset t
+} -result {can't read "tcl_version": no such variable}
+
+test info-19.1 {info vars option} -body {
+    set a 1
+    set b 2
+    proc t1 {x y} {
+        global a b
+        set c 33
+        return [info vars]
+    }
+    lsort [t1 18 19]
+} -cleanup {unset a b} -result {a b c x y}
+test info-19.2 {info vars option} -body {
+    set xxx1 1
+    set xxx2 2
+    proc t1 {xxa y} {
+        global xxx1 xxx2
+        set c 33
+        return [info vars x*]
+    }
+    lsort [t1 18 19]
+} -cleanup {unset xxx1 xxx2} -result {xxa xxx1 xxx2}
+test info-19.3 {info vars option} {
+    lsort [info vars]
+} [lsort [info globals]]
+test info-19.4 {info vars option} -returnCodes error -body {
+    info vars a b
+} -result {wrong # args: should be "info vars ?pattern?"}
+test info-19.5 {info vars with temporary variables} {
+    proc t1 {} {
+        foreach a {b c} {}
+        info vars
+    }
+    t1
+} {a}
+test info-19.6 {info vars: Bug 1072654} -setup {
+    namespace eval :: unset -nocomplain foo
+    catch {namespace delete x}
+} -body {
+    namespace eval x info vars foo
+} -cleanup {
+    namespace delete x
+} -result {}
+
+set functions {abs acos asin atan atan2 bool ceil cos cosh double entier exp floor fmod hypot int isqrt log log10 max min pow rand round sin sinh sqrt srand tan tanh wide}
+# Check whether the extra testing functions are defined...
+if {!([catch {expr T1()} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
+    set functions "T1 T2 T3 $functions"  ;# A lazy way of prepending!
+}
+test info-20.1 {info functions option} {info functions sin} sin
+test info-20.2 {info functions option} {lsort [info functions]} $functions
+test info-20.3 {info functions option} {
+    lsort [info functions a*]
+} {abs acos asin atan atan2}
+test info-20.4 {info functions option} {
+    lsort [info functions *tan*]
+} {atan atan2 tan tanh}
+test info-20.5 {info functions option} -returnCodes error -body {
+    info functions raise an error
+} -result {wrong # args: should be "info functions ?pattern?"}
+unset functions msg
+
+test info-21.1 {miscellaneous error conditions} -returnCodes error -body {
+    info
+} -result {wrong # args: should be "info subcommand ?arg ...?"}
+test info-21.2 {miscellaneous error conditions} -returnCodes error -body {
+    info gorp
+} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+test info-21.3 {miscellaneous error conditions} -returnCodes error -body {
+    info c
+} -result {unknown or ambiguous subcommand "c": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+test info-21.4 {miscellaneous error conditions} -returnCodes error -body {
+    info l
+} -result {unknown or ambiguous subcommand "l": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+test info-21.5 {miscellaneous error conditions} -returnCodes error -body {
+    info s
+} -result {unknown or ambiguous subcommand "s": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+
+##
+# ### ### ### ######### ######### #########
+## info frame
+
+## Helper
+# For the more complex results we cut the file name down to remove path
+# dependencies, and we use only part of the first line of the reported
+# command. The latter is required because otherwise the whole test case may
+# appear in some results, but the result is part of the testcase. An infinite
+# string would be required to describe that. The cutting-down breaks this.
+
+proc reduce {frame} {
+    set cmd [dict get $frame cmd]
+    if {[regexp \n $cmd]} {
+	dict set frame cmd \
+	    [string range [lindex [split $cmd \n] 0] 0 end-4]
+    }
+    if {[dict exists $frame file]} {
+	dict set frame file \
+	    [file tail [dict get $frame file]]
+    }
+    return $frame
+}
+
+proc subinterp {} { interp create sub ; interp debug sub -frame 1;
+    interp eval sub [list proc reduce [info args reduce] [info body reduce]]
+}
+
+## Helper
+# Generate a stacktrace from the current location to top.  This code
+# not only depends on the exact location of things, but also on the
+# implementation of tcltest. Any changes and these tests will have to
+# be updated.
+
+proc etrace {} {
+    set res {}
+    set level [info frame]
+    while {$level} {
+	lappend res [list $level [reduce [info frame $level]]]
+	incr level -1
+    }
+    return $res
+}
+
+test info-22.0 {info frame, levels} {!singleTestInterp} {
+    info frame
+} 7
+test info-22.1 {info frame, bad level relative} {!singleTestInterp} {
+    # catch is another level!, i.e. we have 8, not 7
+    catch {info frame -8} msg
+    set msg
+} {bad level "-8"}
+test info-22.2 {info frame, bad level absolute} {!singleTestInterp} {
+    # catch is another level!, i.e. we have 8, not 7
+    catch {info frame 9} msg
+    set msg
+} {bad level "9"}
+test info-22.3 {info frame, current, relative} -match glob -body {
+    info frame 0
+} -result {type source line 750 file */info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-22.4 {info frame, current, relative, nested} -match glob -body {
+    set res [info frame 0]
+} -result {type source line 753 file */info.test cmd {info frame 0} proc ::tcltest::RunTest} -cleanup {unset res}
+test info-22.5 {info frame, current, absolute} -constraints {!singleTestInterp} -match glob -body {
+    reduce [info frame 7]
+} -result {type source line 756 file info.test cmd {info frame 7} proc ::tcltest::RunTest}
+test info-22.6 {info frame, global, relative} {!singleTestInterp} {
+    reduce [info frame -6]
+} {type source line 758 file info.test cmd test\ info-22.6\ \{info\ frame,\ global,\ relative\}\ \{!singleTestInter level 0}
+test info-22.7 {info frame, global, absolute} {!singleTestInterp} {
+    reduce [info frame 1]
+} {type source line 761 file info.test cmd test\ info-22.7\ \{info\ frame,\ global,\ absolute\}\ \{!singleTestInter level 0}
+test info-22.8 {info frame, basic trace} -match glob -body {
+    join [lrange [etrace] 0 2] \n
+} -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 765 file info.test cmd etrace proc ::tcltest::RunTest}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+unset -nocomplain msg
+
+
+
+
+
+
+
+
+
+
+## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
+test info-23.0 {eval'd info frame} -constraints {!singleTestInterp} -body {
+    list [i eval {info frame}] [i eval {eval {info frame}}]
+} -setup {interp create i} -cleanup {interp delete i} -result {1 2}
+test info-23.1 {eval'd info frame, semi-dynamic} -constraints {!singleTestInterp} -body {
+    i eval {eval info frame}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
+test info-23.2 {eval'd info frame, dynamic} -constraints {!singleTestInterp} -body {
+    i eval {	set script {info frame}
+		eval $script}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
+test info-23.3 {eval'd info frame, literal} -match glob -body {
+    eval {
+	info frame 0
+    }
+} -result {type source line 793 file * cmd {info frame 0} proc ::tcltest::RunTest}
+test info-23.4 {eval'd info frame, semi-dynamic} {
+    eval info frame 0
+} {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
+test info-23.5 {eval'd info frame, dynamic} -cleanup {unset script} -body {
+    set script {info frame 0}
+    eval $script
+} -result {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
+test info-23.6 {eval'd info frame, trace} -match glob -cleanup {unset script} -body {
+    set script {etrace}
+    join [lrange [eval $script] 0 2] \n
+} -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 1 cmd etrace proc ::tcltest::RunTest}
+* {type source line 805 file info.test cmd {eval $script} proc ::tcltest::RunTest}}
+
+# -------------------------------------------------------------------------
+
+# Procedures defined in scripts which are arguments to control
+# structures (like 'namespace eval', 'interp eval', 'if', 'while',
+# 'switch', 'catch', 'for', 'foreach', etc.) have no absolute
+# location. The command implementations execute such scripts through
+# Tcl_EvalObjEx. Flag 0 causes it to use the bytecode compiler. This
+# causes the connection to the context to be lost. Currently only
+# procedure bodies are able to remember their context.
+
+# NOTE THAT THESE DO NOT USE THE -setup OPTION TO [test]
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {
+    proc bar {} {info frame 0}
+}
+
+test info-24.0 {info frame, interaction, namespace eval} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 825 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+set flag 1
+if {$flag} {
+    namespace eval foo {}
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.1 {info frame, interaction, if} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 839 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+set flag 1
+while {$flag} {
+    namespace eval foo {}
+    proc ::foo::bar {} {info frame 0}
+    set flag 0
+};unset flag
+
+test info-24.2 {info frame, interaction, while} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 853 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+catch {
+    namespace eval foo {}
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.3 {info frame, interaction, catch} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 867 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+foreach var val {
+    namespace eval foo {}
+    proc ::foo::bar {} {info frame 0}
+    break
+}; unset var
+
+test info-24.4 {info frame, interaction, foreach} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 880 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+for {} {1} {} {
+    namespace eval foo {}
+    proc ::foo::bar {} {info frame 0}
+    break
+}
+
+test info-24.5 {info frame, interaction, for} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 894 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set x foo
+switch -exact -- $x {
+    foo {
+	proc ::foo::bar {} {info frame 0}
+    }
+}
+
+test info-24.6.0 {info frame, interaction, switch, list body} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type source line 910 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set x foo
+switch -exact -- $x foo {
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.6.1 {info frame, interaction, switch, multi-body} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type source line 926 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set x foo
+switch -exact -- $x [list foo {
+    proc ::foo::bar {} {info frame 0}
+}]
+
+test info-24.6.2 {info frame, interaction, switch, list body, dynamic} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+dict for {k v} {foo bar} {
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.7 {info frame, interaction, dict for} {
+    reduce [foo::bar]
+} {type source line 955 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo; unset k v
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set thedict {foo bar}
+dict with thedict {
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.8 {info frame, interaction, dict with} {
+    reduce [foo::bar]
+} {type source line 969 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+unset thedict foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+dict filter {foo bar} script {k v} {
+    proc ::foo::bar {} {info frame 0}
+    set x 1
+}; unset k v x
+
+test info-24.9 {info frame, interaction, dict filter} {
+    reduce [foo::bar]
+} {type source line 983 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+#unset x
+
+# -------------------------------------------------------------------------
+
+eval {
+    proc bar {} {info frame 0}
+}
+
+test info-25.0 {info frame, proc in eval} {
+    reduce [bar]
+} {type source line 997 file info.test cmd {info frame 0} proc ::bar level 0}
+# Don't need to clean up yet...
+
+proc bar {} {info frame 0}
+
+test info-25.1 {info frame, regular proc} {
+    reduce [bar]
+} {type source line 1005 file info.test cmd {info frame 0} proc ::bar level 0}
+
+rename bar {}
+
+# -------------------------------------------------------------------------
+# More info-30.x test cases at the end of the file.
+test info-30.0 {bs+nl in literal words} -cleanup {unset res} -body {
+    if {1} {
+	set res \
+	    [reduce [info frame 0]];#1018
+    }
+    return $res
+    # This was reporting line 3 instead of the correct 4 because the
+    # bs+nl combination is subst by the parser before the 'if'
+    # command, and the bcc, see the word. Fixed by recording the
+    # offsets of all bs+nl sequences in literal words, then using the
+    # information in the bcc and other places to bump line numbers when
+    # parsing over the location. Also affected: testcases 22.8 and 23.6.
+} -result {type source line 1018 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+# -------------------------------------------------------------------------
+# See 24.0 - 24.5 for similar situations, using literal scripts.
+
+set body {set flag 0
+    set a c
+    set res [info frame 0]} ;# line 3!
+
+test info-31.0 {ns eval, script in variable} -body {namespace eval foo {variable res {}}
+    namespace eval foo $body
+    return $foo::res
+} -result {type eval line 3 cmd {info frame 0} level 0} -cleanup {
+    catch {namespace delete foo}
+}
+test info-31.1 {if, script in variable} -cleanup {unset res a flag} -body {
+    if 1 $body
+    return $res
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-31.1a {if, script in variable} -cleanup {unset res a flag} -body {
+    if 1 then $body
+    return $res
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-31.2 {while, script in variable} -cleanup {unset flag res a} -body {
+    set flag 1
+    while {$flag} $body
+    return $res
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+
+# .3 - proc - scoping prevent return of result ...
+
+test info-31.4 {foreach, script in variable} -cleanup {unset var res a flag} -body {
+    foreach var val $body
+    set res
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-31.5 {for, script in variable} -cleanup {unset flag res a} -body {
+    set flag 1
+    for {} {$flag} {} $body
+    return $res
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-31.6 {eval, script in variable} -cleanup {unset res a flag} -body {
+    eval $body
+    return $res
+} -result {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
+
+# -------------------------------------------------------------------------
+
+set body {
+    foo {
+	proc ::foo::bar {} {info frame 0}
+    }
+}
+
+namespace eval foo {}
+set x foo
+switch -exact -- $x $body; unset body
+
+test info-31.7 {info frame, interaction, switch, dynamic} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+set body {
+    proc ::foo::bar {} {info frame 0}
+}
+
+namespace eval foo {}
+eval $body
+
+test info-32.0 {info frame, dynamic procedure} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace {*}{
+    eval
+    foo
+    {proc bar {} {info frame 0}}
+}
+test info-33.0 {{*}, literal, direct} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1115 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set flag 1
+    if {*}{
+	{$flag}
+	{info frame 0}
+    }
+}
+test info-33.1 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1130 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace {*}"
+    eval
+    foo
+    {proc bar {} {info frame 0}}
+"
+test info-33.2 {{*}, literal, direct} {
+    reduce [foo::bar]
+} {type source line 1144 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace {*}"eval\nfoo\n{proc bar {} {info frame 0}}\n"
+
+test info-33.2a {{*}, literal, not simple, direct} {
+    reduce [foo::bar]
+} {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set flag 1
+    if {*}"
+	{1}
+	{info frame 0}
+    "
+}
+test info-33.3 {{*}, literal, simple, bytecompiled} {
+    reduce [foo::bar]
+} {type source line 1169 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set flag 1
+    if {*}"\n{1}\n{info frame 0}"
+}
+test info-33.3a {{*}, literal, not simple, bytecompiled} {
+    reduce [foo::bar]
+} {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+set body {
+    eval
+    foo
+    {proc bar {} {
+	info frame 0
+    }}
+}
+namespace {*}$body
+test info-34.0 {{*}, dynamic, direct} {
+    reduce [foo::bar]
+} {type proc line 2 cmd {info frame 0} proc ::foo::bar level 0}
+
+unset body
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set body {
+    {$flag}
+    {info frame 0}
+}
+proc foo::bar {} {
+    global body ; set flag 1
+    if {*}$body
+}
+test info-34.1 {{*}, literal, bytecompiled} {
+    reduce [foo::bar]
+} {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+unset body
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+proc foo {} {
+    apply {
+	{x y}
+	{info frame 0}
+    } 0 0
+}
+test info-35.0 {apply, literal} {
+    reduce [foo]
+} {type source line 1231 file info.test cmd {info frame 0} lambda {
+	{x y}
+	{info frame 0}
+    } level 0}
+rename foo {}
+
+set lambda {
+    {x y}
+    {info frame 0}
+}
+test info-35.1 {apply, dynamic} {
+    reduce [apply $lambda 0 0]
+} {type proc line 1 cmd {info frame 0} lambda {
+    {x y}
+    {info frame 0}
+} level 0}
+unset lambda
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    dict for {k v} {foo bar} {
+	set x [info frame 0]
+    }
+    set x
+}
+test info-36.0 {info frame, dict for, bcc} -body {
+    reduce [foo::bar]
+} -result {type source line 1259 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set x foo
+    switch -exact -- $x {
+	foo {set y [info frame 0]}
+    }
+    set y
+}
+
+test info-36.1.0 {switch, list literal, bcc} -body {
+    reduce [foo::bar]
+} -result {type source line 1275 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set x foo
+    switch -exact -- $x foo {set y [info frame 0]}
+    set y
+}
+
+test info-36.1.1 {switch, multi-body literals, bcc} -body {
+    reduce [foo::bar]
+} -result {type source line 1291 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+test info-37.0 {eval pure list, single line} -match glob -body {
+    # Basically, counting the newline in the word seen through $foo
+    # doesn't really make sense. It makes a bit of sense if the word
+    # would have been a string literal in the command list.
+    #
+    # Problem: At the point where we see the list elements we cannot
+    # distinguish the two cases, thus we cannot switch between
+    # count/not-count, it is has to be one or the other for all
+    # cases. Of the two possibilities miguel convinced me that 'not
+    # counting' is the more proper.
+    set foo {b
+	c}
+    set cmd [list foreach $foo {x y} {
+	set res [join [lrange [etrace] 0 2] \n]
+	break
+    }]
+    eval $cmd
+    return $res
+} -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 2 cmd etrace proc ::tcltest::RunTest}
+* {type eval line 1 cmd foreac proc ::tcltest::RunTest}} -cleanup {unset foo cmd res b c}
+
+# -------------------------------------------------------------------------
+
+# 6 cases.
+## DV. direct-var          - unchanged
+## DPV direct-proc-var     - ditto
+## PPV proc-proc-var       - ditto
+## DL. direct-literal      - now tracking absolute location
+## DPL direct-proc-literal - ditto
+## PPL proc-proc-literal   - ditto
+## ### ### ### ######### ######### #########"
+
+proc control {vv script} {
+    upvar 1 $vv var
+    return [uplevel 1 $script]
+}
+
+proc datal {} {
+    control y {
+	set y PPL
+	etrace
+    }
+}
+
+proc datav {} {
+    set script {
+	set y PPV
+	etrace
+    }
+    control y $script
+}
+
+test info-38.1 {location information for uplevel, dv, direct-var} -match glob -body {
+    set script {
+	set y DV.
+	etrace
+    }
+    join [lrange [uplevel \#0 $script] 0 2] \n
+} -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 3 cmd etrace proc ::tcltest::RunTest}
+* {type source line 1361 file info.test cmd {uplevel \\#0 $script} proc ::tcltest::RunTest}} -cleanup {unset script y}
+
+# 38.2 moved to bottom to not disturb other tests with the necessary changes to this one.
+
+
+
+
+
+
+
+
+test info-38.3 {location information for uplevel, dpv, direct-proc-var} -match glob -body {
+    set script {
+	set y DPV
+	etrace
+    }
+    join [lrange [control y $script] 0 3] \n
+} -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 3 cmd etrace proc ::control}
+* {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1380 file info.test cmd {control y $script} proc ::tcltest::RunTest}} -cleanup {unset script y}
+
+# 38.4 moved to bottom to not disturb other tests with the necessary changes to this one.
+
+
+
+
+
+
+
+
+
+test info-38.5 {location information for uplevel, ppv, proc-proc-var} -match glob -body {
+    join [lrange [datav] 0 4] \n
+} -result {* {type source line 730 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 3 cmd etrace proc ::control}
+* {type source line 1338 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1353 file info.test cmd {control y $script} proc ::datav level 1}
+* {type source line 1397 file info.test cmd datav proc ::tcltest::RunTest}}
+
+# 38.6 moved to bottom to not disturb other tests with the necessary changes to this one.
+
+
+
+
+
+
+
+testConstraint testevalex [llength [info commands testevalex]]
+test info-38.7 {location information for arg substitution} -constraints testevalex -match glob -body {
+    join [lrange [testevalex {return -level 0 [etrace]}] 0 3] \n
+} -result {* {type source line 730 file info.test cmd {info frame \$level} proc ::etrace level 0}
+* {type eval line 1 cmd etrace proc ::tcltest::RunTest}
+* {type source line 1414 file info.test cmd {testevalex {return -level 0 \[etrace]}} proc ::tcltest::RunTest}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+
+# -------------------------------------------------------------------------
+# literal sharing
+
+test info-39.0 {location information not confused by literal sharing} -body {
+    namespace eval ::foo {}
+    proc ::foo::bar {} {
+	lappend res {}
+	lappend res [reduce [eval {info frame 0}]]
+	lappend res [reduce [eval {info frame 0}]]
+	return $res
+    }
+    set res [::foo::bar]
+    namespace delete ::foo
+    join $res \n
+} -cleanup {unset res} -result {
+type source line 1427 file info.test cmd {info frame 0} proc ::foo::bar level 0
+type source line 1428 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+# Additional tests for info-30.*, handling of continuation lines (bs+nl sequences).
+
+test info-30.1 {bs+nl in literal words, procedure body, compiled} -body {
+    proc abra {} {
+	if {1} \
+	    {
+		return \
+		    [reduce [info frame 0]];# line 1446
+	    }
+    }
+    abra
+} -cleanup {
+    rename abra {}
+} -result {type source line 1446 file info.test cmd {info frame 0} proc ::abra level 0}
+
+test info-30.2 {bs+nl in literal words, namespace script} {
+    namespace eval xxx {
+	variable res \
+	    [info frame 0];# line 1457
+    }
+    return [reduce $xxx::res]
+} {type source line 1457 file info.test cmd {info frame 0} level 0}
+
+test info-30.3 {bs+nl in literal words, namespace multi-word script} {
+    namespace eval xxx variable res \
+	[list [reduce [info frame 0]]];# line 1464
+    return $xxx::res
+} {type source line 1464 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.4 {bs+nl in literal words, eval script} -cleanup {unset res} -body {
+    eval {
+	set ::res \
+	    [reduce [info frame 0]];# line 1471
+    }
+    return $res
+} -result {type source line 1471 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.5 {bs+nl in literal words, eval script, with nested words} -body {
+    eval {
+	if {1} \
+	    {
+		set ::res \
+		    [reduce [info frame 0]];# line 1481
+	    }
+    }
+    return $res
+} -cleanup {unset res} -result {type source line 1481 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.6 {bs+nl in computed word} -cleanup {unset res} -body {
+    set res "\
+[reduce [info frame 0]]";# line 1489
+} -result { type source line 1489 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.7 {bs+nl in computed word, in proc} -body {
+    proc abra {} {
+	return "\
+[reduce [info frame 0]]";# line 1495
+    }
+    abra
+} -cleanup {
+    rename abra {}
+} -result { type source line 1495 file info.test cmd {info frame 0} proc ::abra level 0}
+
+test info-30.8 {bs+nl in computed word, nested eval} -body {
+    eval {
+	set \
+	    res "\
+[reduce [info frame 0]]";# line 1506
+}
+} -cleanup {unset res} -result { type source line 1506 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.9 {bs+nl in computed word, nested eval} -body {
+    eval {
+	set \
+	    res "\
+[reduce \
+     [info frame 0]]";# line 1515
+}
+} -cleanup {unset res} -result { type source line 1515 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.10 {bs+nl in computed word, key to array} -body {
+    set tmp([set \
+	    res "\
+[reduce \
+     [info frame 0]]"]) x ; #1523
+    unset tmp
+    set res
+} -cleanup {unset res} -result { type source line 1523 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.11 {bs+nl in subst arguments} -body {
+    subst {[set \
+	    res "\
+[reduce \
+     [info frame 0]]"]} ; #1532
+} -cleanup {unset res} -result { type source line 1532 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.12 {bs+nl in computed word, nested eval} -body {
+    eval {
+	set \
+	    res "\
+[set x {}] \
+[reduce \
+     [info frame 0]]";# line 1541
+}
+} -cleanup {unset res x} -result {   type source line 1541 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.13 {bs+nl in literal words, uplevel script, with nested words} -body {
+    subinterp ; set res [interp eval sub { uplevel #0 {
+	if {1} \
+	    {
+		set ::res \
+		    [reduce [info frame 0]];# line 1550
+	    }
+    }
+    set res }] ; interp delete sub ; set res
+} -cleanup {unset res} -result {type source line 1550 file info.test cmd {info frame 0} level 0}
+
+test info-30.14 {bs+nl, literal word, uplevel through proc} {
+    subinterp ; set res [interp eval sub { proc abra {script} {
+	uplevel 1 $script
+    }
+    set res [abra {
+	return "\
+[reduce [info frame 0]]";# line 1562
+    }]
+    rename abra {}
+    set res }] ; interp delete sub ; set res
+} { type source line 1562 file info.test cmd {info frame 0} proc ::abra}
+
+test info-30.15 {bs+nl in literal words, nested proc body, compiled} {
+    proc a {} {
+	proc b {} {
+	    if {1} \
+		{
+		    return \
+			[reduce [info frame 0]];# line 1574
+		}
+	}
+    }
+    a ; set res [b]
+    rename a {}
+    rename b {}
+    set res
+} {type source line 1574 file info.test cmd {info frame 0} proc ::b level 0}
+
+test info-30.16 {bs+nl in multi-body switch, compiled} {
+    proc a {value} {
+	switch -regexp -- $value \
+	    ^key     { info frame 0; # 1587 } \
+	    \t###    { info frame 0; # 1588 } \
+	    {[0-9]*} { info frame 0; # 1589 }
+    }
+    set res {}
+    lappend res [reduce [a {key   }]]
+    lappend res [reduce [a {1alpha}]]
+    set res "\n[join $res \n]"
+} {
+type source line 1587 file info.test cmd {info frame 0} proc ::a level 0
+type source line 1589 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.17 {bs+nl in multi-body switch, direct} {
+    switch -regexp -- {key    } \
+	^key     { reduce [info frame 0] ;# 1601 } \
+        \t###    { } \
+        {[0-9]*} { }
+} {type source line 1601 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.18 {bs+nl, literal word, uplevel through proc, appended, loss of primary tracking data} {
+    proc abra {script} {
+	append script "\n# end of script"
+	uplevel 1 $script
+    }
+    set res [abra {
+	return "\
+[reduce [info frame 0]]";# line 1613, still line of 3 appended script
+    }]
+    rename abra {}
+    set res
+} { type eval line 3 cmd {info frame 0} proc ::abra}
+# { type source line 1606 file info.test cmd {info frame 0} proc ::abra}
+
+test info-30.19 {bs+nl in single-body switch, compiled} {
+    proc a {value} {
+	switch -regexp -- $value {
+	    ^key     { reduce \
+			   [info frame 0] }
+	    \t       { reduce \
+			   [info frame 0] }
+	    {[0-9]*} { reduce \
+			   [info frame 0] }
+	}
+    }
+    set res {}
+    lappend res [a {key   }]
+    lappend res [a {1alpha}]
+    set res "\n[join $res \n]"
+} {
+type source line 1624 file info.test cmd {info frame 0} proc ::a level 0
+type source line 1628 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.20 {bs+nl in single-body switch, direct} {
+    switch -regexp -- {key    } { \
+
+	^key     { reduce \
+		       [info frame 0] }
+	\t###    { }
+        {[0-9]*} { }
+    }
+} {type source line 1643 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+
+test info-30.21 {bs+nl in if, full compiled} {
+    proc a {value} {
+	if {$value} \
+	    {info frame 0} \
+	    {info frame 0} ; # 1653
+    }
+    set res {}
+    lappend res [reduce [a 1]]
+    lappend res [reduce [a 0]]
+    set res "\n[join $res \n]"
+} {
+type source line 1652 file info.test cmd {info frame 0} proc ::a level 0
+type source line 1653 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.22 {bs+nl in computed word, key to array, compiled} {
+    proc a {} {
+	set tmp([set \
+		     res "\
+[reduce \
+     [info frame 0]]"]) x ; #1668
+    unset tmp
+    set res
+    }
+    set res [a]
+    rename a {}
+    set res
+} { type source line 1668 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.23 {bs+nl in multi-body switch, full compiled} {
+    proc a {value} {
+	switch -exact -- $value \
+	    key     { info frame 0; # 1680 } \
+	    xxx     { info frame 0; # 1681 } \
+	    000     { info frame 0; # 1682 }
+    }
+    set res {}
+    lappend res [reduce [a key]]
+    lappend res [reduce [a 000]]
+    set res "\n[join $res \n]"
+} {
+type source line 1680 file info.test cmd {info frame 0} proc ::a level 0
+type source line 1682 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.24 {bs+nl in single-body switch, full compiled} {
+    proc a {value} {
+	switch -exact -- $value {
+	    key { reduce \
+		      [info frame 0] }
+	    xxx { reduce \
+		      [info frame 0] }
+	    000 { reduce \
+		      [info frame 0] }
+	}
+    }
+    set res {}
+    lappend res [a key]
+    lappend res [a 000]
+    set res "\n[join $res \n]"
+} {
+type source line 1696 file info.test cmd {info frame 0} proc ::a level 0
+type source line 1700 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.25 {TIP 280 for compiled [subst]} {
+    subst {[reduce [info frame 0]]} ; # 1712
+} {type source line 1712 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.26 {TIP 280 for compiled [subst]} {
+    subst \
+	    {[reduce [info frame 0]]} ; # 1716
+} {type source line 1716 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.27 {TIP 280 for compiled [subst]} {
+    subst {
+[reduce [info frame 0]]} ; # 1720
+} {
+type source line 1720 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.28 {TIP 280 for compiled [subst]} {
+    subst {\
+[reduce [info frame 0]]} ; # 1725
+} { type source line 1725 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.29 {TIP 280 for compiled [subst]} {
+    subst {foo\
+[reduce [info frame 0]]} ; # 1729
+} {foo type source line 1729 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.30 {TIP 280 for compiled [subst]} {
+    subst {foo
+[reduce [info frame 0]]} ; # 1733
+} {foo
+type source line 1733 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.31 {TIP 280 for compiled [subst]} {
+    subst {[][reduce [info frame 0]]} ; # 1737
+} {type source line 1737 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.32 {TIP 280 for compiled [subst]} {
+    subst {[\
+][reduce [info frame 0]]} ; # 1741
+} {type source line 1741 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.33 {TIP 280 for compiled [subst]} {
+    subst {[
+][reduce [info frame 0]]} ; # 1745
+} {type source line 1745 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.34 {TIP 280 for compiled [subst]} {
+    subst {[format %s {}
+][reduce [info frame 0]]} ; # 1749
+} {type source line 1749 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.35 {TIP 280 for compiled [subst]} {
+    subst {[format %s {}
+]
+[reduce [info frame 0]]} ; # 1754
+} {
+type source line 1754 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.36 {TIP 280 for compiled [subst]} {
+    subst {
+[format %s {}][reduce [info frame 0]]} ; # 1759
+} {
+type source line 1759 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.37 {TIP 280 for compiled [subst]} {
+    subst {
+[format %s {}]
+[reduce [info frame 0]]} ; # 1765
+} {
+
+type source line 1765 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.38 {TIP 280 for compiled [subst]} {
+    subst {\
+[format %s {}][reduce [info frame 0]]} ; # 1771
+} { type source line 1771 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.39 {TIP 280 for compiled [subst]} {
+    subst {\
+[format %s {}]\
+[reduce [info frame 0]]} ; # 1776
+} {  type source line 1776 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.40 {TIP 280 for compiled [subst]} -setup {
+    unset -nocomplain empty
+} -body {
+    set empty {}
+    subst {$empty[reduce [info frame 0]]} ; # 1782
+} -cleanup {
+    unset empty
+} -result {type source line 1782 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.41 {TIP 280 for compiled [subst]} -setup {
+    unset -nocomplain empty
+} -body {
+    set empty {}
+    subst {$empty
+[reduce [info frame 0]]} ; # 1791
+} -cleanup {
+    unset empty
+} -result {
+type source line 1791 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.42 {TIP 280 for compiled [subst]} -setup {
+    unset -nocomplain empty
+} -body {
+    set empty {}; subst {$empty\
+[reduce [info frame 0]]} ; # 1800
+} -cleanup {
+    unset empty
+} -result { type source line 1800 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.43 {TIP 280 for compiled [subst]} -body {
+    unset -nocomplain a\nb
+    set a\nb {}
+    subst {${a
+b}[reduce [info frame 0]]} ; # 1808
+} -cleanup {unset a\nb} -result {type source line 1808 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.44 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a(\n) {}
+    subst {$a(
+)[reduce [info frame 0]]} ; # 1814
+} {type source line 1814 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.45 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a() {}
+    subst {$a([
+return -level 0])[reduce [info frame 0]]} ; # 1820
+} {type source line 1820 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.46 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a(1825) YES;  set a(1824) 1824; set a(1826) 1826
+    subst {$a([dict get [info frame 0] line])} ; # 1825
+} YES
+test info-30.47 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a(\n1831) YES;  set a(\n1830) 1830; set a(\n1832) 1832
+    subst {$a(
+[dict get [info frame 0] line])} ; # 1831
+} YES
+unset -nocomplain a
+
+test info-30.48 {Bug 2850901} testevalex {
+    testevalex {return -level 0 [format %s {}
+][reduce [info frame 0]]} ; # line 2 of the eval
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+
+
+# -------------------------------------------------------------------------
+# literal sharing 2, bug 2933089
+
+test info-40.1 {location information not confused by literal sharing, bug 2933089} -setup {
+    set result {}
+
+    proc print_one {} {}
+    proc test_info_frame {} {
+	set x 1
+	set y x
+
+	if "$x != 1" {
+	} else {
+	    print_one
+	} ;#line 1854^
+
+	if "$$y != 1" {
+	} else {
+	    print_one
+	} ;#line 1859^
+	# Do not put the comments listing the line numbers into the
+	# branches. We need shared literals, and the comments would
+	# make them different, thus unshared.
+    }
+
+    proc get_frame_info { cmd_str op } {
+	lappend ::result [reduce [eval {info frame -3}]]
+    }
+    trace add execution print_one enter get_frame_info
+} -body {
+    test_info_frame;
+    join $result \n
+} -cleanup {
+    trace remove execution print_one enter get_frame_info
+    rename get_frame_info {}
+    rename test_info_frame {}
+    rename print_one {}
+} -result {type source line 1854 file info.test cmd print_one proc ::test_info_frame level 1
+type source line 1859 file info.test cmd print_one proc ::test_info_frame level 1}
+
+# -------------------------------------------------------------------------
+# Tests moved to the end to not disturb other tests and their locations.
+
+test info-38.6 {location information for uplevel, ppl, proc-proc-literal} -match glob -setup {subinterp} -body {
+    interp eval sub {
+	proc etrace {} {
+	    set res {}
+	    set level [info frame]
+	    while {$level} {
+		lappend res [list $level [reduce [info frame $level]]]
+		incr level -1
+	    }
+	    return $res
+	}
+	proc control {vv script} {
+	    upvar 1 $vv var
+	    return [uplevel 1 $script]
+	}
+	proc datal {} {
+	    control y {
+		set y PPL
+		etrace
+	    }
+	}
+	join [lrange [datal] 0 4] \n
+    }
+} -result {* {type source line 1890 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1902 file info.test cmd etrace proc ::control}
+* {type source line 1897 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1900 file info.test cmd control proc ::datal level 1}
+* {type source line 1905 file info.test cmd datal level 2}} -cleanup {interp delete sub}
+
+test info-38.4 {location information for uplevel, dpv, direct-proc-literal} -match glob -setup {subinterp} -body {
+    interp eval sub {
+	proc etrace {} {
+	    set res {}
+	    set level [info frame]
+	    while {$level} {
+		lappend res [list $level [reduce [info frame $level]]]
+		incr level -1
+	    }
+	    return $res
+	}
+	proc control {vv script} {
+	    upvar 1 $vv var
+	    return [uplevel 1 $script]
+	}
+	join [lrange [control y {
+	    set y DPL
+	    etrace
+	}] 0 3] \n
+    }
+} -result {* {type source line 1919 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1930 file info.test cmd etrace proc ::control}
+* {type source line 1926 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1928 file info.test cmd control level 1}} -cleanup {interp delete sub}
+
+test info-38.2 {location information for uplevel, dl, direct-literal} -match glob -setup {subinterp} -body {
+    interp eval sub {
+	proc etrace {} {
+	    set res {}
+	    set level [info frame]
+	    while {$level} {
+		lappend res [list $level [reduce [info frame $level]]]
+		incr level -1
+	    }
+	    return $res
+	}
+	join [lrange [uplevel \#0 {
+	    set y DL.
+	    etrace
+	}] 0 2] \n
+    }
+} -result {* {type source line 1944 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1951 file info.test cmd etrace level 1}
+* {type source line 1949 file info.test cmd uplevel\\ \\\\ level 1}} -cleanup {interp delete sub}
+
+# This test at the end of this file _only_ to avoid disturbing above line
+# numbers. It _belongs_ after info-9.12
+test info-9.13 {info level option, value in global context} -body {
+    uplevel #0 {info level 2}
+} -returnCodes error -result {bad level "2"}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    catch {*}{
+	{info frame 0}
+	res
+    }
+    return $res
+}
+test info-33.4 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1968 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    dict for {a b} {c d} {*}{
+	{set res [info frame 0]}
+    }
+    return $res
+}
+test info-33.5 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1983 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    set d {a b}
+    dict update d x y {*}{
+	{set res [info frame 0]}
+    }
+    return $res
+}
+test info-33.6 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1998 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    set d {}
+    dict with d {*}{
+	{set res [info frame 0]}
+    }
+    return $res
+}
+test info-33.7 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2013 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    for {*}{
+	{set res [info frame 0]}
+	{1} {} {break}
+    }
+    return $res
+}
+test info-33.8 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2027 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    for {*}{
+	{} {1} {}
+	{set res [info frame 0]; break}
+    }
+    return $res
+}
+test info-33.9 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2043 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    for {*}{
+	{} {1}
+	{return [info frame 0]}
+	{}
+    }
+}
+test info-33.10 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2058 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    for {*}{
+	{}
+	{[return [info frame 0]]}
+	{} {}
+    }
+}
+test info-33.11 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2073 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    foreach {*}{
+	x
+    } [return [info frame 0]] {}
+}
+test info-33.12 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2088 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    foreach {*}{
+	x y
+	{set res [info frame 0]}
+    } 
+    return $res
+}
+test info-33.13 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2101 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    if {*}{
+	{[return [info frame 0]]}
+	{}
+    } 
+}
+test info-33.14 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2115 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    if 0 {*}{
+	{} else
+	{return [info frame 0]}
+    } 
+}
+test info-33.15 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2130 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    incr {*}{
+	x
+    } [return [info frame 0]]
+}
+test info-33.16 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2144 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    info level {*}{
+    } [return [info frame 0]]
+}
+test info-33.17 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2156 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    string match {*}{
+    } [return [info frame 0]] {}
+}
+test info-33.18 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2168 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    string match {*}{
+	{}
+    } [return [info frame 0]]
+}
+test info-33.19 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2181 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    string length {*}{
+    } [return [info frame 0]]
+}
+test info-33.20 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2193 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    while {*}{
+	{[return [info frame 0]]}
+    } {}
+}
+test info-33.21 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2205 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    switch -- {*}{
+    } [return [info frame 0]] {*}{
+    } x y
+}
+test info-33.22 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2218 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } 
+    return $res
+}
+test info-33.23 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2231 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } finally {}
+    return $res
+}
+test info-33.24 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2245 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } on ok {} {}
+    return $res
+}
+test info-33.25 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2259 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } on ok {} {} finally {}
+    return $res
+}
+test info-33.26 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2273 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    while 1 {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.27 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2287 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} finally {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.28 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2300 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} on ok {} {} finally {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.29 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2313 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} on ok {} {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.30 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2326 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} on ok {} {*}{
+	{return [info frame 0]}
+    } finally {}
+}
+test info-33.31 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2339 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    binary format {*}{
+    } [return [info frame 0]]
+}
+test info-33.32 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2352 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    set format format
+    binary $format {*}{
+    } [return [info frame 0]]
+}
+test info-33.33 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2365 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    append x {*}{
+    } [return [info frame 0]]
+}
+test info-33.34 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2377 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    append {*}{
+    } x([return [info frame 0]]) {*}{
+    } a
+}
+test info-33.35 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2389 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+unset -nocomplain res
+
+test info-39.2 {Bug 4b61afd660} -setup {
+    proc probe {} {
+	return [dict get [info frame -1] line]
+    }
+    set body {
+	set cmd probe
+	$cmd
+    }
+    proc demo {} $body
+} -body {
+    demo
+} -cleanup {
+    unset -nocomplain body
+    rename demo {}
+    rename probe {}
+} -result 3
+
+# cleanup
+catch {namespace delete test_ns_info1 test_ns_info2}
+::tcltest::cleanupTests
+return

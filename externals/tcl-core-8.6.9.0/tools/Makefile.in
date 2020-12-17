@@ -1,0 +1,67 @@
+# This makefile is used to convert Tcl manual pages into various
+# alternate formats:
+#
+#    Windows help file:  1. Build the winhelp target on Unix
+#			 2. Build the helpfile target on Windows
+#
+#    HTML:		 1. Build the html target on Unix
+
+TCL		= tcl@TCL_VERSION@
+TK		= tk@TCL_VERSION@
+VER		= @TCL_WIN_VERSION@
+
+TCL_BIN_DIR	= @TCL_BIN_DIR@
+TCL_SOURCE	= @TCL_SRC_DIR@
+TK_SOURCE	= $(TCL_SOURCE)/../$(TK)
+PRO_SOURCE	= $(TCL_SOURCE)/../pro
+ITCL_SOURCE	= $(TCL_SOURCE)/../itcl3.1.0
+
+TCL_DOCS	= $(TCL_SOURCE)/doc/*.[13n]
+
+TK_DOCS		= $(TK_SOURCE)/doc/*.[13n]
+
+PRO_DOCS	= \
+	$(PRO_SOURCE)/doc/man/procheck.1 \
+	$(PRO_SOURCE)/doc/man/prodebug.1 \
+	$(PRO_SOURCE)/doc/man/prodebug.n \
+	$(PRO_SOURCE)/doc/man/prolicense.1
+
+ITCL_DOCS	= \
+	$(ITCL_SOURCE)/itcl/doc/*.[13n] \
+	$(ITCL_SOURCE)/itk/doc/*.[13n]
+
+#	$(ITCL_SOURCE)/iwidgets3.0.0/doc/*.[13n]
+
+COREDOCS	= $(TCL_DOCS) $(TK_DOCS)
+#PRODOCS	= $(COREDOCS) $(PRO_DOCS) $(ITCL_DOCS)
+PRODOCS		= $(COREDOCS) $(PRO_DOCS)
+TCLSH		= $(TCL_BIN_DIR)/tclsh
+CC		= @CC@
+
+#
+# Targets
+#
+
+all: core
+
+pro:
+	$(MAKE) DOCS="$(PRODOCS)" VER="" rtf
+
+core:
+	$(MAKE) DOCS="$(COREDOCS)" rtf
+
+rtf: $(TCL_SOURCE)/tools/man2help.tcl man2tcl $(DOCS)
+	LD_LIBRARY_PATH=$(TCL_BIN_DIR) \
+	TCL_LIBRARY=$(TCL_SOURCE)/library \
+	$(TCLSH) $(TCL_SOURCE)/tools/man2help.tcl tcl "$(VER)" $(DOCS)
+
+winhelp: tcl.rtf
+
+man2tcl: $(TCL_SOURCE)/tools/man2tcl.c
+	$(CC) $(CFLAGS) -o man2tcl $(TCL_SOURCE)/tools/man2tcl.c
+
+clean:
+	-rm -f man2tcl *.o *.cnt *.rtf
+
+helpfile:
+	hcw /c /e tcl.hpj

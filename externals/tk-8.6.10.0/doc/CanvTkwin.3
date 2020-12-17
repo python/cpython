@@ -1,0 +1,158 @@
+'\"
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CanvasTkwin 3 4.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CanvasTkwin, Tk_CanvasGetCoord, Tk_CanvasDrawableCoords, Tk_CanvasSetStippleOrigin, Tk_CanvasWindowCoords, Tk_CanvasEventuallyRedraw, Tk_CanvasTagsOption \- utility procedures for canvas type managers
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Window
+\fBTk_CanvasTkwin\fR(\fIcanvas\fR)
+.sp
+int
+\fBTk_CanvasGetCoord\fR(\fIinterp, canvas, string, doublePtr\fR)
+.sp
+\fBTk_CanvasDrawableCoords\fR(\fIcanvas, x, y, drawableXPtr, drawableYPtr\fR)
+.sp
+\fBTk_CanvasSetStippleOrigin\fR(\fIcanvas, gc\fR)
+.sp
+\fBTk_CanvasWindowCoords\fR(\fIcanvas, x, y, screenXPtr, screenYPtr\fR)
+.sp
+\fBTk_CanvasEventuallyRedraw\fR(\fIcanvas, x1, y1, x2, y2\fR)
+.sp
+Tk_OptionParseProc *\fBTk_CanvasTagsParseProc\fR;
+.sp
+Tk_OptionPrintProc *\fBTk_CanvasTagsPrintProc\fR;
+.SH ARGUMENTS
+.AS Tk_ItemType *drawableXPtr
+.AP Tk_Canvas canvas in
+A token that identifies a canvas widget.
+.AP Tcl_Interp *interp in/out
+Interpreter to use for error reporting.
+.AP "const char" *string in
+Textual description of a canvas coordinate.
+.AP double *doublePtr out
+Points to place to store a converted coordinate.
+.AP double x in
+An x coordinate in the space of the canvas.
+.AP double y in
+A y coordinate in the space of the canvas.
+.AP short *drawableXPtr out
+Pointer to a location in which to store an x coordinate in the space
+of the drawable currently being used to redisplay the canvas.
+.AP short *drawableYPtr out
+Pointer to a location in which to store a y coordinate in the space
+of the drawable currently being used to redisplay the canvas.
+.AP GC gc out
+Graphics context to modify.
+.AP short *screenXPtr out
+Points to a location in which to store the screen coordinate in the
+canvas window that corresponds to \fIx\fR.
+.AP short *screenYPtr out
+Points to a location in which to store the screen coordinate in the
+canvas window that corresponds to \fIy\fR.
+.AP int x1 in
+Left edge of the region that needs redisplay.  Only pixels at or to
+the right of this coordinate need to be redisplayed.
+.AP int y1 in
+Top edge of the region that needs redisplay.  Only pixels at or below
+this coordinate need to be redisplayed.
+.AP int x2 in
+Right edge of the region that needs redisplay.  Only pixels to
+the left of this coordinate need to be redisplayed.
+.AP int y2 in
+Bottom edge of the region that needs redisplay.  Only pixels above
+this coordinate need to be redisplayed.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are called by canvas type managers to perform various
+utility functions.
+.PP
+\fBTk_CanvasTkwin\fR returns the Tk_Window associated with a particular
+canvas.
+.PP
+\fBTk_CanvasGetCoord\fR translates a string specification of a
+coordinate (such as \fB2p\fR or \fB1.6c\fR) into a double-precision
+canvas coordinate.
+If \fIstring\fR is a valid coordinate description then \fBTk_CanvasGetCoord\fR
+stores the corresponding canvas coordinate at *\fIdoublePtr\fR
+and returns \fBTCL_OK\fR.
+Otherwise it stores an error message in the interpreter result and
+returns \fBTCL_ERROR\fR.
+.PP
+\fBTk_CanvasDrawableCoords\fR is called by type managers during
+redisplay to compute where to draw things.
+Given \fIx\fR and \fIy\fR coordinates in the space of the
+canvas, \fBTk_CanvasDrawableCoords\fR computes the corresponding
+pixel in the drawable that is currently being used for redisplay;
+it returns those coordinates in *\fIdrawableXPtr\fR and *\fIdrawableYPtr\fR.
+This procedure should not be invoked except during redisplay.
+.PP
+\fBTk_CanvasSetStippleOrigin\fR is also used during redisplay.
+It sets the stipple origin in \fIgc\fR so that stipples drawn
+with \fIgc\fR in the current offscreen pixmap will line up
+with stipples drawn with origin (0,0) in the canvas's actual
+window.
+\fBTk_CanvasSetStippleOrigin\fR is needed in order to guarantee
+that stipple patterns line up properly when the canvas is
+redisplayed in small pieces.
+Redisplays are carried out in double-buffered fashion where a
+piece of the canvas is redrawn in an offscreen pixmap and then
+copied back onto the screen.
+In this approach the stipple origins in graphics contexts need to
+be adjusted during each redisplay to compensate for the position
+of the off-screen pixmap relative to the window.
+If an item is being drawn with stipples, its type manager typically
+calls \fBTk_CanvasSetStippleOrigin\fR just before using \fIgc\fR
+to draw something;  after it is finished drawing, the type manager
+calls \fBXSetTSOrigin\fR to restore the origin in \fIgc\fR back to (0,0)
+(the restore is needed because graphics contexts are shared, so
+they cannot be modified permanently).
+.PP
+\fBTk_CanvasWindowCoords\fR is similar to \fBTk_CanvasDrawableCoords\fR
+except that it returns coordinates in the canvas's window on the
+screen, instead of coordinates in an off-screen pixmap.
+.PP
+\fBTk_CanvasEventuallyRedraw\fR may be invoked by a type manager
+to inform Tk that a portion of a canvas needs to be redrawn.
+The \fIx1\fR, \fIy1\fR, \fIx2\fR, and \fIy2\fR arguments
+specify the region that needs to be redrawn, in canvas coordinates.
+Type managers rarely need to invoke \fBTk_CanvasEventuallyRedraw\fR,
+since Tk can normally figure out when an item has changed and make
+the redisplay request on its behalf (this happens, for example
+whenever Tk calls a \fIconfigureProc\fR or \fIscaleProc\fR).
+The only time that a type manager needs to call
+\fBTk_CanvasEventuallyRedraw\fR is if an item has changed on its own
+without being invoked through one of the procedures in its Tk_ItemType;
+this could happen, for example, in an image item if the image is
+modified using image commands.
+.PP
+\fBTk_CanvasTagsParseProc\fR and \fBTk_CanvasTagsPrintProc\fR are
+procedures that handle the \fB\-tags\fR option for canvas items.
+The code of a canvas type manager will not call these procedures
+directly, but will use their addresses to create a \fBTk_CustomOption\fR
+structure for the \fB\-tags\fR option.   The code typically looks
+like this:
+.PP
+.CS
+static const Tk_CustomOption tagsOption = {Tk_CanvasTagsParseProc,
+    Tk_CanvasTagsPrintProc, NULL
+};
+
+static const Tk_ConfigSpec configSpecs[] = {
+    ...
+    {TK_CONFIG_CUSTOM, "\-tags", NULL, NULL,
+        NULL, 0, TK_CONFIG_NULL_OK, &tagsOption},
+    ...
+};
+.CE
+.SH KEYWORDS
+canvas, focus, item type, redisplay, selection, type manager

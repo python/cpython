@@ -1,0 +1,247 @@
+# -*- tcl -*-
+#
+# The httpd_ procedures implement a stub http server.
+#
+# Copyright (c) 1997-1998 Sun Microsystems, Inc.
+# Copyright (c) 1999-2000 Scriptics Corporation
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+#set httpLog 1
+
+if {$::tcl_platform(os) eq "Darwin"} {
+    # Name resolution often a problem on OSX; not focus of HTTP package anyway
+    set HOST localhost
+} else {
+    set HOST [info hostname]
+}
+
+proc httpd_init {{port 8015}} {
+    socket -server httpdAccept $port
+}
+proc httpd_log {args} {
+    global httpLog
+    if {[info exists httpLog] && $httpLog} {
+	puts stderr "httpd: [join $args { }]"
+    }
+}
+array set httpdErrors {
+    204 {No Content}
+    400 {Bad Request}
+    401 {Authorization Required}
+    404 {Not Found}
+    503 {Service Unavailable}
+    504 {Service Temporarily Unavailable}
+}
+
+proc httpdError {sock code args} {
+    global httpdErrors
+    puts $sock "$code $httpdErrors($code)"
+    httpd_log "error: [join $args { }]"
+}
+proc httpdAccept {newsock ipaddr port} {
+    global httpd
+    upvar #0 httpd$newsock data
+
+    fconfigure $newsock -blocking 0 -translation {auto crlf}
+    httpd_log $newsock Connect $ipaddr $port
+    set data(ipaddr) $ipaddr
+    after 50 [list fileevent $newsock readable [list httpdRead $newsock]]
+}
+
+# read data from a client request
+
+proc httpdRead { sock } {
+    upvar #0 httpd$sock data
+
+    if {[eof $sock]} {
+	set readCount -1
+    } elseif {![info exists data(state)]} {
+
+	# Read the protocol line and parse out the URL and query
+
+	set readCount [gets $sock line]
+	if {[regexp {(POST|GET|HEAD) ([^?]+)\??([^ ]*) HTTP/(1.[01])} $line \
+		-> data(proto) data(url) data(query) data(httpversion)]} {
+	    set data(state) mime
+	    httpd_log $sock Query $line
+	} else {
+	    httpdError $sock 400
+	    httpd_log $sock Error "bad first line:$line"
+	    httpdSockDone $sock
+	}
+	return
+    } elseif {$data(state) == "mime"} {
+
+	# Read the HTTP headers
+
+	set readCount [gets $sock line]
+        if {[regexp {^([^:]+):(.*)$} $line -> key val]} {
+            lappend data(meta) $key [string trim $val]
+        }
+
+    } elseif {$data(state) == "query"} {
+
+	# Read the query data
+
+	if {![info exists data(length_orig)]} {
+	    set data(length_orig) $data(length)
+	}
+	set line [read $sock $data(length)]
+	set readCount [string length $line]
+	incr data(length) -$readCount
+    }
+
+    # string compare $readCount 0 maps -1 to -1, 0 to 0, and > 0 to 1
+
+    set state [string compare $readCount 0],$data(state),$data(proto)
+    httpd_log $sock $state
+    switch -- $state {
+	-1,mime,HEAD	-
+	-1,mime,GET	-
+	-1,mime,POST	{
+	    # gets would block
+	    return
+	}
+	0,mime,HEAD	-
+	0,mime,GET	-
+	0,query,POST	{
+	    # Empty line at end of headers,
+	    # or eof after query data
+	    httpdRespond $sock
+	}
+	0,mime,POST	{
+	    # Empty line between headers and query data
+	    if {![info exists data(mime,content-length)]} {
+		httpd_log $sock Error "No Content-Length for POST"
+		httpdError $sock 400
+		httpdSockDone $sock
+	    } else {
+		set data(state) query
+		set data(length) $data(mime,content-length)
+
+		# Special case to simulate servers that respond
+		# without reading the post data.
+
+		if {[string match *droppost* $data(url)]} {
+		    fileevent $sock readable {}
+		    httpdRespond $sock
+		}
+	    }
+	}
+	1,mime,HEAD	-
+	1,mime,POST	-
+	1,mime,GET	{
+	    # A line of HTTP headers
+	    if {[regexp {([^:]+):[ 	]*(.*)}  $line dummy key value]} {
+		set data(mime,[string tolower $key]) $value
+	    }
+	}
+	-1,query,POST	{
+	    httpd_log $sock Error "unexpected eof on <$data(url)> request"
+	    httpdError $sock 400
+	    httpdSockDone $sock
+	}
+	1,query,POST	{
+	    append data(query) $line
+	    if {$data(length) <= 0} {
+		set data(length) $data(length_orig)
+		httpdRespond $sock
+	    }
+	}
+	default {
+	    if {[eof $sock]} {
+		httpd_log $sock Error "unexpected eof on <$data(url)> request"
+	    } else {
+		httpd_log $sock Error "unhandled state <$state> fetching <$data(url)>"
+	    }
+	    httpdError $sock 404
+	    httpdSockDone $sock
+	}
+    }
+}
+proc httpdSockDone { sock } {
+    upvar #0 httpd$sock data
+    unset data
+    catch {close $sock}
+}
+
+# Respond to the query.
+
+proc httpdRespond { sock } {
+    global httpd bindata port
+    upvar #0 httpd$sock data
+
+    switch -glob -- $data(url) {
+	*binary* {
+	    set html "$bindata${::HOST}:$port$data(url)"
+	    set type application/octet-stream
+	}
+	*xml* {
+	    set html [encoding convertto utf-8 "<test>\u1234</test>"]
+	    set type "application/xml;charset=UTF-8"
+	}
+	*post* {
+	    set html "Got [string length $data(query)] bytes"
+	    set type text/plain
+	}
+	*headers* {
+	    set html ""
+	    set type text/plain
+	    foreach {key value} $data(meta) {
+		append html [list $key $value] "\n"
+	    }
+	    set html [string trim $html]
+	}
+	default {
+	    set type text/html
+
+	    set html "<html><head><title>HTTP/1.0 TEST</title></head><body>
+<h1>Hello, World!</h1>
+<h2>$data(proto) $data(url)</h2>
+"
+	    if {[info exists data(query)] && [string length $data(query)]} {
+		append html "<h2>Query</h2>\n<dl>\n"
+		foreach {key value} [split $data(query) &=] {
+		    append html "<dt>$key<dd>$value\n"
+		    if {$key == "timeout"} {
+			after $value	;# pause
+		    }
+		}
+		append html </dl>\n
+	    }
+	    append html </body></html>
+	}
+    }
+
+    # Catch errors from premature client closes
+    
+    catch {
+	if {$data(proto) == "HEAD"} {
+	    puts $sock "HTTP/1.0 200 OK"
+	} else {
+            # Split the response to test for [Bug 26245326]
+	    puts -nonewline $sock "HT"
+            flush $sock
+            puts $sock "TP/1.0 200 Data follows"
+	}
+	puts $sock "Date: [clock format [clock seconds] \
+                              -format {%a, %d %b %Y %H:%M:%S %Z}]"
+	puts $sock "Content-Type: $type"
+	puts $sock "Content-Length: [string length $html]"
+        foreach {key val} $data(meta) {
+            if {[string match "X-*" $key]} {
+                puts $sock "$key: $val"
+            }
+        }
+	puts $sock ""
+	flush $sock
+	if {$data(proto) != "HEAD"} {
+	    fconfigure $sock -translation binary
+	    puts -nonewline $sock $html
+	}
+    }
+    httpd_log $sock Done ""
+    httpdSockDone $sock
+}

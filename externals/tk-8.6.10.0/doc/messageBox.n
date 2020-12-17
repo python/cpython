@@ -1,0 +1,122 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH tk_messageBox n 4.2 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_messageBox \- pops up a message window and waits for user response.
+.SH SYNOPSIS
+\fBtk_messageBox \fR?\fIoption value ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This procedure creates and displays a message window with an
+application-specified message, an icon and a set of buttons.  Each of
+the buttons in the message window is identified by a unique symbolic
+name (see the \fB\-type\fR options).  After the message window is
+popped up, \fBtk_messageBox\fR waits for the user to select one of the
+buttons. Then it returns the symbolic name of the selected button.
+.PP
+The following option-value pairs are supported:
+.TP
+\fB\-command\fR \fIstring\fR
+Specifies the prefix of a Tcl command to invoke when the user closes the
+dialog. The actual command consists of \fIstring\fR followed by a space
+and the name of the button clicked by the user to close the dialog. This
+is only available on Mac OS X.
+.TP
+\fB\-default\fR \fIname\fR
+.
+\fIName\fR gives the symbolic name of the default button for
+this message window (
+.QW ok ,
+.QW cancel ,
+and so on). See \fB\-type\fR
+for a list of the symbolic names.  If this option is not specified,
+the first button in the dialog will be made the default.
+.TP
+\fB\-detail\fR \fIstring\fR
+.
+Specifies an auxiliary message to the main message given by the
+\fB\-message\fR option. The message detail will be presented beneath the main
+message and, where supported by the OS, in a less emphasized font than the
+main message.
+.TP
+\fB\-icon\fR \fIiconImage\fR
+.
+Specifies an icon to display. \fIIconImage\fR must be one of the
+following: \fBerror\fR, \fBinfo\fR, \fBquestion\fR or
+\fBwarning\fR. If this option is not specified, then the info icon will be
+displayed.
+.TP
+\fB\-message\fR \fIstring\fR
+.
+Specifies the message to display in this message box. The
+default value is an empty string.
+.TP
+\fB\-parent\fR \fIwindow\fR
+.
+Makes \fIwindow\fR the logical parent of the message box. The message
+box is displayed on top of its parent window.
+.TP
+\fB\-title\fR \fItitleString\fR
+.
+Specifies a string to display as the title of the message box. This option
+is ignored on Mac OS X, where platform guidelines forbid the use of a title
+on this kind of dialog.
+.TP
+\fB\-type\fR \fIpredefinedType\fR
+.
+Arranges for a predefined set of buttons to be displayed. The
+following values are possible for \fIpredefinedType\fR:
+.RS
+.TP 18
+\fBabortretryignore\fR
+.
+Displays three buttons whose symbolic names are \fBabort\fR,
+\fBretry\fR and \fBignore\fR.
+.TP 18
+\fBok\fR
+.
+Displays one button whose symbolic name is \fBok\fR.
+.TP 18
+\fBokcancel\fR
+.
+Displays two buttons whose symbolic names are \fBok\fR and \fBcancel\fR.
+.TP 18
+\fBretrycancel\fR
+.
+Displays two buttons whose symbolic names are \fBretry\fR and \fBcancel\fR.
+.TP 18
+\fByesno\fR
+.
+Displays two buttons whose symbolic names are \fByes\fR and \fBno\fR.
+.TP 18
+\fByesnocancel\fR
+.
+Displays three buttons whose symbolic names are \fByes\fR, \fBno\fR
+and \fBcancel\fR.
+.RE
+.PP
+.SH EXAMPLE
+.PP
+.CS
+set answer [\fBtk_messageBox\fR \-message "Really quit?" \e
+        \-icon question \-type yesno \e
+        \-detail "Select \e"Yes\e" to make the application exit"]
+switch \-\- $answer {
+    yes exit
+    no {\fBtk_messageBox\fR \-message "I know you like this application!" \e
+            \-type ok}
+}
+.CE
+.SH KEYWORDS
+message box
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,506 @@
+'\"
+'\" Generated from file '' by tcllib/doctools with format 'nroff'
+'\"
+.TH "ttrace" n 2\&.8  "Tcl Threading"
+.\" The -*- nroff -*- definitions below are for supplemental macros used
+.\" in Tcl/Tk manual entries.
+.\"
+.\" .AP type name in/out ?indent?
+.\"	Start paragraph describing an argument to a library procedure.
+.\"	type is type of argument (int, etc.), in/out is either "in", "out",
+.\"	or "in/out" to describe whether procedure reads or modifies arg,
+.\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+.\"	needed;  use .AS below instead)
+.\"
+.\" .AS ?type? ?name?
+.\"	Give maximum sizes of arguments for setting tab stops.  Type and
+.\"	name are examples of largest possible arguments that will be passed
+.\"	to .AP later.  If args are omitted, default tab stops are used.
+.\"
+.\" .BS
+.\"	Start box enclosure.  From here until next .BE, everything will be
+.\"	enclosed in one large box.
+.\"
+.\" .BE
+.\"	End of box enclosure.
+.\"
+.\" .CS
+.\"	Begin code excerpt.
+.\"
+.\" .CE
+.\"	End code excerpt.
+.\"
+.\" .VS ?version? ?br?
+.\"	Begin vertical sidebar, for use in marking newly-changed parts
+.\"	of man pages.  The first argument is ignored and used for recording
+.\"	the version when the .VS was added, so that the sidebars can be
+.\"	found and removed when they reach a certain age.  If another argument
+.\"	is present, then a line break is forced before starting the sidebar.
+.\"
+.\" .VE
+.\"	End of vertical sidebar.
+.\"
+.\" .DS
+.\"	Begin an indented unfilled display.
+.\"
+.\" .DE
+.\"	End of indented unfilled display.
+.\"
+.\" .SO ?manpage?
+.\"	Start of list of standard options for a Tk widget. The manpage
+.\"	argument defines where to look up the standard options; if
+.\"	omitted, defaults to "options". The options follow on successive
+.\"	lines, in three columns separated by tabs.
+.\"
+.\" .SE
+.\"	End of list of standard options for a Tk widget.
+.\"
+.\" .OP cmdName dbName dbClass
+.\"	Start of description of a specific option.  cmdName gives the
+.\"	option's name as specified in the class command, dbName gives
+.\"	the option's name in the option database, and dbClass gives
+.\"	the option's class in the option database.
+.\"
+.\" .UL arg1 arg2
+.\"	Print arg1 underlined, then print arg2 normally.
+.\"
+.\" .QW arg1 ?arg2?
+.\"	Print arg1 in quotes, then arg2 normally (for trailing punctuation).
+.\"
+.\" .PQ arg1 ?arg2?
+.\"	Print an open parenthesis, arg1 in quotes, then arg2 normally
+.\"	(for trailing punctuation) and then a closing parenthesis.
+.\"
+.\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+.\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ta \\n()Au \\n()Bu
+.ie !"\\$3"" \{\
+\&\\$1 \\fI\\$2\\fP (\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+.\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+.AS Tcl_Interp Tcl_CreateInterp in/out
+.\"	# BS - start boxed text
+.\"	# ^y = starting y location
+.\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+.\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+.\"	# VS - start vertical sidebar
+.\"	# ^Y = starting y location
+.\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.if !"\\$2"" .br
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+.\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+.\"	# Special macro to handle page bottom:  finish off current
+.\"	# box/sidebar if in box/sidebar mode, then invoked standard
+.\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+.\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+.\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+.\"	# SO - start of list of standard options
+.de SO
+'ie '\\$1'' .ds So \\fBoptions\\fR
+'el .ds So \\fB\\$1\\fR
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 5.5c 11c
+.ft B
+..
+.\"	# SE - end of list of standard options
+.de SE
+.fi
+.ft R
+.LP
+See the \\*(So manual entry for details on the standard options.
+..
+.\"	# OP - start of full description for a single option
+.de OP
+.LP
+.nf
+.ta 4c
+Command-Line Name:	\\fB\\$1\\fR
+Database Name:	\\fB\\$2\\fR
+Database Class:	\\fB\\$3\\fR
+.fi
+.IP
+..
+.\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+.\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+.\"	# UL - underline word
+.de UL
+\\$1\l'|0\(ul'\\$2
+..
+.\"	# QW - apply quotation marks to word
+.de QW
+.ie '\\*(lq'"' ``\\$1''\\$2
+.\"" fix emacs highlighting
+.el \\*(lq\\$1\\*(rq\\$2
+..
+.\"	# PQ - apply parens and quotation marks to word
+.de PQ
+.ie '\\*(lq'"' (``\\$1''\\$2)\\$3
+.\"" fix emacs highlighting
+.el (\\*(lq\\$1\\*(rq\\$2)\\$3
+..
+.\"	# QR - quoted range
+.de QR
+.ie '\\*(lq'"' ``\\$1''\\-``\\$2''\\$3
+.\"" fix emacs highlighting
+.el \\*(lq\\$1\\*(rq\\-\\*(lq\\$2\\*(rq\\$3
+..
+.\"	# MT - "empty" string
+.de MT
+.QW ""
+..
+.BS
+.SH NAME
+ttrace \- Trace-based interpreter initialization
+.SH SYNOPSIS
+package require \fBTcl  8\&.4\fR
+.sp
+package require \fBThread  ?2\&.8?\fR
+.sp
+\fBttrace::eval\fR \fIarg\fR ?arg \&.\&.\&.?
+.sp
+\fBttrace::enable\fR
+.sp
+\fBttrace::disable\fR
+.sp
+\fBttrace::cleanup\fR
+.sp
+\fBttrace::update\fR ?epoch?
+.sp
+\fBttrace::getscript\fR
+.sp
+\fBttrace::atenable\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+.sp
+\fBttrace::atdisable\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+.sp
+\fBttrace::addtrace\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+.sp
+\fBttrace::addscript\fR \fIname\fR \fIbody\fR
+.sp
+\fBttrace::addresolver\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+.sp
+\fBttrace::addcleanup\fR \fIbody\fR
+.sp
+\fBttrace::addentry\fR \fIcmd\fR \fIvar\fR \fIval\fR
+.sp
+\fBttrace::getentry\fR \fIcmd\fR \fIvar\fR
+.sp
+\fBttrace::getentries\fR \fIcmd\fR ?pattern?
+.sp
+\fBttrace::delentry\fR \fIcmd\fR
+.sp
+\fBttrace::preload\fR \fIcmd\fR
+.sp
+.BE
+.SH DESCRIPTION
+This package creates a framework for on-demand replication of the
+interpreter state accross threads in an multithreading application\&.
+It relies on the mechanics of Tcl command tracing and the Tcl
+\fBunknown\fR command and mechanism\&.
+.PP
+The package requires Tcl threading extension but can be alternatively
+used stand-alone within the AOLserver, a scalable webserver from
+America Online\&.
+.PP
+In a nutshell, a short sample illustrating the usage of the ttrace
+with the Tcl threading extension:
+.CS
+
+
+
+    % package require Ttrace
+    2\&.8\&.0
+
+    % set t1 [thread::create {package require Ttrace; thread::wait}]
+    tid0x1802800
+
+    % ttrace::eval {proc test args {return test-[thread::id]}}
+    % thread::send $t1 test
+    test-tid0x1802800
+
+    % set t2 [thread::create {package require Ttrace; thread::wait}]
+    tid0x1804000
+
+    % thread::send $t2 test
+    test-tid0x1804000
+
+
+.CE
+.PP
+As seen from above, the \fBttrace::eval\fR and \fBttrace::update\fR
+commands are used to create a thread-wide definition of a simple
+Tcl procedure and replicate that definition to all, already existing
+or later created, threads\&.
+.SH "USER COMMANDS"
+This section describes user-level commands\&. Those commands can be
+used by script writers to control the execution of the tracing
+framework\&.
+.TP
+\fBttrace::eval\fR \fIarg\fR ?arg \&.\&.\&.?
+This command concatenates given arguments and evaluates the resulting
+Tcl command with trace framework enabled\&. If the command execution
+was ok, it takes necessary steps to automatically propagate the
+trace epoch change to all threads in the application\&.
+For AOLserver, only newly created threads actually receive the
+epoch change\&. For the Tcl threading extension, all threads created by
+the extension are automatically updated\&. If the command execution
+resulted in Tcl error, no state propagation takes place\&.
+.sp
+This is the most important user-level command of the package as
+it wraps most of the commands described below\&. This greatly
+simplifies things, because user need to learn just this (one)
+command in order to effectively use the package\&. Other commands,
+as desribed below, are included mostly for the sake of completeness\&.
+.TP
+\fBttrace::enable\fR
+Activates all registered callbacks in the framework
+and starts a new trace epoch\&. The trace epoch encapsulates all
+changes done to the interpreter during the time traces are activated\&.
+.TP
+\fBttrace::disable\fR
+Deactivates all registered callbacks in the framework
+and closes the current trace epoch\&.
+.TP
+\fBttrace::cleanup\fR
+Used to clean-up all on-demand loaded resources in the interpreter\&.
+It effectively brings Tcl interpreter to its pristine state\&.
+.TP
+\fBttrace::update\fR ?epoch?
+Used to refresh the state of the interpreter to match the optional
+trace ?epoch?\&. If the optional ?epoch? is not given, it takes
+the most recent trace epoch\&.
+.TP
+\fBttrace::getscript\fR
+Returns a synthetized Tcl script which may be sourced in any interpreter\&.
+This script sets the stage for the Tcl \fBunknown\fR command so it can
+load traced resources from the in-memory database\&. Normally, this command
+is automatically invoked by other higher-level commands like
+\fBttrace::eval\fR and \fBttrace::update\fR\&.
+.PP
+.SH "CALLBACK COMMANDS"
+A word upfront: the package already includes callbacks for tracing
+following Tcl commands: \fBproc\fR, \fBnamespace\fR, \fBvariable\fR,
+\fBload\fR, and \fBrename\fR\&. Additionaly, a set of callbacks for
+tracing resources (object, clasess) for the XOTcl v1\&.3\&.8+, an
+OO-extension to Tcl, is also provided\&.
+This gives a solid base for solving most of the real-life needs and
+serves as an example for people wanting to customize the package
+to cover their specific needs\&.
+.PP
+Below, you can find commands for registering callbacks in the
+framework and for writing callback scripts\&. These callbacks are
+invoked by the framework in order to gather interpreter state
+changes, build in-memory database, perform custom-cleanups and
+various other tasks\&.
+.TP
+\fBttrace::atenable\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+Registers Tcl callback to be activated at \fBttrace::enable\fR\&.
+Registered callbacks are activated on FIFO basis\&. The callback
+definition includes the name of the callback, \fIcmd\fR, a list
+of callback arguments, \fIarglist\fR and the \fIbody\fR of the
+callback\&. Effectively, this actually resembles the call interface
+of the standard Tcl \fBproc\fR command\&.
+.TP
+\fBttrace::atdisable\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+Registers Tcl callback to be activated at \fBttrace::disable\fR\&.
+Registered callbacks are activated on FIFO basis\&. The callback
+definition includes the name of the callback, \fIcmd\fR, a list
+of callback arguments, \fIarglist\fR and the \fIbody\fR of the
+callback\&. Effectively, this actually resembles the call interface
+of the standard Tcl \fBproc\fR command\&.
+.TP
+\fBttrace::addtrace\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+Registers Tcl callback to be activated for tracing the Tcl
+\fBcmd\fR command\&. The callback definition includes the name of
+the Tcl command to trace, \fIcmd\fR, a list of callback arguments,
+\fIarglist\fR and the \fIbody\fR of the callback\&. Effectively,
+this actually resembles the call interface of the standard Tcl
+\fBproc\fR command\&.
+.TP
+\fBttrace::addscript\fR \fIname\fR \fIbody\fR
+Registers Tcl callback to be activated for building a Tcl
+script to be passed to other interpreters\&. This script is
+used to set the stage for the Tcl \fBunknown\fR command\&.
+Registered callbacks are activated on FIFO basis\&.
+The callback definition includes the name of the callback,
+\fIname\fR and the \fIbody\fR of the callback\&.
+.TP
+\fBttrace::addresolver\fR \fIcmd\fR \fIarglist\fR \fIbody\fR
+Registers Tcl callback to be activated by the overloaded Tcl
+\fBunknown\fR command\&.
+Registered callbacks are activated on FIFO basis\&.
+This callback is used to resolve the resource and load the
+resource in the current interpreter\&.
+.TP
+\fBttrace::addcleanup\fR \fIbody\fR
+Registers Tcl callback to be activated by the \fBtrace::cleanup\fR\&.
+Registered callbacks are activated on FIFO basis\&.
+.TP
+\fBttrace::addentry\fR \fIcmd\fR \fIvar\fR \fIval\fR
+Adds one entry to the named in-memory database\&.
+.TP
+\fBttrace::getentry\fR \fIcmd\fR \fIvar\fR
+Returns the value of the entry from the named in-memory database\&.
+.TP
+\fBttrace::getentries\fR \fIcmd\fR ?pattern?
+Returns names of all entries from the named in-memory database\&.
+.TP
+\fBttrace::delentry\fR \fIcmd\fR
+Deletes an entry from the named in-memory database\&.
+.TP
+\fBttrace::preload\fR \fIcmd\fR
+Registers the Tcl command to be loaded in the interpreter\&.
+Commands registered this way will always be the part of
+the interpreter and not be on-demand loaded by the Tcl
+\fBunknown\fR command\&.
+.PP
+.SH DISCUSSION
+Common introspective state-replication approaches use a custom Tcl
+script to introspect the running interpreter and synthesize another
+Tcl script to replicate this state in some other interpreter\&.
+This package, on the contrary, uses Tcl command traces\&. Command
+traces are registered on selected Tcl commands, like \fBproc\fR,
+\fBnamespace\fR, \fBload\fR and other standard (and/or user-defined)
+Tcl commands\&. When activated, those traces build an in-memory
+database of created resources\&. This database is used as a resource
+repository for the (overloaded) Tcl \fBunknown\fR command which
+creates the requested resource in the interpreter on demand\&.
+This way, users can update just one interpreter (master) in one
+thread and replicate that interpreter state (or part of it) to other
+threads/interpreters in the process\&.
+.PP
+Immediate benefit of such approach is the much smaller memory footprint
+of the application and much faster thread creation\&. By not actually
+loading all necessary procedures (and other resources) in every thread
+at the thread initialization time, but by deffering this to the time the
+resource is actually referenced, significant improvements in both
+memory consumption and thread initialization time can be achieved\&. Some
+tests have shown that memory footprint of an multithreading Tcl application
+went down more than three times and thread startup time was reduced for
+about 50 times\&. Note that your mileage may vary\&.
+Other benefits include much finer control about what (and when) gets
+replicated from the master to other Tcl thread/interpreters\&.
+.SH "SEE ALSO"
+thread, tpool, tsv
+.SH KEYWORDS
+command tracing, introspection

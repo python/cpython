@@ -1,0 +1,44 @@
+﻿  Killing any running python.exe instances...
+  Getting build info from git
+  Building heads/master-dirty:fc3dca3e16 master
+  _abc.c
+  _bisectmodule.c
+  blake2module.c
+  blake2b_impl.c
+  blake2s_impl.c
+  _codecsmodule.c
+  _collectionsmodule.c
+  _contextvarsmodule.c
+  _csv.c
+  _functoolsmodule.c
+  _heapqmodule.c
+  _json.c
+  _localemodule.c
+  _lsprof.c
+  _math.c
+  _pickle.c
+  _randommodule.c
+  sha3module.c
+  _sre.c
+  _stat.c
+  Compiling...
+  _struct.c
+  _weakref.c
+  arraymodule.c
+  atexitmodule.c
+  audioop.c
+  binascii.c
+  cmathmodule.c
+  _datetimemodule.c
+  errnomodule.c
+  faulthandler.c
+  gcmodule.c
+  itertoolsmodule.c
+  main.c
+  mathmodule.c
+  md5module.c
+  mmapmodule.c
+  _opcode.c
+  _operator.c
+  posixmodule.c
+MSBUILD : error MSB4166: Child node "2" exited prematurely. Shutting down. Diagnostic information may be found in files in "C:\Users\iofoc\AppData\Local\Temp\" and will be named MSBuild_*.failure.txt. This location can be changed by setting the MSBUILDDEBUGPATH environment variable to a different directory.

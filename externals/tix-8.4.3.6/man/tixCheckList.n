@@ -1,0 +1,238 @@
+'\"
+'\" $Id: tixCheckList.n,v 1.2 2001/01/22 08:02:45 ioilam Exp $
+'\"
+'\"
+'\" Copyright (c) 1993-1999 Ioi Kim Lam.
+'\" Copyright (c) 2000-2001 Tix Project Group.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" The file man.macros and some of the macros used by this file are
+'\" copyrighted: (c) 1990 The Regents of the University of California.
+'\"              (c) 1994-1995 Sun Microsystems, Inc.
+'\" The license terms of the Tcl/Tk distrobution are in the file
+'\" license.tcl.
+.so man.macros
+'\"----------------------------------------------------------------------
+.TH tixCheckList n 4.0 Tix "Tix Built-In Commands"
+.BS
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH NAME
+tixCheckList \- Create and manipulate tixCheckList widgets
+'\"
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SYNOPSIS
+\fBtixCheckList \fIpathName \fR?\fIoptions\fR?
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUPER-CLASS
+The \fBTixCheckList\fR class is derived from the \fBTixTree\fR class
+and inherits all the commands, options and subwidgets of its
+super-class.
+'\"
+'\"----------------------------------------------------------------------
+.SH "STANDARD OPTIONS"
+'\"
+\fBTixCheckList\fR supports all the standard options of a frame
+widget. See the \fBoptions(n)\fR manual entry for details on the
+standard options.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH "WIDGET-SPECIFIC OPTIONS"
+'\"
+'\"----------BEGIN
+.OP \-browsecmd browseCmd BrowseCmd
+Specifies a command to call whenever the user browses on an entry
+(usually by single-clicking on the entry). The command is called with
+one argument, the pathname of the entry.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-command command Command
+Specifies a command to call whenever the user activates an entry
+(usually by double-clicking on the entry). The command
+is called with one argument, the pathname of the entry.
+'\"----------END
+'\"
+'\"----------BEGIN
+.OP \-radio radio Radio
+A Boolean value. If set to true, the user can select at most one item
+at a time; if set to false, the user can select as many items as
+possible.
+'\"----------END
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH SUBWIDGETS
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhlist\fR
+Class:		\fBTixHList\fR
+.fi
+.IP
+The hierarchical listbox that displays the CheckList.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBhsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The horizontal scrollbar subwidget.
+'\"----------END
+'\"
+'\"----------BEGIN
+.LP
+.nf
+Name:		\fBvsb\fR
+Class:		\fBScrollbar\fR
+.fi
+.IP
+The vertical scrollbar subwidget.
+'\"----------END
+'\"
+.BE
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH DESCRIPTION
+'\"
+.PP
+'\"
+The \fBtixCheckList\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a CheckList widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the CheckList
+widget such as its cursor and relief.
+.PP
+The CheckList widget displays a list of items to be selected by the
+user. CheckList acts similarly to the Tk checkbutton or radiobutton
+widgets, except it is capable of handling many more items than
+checkbuttons or radiobuttons.
+.PP
+The items are contained in the \fBhlist\fR subwidget.  Each item may
+be in one of the following status: \fBon\fR (indicated by a check
+bitmap), \fBoff\fR (indicated by a cross bitmap) \fBdefault\fR
+(indicated by a gray box bitmap) or \fBnone\fR, in which case the item
+will not be accompanied by a bitmap. The items whose status is
+\fBon\fR, \fBoff\fR or \fBdefault\fR are called the \fIselectable\fR
+items and can be checked or crossed by the user. All selectable
+entries must be of the type \fBimagetext\fR.
+.PP
+The items whose status is \fBnone\fR cannot be checked or crossed by
+the user; usually they are included in the \fBhlist\fR subwidget only
+for explanation purposes or as separators.
+.PP
+Initially, all the items have a \fInone\fR status. To make an item
+selectable, you can call the \fBsetstatus\fR command to change its
+status (see below).
+'\"
+.PP
+Notice that CheckList is a subclass of the TixTree widget and thus is
+is capable of displaying a hierachy of selectable entries. When
+necessary, you can call the \fBsetmode\fR method (see
+\fBTixTree(n)\fR) to define the hierachical structure of the
+selectable entries.
+'\"
+'\"----------------------------------------------------------------------
+.SH WIDGET COMMANDS
+.PP
+'\"
+The \fBtixCheckList\fR command creates a new Tcl command whose name is
+the same as the path name of the CheckList's window.  This command may
+be used to invoke various operations on the widget. It has the
+following general form:
+'\"
+.RS
+.CS
+'\"
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.RE
+'\"
+\fIPathName\fR is the name of the command, which is the same as the
+CheckList widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command. The following commands
+are possible for CheckList widgets:
+'\"
+.TP
+\fIpathName \fBgetselection\fR ?\fIstatus\fR?
+'\"
+Returns a list of items whose status matches \fIstatus\fR. If
+\fIstatus\fR is not specified, the list of items in the "\fBon\fR"
+status will be returned.
+'\"
+.TP
+\fIpathName \fBgetstatus\fR \fIentryPath\fR
+'\"
+Returns the current status of \fIentryPath\fR.
+'\"
+.TP
+\fIpathName \fBsetstatus\fR \fIentryPath status\fR 
+'\"
+Sets the status of \fIentryPath\fR to be \fIstatus\fR. A bitmap will
+be displayed next to the entry its status is \fBon\fR, \fBoff\fR or
+\fBdefault\fR.
+'\"
+'\"
+.TP
+\fIpathName \fBsubwidget \fI name ?args?\fR 
+'\"
+When no options are given, this command returns the pathname of the
+subwidget of the specified name.
+
+When options are given, the widget command of the specified subwidget
+will be called with these options.
+'\"
+'\"----------------------------------------------------------------------
+.SH EXAMPLE
+'\"
+.PP
+This example creates several choices for the user to select.
+.PP
+.CS
+set c [tixCheckList .c]
+$c subwidget hlist add choice1 -itemtype imagetext -text Choice1
+$c subwidget hlist add choice2 -itemtype imagetext -text Choice2
+$c subwidget hlist add choice3 -itemtype imagetext -text Choice3
+$c setstatus choice1 on
+$c setstatus choice2 off
+$c setstatus choice3 off
+pack $c
+.CE
+'\"
+'\"----------------------------------------------------------------------
+.SH BINDINGS
+.PP
+'\"
+The basic mouse and keyboard bindings of the CheckList widget are the
+same as the bindings of the TixTree widget.
+
+In addition, the status of the entries in the CheckList are toggled
+under the following conditions:
+'\"
+.IP [1]
+When the user press the mouse button over an entry.
+'\"
+.IP [2]
+When the user press the <space> key over an entry.
+'\"
+.IP [3]
+When the user press the <Return> key over an entry.
+'\"
+'\"
+'\"----------------------------------------------------------------------
+.SH KEYWORDS
+Tix(n), tixHList(n), tixTree(n)
+
+

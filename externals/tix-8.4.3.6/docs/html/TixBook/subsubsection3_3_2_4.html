@@ -1,0 +1,38 @@
+<HEAD>
+<TITLE> Validating User Inputs<A NAME=123>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html319 HREF=subsection3_3_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html317 HREF=subsection3_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html313 HREF=subsubsectionstar3_3_2_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html321 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html320 HREF=subsection3_3_3.html> Accessing The Components </A>
+<B>Up:</B> <A NAME=tex2html318 HREF=subsection3_3_2.html> Getting Started: the </A>
+<B> Previous:</B> <A NAME=tex2html314 HREF=subsubsectionstar3_3_2_3.html>  Disabling Callbacks Temporarily</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00032400000000000000> Validating User Inputs<A NAME=123>&nbsp;</A></A></H3>
+<P>
+Sometimes it may be necessary to check the user input against certain
+  criteria. For example, you may want to allow only even numbers in a
+  TixControl widget. To do this, you can use the <tt>-validatecmd</tt> option,
+  which specifies a Tcl command to call whenever the user enters a new
+  value. Here is an example:
+<P>
+<tt>     tixControl .c -value 0 -step 2 -validatecmd evenOnly<BR>
+<BR>
+    proc evenOnly {value} {<BR>
+        return [expr $value - ($value %2)]<BR>
+    }</tt>
+<P>
+The value parameter to <tt>evenOnly</tt> is the new value entered by
+  the user.  The <tt>evenOnly</tt> procedure makes sure that the new
+  value is even by returning a modified, even number. The Tcl command
+  specified by the <tt>-validatecmd</tt> must return a value which it
+  deems valid and this value will be stored in the <tt>-value</tt> option
+  of the TixControl widget.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

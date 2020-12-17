@@ -1,0 +1,69 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH "Safe Tk" n 8.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+safe::loadTk \- Load Tk into a safe interpreter.
+.SH SYNOPSIS
+\fBsafe::loadTk \fIslave\fR ?\fB\-use\fR \fIwindowId\fR? ?\fB\-display\fR \fIdisplayName\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Safe Tk is based on Safe Tcl, which provides a mechanism that allows
+restricted and mediated access to auto-loading and packages for safe
+interpreters.  Safe Tk adds the ability to configure the interpreter for safe
+Tk operations and load Tk into safe interpreters.
+.PP
+The \fBsafe::loadTk\fR command initializes the required data structures in
+the named safe interpreter and then loads Tk into it.  The interpreter must
+have been created with \fBsafe::interpCreate\fR or have been initialized
+with \fBsafe::interpInit\fR.  The command returns the name of the safe
+interpreter.  If \fB\-use\fR is specified, the window identified by the
+specified system dependent identifier \fIwindowId\fR is used to contain the
+.QW .
+window of the safe interpreter; it can be any valid id, eventually referencing
+a window belonging to another application. As a convenience, if the window you
+plan to use is a Tk Window of the application you can use the window name
+(e.g.,
+.QW \fB.x.y\fR )
+instead of its window Id (e.g., from \fBwinfo id\fR \fB.x.y\fR).
+When \fB\-use\fR is not specified, a new toplevel window is created for the
+.QW .
+window of the safe interpreter. On X11 if you want the embedded window to use
+another display than the default one, specify it with \fB\-display\fR.  See
+the \fBSECURITY ISSUES\fR section below for implementation details.
+.SH "SECURITY ISSUES"
+.PP
+Please read the \fBsafe\fR manual page for Tcl to learn about the basic
+security considerations for Safe Tcl.
+.PP
+\fBsafe::loadTk\fR adds the value of \fBtk_library\fR taken from the master
+interpreter to the virtual access path of the safe interpreter so that
+auto-loading will work in the safe interpreter.
+.PP
+Tk initialization is now safe with respect to not trusting the slave's state
+for startup. \fBsafe::loadTk\fR registers the slave's name so when the Tk
+initialization (\fBTk_SafeInit\fR) is called and in turn calls the master's
+\fBsafe::InitTk\fR it will return the desired \fBargv\fR equivalent
+(\fB\-use\fR \fIwindowId\fR, correct \fB\-display\fR, etc.)
+.PP
+When \fB\-use\fR is not used, the new toplevel created is specially decorated
+so the user is always aware that the user interface presented comes from a
+potentially unsafe code and can easily delete the corresponding interpreter.
+.PP
+On X11, conflicting \fB\-use\fR and \fB\-display\fR are likely to generate a
+fatal X error.
+.SH "SEE ALSO"
+safe(n), interp(n), library(n), load(n), package(n), source(n), unknown(n)
+.SH KEYWORDS
+alias, auto-loading, auto_mkindex, load, master interpreter, safe
+interpreter, slave interpreter, source
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

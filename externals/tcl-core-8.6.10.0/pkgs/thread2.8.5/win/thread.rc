@@ -1,0 +1,57 @@
+// Version resource script
+//
+
+#include <winver.h>
+
+#define RESOURCE_INCLUDED
+
+LANGUAGE 0x9, 0x1    /* LANG_ENGLISH, SUBLANG_DEFAULT */
+
+#ifndef COMMAVERSION
+#define COMMAVERSION PACKAGE_MAJOR,PACKAGE_MINOR,0,0
+#endif
+
+#ifndef DOTVERSION
+#define DOTVERSION PACKAGE_VERSION
+#endif
+
+#ifndef PRJLIBNAME
+#ifdef DEBUG
+#define PRJLIBNAME "thread" STRINGIFY(JOIN(PACKAGE_MAJOR,PACKAGE_MINOR)) "d.dll\0"
+#else
+#define PRJLIBNAME "thread" STRINGIFY(JOIN(PACKAGE_MAJOR,PACKAGE_MINOR)) ".dll\0"
+#endif
+#endif
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION    COMMAVERSION
+ PRODUCTVERSION COMMAVERSION
+ FILEFLAGSMASK  0x3fL
+#if DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS     VOS_NT_WINDOWS32
+ FILETYPE     VFT_DLL
+ FILESUBTYPE     0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0" /* LANG_ENGLISH/SUBLANG_ENGLISH_US, Unicode CP */
+        BEGIN
+            VALUE "FileDescription", "Threading extension library for Tcl"
+            VALUE "OriginalFilename", PRJLIBNAME
+            VALUE "CompanyName", "NONE! Open-sourced with no owner\0"
+            VALUE "FileVersion", DOTVERSION
+            VALUE "LegalCopyright", "Under BSD license\0"
+            VALUE "ProductName", "Tcl for Windows\0"
+            VALUE "ProductVersion", DOTVERSION
+            VALUE "Authors", "Brent Welch,\r\n" "Andreas Kupries, \r\n" "David Gravereaux,\r\n" "Zoran Vasiljevic" "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

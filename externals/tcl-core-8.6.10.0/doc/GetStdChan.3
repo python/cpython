@@ -1,0 +1,86 @@
+'\"
+'\" Copyright (c) 1996 by Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_GetStdChannel 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_GetStdChannel, Tcl_SetStdChannel \- procedures for retrieving and replacing the standard channels
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Channel
+\fBTcl_GetStdChannel\fR(\fItype\fR)
+.sp
+\fBTcl_SetStdChannel\fR(\fIchannel, type\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_Channel channel
+.AP int type in
+The identifier for the standard channel to retrieve or modify.  Must be one of
+\fBTCL_STDIN\fR, \fBTCL_STDOUT\fR, or \fBTCL_STDERR\fR.
+.AP Tcl_Channel channel in
+The channel to use as the new value for the specified standard channel.
+.BE
+
+.SH DESCRIPTION
+.PP
+Tcl defines three special channels that are used by various I/O related
+commands if no other channels are specified.  The standard input channel
+has a channel name of \fBstdin\fR and is used by \fBread\fR and \fBgets\fR.
+The standard output channel is named \fBstdout\fR and is used by
+\fBputs\fR.  The standard error channel is named \fBstderr\fR and is used for
+reporting errors.  In addition, the standard channels are inherited by any
+child processes created using \fBexec\fR or \fBopen\fR in the absence of any
+other redirections.
+.PP
+The standard channels are actually aliases for other normal channels.  The
+current channel associated with a standard channel can be retrieved by calling
+\fBTcl_GetStdChannel\fR with one of
+\fBTCL_STDIN\fR, \fBTCL_STDOUT\fR, or \fBTCL_STDERR\fR as the \fItype\fR.  The
+return value will be a valid channel, or NULL.
+.PP
+A new channel can be set for the standard channel specified by \fItype\fR
+by calling \fBTcl_SetStdChannel\fR with a new channel or NULL in the
+\fIchannel\fR argument.  If the specified channel is closed by a later call to
+\fBTcl_Close\fR, then the corresponding standard channel will automatically be
+set to NULL.
+.PP
+If a non-NULL value for \fIchannel\fR is passed to \fBTcl_SetStdChannel\fR,
+then that same value should be passed to \fBTcl_RegisterChannel\fR, like so:
+.PP
+.CS
+Tcl_RegisterChannel(NULL, channel);
+.CE
+.PP
+This is a workaround for a misfeature in \fBTcl_SetStdChannel\fR that it
+fails to do some reference counting housekeeping.  This misfeature cannot
+be corrected without contradicting the assumptions of some existing
+code that calls \fBTcl_SetStdChannel\fR.
+.PP
+If \fBTcl_GetStdChannel\fR is called before \fBTcl_SetStdChannel\fR, Tcl will
+construct a new channel to wrap the appropriate platform-specific standard
+file handle.  If \fBTcl_SetStdChannel\fR is called before
+\fBTcl_GetStdChannel\fR, then the default channel will not be created.
+.PP
+If one of the standard channels is set to NULL, either by calling
+\fBTcl_SetStdChannel\fR with a NULL \fIchannel\fR argument, or by calling
+\fBTcl_Close\fR on the channel, then the next call to \fBTcl_CreateChannel\fR
+will automatically set the standard channel with the newly created channel.  If
+more than one standard channel is NULL, then the standard channels will be
+assigned starting with standard input, followed by standard output, with
+standard error being last.
+.PP
+See \fBTcl_StandardChannels\fR for a general treatise about standard
+channels and the behavior of the Tcl library with regard to them.
+
+.SH "SEE ALSO"
+Tcl_Close(3), Tcl_CreateChannel(3), Tcl_Main(3), tclsh(1)
+
+.SH KEYWORDS
+standard channel, standard input, standard output, standard error

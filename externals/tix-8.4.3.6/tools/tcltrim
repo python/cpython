@@ -1,0 +1,24 @@
+#!/usr/local/bin/tclsh
+
+foreach source $argv {
+    set target [file rootname $source].tt
+
+    set src [open $source RDONLY]
+    set tgt [open $target {RDWR CREAT TRUNC}]
+
+    while {[eof $src] == 0} {
+	set line [string trim [gets $src]]
+
+	if {$line == ""} {
+	    continue
+	}
+	if {[string index $line 0] == "#"} {
+	    continue
+	}
+	puts $tgt $line
+    }
+
+    close $src
+    close $tgt
+}
+

@@ -1,0 +1,1220 @@
+# This file is a Tcl script to test entry widgets in Tk.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# ------------------------------------------------------------------------------
+# Tests that a Safe Base interpreter cannot write to the PRIMARY selection.
+# ------------------------------------------------------------------------------
+# - Tests 3.*, 6.* test that the fix for ticket de156e9efe implemented in branch
+#   bug-de156e9efe has been applied and still works.  They test that a Safe Base
+#   slave interpreter cannot write to the PRIMARY selection.
+# - The other tests verify that the master interpreter and an unsafe slave CAN
+#   write to the PRIMARY selection, and therefore that the test scripts
+#   themselves are valid.
+# - A text, entry, ttk::entry, listbox, spinbox or ttk::spinbox widget can have
+#   option -exportselection 1, meaning (in an unsafe interpreter) that a
+#   selection made in one of these widgets is automatically written to the
+#   PRIMARY selection.
+# - A safe interpreter must not write to the PRIMARY selection.
+# - The spinbox, ttk::spinbox are variants of entry, ttk::entry respectively.
+# ------------------------------------------------------------------------------
+
+namespace eval ::_test_tmp {}
+
+# ------------------------------------------------------------------------------
+#  Proc ::_test_tmp::unsafeInterp
+# ------------------------------------------------------------------------------
+# Command that creates an unsafe child interpreter and tries to load Tk.
+# - This is necessary for loading Tk if the tests are done in the build
+#   directory without installing Tk.  In that case the usual auto_path loading
+#   mechanism cannot work because the tk binary is not where pkgIndex.tcl says
+#   it is.
+# - This command is not needed for Safe Base slaves because safe::loadTk does
+#   something similar and works correctly.
+# - Based on scripts in winSend.test.
+# ------------------------------------------------------------------------------
+
+namespace eval ::_test_tmp {
+    variable TkLoadCmd
+}
+
+foreach pkg [info loaded] {
+    if {[lindex $pkg 1] eq "Tk"} {
+	set ::_test_tmp::TkLoadCmd [list load {*}$pkg]
+	break
+    }
+}
+
+proc ::_test_tmp::unsafeInterp {name} {
+    variable TkLoadCmd
+    interp create $name
+    $name eval [list set argv [list -name $name]]
+    catch {{*}$TkLoadCmd $name}
+}
+
+
+set ::_test_tmp::script {
+    package require Tk
+    namespace eval ::_test_tmp {}
+
+    proc ::_test_tmp::getPrimarySelection {} {
+        if {[catch {::tk::GetSelection . PRIMARY} sel]} {
+            set sel {}
+        }
+        return $sel
+    }
+
+    proc ::_test_tmp::setPrimarySelection {} {
+        destroy .preset
+        text .preset -exportselection 1
+        .preset insert end OLD_VALUE
+        # pack .preset
+        .preset tag add sel 1.0 end-1c
+        update
+        return
+    }
+
+    # Clearing the PRIMARY selection is troublesome.
+    # The window need not be mapped.
+    # However, the window must continue to exist, or some X11 servers
+    # will set the PRIMARY selection to something else.
+    proc ::_test_tmp::clearPrimarySelection {} {
+        destroy .clear
+        text .clear -exportselection 1
+        .clear insert end TMP_VALUE
+        # pack .clear
+        .clear tag add sel 1.0 end-1c
+        update
+        .clear tag remove sel 1.0 end-1c
+        update
+        return
+    }
+
+    # If this interpreter can write to the PRIMARY
+    # selection, the commands below will do so.
+
+    proc ::_test_tmp::tryText {} {
+        text .t -exportselection 1
+        .t insert end PAYLOAD
+        pack .t
+        .t tag add sel 1.0 end-1c
+        update
+        return
+    }
+
+    proc ::_test_tmp::tryEntry {} {
+        entry .t -exportselection 1
+        .t insert end PAYLOAD
+        pack .t
+        .t selection range 0 end
+        update
+        return
+    }
+
+    proc ::_test_tmp::tryTtkEntry {} {
+        ::ttk::entry .t -exportselection 1
+        .t insert end PAYLOAD
+        pack .t
+        .t selection range 0 end
+        update
+        return
+    }
+
+    proc ::_test_tmp::tryListbox {} {
+        listbox .t -exportselection 1
+        .t insert end list1 PAYLOAD list3
+        pack .t
+        .t selection set 1
+        update
+        return
+    }
+
+    proc ::_test_tmp::trySpinbox {ver} {
+        if {$ver == 1} {
+            # spinbox as entry
+            spinbox .t -exportselection 1 -values {1 2 3 4 5}
+            .t delete 0 end
+            .t insert end PAYLOAD
+            pack .t
+            .t selection range 0 end
+            update
+            return
+            # selects PAYLOAD
+        } elseif {$ver == 2} {
+            # spinbox spun
+            spinbox .t -exportselection 1 -values {1 2 3 4 5}
+            .t invoke buttonup
+            pack .t
+            .t selection range 0 end
+            update
+            return
+            # selects 2
+        } else {
+            # spinbox spun/selected/spun
+            spinbox .t -exportselection 1 -values {1 2 3 4 5}
+            .t invoke buttonup
+            pack .t
+            .t selection range 0 end
+            update
+            .t invoke buttonup
+            update
+            return
+            # selects 3
+        }
+    }
+
+    proc ::_test_tmp::tryTtkSpinbox {ver} {
+        if {$ver == 1} {
+            # ttk::spinbox as entry
+            ::ttk::spinbox .t -exportselection 1 -values {1 2 3 4 5}
+            .t delete 0 end
+            .t insert end PAYLOAD
+            pack .t
+            .t selection range 0 end
+            update
+            return
+        } elseif {$ver == 2} {
+            # ttk::spinbox spun
+            ::ttk::spinbox .t -exportselection 1 -values {1 2 3 4 5}
+            ::ttk::spinbox::Spin .t +1
+            ::ttk::spinbox::Spin .t +1
+            pack .t
+            # ttk::spinbox::Spin sets selection
+            update
+            return
+            # selects 2
+        } else {
+            # ttk::spinbox spun/selected/spun
+            ::ttk::spinbox .t -exportselection 1 -values {1 2 3 4 5}
+            ::ttk::spinbox::Spin .t +1
+            ::ttk::spinbox::Spin .t +1
+            pack .t
+            # ttk::spinbox::Spin sets selection
+            update
+            ::ttk::spinbox::Spin .t +1
+            update
+            return
+            # selects 3
+        }
+    }
+}
+
+# Do this once for the master interpreter.
+eval $::_test_tmp::script
+
+test safePrimarySelection-1.1 {master interpreter, text, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryText
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-1.2 {master interpreter, entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryEntry
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-1.3 {master interpreter, ttk::entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkEntry
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-1.4 {master interpreter, listbox, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryListbox
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-1.5 {master interpreter, spinbox as entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::trySpinbox 1
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-1.6 {master interpreter, spinbox spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::trySpinbox 2
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-1.7 {master interpreter, spinbox spun/selected/spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::trySpinbox 3
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-1.8 {master interpreter, ttk::spinbox as entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkSpinbox 1
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-1.9 {master interpreter, ttk::spinbox spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkSpinbox 2
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-1.10 {master interpreter, ttk::spinbox spun/selected/spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkSpinbox 3
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-2.1 {unsafe slave interpreter, text, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryText
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-2.2 {unsafe slave interpreter, entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryEntry
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-2.3 {unsafe slave interpreter, ttk::entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkEntry
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-2.4 {unsafe slave interpreter, listbox, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryListbox
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-2.5 {unsafe slave interpreter, spinbox as entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 1
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-2.6 {unsafe slave interpreter, spinbox spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 2
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-2.7 {unsafe slave interpreter, spinbox spun/selected/spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 3
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-2.8 {unsafe slave interpreter, ttk::spinbox as entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 1
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-2.9 {unsafe slave interpreter, ttk::spinbox spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 2
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-2.10 {unsafe slave interpreter, ttk::spinbox spun/selected/spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 3
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-3.1 {IMPORTANT, safe slave interpreter, text, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryText
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.2 {IMPORTANT, safe slave interpreter, entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryEntry
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.3 {IMPORTANT, safe slave interpreter, ttk::entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkEntry
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.4 {IMPORTANT, safe slave interpreter, listbox, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryListbox
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.5 {IMPORTANT, safe slave interpreter, spinbox as entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 1
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.6 {IMPORTANT, safe slave interpreter, spinbox spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 2
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.7 {IMPORTANT, safe slave interpreter, spinbox spun/selected/spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 3
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.8 {IMPORTANT, safe slave interpreter, ttk::spinbox as entry, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 1
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.9 {IMPORTANT, safe slave interpreter, ttk::spinbox spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 2
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-3.10 {IMPORTANT, safe slave interpreter, ttk::spinbox spun/selected/spun, no existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 3
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {----}
+
+test safePrimarySelection-4.1 {master interpreter, text, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryText
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-4.2 {master interpreter, entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryEntry
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-4.3 {master interpreter, ttk::entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkEntry
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-4.4 {master interpreter, listbox, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryListbox
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-4.5 {master interpreter, spinbox as entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::trySpinbox 1
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-4.6 {master interpreter, spinbox spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::trySpinbox 2
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-4.7 {master interpreter, spinbox spun/selected/spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::trySpinbox 3
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-4.8 {master interpreter, ttk::spinbox as entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkSpinbox 1
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-4.9 {master interpreter, ttk::spinbox spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkSpinbox 2
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-4.10 {master interpreter, ttk::spinbox spun/selected/spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    ::_test_tmp::tryTtkSpinbox 3
+    ::_test_tmp::getPrimarySelection
+} -cleanup {
+    destroy {*}[winfo children .]
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-5.1 {unsafe slave interpreter, text, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryText
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-5.2 {unsafe slave interpreter, entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryEntry
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-5.3 {unsafe slave interpreter, ttk::entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkEntry
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-5.4 {unsafe slave interpreter, listbox, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryListbox
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-5.5 {unsafe slave interpreter, spinbox as entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 1
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-5.6 {unsafe slave interpreter, spinbox spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 2
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-5.7 {unsafe slave interpreter, spinbox spun/selected/spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 3
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-5.8 {unsafe slave interpreter, ttk::spinbox as entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 1
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {PAYLOAD}
+
+test safePrimarySelection-5.9 {unsafe slave interpreter, ttk::spinbox spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 2
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {2}
+
+test safePrimarySelection-5.10 {unsafe slave interpreter, ttk::spinbox spun/selected/spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set int2 slave2
+    ::_test_tmp::unsafeInterp $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 3
+    $int2 eval ::_test_tmp::getPrimarySelection
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2
+    ::_test_tmp::clearPrimarySelection
+} -result {3}
+
+test safePrimarySelection-6.1 {IMPORTANT, safe slave interpreter, text, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryText
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.2 {IMPORTANT, safe slave interpreter, entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryEntry
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.3 {IMPORTANT, safe slave interpreter, ttk::entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkEntry
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.4 {IMPORTANT, safe slave interpreter, listbox, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryListbox
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.5 {IMPORTANT, safe slave interpreter, spinbox as entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 1
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.6 {IMPORTANT, safe slave interpreter, spinbox spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 2
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.7 {IMPORTANT, safe slave interpreter, spinbox spun/selected/spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::trySpinbox 3
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.8 {IMPORTANT, safe slave interpreter, ttk::spinbox as entry, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 1
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.9 {IMPORTANT, safe slave interpreter, ttk::spinbox spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 2
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+test safePrimarySelection-6.10 {IMPORTANT, safe slave interpreter, ttk::spinbox spun/selected/spun, existing selection} -setup {
+    catch {interp delete slave2}
+    destroy {*}[winfo children .]
+    ::_test_tmp::setPrimarySelection
+} -body {
+    set res0 [::_test_tmp::getPrimarySelection]
+    set int2 slave2
+    ::safe::interpCreate $int2
+    ::safe::loadTk $int2
+    $int2 eval $::_test_tmp::script
+    $int2 eval ::_test_tmp::tryTtkSpinbox 3
+    set res1 [$int2 eval ::_test_tmp::getPrimarySelection]
+    set res2 [::_test_tmp::getPrimarySelection]
+    set res3 $res0--$res1--$res2
+} -cleanup {
+    interp delete $int2
+    destroy {*}[winfo children .]
+    unset int2 res0 res1 res2 res3
+    ::_test_tmp::clearPrimarySelection
+} -result {OLD_VALUE----OLD_VALUE}
+
+
+namespace delete ::_test_tmp
+
+# option clear
+# cleanup
+cleanupTests
+return

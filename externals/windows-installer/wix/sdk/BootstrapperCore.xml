@@ -1,0 +1,2813 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BootstrapperCore</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication">
+            <summary>
+            The default bootstrapper application.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication"/> class.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Startup">
+            <summary>
+            Fired when the engine is starting up the bootstrapper application.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Shutdown">
+            <summary>
+            Fired when the engine is shutting down the bootstrapper application.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.SystemShutdown">
+            <summary>
+            Fired when the system is shutting down or user is logging off.
+            </summary>
+            <remarks>
+            <para>To prevent shutting down or logging off, set <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.Result"/> to
+            <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Cancel"/>; otherwise, set it to <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Ok"/>.</para>
+            <para>By default setup will prevent shutting down or logging off between
+            <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyBegin"/> and <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyComplete"/>.
+            Derivatives can change this behavior by overriding <see cref="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnSystemShutdown(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs)"/>
+            or handling <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.SystemShutdown"/>.</para>
+            <para>If <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs.Reasons"/> contains <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Critical"/>
+            the bootstrapper cannot prevent the shutdown and only has a few seconds to save state or perform any other
+            critical operations before being closed by the operating system.</para>
+            <para>This event may be fired on a different thread.</para>
+            </remarks>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectBegin">
+            <summary>
+            Fired when the overall detection phase has begun.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectForwardCompatibleBundle">
+            <summary>
+            Fired when a forward compatible bundle is detected.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectUpdateBegin">
+            <summary>
+            Fired when the update detection phase has begun.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectUpdate">
+            <summary>
+            Fired when the update detection has found a potential update candidate.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectUpdateComplete">
+            <summary>
+            Fired when the update detection phase has completed.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectPriorBundle">
+            <summary>
+            Fired when the detection for a prior bundle has begun.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectRelatedBundle">
+            <summary>
+            Fired when a related bundle has been detected for a bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectPackageBegin">
+            <summary>
+            Fired when the detection for a specific package has begun.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectCompatiblePackage">
+            <summary>
+            Fired when a package was not detected but a package using the same provider key was.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectRelatedMsiPackage">
+            <summary>
+            Fired when a related MSI package has been detected for a package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectTargetMsiPackage">
+            <summary>
+            Fired when an MSP package detects a target MSI has been detected.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectMsiFeature">
+            <summary>
+            Fired when a feature in an MSI package has been detected.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectPackageComplete">
+            <summary>
+            Fired when the detection for a specific package has completed.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.DetectComplete">
+            <summary>
+            Fired when the detection phase has completed.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanBegin">
+            <summary>
+            Fired when the engine has begun planning the installation.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanRelatedBundle">
+            <summary>
+            Fired when the engine has begun planning for a related bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanPackageBegin">
+            <summary>
+            Fired when the engine has begun planning the installation of a specific package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanCompatiblePackage">
+            <summary>
+            Fired when the engine plans a new, compatible package using the same provider key.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanTargetMsiPackage">
+            <summary>
+            Fired when the engine is about to plan the target MSI of a MSP package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanMsiFeature">
+            <summary>
+            Fired when the engine is about to plan a feature in an MSI package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanPackageComplete">
+            <summary>
+            Fired when the engine has completed planning the installation of a specific package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.PlanComplete">
+            <summary>
+            Fired when the engine has completed planning the installation.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyBegin">
+            <summary>
+            Fired when the engine has begun installing the bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyPhaseCount">
+            <summary>
+            DEPRECATED: This event will be merged with ApplyBegin in wix4.
+            Fired right after ApplyBegin, providing the number of phases that the engine will go through in apply.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Elevate">
+            <summary>
+            Fired when the engine is about to start the elevated process.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.RegisterBegin">
+            <summary>
+            Fired when the engine has begun registering the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.RegisterComplete">
+            <summary>
+            Fired when the engine has completed registering the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.UnregisterBegin">
+            <summary>
+            Fired when the engine has begun removing the registration for the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.UnregisterComplete">
+            <summary>
+            Fired when the engine has completed removing the registration for the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheBegin">
+            <summary>
+            Fired when the engine has begun caching the installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CachePackageBegin">
+            <summary>
+            Fired when the engine has begun caching a specific package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheAcquireBegin">
+            <summary>
+            Fired when the engine has begun acquiring the installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheAcquireProgress">
+            <summary>
+            Fired when the engine has progress acquiring the installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ResolveSource">
+            <summary>
+            Fired by the engine to allow the user experience to change the source
+            using <see cref="M:Engine.SetLocalSource"/> or <see cref="M:Engine.SetDownloadSource"/>.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheAcquireComplete">
+            <summary>
+            Fired when the engine has completed the acquisition of the installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheVerifyBegin">
+            <summary>
+            Fired when the engine begins the verification of the acquired installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheVerifyComplete">
+            <summary>
+            Fired when the engine complete the verification of the acquired installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CachePackageComplete">
+            <summary>
+            Fired when the engine has completed caching a specific package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.CacheComplete">
+            <summary>
+            Fired after the engine has cached the installation sources.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecuteBegin">
+            <summary>
+            Fired when the engine has begun installing packages.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecutePackageBegin">
+            <summary>
+            Fired when the engine has begun installing a specific package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecutePatchTarget">
+            <summary>
+            Fired when the engine executes one or more patches targeting a product.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Error">
+            <summary>
+            Fired when the engine has encountered an error.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Progress">
+            <summary>
+            Fired when the engine has changed progress for the bundle installation.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecuteMsiMessage">
+            <summary>
+            Fired when Windows Installer sends an installation message.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecuteFilesInUse">
+            <summary>
+            Fired when Windows Installer sends a files in use installation message.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecutePackageComplete">
+            <summary>
+            Fired when the engine has completed installing a specific package.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecuteComplete">
+            <summary>
+            Fired when the engine has completed installing packages.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.RestartRequired">
+            <summary>
+            Fired by the engine to request a restart now or inform the user a manual restart is required later.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyComplete">
+            <summary>
+            Fired when the engine has completed installing the bundle.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ExecuteProgress">
+            <summary>
+            Fired by the engine while executing on payload.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.LaunchApprovedExeBegin">
+            <summary>
+            Fired when the engine is about to launch the preapproved executable.
+            </summary>
+        </member>
+        <member name="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.LaunchApprovedExeComplete">
+            <summary>
+            Fired when the engine has completed launching the preapproved executable.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.AsyncExecution">
+            <summary>
+            Specifies whether this bootstrapper should run asynchronously. The default is true.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Command">
+            <summary>
+            Gets the <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Command"/> information for how the UX should be started.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Engine">
+            <summary>
+            Gets the <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Engine"/> for interaction with the Engine.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.Run">
+            <summary>
+            Entry point that is called when the bootstrapper application is ready to run.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnStartup(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StartupEventArgs)">
+            <summary>
+            Called by the engine on startup of the bootstrapper application.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnShutdown(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ShutdownEventArgs)">
+            <summary>
+            Called by the engine to uninitialize the user experience.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnSystemShutdown(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs)">
+            <summary>
+            Called when the system is shutting down or the user is logging off.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+            <remarks>
+            <para>To prevent shutting down or logging off, set <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.Result"/> to
+            <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Cancel"/>; otherwise, set it to <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Ok"/>.</para>
+            <para>By default setup will prevent shutting down or logging off between
+            <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyBegin"/> and <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyComplete"/>.
+            Derivatives can change this behavior by overriding <see cref="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnSystemShutdown(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs)"/>
+            or handling <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.SystemShutdown"/>.</para>
+            <para>If <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs.Reasons"/> contains <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Critical"/>
+            the bootstrapper cannot prevent the shutdown and only has a few seconds to save state or perform any other
+            critical operations before being closed by the operating system.</para>
+            <para>This method may be called on a different thread.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectBeginEventArgs)">
+            <summary>
+            Called when the overall detection phase has begun.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectForwardCompatibleBundle(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs)">
+            <summary>
+            Called when the update detection phase has begun.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectUpdateBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs)">
+            <summary>
+            Called when the update detection phase has begun.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectUpdate(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs)">
+            <summary>
+            Fired when the update detection has found a potential update candidate.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectUpdateComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateCompleteEventArgs)">
+            <summary>
+            Called when the update detection phase has completed.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectPriorBundle(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPriorBundleEventArgs)">
+            <summary>
+            Called when the detection for a prior bundle has begun.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectRelatedBundle(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs)">
+            <summary>
+            Called when a related bundle has been detected for a bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectPackageBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageBeginEventArgs)">
+            <summary>
+            Called when the detection for a specific package has begun.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectCompatiblePackage(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompatiblePackageEventArgs)">
+            <summary>
+            Called when a package was not detected but a package using the same provider key was.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectRelatedMsiPackage(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs)">
+            <summary>
+            Called when a related MSI package has been detected for a package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectTargetMsiPackage(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectTargetMsiPackageEventArgs)">
+            <summary>
+            Called when an MSP package detects a target MSI has been detected.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectMsiFeature(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs)">
+            <summary>
+            Called when an MSI feature has been detected for a package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectPackageComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageCompleteEventArgs)">
+            <summary>
+            Called when the detection for a specific package has completed.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnDetectComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompleteEventArgs)">
+            <summary>
+            Called when the detection phase has completed.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanBeginEventArgs)">
+            <summary>
+            Called when the engine has begun planning the installation.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanRelatedBundle(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanRelatedBundleEventArgs)">
+            <summary>
+            Called when the engine has begun planning for a prior bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanPackageBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageBeginEventArgs)">
+            <summary>
+            Called when the engine has begun planning the installation of a specific package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanCompatiblePackage(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompatiblePackageEventArgs)">
+            <summary>
+            Called when the engine plans a new, compatible package using the same provider key.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanTargetMsiPackage(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanTargetMsiPackageEventArgs)">
+            <summary>
+            Called when the engine is about to plan the target MSI of a MSP package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanMsiFeature(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs)">
+            <summary>
+            Called when the engine is about to plan an MSI feature of a specific package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanPackageComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs)">
+            <summary>
+            Called when then engine has completed planning the installation of a specific package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnPlanComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompleteEventArgs)">
+            <summary>
+            Called when the engine has completed planning the installation.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnApplyBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyBeginEventArgs)">
+            <summary>
+            Called when the engine has begun installing the bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnApplyPhaseCount(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyPhaseCountArgs)">
+            <summary>
+            Called right after OnApplyBegin.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnElevate(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ElevateEventArgs)">
+            <summary>
+            Called when the engine is about to start the elevated process.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnRegisterBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RegisterBeginEventArgs)">
+            <summary>
+            Called when the engine has begun registering the location and visibility of the bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnRegisterComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RegisterCompleteEventArgs)">
+            <summary>
+            Called when the engine has completed registering the location and visilibity of the bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnUnregisterBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UnregisterBeginEventArgs)">
+            <summary>
+            Called when the engine has begun removing the registration for the location and visibility of the bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnUnregisterComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UnregisterCompleteEventArgs)">
+            <summary>
+            Called when the engine has completed removing the registration for the location and visibility of the bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheBeginEventArgs)">
+            <summary>
+            Called when the engine begins to cache the installation sources.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCachePackageBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs)">
+            <summary>
+            Called by the engine when it begins to cache a specific package.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheAcquireBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs)">
+            <summary>
+            Called when the engine begins to cache the container or payload.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheAcquireProgress(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs)">
+            <summary>
+            Called when the engine has progressed on caching the container or payload.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnResolveSource(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs)">
+            <summary>
+            Called by the engine to allow the user experience to change the source
+            using <see cref="M:Engine.SetLocalSource"/> or <see cref="M:Engine.SetDownloadSource"/>.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheAcquireComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireCompleteEventArgs)">
+            <summary>
+            Called when the engine complets caching of the container or payload.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheVerifyBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyBeginEventArgs)">
+            <summary>
+            Called when the engine has started verify the payload.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheVerifyComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyCompleteEventArgs)">
+            <summary>
+            Called when the engine completes verification of the payload.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCachePackageComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageCompleteEventArgs)">
+            <summary>
+            Called when the engine completes caching a specific package.
+            </summary>
+            <param name="args"></param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnCacheComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheCompleteEventArgs)">
+            <summary>
+            Called after the engine has cached the installation sources.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecuteBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteBeginEventArgs)">
+            <summary>
+            Called when the engine has begun installing packages.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecutePackageBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageBeginEventArgs)">
+            <summary>
+            Called when the engine has begun installing a specific package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecutePatchTarget(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePatchTargetEventArgs)">
+            <summary>
+            Called when the engine executes one or more patches targeting a product.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnError(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs)">
+            <summary>
+            Called when the engine has encountered an error.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnProgress(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ProgressEventArgs)">
+            <summary>
+            Called when the engine has changed progress for the bundle installation.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecuteMsiMessage(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs)">
+            <summary>
+            Called when Windows Installer sends an installation message.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecuteFilesInUse(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteFilesInUseEventArgs)">
+            <summary>
+            Called when Windows Installer sends a file in use installation message.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecutePackageComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageCompleteEventArgs)">
+            <summary>
+            Called when the engine has completed installing a specific package.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecuteComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteCompleteEventArgs)">
+            <summary>
+            Called when the engine has completed installing packages.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnRestartRequired(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RestartRequiredEventArgs)">
+            <summary>
+            Called by the engine to request a restart now or inform the user a manual restart is required later.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnApplyComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyCompleteEventArgs)">
+            <summary>
+            Called when the engine has completed installing the bundle.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnExecuteProgress(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs)">
+            <summary>
+            Called by the engine while executing on payload.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnLaunchApprovedExeBegin(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchApprovedExeBeginArgs)">
+            <summary>
+            Called by the engine before trying to launch the preapproved executable.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.OnLaunchApprovedExeComplete(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchApprovedExeCompleteArgs)">
+            <summary>
+            Called by the engine after trying to launch the preapproved executable.
+            </summary>
+            <param name="args">Additional arguments for this event.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute">
+            <summary>
+            Identifies the bootstrapper application class.
+            </summary>
+            <remarks>
+            This required assembly attribute identifies the bootstrapper application class.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute.#ctor(System.Type)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/> class.
+            </summary>
+            <param name="bootstrapperApplicationType">The <see cref="T:System.Type"/> of the user experience, or null for the default user experience.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute.BootstrapperApplicationType">
+            <summary>
+            Gets the type of the bootstrapper application class to create.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationFactory">
+            <summary>
+            Class used by the MUX host to create and return the IBootstrapperApplication implementation to the engine.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationFactory.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationFactory"/> class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationFactory.Create(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperEngine,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command@)">
+            <summary>
+            Loads the bootstrapper application assembly and creates an instance of the IBootstrapperApplication.
+            </summary>
+            <param name="pEngine">IBootstrapperEngine provided for the bootstrapper application.</param>
+            <param name="command">Command line for the bootstrapper application.</param>
+            <returns>Bootstrapper application via <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperApplication"/> interface.</returns>
+            <exception cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException">The bootstrapper application assembly
+            does not define the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/>.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationFactory.GetBootstrapperApplicationTypeFromAssembly(System.String)">
+            <summary>
+            Locates the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/> and returns the specified type.
+            </summary>
+            <param name="assemblyName">The assembly that defines the user experience class.</param>
+            <returns>The bootstrapper application <see cref="T:System.Type"/>.</returns>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperSectionGroup">
+            <summary>
+            Handler for the wix.bootstrapper configuration section group.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperSectionGroup.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperSectionGroup"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperSectionGroup.Host">
+            <summary>
+            Gets the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.HostSection"/> handler for the mux configuration section.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElementCollection">
+            <summary>
+            Handler for the supportedFramework collection.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElement">
+            <summary>
+            Handler for the supportedFramework configuration section.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElement.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElement"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElement.Version">
+            <summary>
+            Gets the version of the supported framework.
+            </summary>
+            <remarks>
+            The assembly specified by this name must contain a value matching the NETFX version registry key under
+            "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP".
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElement.RuntimeVersion">
+            <summary>
+            Gets the runtime version required by this supported framework.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine">
+            <summary>
+            Container class for the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperEngine"/> interface.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.#ctor(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperEngine)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine"/> container class.
+            </summary>
+            <param name="engine">The <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperEngine"/> to contain.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.NumericVariables">
+            <summary>
+            Gets or sets numeric variables for the engine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.PackageCount">
+            <summary>
+            Gets the number of packages in the bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SecureStringVariables">
+            <summary>
+            Gets or sets string variables for the engine using SecureStrings.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.StringVariables">
+            <summary>
+            Gets or sets string variables for the engine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.VersionVariables">
+            <summary>
+            Gets or sets <see cref="T:System.Version"/> variables for the engine.
+            
+            The <see cref="T:System.Version"/> class can keep track of when the build and revision fields are undefined, but the engine can't.
+            Therefore, the build and revision fields must be defined when setting a <see cref="T:System.Version"/> variable.
+            Use the NormalizeVersion method to make sure the engine can accept the Version.
+            
+            To keep track of versions without build or revision fields, use StringVariables instead.
+            </summary>
+            <exception cref="T:System.OverflowException">The given <see cref="T:System.Version"/> was invalid.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Apply(System.IntPtr)">
+            <summary>
+            Install the packages.
+            </summary>
+            <param name="hwndParent">The parent window for the installation user interface.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.CloseSplashScreen">
+            <summary>
+            Close the splash screen if it is still open. Does nothing if the splash screen is not or
+            never was opened.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Detect">
+            <summary>
+            Determine if all installation conditions are fulfilled.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Detect(System.IntPtr)">
+            <summary>
+            Determine if all installation conditions are fulfilled.
+            </summary>
+            <param name="hwndParent">The parent window for the installation user interface.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Elevate(System.IntPtr)">
+            <summary>
+            Elevate the install.
+            </summary>
+            <param name="hwndParent">The parent window of the elevation dialog.</param>
+            <returns>true if elevation succeeded; otherwise, false if the user cancelled.</returns>
+            <exception cref="T:System.ComponentModel.Win32Exception">A Win32 error occurred.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.EscapeString(System.String)">
+            <summary>
+            Escapes the input string.
+            </summary>
+            <param name="input">The string to escape.</param>
+            <returns>The escaped string.</returns>
+            <exception cref="T:System.ComponentModel.Win32Exception">A Win32 error occurred.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.EvaluateCondition(System.String)">
+            <summary>
+            Evaluates the <paramref name="condition"/> string.
+            </summary>
+            <param name="condition">The string representing the condition to evaluate.</param>
+            <returns>Whether the condition evaluated to true or false.</returns>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.FormatString(System.String)">
+            <summary>
+            Formats the input string.
+            </summary>
+            <param name="format">The string to format.</param>
+            <returns>The formatted string.</returns>
+            <exception cref="T:System.ComponentModel.Win32Exception">A Win32 error occurred.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.LaunchApprovedExe(System.IntPtr,System.String,System.String)">
+            <summary>
+            Launches a preapproved executable elevated.  As long as the engine already elevated, there will be no UAC prompt.
+            </summary>
+            <param name="hwndParent">The parent window of the elevation dialog (if the engine hasn't elevated yet).</param>
+            <param name="approvedExeForElevationId">Id of the ApprovedExeForElevation element specified when the bundle was authored.</param>
+            <param name="arguments">Optional arguments.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.LaunchApprovedExe(System.IntPtr,System.String,System.String,System.Int32)">
+            <summary>
+            Launches a preapproved executable elevated.  As long as the engine already elevated, there will be no UAC prompt.
+            </summary>
+            <param name="hwndParent">The parent window of the elevation dialog (if the engine hasn't elevated yet).</param>
+            <param name="approvedExeForElevationId">Id of the ApprovedExeForElevation element specified when the bundle was authored.</param>
+            <param name="arguments">Optional arguments.</param>
+            <param name="waitForInputIdleTimeout">Timeout in milliseconds. When set to something other than zero, the engine will call WaitForInputIdle for the new process with this timeout before calling OnLaunchApprovedExeComplete.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Log(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel,System.String)">
+            <summary>
+            Logs the <paramref name="message"/>.
+            </summary>
+            <param name="level">The logging level.</param>
+            <param name="message">The message to log.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Plan(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchAction)">
+            <summary>
+            Determine the installation sequencing and costing.
+            </summary>
+            <param name="action">The action to perform when planning.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SetUpdate(System.String,System.String,System.Int64,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UpdateHashType,System.Byte[])">
+            <summary>
+            Set the update information for a bundle.
+            </summary>
+            <param name="localSource">Optional local source path for the update. Default is "update\[OriginalNameOfBundle].exe".</param>
+            <param name="downloadSource">Optional download source for the update.</param>
+            <param name="size">Size of the expected update.</param>
+            <param name="hashType">Type of the hash expected on the update.</param>
+            <param name="hash">Optional hash expected for the update.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SetLocalSource(System.String,System.String,System.String)">
+            <summary>
+            Set the local source for a package or container.
+            </summary>
+            <param name="packageOrContainerId">The id that uniquely identifies the package or container.</param>
+            <param name="payloadId">The id that uniquely identifies the payload.</param>
+            <param name="path">The new source path.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SetDownloadSource(System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Set the new download URL for a package or container.
+            </summary>
+            <param name="packageOrContainerId">The id that uniquely identifies the package or container.</param>
+            <param name="payloadId">The id that uniquely identifies the payload.</param>
+            <param name="url">The new url.</param>
+            <param name="user">The user name for proxy authentication.</param>
+            <param name="password">The password for proxy authentication.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SendEmbeddedError(System.Int32,System.String,System.Int32)">
+            <summary>
+            Sends error message when embedded.
+            </summary>
+            <param name="errorCode">Error code.</param>
+            <param name="message">Error message.</param>
+            <param name="uiHint">UI buttons to show on error dialog.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SendEmbeddedProgress(System.Int32,System.Int32)">
+            <summary>
+            Sends progress percentages when embedded.
+            </summary>
+            <param name="progressPercentage">Percentage completed thus far.</param>
+            <param name="overallPercentage">Overall percentage completed.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Quit(System.Int32)">
+            <summary>
+            Shuts down the engine.
+            </summary>
+            <param name="exitCode">Exit code indicating reason for shut down.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Variables`1">
+            <summary>
+            An accessor for numeric, string, and version variables for the engine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Variables`1.Item(System.String)">
+            <summary>
+            Gets or sets the variable given by <paramref name="name"/>.
+            </summary>
+            <param name="name">The name of the variable to get/set.</param>
+            <returns>The value of the given variable.</returns>
+            <exception cref="T:System.Exception">An error occurred getting the variable.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.Variables`1.Contains(System.String)">
+            <summary>
+            Gets whether the variable given by <paramref name="name"/> exists.
+            </summary>
+            <param name="name">The name of the variable to check.</param>
+            <returns>True if the variable given by <paramref name="name"/> exists; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.containsVariable(System.String)">
+            <summary>
+            Gets whether the variable given by <paramref name="name"/> exists.
+            </summary>
+            <param name="name">The name of the variable to check.</param>
+            <returns>True if the variable given by <paramref name="name"/> exists; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.getStringVariable(System.String,System.Int32@)">
+            <summary>
+            Gets the variable given by <paramref name="name"/> as a string.
+            </summary>
+            <param name="name">The name of the variable to get.</param>
+            <param name="length">The length of the Unicode string.</param>
+            <returns>The value by a pointer to a Unicode string.  Must be freed by Marshal.FreeCoTaskMem.</returns>
+            <exception cref="T:System.Exception">An error occurred getting the variable.</exception>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.convertToSecureString(System.IntPtr,System.Int32)">
+            <summary>
+            Initialize a SecureString with the given Unicode string.
+            </summary>
+            <param name="pUniString">Pointer to Unicode string.</param>
+            <param name="length">The string's length.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.NormalizeVersion(System.Version)">
+            <summary>
+            Verifies that VersionVariables can pass on the given Version to the engine.
+            If the Build or Revision fields are undefined, they are set to zero.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs">
+            <summary>
+            Base class for <see cref="T:System.EventArgs"/> classes that must return a value.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs"/> class.
+            </summary>
+            <param name="recommendation">Recommended result from engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.Result">
+            <summary>
+            Gets or sets the <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.Result"/> of the operation. This is passed back to the engine.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StatusEventArgs">
+            <summary>
+            Base class for <see cref="T:System.EventArgs"/> classes that receive status from the engine.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StatusEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StatusEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StatusEventArgs.Status">
+            <summary>
+            Gets the return code of the operation.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultStatusEventArgs">
+            <summary>
+            Base class for <see cref="T:System.EventArgs"/> classes that receive status from the engine and return a result.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultStatusEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultStatusEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultStatusEventArgs.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultStatusEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+            <param name="recommendation">The recommended result from the engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultStatusEventArgs.Status">
+            <summary>
+            Gets the return code of the operation.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StartupEventArgs">
+            <summary>
+            Additional arguments used when startup has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StartupEventArgs.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.StartupEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ShutdownEventArgs">
+            <summary>
+            Additional arguments used when shutdown has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ShutdownEventArgs.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ShutdownEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs">
+            <summary>
+            Additional arguments used when the system is shutting down or the user is logging off.
+            </summary>
+            <remarks>
+            <para>To prevent shutting down or logging off, set <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.Result"/> to
+            <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Cancel"/>; otherwise, set it to <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Ok"/>.</para>
+            <para>By default setup will prevent shutting down or logging off between
+            <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyBegin"/> and <see cref="E:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication.ApplyComplete"/>.</para>
+            <para>If <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs.Reasons"/> contains <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Critical"/>
+            the bootstrapper cannot prevent the shutdown and only has a few seconds to save state or perform any other
+            critical operations before being closed by the operating system.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs.#ctor(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs"/> class.
+            </summary>
+            <param name="reasons">The reason the application is requested to close or being closed.</param>
+            <param name="recommendation">The recommendation from the engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs.Reasons">
+            <summary>
+            Gets the reason the application is requested to close or being closed.
+            </summary>
+            <remarks>
+            <para>To prevent shutting down or logging off, set <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResultEventArgs.Result"/> to
+            <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Cancel"/>; otherwise, set it to <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result.Ok"/>.</para>
+            <para>If <see cref="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SystemShutdownEventArgs.Reasons"/> contains <see cref="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Critical"/>
+            the bootstrapper cannot prevent the shutdown and only has a few seconds to save state or perform any other
+            critical operations before being closed by the operating system.</para>
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectBeginEventArgs">
+            <summary>
+            Additional arguments used when the overall detection phase has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectBeginEventArgs.#ctor(System.Boolean,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectBeginEventArgs"/> class.
+            </summary>
+            <param name="installed">Specifies whether the bundle is installed.</param>
+            <param name="packageCount">The number of packages to detect.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectBeginEventArgs.Installed">
+            <summary>
+            Gets whether the bundle is installed.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectBeginEventArgs.PackageCount">
+            <summary>
+            Gets the number of packages to detect.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs">
+            <summary>
+            Additional arguments used when detected a forward compatible bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs.#ctor(System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelationType,System.String,System.Boolean,System.Int64,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs"/> class.
+            </summary>
+            <param name="bundleId">The identity of the forward compatible bundle.</param>
+            <param name="relationType">Relationship type for this forward compatible bundle.</param>
+            <param name="bundleTag">The tag of the forward compatible bundle.</param>
+            <param name="perMachine">Whether the detected forward compatible bundle is per machine.</param>
+            <param name="version">The version of the forward compatible bundle detected.</param>
+            <param name="recommendation">The recommendation from the engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs.BundleId">
+            <summary>
+            Gets the identity of the forward compatible bundle detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs.RelationType">
+            <summary>
+            Gets the relationship type of the forward compatible bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs.BundleTag">
+            <summary>
+            Gets the tag of the forward compatible bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs.PerMachine">
+            <summary>
+            Gets whether the detected forward compatible bundle is per machine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectForwardCompatibleBundleEventArgs.Version">
+            <summary>
+            Gets the version of the forward compatible bundle detected.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs">
+            <summary>
+            Additional arguments used when the detection for an update has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs.#ctor(System.String,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs"/> class.
+            </summary>
+            <param name="updateLocation">The location to check for an updated bundle.</param>
+            <param name="recommendation">The recommendation from the engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs.UpdateLocation">
+            <summary>
+            Gets the identity of the bundle to detect.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs">
+            <summary>
+            Additional arguments used when the detection for an update has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.#ctor(System.String,System.Int64,System.Int64,System.String,System.String,System.String,System.String,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateBeginEventArgs"/> class.
+            </summary>
+            <param name="updateLocation">The location to check for an updated bundle.</param>
+            <param name="size">The expected size of the updated bundle.</param>
+            <param name="version">The expected version of the updated bundle.</param>
+            <param name="title">The title of the updated bundle.</param>
+            <param name="summary">The summary of the updated bundle.</param>
+            <param name="contentType">The content type of the content of the updated bundle.</param>
+            <param name="content">The content of the updated bundle.</param>
+            <param name="recommendation">The recommendation from the engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.Size">
+            <summary>
+            Gets the size of the updated bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.Version">
+            <summary>
+            Gets the version of the updated bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.Title">
+            <summary>
+            Gets the title of the the updated bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.Summary">
+            <summary>
+            Gets the summary of the updated bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.ContentType">
+            <summary>
+            Gets the content type of the content of the updated bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateEventArgs.Content">
+            <summary>
+            Gets the content of the updated bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateCompleteEventArgs">
+            <summary>
+            Additional arguments used when the detection for an update has completed.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateCompleteEventArgs.#ctor(System.Int32,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+            <param name="updateLocation">The location of the updated bundle.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectUpdateCompleteEventArgs.UpdateLocation">
+            <summary>
+            Gets the location of the updated bundle if one was detected.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPriorBundleEventArgs">
+            <summary>
+            Additional arguments used when the detection for a prior bundle has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPriorBundleEventArgs.#ctor(System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPriorBundleEventArgs"/> class.
+            </summary>
+            <param name="bundleId">The identity of the bundle to detect.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPriorBundleEventArgs.BundleId">
+            <summary>
+            Gets the identity of the bundle to detect.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs">
+            <summary>
+            Additional arguments used when a related bundle has been detected for a bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.#ctor(System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelationType,System.String,System.Boolean,System.Int64,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs"/> class.
+            </summary>
+            <param name="productCode">The identity of the related package bundle.</param>
+            <param name="relationType">Relationship type for this related bundle.</param>
+            <param name="bundleTag">The tag of the related package bundle.</param>
+            <param name="perMachine">Whether the detected bundle is per machine.</param>
+            <param name="version">The version of the related bundle detected.</param>
+            <param name="operation">The operation that will be taken on the detected bundle.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.ProductCode">
+            <summary>
+            Gets the identity of the related bundle detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.RelationType">
+            <summary>
+            Gets the relationship type of the related bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.BundleTag">
+            <summary>
+            Gets the tag of the related package bundle.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.PerMachine">
+            <summary>
+            Gets whether the detected bundle is per machine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.Version">
+            <summary>
+            Gets the version of the related bundle detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedBundleEventArgs.Operation">
+            <summary>
+            Gets the operation that will be taken on the detected bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageBeginEventArgs">
+            <summary>
+            Additional arguments used when the detection for a specific package has begun.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageBeginEventArgs.#ctor(System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageBeginEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package to detect.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageBeginEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package to detect.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompatiblePackageEventArgs">
+            <summary>
+            Additional arguments used when a package was not found but a newer package using the same provider key was.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompatiblePackageEventArgs.#ctor(System.String,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompatiblePackageEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package that was not detected.</param>
+            <param name="compatiblePackageId">The identity of the compatible package that was detected.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompatiblePackageEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that was not detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompatiblePackageEventArgs.CompatiblePackageId">
+            <summary>
+            Gets the identity of the compatible package that was detected.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs">
+            <summary>
+            Additional arguments used when a related MSI package has been detected for a package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs.#ctor(System.String,System.String,System.Boolean,System.Int64,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package detecting.</param>
+            <param name="productCode">The identity of the related package detected.</param>
+            <param name="perMachine">Whether the detected package is per machine.</param>
+            <param name="version">The version of the related package detected.</param>
+            <param name="operation">The operation that will be taken on the detected package.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs.PackageId">
+            <summary>
+            Gets the identity of the product's package detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs.ProductCode">
+            <summary>
+            Gets the identity of the related package detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs.PerMachine">
+            <summary>
+            Gets whether the detected package is per machine.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs.Version">
+            <summary>
+            Gets the version of the related package detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectRelatedMsiPackageEventArgs.Operation">
+            <summary>
+            Gets the operation that will be taken on the detected package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectTargetMsiPackageEventArgs">
+            <summary>
+            Additional arguments used when a target MSI package has been detected.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectTargetMsiPackageEventArgs.#ctor(System.String,System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PackageState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs"/> class.
+            </summary>
+            <param name="packageId">Detected package identifier.</param>
+            <param name="productCode">Detected product code.</param>
+            <param name="state">Package state detected.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectTargetMsiPackageEventArgs.PackageId">
+            <summary>
+            Gets the identity of the target's package detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectTargetMsiPackageEventArgs.ProductCode">
+            <summary>
+            Gets the product code of the target MSI detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectTargetMsiPackageEventArgs.State">
+            <summary>
+            Gets the detected patch package state.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs">
+            <summary>
+            Additional arguments used when a feature in an MSI package has been detected.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs.#ctor(System.String,System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.FeatureState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs"/> class.
+            </summary>
+            <param name="packageId">Detected package identifier.</param>
+            <param name="featureId">Detected feature identifier.</param>
+            <param name="state">Feature state detected.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs.PackageId">
+            <summary>
+            Gets the identity of the feature's package detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs.FeatureId">
+            <summary>
+            Gets the identity of the feature detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectMsiFeatureEventArgs.State">
+            <summary>
+            Gets the detected feature state.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageCompleteEventArgs">
+            <summary>
+            Additional arguments used when the detection for a specific package has completed.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageCompleteEventArgs.#ctor(System.String,System.Int32,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PackageState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageCompleteEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package detected.</param>
+            <param name="status">The return code of the operation.</param>
+            <param name="state">The state of the specified package.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageCompleteEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectPackageCompleteEventArgs.State">
+            <summary>
+            Gets the state of the specified package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompleteEventArgs">
+            <summary>
+            Additional arguments used when the detection phase has completed.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompleteEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DetectCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun planning the installation.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanBeginEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanBeginEventArgs"/> class.
+            </summary>
+            <param name="packageCount">The number of packages to plan for.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanBeginEventArgs.PackageCount">
+            <summary>
+            Gets the number of packages to plan for.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanRelatedBundleEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun planning for a related bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanRelatedBundleEventArgs.#ctor(System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RequestState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanRelatedBundleEventArgs"/> class.
+            </summary>
+            <param name="bundleId">The identity of the bundle to plan for.</param>
+            <param name="state">The requested state for the bundle.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanRelatedBundleEventArgs.BundleId">
+            <summary>
+            Gets the identity of the bundle to plan for.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanRelatedBundleEventArgs.State">
+            <summary>
+            Gets or sets the requested state for the bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun planning the installation of a specific package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageBeginEventArgs.#ctor(System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RequestState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageBeginEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package to plan for.</param>
+            <param name="state">The requested state for the package.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageBeginEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package to plan for.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageBeginEventArgs.State">
+            <summary>
+            Gets or sets the requested state for the package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompatiblePackageEventArgs">
+            <summary>
+            Additional arguments used when the engine is about to plan a newer package using the same provider key.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompatiblePackageEventArgs.#ctor(System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RequestState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompatiblePackageEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package that was not detected.</param>
+            <param name="state">The requested state for the compatible package.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompatiblePackageEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that was not detected.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompatiblePackageEventArgs.State">
+            <summary>
+            Gets or sets the state to use for the compatible package for planning.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanTargetMsiPackageEventArgs">
+            <summary>
+            Additional arguments used when engine is about to plan a MSP applied to a target MSI package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanTargetMsiPackageEventArgs.#ctor(System.String,System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RequestState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs"/> class.
+            </summary>
+            <param name="packageId">Package identifier of the patch being planned.</param>
+            <param name="productCode">Product code identifier being planned.</param>
+            <param name="state">Package state of the patch being planned.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanTargetMsiPackageEventArgs.PackageId">
+            <summary>
+            Gets the identity of the feature's package to plan.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanTargetMsiPackageEventArgs.ProductCode">
+            <summary>
+            Gets the identity of the feature to plan.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanTargetMsiPackageEventArgs.State">
+            <summary>
+            Gets or sets the state of the patch to use by planning.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs">
+            <summary>
+            Additional arguments used when engine is about to plan a feature in an MSI package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs.#ctor(System.String,System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.FeatureState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs"/> class.
+            </summary>
+            <param name="packageId">Package identifier being planned.</param>
+            <param name="featureId">Feature identifier being planned.</param>
+            <param name="state">Feature state being planned.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs.PackageId">
+            <summary>
+            Gets the identity of the feature's package to plan.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs.FeatureId">
+            <summary>
+            Gets the identity of the feature to plan.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanMsiFeatureEventArgs.State">
+            <summary>
+            Gets or sets the feature state to use by planning.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs">
+            <summary>
+            Additional arguments used when then engine has completed planning the installation of a specific package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs.#ctor(System.String,System.Int32,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PackageState,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RequestState,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ActionState,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ActionState)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package planned for.</param>
+            <param name="status">The return code of the operation.</param>
+            <param name="state">The current state of the package.</param>
+            <param name="requested">The requested state for the package</param>
+            <param name="execute">The execution action to take.</param>
+            <param name="rollback">The rollback action to take.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package planned for.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs.State">
+            <summary>
+            Gets the current state of the package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs.Requested">
+            <summary>
+            Gets the requested state for the package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs.Execute">
+            <summary>
+            Gets the execution action to take.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanPackageCompleteEventArgs.Rollback">
+            <summary>
+            Gets the rollback action to take.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine has completed planning the installation.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompleteEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PlanCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun installing the bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyPhaseCountArgs">
+            <summary>
+            DEPRECATED: this information will be provided in ApplyBeginEventArgs in wix4.
+            Additional arguments used when the engine has determined the number of phases in apply.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyPhaseCountArgs.PhaseCount">
+            <summary>
+            DEPRECATED: this information will be provided in ApplyBeginEventArgs in wix4.
+            Gets the number of phases that the engine will go through in apply.
+            There are currently two possible phases: cache and execute.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ElevateEventArgs">
+            <summary>
+            Additional arguments used when the engine is about to start the elevated process.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RegisterBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun registering the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RegisterCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine has completed registering the location and visilibity of the bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RegisterCompleteEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RegisterCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UnregisterBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun removing the registration for the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UnregisterCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine has completed removing the registration for the location and visibility of the bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UnregisterCompleteEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UnregisterCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun caching the installation sources.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine begins to acquire containers or payloads.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs.#ctor(System.String,System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheOperation,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs.PackageOrContainerId">
+            <summary>
+            Gets the identifier of the container or package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload (if acquiring a payload).
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs.Operation">
+            <summary>
+            Gets the cache acquire operation.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs.Source">
+            <summary>
+            Gets the source of the container or payload.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs">
+            <summary>
+            Additional arguments used when the engine acquires some part of a container or payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs.#ctor(System.String,System.String,System.Int64,System.Int64,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireBeginEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs.PackageOrContainerId">
+            <summary>
+            Gets the identifier of the container or package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload (if acquiring a payload).
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs.Progress">
+            <summary>
+            Gets the number of bytes cached thus far.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs.Total">
+            <summary>
+            Gets the total bytes to cache.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireProgressEventArgs.OverallPercentage">
+            <summary>
+            Gets the overall percentage of progress of caching.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine completes the acquisition of a container or payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireCompleteEventArgs.#ctor(System.String,System.String,System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireCompleteEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireCompleteEventArgs.PackageOrContainerId">
+            <summary>
+            Gets the identifier of the container or package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheAcquireCompleteEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload (if acquiring a payload).
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine starts the verification of a payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyBeginEventArgs.#ctor(System.String,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyBeginEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyBeginEventArgs.PackageId">
+            <summary>
+            Gets the identifier of the package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyBeginEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine completes the verification of a payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyCompleteEventArgs.#ctor(System.String,System.String,System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyCompleteEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyCompleteEventArgs.PackageId">
+            <summary>
+            Gets the identifier of the package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheVerifyCompleteEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheCompleteEventArgs">
+            <summary>
+            Additional arguments used after the engine has cached the installation sources.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheCompleteEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun installing packages.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteBeginEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteBeginEventArgs"/> class.
+            </summary>
+            <param name="packageCount">The number of packages to act on.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteBeginEventArgs.PackageCount">
+            <summary>
+            Gets the number of packages to act on.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageBeginEventArgs">
+            <summary>
+            Additional arguments used when the engine has begun installing a specific package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageBeginEventArgs.#ctor(System.String,System.Boolean)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageBeginEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package to act on.</param>
+            <param name="shouldExecute">Whether the package should really be acted on.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageBeginEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package to act on.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageBeginEventArgs.ShouldExecute">
+            <summary>
+            Gets whether the package should really be acted on.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePatchTargetEventArgs">
+            <summary>
+            Additional arguments used when the engine executes one or more patches targeting a product.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePatchTargetEventArgs.#ctor(System.String,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePatchTargetEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package to act on.</param>
+            <param name="targetProductCode">The product code of the target of the patch.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePatchTargetEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package to act on.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePatchTargetEventArgs.TargetProductCode">
+            <summary>
+            Gets the product code being targeted.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs">
+            <summary>
+            Additional arguments used when the engine has encountered an error.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.#ctor(Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType,System.String,System.Int32,System.String,System.Int32,System.String[],System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs"/> class.
+            </summary>
+            <param name="errorType">The error type.</param>
+            <param name="packageId">The identity of the package that yielded the error.</param>
+            <param name="errorCode">The error code.</param>
+            <param name="errorMessage">The error message.</param>
+            <param name="uiHint">Recommended display flags for an error dialog.</param>
+            <param name="data">The exteded data for the error.</param>
+            <param name="recommendation">Recommended result from engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.ErrorType">
+            <summary>
+            Gets the type of error that occurred.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that yielded the error.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.ErrorCode">
+            <summary>
+            Gets the error code.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.ErrorMessage">
+            <summary>
+            Gets the error message.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.UIHint">
+            <summary>
+            Gets the recommended display flags for an error dialog.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorEventArgs.Data">
+            <summary>
+            Gets the extended data for the error.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ProgressEventArgs">
+            <summary>
+            Additional arguments used when the engine has changed progress for the bundle installation.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ProgressEventArgs.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates an new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ProgressEventArgs"/> class.
+            </summary>
+            <param name="progressPercentage">The percentage from 0 to 100 completed for a package.</param>
+            <param name="overallPercentage">The percentage from 0 to 100 completed for the bundle.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ProgressEventArgs.ProgressPercentage">
+            <summary>
+            Gets the percentage from 0 to 100 completed for a package.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ProgressEventArgs.OverallPercentage">
+            <summary>
+            Gets the percentage from 0 to 100 completed for the bundle.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs">
+            <summary>
+            Additional arguments used when Windows Installer sends an installation message.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs.#ctor(System.String,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InstallMessage,System.Int32,System.String,System.String[],System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package that yielded this message.</param>
+            <param name="messageType">The type of this message.</param>
+            <param name="displayParameters">Recommended display flags for this message.</param>
+            <param name="message">The message.</param>
+            <param name="data">The extended data for the message.</param>
+            <param name="recommendation">Recommended result from engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that yielded this message.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs.MessageType">
+            <summary>
+            Gets the type of this message.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs.DisplayParameters">
+            <summary>
+            Gets the recommended display flags for this message.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs.Message">
+            <summary>
+            Gets the message.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteMsiMessageEventArgs.Data">
+            <summary>
+            Gets the extended data for the message.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteFilesInUseEventArgs">
+            <summary>
+            Additional arugments used for file in use installation messages.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteFilesInUseEventArgs.#ctor(System.String,System.String[])">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteFilesInUseEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package that yielded the files in use message.</param>
+            <param name="files">The list of files in use.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteFilesInUseEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that yielded the files in use message.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteFilesInUseEventArgs.Files">
+            <summary>
+            Gets the list of files in use.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine has completed installing a specific package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageCompleteEventArgs.#ctor(System.String,System.Int32,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyRestart,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageCompleteEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the packaged that was acted on.</param>
+            <param name="status">The return code of the operation.</param>
+            <param name="restart">Whether a restart is required.</param>
+            <param name="recommendation">Recommended result from engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageCompleteEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that was acted on.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecutePackageCompleteEventArgs.Restart">
+            <summary>
+            Gets the package restart state after being applied.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine has completed installing packages.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteCompleteEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteCompleteEventArgs"/> class.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RestartRequiredEventArgs">
+            <summary>
+            Additional arguments used by the engine to request a restart now or inform the user a manual restart is required later.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RestartRequiredEventArgs.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RestartRequiredEventArgs"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RestartRequiredEventArgs.Restart">
+            <summary>
+            Gets or sets whether the engine should restart now. The default is false.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyCompleteEventArgs">
+            <summary>
+            Additional arguments used when the engine has completed installing the bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyCompleteEventArgs.#ctor(System.Int32,Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyRestart)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyCompleteEventArgs"/> clas.
+            </summary>
+            <param name="status">The return code of the operation.</param>
+            <param name="restart">Whether a restart is required.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyCompleteEventArgs.Restart">
+            <summary>
+            Gets the apply restart state when complete.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs">
+            <summary>
+            Additional arguments used by the engine to allow the user experience to change the source
+            using <see cref="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SetLocalSource(System.String,System.String,System.String)"/> or <see cref="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Engine.SetDownloadSource(System.String,System.String,System.String,System.String,System.String)"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs.#ctor(System.String,System.String,System.String,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs"/> class.
+            </summary>
+            <param name="packageOrContainerId">The identity of the package or container that requires source.</param>
+            <param name="payloadId">The identity of the payload that requires source.</param>
+            <param name="localSource">The current path used for source resolution.</param>
+            <param name="downloadSource">Optional URL to download container or payload.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs.PackageOrContainerId">
+            <summary>
+            Gets the identity of the package or container that requires source.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs.PayloadId">
+            <summary>
+            Gets the identity of the payload that requires source.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs.LocalSource">
+            <summary>
+            Gets the current path used for source resolution.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResolveSourceEventArgs.DownloadSource">
+            <summary>
+            Gets the optional URL to download container or payload.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs">
+            <summary>
+            Additional arguments used by the engine when it has begun caching a specific package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs.#ctor(System.String,System.Int32,System.Int64)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package that is being cached.</param>
+            <param name="cachePayloads">Number of payloads to be cached.</param>
+            <param name="packageCacheSize">The size on disk required by the specific package.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that is being cached.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs.CachePayloads">
+            <summary>
+            Gets number of payloads to be cached.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageBeginEventArgs.PackageCacheSize">
+            <summary>
+            Gets the size on disk required by the specific package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageCompleteEventArgs">
+            <summary>
+            Additional arguments passed by the engine when it has completed caching a specific package.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageCompleteEventArgs.#ctor(System.String,System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageCompleteEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identity of the package that was cached.</param>
+            <param name="status">The return code of the operation.</param>
+            <param name="recommendation">Recommended result from engine.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CachePackageCompleteEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that was cached.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadBeginEventArgs">
+            <summary>
+            Additional arguments passed by the engine when it has begun downloading a specific payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadBeginEventArgs.#ctor(System.String,System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadBeginEventArgs"/> class.
+            </summary>
+            <param name="payloadId">The identifier of the payload being downloaded.</param>
+            <param name="payloadFileName">The file name of the payload being downloaded.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadBeginEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload being downloaded.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadBeginEventArgs.PayloadFileName">
+            <summary>
+            Gets the file name of the payload being downloaded.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadCompleteEventArgs">
+            <summary>
+            Additional arguments passed by the engine when it has completed downloading a specific payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadCompleteEventArgs.#ctor(System.String,System.String,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadCompleteEventArgs"/> class.
+            </summary>
+            <param name="payloadId">The identifier of the payload that was downloaded.</param>
+            <param name="payloadFileName">The file name of the payload that was downloaded.</param>
+            <param name="status">The return code of the operation.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadCompleteEventArgs.PayloadId">
+            <summary>
+            Gets the identifier of the payload that was downloaded.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadPayloadCompleteEventArgs.PayloadFileName">
+            <summary>
+            Gets the file name of the payload that was downloaded.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadProgressEventArgs">
+            <summary>
+            Additional arguments passed by the engine while downloading payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadProgressEventArgs.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadProgressEventArgs"/> class.
+            </summary>
+            <param name="progressPercentage">The percentage from 0 to 100 of the download progress for a single payload.</param>
+            <param name="overallPercentage">The percentage from 0 to 100 of the download progress for all payload.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadProgressEventArgs.ProgressPercentage">
+            <summary>
+            Gets the percentage from 0 to 100 of the download progress for a single payload.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.DownloadProgressEventArgs.OverallPercentage">
+            <summary>
+            Gets the percentage from 0 to 100 of the download progress for all payload.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs">
+            <summary>
+            Additional arguments passed by the engine while executing on payload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs.#ctor(System.String,System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs"/> class.
+            </summary>
+            <param name="packageId">The identifier of the package being executed.</param>
+            <param name="progressPercentage">The percentage from 0 to 100 of the execution progress for a single payload.</param>
+            <param name="overallPercentage">The percentage from 0 to 100 of the execution progress for all payload.</param>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs.PackageId">
+            <summary>
+            Gets the identity of the package that was executed.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs.ProgressPercentage">
+            <summary>
+            Gets the percentage from 0 to 100 of the execution progress for a single payload.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ExecuteProgressEventArgs.OverallPercentage">
+            <summary>
+            Gets the percentage from 0 to 100 of the execution progress for all payload.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchApprovedExeBeginArgs">
+            <summary>
+            Additional arguments passed by the engine before it tries to launch the preapproved executable.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchApprovedExeCompleteArgs">
+            <summary>
+            Additional arguments passed by the engine after it finished trying to launch the preapproved executable.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchApprovedExeCompleteArgs.ProcessId">
+            <summary>
+            Gets the ProcessId of the process that was launched.
+            This is only valid if the status reports success.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException">
+            <summary>
+            Base class for exception returned to the bootstrapper application host.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException.#ctor(System.Int32)">
+            <summary>
+            Creates an instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException"/> base class with the given HRESULT.
+            </summary>
+            <param name="hr">The HRESULT for the exception that is used by the bootstrapper application host.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException"/> class.
+            </summary>
+            <param name="message">Exception message.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException"/> class.
+            </summary>
+            <param name="message">Exception message</param>
+            <param name="innerException">Inner exception associated with this one</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperException"/> class.
+            </summary>
+            <param name="info">Serialization information for this exception</param>
+            <param name="context">Streaming context to serialize to</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException">
+            <summary>
+            The bootstrapper application loaded by the host does not contain exactly one instance of the
+            <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/> class.
+            </summary>
+            <seealso cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException"/> class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException"/> class.
+            </summary>
+            <param name="message">Exception message.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException"/> class.
+            </summary>
+            <param name="message">Exception message</param>
+            <param name="innerException">Inner exception associated with this one</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.MissingAttributeException"/> class.
+            </summary>
+            <param name="info">Serialization information for this exception</param>
+            <param name="context">Streaming context to serialize to</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException">
+            <summary>
+            The bootstrapper application specified by the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/>
+             does not extend the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication"/> base class.
+            </summary>
+            <seealso cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication"/>
+            <seealso cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException"/> class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException"/> class.
+            </summary>
+            <param name="message">Exception message.</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException"/> class.
+            </summary>
+            <param name="message">Exception message</param>
+            <param name="innerException">Inner exception associated with this one</param>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InvalidBootstrapperApplicationException"/> class.
+            </summary>
+            <param name="info">Serialization information for this exception</param>
+            <param name="context">Streaming context to serialize to</param>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.HostSection">
+            <summary>
+            Handler for the Host configuration section.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.HostSection.#ctor">
+            <summary>
+            Creates a new instance of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.HostSection"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.HostSection.AssemblyName">
+            <summary>
+            Gets the name of the assembly that contians the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication"/> child class.
+            </summary>
+            <remarks>
+            The assembly specified by this name must contain the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplicationAttribute"/> to identify
+            the type of the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.BootstrapperApplication"/> child class.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.HostSection.SupportedFrameworks">
+            <summary>
+            Gets the <see cref="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.SupportedFrameworkElementCollection"/> of supported frameworks for the host configuration.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperApplication">
+            <summary>
+            Allows customization of the bootstrapper application.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Display">
+            <summary>
+            The display level for the UX.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.InstallMessage">
+            <summary>
+            Messages from Windows Installer.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Restart">
+            <summary>
+            The action to perform when a reboot is necessary.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Result">
+            <summary>
+            Result codes.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType">
+            <summary>
+            Describes why a bundle or packaged is being resumed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType.Invalid">
+            <summary>
+            Resume information exists but is invalid.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType.Interrupted">
+            <summary>
+            The bundle was re-launched after an unexpected interruption.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType.RebootPending">
+            <summary>
+            A reboot is pending.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType.Reboot">
+            <summary>
+            The bundle was re-launched after a reboot.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType.Suspend">
+            <summary>
+            The bundle was re-launched after being suspended.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ResumeType.Arp">
+            <summary>
+            The bundle was launched from Add/Remove Programs.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType">
+            <summary>
+            Indicates what caused the error.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType.Elevate">
+            <summary>
+            The error occurred trying to elevate.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType.WindowsInstaller">
+            <summary>
+            The error came from the Windows Installer.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType.ExePackage">
+            <summary>
+            The error came from an EXE Package.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType.HttpServerAuthentication">
+            <summary>
+            The error came while trying to authenticate with an HTTP server.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType.HttpProxyAuthentication">
+            <summary>
+            The error came while trying to authenticate with an HTTP proxy.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ErrorType.Apply">
+            <summary>
+            The error occurred during apply.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation.Downgrade">
+            <summary>
+            The related bundle or package will be downgraded.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation.MinorUpdate">
+            <summary>
+            The related package will be upgraded as a minor revision.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation.MajorUpgrade">
+            <summary>
+            The related bundle or package will be upgraded as a major revision.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation.Remove">
+            <summary>
+            The related bundle will be removed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation.Install">
+            <summary>
+            The related bundle will be installed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelatedOperation.Repair">
+            <summary>
+            The related bundle will be repaired.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheOperation">
+            <summary>
+            The cache operation used to acquire a container or payload.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheOperation.Copy">
+            <summary>
+            Container or payload is being copied.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheOperation.Download">
+            <summary>
+            Container or payload is being downloaded.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.CacheOperation.Extract">
+            <summary>
+            Container or payload is being extracted.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyRestart">
+            <summary>
+            The restart state after a package or all packages were applied.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyRestart.None">
+            <summary>
+            Package or chain does not require a restart.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyRestart.RestartRequired">
+            <summary>
+            Package or chain requires a restart but it has not been initiated yet.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ApplyRestart.RestartInitiated">
+            <summary>
+            Package or chain has already initiated the restart.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RelationType">
+            <summary>
+            The relation type for related bundles.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons">
+            <summary>
+            One or more reasons why the application is requested to be closed or is being closed.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Unknown">
+            <summary>
+            The system is shutting down or restarting (it is not possible to determine which event is occurring).
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.CloseApplication">
+            <summary>
+            The application is using a file that must be replaced, the system is being serviced, or system resources are exhausted.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Critical">
+            <summary>
+            The application is forced to shut down.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.EndSessionReasons.Logoff">
+            <summary>
+            The user is logging off.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command">
+            <summary>
+            Command information passed from the engine for the user experience to perform.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.Action">
+            <summary>
+            Gets the action for the user experience to perform.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.Display">
+            <summary>
+            Gets the display level for the user experience.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.Restart">
+            <summary>
+            Gets the action to perform if a reboot is required.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.CommandLine">
+            <summary>
+            Gets command line arguments that weren't processed by the engine. Can be null.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.LayoutDirectory">
+            <summary>
+            Gets layout directory.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.Resume">
+            <summary>
+            Gets the method of how the engine was resumed from a previous installation step.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.SplashScreen">
+            <summary>
+            Gets the handle to the splash screen window. If no splash screen was displayed this value will be IntPtr.Zero.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.Relation">
+            <summary>
+            If this was run from a related bundle, specifies the relation type.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.Passthrough">
+            <summary>
+            If this was run from a backward compatible bundle.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.Command.GetCommandLineArgs">
+            <summary>
+            Gets the command line arguments as a string array.
+            </summary>
+            <returns>
+            Array of command line arguments not handled by the engine.
+            </returns>
+            <exception type="Win32Exception">The command line could not be parsed into an array.</exception>
+            <remarks>
+            This method uses the same parsing as the operating system which handles quotes and spaces correctly.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.IBootstrapperEngine">
+            <summary>
+            Allows calls into the bootstrapper engine.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.ActionState">
+            <summary>
+            The installation action for the bundle or current package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LaunchAction">
+            <summary>
+            The action for the BA to perform.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel">
+            <summary>
+            The message log level.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel.None">
+            <summary>
+            No logging level (generic).
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel.Standard">
+            <summary>
+            User messages.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel.Verbose">
+            <summary>
+            Verbose messages.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel.Debug">
+            <summary>
+            Messages for debugging.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.LogLevel.Error">
+            <summary>
+            Error messages.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UpdateHashType">
+            <summary>
+            Type of hash used for update bundle.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UpdateHashType.None">
+            <summary>
+            No hash provided.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.UpdateHashType.Sha1">
+            <summary>
+            SHA-1 based hash provided.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.PackageState">
+            <summary>
+            Describes the state of an installation package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.RequestState">
+            <summary>
+            Indicates the state desired for an installation package.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.FeatureState">
+            <summary>
+            Indicates the state of a feature.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.FeatureAction">
+            <summary>
+            Indicates the action for a feature.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.Bootstrapper.NativeMethods">
+            <summary>
+            Contains native constants, functions, and structures for this assembly.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.WixDistribution">
+            <summary>
+            Distribution specific strings.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.NewsUrl">
+            <summary>
+            News URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.ShortProduct">
+            <summary>
+            Short product name for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.SupportUrl">
+            <summary>
+            Support URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.TelemetryUrlFormat">
+            <summary>
+            Telemetry URL format for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.VSExtensionsLandingUrl">
+            <summary>
+            VS Extensions Landing page Url for the distribution.
+            </summary>
+        </member>
+    </members>
+</doc>

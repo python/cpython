@@ -1,0 +1,36 @@
+'\"
+'\" Copyright (c) 2002 ActiveState Corporation.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_SetCaretPos 3 8.4 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_SetCaretPos \- set the display caret location
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_SetCaretPos\fR(\fItkwin, x, y, height\fR)
+.SH ARGUMENTS
+.AP Tk_Window tkwin in
+Token for window.
+.AP int x in
+Window-relative x coordinate.
+.AP int y in
+Window-relative y coordinate.
+.AP int h in
+Height of the caret in the window.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_SetCaretPos\fR sets the caret location for the display of the
+specified Tk_Window \fItkwin\fR.  The caret is the per-display cursor
+location used for indicating global focus (e.g. to comply with Microsoft
+Accessibility guidelines), as well as for location of the over-the-spot XIM
+(X Input Methods) or Windows IME windows.
+.SH KEYWORDS
+caret, cursor

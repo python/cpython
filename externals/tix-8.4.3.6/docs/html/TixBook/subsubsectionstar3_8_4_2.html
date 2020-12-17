@@ -1,0 +1,44 @@
+<HEAD>
+<TITLE>  Chaining Methods<A NAME=6411>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1234 HREF=subsubsectionstar3_8_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1232 HREF=subsection3_8_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1226 HREF=subsubsection3_8_4_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1236 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1235 HREF=subsubsectionstar3_8_4_3.html>  The tixChainMethod call</A>
+<B>Up:</B> <A NAME=tex2html1233 HREF=subsection3_8_4.html> Standard Initialization Methods</A>
+<B> Previous:</B> <A NAME=tex2html1227 HREF=subsubsection3_8_4_1.html> The InitWidgetRec Method</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00084200000000000000>  Chaining Methods<A NAME=6411>&nbsp;</A></A></H3>
+<P>
+The above implementation is not sufficient because our
+  TixArrowButton class is derived from TixPrimitive. The class
+  derivation in Tix is basically an <em>is-a</em> relationship:
+  TixArrowButton <em>is a</em> TixPrimitive. TixPrimitive defines the
+  method <tt>tixPrimitive:InitWidgetRec</tt> which sets up the instance
+  variables of every instance of TixPrimitive. Since an instance of
+  TixArrowButton is also an instance of TixPrimitive, we need to make
+  sure that the instance variables defined by TixPrimitive are also
+  properly initialized. The technique of calling a method defined in a
+  superclass is called the <em>chaining</em> of a method. The following
+  implementation does this correctly:
+<P>
+<blockquote> <P><tt> proc tixArrowButton:InitWidgetRec {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    tixPrimitive:InitWidgetRec $w<BR>
+    set data(count) 0<BR>
+}</tt>
+<P></blockquote>
+<P>Notice that <tt>tixPrimitive:InitWidgetRec</tt> is called before anything
+  else is done. This way, we can define new classes by means of
+  successive refinement: we can first ask the superclass to set up the
+  instance variables, then we can modify some of those variables when
+  necessary and also define new variables.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

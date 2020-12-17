@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Scriptics Corporation.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH source n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+source \- Evaluate a file or resource as a Tcl script
+.SH SYNOPSIS
+\fBsource \fIfileName\fR
+.sp
+\fBsource\fR \fB\-encoding \fIencodingName fileName\fR
+.BE
+.SH DESCRIPTION
+.PP
+This command takes the contents of the specified file or resource
+and passes it to the Tcl interpreter as a text script.  The return
+value from \fBsource\fR is the return value of the last command
+executed in the script.  If an error occurs in evaluating the contents
+of the script then the \fBsource\fR command will return that error.
+If a \fBreturn\fR command is invoked from within the script then the
+remainder of the file will be skipped and the \fBsource\fR command
+will return normally with the result from the \fBreturn\fR command.
+.PP
+The end-of-file character for files is
+.QW \e32
+(^Z) for all platforms.
+The source command will read files up to this character.  This
+restriction does not exist for the \fBread\fR or \fBgets\fR commands,
+allowing for files containing code and data segments (scripted documents).
+If you require a
+.QW ^Z
+in code for string comparison, you can use
+.QW \e032
+or
+.QW \eu001a ,
+which will be safely substituted by the Tcl interpreter into
+.QW ^Z .
+.PP
+A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, unicode).
+.PP
+The \fB\-encoding\fR option is used to specify the encoding of
+the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
+is omitted, the system encoding is assumed.
+.SH EXAMPLE
+.PP
+Run the script in the file \fBfoo.tcl\fR and then the script in the
+file \fBbar.tcl\fR:
+.PP
+.CS
+\fBsource\fR foo.tcl
+\fBsource\fR bar.tcl
+.CE
+.PP
+Alternatively:
+.PP
+.CS
+foreach scriptFile {foo.tcl bar.tcl} {
+    \fBsource\fR $scriptFile
+}
+.CE
+.SH "SEE ALSO"
+file(n), cd(n), encoding(n), info(n)
+.SH KEYWORDS
+file, script

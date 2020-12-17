@@ -1,0 +1,32 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_IdToWindow 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_IdToWindow \- Find Tk's window information for an X window
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_Window
+\fBTk_IdToWindow\fR(\fIdisplay, window\fR)
+.SH ARGUMENTS
+.AS Tk_Window display
+.AP Display *display in
+X display containing the window.
+.AP Window window in
+X id for window.
+.BE
+.SH DESCRIPTION
+.PP
+Given an X window identifier and the X display it corresponds to,
+this procedure returns the corresponding Tk_Window handle.
+If there is no Tk_Window corresponding to \fIwindow\fR then
+NULL is returned.
+.SH KEYWORDS
+X window id

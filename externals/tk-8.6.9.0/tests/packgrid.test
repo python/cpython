@@ -1,0 +1,280 @@
+# This file is a Tcl script to test out interaction between Tk's "pack" and
+# "grid" commands.
+# It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 2008 Peter Spjuth
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::*
+
+test packgrid-1.1 {pack and grid in same master} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Basic conflict
+    grid .g
+    pack .p
+} -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager pack inside . which already has slaves managed by grid}
+
+test packgrid-1.2 {pack and grid in same master} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Basic conflict
+    pack .p
+    grid .g
+} -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager grid inside . which already has slaves managed by pack}
+
+test packgrid-1.3 {pack and grid in same master} -setup {
+    grid propagate . false
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Ok if one is non-propagating
+    grid .g
+    pack .p
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-1.4 {pack and grid in same master} -setup {
+    grid propagate . false
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Ok if one is non-propagating
+    pack .p
+    grid .g
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-1.5 {pack and grid in same master} -setup {
+    grid propagate . true
+    pack propagate . false
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Ok if one is non-propagating
+    grid .g
+    pack .p
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-1.6 {pack and grid in same master} -setup {
+    grid propagate . true
+    pack propagate . false
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Ok if one is non-propagating
+    pack .p
+    grid .g
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-1.7 {pack and grid in same master} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Basic conflict should stop widget from being handled
+    grid .g
+    catch { pack .p }
+    pack slaves .
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-1.8 {pack and grid in same master} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Basic conflict should stop widget from being handled
+    pack .p
+    catch { grid .g }
+    grid slaves .
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-2.1 {pack and grid in same master, change propagation} -setup {
+    grid propagate . false
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+    pack .p
+    grid .g
+    update
+} -body {
+    grid propagate . true
+} -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager grid inside . which already has slaves managed by pack}
+
+test packgrid-2.2 {pack and grid in same master, change propagation} -setup {
+    grid propagate . true
+    pack propagate . false
+    label .p -text PACK
+    label .g -text GRID
+    pack .p
+    grid .g
+    update
+} -body {
+    pack propagate . true
+} -returnCodes error -cleanup {
+    destroy .p
+    update
+    destroy .g
+} -result {cannot use geometry manager pack inside . which already has slaves managed by grid}
+
+test packgrid-2.3 {pack and grid in same master, change propagation} -setup {
+    grid propagate . false
+    pack propagate . false
+    label .p -text PACK
+    label .g -text GRID
+    pack .p
+    grid .g
+    update
+} -body {
+    grid propagate . true
+    update
+    pack propagate . true
+} -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager pack inside . which already has slaves managed by grid}
+
+test packgrid-2.4 {pack and grid in same master, change propagation} -setup {
+    grid propagate . false
+    pack propagate . false
+    label .p -text PACK
+    label .g -text GRID
+    pack .p
+    grid .g
+    update
+} -body {
+    pack propagate . true
+    grid propagate . true
+} -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager grid inside . which already has slaves managed by pack}
+
+test packgrid-3.1 {stealing slave} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Ok to steal if the other one is emptied
+    grid .g
+    pack .g
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-3.2 {stealing slave} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Ok to steal if the other one is emptied
+    pack .g
+    grid .g
+} -cleanup {
+    destroy .p
+    destroy .g
+} -result {}
+
+test packgrid-3.3 {stealing slave} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Not ok to steal if the other one is not emptied
+    grid .g
+    grid .p
+    pack .g
+}  -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager pack inside . which already has slaves managed by grid}
+
+test packgrid-3.4 {stealing slave} -setup {
+    grid propagate . true
+    pack propagate . true
+    label .p -text PACK
+    label .g -text GRID
+} -body {
+    # Not ok to steal if the other one is not emptied
+    pack .g
+    pack .p
+    grid .g
+}  -returnCodes error -cleanup {
+    destroy .p
+    destroy .g
+} -result {cannot use geometry manager grid inside . which already has slaves managed by pack}
+
+test packgrid-4.1 {slave stolen after master destruction - bug [aa7679685e]} -setup {
+    frame .f
+    button .b -text hello
+} -body {
+    pack .f
+    grid .b -in .f
+    destroy .f
+    set res [winfo manager .b]
+    # shall not crash
+    pack .b
+    set res
+} -cleanup {
+    destroy .b
+} -result {}
+
+test packgrid-4.2 {slave stolen after master destruction - bug [aa7679685e]} -setup {
+    frame .f
+    button .b -text hello
+} -body {
+    pack .f
+    pack .b -in .f
+    destroy .f
+    set res [winfo manager .b]
+    # shall not crash
+    grid .b
+    set res
+} -cleanup {
+    destroy .b
+} -result {}
+
+cleanupTests
+return

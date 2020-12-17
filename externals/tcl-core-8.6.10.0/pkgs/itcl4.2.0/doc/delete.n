@@ -1,0 +1,71 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH delete n 3.0 itcl "[incr\ Tcl]"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+itcl::delete \- delete things in the interpreter
+.SH SYNOPSIS
+\fBitcl::delete \fIoption\fR ?\fIarg arg ...\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBdelete\fR command is used to delete things in the interpreter.
+It is implemented as an ensemble, so extensions can add their own
+options and extend the behavior of this command.  By default, the
+\fBdelete\fR command handles the destruction of namespaces.
+.PP
+The \fIoption\fR argument determines what action is carried out
+by the command.  The legal \fIoptions\fR (which may be abbreviated)
+are:
+.TP
+\fBdelete class \fIname\fR ?\fIname...\fR?
+.
+Deletes one or more \fB[incr\ Tcl]\fR classes called \fIname\fR.
+This deletes all objects in the class, and all derived classes
+as well.
+.RS
+.PP
+If an error is encountered while destructing an object, it will
+prevent the destruction of the class and any remaining objects.
+To destroy the entire class without regard for errors, use the
+"\fBdelete namespace\fR" command.
+.RE
+.TP
+\fBdelete object \fIname\fR ?\fIname...\fR?
+.
+Deletes one or more \fB[incr\ Tcl]\fR objects called \fIname\fR.
+An object is deleted by invoking all destructors in its class
+hierarchy, in order from most- to least-specific.  If all destructors
+are successful, data associated with the object is deleted and
+the \fIname\fR is removed as a command from the interpreter.
+.RS
+.PP
+If the access command for an object resides in another namespace,
+then its qualified name can be used:
+.PP
+.CS
+itcl::delete object foo::bar::x
+.CE
+.PP
+If an error is encountered while destructing an object, the
+\fBdelete\fR command is aborted and the object remains alive.
+To destroy an object without regard for errors, use the
+"\fBrename\fR" command to destroy the object access command.
+.RE
+.TP
+\fBdelete namespace \fIname\fR ?\fIname...\fR?
+.
+Deletes one or more namespaces called \fIname\fR.  This deletes
+all commands and variables in the namespace, and deletes all
+child namespaces as well.  When a namespace is deleted, it is
+automatically removed from the import lists of all other namespaces.
+
+.SH KEYWORDS
+namespace, proc, variable, ensemble

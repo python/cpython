@@ -1,0 +1,33 @@
+This is the release 4.1.2 of Itcl.
+
+It is intended to be script compatible with Itcl 4.0.* and Itcl 3.4.* .
+It very likely presents the same public C interface as Itcl 4.0.* .
+It includes incompatible changes to internal structs when compared
+with Itcl 4.0.* .  Unfortunately, the extension Itk 4.0.* intrudes
+in those internals and will notice and break in the presence of Itcl 4.1.* .
+When you upgrade to Itcl 4.1 , you must also upgrade to Itk 4.1 .  It
+is possible you will find other extensions and applications repeating Itk's
+error.
+
+Notes of past releases follow below
+-----------------------------------
+
+The difference to 4.0.*: in this release there are only bug fixes from SF and the fossil bug tracker for itcl.
+
+This is the first stable release of Itcl 4.0.
+It is a new major release of Itcl.
+
+The difference to 4.0b7: Tighter control on the set of exported functions.
+
+The difference to 4.0b6: Updated TEA system and related build system changes.
+
+The difference to 4.0b5: in this release there are only bug fixes from SF
+tracker and updates for using Tcl 8.6 version from fossil repo trunk
+
+The difference to 4.0b4: in this release there are only bug fixes from SF
+tracker and updates to TEA 3.9.
+
+The difference to 4.0b3: in this release there are only bug fixes from SF
+tracker and some fixes to run on OSX and Windows platform.
+
+There is no known incompatibility.

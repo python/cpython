@@ -1,0 +1,376 @@
+'\"
+'\" tdbc::connection.n --
+'\"
+'\" Copyright (c) 2008 by Kevin B. Kenny.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution of
+'\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+.TH "tdbc::connection" n 8.6 Tcl "Tcl Database Connectivity"
+'\" .so man.macros
+'\" IGNORE
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+'\"	Draw four-sided box normally, but don't draw top of
+'\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\" END IGNORE
+.BS
+.SH "NAME"
+tdbc::connection \- TDBC connection object
+.SH "SYNOPSIS"
+.nf
+package require \fBtdbc 1.0\fR
+package require \fBtdbc::\fIdriver version\fR
+
+\fBtdbc::\fIdriver\fB::connection create \fIdb\fR ?\fI\-option value\fR...?
+
+\fIdb \fBconfigure\fR ?\fI\-option value\fR...?
+\fIdb \fBclose\fR
+\fIdb \fBforeignkeys\fR ?\fI\-primary tableName\fR? ?\fI\-foreign tableName\fR?
+\fIdb \fBprepare\fR \fIsql-code\fR
+\fIdb \fBpreparecall\fR \fIcall\fR
+\fIdb \fBprimarykeys\fR \fItableName\fR
+\fIdb \fBstatements\fR
+\fIdb \fBresultsets\fR
+\fIdb \fBtables\fR ?\fIpattern\fR?
+\fIdb \fBcolumns\fR \fItable\fR ?\fIpattern\fR?
+\fIdb \fBbegintransaction\fR
+\fIdb \fBcommit\fR
+\fIdb \fBrollback\fR
+\fIdb \fBtransaction\fR \fIscript\fR
+.fi
+.ad l
+.in 14
+.ti 7
+\fIdb \fBallrows\fR ?\fB\-as lists\fR|\fBdicts\fR? ?\fB\-columnsvariable \fIname\fR? ?\fB\-\-\fR? \fIsql-code\fR ?\fIdictionary\fR?
+.br
+.ti 7
+\fIdb \fBforeach\fR ?\fB\-as lists\fR|\fBdicts\fR? ?\fB\-columnsvariable \fIname\fR? ?\-\-? \fIvarName sqlcode\fR ?\fIdictionary\fR? \fIscript\fR
+.ad b
+.BE
+.SH "DESCRIPTION"
+.PP
+Every database driver for TDBC (Tcl DataBase Connectivity) implements
+a \fIconnection\fR object that represents a connection to a database.
+By convention, this object is created by the command,
+\fBtdbc::\fIdriver\fB::connection create\fR.
+This command accepts the name of a Tcl command that will represent the
+connection and a possible set of options (see \fBCONFIGURATION
+OPTIONS\fR). It establishes a connection to the database and returns
+the name of the newly-created Tcl command.
+.PP
+The \fBconfigure\fR object command on a database connection, if
+presented with no arguments, returns a list of alternating keywords
+and values representing the connection's current configuration. If
+presented with a single argument \fI\-option\fR, it returns the
+configured value of the given option. Otherwise, it must be given an
+even number of arguments which are alternating options and values. The
+specified options receive the specified values, and nothing is
+returned.
+.PP
+The \fBclose\fR object command on a database connection closes the
+connection. All active statements and result sets on the connection
+are closed. Any uncommitted transaction is rolled back. The object
+command is deleted.
+.PP
+The \fBprepare\fR object command on a database connection prepares a SQL
+statement for execution. The \fIsql-code\fR argument must contain a
+single SQL statement to be executed. Bound variables may be
+included. The return value is a
+newly-created Tcl command that represents the statement. See
+\fBtdbc::statement\fR for more detailed discussion of the
+SQL accepted by the \fBprepare\fR object command and the
+interface accepted by a statement.
+.PP
+On a database connection where the underlying database and driver
+support stored procedures, the \fBpreparecall\fR
+object command prepares a call to a stored procedure for execution.
+The syntax of the stored procedure call is:
+.PP
+.CS
+?\fIresultvar\fR =? \fIprocname\fR(?\fIarg\fR ?, \fIarg\fR...?)
+.CE
+.PP
+The return value is a
+newly-created Tcl command that represents the statement. See
+\fBtdbc::statement\fR for the interface accepted by a statement.
+.PP
+The \fBstatements\fR object command returns a list of statements 
+that have been created by \fBprepare\fR and \fBpreparecall\fR
+statements against the given connection and have not yet been closed.
+.PP
+The \fBresultsets\fR object command returns a list of result sets
+that have been obtained by executing statements prepared using the
+given connection and not yet closed.
+.PP
+The \fBtables\fR object command allows the program to query the
+connection for the names of tables that exist in the database.
+The optional \fIpattern\fR parameter is a pattern to match the name of
+a table. It may contain the SQL wild-card characters '\fB%\fR' and
+'\fB_\fR'. The return value is a dictionary whose keys are table names
+and whose values are subdictionaries. See the documentation for the
+individual database driver for the interpretation of the values.
+.PP
+The \fBcolumns\fR object command allows the program to query the
+connection for the names of columns that exist in a given table.
+The optional \fBpattern\fR parameter is a pattern to match the name of
+a column. It may contain the SQL wild-card characters '\fB%\fR' and
+'\fB_\fR'. The return value is a dictionary whose keys are column names
+and whose values are dictionaries. Each of the subdictionaries will
+contain at least the following keys and values (and may contain others
+whose usage is determined by a specific database driver).
+.IP \fBtype\fR
+Contains the data type of the column, and will generally be chosen
+from the set, 
+\fBbigint\fR, \fBbinary\fR, \fBbit\fR, \fBchar\fR, \fBdate\fR,
+\fBdecimal\fR, \fBdouble\fR, \fBfloat\fR, \fBinteger\fR,
+\fBlongvarbinary\fR, \fBlongvarchar\fR, \fBnumeric\fR, \fBreal\fR,
+\fBtime\fR, \fBtimestamp\fR, \fBsmallint\fR, \fBtinyint\fR,
+\fBvarbinary\fR, and \fBvarchar\fR. (If the column has a type that
+cannot be represented as one of the above, \fBtype\fR will contain
+a driver-dependent description of the type.)
+.IP \fBprecision\fR
+Contains the precision of the column in bits, decimal digits, or the
+width in characters, according to the type.
+.IP \fBscale\fR
+Contains the scale of the column (the number of digits after the radix
+point), for types that support the concept.
+.IP \fBnullable\fR
+Contains 1 if the column can contain NULL values, and 0 otherwise.
+.PP
+The \fBprimarykeys\fR object command allows the program to query the
+connection for the primary keys belonging to a given table. The
+\fItableName\fR parameter identifies the table being interrogated. The result
+is a list of dictionaries enumerating the keys (in a similar format to the
+list returned by \fI$connection\fR \fBallrows -as dicts\fR). The keys of the
+dictionary may include at least the following. Values that are NULL or
+meaningless in a given database are omitted.
+.IP \fBtableCatalog\fR
+Name of the catalog in which the table appears.
+.IP \fBtableSchema\fR
+Name of the schema in which the table  appears.
+.IP \fBtableName\fR
+Name of the table owning the primary key.
+.IP \fBconstraintCatalog\fR
+Name of the catalog in which the primary key constraint appears. In some
+database systems, this may not be the same as the table's catalog.
+.IP \fBconstraintSchema\fR
+Name of the schema in which the primary key constraint appears.  In some
+database systems, this may not be the same as the table's schema.
+.IP \fBconstraintName\fR
+Name of the primary key constraint,
+.IP \fBcolumnName\fR
+Name of a column that is a member of the primary key.
+.IP \fBordinalPosition\fR
+Ordinal position of the column within the primary key.
+.PP
+To these columns may be added additional ones that are specific to
+a particular database system.
+.PP
+The \fBforeignkeys\fR object command allows the program to query the
+connection for foreign key relationships that apply to a particular table.
+The relationships may be constrained to the keys that appear in a
+particular table (\fB-foreign\fR \fItableName\fR), the keys that
+refer to a particular table (\fB-primary\fR \fItableName\fR), or both.
+At least one of \fB-primary\fR and \fB-foreign\fR should be specified,
+although some drivers will enumerate all foreign keys in the current
+catalog if both options are omitted. The result of the \fBforeignkeys\fR 
+object command is a list of dictionaries, with one list element per key
+(in a similar format to the
+list returned by \fI$connection\fR \fBallrows -as dicts\fR). The keys of the
+dictionary may include at least the following. Values that are NULL or
+meaningless in a given database are omitted.
+.IP \fBforeignConstraintCatalog\fR
+Catalog in which the foreign key constraint appears.
+.IP \fBforeignConstraintSchema\fR
+Schema in which the foreign key constraint appears.
+.IP \fBforeignConstraintName\fR
+Name of the foreign key constraint.
+.IP \fBprimaryConstraintCatalog\fR
+Catalog holding the primary key constraint (or unique key constraint) on the 
+column to which the foreign key refers.
+.IP \fBprimaryConstraintSchema\fR
+Schema holding the primary key constraint (or unique key constraint) on the 
+column to which the foreign key refers.
+.IP \fBprimaryConstraintName\fR
+Name of the primary key constraint (or unique key constraint) on the 
+column to which the foreign key refers.
+.IP \fBupdateAction\fR
+Action to take when an UPDATE statement invalidates the constraint. 
+The value will be \fBCASCADE\fR, \fBSET DEFAULT\fR, \fBSET NULL\fR, 
+\fBRESTRICT\fR, or \fBNO ACTION\fR.
+.IP \fBdeleteAction\fR
+Action to take when a DELETE statement invalidates the constraint. 
+The value will be \fBCASCADE\fR, \fBSET DEFAULT\fR, \fBSET NULL\fR,
+\fBRESTRICT\fR, or \fBNO ACTION\fR.
+.IP \fBprimaryCatalog\fR
+Catalog name in which the primary table (the one to which the foreign key
+refers) appears.
+.IP \fBprimarySchema\fR
+Schema name in which the primary table (the one to which the foreign key
+refers) appears.
+.PP
+.IP \fBprimaryTable\fR
+Table name of the primary table (the one to which the foreign key
+refers).
+.IP \fBprimaryColumn\fR
+Name of the column to which the foreign key refers.
+.IP \fBforeignCatalog\fR
+Name of the catalog in which the table containing the foreign key appears.
+.IP \fBforeignSchema\fR
+Name of the schema in which the table containing the foreign key appears.
+.IP \fBforeignTable\fR
+Name of the table containing the foreign key.
+.IP \fBforeignColumn\fR
+Name of the column appearing in the foreign key.
+.IP \fBordinalPosition\fR
+Position of the column in the foreign key, if the key is a compound key.
+.PP
+The \fBbegintransaction\fR object command on a database connection
+begins a transaction on the database. If the underlying database does
+not support atomic, consistent, isolated, durable transactions, the
+\fBbegintransaction\fR object command returns an error reporting the
+fact. Similarly, if multiple \fBbegintransaction\fR commands are executed
+withough an intervening \fBcommit\fR or \fBrollback\fR command, an
+error is returned unless the underlying database supports nested
+transactions.
+.PP
+The \fBcommit\fR object command on a database connection ends the most
+recent transaction started by \fBbegintransaction\fR and commits
+changes to the database.
+.PP
+The \fBrollback\fR object command on a database connection rolls back
+the most recent transaction started by \fBbegintransaction\fR. The
+state of the database is as if nothing happened during the
+transaction.
+.PP
+The \fBtransaction\fR object command on a database connection
+presents a simple way of bundling a database transaction. It begins a
+transaction, and evaluates the supplied \fIscript\fR argument as a Tcl
+script in the caller's scope. If \fIscript\fR terminates normally, or
+by \fBbreak\fR, \fBcontinue\fR, or \fBreturn\fR, the transaction is
+committed (and any action requested by \fBbreak\fR, \fBcontinue\fR, or
+\fBreturn\fR takes place). If the commit fails for any reason,
+the error in the commit is treated as an error in the \fIscript\fR.
+In the case of an error in \fIscript\fR or in the commit, 
+the transaction is rolled back and the error is
+rethrown. Any nonstandard return code from the script
+causes the transaction to be rolled back and then is rethrown.
+.PP
+The \fBallrows\fR object command prepares a SQL statement (given by
+the \fIsql-code\fR parameter) to execute against the database.
+It then executes it (see \fBtdbc::statement\fR for details) with the
+optional \fIdictionary\fR parameter giving bind variables. Finally,
+it uses the \fIallrows\fR object command on the result set (see
+\fBtdbc::resultset\fR) to construct a list of the results. Finally, both
+result set and statement are closed. The return value is the list of
+results. 
+.PP
+The \fBforeach\fR object command prepares a SQL statement (given by
+the \fIsql-code\fR parameter) to execute against the database.
+It then executes it (see \fBtdbc::statement\fR for details) with the
+optional \fIdictionary\fR parameter giving bind variables. Finally,
+it uses the \fIforeach\fR object command on the result set (see
+\fBtdbc::resultset\fR) to evaluate the given \fIscript\fR for each row of
+the results. Finally, both result set and statement are closed, even
+if the given \fIscript\fR results in a \fBreturn\fR, an error, or
+an unusual return code. 
+.SH "CONFIGURATION OPTIONS"
+The configuration options accepted when the connection is created and
+on the connection's \fBconfigure\fR object command include the
+following, and may include others specific to a database driver.
+.IP "\fB\-encoding \fIname\fR"
+Specifies the encoding to be used in connecting to the database.
+The \fIname\fR should be one of the names accepted by the
+\fBencoding\fR command. This option is usually unnecessary; most
+database drivers can figure out the encoding in use by themselves.
+.IP "\fB\-isolation \fIlevel\fR"
+Specifies the transaction isolation level needed for transactions on
+the database. The acceptable values for \fIlevel\fR are shown under
+\fBTRANSACTION ISOLATION LEVELS\fR.
+.IP "\fB\-timeout \fIms\fR"
+Specifies the maximum time to wait for a an operation database engine before
+reporting an error to the caller. The \fIms\fR argument gives the
+maximum time in milliseconds. A value of zero (the default) specifies
+that the calling process is to wait indefinitely for database
+operations.
+.IP "\fB\-readonly \fIflag\fR"
+Specifies that the connection will not modify the database (if the
+Boolean parameter \fIflag\fR is true), or that it may modify the
+database (if \fIflag\fR is false). If \fIflag\fR is true, this option
+may have the effect of raising the transaction isolation level to
+\fIreadonly\fR.
+.SS "TRANSACTION ISOLATION LEVELS"
+The acceptable values for the \fB\-isolation\fR configuration option
+are as follows:
+.IP \fBreaduncommitted\fR
+Allows the transaction to read "dirty", that is, uncommitted
+data. This isolation level may compromise data integrity, does not
+guarantee that foreign keys or uniqueness constraints are satisfied,
+and in general does not guarantee data consistency.
+.IP \fBreadcommitted\fR
+Forbids the transaction from reading "dirty" data, but does not
+guarantee repeatable reads; if a transaction reads a row of a database
+at a given time, there is no guarantee that the same row will be
+available at a later time in the same transaction.
+.IP \fBrepeatableread\fR
+Guarantees that any row of the database, once read, will have the same
+values for the life of a transaction. Still permits "phantom reads"
+(that is, newly-added rows appearing if a table is queried a second
+time).
+.IP \fBserializable\fR
+The most restrictive (and most expensive) level of transaction isolation. Any query to the database, if repeated, will return precisely the same results for the life of the transaction, exactly as if the transaction is the only user of the database.
+.IP \fBreadonly\fR
+Behaves like \fBserializable\fR in that the only results visible to
+the transaction are those that were committed prior to the start of
+the transaction, but forbids the transaction from modifying the
+database.
+.PP
+A database that does not implement one of these isolation levels
+will instead use the next more restrictive isolation level. If the
+given level of isolation cannot be obtained, the database interface
+throws an error reporting the fact. The default isolation level
+is \fBreadcommitted\fR.
+.PP
+A script should not the isolation level when a transaction is in
+progress.
+.SH "SEE ALSO"
+encoding(n), tdbc(n), tdbc::resultset(n), tdbc::statement(n), tdbc::tokenize(n)
+.SH "KEYWORDS"
+TDBC, SQL, database, connectivity, connection, resultset, statement
+.SH "COPYRIGHT"
+Copyright (c) 2008 by Kevin B. Kenny.
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
+'\"

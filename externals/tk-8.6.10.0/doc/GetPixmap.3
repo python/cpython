@@ -1,0 +1,52 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_GetPixmap 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetPixmap, Tk_FreePixmap \- allocate and free pixmaps
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Pixmap
+\fBTk_GetPixmap(\fIdisplay, d, width, height, depth\fB)\fR
+.sp
+\fBTk_FreePixmap(\fIdisplay, pixmap\fB)\fR
+.SH ARGUMENTS
+.AS "Drawable" *pixelPtr
+.AP Display *display in
+X display for the pixmap.
+.AP Drawable d in
+Pixmap or window where the new pixmap will be used for drawing.
+.AP "int" width in
+Width of pixmap.
+.AP "int" height in
+Height of pixmap.
+.AP "int" depth in
+Number of bits per pixel in pixmap.
+.AP Pixmap pixmap in
+Pixmap to destroy.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are identical to the Xlib procedures \fBXCreatePixmap\fR
+and \fBXFreePixmap\fR, except that they have extra code to manage X
+resource identifiers so that identifiers for deleted pixmaps can be
+reused in the future.
+It is important for Tk applications to use these procedures rather
+than \fBXCreatePixmap\fR and \fBXFreePixmap\fR;  otherwise long-running
+applications may run out of resource identifiers.
+.PP
+\fBTk_GetPixmap\fR creates a pixmap suitable for drawing in \fId\fR,
+with dimensions given by \fIwidth\fR, \fIheight\fR, and \fIdepth\fR,
+and returns its identifier.
+\fBTk_FreePixmap\fR destroys the pixmap given by \fIpixmap\fR and makes
+its resource identifier available for reuse.
+.SH KEYWORDS
+pixmap, resource identifier

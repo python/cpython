@@ -1,0 +1,163 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH toplevel n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+toplevel \- Create and manipulate 'toplevel' main and popup window widgets
+.SH SYNOPSIS
+\fBtoplevel\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-borderwidth	\-highlightcolor	\-pady
+\-cursor	\-highlightthickness	\-relief
+\-highlightbackground	\-padx	\-takefocus
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-background background Background
+This option is the same as the standard \fB\-background\fR option
+except that its value may also be specified as an empty string.
+In this case, the widget will display no background or border, and
+no colors will be consumed from its colormap for its background
+and border.
+.OP \-class class Class
+Specifies a class for the window.
+This class will be used when querying the option database for
+the window's other options, and it will also be used later for
+other purposes such as bindings.
+The \fB\-class\fR option may not be changed with the \fBconfigure\fR
+widget command.
+.OP \-colormap colormap Colormap
+Specifies a colormap to use for the window.
+The value may be either \fBnew\fR, in which case a new colormap is
+created for the window and its children, or the name of another
+window (which must be on the same screen and have the same visual
+as \fIpathName\fR), in which case the new window will use the colormap
+from the specified window.
+If the \fB\-colormap\fR option is not specified, the new window
+uses the default colormap of its screen.
+This option may not be changed with the \fBconfigure\fR
+widget command.
+.OP \-container container Container
+The value must be a boolean.  If true, it means that this window will
+be used as a container in which some other application will be embedded
+(for example, a Tk toplevel can be embedded using the \fB\-use\fR option).
+The window will support the appropriate window manager protocols for
+things like geometry requests.  The window should not have any
+children of its own in this application.
+This option may not be changed with the \fBconfigure\fR
+widget command.
+.OP \-height height Height
+Specifies the desired height for the window in any of the forms
+acceptable to \fBTk_GetPixels\fR.
+If this option is less than or equal to zero then the window will
+not request any size at all.
+.OP \-menu menu Menu
+Specifies a menu widget to be used as a menubar. On the Macintosh, the
+menubar will be displayed across the top of the main monitor. On
+Microsoft Windows and all UNIX platforms, the menu will appear across
+the toplevel window as part of the window dressing maintained by the
+window manager.
+.OP \-screen "" ""
+Specifies the screen on which to place the new window.
+Any valid screen name may be used, even one associated with a
+different display.
+Defaults to the same screen as its parent.
+This option is special in that it may not be specified via the option
+database, and it may not be modified with the \fBconfigure\fR
+widget command.
+.OP \-use use Use
+This option is used for embedding. If the value is not an empty string,
+it must be the window identifier of a container window, specified as
+a hexadecimal string like the ones returned by the \fBwinfo id\fR
+command. The toplevel widget will be created as a child of the given
+container instead of the root window for the screen.  If the container
+window is in a Tk application, it must be a frame or toplevel widget for
+which the \fB\-container\fR option was specified.
+This option may not be changed with the \fBconfigure\fR
+widget command.
+.OP \-visual visual Visual
+Specifies visual information for the new window in any of the
+forms accepted by \fBTk_GetVisual\fR.
+If this option is not specified, the new window will use the default
+visual for its screen.
+The \fB\-visual\fR option may not be modified with the \fBconfigure\fR
+widget command.
+.OP \-width width Width
+Specifies the desired width for the window in any of the forms
+acceptable to \fBTk_GetPixels\fR.
+If this option is less than or equal to zero then the window will
+not request any size at all.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtoplevel\fR command creates a new toplevel widget (given
+by the \fIpathName\fR argument).  Additional
+options, described above, may be specified on the command line
+or in the option database
+to configure aspects of the toplevel such as its background color
+and relief.  The \fBtoplevel\fR command returns the
+path name of the new window.
+.PP
+A toplevel is similar to a \fBframe\fR except that it is created as a
+top-level window:  its X parent is the root window of a screen
+rather than the logical parent from its Tk path name.  The primary
+purpose of a toplevel is to serve as a container for dialog boxes
+and other collections of widgets.  The only visible features
+of a toplevel are its background color and an optional 3-D border
+to make the toplevel appear raised or sunken.
+.SH "WIDGET COMMAND"
+.PP
+The \fBtoplevel\fR command creates a new Tcl command whose
+name is the same as the path name of the toplevel's window.  This
+command may be used to invoke various
+operations on the widget.  It has the following general form:
+.PP
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+.PP
+\fIPathName\fR is the name of the command, which is the same as
+the toplevel widget's path name.  \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for toplevel widgets:
+.TP
+\fIpathName \fBcget \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBtoplevel\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBtoplevel\fR
+command.
+.SH BINDINGS
+.PP
+When a new toplevel is created, it has no default event bindings:
+toplevels are not intended to be interactive.
+.PP
+Be aware that bindings on toplevels may receive events from subwidgets.
+.SH "SEE ALSO"
+bind(n), bindtags(n), frame(n), wm(n)
+.SH KEYWORDS
+toplevel, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

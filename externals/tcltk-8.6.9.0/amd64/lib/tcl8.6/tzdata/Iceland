@@ -1,0 +1,5 @@
+# created by tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Atlantic/Reykjavik)]} {
+    LoadTimeZoneFile Atlantic/Reykjavik
+}
+set TZData(:Iceland) $TZData(:Atlantic/Reykjavik)

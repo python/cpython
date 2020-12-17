@@ -1,0 +1,2352 @@
+# This file is a Tcl script to test out Tk's interactions with the window
+# manager, including the "wm" command. It is organized in the standard fashion
+# for Tcl tests.
+#
+# Copyright (c) 1992-1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+# This file tests window manager interactions that work across platforms.
+# Window manager tests that only work on a specific platform should be placed
+# in unixWm.test or winWm.test.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+wm deiconify .
+if {![winfo ismapped .]} {
+    tkwait visibility .
+}
+
+proc stdWindow {} {
+    destroy .t
+    toplevel .t -width 100 -height 50
+    wm geom .t +0+0
+    update
+}
+
+# [raise] and [lower] may return before the window manager has completed the
+# operation. The raiseDelay procedure idles for a while to give the operation
+# a chance to complete.
+#
+
+proc raiseDelay {} {
+    after 100; update
+}
+
+# How to carry out a small delay while processing events
+
+proc eventDelay {{delay 200}} {
+    after $delay "set done 1" ; vwait done
+}
+
+deleteWindows
+
+##############################################################################
+
+stdWindow
+
+test wm-1.1 {Tk_WmObjCmd procedure, miscellaneous errors} -returnCodes error -body {
+    wm
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+# Next test will fail every time set of subcommands is changed
+test wm-1.2 {Tk_WmObjCmd procedure, miscellaneous errors} -returnCodes error -body {
+    wm foo
+} -result {bad option "foo": must be aspect, attributes, client, colormapwindows, command, deiconify, focusmodel, forget, frame, geometry, grid, group, iconbitmap, iconify, iconmask, iconname, iconphoto, iconposition, iconwindow, manage, maxsize, minsize, overrideredirect, positionfrom, protocol, resizable, sizefrom, stackorder, state, title, transient, or withdraw}
+test wm-1.3 {Tk_WmObjCmd procedure, miscellaneous errors} -returnCodes error -body {
+    wm command
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-1.4 {Tk_WmObjCmd procedure, miscellaneous errors} -returnCodes error -body {
+    wm aspect bogus
+} -result {bad window path name "bogus"}
+test wm-1.5 {Tk_WmObjCmd procedure, miscellaneous errors} -body {
+    button .b -text hello
+    wm geometry .b
+} -returnCodes error -cleanup {
+    destroy .b
+} -result {window ".b" isn't a top-level window}
+
+
+### wm aspect ###
+test wm-aspect-1.1 {usage} -returnCodes error -body {
+    wm aspect
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-aspect-1.2 {usage} -returnCodes error -body {
+    wm aspect . _
+} -result {wrong # args: should be "wm aspect window ?minNumer minDenom maxNumer maxDenom?"}
+test wm-aspect-1.3 {usage} -returnCodes error -body {
+    wm aspect . _ _ _
+} -result {wrong # args: should be "wm aspect window ?minNumer minDenom maxNumer maxDenom?"}
+test wm-aspect-1.4 {usage} -returnCodes error -body {
+    wm aspect . _ _ _ _ _
+} -result {wrong # args: should be "wm aspect window ?minNumer minDenom maxNumer maxDenom?"}
+test wm-aspect-1.5 {usage} -returnCodes error -body {
+    wm aspect . bad 14 15 16
+} -result {expected integer but got "bad"}
+test wm-aspect-1.6 {usage} -returnCodes error -body {
+    wm aspect . 13 foo 15 16
+} -result {expected integer but got "foo"}
+test wm-aspect-1.7 {usage} -returnCodes error -body {
+    wm aspect . 13 14 bar 16
+} -result {expected integer but got "bar"}
+test wm-aspect-1.8 {usage} -returnCodes error -body {
+    wm aspect . 13 14 15 baz
+} -result {expected integer but got "baz"}
+test wm-aspect-1.9 {usage} -returnCodes error -body {
+    wm aspect . 0 14 15 16
+} -result {aspect number can't be <= 0}
+test wm-aspect-1.10 {usage} -returnCodes error -body {
+    wm aspect . 13 0 15 16
+} -result {aspect number can't be <= 0}
+test wm-aspect-1.11 {usage} -returnCodes error -body {
+    wm aspect . 13 14 0 16
+} -result {aspect number can't be <= 0}
+test wm-aspect-1.12 {usage} -returnCodes error -body {
+    wm aspect . 13 14 15 0
+} -result {aspect number can't be <= 0}
+
+test wm-aspect-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm aspect .t]
+    wm aspect .t 3 4 10 2
+    lappend result [wm aspect .t]
+    wm aspect .t {} {} {} {}
+    lappend result [wm aspect .t]
+} -result [list {} {3 4 10 2} {}]
+
+
+### wm attributes ###
+test wm-attributes-1.1 {usage} -returnCodes error -body {
+    wm attributes
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-attributes-1.2.1 {usage} -constraints win -returnCodes error -body {
+    # This is the wrong error to output - unix has it right, but it's
+    # not critical.
+    wm attributes . _
+} -result {wrong # args: should be "wm attributes window ?-alpha ?double?? ?-transparentcolor ?color?? ?-disabled ?bool?? ?-fullscreen ?bool?? ?-toolwindow ?bool?? ?-topmost ?bool??"}
+test wm-attributes-1.2.2 {usage} -constraints win -returnCodes error -body {
+    wm attributes . -alpha 1.0 -disabled
+} -result {wrong # args: should be "wm attributes window ?-alpha ?double?? ?-transparentcolor ?color?? ?-disabled ?bool?? ?-fullscreen ?bool?? ?-toolwindow ?bool?? ?-topmost ?bool??"}
+test wm-attributes-1.2.3 {usage} -constraints win -returnCodes error -body {
+    # This is the wrong error to output - unix has it right, but it's
+    # not critical.
+    wm attributes . -to
+} -result {wrong # args: should be "wm attributes window ?-alpha ?double?? ?-transparentcolor ?color?? ?-disabled ?bool?? ?-fullscreen ?bool?? ?-toolwindow ?bool?? ?-topmost ?bool??"}
+test wm-attributes-1.2.4 {usage} -constraints {unix notAqua} -returnCodes error -body {
+    wm attributes . _
+} -result {bad attribute "_": must be -alpha, -topmost, -zoomed, -fullscreen, or -type}
+test wm-attributes-1.2.5 {usage} -constraints aqua -returnCodes error -body {
+    wm attributes . _
+} -result {bad attribute "_": must be -alpha, -fullscreen, -modified, -notify, -titlepath, -topmost, -transparent, or -type}
+
+
+### wm client ###
+test wm-client-1.1 {usage} -returnCodes error -body {
+    wm client
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-client-1.2 {usage} -returnCodes error -body {
+    wm client . _ _
+} -result {wrong # args: should be "wm client window ?name?"}
+
+test wm-client-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm client .t]
+    wm client .t Miffo
+    lappend result [wm client .t]
+    wm client .t {}
+    lappend result [wm client .t]
+} -result [list {} Miffo {}]
+
+deleteWindows
+
+test wm-attributes-1.3.0 {default -fullscreen value} -constraints win -body {
+    toplevel .t
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 0
+test wm-attributes-1.3.1 {change -fullscreen before map} -constraints win -body {
+    toplevel .t
+    wm attributes .t -fullscreen 1
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-attributes-1.3.2 {change -fullscreen before map} -constraints win -body {
+    toplevel .t
+    wm attributes .t -fullscreen 1
+    update
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-attributes-1.3.3 {change -fullscreen after map} -constraints win -body {
+    toplevel .t
+    update
+    wm attributes .t -fullscreen 1
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-attributes-1.3.4 {change -fullscreen after map} -setup {
+    set booleans [list]
+} -constraints win -body {
+    toplevel .t
+    update
+    lappend booleans [wm attributes .t -fullscreen]
+    wm attributes .t -fullscreen 1
+    lappend booleans [wm attributes .t -fullscreen]
+    # Query above should not clear fullscreen state
+    lappend booleans [wm attributes .t -fullscreen]
+    wm attributes .t -fullscreen 0
+    lappend booleans [wm attributes .t -fullscreen]
+} -cleanup {
+    deleteWindows
+} -result {0 1 1 0}
+test wm-attributes-1.3.5 {change -fullscreen after map} -setup {
+    set results [list]
+    set normal_geom "301x302+101+102"
+    set fullscreen_geom "[winfo screenwidth .]x[winfo screenheight .]+0+0"
+} -constraints win -body {
+    toplevel .t
+    wm geom .t $normal_geom
+    update
+    lappend results [string equal [wm geom .t] $normal_geom]
+    wm attributes .t -fullscreen 1
+    lappend results [string equal [wm geom .t] $fullscreen_geom]
+    wm attributes .t -fullscreen 0
+    lappend results [string equal [wm geom .t] $normal_geom]
+} -cleanup {
+    deleteWindows
+} -result {1 1 1}
+test wm-attributes-1.3.6 {state change does not change -fullscreen} -constraints win -body {
+    toplevel .t
+    update
+    wm attributes .t -fullscreen 1
+    wm withdraw .t
+    wm deiconify .t
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-attributes-1.3.7 {state change does not change -fullscreen} -constraints win -body {
+    toplevel .t
+    update
+    wm attributes .t -fullscreen 1
+    wm iconify .t
+    wm deiconify .t
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-attributes-1.3.8 {override-redirect not compatible with fullscreen attribute} -constraints win -body {
+    toplevel .t
+    update
+    wm overrideredirect .t 1
+    wm attributes .t -fullscreen 1
+} -returnCodes error -cleanup {
+    deleteWindows
+} -result {can't set fullscreen attribute for ".t": override-redirect flag is set}
+test wm-attributes-1.3.9 {max height too small} -constraints win -body {
+    toplevel .t
+    update
+    wm maxsize .t 5000 450
+    wm attributes .t -fullscreen 1
+} -returnCodes error -cleanup {
+    deleteWindows
+} -result {can't set fullscreen attribute for ".t": max width/height is too small}
+test wm-attributes-1.3.10 {max height too small} -constraints win -body {
+    toplevel .t
+    update
+    wm maxsize .t 450 5000
+    wm attributes .t -fullscreen 1
+} -returnCodes error -cleanup {
+    deleteWindows
+} -result {can't set fullscreen attribute for ".t": max width/height is too small}
+test wm-attributes-1.3.11 {another attribute, then -fullscreen} -constraints win -body {
+    toplevel .t
+    update
+    wm attributes .t -alpha 1.0 -fullscreen 1
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-attributes-1.3.12 {another attribute, then -fullscreen, then another} -constraints win -body {
+    toplevel .t
+    update
+    wm attributes .t -toolwindow 0 -fullscreen 1 -topmost 0
+    wm attributes .t -fullscreen
+} -cleanup {
+    deleteWindows
+} -result 1
+
+test wm-attributes-1.4.0 {setting/unsetting fullscreen does not change the focus} -setup {
+    set results [list]
+} -constraints win -body {
+    focus -force .
+    toplevel .t
+    lower .t
+    update
+    lappend results [focus]
+
+    wm attributes .t -fullscreen 1
+    eventDelay
+    lappend results [focus]
+
+    wm attributes .t -fullscreen 0
+    eventDelay
+    lappend results [focus]
+} -cleanup {
+    deleteWindows
+} -result {. . .}
+test wm-attributes-1.4.1 {setting fullscreen does not generate FocusIn on wrapper create} -setup {
+    catch {unset focusin}
+} -constraints win -body {
+    focus -force .
+    toplevel .t
+    pack [entry .t.e]
+    lower .t
+    bind .t <FocusIn> {lappend focusin %W}
+    eventDelay
+
+    lappend focusin 1
+    focus -force .t.e
+    eventDelay
+
+    lappend focusin 2
+    wm attributes .t -fullscreen 1
+    eventDelay
+
+    lappend focusin 3
+    wm attributes .t -fullscreen 0
+    eventDelay
+
+    lappend focusin final [focus]
+} -cleanup {
+    bind . <FocusIn> {}
+    bind .t <FocusIn> {}
+    deleteWindows
+} -result {1 .t .t.e 2 3 final .t.e}
+
+test wm-attributes-1.5.0 {fullscreen stackorder} -setup {
+    set results [list]
+} -constraints win -body {
+    toplevel .t
+    lappend results [wm stackorder .]
+    eventDelay
+    lappend results [wm stackorder .]
+
+    # Default stacking is on top of other windows on the display. Setting the
+    # fullscreen attribute does not change this.
+    wm attributes .t -fullscreen 1
+    eventDelay
+    lappend results [wm stackorder .]
+} -cleanup {
+    deleteWindows
+} -result {. {. .t} {. .t}}
+test wm-attributes-1.5.1 {fullscreen stackorder} -setup {
+    set results [list]
+} -constraints win -body {
+    toplevel .t
+    lower .t
+    eventDelay
+    lappend results [wm stackorder .]
+
+    # If stacking order is explicitly set, then setting the fullscreen
+    # attribute should not change it.
+    wm attributes .t -fullscreen 1
+    eventDelay
+    lappend results [wm stackorder .]
+} -cleanup {
+    deleteWindows
+} -result {{.t .} {.t .}}
+test wm-attributes-1.5.2 {fullscreen stackorder} -setup {
+    set results [list]
+} -constraints win -body {
+    toplevel .t
+    # lower forces the window to be mapped, it would not be otherwise
+    lower .t
+    lappend results [wm stackorder .]
+
+    # If stacking order is explicitly set for an unmapped window, then setting
+    # the fullscreen attribute should not change it.
+    wm attributes .t -fullscreen 1
+    eventDelay
+    lappend results [wm stackorder .]
+} -cleanup {
+    deleteWindows
+} -result {{.t .} {.t .}}
+test wm-attributes-1.5.3 {fullscreen stackorder} -setup {
+    set results [list]
+} -constraints win -body {
+    toplevel .t
+    eventDelay
+    lappend results [wm stackorder .]
+
+    wm attributes .t -fullscreen 1
+    eventDelay
+    lappend results [wm stackorder .]
+
+    # Unsetting the fullscreen attribute should not change the stackorder.
+    wm attributes .t -fullscreen 0
+    eventDelay
+    lappend results [wm stackorder .]
+} -cleanup {
+    deleteWindows
+} -result {{. .t} {. .t} {. .t}}
+test wm-attributes-1.5.4 {fullscreen stackorder} -setup {
+    set results [list]
+} -constraints win -body {
+    toplevel .t
+    lower .t
+    eventDelay
+    lappend results [wm stackorder .]
+
+    wm attributes .t -fullscreen 1
+    eventDelay
+    lappend results [wm stackorder .]
+
+    # Unsetting the fullscreen attribute should not change the stackorder.
+    wm attributes .t -fullscreen 0
+    eventDelay
+    lappend results [wm stackorder .]
+} -cleanup {
+    deleteWindows
+} -result {{.t .} {.t .} {.t .}}
+test wm-attributes-1.5.5 {fullscreen stackorder} -setup {
+    set results [list]
+} -constraints win -body {
+    toplevel .a
+    toplevel .b
+    toplevel .c
+    raise .a
+    raise .b
+    raise .c
+    eventDelay
+    lappend results [wm stackorder .]
+
+    wm attributes .b -fullscreen 1
+    eventDelay
+    lappend results [wm stackorder .]
+
+    # Unsetting the fullscreen attribute should not change the stackorder.
+    wm attributes .b -fullscreen 0
+    eventDelay
+    lappend results [wm stackorder .]
+} -cleanup {
+    deleteWindows
+} -result {{. .a .b .c} {. .a .b .c} {. .a .b .c}}
+
+
+stdWindow
+
+
+### wm colormapwindows ###
+test wm-colormapwindows-1.1 {usage} -returnCodes error -body {
+    wm colormapwindows
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-colormapwindows-1.2 {usage} -returnCodes error -body {
+    wm colormapwindows . _ _
+} -result {wrong # args: should be "wm colormapwindows window ?windowList?"}
+test wm-colormapwindows-1.3 {usage} -returnCodes error -body {
+    wm colormapwindows . "a \{"
+} -result {unmatched open brace in list}
+test wm-colormapwindows-1.4 {usage} -returnCodes error -body {
+    wm colormapwindows . foo
+} -result {bad window path name "foo"}
+
+test wm-colormapwindows-2.1 {reading values} -body {
+    toplevel .t2 -width 200 -height 200 -colormap new
+    wm geom .t2 +0+0
+    frame .t2.a -width 100 -height 30
+    frame .t2.b -width 100 -height 30 -colormap new
+    pack .t2.a .t2.b -side top
+    update
+    set x [wm colormapwindows .t2]
+    frame .t2.c -width 100 -height 30 -colormap new
+    pack .t2.c -side top
+    update
+    list $x [wm colormapwindows .t2]
+} -cleanup {
+    destroy .t2
+} -result {{.t2.b .t2} {.t2.b .t2.c .t2}}
+test wm-colormapwindows-2.2 {setting and reading values} -body {
+    toplevel .t2 -width 200 -height 200
+    wm geom .t2 +0+0
+    frame .t2.a -width 100 -height 30
+    frame .t2.b -width 100 -height 30
+    frame .t2.c -width 100 -height 30
+    pack .t2.a .t2.b .t2.c -side top
+    wm colormapwindows .t2 {.t2.b .t2.a}
+    wm colormapwindows .t2
+} -cleanup {
+    destroy .t2
+} -result {.t2.b .t2.a}
+
+
+### wm command ###
+test wm-command-1.1 {usage} -returnCodes error -body {
+    wm command
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-command-1.2 {usage} -returnCodes error -body {
+    wm command . _ _
+} -result {wrong # args: should be "wm command window ?value?"}
+test wm-command-1.3 {usage} -returnCodes error -body {
+    wm command . "a \{"
+} -result {unmatched open brace in list}
+
+test wm-command-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm command .t]
+    wm command .t [list Miffo Foo]
+    lappend result [wm command .t]
+    wm command .t {}
+    lappend result [wm command .t]
+} -result [list {} [list Miffo Foo] {}]
+
+
+### wm deiconify ###
+test wm-deiconify-1.1 {usage} -returnCodes error -body {
+    wm deiconify
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-deiconify-1.2 {usage} -returnCodes error -body {
+    wm deiconify . _
+} -result {wrong # args: should be "wm deiconify window"}
+test wm-deiconify-1.3 {usage} -returnCodes error -body {
+    wm deiconify _
+} -result {bad window path name "_"}
+test wm-deiconify-1.4 {usage} -setup {
+    destroy .icon
+} -body {
+    toplevel .icon -width 50 -height 50 -bg red
+    wm iconwindow .t .icon
+    wm deiconify .icon
+} -returnCodes error -cleanup {
+    destroy .icon
+} -result {can't deiconify .icon: it is an icon for .t}
+# test embedded window for Windows
+test wm-deiconify-1.5 {usage} -constraints win -setup {
+    destroy .embed
+} -body {
+    frame .t.f -container 1
+    toplevel .embed -use [winfo id .t.f]
+    wm deiconify .embed
+} -returnCodes error -cleanup {
+    destroy .t.f .embed
+} -result {can't deiconify .embed: the container does not support the request}
+# test embedded window for other platforms
+test wm-deiconify-1.6 {usage} -constraints !win -setup {
+    destroy .embed
+} -body {
+    frame .t.f -container 1
+    toplevel .embed -use [winfo id .t.f]
+    wm deiconify .embed
+} -returnCodes error -cleanup {
+    destroy .t.f .embed
+} -result {can't deiconify .embed: it is an embedded window}
+
+deleteWindows
+test wm-deiconify-2.1 {a window that has never been mapped\
+        should not be mapped by a call to deiconify} -body {
+    toplevel .t
+    wm deiconify .t
+    winfo ismapped .t
+} -cleanup {
+    deleteWindows
+} -result 0
+test wm-deiconify-2.2 {a window that has already been\
+        mapped should be mapped by deiconify} -body {
+    toplevel .t
+    update idletasks
+    wm withdraw .t
+    wm deiconify .t
+    winfo ismapped .t
+} -cleanup {
+    deleteWindows
+} -result 1
+test wm-deiconify-2.3 {geometry for an unmapped window\
+        should not be calculated by a call to deiconify,\
+        it should be done at idle time} -setup {
+    set results {}
+} -body {
+    toplevel .t -width 200 -height 200
+    lappend results [wm geometry .t]
+    wm deiconify .t
+    lappend results [wm geometry .t]
+    update idletasks
+    lappend results [lindex [split \
+        [wm geometry .t] +] 0]
+} -cleanup {
+    deleteWindows
+} -result {1x1+0+0 1x1+0+0 200x200}
+test wm-deiconify-2.4 {invoking destroy after a deiconify\
+        should not result in a crash because of a callback\
+        set on the toplevel} -body {
+    toplevel .t
+    wm withdraw .t
+    wm deiconify .t
+    destroy .t
+    update
+} -cleanup {
+    deleteWindows
+}
+
+
+### wm focusmodel ###
+test wm-focusmodel-1.1 {usage} -returnCodes error -body {
+    wm focusmodel
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-focusmodel-1.2 {usage} -returnCodes error -body {
+    wm focusmodel . _ _
+} -result {wrong # args: should be "wm focusmodel window ?active|passive?"}
+test wm-focusmodel-1.3 {usage} -returnCodes error -body {
+    wm focusmodel . bogus
+} -result {bad argument "bogus": must be active or passive}
+
+stdWindow
+
+test wm-focusmodel-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm focusmodel .t]
+    wm focusmodel .t active
+    lappend result [wm focusmodel .t]
+    wm focusmodel .t passive
+    lappend result [wm focusmodel .t]
+} -result {passive active passive}
+
+
+### wm frame ###
+test wm-frame-1.1 {usage} -returnCodes error -body {
+    wm frame
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-frame-1.2 {usage} -returnCodes error -body {
+    wm frame . _
+} -result {wrong # args: should be "wm frame window"}
+
+
+### wm geometry ###
+test wm-geometry-1.1 {usage} -returnCodes error -body {
+    wm geometry
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-geometry-1.2 {usage} -returnCodes error -body {
+    wm geometry . _ _
+} -result {wrong # args: should be "wm geometry window ?newGeometry?"}
+test wm-geometry-1.3 {usage} -returnCodes error -body {
+    wm geometry . bogus
+} -result {bad geometry specifier "bogus"}
+
+test wm-geometry-2.1 {setting values} -body {
+    wm geometry .t 150x150+50+50
+    update
+    set result [wm geometry .t]
+    wm geometry .t {}
+    update
+    return [list $result [string equal [wm geometry .t] $result]]
+} -cleanup {
+    unset result
+} -match glob -result [list 150x150+*+* 0]
+
+
+### wm grid ###
+test wm-grid-1.1 {usage} -returnCodes error -body {
+    wm grid
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-grid-1.2 {usage} -returnCodes error -body {
+    wm grid . _
+} -result {wrong # args: should be "wm grid window ?baseWidth baseHeight widthInc heightInc?"}
+test wm-grid-1.3 {usage} -returnCodes error -body {
+    wm grid . _ _ _
+} -result {wrong # args: should be "wm grid window ?baseWidth baseHeight widthInc heightInc?"}
+test wm-grid-1.4 {usage} -returnCodes error -body {
+    wm grid . _ _ _ _ _
+} -result {wrong # args: should be "wm grid window ?baseWidth baseHeight widthInc heightInc?"}
+test wm-grid-1.5 {usage} -returnCodes error -body {
+    wm grid . bad 14 15 16
+} -result {expected integer but got "bad"}
+test wm-grid-1.6 {usage} -returnCodes error -body {
+    wm grid . 13 foo 15 16
+} -result {expected integer but got "foo"}
+test wm-grid-1.7 {usage} -returnCodes error -body {
+    wm grid . 13 14 bar 16
+} -result {expected integer but got "bar"}
+test wm-grid-1.8 {usage} -returnCodes error -body {
+    wm grid . 13 14 15 baz
+} -result {expected integer but got "baz"}
+test wm-grid-1.9 {usage} -returnCodes error -body {
+    wm grid . -1 14 15 16
+} -result {baseWidth can't be < 0}
+test wm-grid-1.10 {usage} -returnCodes error -body {
+    wm grid . 13 -1 15 16
+} -result {baseHeight can't be < 0}
+test wm-grid-1.11 {usage} -returnCodes error -body {
+    wm grid . 13 14 -1 16
+} -result {widthInc can't be <= 0}
+test wm-grid-1.12 {usage} -returnCodes error -body {
+    wm grid . 13 14 15 -1
+} -result {heightInc can't be <= 0}
+
+test wm-grid-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm grid .t]
+    wm grid .t 3 4 10 2
+    lappend result [wm grid .t]
+    wm grid .t {} {} {} {}
+    lappend result [wm grid .t]
+} -result [list {} {3 4 10 2} {}]
+
+
+### wm group ###
+test wm-group-1.1 {usage} -returnCodes error -body {
+    wm group
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-group-1.2 {usage} -returnCodes error -body {
+    wm group .t 12 13
+} -result {wrong # args: should be "wm group window ?pathName?"}
+test wm-group-1.3 {usage} -returnCodes error -body {
+    wm group .t bogus
+} -result {bad window path name "bogus"}
+
+test wm-group-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm group .t]
+    wm group .t .
+    lappend result [wm group .t]
+    wm group .t {}
+    lappend result [wm group .t]
+} -result [list {} . {}]
+
+
+### wm iconbitmap ###
+test wm-iconbitmap-1.1 {usage} -returnCodes error -body {
+    wm iconbitmap
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconbitmap-1.2.1 {usage} -constraints unix -returnCodes error -body {
+    wm iconbitmap .t 12 13
+} -result {wrong # args: should be "wm iconbitmap window ?bitmap?"}
+test wm-iconbitmap-1.2.2 {usage} -constraints win -returnCodes error -body {
+    wm iconbitmap .t 12 13 14
+} -result {wrong # args: should be "wm iconbitmap window ?-default? ?image?"}
+test wm-iconbitmap-1.3 {usage} -constraints win -returnCodes error -body {
+    wm iconbitmap .t 12 13
+} -result {illegal option "12" must be "-default"}
+test wm-iconbitmap-1.4 {usage} -constraints notAqua -returnCodes error -body {
+    wm iconbitmap .t bad-bitmap
+} -result {bitmap "bad-bitmap" not defined}
+
+test wm-iconbitmap-2.1 {setting and reading values} -constraints notAqua -setup {
+    set result {}
+} -body {
+    lappend result [wm iconbitmap .t]
+    wm iconbitmap .t hourglass
+    lappend result [wm iconbitmap .t]
+    wm iconbitmap .t {}
+    lappend result [wm iconbitmap .t]
+} -result [list {} hourglass {}]
+
+
+### wm iconify ###
+test wm-iconify-1.1 {usage} -returnCodes error -body {
+    wm iconify
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconify-1.2 {usage} -returnCodes error -body {
+    wm iconify .t _
+} -result {wrong # args: should be "wm iconify window"}
+
+destroy .t2
+test wm-iconify-2.1 {Misc errors} -body {
+    toplevel .t2
+    wm overrideredirect .t2 1
+    wm iconify .t2
+} -returnCodes error -cleanup {
+    destroy .t2
+} -result {can't iconify ".t2": override-redirect flag is set}
+test wm-iconify-2.2 {Misc errors} -body {
+    toplevel .t2
+    wm geom .t2 +0+0
+    wm transient .t2 .t
+    wm iconify .t2
+} -returnCodes error -cleanup {
+    destroy .t2
+} -result {can't iconify ".t2": it is a transient}
+test wm-iconify-2.3 {Misc errors} -body {
+    toplevel .t2
+    wm geom .t2 +0+0
+    wm iconwindow .t .t2
+    wm iconify .t2
+} -returnCodes error -cleanup {
+    destroy .t2
+} -result {can't iconify .t2: it is an icon for .t}
+# test embedded window for Windows
+test wm-iconify-2.4.1 {Misc errors} -constraints win -setup {
+    destroy .t2
+} -body {
+    frame .t.f -container 1
+    toplevel .t2 -use [winfo id .t.f]
+    wm iconify .t2
+} -returnCodes error -cleanup {
+    destroy .t2 .r.f
+} -result {can't iconify .t2: the container does not support the request}
+# test embedded window for other platforms
+test wm-iconify-2.4.2 {Misc errors} -constraints !win -setup {
+    destroy .t2
+} -body {
+    frame .t.f -container 1
+    toplevel .t2 -use [winfo id .t.f]
+    wm iconify .t2
+} -returnCodes error -cleanup {
+    destroy .t2 .r.f
+} -result {can't iconify .t2: it is an embedded window}
+
+test wm-iconify-3.1 {iconify behavior} -body {
+    toplevel .t2
+    wm geom .t2 -0+0
+    update
+    set result [winfo ismapped .t2]
+    wm iconify .t2
+    update
+    lappend result [winfo ismapped .t2]
+} -cleanup {
+    destroy .t2
+} -result {1 0}
+
+
+### wm iconmask ###
+test wm-iconmask-1.1 {usage} -returnCodes error -body {
+    wm iconmask
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconmask-1.2 {usage} -returnCodes error -body {
+    wm iconmask .t 12 13
+} -result {wrong # args: should be "wm iconmask window ?bitmap?"}
+test wm-iconmask-1.3 {usage} -returnCodes error -body {
+    wm iconmask .t bad-bitmap
+} -result {bitmap "bad-bitmap" not defined}
+
+test wm-iconmask-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm iconmask .t]
+    wm iconmask .t hourglass
+    lappend result [wm iconmask .t]
+    wm iconmask .t {}
+    lappend result [wm iconmask .t]
+} -result [list {} hourglass {}]
+
+
+### wm iconname ###
+test wm-iconname-1.1 {usage} -returnCodes error -body {
+    wm iconname
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconname-1.2 {usage} -returnCodes error -body {
+    wm iconname .t 12 13
+} -result {wrong # args: should be "wm iconname window ?newName?"}
+
+test wm-iconname-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm iconname .t]
+    wm iconname .t ThisIconHasAName
+    lappend result [wm iconname .t]
+    wm iconname .t {}
+    lappend result [wm iconname .t]
+} -result [list {} ThisIconHasAName {}]
+
+
+### wm iconphoto ###
+test wm-iconphoto-1.1 {usage} -returnCodes error -body {
+    wm iconphoto
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconphoto-1.2 {usage} -returnCodes error -body {
+    wm iconphoto .
+} -result {wrong # args: should be "wm iconphoto window ?-default? image1 ?image2 ...?"}
+test wm-iconphoto-1.3 {usage} -returnCodes error -body {
+    wm iconphoto . notanimage
+} -result {can't use "notanimage" as iconphoto: not a photo image}
+test wm-iconphoto-1.4 {usage} -returnCodes error -body {
+    # we currently have no return info
+    wm iconphoto . -default
+} -result {wrong # args: should be "wm iconphoto window ?-default? image1 ?image2 ...?"}
+test wm-iconphoto-1.5.1 {usage} -constraints aquaOrWin32 -returnCodes error -body {
+    wm iconphoto . -default [image create photo -file {}]
+} -match {glob} -result {failed to create an iconphoto with image *}
+test wm-iconphoto-1.5.2 {usage} -constraints x11 -body {
+    wm iconphoto . -default [image create photo -file {}]
+} -result {}
+
+# All other iconphoto tests are platform specific
+
+
+### wm iconposition ###
+test wm-iconposition-1.1 {usage} -returnCodes error -body {
+    wm iconposition
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconposition-1.2 {usage} -returnCodes error -body {
+    wm iconposition .t 12
+} -result {wrong # args: should be "wm iconposition window ?x y?"}
+test wm-iconposition-1.3 {usage} -returnCodes error -body {
+    wm iconposition .t 12 13 14
+} -result {wrong # args: should be "wm iconposition window ?x y?"}
+test wm-iconposition-1.4 {usage} -returnCodes error -body {
+    wm iconposition .t bad 13
+} -result {expected integer but got "bad"}
+test wm-iconposition-1.5 {usage} -returnCodes error -body {
+    wm iconposition .t 13 lousy
+} -result {expected integer but got "lousy"}
+
+test wm-iconposition-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm iconposition .t]
+    wm iconposition .t 10 20
+    lappend result [wm iconposition .t]
+    wm iconposition .t {} {}
+    lappend result [wm iconposition .t]
+} -result [list {} {10 20} {}]
+
+
+### wm iconwindow ###
+test wm-iconwindow-1.1 {usage} -returnCodes error -body {
+    wm iconwindow
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-iconwindow-1.2 {usage} -returnCodes error -body {
+    wm iconwindow .t 12 13
+} -result {wrong # args: should be "wm iconwindow window ?pathName?"}
+test wm-iconwindow-1.3 {usage} -returnCodes error -body {
+    wm iconwindow .t bogus
+} -result {bad window path name "bogus"}
+test wm-iconwindow-1.4 {usage} -setup {
+    destroy .b
+} -body {
+    button .b -text Help
+    wm iconwindow .t .b
+} -returnCodes error -cleanup {
+    destroy .b
+} -result {can't use .b as icon window: not at top level}
+test wm-iconwindow-1.5 {usage} -setup {
+    destroy .icon .t2
+} -body {
+    toplevel .icon -width 50 -height 50 -bg green
+    toplevel .t2
+    wm geom .t2 -0+0
+    wm iconwindow .t2 .icon
+    wm iconwindow .t .icon
+} -returnCodes error -cleanup {
+    destroy .t2 .icon
+} -result {.icon is already an icon for .t2}
+
+test wm-iconwindow-2.1 {setting and reading values} -setup {
+    destroy .icon
+    set result {}
+} -body {
+    lappend result [wm iconwindow .t]
+    toplevel .icon -width 50 -height 50 -bg green
+    wm iconwindow .t .icon
+    lappend result [wm iconwindow .t]
+    wm iconwindow .t {}
+    destroy .icon
+    lappend result [wm iconwindow .t]
+} -result {{} .icon {}}
+
+
+### wm maxsize ###
+test wm-maxsize-1.1 {usage} -returnCodes error -body {
+    wm maxsize
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-maxsize-1.2 {usage} -returnCodes error -body {
+    wm maxsize . a
+} -result {wrong # args: should be "wm maxsize window ?width height?"}
+test wm-maxsize-1.3 {usage} -returnCodes error -body {
+    wm maxsize . a b c
+} -result {wrong # args: should be "wm maxsize window ?width height?"}
+test wm-maxsize-1.4 {usage} -returnCodes error -body {
+    wm maxsize . x 100
+} -result {expected integer but got "x"}
+test wm-maxsize-1.5 {usage} -returnCodes error -body {
+    wm maxsize . 100 bogus
+} -result {expected integer but got "bogus"}
+test wm-maxsize-1.6 {usage} -setup {
+    destroy .t2
+} -body {
+    toplevel .t2
+    wm maxsize .t2 300 200
+    wm maxsize .t2
+} -cleanup {
+    destroy .t2
+} -result {300 200}
+test wm-maxsize-1.7 {maxsize must be <= screen size} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    lassign [wm maxsize .t] t_width t_height
+    set s_width [winfo screenwidth .t]
+    set s_height [winfo screenheight .t]
+    expr {($t_width <= $s_width) && ($t_height <= $s_height)}
+} -cleanup {
+    destroy .t
+} -result 1
+
+destroy .t
+test wm-maxsize-2.1 {setting the maxsize to a value smaller\
+        than the current size will resize a toplevel} -body {
+    toplevel .t -width 300 -height 300
+    update
+    wm maxsize .t 200 150
+    # UpdateGeometryInfo invoked at idle
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {200 150}
+test wm-maxsize-2.2 {setting the maxsize to a value smaller\
+        than the current size will resize a gridded toplevel} -body {
+    toplevel .t
+    wm grid .t 0 0 50 50
+    wm geometry .t 6x6
+    update
+    wm maxsize .t 4 3
+    # UpdateGeometryInfo invoked at idle
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {4 3}
+test wm-maxsize-2.3 {attempting to resize to a value\
+        bigger than the current maxsize will set it to the max size} -body {
+    toplevel .t -width 200 -height 200
+    wm maxsize .t 300 250
+    update
+    wm geom .t 400x300
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {300 250}
+test wm-maxsize-2.4 {attempting to resize to a value bigger than the\
+	current maxsize will set it to the max size when gridded} -body {
+    toplevel .t
+    wm grid .t 1 1 50 50
+    wm geom .t 4x4
+    wm maxsize .t 6 5
+    update
+    wm geom .t 8x6
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {6 5}
+test wm-maxsize-2.5 {Use max size if window size is not explicitly set\
+	and the reqWidth/reqHeight are bigger than the max size} -body {
+    toplevel .t
+    pack [frame .t.f -width 400 -height 400]
+    update idletasks
+    set req [list [winfo reqwidth .t] [winfo reqheight .t]]
+    wm maxsize .t 300 300
+    update
+    list $req [lrange [split [wm geom .t] x+] 0 1]
+} -cleanup {
+    destroy .t
+} -result {{400 400} {300 300}}
+
+
+### wm minsize ###
+test wm-minsize-1.1 {usage} -returnCodes error -body {
+    wm minsize
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-minsize-1.2 {usage} -returnCodes error -body {
+    wm minsize . a
+} -result {wrong # args: should be "wm minsize window ?width height?"}
+test wm-minsize-1.3 {usage} -returnCodes error -body {
+    wm minsize . a b c
+} -result {wrong # args: should be "wm minsize window ?width height?"}
+test wm-minsize-1.4 {usage} -returnCodes error -body {
+    wm minsize . x 100
+} -result {expected integer but got "x"}
+test wm-minsize-1.5 {usage} -returnCodes error -body {
+    wm minsize . 100 bogus
+} -result {expected integer but got "bogus"}
+test wm-minsize-1.6 {usage} -setup {
+    destroy .t2
+} -body {
+    toplevel .t2
+    wm minsize .t2 300 200
+    wm minsize .t2
+} -cleanup {
+    destroy .t2
+} -result {300 200}
+
+test wm-minsize-2.1 {setting the minsize to a value larger\
+        than the current size will resize a toplevel} -body {
+    toplevel .t -width 200 -height 200
+    update
+    wm minsize .t 400 300
+    # UpdateGeometryInfo invoked at idle
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {400 300}
+test wm-minsize-2.2 {setting the minsize to a value larger\
+        than the current size will resize a gridded toplevel} -body {
+    toplevel .t
+    wm grid .t 1 1 50 50
+    wm geom .t 4x4
+    update
+    wm minsize .t 8 8
+    # UpdateGeometryInfo invoked at idle
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {8 8}
+test wm-minsize-2.3 {attempting to resize to a value\
+        smaller than the current minsize will set it to the minsize} -body {
+    toplevel .t -width 400 -height 400
+    wm minsize .t 300 300
+    update
+    wm geom .t 200x200
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {300 300}
+test wm-minsize-2.4 {attempting to resize to a value smaller than the\
+	current minsize will set it to the minsize when gridded} -body {
+    toplevel .t
+    wm grid .t 1 1 50 50
+    wm geom .t 8x8
+    wm minsize .t 6 6
+    update
+    wm geom .t 4x4
+    update
+    lrange [split [wm geom .t] x+] 0 1
+} -cleanup {
+    destroy .t
+} -result {6 6}
+test wm-minsize-2.5 {Use min size if window size is not explicitly set\
+	and the reqWidth/reqHeight are smaller than the min size} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    pack [frame .t.f -width 250 -height 250]
+    update idletasks
+    lappend result [list [winfo reqwidth .t] [winfo reqheight .t]]
+    wm minsize .t 300 300
+    update
+    lappend result [lrange [split [wm geom .t] x+] 0 1]
+} -cleanup {
+    destroy .t
+} -result {{250 250} {300 300}}
+
+stdWindow
+
+### wm overrideredirect ###
+test wm-overrideredirect-1.1 {usage} -returnCodes error -body {
+    wm overrideredirect
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-overrideredirect-1.2 {usage} -returnCodes error -body {
+    wm overrideredirect .t 1 2
+} -result {wrong # args: should be "wm overrideredirect window ?boolean?"}
+test wm-overrideredirect-1.3 {usage} -returnCodes error -body {
+    wm overrideredirect .t boo
+} -result {expected boolean value but got "boo"}
+
+test wm-overrideredirect-2.1 {setting and reading values} -setup {
+    set result {}
+} -body {
+    lappend result [wm overrideredirect .t]
+    wm overrideredirect .t true
+    lappend result [wm overrideredirect .t]
+    wm overrideredirect .t off
+    lappend result [wm overrideredirect .t]
+} -result {0 1 0}
+
+
+### wm positionfrom ###
+test wm-positionfrom-1.1 {usage} -returnCodes error -body {
+    wm positionfrom
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-positionfrom-1.2 {usage} -returnCodes error -body {
+    wm positionfrom .t 1 2
+} -result {wrong # args: should be "wm positionfrom window ?user/program?"}
+test wm-positionfrom-1.3 {usage} -returnCodes error -body {
+    wm positionfrom .t none
+} -result {bad argument "none": must be program or user}
+
+test wm-positionfrom-2.1 {setting and reading values} -setup {
+    destroy .t2
+    set result {}
+} -body {
+    toplevel .t2
+    wm positionfrom .t user
+    lappend result [wm positionfrom .t]
+    wm positionfrom .t program
+    lappend result [wm positionfrom .t]
+    wm positionfrom .t {}
+    lappend result [wm positionfrom .t]
+} -cleanup {
+    destroy .t2
+} -result {user program {}}
+
+
+### wm protocol ###
+test wm-protocol-1.1 {usage} -returnCodes error -body {
+    wm protocol
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-protocol-1.2 {usage} -returnCodes error -body {
+    wm protocol .t 1 2 3
+} -result {wrong # args: should be "wm protocol window ?name? ?command?"}
+
+test wm-protocol-2.1 {setting and reading values} -body {
+    wm protocol .t {foo a} {a b c}
+    wm protocol .t bar {test script for bar}
+    wm protocol .t
+} -cleanup {
+    wm protocol .t {foo a} {}
+    wm protocol .t bar {}
+} -result {bar {foo a}}
+test wm-protocol-2.2 {setting and reading values} -setup {
+    set result {}
+} -body {
+    wm protocol .t foo {a b c}
+    wm protocol .t bar {test script for bar}
+    lappend result [wm protocol .t foo] [wm protocol .t bar]
+    wm protocol .t foo {}
+    wm protocol .t bar {}
+    lappend result [wm protocol .t foo] [wm protocol .t bar]
+} -result {{a b c} {test script for bar} {} {}}
+test wm-protocol-2.3 {setting and reading values} -body {
+    wm protocol .t foo {a b c}
+    wm protocol .t foo {test script}
+    wm protocol .t foo
+} -cleanup {
+    wm protocol .t foo {}
+} -result {test script}
+
+
+### wm resizable ###
+test wm-resizable-1.1 {usage} -returnCodes error -body {
+    wm resizable
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-resizable-1.2 {usage} -returnCodes error -body {
+    wm resizable .t 1
+} -result {wrong # args: should be "wm resizable window ?width height?"}
+test wm-resizable-1.3 {usage} -returnCodes error -body {
+    wm resizable .t 1 2 3
+} -result {wrong # args: should be "wm resizable window ?width height?"}
+test wm-resizable-1.4 {usage} -returnCodes error -body {
+    wm resizable .t bad 0
+} -result {expected boolean value but got "bad"}
+test wm-resizable-1.5 {usage} -returnCodes error -body {
+    wm resizable .t 1 bad
+} -result {expected boolean value but got "bad"}
+
+test wm-resizable-2.1 {setting and reading values} {
+    wm resizable .t 0 0
+    set result [wm resizable .t]
+    wm resizable .t 0 1
+    lappend result [wm resizable .t]
+    wm resizable .t 1 0
+    lappend result [wm resizable .t]
+    wm resizable .t 1 1
+    lappend result [wm resizable .t]
+} {0 0 {0 1} {1 0} {1 1}}
+
+
+### wm sizefrom ###
+test wm-sizefrom-1.1 {usage} -returnCodes error -body {
+    wm sizefrom
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-sizefrom-1.2 {usage} -returnCodes error -body {
+    wm sizefrom .t 1 2
+} -result {wrong # args: should be "wm sizefrom window ?user|program?"}
+test wm-sizefrom-1.4 {usage} -returnCodes error -body {
+    wm sizefrom .t bad
+} -result {bad argument "bad": must be program or user}
+
+test wm-sizefrom-2.1 {setting and reading values} {
+    set result [list [wm sizefrom .t]]
+    wm sizefrom .t user
+    lappend result [wm sizefrom .t]
+    wm sizefrom .t program
+    lappend result [wm sizefrom .t]
+    wm sizefrom .t {}
+    lappend result [wm sizefrom .t]
+} {{} user program {}}
+
+destroy .t
+
+### wm stackorder ###
+test wm-stackorder-1.1 {usage} -returnCodes error -body {
+    wm stackorder
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-stackorder-1.2 {usage} -returnCodes error -body {
+    wm stackorder . _
+} -result {wrong # args: should be "wm stackorder window ?isabove|isbelow window?"}
+test wm-stackorder-1.3 {usage} -returnCodes error -body {
+    wm stackorder . _ _ _
+} -result {wrong # args: should be "wm stackorder window ?isabove|isbelow window?"}
+test wm-stackorder-1.4 {usage} -returnCodes error -body {
+    wm stackorder . is .
+} -result {ambiguous argument "is": must be isabove or isbelow}
+test wm-stackorder-1.5 {usage} -returnCodes error -body {
+    wm stackorder _
+} -result {bad window path name "_"}
+test wm-stackorder-1.6 {usage} -returnCodes error -body {
+    wm stackorder . isabove _
+} -result {bad window path name "_"}
+test wm-stackorder-1.7 {usage} -body {
+    toplevel .t
+    button .t.b
+    wm stackorder .t.b
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {window ".t.b" isn't a top-level window}
+test wm-stackorder-1.8 {usage} -body {
+    toplevel .t
+    button .t.b
+    pack .t.b
+    update
+    wm stackorder . isabove .t.b
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {window ".t.b" isn't a top-level window}
+test wm-stackorder-1.9 {usage} -body {
+    toplevel .t
+    button .t.b
+    pack .t.b
+    update
+    wm stackorder . isbelow .t.b
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {window ".t.b" isn't a top-level window}
+test wm-stackorder-1.10 {usage, isabove|isbelow toplevels must be mapped} -body {
+    toplevel .t
+    update
+    wm withdraw .t
+    wm stackorder .t isabove .
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {window ".t" isn't mapped}
+test wm-stackorder-1.11 {usage, isabove|isbelow toplevels must be mapped} -body {
+    toplevel .t
+    update
+    wm withdraw .t
+    wm stackorder . isbelow .t
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {window ".t" isn't mapped}
+deleteWindows
+
+test wm-stackorder-2.1 {stacking order} -body {
+    toplevel .t ; update
+    wm stackorder .
+} -cleanup {
+    destroy .t
+} -result {. .t}
+test wm-stackorder-2.2 {stacking order} -body {
+    toplevel .t ; update
+    raise .
+    raiseDelay
+    wm stackorder .
+} -cleanup {
+    destroy .t
+} -result {.t .}
+test wm-stackorder-2.3 {stacking order} -body {
+    toplevel .t ; update
+    toplevel .t2 ; update
+    raise .
+    raiseDelay
+    raise .t2
+    raiseDelay
+    wm stackorder .
+} -cleanup {
+    destroy .t .t2
+} -result {.t . .t2}
+test wm-stackorder-2.4 {stacking order} -body {
+    toplevel .t ; update
+    toplevel .t2 ; update
+    raise .
+    lower .t2
+    raiseDelay
+    wm stackorder .
+} -cleanup {
+    destroy .t .t2
+} -result {.t2 .t .}
+test wm-stackorder-2.5 {stacking order} -setup {
+    destroy .parent
+} -body {
+    toplevel .parent ; update
+    destroy .parent.child1
+    toplevel .parent.child1 ; update
+    destroy .parent.child2
+    toplevel .parent.child2 ; update
+    destroy .extra
+    toplevel .extra ; update
+    raise .parent
+    lower .parent.child2
+    raiseDelay
+    wm stackorder .parent
+} -cleanup {
+    deleteWindows
+} -result {.parent.child2 .parent.child1 .parent}
+test wm-stackorder-2.6 {stacking order: non-toplevel widgets ignored} -body {
+    toplevel .t1
+    button .t1.b
+    pack .t1.b
+    update
+    wm stackorder .
+} -cleanup {
+    destroy .t1
+} -result {. .t1}
+test wm-stackorder-2.7 {stacking order: no children returns self} -setup {
+    deleteWindows
+} -body {
+    wm stackorder .
+} -result {.}
+
+deleteWindows
+
+test wm-stackorder-3.1 {unmapped toplevel} -body {
+    toplevel .t1 ; update
+    toplevel .t2 ; update
+    wm iconify .t1
+    wm stackorder .
+} -cleanup {
+    destroy .t1 .t2
+} -result {. .t2}
+test wm-stackorder-3.2 {unmapped toplevel} -body {
+    toplevel .t1 ; update
+    toplevel .t2 ; update
+    wm withdraw .t2
+    wm stackorder .
+} -cleanup {
+    destroy .t1 .t2
+} -result {. .t1}
+test wm-stackorder-3.3 {unmapped toplevel} -body {
+    toplevel .t1 ; update
+    toplevel .t2 ; update
+    wm withdraw .t2
+    wm stackorder .t2
+} -cleanup {
+    destroy .t1 .t2
+} -result {}
+test wm-stackorder-3.4 {unmapped toplevel} -body {
+    toplevel .t1 ; update
+    toplevel .t1.t2 ; update
+    wm withdraw .t1.t2
+    wm stackorder .t1
+} -cleanup {
+    destroy .t1
+} -result {.t1}
+test wm-stackorder-3.5 {unmapped toplevel} -body {
+    toplevel .t1 ; update
+    toplevel .t1.t2 ; update
+    wm withdraw .t1
+    wm stackorder .t1
+} -cleanup {
+    destroy .t1
+} -result {.t1.t2}
+test wm-stackorder-3.6 {unmapped toplevel} -body {
+    toplevel .t1 ; update
+    toplevel .t1.t2 ; update
+    toplevel .t1.t2.t3 ; update
+    wm withdraw .t1.t2
+    wm stackorder .t1
+} -cleanup {
+    destroy .t1
+} -result {.t1 .t1.t2.t3}
+test wm-stackorder-3.7 {unmapped toplevel, mapped children returned} -body {
+    toplevel .t1 ; update
+    toplevel .t1.t2 ; update
+    wm withdraw .t1
+    wm stackorder .t1
+} -cleanup {
+    destroy .t1
+} -result {.t1.t2}
+test wm-stackorder-3.8 {toplevel mapped in idle callback} -body {
+    toplevel .t1
+    wm stackorder .
+} -cleanup {
+    destroy .t1
+} -result {.}
+deleteWindows
+
+test wm-stackorder-4.1 {wm stackorder isabove|isbelow} -body {
+    toplevel .t ; update
+    raise .t
+    wm stackorder . isabove .t
+} -cleanup {
+    destroy .t
+} -result {0}
+test wm-stackorder-4.2 {wm stackorder isabove|isbelow} -body {
+    toplevel .t ; update
+    raise .t
+    wm stackorder . isbelow .t
+} -cleanup {
+    destroy .t
+} -result {1}
+test wm-stackorder-4.3 {wm stackorder isabove|isbelow} -body {
+    toplevel .t ; update
+    raise .
+    raiseDelay
+    wm stackorder .t isa .
+} -cleanup {
+    destroy .t
+} -result {0}
+test wm-stackorder-4.4 {wm stackorder isabove|isbelow} -body {
+    toplevel .t ; update
+    raise .
+    raiseDelay
+    wm stackorder .t isb .
+} -cleanup {
+    destroy .t
+} -result {1}
+deleteWindows
+
+test wm-stackorder-5.1 {a menu is not a toplevel} -body {
+    toplevel .t
+    menu .t.m -type menubar
+    .t.m add cascade -label "File"
+    .t configure -menu .t.m
+    update
+    raise .
+    raiseDelay
+    wm stackorder .
+} -cleanup {
+    destroy .t
+} -result {.t .}
+test wm-stackorder-5.2 {A normal toplevel can't be raised above an \
+    overrideredirect toplevel on unix} -constraints x11 -body {
+    toplevel .t
+    tkwait visibility .t	    
+    wm overrideredirect .t 1
+    raise .
+    update
+    raiseDelay
+    wm stackorder . isabove .t
+} -cleanup {
+    destroy .t
+} -result 0
+test wm-stackorder-5.2.1 {A normal toplevel can be raised above an \
+    overrideredirect toplevel on macOS or win} -constraints aquaOrWin32 -body {
+    toplevel .t
+    tkwait visibility .t	    
+    wm overrideredirect .t 1
+    raise .
+    update
+    raiseDelay
+    wm stackorder . isabove .t
+} -cleanup {
+    destroy .t
+} -result 1
+test wm-stackorder-5.3 {An overrideredirect window\
+        can be explicitly lowered} -body {
+    toplevel .t
+    tkwait visibility .t	    
+    wm overrideredirect .t 1
+    lower .t
+    update
+    raiseDelay
+    wm stackorder .t isbelow .
+} -cleanup {
+    destroy .t
+} -result 1
+
+test wm-stackorder-6.1 {An embedded toplevel does not appear in the \
+	stacking order} -body {
+    toplevel .real -container 1
+    toplevel .embd -bg blue -use [winfo id .real]
+    update
+    wm stackorder .
+} -cleanup {
+    deleteWindows
+} -result {. .real}
+
+stdWindow
+
+### wm title ###
+test wm-title-1.1 {usage} -returnCodes error -body {
+    wm title
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-title-1.2 {usage} -returnCodes error -body {
+    wm title . 1 2
+} -result {wrong # args: should be "wm title window ?newTitle?"}
+
+test wm-title-2.1 {setting and reading values} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    set result [wm title .t]
+    wm title .t Apa
+    lappend result [wm title .t]
+    wm title .t {}
+    lappend result [wm title .t]
+} -result {t Apa {}}
+
+
+### wm transient ###
+test wm-transient-1.1 {usage} -returnCodes error -body {
+    catch {destroy .t} ; toplevel .t
+    wm transient .t 1 2
+} -result {wrong # args: should be "wm transient window ?master?"}
+test wm-transient-1.2 {usage} -returnCodes error -body {
+    catch {destroy .t} ; toplevel .t
+    wm transient .t foo
+} -result {bad window path name "foo"}
+test wm-transient-1.3 {usage} -returnCodes error -body {
+    catch {destroy .t} ; toplevel .t
+    wm transient foo .t
+} -result {bad window path name "foo"}
+deleteWindows
+test wm-transient-1.4 {usage} -returnCodes error -body {
+    toplevel .master
+    toplevel .subject
+    wm transient .subject .master
+    wm iconify .subject
+} -cleanup {
+    deleteWindows
+} -result {can't iconify ".subject": it is a transient}
+test wm-transient-1.5 {usage} -returnCodes error -body {
+    toplevel .icon -bg blue
+    toplevel .top
+    wm iconwindow .top .icon
+    toplevel .dummy
+    wm transient .icon .dummy
+} -cleanup {
+    deleteWindows
+} -result {can't make ".icon" a transient: it is an icon for .top}
+test wm-transient-1.6 {usage} -returnCodes error -body {
+    toplevel .icon -bg blue
+    toplevel .top
+    wm iconwindow .top .icon
+    toplevel .dummy
+    wm transient .dummy .icon
+} -cleanup {
+    deleteWindows
+} -result {can't make ".icon" a master: it is an icon for .top}
+test wm-transient-1.7 {usage} -returnCodes error -body {
+    toplevel .master
+    wm transient .master .master
+} -cleanup {
+    deleteWindows
+} -result {setting ".master" as master creates a transient/master cycle}
+test wm-transient-1.8 {usage} -returnCodes error -body {
+    toplevel .t1
+    toplevel .t2
+    toplevel .t3
+    wm transient .t2 .t1
+    wm transient .t3 .t2
+    wm transient .t1 .t3
+} -cleanup {
+    deleteWindows
+} -result {setting ".t3" as master creates a transient/master cycle}
+test wm-transient-1.9 {usage} -returnCodes error -body {
+    toplevel .master
+    frame .master.f
+    wm transient .master .master.f
+} -cleanup {
+    deleteWindows
+} -result {setting ".master" as master creates a transient/master cycle}
+
+test wm-transient-2.1 {basic get/set of master} -setup {
+    set results [list]
+} -body {
+    toplevel .master
+    toplevel .subject
+    lappend results [wm transient .subject]
+    wm transient .subject .master
+    lappend results [wm transient .subject]
+    wm transient .subject {}
+    lappend results [wm transient .subject]
+} -cleanup {
+    deleteWindows
+} -result {{} .master {}}
+test wm-transient-2.2 {first toplevel parent of non-toplevel master is used} -body {
+    toplevel .master
+    frame .master.f
+    toplevel .subject
+    wm transient .subject .master.f
+    wm transient .subject
+} -cleanup {
+    deleteWindows
+} -result {.master}
+
+test wm-transient-3.1 {transient toplevel is withdrawn
+        when mapped if master is withdrawn} -body {
+    toplevel .master
+    wm withdraw .master
+    update
+    toplevel .subject
+    wm transient .subject .master
+    update
+    list [wm state .subject] [winfo ismapped .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0}
+test wm-transient-3.2 {already mapped transient toplevel
+        takes on withdrawn state of master} -body {
+    toplevel .master
+    wm withdraw .master
+    update
+    toplevel .subject
+    update
+    wm transient .subject .master
+    update
+    list [wm state .subject] [winfo ismapped .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0}
+test wm-transient-3.3 {withdraw/deiconify on the master
+        also does a withdraw/deiconify on the transient} -setup {
+    set results [list]
+} -body {
+    toplevel .master
+    toplevel .subject
+    update
+    wm transient .subject .master
+    wm withdraw .master
+    update
+    lappend results [wm state .subject] [winfo ismapped .subject]
+    wm deiconify .master
+    update
+    lappend results [wm state .subject] [winfo ismapped .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0 normal 1}
+
+test wm-transient-4.1 {transient toplevel is withdrawn
+        when mapped if master is iconic} -body {
+    toplevel .master
+    wm iconify .master
+    update
+    toplevel .subject
+    wm transient .subject .master
+    update
+    list [wm state .subject] [winfo ismapped .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0}
+test wm-transient-4.2 {already mapped transient toplevel
+        is withdrawn if master is iconic} -body {
+    toplevel .master
+    raiseDelay
+    wm iconify .master
+    update
+    toplevel .subject
+    update
+    wm transient .subject .master
+    update
+    list [wm state .subject] [winfo ismapped .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0}
+test wm-transient-4.3 {iconify/deiconify on the master
+        does a withdraw/deiconify on the transient} -setup {
+    set results [list]
+} -body {
+    toplevel .master
+    toplevel .subject
+    update
+    wm transient .subject .master
+    wm iconify .master
+    update
+    lappend results [wm state .subject] [winfo ismapped .subject]
+    wm deiconify .master
+    update
+    lappend results [wm state .subject] [winfo ismapped .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0 normal 1}
+
+test wm-transient-5.1 {an error during transient command should not
+        cause the map/unmap binding to be deleted} -setup {
+    set results [list]
+} -body {
+    toplevel .master
+    toplevel .subject
+    update
+    wm transient .subject .master
+    # Expect a bad window path error here
+    lappend results [catch {wm transient .subject .bad}]
+    wm withdraw .master
+    update
+    lappend results [wm state .subject]
+    wm deiconify .master
+    update
+    lappend results [wm state .subject]
+} -cleanup {
+    deleteWindows
+} -result {1 withdrawn normal}
+test wm-transient-5.2 {remove transient property when master
+        is destroyed} -body {
+    toplevel .master
+    toplevel .subject
+    wm transient .subject .master
+    update
+    destroy .master
+    update
+    wm transient .subject
+} -cleanup {
+    deleteWindows
+} -result {}
+test wm-transient-5.3 {remove transient property from window
+        that had never been mapped when master is destroyed} -body {
+    toplevel .master
+    toplevel .subject
+    wm transient .subject .master
+    destroy .master
+    wm transient .subject
+} -cleanup {
+    deleteWindows
+} -result {}
+
+test wm-transient-6.1 {a withdrawn transient does not track
+        state changes in the master} -body {
+    toplevel .master
+    toplevel .subject
+    update
+    wm transient .subject .master
+    wm withdraw .subject
+    wm withdraw .master
+    wm deiconify .master
+    # idle handler should not map the transient
+    update
+    wm state .subject
+} -cleanup {
+    deleteWindows
+} -result {withdrawn}
+test wm-transient-6.2 {a withdrawn transient does not track
+        state changes in the master} -setup {
+    set results [list]
+} -body {
+    toplevel .master
+    toplevel .subject
+    update
+    wm transient .subject .master
+    wm withdraw .subject
+    wm withdraw .master
+    wm deiconify .master
+    # idle handler should not map the transient
+    update
+    lappend results [wm state .subject]
+    wm deiconify .subject
+    lappend results [wm state .subject]
+    wm withdraw .master
+    lappend results [wm state .subject]
+    wm deiconify .master
+    # idle handler should map transient
+    update
+    lappend results [wm state .subject]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn normal withdrawn normal}
+test wm-transient-6.3 {a withdrawn transient does not track
+        state changes in the master} -body {
+    toplevel .master
+    toplevel .subject
+    update
+    # withdraw before making window a transient
+    wm withdraw .subject
+    wm transient .subject .master
+    wm withdraw .master
+    wm deiconify .master
+    # idle handler should not map the transient
+    update
+    wm state .subject
+} -cleanup {
+    deleteWindows
+} -result {withdrawn}
+
+# wm-transient-7.*: See SF Tk Bug #592201 "wm transient fails with two masters"
+# wm-transient-7.3 through 7.5 all caused panics on Unix in Tk 8.4b1.
+# 7.1 and 7.2 added to catch (potential) future errors.
+#
+test wm-transient-7.1 {Destroying transient} -body {
+    toplevel .t
+    toplevel .transient
+    wm transient .transient .t
+    destroy .transient
+    destroy .t
+    # OK: the above did not cause a panic.
+} -cleanup {
+    deleteWindows
+}
+test wm-transient-7.2 {Destroying master} -body {
+    toplevel .t
+    toplevel .transient
+    wm transient .transient .t
+    destroy .t
+    wm transient .transient
+} -cleanup {
+    deleteWindows
+} -result {}
+test wm-transient-7.3 {Reassign transient, destroy old master} -body {
+    toplevel .t1
+    toplevel .t2
+    toplevel .transient
+    wm transient .transient .t1
+    wm transient .transient .t2
+    destroy .t1	;# Caused panic in 8.4b1
+    destroy .t2
+    destroy .transient
+} -cleanup {
+    deleteWindows
+}
+test wm-transient-7.4 {Reassign transient, destroy new master} -body {
+    toplevel .t1
+    toplevel .t2
+    toplevel .transient
+    wm transient .transient .t1
+    wm transient .transient .t2
+    destroy .t2 	;# caused panic in 8.4b1
+    destroy .t1
+    destroy .transient
+} -cleanup {
+    deleteWindows
+}
+test wm-transient-7.5 {Reassign transient, destroy transient} -body {
+    toplevel .t1
+    toplevel .t2
+    toplevel .transient
+    wm transient .transient .t1
+    wm transient .transient .t2
+    destroy .transient
+    destroy .t2 	;# caused panic in 8.4b1
+    destroy .t1		;# so did this
+} -cleanup {
+    deleteWindows
+}
+
+test wm-transient-8.1 {transient to withdrawn window, Bug 1163496} -setup {
+    deleteWindows
+    set result {}
+} -body {
+    # Verifies that transients stay on top of their masters, even if they were
+    # made transients when those masters were withdrawn.
+    toplevel .t1; wm withdraw  .t1;     update
+    toplevel .t2; wm transient .t2 .t1; update
+    lappend result [winfo ismapped .t1] [winfo ismapped .t2]
+    wm deiconify .t1; update
+    lappend result [winfo ismapped .t1] [winfo ismapped .t2]
+    raise .t1; update
+    lappend result [lsearch -all -inline -glob [wm stackorder .] ".t?"]
+} -cleanup {
+    deleteWindows
+} -result {0 0 1 1 {.t1 .t2}}
+
+
+### wm state ###
+test wm-state-1.1 {usage} -returnCodes error -body {
+    wm state
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-state-1.2 {usage} -returnCodes error -body {
+    wm state . _ _
+} -result {wrong # args: should be "wm state window ?state?"}
+
+deleteWindows
+test wm-state-2.1 {initial state} -body {
+    toplevel .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.2 {state change before map} -body {
+    toplevel .t
+    wm state .t withdrawn
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {withdrawn}
+test wm-state-2.3 {state change before map} -body {
+    toplevel .t
+    wm withdraw .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {withdrawn}
+test wm-state-2.4 {state change after map} -body {
+    toplevel .t
+    update
+    wm state .t withdrawn
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {withdrawn}
+test wm-state-2.5 {state change after map} -body {
+    toplevel .t
+    update
+    wm withdraw .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {withdrawn}
+test wm-state-2.6 {state change before map} -body {
+    toplevel .t
+    wm state .t iconic
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {iconic}
+test wm-state-2.7 {state change before map} -body {
+    toplevel .t
+    wm iconify .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {iconic}
+test wm-state-2.8 {state change after map} -body {
+    toplevel .t
+    update
+    wm state .t iconic
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {iconic}
+test wm-state-2.9 {state change after map} -body {
+    toplevel .t
+    update
+    wm iconify .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {iconic}
+test wm-state-2.10 {state change before map} -body {
+    toplevel .t
+    wm withdraw .t
+    wm state .t normal
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.11 {state change before map} -body {
+    toplevel .t
+    wm withdraw .t
+    wm deiconify .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.12 {state change after map} -body {
+    toplevel .t
+    update
+    wm withdraw .t
+    wm state .t normal
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.13 {state change after map} -body {
+    toplevel .t
+    update
+    wm withdraw .t
+    wm deiconify .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.14 {state change before map} -body {
+    toplevel .t
+    wm iconify .t
+    wm state .t normal
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.15 {state change before map} -body {
+    toplevel .t
+    wm iconify .t
+    wm deiconify .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.16 {state change after map} -body {
+    toplevel .t
+    update
+    wm iconify .t
+    wm state .t normal
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.17 {state change after map} -body {
+    toplevel .t
+    update
+    wm iconify .t
+    wm deiconify .t
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {normal}
+test wm-state-2.18 {state change after map} -constraints win -body {
+    toplevel .t
+    update
+    wm state .t zoomed
+    wm state .t
+} -cleanup {
+    deleteWindows
+} -result {zoomed}
+
+
+### wm withdraw ###
+test wm-withdraw-1.1 {usage} -returnCodes error -body {
+    wm withdraw
+} -result {wrong # args: should be "wm option window ?arg ...?"}
+test wm-withdraw-1.2 {usage} -returnCodes error -body {
+    wm withdraw . _
+} -result {wrong # args: should be "wm withdraw window"}
+
+deleteWindows
+test wm-withdraw-2.1 {Misc errors} -body {
+    toplevel .t
+    toplevel .t2
+    wm iconwindow .t .t2
+    wm withdraw .t2
+} -returnCodes error -cleanup {
+    deleteWindows
+} -result {can't withdraw .t2: it is an icon for .t}
+
+test wm-withdraw-3.1 {} -setup {
+    set result {}
+} -body {
+    toplevel .t
+    update
+    wm withdraw .t
+    lappend result [wm state .t] [winfo ismapped .t]
+    wm deiconify .t
+    lappend result [wm state .t] [winfo ismapped .t]
+} -cleanup {
+    deleteWindows
+} -result {withdrawn 0 normal 1}
+
+
+### Misc. wm tests ###
+test wm-deletion-epoch-1.1 {Deletion epoch on multiple displays} -constraints altDisplay -body {
+    # See Tk Bug #671330 "segfault when e.g. deiconifying destroyed window"
+    set w [toplevel .t -screen $env(TK_ALT_DISPLAY)]
+    wm deiconify $w         ;# this caches the WindowRep
+    destroy .t
+    wm deiconify $w
+} -returnCodes error -result {bad window path name ".t"} -cleanup {
+    deleteWindows
+}
+
+### Docking test (manage, forget) ###
+test wm-manage-1.1 {managing a frame} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    frame .t.f
+    pack [label .t.f.l -text hello]
+    wm manage .t.f
+    raise .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+} -cleanup {
+    deleteWindows
+} -result {wm .t.f}
+test wm-manage-1.2 {managing a toplevel} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    pack [label .t.l -text hello]
+    wm manage .t
+    raise .t
+    update
+    lappend result [winfo manage .t]
+    lappend result [winfo toplevel .t]
+} -cleanup {
+    deleteWindows
+} -result {wm .t}
+test wm-manage-1.3 {managing a labelframe} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    labelframe .t.f -text Labelframe
+    pack [label .t.f.l -text hello]
+    wm manage .t.f
+    raise .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+} -cleanup {
+    deleteWindows
+} -result {wm .t.f}
+test wm-manage-1.4 {managing a ttk::frame} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    ttk::frame .t.f
+    pack [label .t.f.l -text hello]
+    wm manage .t.f
+    raise .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result "window \".t.f\" is not manageable: must be a frame, labelframe or toplevel"
+test wm-manage-1.5 {managing a text widget} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    text .t.f
+    .t.f insert end "Manage text\n" {}
+    wm manage .t.f
+    raise .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result "window \".t.f\" is not manageable: must be a frame, labelframe or toplevel"
+test wm-manage-1.6 {managing a button} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    button .t.f -text Button
+    wm manage .t.f
+    raise .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+} -cleanup {
+    deleteWindows
+} -returnCodes error -result "window \".t.f\" is not manageable: must be a frame, labelframe or toplevel"
+test wm-manage-1.7 {managing a frame} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    frame .t.f
+    pack [label .t.f.l -text Label]
+    pack .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+    wm manage .t.f
+    raise .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+    wm forget .t.f
+    pack .t.f
+    update
+    lappend result [winfo manage .t.f]
+    lappend result [winfo toplevel .t.f]
+} -cleanup {
+    deleteWindows
+} -result {pack .t wm .t.f pack .t}
+test wm-manage-1.8 {unmanaging a toplevel} -setup {
+    set result [list]
+} -body {
+    toplevel .t
+    toplevel .t.t
+    button .t.t.b -text "Manage This"
+    pack .t.t.b
+    update
+    lappend result [winfo manage .t.t]
+    lappend result [winfo toplevel .t.t.b]
+    wm forget .t.t
+    wm forget .t.t ; # second call should be a no-op
+    pack .t.t
+    update
+    lappend result [winfo manage .t.t]
+    lappend result [winfo toplevel .t.t.b]
+    wm manage .t.t
+    wm manage .t.t ; # second call should be a no-op
+    wm deiconify .t.t
+    update
+    lappend result [winfo manage .t.t]
+    lappend result [winfo toplevel .t.t.b]
+} -cleanup {
+    deleteWindows
+} -result {wm .t.t pack .t wm .t.t}
+
+test wm-forget-1.1 "bug #2009788: forget toplevel can cause crash" -body {
+    toplevel .parent
+    toplevel .parent.child
+    wm forget .parent.child
+    winfo exists .parent.child
+} -cleanup {
+    deleteWindows
+}  -result {1}
+test wm-forget-1.2 "bug #2009788: forget toplevel can cause crash" -body {
+    toplevel .parent
+    update
+    toplevel .parent.child
+    wm forget .parent.child
+    winfo exists .parent.child
+} -cleanup {
+    deleteWindows
+}  -result {1}
+test wm-forget-1.3 "bug #2009788: forget toplevel can cause crash" -body {
+    toplevel .parent
+    toplevel .parent.child
+    wm forget .parent.child
+    wm manage .parent.child
+    winfo exists .parent.child
+} -cleanup {
+    deleteWindows
+}  -result {1}
+test wm-forget-1.4 "pack into unmapped toplevel causes crash" -body {
+    toplevel .parent
+    toplevel .parent.child
+    wm forget .parent.child
+    pack [button .parent.child.button -text Hello]
+    after 250 {destroy .parent}
+    tkwait window .parent
+} -cleanup {
+    deleteWindows
+} -result {}
+
+test wm-forget-2 {bug [e9112ef96e] - [wm forget] doesn't completely} -setup {
+    catch {destroy .l .f.b .f}
+    set res {}
+} -body {
+    label .l -text "Top Dot"
+    frame .f
+    button .f.b -text Hello -command "puts Hello!"
+    pack .l -side top
+    pack .f.b
+    pack .f -side bottom
+    update
+    set res [winfo manager .f]
+    pack forget .f
+    update
+    lappend res [winfo manager .f]
+    wm manage .f
+    update
+    lappend res [winfo manager .f]
+    wm forget .f
+    update
+    lappend res [winfo manager .f]
+} -cleanup {
+    destroy .l .f.b .f
+    unset res
+} -result {pack {} wm {}}
+
+# FIXME:
+
+# Test delivery of virtual events to the WM. We could check to see if the
+# window was raised after a button click for example. This sort of testing may
+# not be possible.
+
+##############################################################################
+
+deleteWindows
+cleanupTests
+catch {unset results}
+catch {unset focusin}
+return
+
+# Local variables:
+# mode: tcl
+# End:

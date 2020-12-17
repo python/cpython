@@ -1,0 +1,631 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_ConfigureWidget 3 4.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_ConfigureWidget, Tk_ConfigureInfo, Tk_ConfigureValue, Tk_FreeOptions \- process configuration options for widgets
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_ConfigureWidget(\fIinterp, tkwin, specs, argc, argv, widgRec, flags\fB)\fR
+.sp
+int
+\fBTk_ConfigureInfo(\fIinterp, tkwin, specs, widgRec, argvName, flags\fB)\fR
+.sp
+int
+\fBTk_ConfigureValue(\fIinterp, tkwin, specs, widgRec, argvName, flags\fB)\fR
+.sp
+\fBTk_FreeOptions(\fIspecs, widgRec, display, flags\fB)\fR
+.SH ARGUMENTS
+.AS char *widgRec in/out
+.AP Tcl_Interp *interp in
+Interpreter to use for returning error messages.
+.AP Tk_Window tkwin in
+Window used to represent widget (needed to set up X resources).
+.AP "const Tk_ConfigSpec" *specs in
+Pointer to table specifying legal configuration options for this
+widget.
+.AP int argc in
+Number of arguments in \fIargv\fR.
+.AP "const char" **argv in
+Command-line options for configuring widget.
+.AP char *widgRec in/out
+Points to widget record structure.  Fields in this structure get
+modified by \fBTk_ConfigureWidget\fR to hold configuration information.
+.AP int flags in
+If non-zero, then it specifies an OR-ed combination of flags that
+control the processing of configuration information.
+\fBTK_CONFIG_ARGV_ONLY\fR causes the option database and defaults to be
+ignored, and flag bits \fBTK_CONFIG_USER_BIT\fR and higher are used to
+selectively disable entries in \fIspecs\fR.
+.AP "type name" type in
+The name of the type of a widget record.
+.AP "field name" field in
+The name of a field in records of type \fItype\fR.
+.AP "const char" *argvName in
+The name used on Tcl command lines to refer to a particular option
+(e.g. when creating a widget or invoking the \fBconfigure\fR widget
+command).  If non-NULL, then information is returned only for this
+option.  If NULL, then information is returned for all available
+options.
+.AP Display *display in
+Display containing widget whose record is being freed;  needed in
+order to free up resources.
+.BE
+.SH DESCRIPTION
+.PP
+Note: \fBTk_ConfigureWidget\fR should be replaced with the new
+\fBTcl_Obj\fR based API \fBTk_SetOptions\fR.  The old interface is
+retained for backward compatibility.
+.PP
+\fBTk_ConfigureWidget\fR is called to configure various aspects of a
+widget, such as colors, fonts, border width, etc.
+It is intended as a convenience procedure to reduce the amount
+of code that must be written in individual widget managers to
+handle configuration information.
+It is typically
+invoked when widgets are created, and again when the \fBconfigure\fR
+command is invoked for a widget.
+Although intended primarily for widgets, \fBTk_ConfigureWidget\fR
+can be used in other situations where \fIargc-argv\fR information
+is to be used to fill in a record structure, such as configuring
+graphical elements for a canvas widget or entries of a menu.
+.PP
+\fBTk_ConfigureWidget\fR processes
+a table specifying the configuration options that are supported
+(\fIspecs\fR) and a collection of command-line arguments (\fIargc\fR and
+\fIargv\fR) to fill in fields of a record (\fIwidgRec\fR).
+It uses the option database and defaults specified in \fIspecs\fR
+to fill in fields of \fIwidgRec\fR that are not specified in \fIargv\fR.
+\fBTk_ConfigureWidget\fR normally returns the value \fBTCL_OK\fR; in this
+case it does not modify \fIinterp\fR.
+If an error
+occurs then \fBTCL_ERROR\fR is returned and \fBTk_ConfigureWidget\fR will
+leave an error message in interpreter \fIinterp\fR's result in the standard Tcl
+fashion.
+In the event of an error return, some of the fields of \fIwidgRec\fR
+could already have been set, if configuration information for them
+was successfully processed before the error occurred.
+The other fields will be set to reasonable initial values so that
+\fBTk_FreeOptions\fR can be called for cleanup.
+.PP
+The \fIspecs\fR array specifies the kinds of configuration options
+expected by the widget.  Each of its entries specifies one configuration
+option and has the following structure:
+.CS
+typedef struct {
+    int \fItype\fR;
+    const char *\fIargvName\fR;
+    const char *\fIdbName\fR;
+    const char *\fIdbClass\fR;
+    const char *\fIdefValue\fR;
+    int \fIoffset\fR;
+    int \fIspecFlags\fR;
+    const Tk_CustomOption *\fIcustomPtr\fR;
+} \fBTk_ConfigSpec\fR;
+.CE
+The \fItype\fR field indicates what type of configuration option this is
+(e.g. \fBTK_CONFIG_COLOR\fR for a color value, or \fBTK_CONFIG_INT\fR for
+an integer value).  The \fItype\fR field indicates how to use the
+value of the option (more on this below).
+The \fIargvName\fR field is a string such as
+.QW \-font
+or
+.QW \-bg ,
+which is compared with the values in \fIargv\fR (if \fIargvName\fR is
+NULL it means this is a grouped entry;  see \fBGROUPED ENTRIES\fR below).  The
+\fIdbName\fR and \fIdbClass\fR fields are used to look up a value
+for this option in the option database.  The \fIdefValue\fR field
+specifies a default value for this configuration option if no
+value is specified in either \fIargv\fR or the option database.
+\fIOffset\fR indicates where in \fIwidgRec\fR to store information
+about this option, and \fIspecFlags\fR contains additional information
+to control the processing of this configuration option (see FLAGS
+below).
+The last field, \fIcustomPtr\fR, is only used if \fItype\fR is
+\fBTK_CONFIG_CUSTOM\fR;  see CUSTOM OPTION TYPES below.
+.PP
+\fBTk_ConfigureWidget\fR first processes \fIargv\fR to see which
+(if any) configuration options are specified there.  \fIArgv\fR
+must contain an even number of fields;  the first of each pair
+of fields must match the \fIargvName\fR of some entry in \fIspecs\fR
+(unique abbreviations are acceptable),
+and the second field of the pair contains the value for that
+configuration option.  If there are entries in \fIspec\fR for which
+there were no matching entries in \fIargv\fR,
+\fBTk_ConfigureWidget\fR uses the \fIdbName\fR and \fIdbClass\fR
+fields of the \fIspecs\fR entry to probe the option database;  if
+a value is found, then it is used as the value for the option.
+Finally, if no entry is found in the option database, the
+\fIdefValue\fR field of the \fIspecs\fR entry is used as the
+value for the configuration option.  If the \fIdefValue\fR is
+NULL, or if the \fBTK_CONFIG_DONT_SET_DEFAULT\fR bit is set in
+\fIflags\fR, then there is no default value and this \fIspecs\fR entry
+will be ignored if no value is specified in \fIargv\fR or the
+option database.
+.PP
+Once a string value has been determined for a configuration option,
+\fBTk_ConfigureWidget\fR translates the string value into a more useful
+form, such as a color if \fItype\fR is \fBTK_CONFIG_COLOR\fR or an integer
+if \fItype\fR is \fBTK_CONFIG_INT\fR.  This value is then stored in the
+record pointed to by \fIwidgRec\fR.  This record is assumed to
+contain information relevant to the manager of the widget;  its exact
+type is unknown to \fBTk_ConfigureWidget\fR.  The \fIoffset\fR field
+of each \fIspecs\fR entry indicates where in \fIwidgRec\fR to store
+the information about this configuration option.  You should use the
+\fBTk_Offset\fR macro to generate \fIoffset\fR values (see below for
+a description of \fBTk_Offset\fR).  The location indicated by
+\fIwidgRec\fR and \fIoffset\fR will be referred to as the
+.QW target
+in the descriptions below.
+.PP
+The \fItype\fR field of each entry in \fIspecs\fR determines what
+to do with the string value of that configuration option.  The
+legal values for \fItype\fR, and the corresponding actions, are:
+.TP
+\fBTK_CONFIG_ACTIVE_CURSOR\fR
+The value
+must be an ASCII string identifying a cursor in a form
+suitable for passing to \fBTk_GetCursor\fR.
+The value is converted to a \fBTk_Cursor\fR by calling
+\fBTk_GetCursor\fR and the result is stored in the target.
+In addition, the resulting cursor is made the active cursor
+for \fItkwin\fR by calling \fBXDefineCursor\fR.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR then the value
+may be an empty string, in which case the target and \fItkwin\fR's
+active cursor will be set to \fBNone\fR.
+If the previous value of the target
+was not \fBNone\fR, then it is freed by passing it to \fBTk_FreeCursor\fR.
+.TP
+\fBTK_CONFIG_ANCHOR\fR
+The value must be an ASCII string identifying an anchor point in one of the ways
+accepted by \fBTk_GetAnchor\fR.
+The string is converted to a \fBTk_Anchor\fR by calling
+\fBTk_GetAnchor\fR and the result is stored in the target.
+.TP
+\fBTK_CONFIG_BITMAP\fR
+The value must be an ASCII string identifying a bitmap in a form
+suitable for passing to \fBTk_GetBitmap\fR.  The value is converted
+to a \fBPixmap\fR by calling \fBTk_GetBitmap\fR and the result
+is stored in the target.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR then the value
+may be an empty string, in which case the target is set to \fBNone\fR.
+If the previous value of the target
+was not \fBNone\fR, then it is freed by passing it to \fBTk_FreeBitmap\fR.
+.TP
+\fBTK_CONFIG_BOOLEAN\fR
+The value must be an ASCII string specifying a boolean value.  Any
+of the values
+.QW true ,
+.QW yes ,
+.QW on ,
+or
+.QW 1 ,
+or an abbreviation of one of these values, means true;
+any of the values
+.QW false ,
+.QW no ,
+.QW off ,
+or
+.QW 0 ,
+or an abbreviation of one of these values, means false.
+The target is expected to be an integer;  for true values it will
+be set to 1 and for false values it will be set to 0.
+.TP
+\fBTK_CONFIG_BORDER\fR
+The value must be an ASCII string identifying a border color in a form
+suitable for passing to \fBTk_Get3DBorder\fR.  The value is converted
+to a (\fBTk_3DBorder *\fR) by calling \fBTk_Get3DBorder\fR and the result
+is stored in the target.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR then the value
+may be an empty string, in which case the target will be set to NULL.
+If the previous value of the target
+was not NULL, then it is freed by passing it to \fBTk_Free3DBorder\fR.
+.TP
+\fBTK_CONFIG_CAP_STYLE\fR
+The value must be
+an ASCII string identifying a cap style in one of the ways
+accepted by \fBTk_GetCapStyle\fR.
+The string is converted to an integer value corresponding
+to the cap style by calling
+\fBTk_GetCapStyle\fR and the result is stored in the target.
+.TP
+\fBTK_CONFIG_COLOR\fR
+The value must be an ASCII string identifying a color in a form
+suitable for passing to \fBTk_GetColor\fR.  The value is converted
+to an (\fBXColor *\fR) by calling \fBTk_GetColor\fR and the result
+is stored in the target.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR then the value
+may be an empty string, in which case the target will be set to \fBNone\fR.
+If the previous value of the target
+was not NULL, then it is freed by passing it to \fBTk_FreeColor\fR.
+.TP
+\fBTK_CONFIG_CURSOR\fR
+This option is identical to \fBTK_CONFIG_ACTIVE_CURSOR\fR except
+that the new cursor is not made the active one for \fItkwin\fR.
+.TP
+\fBTK_CONFIG_CUSTOM\fR
+This option allows applications to define new option types.
+The \fIcustomPtr\fR field of the entry points to a structure
+defining the new option type.
+See the section \fBCUSTOM OPTION TYPES\fR below for details.
+.TP
+\fBTK_CONFIG_DOUBLE\fR
+The value must be an ASCII floating-point number in
+the format accepted by \fBstrtol\fR.  The string is converted
+to a \fBdouble\fR value, and the value is stored in the
+target.
+.TP
+\fBTK_CONFIG_END\fR
+Marks the end of the table.  The last entry in \fIspecs\fR
+must have this type;  all of its other fields are ignored and it
+will never match any arguments.
+.TP
+\fBTK_CONFIG_FONT\fR
+The value must be an ASCII string identifying a font in a form
+suitable for passing to \fBTk_GetFont\fR.  The value is converted
+to a \fBTk_Font\fR by calling \fBTk_GetFont\fR and the result
+is stored in the target.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR then the value
+may be an empty string, in which case the target will be set to NULL.
+If the previous value of the target
+was not NULL, then it is freed by passing it to \fBTk_FreeFont\fR.
+.TP
+\fBTK_CONFIG_INT\fR
+The value must be an ASCII integer string
+in the format accepted by \fBstrtol\fR (e.g.
+.QW 0
+and
+.QW 0x
+prefixes may be used to specify octal or hexadecimal
+numbers, respectively).  The string is converted to an integer
+value and the integer is stored in the target.
+.TP
+\fBTK_CONFIG_JOIN_STYLE\fR
+The value must be
+an ASCII string identifying a join style in one of the ways
+accepted by \fBTk_GetJoinStyle\fR.
+The string is converted to an integer value corresponding
+to the join style by calling
+\fBTk_GetJoinStyle\fR and the result is stored in the target.
+.TP
+\fBTK_CONFIG_JUSTIFY\fR
+The value must be
+an ASCII string identifying a justification method in one of the
+ways accepted by \fBTk_GetJustify\fR.
+The string is converted to a \fBTk_Justify\fR by calling
+\fBTk_GetJustify\fR and the result is stored in the target.
+.TP
+\fBTK_CONFIG_MM\fR
+The value must specify a screen distance in one of the forms acceptable
+to \fBTk_GetScreenMM\fR.
+The string is converted to double-precision floating-point distance
+in millimeters and the value is stored in the target.
+.TP
+\fBTK_CONFIG_PIXELS\fR
+The value must specify screen units in one of the forms acceptable
+to \fBTk_GetPixels\fR.
+The string is converted to an integer distance in pixels and the
+value is stored in the target.
+.TP
+\fBTK_CONFIG_RELIEF\fR
+The value must be an ASCII string identifying a relief in a form
+suitable for passing to \fBTk_GetRelief\fR.  The value is converted
+to an integer relief value by calling \fBTk_GetRelief\fR and the result
+is stored in the target.
+.TP
+\fBTK_CONFIG_STRING\fR
+A copy
+of the value is made by allocating memory space with
+\fBTcl_Alloc\fR and copying the value into the dynamically-allocated
+space.  A pointer to the new string is stored in the target.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR then the value
+may be an empty string, in which case the target will be set to NULL.
+If the previous value of the target was not NULL, then it is
+freed by passing it to \fBTcl_Free\fR.
+.TP
+\fBTK_CONFIG_SYNONYM\fR
+This \fItype\fR value identifies special entries in \fIspecs\fR that
+are synonyms for other entries.  If an \fIargv\fR value matches the
+\fIargvName\fR of a \fBTK_CONFIG_SYNONYM\fR entry, the entry is not used
+directly. Instead, \fBTk_ConfigureWidget\fR searches \fIspecs\fR
+for another entry whose \fIargvName\fR is the same as the \fIdbName\fR
+field in the \fBTK_CONFIG_SYNONYM\fR entry;  this new entry is used just
+as if its \fIargvName\fR had matched the \fIargv\fR value.  The
+synonym mechanism allows multiple \fIargv\fR values to be used for
+a single configuration option, such as
+.QW \-background
+and
+.QW \-bg .
+.TP
+\fBTK_CONFIG_UID\fR
+The value is translated to a \fBTk_Uid\fR
+(by passing it to \fBTk_GetUid\fR).  The resulting value
+is stored in the target.
+If \fBTK_CONFIG_NULL_OK\fR is specified in \fIspecFlags\fR and the value
+is an empty string then the target will be set to NULL.
+.TP
+\fBTK_CONFIG_WINDOW\fR
+The value must be a window path name.  It is translated to a
+\fBTk_Window\fR token and the token is stored in the target.
+.SH "GROUPED ENTRIES"
+.PP
+In some cases it is useful to generate multiple resources from
+a single configuration value.  For example, a color name might
+be used both to generate the background color for a widget (using
+\fBTK_CONFIG_COLOR\fR) and to generate a 3-D border to draw around the
+widget (using \fBTK_CONFIG_BORDER\fR).  In cases like this it is possible
+to specify that several consecutive entries in \fIspecs\fR are to
+be treated as a group.  The first entry is used to determine a value
+(using its \fIargvName\fR, \fIdbName\fR,
+\fIdbClass\fR, and \fIdefValue\fR fields).  The value will be processed
+several times (one for each entry in the group), generating multiple
+different resources and modifying multiple targets within \fIwidgRec\fR.
+Each of the entries after the first must have a NULL value in its
+\fIargvName\fR field;  this indicates that the entry is to be grouped
+with the entry that precedes it.  Only the \fItype\fR and \fIoffset\fR
+fields are used from these follow-on entries.
+.SH "FLAGS"
+.PP
+The \fIflags\fR argument passed to \fBTk_ConfigureWidget\fR is used
+in conjunction with the \fIspecFlags\fR fields in the entries of \fIspecs\fR
+to provide additional control over the processing of configuration
+options.  These values are used in three different ways as
+described below.
+.PP
+First, if the \fIflags\fR argument to \fBTk_ConfigureWidget\fR has
+the \fBTK_CONFIG_ARGV_ONLY\fR bit set (i.e., \fIflags\fR | \fBTK_CONFIG_ARGV_ONLY\fR != 0),
+then the option database and
+\fIdefValue\fR fields are not used.  In this case, if an entry in
+\fIspecs\fR does not match a field in \fIargv\fR then nothing happens:
+the corresponding target is not modified.  This feature is useful
+when the goal is to modify certain configuration options while
+leaving others in their current state, such as when a \fBconfigure\fR
+widget command is being processed.
+.PP
+Second, the \fIspecFlags\fR field of an entry in \fIspecs\fR may be used
+to control the processing of that entry.  Each \fIspecFlags\fR
+field may consists of an OR-ed combination of the following values:
+.TP
+\fBTK_CONFIG_COLOR_ONLY\fR
+If this bit is set then the entry will only be considered if the
+display for \fItkwin\fR has more than one bit plane.  If the display
+is monochromatic then this \fIspecs\fR entry will be ignored.
+.TP
+\fBTK_CONFIG_MONO_ONLY\fR
+If this bit is set then the entry will only be considered if the
+display for \fItkwin\fR has exactly one bit plane.  If the display
+is not monochromatic then this \fIspecs\fR entry will be ignored.
+.TP
+\fBTK_CONFIG_NULL_OK\fR
+This bit is only relevant for some types of entries (see the
+descriptions of the various entry types above).
+If this bit is set, it indicates that an empty string value
+for the field is acceptable and if it occurs then the
+target should be set to NULL or \fBNone\fR, depending
+on the type of the target.
+This flag is typically used to allow a
+feature to be turned off entirely, e.g. set a cursor value to
+\fBNone\fR so that a window simply inherits its parent's cursor.
+If this bit is not set then empty strings are processed as strings,
+which generally results in an error.
+.TP
+\fBTK_CONFIG_DONT_SET_DEFAULT\fR
+If this bit is one, it means that the \fIdefValue\fR field of the
+entry should only be used for returning the default value in
+\fBTk_ConfigureInfo\fR.
+In calls to \fBTk_ConfigureWidget\fR no default will be supplied
+for entries with this flag set;  it is assumed that the
+caller has already supplied a default value in the target location.
+This flag provides a performance optimization where it is expensive
+to process the default string:  the client can compute the default
+once, save the value, and provide it before calling
+\fBTk_ConfigureWidget\fR.
+.TP
+\fBTK_CONFIG_OPTION_SPECIFIED\fR
+This bit is
+deprecated. It used to be set and cleared by \fBTk_ConfigureWidget\fR
+so that callers could detect what entries were specified in
+\fIargv\fR, but it was removed because it was inherently
+thread-unsafe. Code that wishes to detect what options were specified
+should use \fBTk_SetOptions\fR instead.
+.PP
+The \fBTK_CONFIG_MONO_ONLY\fR and \fBTK_CONFIG_COLOR_ONLY\fR flags are typically
+used to specify different default values for
+monochrome and color displays.  This is done by creating two
+entries in \fIspecs\fR that are identical except for their
+\fIdefValue\fR and \fIspecFlags\fR fields.  One entry should have
+the value \fBTK_CONFIG_MONO_ONLY\fR in its \fIspecFlags\fR and the
+default value for monochrome displays in its \fIdefValue\fR;  the
+other entry should have the value \fBTK_CONFIG_COLOR_ONLY\fR in
+its \fIspecFlags\fR and the appropriate \fIdefValue\fR for
+color displays.
+.PP
+Third, it is possible to use \fIflags\fR and \fIspecFlags\fR
+together to selectively disable some entries.  This feature is
+not needed very often.  It is useful in cases where several
+similar kinds of widgets are implemented in one place.  It allows
+a single \fIspecs\fR table to be created with all the configuration
+options for all the widget types.  When processing a particular
+widget type, only entries relevant to that type will be used.  This
+effect is achieved by setting the high-order bits (those in positions
+equal to or greater than \fBTK_CONFIG_USER_BIT\fR) in \fIspecFlags\fR
+values or in \fIflags\fR.  In order for a particular entry in
+\fIspecs\fR to be used, its high-order bits must match exactly
+the high-order bits of the \fIflags\fR value passed to
+\fBTk_ConfigureWidget\fR.  If a \fIspecs\fR table is being used
+for N different widget types, then N of the high-order bits will
+be used.  Each \fIspecs\fR entry will have one of more of those
+bits set in its \fIspecFlags\fR field to indicate the widget types
+for which this entry is valid.  When calling \fBTk_ConfigureWidget\fR,
+\fIflags\fR will have a single one of these bits set to select the
+entries for the desired widget type.  For a working example of
+this feature, see the code in tkButton.c.
+.SH TK_OFFSET
+.PP
+The \fBTk_Offset\fR macro is provided as a safe way of generating
+the \fIoffset\fR values for entries in Tk_ConfigSpec structures.
+It takes two arguments:  the name of a type of record, and the
+name of a field in that record.  It returns the byte offset of
+the named field in records of the given type.
+.SH TK_CONFIGUREINFO
+.PP
+The \fBTk_ConfigureInfo\fR procedure may be used to obtain
+information about one or all of the options for a given widget.
+Given a token for a window (\fItkwin\fR), a table describing the
+configuration options for a class of widgets (\fIspecs\fR), a
+pointer to a widget record containing the current information for
+a widget (\fIwidgRec\fR), and a NULL \fIargvName\fR argument,
+\fBTk_ConfigureInfo\fR generates a string describing all of the
+configuration options for the window.  The string is placed
+in interpreter \fIinterp\fR's result.  Under normal circumstances
+it returns \fBTCL_OK\fR;  if an error occurs then it returns \fBTCL_ERROR\fR
+and the interpreter's result will contain an error message.
+.PP
+If \fIargvName\fR is NULL, then the value left in
+the interpreter's result by \fBTk_ConfigureInfo\fR
+consists of a list of one or more entries, each of which describes
+one configuration option (i.e. one entry in \fIspecs\fR).  Each
+entry in the list will contain either two or five values.  If the
+corresponding entry in \fIspecs\fR has type \fBTK_CONFIG_SYNONYM\fR, then
+the list will contain two values:  the \fIargvName\fR for the entry
+and the \fIdbName\fR (synonym name).  Otherwise the list will contain
+five values:  \fIargvName\fR, \fIdbName\fR, \fIdbClass\fR, \fIdefValue\fR,
+and current value.  The current value is computed from the appropriate
+field of \fIwidgRec\fR by calling procedures like \fBTk_NameOfColor\fR.
+.PP
+If the \fIargvName\fR argument to \fBTk_ConfigureInfo\fR is non-NULL,
+then it indicates a single option, and information is returned only
+for that option.  The string placed in the interpreter's result will be
+a list containing two or five values as described above;  this will
+be identical to the corresponding sublist that would have been returned
+if \fIargvName\fR had been NULL.
+.PP
+The \fIflags\fR argument to \fBTk_ConfigureInfo\fR is used to restrict
+the \fIspecs\fR entries to consider, just as for \fBTk_ConfigureWidget\fR.
+.SH TK_CONFIGUREVALUE
+.PP
+\fBTk_ConfigureValue\fR takes arguments similar to \fBTk_ConfigureInfo\fR;
+instead of returning a list of values, it just returns the current value
+of the option given by \fIargvName\fR (\fIargvName\fR must not be NULL).
+The value is returned in interpreter \fIinterp\fR's result and \fBTCL_OK\fR is
+normally returned as the procedure's result.
+If an error occurs in \fBTk_ConfigureValue\fR (e.g., \fIargvName\fR is
+not a valid option name), \fBTCL_ERROR\fR is returned and an error message
+is left in the interpreter's result.
+This procedure is typically called to implement \fBcget\fR widget
+commands.
+.SH TK_FREEOPTIONS
+.PP
+The \fBTk_FreeOptions\fR procedure may be invoked during widget cleanup
+to release all of the resources associated with configuration options.
+It scans through \fIspecs\fR and for each entry corresponding to a
+resource that must be explicitly freed (e.g. those with
+type \fBTK_CONFIG_COLOR\fR), it frees the resource in the widget record.
+If the field in the widget record does not refer to a resource (e.g.
+it contains a null pointer) then no resource is freed for that
+entry.
+After freeing a resource, \fBTk_FreeOptions\fR sets the
+corresponding field of the widget record to null.
+.SH "CUSTOM OPTION TYPES"
+.PP
+Applications can extend the built-in configuration types with additional
+configuration types by writing procedures to parse and print options
+of the a type and creating a structure pointing to those procedures:
+.CS
+typedef struct Tk_CustomOption {
+    Tk_OptionParseProc *\fIparseProc\fR;
+    Tk_OptionPrintProc *\fIprintProc\fR;
+    ClientData \fIclientData\fR;
+} \fBTk_CustomOption\fR;
+
+typedef int \fBTk_OptionParseProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        Tk_Window \fItkwin\fR,
+        char *\fIvalue\fR,
+        char *\fIwidgRec\fR,
+        int \fIoffset\fR);
+
+typedef const char *\fBTk_OptionPrintProc\fR(
+        ClientData \fIclientData\fR,
+        Tk_Window \fItkwin\fR,
+        char *\fIwidgRec\fR,
+        int \fIoffset\fR,
+        Tcl_FreeProc **\fIfreeProcPtr\fR);
+.CE
+The Tk_CustomOption structure contains three fields, which are pointers
+to the two procedures and a \fIclientData\fR value to be passed to those
+procedures when they are invoked.  The \fIclientData\fR value typically
+points to a structure containing information that is needed by the
+procedures when they are parsing and printing options.
+.PP
+The \fIparseProc\fR procedure is invoked by
+\fBTk_ConfigureWidget\fR to parse a string and store the resulting
+value in the widget record.
+The \fIclientData\fR argument is a copy of the \fIclientData\fR
+field in the Tk_CustomOption structure.
+The \fIinterp\fR argument points to a Tcl interpreter used for
+error reporting.  \fITkwin\fR is a copy of the \fItkwin\fR argument
+to \fBTk_ConfigureWidget\fR.  The \fIvalue\fR argument is a string
+describing the value for the option;  it could have been specified
+explicitly in the call to \fBTk_ConfigureWidget\fR or it could
+come from the option database or a default.
+\fIValue\fR will never be a null pointer but it may point to
+an empty string.
+\fIRecordPtr\fR is the same as the \fIwidgRec\fR argument to
+\fBTk_ConfigureWidget\fR;  it points to the start of the widget
+record to modify.
+The last argument, \fIoffset\fR, gives the offset in bytes from the start
+of the widget record to the location where the option value is to
+be placed.  The procedure should translate the string to whatever
+form is appropriate for the option and store the value in the widget
+record.  It should normally return \fBTCL_OK\fR, but if an error occurs
+in translating the string to a value then it should return \fBTCL_ERROR\fR
+and store an error message in interpreter \fIinterp\fR's result.
+.PP
+The \fIprintProc\fR procedure is called
+by \fBTk_ConfigureInfo\fR to produce a string value describing an
+existing option.
+Its \fIclientData\fR, \fItkwin\fR, \fIwidgRec\fR, and \fIoffset\fR
+arguments all have the same meaning as for Tk_OptionParseProc
+procedures.
+The \fIprintProc\fR procedure should examine the option whose value
+is stored at \fIoffset\fR in \fIwidgRec\fR, produce a string describing
+that option, and return a pointer to the string.
+If the string is stored in dynamically-allocated memory, then
+the procedure must set \fI*freeProcPtr\fR to the address of
+a procedure to call to free the string's memory;  \fBTk_ConfigureInfo\fR
+will call this procedure when it is finished with the string.
+If the result string is stored in static memory then \fIprintProc\fR
+need not do anything with the \fIfreeProcPtr\fR argument.
+.PP
+Once \fIparseProc\fR and \fIprintProc\fR have been defined and a
+Tk_CustomOption structure has been created for them, options of this
+new type may be manipulated with Tk_ConfigSpec entries whose \fItype\fR
+fields are \fBTK_CONFIG_CUSTOM\fR and whose \fIcustomPtr\fR fields point
+to the Tk_CustomOption structure.
+.SH EXAMPLES
+.PP
+Although the explanation of \fBTk_ConfigureWidget\fR is fairly
+complicated, its actual use is pretty straightforward.
+The easiest way to get started is to copy the code
+from an existing widget.
+The library implementation of frames
+(tkFrame.c) has a simple configuration table, and the library
+implementation of buttons (tkButton.c) has a much more complex
+table that uses many of the fancy \fIspecFlags\fR mechanisms.
+.SH "SEE ALSO"
+Tk_SetOptions(3)
+.SH KEYWORDS
+anchor, bitmap, boolean, border, cap style, color, configuration options,
+cursor, custom, double, font, integer, join style, justify, millimeters,
+pixels, relief, synonym, uid

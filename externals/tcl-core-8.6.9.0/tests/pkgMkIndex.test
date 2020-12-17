@@ -1,0 +1,698 @@
+# This file contains tests for the pkg_mkIndex command.
+# Note that the tests are limited to Tcl scripts only, there are no shared
+# libraries against which to test.
+#
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+set fullPkgPath [makeDirectory pkg]
+
+namespace eval pkgtest {
+    # Namespace for procs we can discard
+}
+
+# pkgtest::parseArgs --
+#
+#  Parse an argument list.
+#
+# Arguments:
+#  <flags>	(optional) arguments starting with a dash are collected as
+#		options to pkg_mkIndex and passed to pkg_mkIndex.
+#  dirPath	the directory to index
+#  pattern0	pattern to index
+#  ...		pattern to index
+#  patternN	pattern to index
+#
+# Results:
+#  Returns a three element list:
+#    0: the options
+#    1: the directory to index
+#    2: the patterns list
+
+proc pkgtest::parseArgs { args } {
+    set options ""
+
+    set argc [llength $args]
+    for {set iarg 0} {$iarg < $argc} {incr iarg} {
+	set a [lindex $args $iarg]
+	if {[regexp {^-} $a]} {
+	    lappend options $a
+	    if {$a eq "-load"} {
+		incr iarg
+		lappend options [lindex $args $iarg]
+	    }
+	} else {
+	    break
+	}
+    }
+
+    set dirPath [lindex $args $iarg]
+    incr iarg
+    set patternList [lrange $args $iarg end]
+
+    return [list $options $dirPath $patternList]
+}
+
+# pkgtest::parseIndex --
+#
+#  Loads a pkgIndex.tcl file, records all the calls to "package ifneeded".
+#
+# Arguments:
+#  filePath	path to the pkgIndex.tcl file.
+#
+# Results:
+#  Returns a list, in "array set/get" format, where the keys are the package
+#  name and version (in the form "$name:$version"), and the values the rest
+#  of the command line.
+
+proc pkgtest::parseIndex { filePath } {
+    # create a slave interpreter, where we override "package ifneeded"
+
+    set slave [interp create]
+    if {[catch {
+	$slave eval {
+	    rename package package_original
+	    proc package { args } {
+		if {[lindex $args 0] eq "ifneeded"} {
+		    set pkg [lindex $args 1]
+		    set ver [lindex $args 2]
+		    set ::PKGS($pkg:$ver) [lindex $args 3]
+		} else {
+		    return [package_original {*}$args]
+		}
+	    }
+	    array set ::PKGS {}
+	}
+
+	set dir [file dirname $filePath]
+	$slave eval {set curdir [pwd]}
+	$slave eval [list cd $dir]
+	$slave eval [list set dir $dir]
+	$slave eval [list source [file tail $filePath]]
+	$slave eval {cd $curdir}
+
+	# Create the list in sorted order, so that we don't get spurious
+	# errors because the order has changed.
+
+	array set P {}
+	foreach {k v} [$slave eval {array get ::PKGS}] {
+	    set P($k) $v
+	}
+
+	set PKGS ""
+	foreach k [lsort [array names P]] {
+	    lappend PKGS $k $P($k)
+	}
+    } err opts]} {
+	set ei [dict get $opts -errorinfo]
+	set ec [dict get $opts -errorcode]
+
+	catch {interp delete $slave}
+
+	error $ei $ec
+    }
+
+    interp delete $slave
+
+    return $PKGS
+}
+
+# pkgtest::createIndex --
+#
+#  Runs pkg_mkIndex for the given directory and set of patterns.  This
+#  procedure deletes any pkgIndex.tcl file in the target directory, then runs
+#  pkg_mkIndex.
+#
+# Arguments:
+#  <flags>	(optional) arguments starting with a dash are collected as
+#		options to pkg_mkIndex and passed to pkg_mkIndex.
+#  dirPath	the directory to index
+#  pattern0	pattern to index
+#  ...		pattern to index
+#  patternN	pattern to index
+#
+# Results:
+#  Returns a two element list:
+#    0: 1 if the procedure encountered an error, 0 otherwise.
+#    1: the error result if element 0 was 1
+
+proc pkgtest::createIndex { args } {
+    set parsed [parseArgs {*}$args]
+    set options [lindex $parsed 0]
+    set dirPath [lindex $parsed 1]
+    set patternList [lindex $parsed 2]
+
+    file mkdir $dirPath
+
+    if {[catch {
+	file delete [file join $dirPath pkgIndex.tcl]
+	pkg_mkIndex {*}$options $dirPath {*}$patternList
+    } err]} {
+	return [list 1 $err]
+    }
+
+    return [list 0 {}]
+}
+
+# makePkgList --
+#
+#  Takes the output of a pkgtest::parseIndex call, filters it and returns a
+#  cleaned up list of packages and their actions.
+#
+# Arguments:
+#  inList	output from a pkgtest::parseIndex.
+#
+# Results:
+#  Returns a list of two element lists:
+#    0: the name:version
+#    1: a list describing the package.
+#	For tclPkgSetup packages it consists of:
+#	 0: the keyword tclPkgSetup
+#	 1: the first file to source, with its exported procedures
+#	 2: the second file ...
+#	 N: the N-1st file ...
+
+proc makePkgList { inList } {
+    set pkgList ""
+
+    foreach {k v} $inList {
+	switch [lindex $v 0] {
+	    tclPkgSetup {
+		set l tclPkgSetup
+		foreach s [lindex $v 4] {
+		    lappend l $s
+		}
+	    }
+	    source {
+		set l $v
+	    }
+	    default {
+		error "can't handle $k $v"
+	    }
+	}
+
+	lappend pkgList [list $k $l]
+    }
+
+    return $pkgList
+}
+
+# pkgtest::runIndex --
+#
+#  Runs pkg_mkIndex, parses the generated index file.
+#
+# Arguments:
+#  <flags>	(optional) arguments starting with a dash are collected as
+#		options to pkg_mkIndex and passed to pkg_mkIndex.
+#  dirPath	the directory to index
+#  pattern0	pattern to index
+#  ...		pattern to index
+#  patternN	pattern to index
+#
+# Results:
+#  Returns a two element list:
+#    0: 1 if the procedure encountered an error, 0 otherwise.
+#    1: if no error, this is the parsed generated index file, in the format
+#	returned by pkgtest::parseIndex.  If error, this is the error result.
+
+proc pkgtest::runCreatedIndex {rv args} {
+    if {[lindex $rv 0] == 0} {
+	set parsed [parseArgs {*}$args]
+	set dirPath [lindex $parsed 1]
+	set idxFile [file join $dirPath pkgIndex.tcl]
+
+	if {[catch {
+	    set result [list 0 [makePkgList [parseIndex $idxFile]]]
+	} err]} {
+	    set result [list 1 $err]
+	} 
+	file delete $idxFile
+    } else {
+	set result $rv
+    }
+
+    return $result
+}
+proc pkgtest::runIndex { args } {
+    set rv [createIndex {*}$args]
+    return [runCreatedIndex $rv {*}$args]
+}
+
+# If there is no match to the patterns, make sure the directory hasn't changed
+# on us
+
+test pkgMkIndex-1.1 {nothing matches pattern - current dir is the same} {
+    list [pkgtest::runIndex -lazy $fullPkgPath nomatch.tcl] [pwd]
+} [list {1 {no files matched glob pattern "nomatch.tcl"}} [pwd]]
+
+makeFile {
+#  This is a simple package, just to check basic functionality.
+package provide simple 1.0
+namespace eval simple {
+    namespace export lower upper
+}
+proc simple::lower { stg } {
+    return [string tolower $stg]
+}
+proc simple::upper { stg } {
+    return [string toupper $stg]
+}
+} [file join pkg simple.tcl]
+
+test pkgMkIndex-2.1 {simple package} {
+    pkgtest::runIndex -lazy $fullPkgPath simple.tcl
+} {0 {{simple:1.0 {tclPkgSetup {simple.tcl source {::simple::lower ::simple::upper}}}}}}
+
+test pkgMkIndex-2.2 {simple package - use -direct} {
+    pkgtest::runIndex -direct $fullPkgPath simple.tcl
+} "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}"
+
+test pkgMkIndex-2.3 {simple package - direct loading is default} {
+    pkgtest::runIndex $fullPkgPath simple.tcl
+} "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}"
+
+test pkgMkIndex-2.4 {simple package - use -verbose} -body {
+    pkgtest::runIndex -verbose $fullPkgPath simple.tcl
+} -result "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}" \
+    -errorOutput {successful sourcing of simple.tcl
+packages provided were {simple 1.0}
+processed simple.tcl
+}
+
+removeFile [file join pkg simple.tcl]
+
+makeFile {
+#  Contains global symbols, used to check that they don't have a leading ::
+package provide global 1.0
+proc global_lower { stg } {
+    return [string tolower $stg]
+}
+proc global_upper { stg } {
+    return [string toupper $stg]
+}
+} [file join pkg global.tcl]
+
+test pkgMkIndex-3.1 {simple package with global symbols} {
+    pkgtest::runIndex -lazy $fullPkgPath global.tcl
+} {0 {{global:1.0 {tclPkgSetup {global.tcl source {global_lower global_upper}}}}}}
+
+removeFile [file join pkg global.tcl]
+
+makeFile {
+#  This package is required by pkg1.
+#  This package is split into two files, to test packages that are split over
+#  multiple files.
+package provide pkg2 1.0
+namespace eval pkg2 {
+    namespace export p2-1
+}
+proc pkg2::p2-1 { num } {
+    return [expr $num * 2]
+}
+} [file join pkg pkg2_a.tcl]
+
+makeFile {
+#  This package is required by pkg1.
+#  This package is split into two files, to test packages that are split over
+#  multiple files.
+package provide pkg2 1.0
+namespace eval pkg2 {
+    namespace export p2-2
+}
+proc pkg2::p2-2 { num } {
+    return [expr $num * 3]
+}
+} [file join pkg pkg2_b.tcl]
+
+test pkgMkIndex-4.1 {split package} {
+    pkgtest::runIndex -lazy $fullPkgPath pkg2_a.tcl pkg2_b.tcl
+} {0 {{pkg2:1.0 {tclPkgSetup {pkg2_a.tcl source ::pkg2::p2-1} {pkg2_b.tcl source ::pkg2::p2-2}}}}}
+
+test pkgMkIndex-4.2 {split package - direct loading} {
+    pkgtest::runIndex -direct $fullPkgPath pkg2_a.tcl pkg2_b.tcl
+} "0 {{pkg2:1.0 {[list source [file join $fullPkgPath pkg2_a.tcl]]
+[list source [file join $fullPkgPath pkg2_b.tcl]]}}}"
+
+# Add the direct1 directory to auto_path, so that the direct1 package can be
+# found.
+set direct1 [makeDirectory direct1]
+lappend auto_path $direct1
+makeFile {
+#  This is referenced by pkgIndex.tcl as a -direct script.
+package provide direct1 1.0
+namespace eval direct1 {
+    namespace export pd1 pd2
+}
+proc direct1::pd1 { stg } {
+    return [string tolower $stg]
+}
+proc direct1::pd2 { stg } {
+    return [string toupper $stg]
+}
+} [file join direct1 direct1.tcl]
+pkg_mkIndex -direct $direct1 direct1.tcl
+
+makeFile {
+#  Does a package require of direct1, whose pkgIndex.tcl entry is created
+#  above with option -direct.  This tests that pkg_mkIndex can handle code
+#  that is sourced in pkgIndex.tcl files.
+package require direct1
+package provide std 1.0
+namespace eval std {
+    namespace export p1 p2
+}
+proc std::p1 { stg } {
+    return [string tolower $stg]
+}
+proc std::p2 { stg } {
+    return [string toupper $stg]
+}
+} [file join pkg std.tcl]
+
+test pkgMkIndex-5.1 {requires -direct package} {
+    pkgtest::runIndex -lazy $fullPkgPath std.tcl
+} {0 {{std:1.0 {tclPkgSetup {std.tcl source {::std::p1 ::std::p2}}}}}}
+
+removeFile [file join direct1 direct1.tcl]
+file delete [file join $direct1 pkgIndex.tcl]
+removeDirectory direct1
+removeFile [file join pkg std.tcl]
+
+makeFile {
+#  This package requires pkg3, but it does not use any of pkg3's procs in the
+#  code that is executed by the file (i.e. references to pkg3's procs are in
+#  the proc bodies only).
+package require pkg3 1.0
+package provide pkg1 1.0
+namespace eval pkg1 {
+    namespace export p1-1 p1-2
+}
+proc pkg1::p1-1 { num } {
+    return [pkg3::p3-1 $num]
+}
+proc pkg1::p1-2 { num } {
+    return [pkg3::p3-2 $num]
+}
+} [file join pkg pkg1.tcl]
+
+makeFile {
+package provide pkg3 1.0
+namespace eval pkg3 {
+    namespace export p3-1 p3-2
+}
+proc pkg3::p3-1 { num } {
+    return {[expr $num * 2]}
+}
+proc pkg3::p3-2 { num } {
+    return {[expr $num * 3]}
+}
+} [file join pkg pkg3.tcl]
+
+test pkgMkIndex-6.1 {pkg1 requires pkg3} {
+    pkgtest::runIndex -lazy $fullPkgPath pkg1.tcl pkg3.tcl
+} {0 {{pkg1:1.0 {tclPkgSetup {pkg1.tcl source {::pkg1::p1-1 ::pkg1::p1-2}}}} {pkg3:1.0 {tclPkgSetup {pkg3.tcl source {::pkg3::p3-1 ::pkg3::p3-2}}}}}}
+
+test pkgMkIndex-6.2 {pkg1 requires pkg3 - use -direct} {
+    pkgtest::runIndex -direct $fullPkgPath pkg1.tcl pkg3.tcl
+} "0 {{pkg1:1.0 {[list source [file join $fullPkgPath pkg1.tcl]]}} {pkg3:1.0 {[list source [file join $fullPkgPath pkg3.tcl]]}}}"
+
+removeFile [file join pkg pkg1.tcl]
+
+makeFile {
+#  This package requires pkg3, and it calls a pkg3 proc in the code that is
+#  executed by the file
+package require pkg3 1.0
+package provide pkg4 1.0
+namespace eval pkg4 {
+    namespace export p4-1 p4-2
+    variable m2 [pkg3::p3-1 10]
+}
+proc pkg4::p4-1 { num } {
+    variable m2
+    return [expr {$m2 * $num}]
+}
+proc pkg4::p4-2 { num } {
+    return [pkg3::p3-2 $num]
+}
+} [file join pkg pkg4.tcl]
+
+test pkgMkIndex-7.1 {pkg4 uses pkg3} {
+    pkgtest::runIndex -lazy $fullPkgPath pkg4.tcl pkg3.tcl
+} {0 {{pkg3:1.0 {tclPkgSetup {pkg3.tcl source {::pkg3::p3-1 ::pkg3::p3-2}}}} {pkg4:1.0 {tclPkgSetup {pkg4.tcl source {::pkg4::p4-1 ::pkg4::p4-2}}}}}}
+
+test pkgMkIndex-7.2 {pkg4 uses pkg3 - use -direct} {
+    pkgtest::runIndex -direct $fullPkgPath pkg4.tcl pkg3.tcl
+} "0 {{pkg3:1.0 {[list source [file join $fullPkgPath pkg3.tcl]]}} {pkg4:1.0 {[list source [file join $fullPkgPath pkg4.tcl]]}}}"
+
+removeFile [file join pkg pkg4.tcl]
+removeFile [file join pkg pkg3.tcl]
+
+makeFile {
+#  This package requires pkg2, and it calls a pkg2 proc in the code that is
+#  executed by the file.  Pkg2 is a split package.
+package require pkg2 1.0
+package provide pkg5 1.0
+namespace eval pkg5 {
+    namespace export p5-1 p5-2
+    variable m2 [pkg2::p2-1 10]
+    variable m3 [pkg2::p2-2 10]
+}
+proc pkg5::p5-1 { num } {
+    variable m2
+    return [expr {$m2 * $num}]
+}
+proc pkg5::p5-2 { num } {
+    variable m2
+    return [expr {$m2 * $num}]
+}
+} [file join pkg pkg5.tcl]
+
+test pkgMkIndex-8.1 {pkg5 uses pkg2} {
+    pkgtest::runIndex -lazy $fullPkgPath pkg5.tcl pkg2_a.tcl pkg2_b.tcl
+} {0 {{pkg2:1.0 {tclPkgSetup {pkg2_a.tcl source ::pkg2::p2-1} {pkg2_b.tcl source ::pkg2::p2-2}}} {pkg5:1.0 {tclPkgSetup {pkg5.tcl source {::pkg5::p5-1 ::pkg5::p5-2}}}}}}
+
+test pkgMkIndex-8.2 {pkg5 uses pkg2 - use -direct} {
+    pkgtest::runIndex -direct $fullPkgPath pkg5.tcl pkg2_a.tcl pkg2_b.tcl
+} "0 {{pkg2:1.0 {[list source [file join $fullPkgPath pkg2_a.tcl]]
+[list source [file join $fullPkgPath pkg2_b.tcl]]}} {pkg5:1.0 {[list source [file join $fullPkgPath pkg5.tcl]]}}}"
+
+removeFile [file join pkg pkg5.tcl]
+removeFile [file join pkg pkg2_a.tcl]
+removeFile [file join pkg pkg2_b.tcl]
+
+makeFile {
+#  This package requires circ2, and circ2 requires circ3, which in turn
+#  requires circ1.  In case of cirularities, pkg_mkIndex should give up when
+#  it gets stuck.
+package require circ2 1.0
+package provide circ1 1.0
+namespace eval circ1 {
+    namespace export c1-1 c1-2 c1-3 c1-4
+}
+proc circ1::c1-1 { num } {
+    return [circ2::c2-1 $num]
+}
+proc circ1::c1-2 { num } {
+    return [circ2::c2-2 $num]
+}
+proc circ1::c1-3 {} {
+    return 10
+}
+proc circ1::c1-4 {} {
+    return 20
+}
+} [file join pkg circ1.tcl]
+
+makeFile {
+#  This package is required by circ1, and requires circ3. Circ3, in turn,
+#  requires circ1 to give us a circularity.
+package require circ3 1.0
+package provide circ2 1.0
+namespace eval circ2 {
+    namespace export c2-1 c2-2
+}
+proc circ2::c2-1 { num } {
+    return [expr $num * [circ3::c3-1]]
+}
+proc circ2::c2-2 { num } {
+    return [expr $num * [circ3::c3-2]]
+}
+} [file join pkg circ2.tcl]
+
+makeFile {
+#  This package is required by circ2, and in turn requires circ1. This closes
+#  the circularity.
+package require circ1 1.0
+package provide circ3 1.0
+namespace eval circ3 {
+    namespace export c3-1 c3-4
+}
+proc circ3::c3-1 {} {
+    return [circ1::c1-3]
+}
+proc circ3::c3-2 {} {
+    return [circ1::c1-4]
+}
+} [file join pkg circ3.tcl]
+
+test pkgMkIndex-9.1 {circular packages} {
+    pkgtest::runIndex -lazy $fullPkgPath circ1.tcl circ2.tcl circ3.tcl
+} {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
+
+removeFile [file join pkg circ1.tcl]
+removeFile [file join pkg circ2.tcl]
+removeFile [file join pkg circ3.tcl]
+
+# Some tests require the existence of one of the DLLs in the dltest directory
+set x [file join [file dirname [info nameofexecutable]] dltest \
+	pkga[info sharedlibextension]]
+set dll "[file tail $x]Required"
+testConstraint $dll [file exists $x]
+
+if {[testConstraint $dll]} {
+    makeFile {
+#  This package provides Pkga, which is also provided by a DLL.
+package provide Pkga 1.0
+proc pkga_neq { x } {
+    return [expr {! [pkgq_eq $x]}]
+}
+} [file join pkg pkga.tcl]
+    file copy -force $x $fullPkgPath
+}
+testConstraint exec [llength [info commands ::exec]]
+
+test pkgMkIndex-10.1 {package in DLL and script} [list exec $dll] {
+    # Do all [load]ing of shared libraries in another process, so we can
+    # delete the file and not get stuck because we're holding a reference to
+    # it.
+    set cmd [list pkg_mkIndex -lazy $fullPkgPath [file tail $x] pkga.tcl]
+    exec [interpreter] << $cmd
+    pkgtest::runCreatedIndex {0 {}} -lazy $fullPkgPath pkga[info sharedlibextension] pkga.tcl
+} "0 {{Pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
+test pkgMkIndex-10.2 {package in DLL hidden by -load} [list exec $dll] {
+    # Do all [load]ing of shared libraries in another process, so we can
+    # delete the file and not get stuck because we're holding a reference to
+    # it.
+    #
+    # This test depends on context from prior test, so repeat it.
+    set script \
+	"[list pkg_mkIndex -lazy $fullPkgPath [file tail $x] pkga.tcl]"
+    append script \n \
+	"[list pkg_mkIndex -lazy -load Pkg* $fullPkgPath [file tail $x]]"
+    exec [interpreter] << $script
+    pkgtest::runCreatedIndex {0 {}} -lazy -load Pkg* -- $fullPkgPath pkga[info sharedlibextension]
+} {0 {}}
+
+if {[testConstraint $dll]} {
+    file delete -force [file join $fullPkgPath [file tail $x]]
+    removeFile [file join pkg pkga.tcl]
+}
+
+# Tolerate "namespace import" at the global scope
+
+makeFile {
+package provide fubar 1.0
+namespace eval ::fubar:: {
+    #
+    # export only public functions.
+    #
+    namespace export {[a-z]*}
+}
+proc ::fubar::foo {bar} {
+    puts "$bar"
+    return true
+}
+namespace import ::fubar::foo
+} [file join pkg import.tcl]
+
+test pkgMkIndex-11.1 {conflicting namespace imports} {
+    pkgtest::runIndex -lazy $fullPkgPath import.tcl
+} {0 {{fubar:1.0 {tclPkgSetup {import.tcl source ::fubar::foo}}}}}
+
+removeFile [file join pkg import.tcl]
+
+# Verify that the auto load list generated is correct even when there is a
+# proc name conflict between two namespaces (ie, ::foo::baz and ::bar::baz)
+
+makeFile {
+package provide football 1.0
+namespace eval ::pro:: {
+    #
+    # export only public functions.
+    #
+    namespace export {[a-z]*}
+}
+namespace eval ::college:: {
+    #
+    # export only public functions.
+    #
+    namespace export {[a-z]*}
+}
+proc ::pro::team {} {
+    puts "go packers!"
+    return true
+}
+proc ::college::team {} {
+    puts "go badgers!"
+    return true
+}
+} [file join pkg samename.tcl]
+
+test pkgMkIndex-12.1 {same name procs in different namespace} {
+    pkgtest::runIndex -lazy $fullPkgPath samename.tcl
+} {0 {{football:1.0 {tclPkgSetup {samename.tcl source {::college::team ::pro::team}}}}}}
+
+removeFile [file join pkg samename.tcl]
+
+# Proc names with embedded spaces are properly listed (ie, correct number of
+# braces) in result
+makeFile {
+package provide spacename 1.0
+proc {a b} {} {}
+proc {c d} {} {}
+} [file join pkg spacename.tcl]
+
+test pkgMkIndex-13.1 {proc names with embedded spaces} {
+    pkgtest::runIndex -lazy $fullPkgPath spacename.tcl
+} {0 {{spacename:1.0 {tclPkgSetup {spacename.tcl source {{a b} {c d}}}}}}}
+
+removeFile [file join pkg spacename.tcl]
+
+# Test the tcl::Pkg::CompareExtension helper function
+test pkgMkIndex-14.1 {tcl::Pkg::CompareExtension} {unix} {
+    tcl::Pkg::CompareExtension foo.so .so
+} 1
+test pkgMkIndex-14.2 {tcl::Pkg::CompareExtension} {unix} {
+    tcl::Pkg::CompareExtension foo.so.bar .so
+} 0
+test pkgMkIndex-14.3 {tcl::Pkg::CompareExtension} {unix} {
+    tcl::Pkg::CompareExtension foo.so.1 .so
+} 1
+test pkgMkIndex-14.4 {tcl::Pkg::CompareExtension} {unix} {
+    tcl::Pkg::CompareExtension foo.so.1.2 .so
+} 1
+test pkgMkIndex-14.5 {tcl::Pkg::CompareExtension} {unix} {
+    tcl::Pkg::CompareExtension foo .so
+} 0
+test pkgMkIndex-14.6 {tcl::Pkg::CompareExtension} {unix} {
+    tcl::Pkg::CompareExtension foo.so.1.2.bar .so
+} 0
+
+# cleanup
+
+removeDirectory pkg
+
+namespace delete pkgtest
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

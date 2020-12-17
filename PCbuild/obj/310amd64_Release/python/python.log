@@ -1,0 +1,14 @@
+﻿  python.c
+  Generating code
+  Finished generating code
+  python.vcxproj -> C:\cpython\PCbuild\amd64\python.exe
+  Traceback (most recent call last):
+    File "C:\cpython\PC\validate_ucrtbase.py", line 8, in <module>
+      from ctypes import (c_buffer, POINTER, byref, create_unicode_buffer,
+    File "C:\cpython\Lib\ctypes\__init__.py", line 8, in <module>
+      from _ctypes import Union, Structure, Array
+  ImportError: DLL load failed while importing _ctypes: The specified procedure could not be found.
+C:\cpython\PCbuild\python.vcxproj(123,5): warning MSB3073: The command "setlocal
+C:\cpython\PCbuild\python.vcxproj(123,5): warning MSB3073: set PYTHONPATH=C:\cpython\Lib
+C:\cpython\PCbuild\python.vcxproj(123,5): warning MSB3073: "C:\cpython\PCbuild\amd64\python.exe" "C:\cpython\PC\validate_ucrtbase.py" ucrtbase" exited with code 1.
+C:\cpython\PCbuild\python.vcxproj(123,5): warning MSB4181: The "Exec" task returned false but did not log an error.

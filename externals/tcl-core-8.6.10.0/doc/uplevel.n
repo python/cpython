@@ -1,0 +1,103 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH uplevel n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+uplevel \- Execute a script in a different stack frame
+.SH SYNOPSIS
+\fBuplevel \fR?\fIlevel\fR?\fI arg \fR?\fIarg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+All of the \fIarg\fR arguments are concatenated as if they had
+been passed to \fBconcat\fR; the result is then evaluated in the
+variable context indicated by \fIlevel\fR.  \fBUplevel\fR returns
+the result of that evaluation.
+.PP
+If \fIlevel\fR is an integer then
+it gives a distance (up the procedure calling stack) to move before
+executing the command.  If \fIlevel\fR consists of \fB#\fR followed by
+a number then the number gives an absolute level number.  If \fIlevel\fR
+is omitted then it defaults to \fB1\fR.  \fILevel\fR cannot be
+defaulted if the first \fIcommand\fR argument starts with a digit or \fB#\fR.
+.PP
+For example, suppose that procedure \fBa\fR was invoked
+from top-level, and that it called \fBb\fR, and that \fBb\fR called \fBc\fR.
+Suppose that \fBc\fR invokes the \fBuplevel\fR command.  If \fIlevel\fR
+is \fB1\fR or \fB#2\fR  or omitted, then the command will be executed
+in the variable context of \fBb\fR.  If \fIlevel\fR is \fB2\fR or \fB#1\fR
+then the command will be executed in the variable context of \fBa\fR.
+If \fIlevel\fR is \fB3\fR or \fB#0\fR then the command will be executed
+at top-level (only global variables will be visible).
+.PP
+The \fBuplevel\fR command causes the invoking procedure to disappear
+from the procedure calling stack while the command is being executed.
+In the above example, suppose \fBc\fR invokes the command
+.PP
+.CS
+\fBuplevel\fR 1 {set x 43; d}
+.CE
+.PP
+where \fBd\fR is another Tcl procedure.  The \fBset\fR command will
+modify the variable \fBx\fR in \fBb\fR's context, and \fBd\fR will execute
+at level 3, as if called from \fBb\fR.  If it in turn executes
+the command
+.PP
+.CS
+\fBuplevel\fR {set x 42}
+.CE
+.PP
+then the \fBset\fR command will modify the same variable \fBx\fR in \fBb\fR's
+context:  the procedure \fBc\fR does not appear to be on the call stack
+when \fBd\fR is executing.  The \fBinfo level\fR command may
+be used to obtain the level of the current procedure.
+.PP
+\fBUplevel\fR makes it possible to implement new control
+constructs as Tcl procedures (for example, \fBuplevel\fR could
+be used to implement the \fBwhile\fR construct as a Tcl procedure).
+.PP
+The \fBnamespace eval\fR and \fBapply\fR commands offer other ways
+(besides procedure calls) that the Tcl naming context can change.
+They add a call frame to the stack to represent the namespace context.
+This means each \fBnamespace eval\fR command
+counts as another call level for \fBuplevel\fR and \fBupvar\fR commands.
+For example, \fBinfo level 1\fR will return a list
+describing a command that is either
+the outermost procedure call or the outermost \fBnamespace eval\fR command.
+Also, \fBuplevel #0\fR evaluates a script
+at top-level in the outermost namespace (the global namespace).
+.SH EXAMPLE
+As stated above, the \fBuplevel\fR command is useful for creating new
+control constructs.  This example shows how (without error handling)
+it can be used to create a \fBdo\fR command that is the counterpart of
+\fBwhile\fR except for always performing the test after running the
+loop body:
+.PP
+.CS
+proc do {body while condition} {
+    if {$while ne "while"} {
+        error "required word missing"
+    }
+    set conditionCmd [list expr $condition]
+    while {1} {
+        \fBuplevel\fR 1 $body
+        if {![\fBuplevel\fR 1 $conditionCmd]} {
+            break
+        }
+    }
+}
+.CE
+.SH "SEE ALSO"
+apply(n), namespace(n), upvar(n)
+.SH KEYWORDS
+context, level, namespace, stack frame, variable
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

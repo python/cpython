@@ -1,0 +1,1282 @@
+# Commands covered:  if
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# Basic "if" operation.
+
+catch {unset a}
+test if-1.1 {TclCompileIfCmd: missing if/elseif test} -body {
+    if
+} -returnCodes error -result {wrong # args: no expression after "if" argument}
+test if-1.2 {TclCompileIfCmd: error in if/elseif test} -body {
+    if {[error "error in condition"]} foo
+} -returnCodes error -result {error in condition}
+test if-1.3 {TclCompileIfCmd: error in if/elseif test} -body {
+    list [catch {if {1+}} msg] $msg $::errorInfo
+} -match glob -cleanup {
+    unset msg
+} -result {1 * {*"if {1+}"}}
+test if-1.4 {TclCompileIfCmd: if/elseif test in braces} -body {
+    set a {}
+    if {1<2} {set a 1}
+    return $a
+} -cleanup {
+    unset a
+} -result {1}
+test if-1.5 {TclCompileIfCmd: if/elseif test not in braces} -body {
+    set a {}
+    if 1<2 {set a 1}
+    return $a
+} -cleanup {
+    unset a
+} -result {1}
+test if-1.6 {TclCompileIfCmd: multiline test expr} -setup {
+    set a {}
+} -body {
+    if {($tcl_platform(platform) != "foobar1") && \
+	($tcl_platform(platform) != "foobar2")} {set a 3} else {set a 4}
+    return $a
+} -cleanup {
+    unset a
+} -result 3
+test if-1.7 {TclCompileIfCmd: "then" after if/elseif test} -body {
+    set a {}
+    if 4>3 then {set a 1}
+    return $a
+} -cleanup {
+    unset a
+} -result {1}
+test if-1.8 {TclCompileIfCmd: keyword other than "then" after if/elseif test} -setup {
+    set a {}
+} -body {
+    if 1<2 therefore {set a 1}
+} -cleanup {
+    unset a
+} -returnCodes error -result {invalid command name "therefore"}
+test if-1.9 {TclCompileIfCmd: missing "then" body} -setup {
+    set a {}
+} -body {
+    if 1<2 then
+} -cleanup {
+    unset a
+} -returnCodes error -result {wrong # args: no script following "then" argument}
+test if-1.10 {TclCompileIfCmd: error in "then" body} -body {
+    set a {}
+    list [catch {if {$a!="xxx"} then {set}} msg] $msg $::errorInfo
+} -match glob -cleanup {
+    unset a msg
+} -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}}
+test if-1.11 {TclCompileIfCmd: error in "then" body} -body {
+    if 2 then {[error "error in then clause"]}
+} -returnCodes error -result {error in then clause}
+test if-1.12 {TclCompileIfCmd: "then" body in quotes} -body {
+    set a {}
+    if 27>17 "append a x"
+    return $a
+} -cleanup {
+    unset a
+} -result {x}
+test if-1.13 {TclCompileIfCmd: computed "then" body} -setup {
+    catch {unset x1}
+    catch {unset x2}
+} -body {
+    set x1 {append a x1}
+    set x2 {; append a x2}
+    set a {}
+    if 1 $x1$x2
+    return $a
+} -cleanup {
+    unset a x1 x2
+} -result {x1x2}
+test if-1.14 {TclCompileIfCmd: taking proper branch} -body {
+    set a {}
+    if 1<2 {set a 1}
+    return $a
+} -cleanup {
+    unset a
+} -result 1
+test if-1.15 {TclCompileIfCmd: taking proper branch} -body {
+    set a {}
+    if 1>2 {set a 1}
+    return $a
+} -cleanup {
+    unset a
+} -result {}
+test if-1.16 {TclCompileIfCmd: test jumpFalse instruction replacement after long "then" body} -setup {
+    catch {unset i}
+    set a {}
+} -body {
+    if 1<2 {
+	set a 1
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 2
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 3
+    }
+    return $a
+} -cleanup {
+    unset a
+    unset -nocomplain i
+} -result 3
+test if-1.17 {TclCompileIfCmd: if/elseif test in quotes} -setup {
+    set a {}
+} -body {
+    if {"0 < 3"} {set a 1}
+} -returnCodes error -cleanup {
+    unset a
+} -result {expected boolean value but got "0 < 3"}
+
+test if-2.1 {TclCompileIfCmd: "elseif" after if/elseif test} -setup {
+    set a {}
+} -body {
+    if 3>4 {set a 1} elseif 1 {set a 2}
+    return $a
+} -cleanup {
+    unset a
+} -result {2}
+# Since "else" is optional, the "elwood" below is treated as a command.
+# But then there shouldn't be any additional argument words for the "if".
+test if-2.2 {TclCompileIfCmd: keyword other than "elseif"} -setup {
+    set a {}
+} -body {
+    if 1<2 {set a 1} elwood {set a 2}
+} -returnCodes error -cleanup {
+    unset a
+} -result {wrong # args: extra words after "else" clause in "if" command}
+test if-2.3 {TclCompileIfCmd: missing expression after "elseif"} -setup {
+    set a {}
+} -body {
+    if 1<2 {set a 1} elseif
+} -returnCodes error -cleanup {
+    unset a
+} -result {wrong # args: no expression after "elseif" argument}
+test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} -setup {
+    set a {}
+} -body {
+    list [catch {if 3>4 {set a 1} elseif {1>}} msg] $msg $::errorInfo
+} -match glob -cleanup {
+    unset a msg
+} -result {1 * {*"if 3>4 {set a 1} elseif {1>}"}}
+test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long "elseif" body} -setup {
+    catch {unset i}
+    set a {}
+} -body {
+    if 1>2 {
+	set a 1
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 2
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 3
+    } elseif 1<2 then { #; this if arm should be taken
+	set a 4
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 5
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 6
+    }
+    return $a
+} -cleanup {
+    unset a
+    unset -nocomplain i
+} -result 6
+
+test if-3.1 {TclCompileIfCmd: "else" clause} -body {
+    set a {}
+    if 3>4 {set a 1} elseif {$a == "foo"} {set a 2} else {set a 3}
+    return $a
+} -cleanup {
+    unset a
+} -result 3
+# Since "else" is optional, the "elsex" below is treated as a command.
+# But then there shouldn't be any additional argument words for the "if".
+test if-3.2 {TclCompileIfCmd: keyword other than "else"} -setup {
+    set a {}
+} -body {
+    if 1<2 then {set a 1} elsex {set a 2}
+} -returnCodes error -cleanup {
+    unset a
+} -result {wrong # args: extra words after "else" clause in "if" command}
+test if-3.3 {TclCompileIfCmd: missing body after "else"} -setup {
+    set a {}
+} -body {
+    if 2<1 {set a 1} else
+} -returnCodes error -cleanup {
+    unset a
+} -result {wrong # args: no script following "else" argument}
+test if-3.4 {TclCompileIfCmd: error compiling body after "else"} -setup {
+    set a {}
+} -body {
+    catch {if 2<1 {set a 1} else {set}}
+    set ::errorInfo
+} -match glob -cleanup {
+    unset a
+} -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+test if-3.5 {TclCompileIfCmd: extra arguments after "else" argument} -setup {
+    set a {}
+} -body {
+    if 2<1 {set a 1} else {set a 2} or something
+} -returnCodes error -cleanup {
+    unset a
+} -result {wrong # args: extra words after "else" clause in "if" command}
+# The following test also checks whether contained loops and other
+# commands are properly relocated because a short jump must be replaced
+# by a "long distance" one.
+test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long "else" clause} -setup {
+    catch {unset i}
+    set a {}
+} -body {
+    if 1>2 {
+	set a 1
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 2
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 3
+    } elseif 1==2 then { #; this if arm should be taken
+	set a 4
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 5
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 6
+    } else {
+	set a 7
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 8
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		if {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 9
+    }
+    return $a
+} -cleanup {
+    unset a
+    unset -nocomplain i
+} -result 9
+
+test if-4.1 {TclCompileIfCmd: "if" command result} -setup {
+    set a {}
+} -body {
+    set a [if 3<4 {set i 27}]
+    return $a
+} -cleanup {
+    unset a
+    unset -nocomplain i
+} -result 27
+test if-4.2 {TclCompileIfCmd: "if" command result} -setup {
+    set a {}
+} -body {
+    set a [if 3>4 {set i 27}]
+    return $a
+} -cleanup {
+    unset a
+    unset -nocomplain i
+} -result {}
+test if-4.3 {TclCompileIfCmd: "if" command result} -setup {
+    set a {}
+} -body {
+    set a [if 0 {set i 1} elseif 1 {set i 2}]
+    return $a
+} -cleanup {
+    unset a
+    unset -nocomplain i
+} -result 2
+test if-4.4 {TclCompileIfCmd: "if" command result} -setup {
+    set a {}
+} -body {
+    set a [if 0 {set i 1} elseif 0 {set i 2} elseif 2>5 {set i 3} else {set i 4}]
+    return $a
+} -cleanup {
+    unset a i
+} -result 4
+test if-4.5 {TclCompileIfCmd: return value} -body {
+    if 0 then {set a 22; concat abc} elseif 1 {concat def} {concat ghi}
+} -cleanup {
+    unset -nocomplain a
+} -result def
+
+# Check "if" and computed command names.
+
+test if-5.1 {if cmd with computed command names: missing if/elseif test} -body {
+    set z if
+    $z
+} -returnCodes error -cleanup {
+    unset z
+} -result {wrong # args: no expression after "if" argument}
+test if-5.2 {if cmd with computed command names: error in if/elseif test} -body {
+    set z if
+    $z {[error "error in condition"]} foo
+} -returnCodes error -cleanup {
+    unset z
+} -result {error in condition}
+test if-5.3 {if cmd with computed command names: error in if/elseif test} -body {
+    set z if
+    list [catch {$z {1+}}] $::errorInfo
+} -match glob -cleanup {
+    unset z
+} -result {1 {*"$z {1+}"}}
+test if-5.4 {if cmd with computed command names: if/elseif test in braces} -setup {
+    set a {}
+} -body {
+    set z if
+    $z {1<2} {set a 1}
+    return $a
+} -cleanup {
+    unset a z
+} -result {1}
+test if-5.5 {if cmd with computed command names: if/elseif test not in braces} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 {set a 1}
+    return $a
+} -cleanup {
+    unset a z
+} -result {1}
+test if-5.6 {if cmd with computed command names: multiline test expr} -body {
+    set z if
+    $z {($tcl_platform(platform) != "foobar1") && \
+	($tcl_platform(platform) != "foobar2")} {set a 3} else {set a 4}
+    return $a
+} -cleanup {
+    unset a z
+} -result 3
+test if-5.7 {if cmd with computed command names: "then" after if/elseif test} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 4>3 then {set a 1}
+    return $a
+} -cleanup {
+    unset a z
+} -result {1}
+test if-5.8 {if cmd with computed command names: keyword other than "then" after if/elseif test} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 therefore {set a 1}
+} -returnCodes error -cleanup {
+    unset a z
+} -result {invalid command name "therefore"}
+test if-5.9 {if cmd with computed command names: missing "then" body} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 then
+} -returnCodes error -cleanup {
+    unset a z
+} -result {wrong # args: no script following "then" argument}
+test if-5.10 {if cmd with computed command names: error in "then" body} -body {
+    set z if
+    set a {}
+    list [catch {$z {$a!="xxx"} then {set}} msg] $msg $::errorInfo
+} -match glob -cleanup {
+    unset a z msg
+} -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"
+    invoked from within
+"$z {$a!="xxx"} then {set}"}}
+test if-5.11 {if cmd with computed command names: error in "then" body} -body {
+    set z if
+    $z 2 then {[error "error in then clause"]}
+} -returnCodes error -cleanup {
+    unset z
+} -result {error in then clause}
+test if-5.12 {if cmd with computed command names: "then" body in quotes} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 27>17 "append a x"
+    return $a
+} -cleanup {
+    unset a z
+} -result {x}
+test if-5.13 {if cmd with computed command names: computed "then" body} -setup {
+    catch {unset x1}
+    catch {unset x2}
+} -body {
+    set z if
+    set x1 {append a x1}
+    set x2 {; append a x2}
+    set a {}
+    $z 1 $x1$x2
+    return $a
+} -cleanup {
+    unset a z x1 x2
+} -result {x1x2}
+test if-5.14 {if cmd with computed command names: taking proper branch} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 {set a 1}
+    return $a
+} -cleanup {
+    unset a z
+} -result 1
+test if-5.15 {if cmd with computed command names: taking proper branch} -body {
+    set a {}
+    set z if
+    $z 1>2 {set a 1}
+    return $a
+} -cleanup {
+    unset a z
+} -result {}
+test if-5.16 {if cmd with computed command names: test jumpFalse instruction replacement after long "then" body} -setup {
+    catch {unset i}
+    set a {}
+} -body {
+    set z if
+    $z 1<2 {
+	set a 1
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 2
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 3
+    }
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result 3
+test if-5.17 {if cmd with computed command names: if/elseif test in quotes} -setup {
+    set a {}
+} -body {
+    set z if
+    $z {"0 < 3"} {set a 1}
+} -returnCodes error -cleanup {
+    unset a z
+} -result {expected boolean value but got "0 < 3"}
+
+test if-6.1 {if cmd with computed command names: "elseif" after if/elseif test} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 3>4 {set a 1} elseif 1 {set a 2}
+    return $a
+} -cleanup {
+    unset a z
+} -result {2}
+# Since "else" is optional, the "elwood" below is treated as a command.
+# But then there shouldn't be any additional argument words for the "if".
+test if-6.2 {if cmd with computed command names: keyword other than "elseif"} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 {set a 1} elwood {set a 2}
+} -returnCodes error -cleanup {
+    unset a z
+} -result {wrong # args: extra words after "else" clause in "if" command}
+test if-6.3 {if cmd with computed command names: missing expression after "elseif"} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 {set a 1} elseif
+} -returnCodes error -cleanup {
+    unset a z
+} -result {wrong # args: no expression after "elseif" argument}
+test if-6.4 {if cmd with computed command names: error in expression after "elseif"} -setup {
+    set a {}
+} -body {
+    set z if
+    list [catch {$z 3>4 {set a 1} elseif {1>}}] $::errorInfo
+} -match glob -cleanup {
+    unset a z
+} -result {1 {*"$z 3>4 {set a 1} elseif {1>}"}}
+test if-6.5 {if cmd with computed command names: test jumpFalse instruction replacement after long "elseif" body} -setup {
+    catch {unset i}
+    set a {}
+} -body {
+    set z if
+    $z 1>2 {
+	set a 1
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 2
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 3
+    } elseif 1<2 then { #; this if arm should be taken
+	set a 4
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 5
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 6
+    }
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result 6
+
+test if-7.1 {if cmd with computed command names: "else" clause} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 3>4 {set a 1} elseif {$a == "foo"} {set a 2} else {set a 3}
+    return $a
+} -cleanup {
+    unset a z
+} -result 3
+# Since "else" is optional, the "elsex" below is treated as a command.
+# But then there shouldn't be any additional argument words for the "if".
+test if-7.2 {if cmd with computed command names: keyword other than "else"} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 1<2 then {set a 1} elsex {set a 2}
+} -returnCodes error -cleanup {
+    unset a z
+} -result {wrong # args: extra words after "else" clause in "if" command}
+test if-7.3 {if cmd with computed command names: missing body after "else"} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 2<1 {set a 1} else
+} -returnCodes error -cleanup {
+    unset a z
+} -result {wrong # args: no script following "else" argument}
+test if-7.4 {if cmd with computed command names: error compiling body after "else"} -setup {
+    set a {}
+} -body {
+    set z if
+    catch {$z 2<1 {set a 1} else {set}}
+    return $::errorInfo
+} -match glob -cleanup {
+    unset a z
+} -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"
+    invoked from within
+"$z 2<1 {set a 1} else {set}"}
+test if-7.5 {if cmd with computed command names: extra arguments after "else" argument} -setup {
+    set a {}
+} -body {
+    set z if
+    $z 2<1 {set a 1} else {set a 2} or something
+} -returnCodes error -cleanup {
+    unset a z
+} -result {wrong # args: extra words after "else" clause in "if" command}
+# The following test also checks whether contained loops and other
+# commands are properly relocated because a short jump must be replaced
+# by a "long distance" one.
+test if-7.6 {if cmd with computed command names: test jumpFalse instruction replacement after long "else" clause} -setup {
+    catch {unset i}
+    set a {}
+} -body {
+    set z if
+    $z 1>2 {
+	set a 1
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 2
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 3
+    } elseif 1==2 then { #; this if arm should be taken
+	set a 4
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 5
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 6
+    } else {
+	set a 7
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 8
+	while {$a != "xxx"} {
+	    break;
+	    while {$i >= 0} {
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		$z {[string compare $a "bar"] < 0} {
+		    set i $i
+		    set i [lindex $s $i]
+		}
+		set i [expr $i-1]
+	    }
+	}
+	set a 9
+    }
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result 9
+
+test if-8.1 {if cmd with computed command names: "if" command result} -setup {
+    set a {}
+} -body {
+    set z if
+    set a [$z 3<4 {set i 27}]
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result 27
+test if-8.2 {if cmd with computed command names: "if" command result} -setup {
+    set a {}
+} -body {
+    set z if
+    set a [$z 3>4 {set i 27}]
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result {}
+test if-8.3 {if cmd with computed command names: "if" command result} -setup {
+    set a {}
+} -body {
+    set z if
+    set a [$z 0 {set i 1} elseif 1 {set i 2}]
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result 2
+test if-8.4 {if cmd with computed command names: "if" command result} -setup {
+    set a {}
+} -body {
+    set z if
+    set a [$z 0 {set i 1} elseif 0 {set i 2} elseif 2>5 {set i 3} else {set i 4}]
+    return $a
+} -cleanup {
+    unset a z
+    unset -nocomplain i
+} -result 4
+test if-8.5 {if cmd with computed command names: return value} -body {
+    set z if
+    $z 0 then {set a 22; concat abc} elseif 1 {concat def} {concat ghi}
+} -cleanup {
+    unset z
+    unset -nocomplain a
+} -result def
+
+test if-9.1 {if cmd with namespace qualifiers} -body {
+    ::if {1} {set x 4}
+} -cleanup {
+    unset x
+} -result 4
+
+# Test for incorrect "double evaluation semantics"
+
+test if-10.1 {delayed substitution of then body} -body {
+    set j 0
+    set if if
+    # this is not compiled
+    $if {[incr j] == 1} "
+       set result $j
+    "
+    # this will be compiled
+    proc p {} {
+	set j 0
+	if {[incr j]} "
+	    set result $j
+	"
+	set result
+    }
+    append result [p]
+} -cleanup {
+    unset j if result
+    rename p {}
+} -result {00}
+test if-10.2 {delayed substitution of elseif expression} -body {
+    set j 0
+    set if if
+    # this is not compiled
+    $if {[incr j] == 0} {
+       set result badthen
+    } elseif "$j == 1" {
+       set result badelseif
+    } else {
+       set result 0
+    }
+    # this will be compiled
+    proc p {} {
+	set j 0
+	if {[incr j] == 0} {
+	    set result badthen
+	} elseif "$j == 1" {
+	    set result badelseif
+	} else {
+	    set result 0
+	}
+	set result
+    }
+    append result [p]
+} -cleanup {
+    unset j if result
+    rename p {}
+} -result {00}
+test if-10.3 {delayed substitution of elseif body} -body {
+    set j 0
+    set if if
+    # this is not compiled
+    $if {[incr j] == 0} {
+       set result badthen
+    } elseif {1} "
+       set result $j
+    "
+    # this will be compiled
+    proc p {} {
+	set j 0
+	if {[incr j] == 0} {
+	    set result badthen
+	} elseif {1} "
+	    set result $j
+	"
+    }
+    append result [p]
+} -cleanup {
+    unset j if result
+    rename p {}
+} -result {00}
+test if-10.4 {delayed substitution of else body} -body {
+    set j 0
+    if {[incr j] == 0} {
+       set result badthen
+    } else "
+       set result $j
+    "
+    return $result
+} -cleanup {
+    unset j result
+} -result {0}
+test if-10.5 {substituted control words} -body {
+    set then then; proc then {} {return badthen}
+    set else else; proc else {} {return badelse}
+    set elseif elseif; proc elseif {} {return badelseif}
+    list [catch {if 1 $then {if 0 {} $elseif 1 {if 0 {} $else {list ok}}}} a] $a
+} -cleanup {
+    unset then else elseif a
+} -result {0 ok}
+test if-10.6 {double invocation of variable traces} -body {
+    set iftracecounter 0
+    proc iftraceproc {args} {
+       upvar #0 iftracecounter counter
+       set argc [llength $args]
+       set extraargs [lrange $args 0 [expr {$argc - 4}]]
+       set name [lindex $args [expr {$argc - 3}]]
+       upvar 1 $name var
+       if {[incr counter] % 2 == 1} {
+           set var "$counter oops [concat $extraargs]"
+       } else {
+           set var "$counter + [concat $extraargs]"
+       }
+    }
+    trace variable iftracevar r [list iftraceproc 10]
+    list [catch {if "$iftracevar + 20" {}} a] $a \
+        [catch {if "$iftracevar + 20" {}} b] $b
+} -cleanup {
+    unset iftracevar iftracecounter a b
+} -match glob -result {1 {*} 0 {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

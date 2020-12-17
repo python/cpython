@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_InternAtom 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_InternAtom, Tk_GetAtomName \- manage cache of X atoms
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Atom
+\fBTk_InternAtom(\fItkwin, name\fR)
+.sp
+const char *
+\fBTk_GetAtomName(\fItkwin, atom\fR)
+.SH ARGUMENTS
+.AS Tk_Window parent
+.AP Tk_Window tkwin in
+Token for window.  Used to map atom or name relative to a particular display.
+.AP "const char" *name in
+String name for which atom is desired.
+.AP Atom atom in
+Atom for which corresponding string name is desired.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures are similar to the Xlib procedures
+\fBXInternAtom\fR and \fBXGetAtomName\fR.  \fBTk_InternAtom\fR
+returns the atom identifier associated with string given by
+\fIname\fR;  the atom identifier is only valid for the display
+associated with \fItkwin\fR.
+\fBTk_GetAtomName\fR returns the string associated
+with \fIatom\fR on \fItkwin\fR's display.  The string returned
+by \fBTk_GetAtomName\fR is in Tk's storage:  the caller need
+not free this space when finished with the string, and the caller
+should not modify the contents of the returned string.
+If there is no atom \fIatom\fR on \fItkwin\fR's display,
+then \fBTk_GetAtomName\fR returns the string
+.QW "?bad atom?" .
+.PP
+Tk caches
+the information returned by \fBTk_InternAtom\fR and \fBTk_GetAtomName\fR
+so that future calls
+for the same information can be serviced from the cache without
+contacting the server.  Thus \fBTk_InternAtom\fR and \fBTk_GetAtomName\fR
+are generally much faster than their Xlib counterparts, and they
+should be used in place of the Xlib procedures.
+.SH KEYWORDS
+atom, cache, display

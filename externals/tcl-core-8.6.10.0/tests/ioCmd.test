@@ -1,0 +1,3853 @@
+# -*- tcl -*-
+# Commands covered: open, close, gets, read, puts, seek, tell, eof, flush,
+#		    fblocked, fconfigure, open, channel, fcopy
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1991-1994 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+package require tcltests
+
+# Custom constraints used in this file
+testConstraint testchannel	[llength [info commands testchannel]]
+
+#----------------------------------------------------------------------
+
+test iocmd-1.1 {puts command} {
+   list [catch {puts} msg] $msg
+} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+test iocmd-1.2 {puts command} {
+   list [catch {puts a b c d e f g} msg] $msg
+} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+test iocmd-1.3 {puts command} {
+   list [catch {puts froboz -nonewline kablooie} msg] $msg
+} {1 {wrong # args: should be "puts ?-nonewline? ?channelId? string"}}
+test iocmd-1.4 {puts command} {
+   list [catch {puts froboz hello} msg] $msg
+} {1 {can not find channel named "froboz"}}
+test iocmd-1.5 {puts command} {
+   list [catch {puts stdin hello} msg] $msg
+} {1 {channel "stdin" wasn't opened for writing}}
+
+set path(test1) [makeFile {} test1]
+
+test iocmd-1.6 {puts command} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf -eofchar {}
+    puts -nonewline $f foobar
+    close $f
+    file size $path(test1)
+} 6
+test iocmd-1.7 {puts command} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf -eofchar {}
+    puts $f foobar
+    close $f
+    file size $path(test1)
+} 7
+test iocmd-1.8 {puts command} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf -eofchar {} -encoding iso8859-1
+    puts -nonewline $f [binary format a4a5 foo bar]
+    close $f
+    file size $path(test1)
+} 9
+
+test iocmd-2.1 {flush command} {
+   list [catch {flush} msg] $msg
+} {1 {wrong # args: should be "flush channelId"}}
+test iocmd-2.2 {flush command} {
+   list [catch {flush a b c d e} msg] $msg
+} {1 {wrong # args: should be "flush channelId"}}
+test iocmd-2.3 {flush command} {
+   list [catch {flush foo} msg] $msg
+} {1 {can not find channel named "foo"}}
+test iocmd-2.4 {flush command} {
+   list [catch {flush stdin} msg] $msg
+} {1 {channel "stdin" wasn't opened for writing}}
+
+test iocmd-3.1 {gets command} {
+   list [catch {gets} msg] $msg
+} {1 {wrong # args: should be "gets channelId ?varName?"}}
+test iocmd-3.2 {gets command} {
+   list [catch {gets a b c d e f g} msg] $msg
+} {1 {wrong # args: should be "gets channelId ?varName?"}}
+test iocmd-3.3 {gets command} {
+   list [catch {gets aaa} msg] $msg
+} {1 {can not find channel named "aaa"}}
+test iocmd-3.4 {gets command} {
+   list [catch {gets stdout} msg] $msg
+} {1 {channel "stdout" wasn't opened for reading}}
+test iocmd-3.5 {gets command} {
+    set f [open $path(test1) w]
+    puts $f [binary format a4a5 foo bar]
+    close $f
+    set f [open $path(test1) r]
+    set result [gets $f]
+    close $f
+    set x foo\x00
+    set x "${x}bar\x00\x00"
+    string compare $x $result
+} 0
+
+test iocmd-4.1 {read command} {
+   list [catch {read} msg] $msg
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+test iocmd-4.2 {read command} {
+   list [catch {read a b c d e f g h} msg] $msg
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+test iocmd-4.3 {read command} {
+   list [catch {read aaa} msg] $msg
+} {1 {can not find channel named "aaa"}}
+test iocmd-4.4 {read command} {
+   list [catch {read -nonewline} msg] $msg
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
+test iocmd-4.5 {read command} {
+   list [catch {read -nonew file4} msg] $msg $::errorCode
+} {1 {can not find channel named "-nonew"} {TCL LOOKUP CHANNEL -nonew}}
+test iocmd-4.6 {read command} {
+   list [catch {read stdout} msg] $msg
+} {1 {channel "stdout" wasn't opened for reading}}
+test iocmd-4.7 {read command} {
+   list [catch {read -nonewline stdout} msg] $msg
+} {1 {channel "stdout" wasn't opened for reading}}
+test iocmd-4.8 {read command with incorrect combination of arguments} {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    puts $f "Two lines: this one"
+    puts $f "and this one"
+    close $f
+    set f [open $path(test1)]
+    set x [list [catch {read -nonewline $f 20 z} msg] $msg $::errorCode]
+    close $f
+    set x
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} {TCL WRONGARGS}}
+test iocmd-4.9 {read command} {
+    list [catch {read stdin foo} msg] $msg $::errorCode
+} {1 {expected non-negative integer but got "foo"} {TCL VALUE NUMBER}}
+test iocmd-4.10 {read command} {
+    list [catch {read file107} msg] $msg $::errorCode
+} {1 {can not find channel named "file107"} {TCL LOOKUP CHANNEL file107}}
+set path(test3) [makeFile {} test3]
+test iocmd-4.11 {read command} {
+    set f [open $path(test3) w]
+    set x [list [catch {read $f} msg] $msg $::errorCode]
+    close $f
+    string compare [string tolower $x] \
+	[list 1 [format "channel \"%s\" wasn't opened for reading" $f] none]
+} 0
+test iocmd-4.12 {read command} -setup {
+    set f [open $path(test1)]
+} -body {
+    list [catch {read $f 12z} msg] $msg $::errorCode
+} -cleanup {
+    close $f
+} -result {1 {expected non-negative integer but got "12z"} {TCL VALUE NUMBER}}
+
+test iocmd-5.1 {seek command} -returnCodes error -body {
+    seek
+} -result {wrong # args: should be "seek channelId offset ?origin?"}
+test iocmd-5.2 {seek command} -returnCodes error -body {
+    seek a b c d e f g
+} -result {wrong # args: should be "seek channelId offset ?origin?"}
+test iocmd-5.3 {seek command} -returnCodes error -body {
+    seek stdin gugu
+} -result {expected integer but got "gugu"}
+test iocmd-5.4 {seek command} -returnCodes error -body {
+    seek stdin 100 gugu
+} -result {bad origin "gugu": must be start, current, or end}
+
+test iocmd-6.1 {tell command} {
+    list [catch {tell} msg] $msg
+} {1 {wrong # args: should be "tell channelId"}}
+test iocmd-6.2 {tell command} {
+    list [catch {tell a b c d e} msg] $msg
+} {1 {wrong # args: should be "tell channelId"}}
+test iocmd-6.3 {tell command} {
+    list [catch {tell aaa} msg] $msg
+} {1 {can not find channel named "aaa"}}
+
+test iocmd-7.1 {close command} {
+    list [catch {close} msg] $msg
+} {1 {wrong # args: should be "close channelId ?direction?"}}
+test iocmd-7.2 {close command} {
+    list [catch {close a b c d e} msg] $msg
+} {1 {wrong # args: should be "close channelId ?direction?"}}
+test iocmd-7.3 {close command} {
+    list [catch {close aaa} msg] $msg
+} {1 {can not find channel named "aaa"}}
+test iocmd-7.4 {close command} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan bar
+} -cleanup {
+    close $chan
+} -returnCodes error -result "bad direction \"bar\": must be read or write"
+test iocmd-7.5 {close command} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan write
+} -cleanup {
+    close $chan
+} -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
+
+test iocmd-8.1 {fconfigure command} {
+    list [catch {fconfigure} msg] $msg
+} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
+test iocmd-8.2 {fconfigure command} {
+    list [catch {fconfigure a b c d e f} msg] $msg
+} {1 {wrong # args: should be "fconfigure channelId ?-option value ...?"}}
+test iocmd-8.3 {fconfigure command} {
+    list [catch {fconfigure a b} msg] $msg
+} {1 {can not find channel named "a"}}
+test iocmd-8.4 {fconfigure command} {
+    file delete $path(test1)
+    set f1 [open $path(test1) w]
+    set x [list [catch {fconfigure $f1 froboz} msg] $msg]
+    close $f1
+    set x
+} {1 {bad option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+test iocmd-8.5 {fconfigure command} {
+    list [catch {fconfigure stdin -buffering froboz} msg] $msg
+} {1 {bad value for -buffering: must be one of full, line, or none}}
+test iocmd-8.6 {fconfigure command} {
+    list [catch {fconfigure stdin -translation froboz} msg] $msg
+} {1 {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}}
+test iocmd-8.7 {fconfigure command} {
+    file delete $path(test1)
+    set f1 [open $path(test1) w]
+    fconfigure $f1 -translation lf -eofchar {} -encoding unicode
+    set x [fconfigure $f1]
+    close $f1
+    set x
+} {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
+test iocmd-8.8 {fconfigure command} {
+    file delete $path(test1)
+    set f1 [open $path(test1) w]
+    fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
+		-eofchar {} -encoding unicode
+    set x ""
+    lappend x [fconfigure $f1 -buffering]
+    lappend x [fconfigure $f1]
+    close $f1
+    set x
+} {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
+test iocmd-8.9 {fconfigure command} {
+    file delete $path(test1)
+    set f1 [open $path(test1) w]
+    fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
+		-eofchar {} -encoding binary
+    set x [fconfigure $f1]
+    close $f1
+    set x
+} {-blocking 1 -buffering none -buffersize 4040 -encoding binary -eofchar {} -translation lf}
+test iocmd-8.10 {fconfigure command} {
+    list [catch {fconfigure a b} msg] $msg
+} {1 {can not find channel named "a"}}
+set path(fconfigure.dummy) [makeFile {} fconfigure.dummy]
+test iocmd-8.11 {fconfigure command} {
+    set chan [open $path(fconfigure.dummy) r]
+    set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
+    close $chan
+    set res
+} {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+test iocmd-8.12 {fconfigure command} {
+    set chan [open $path(fconfigure.dummy) r]
+    set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
+    close $chan
+    set res
+} {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+test iocmd-8.13 {fconfigure command} {
+    set chan [open $path(fconfigure.dummy) r]
+    set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
+    close $chan
+    set res
+} {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+removeFile fconfigure.dummy
+test iocmd-8.14 {fconfigure command} {
+    fconfigure stdin -buffers
+} 4096
+test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrWin} -setup {
+    set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
+    set port [lindex [fconfigure $srv -sockname] 2]
+    proc iocmdSRV {sock ip port} {close $sock}
+    set cli [socket 127.0.0.1 $port]
+} -body {
+    fconfigure $cli -blah
+} -cleanup {
+    close $cli
+    close $srv
+    unset cli srv port
+    rename iocmdSRV {}
+} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -connecting, -peername, or -sockname}
+test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
+    set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
+    set port [lindex [fconfigure $srv -sockname] 2]
+    proc iocmdSRV {sock ip port} {close $sock}
+    set cli [socket 127.0.0.1 $port]
+} -body {
+    expr {[lindex [fconfigure $cli -peername] 2] == $port}
+} -cleanup {
+    close $cli
+    close $srv
+    unset cli srv port
+    rename iocmdSRV {}
+} -result 1
+test iocmd-8.17 {fconfigure command / tcp channel} -constraints nonPortable -setup {
+    set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
+    set port [lindex [fconfigure $srv -sockname] 2]
+    proc iocmdSRV {sock ip port} {close $sock}
+    set cli [socket 127.0.0.1 $port]
+} -body {
+    # It is possible that you don't get the connection reset by peer
+    # error but rather a valid answer. Depends on the tcp implementation
+    update
+    puts $cli "blah"
+    flush $cli;			# that flush could/should fail too
+    update
+    regsub -all {can([^:])+: } [catch {fconfigure $cli -peername} msg] {}
+} -cleanup {
+    close $cli
+    close $srv
+    unset cli srv port
+    rename iocmdSRV {}
+} -result 1
+test iocmd-8.18 {fconfigure command / unix tty channel} -constraints {nonPortable unix} -setup {
+    set tty ""
+} -body {
+    # might fail if /dev/ttya is unavailable
+    set tty [open /dev/ttya]
+    fconfigure $tty -blah blih
+} -cleanup {
+    if {$tty ne ""} {
+	close $tty
+    }
+} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, or -mode}
+test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable win} -setup {
+    set tty ""
+} -body {
+    # might fail early if com1 is unavailable
+    set tty [open com1]
+    fconfigure $tty -blah blih
+} -cleanup {
+    if {$tty ne ""} {
+	close $tty
+    }
+} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -mode, -handshake, -pollinterval, -sysbuffer, -timeout, -ttycontrol, or -xchar}
+# TODO: Test parsing of serial channel options (nonPortable, since requires an
+# open channel to work with).
+
+test iocmd-9.1 {eof command} {
+    list [catch {eof} msg] $msg $::errorCode
+} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
+test iocmd-9.2 {eof command} {
+    list [catch {eof a b} msg] $msg $::errorCode
+} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
+test iocmd-9.3 {eof command} {
+    catch {close file100}
+    list [catch {eof file100} msg] $msg $::errorCode
+} {1 {can not find channel named "file100"} {TCL LOOKUP CHANNEL file100}}
+
+# The tests for Tcl_ExecObjCmd are in exec.test
+
+test iocmd-10.1 {fblocked command} {
+    list [catch {fblocked} msg] $msg
+} {1 {wrong # args: should be "fblocked channelId"}}
+test iocmd-10.2 {fblocked command} {
+    list [catch {fblocked a b c d e f g} msg] $msg
+} {1 {wrong # args: should be "fblocked channelId"}}
+test iocmd-10.3 {fblocked command} {
+    list [catch {fblocked file1000} msg] $msg
+} {1 {can not find channel named "file1000"}}
+test iocmd-10.4 {fblocked command} {
+    list [catch {fblocked stdout} msg] $msg
+} {1 {channel "stdout" wasn't opened for reading}}
+test iocmd-10.5 {fblocked command} {
+    fblocked stdin
+} 0
+
+set path(test4) [makeFile {} test4]
+set path(test5) [makeFile {} test5]
+
+test iocmd-11.1 {I/O to command pipelines} {unixOrWin unixExecs} {
+    set f [open $path(test4) w]
+    close $f
+    list [catch {open "| cat < \"$path(test4)\" > \"$path(test5)\"" w} msg] $msg $::errorCode
+} {1 {can't write input to command: standard input was redirected} {TCL OPERATION EXEC BADREDIRECT}}
+test iocmd-11.2 {I/O to command pipelines} {unixOrWin unixExecs} {
+    list [catch {open "| echo > \"$path(test5)\"" r} msg] $msg $::errorCode
+} {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
+test iocmd-11.3 {I/O to command pipelines} {unixOrWin unixExecs} {
+    list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
+} {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
+test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrWin} {
+    list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
+} {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
+
+test iocmd-12.1 {POSIX open access modes: RDONLY} {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    puts $f "Two lines: this one"
+    puts $f "and this one"
+    close $f
+    set f [open $path(test1) RDONLY]
+    set x [list [gets $f] [catch {puts $f Test} msg] $msg]
+    close $f
+    string compare $x \
+	"{Two lines: this one} 1 [list [format "channel \"%s\" wasn't opened for writing" $f]]"
+} 0
+test iocmd-12.2 {POSIX open access modes: RDONLY} -match regexp -body {
+    file delete $path(test3)
+    open $path(test3) RDONLY
+} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
+    file delete $path(test3)
+    open $path(test3) WRONLY
+} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+#
+# Test 13.4 relies on assigning the same channel name twice.
+#
+test iocmd-12.4 {POSIX open access modes: WRONLY} {unix} {
+    file delete $path(test3)
+    set f [open $path(test3) w]
+    fconfigure $f -eofchar {}
+    puts $f xyzzy
+    close $f
+    set f [open $path(test3) WRONLY]
+    fconfigure $f -eofchar {}
+    puts -nonewline $f "ab"
+    seek $f 0 current
+    set x [list [catch {gets $f} msg] $msg]
+    close $f
+    set f [open $path(test3) r]
+    fconfigure $f -eofchar {}
+    lappend x [gets $f]
+    close $f
+    set y [list 1 [format "channel \"%s\" wasn't opened for reading" $f] abzzy]
+    string compare $x $y
+} 0
+test iocmd-12.5 {POSIX open access modes: RDWR} -match regexp -body {
+    file delete $path(test3)
+    open $path(test3) RDWR
+} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+test iocmd-12.6 {POSIX open access modes: errors} {
+    concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$::errorInfo
+} "1 unmatched open brace in list
+unmatched open brace in list
+    while processing open access modes \"FOO {BAR BAZ\"
+    invoked from within
+\"open \$path(test3) \"FOO \\{BAR BAZ\"\""
+test iocmd-12.7 {POSIX open access modes: errors} {
+  list [catch {open $path(test3) {FOO BAR BAZ}} msg] $msg
+} {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC}}
+test iocmd-12.8 {POSIX open access modes: errors} {
+    list [catch {open $path(test3) {TRUNC CREAT}} msg] $msg
+} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+close [open $path(test3) w]
+test iocmd-12.9 {POSIX open access modes: BINARY} {
+    list [catch {open $path(test1) BINARY} msg] $msg
+} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+test iocmd-12.10 {POSIX open access modes: BINARY} {
+    set f [open $path(test1) {WRONLY BINARY TRUNC}]
+    puts $f a
+    puts $f b
+    puts -nonewline $f c	;# contents are now 5 bytes: a\nb\nc
+    close $f
+    set f [open $path(test1) r]
+    fconfigure $f -translation binary
+    set result [string length [read $f]]
+    close $f
+    set result
+} 5
+test iocmd-12.11 {POSIX open access modes: BINARY} {
+    set f [open $path(test1) {WRONLY BINARY TRUNC}]
+    puts $f \u0248		;# gets truncated to \u0048
+    close $f
+    set f [open $path(test1) r]
+    fconfigure $f -translation binary
+    set result [read -nonewline $f]
+    close $f
+    set result
+} \u0048
+
+test iocmd-13.1 {errors in open command} {
+    list [catch {open} msg] $msg
+} {1 {wrong # args: should be "open fileName ?access? ?permissions?"}}
+test iocmd-13.2 {errors in open command} {
+    list [catch {open a b c d} msg] $msg
+} {1 {wrong # args: should be "open fileName ?access? ?permissions?"}}
+test iocmd-13.3 {errors in open command} {
+    list [catch {open $path(test1) x} msg] $msg
+} {1 {illegal access mode "x"}}
+test iocmd-13.4 {errors in open command} {
+    list [catch {open $path(test1) rw} msg] $msg
+} {1 {illegal access mode "rw"}}
+test iocmd-13.5 {errors in open command} {
+    list [catch {open $path(test1) r+1} msg] $msg
+} {1 {illegal access mode "r+1"}}
+test iocmd-13.6 {errors in open command} {
+    set msg [list [catch {open _non_existent_} msg] $msg $::errorCode]
+    regsub [file join {} _non_existent_] $msg "_non_existent_" msg
+    string tolower $msg
+} {1 {couldn't open "_non_existent_": no such file or directory} {posix enoent {no such file or directory}}}
+test iocmd-13.7 {errors in open command} {
+    list [catch {open $path(test1) b} msg] $msg
+} {1 {illegal access mode "b"}}
+test iocmd-13.8 {errors in open command} {
+    list [catch {open $path(test1) rbb} msg] $msg
+} {1 {illegal access mode "rbb"}}
+test iocmd-13.9 {errors in open command} {
+    list [catch {open $path(test1) r++} msg] $msg
+} {1 {illegal access mode "r++"}}
+test iocmd-13.10.1 {open for append, a mode} -setup {
+    set log   [makeFile {} out]
+    set chans {}
+} -body {
+    foreach i { 0 1 2 3 4 5 6 7 8 9 } {
+	puts [set ch [open $log a]] $i
+	lappend chans $ch
+    }
+    foreach ch $chans {catch {close $ch}}
+    lsort [split [string trim [viewFile out]] \n]
+} -cleanup {
+    removeFile out
+    # Ensure that channels are gone, even if body failed to do so
+    foreach ch $chans {catch {close $ch}}
+} -result {0 1 2 3 4 5 6 7 8 9}
+test iocmd-13.10.2 {open for append, O_APPEND} -setup {
+    set log   [makeFile {} out]
+    set chans {}
+} -body {
+    foreach i { 0 1 2 3 4 5 6 7 8 9 } {
+	puts [set ch [open $log {WRONLY CREAT APPEND}]] $i
+	lappend chans $ch
+    }
+    foreach ch $chans {catch {close $ch}}
+    lsort [split [string trim [viewFile out]] \n]
+} -cleanup {
+    removeFile out
+    # Ensure that channels are gone, even if body failed to do so
+    foreach ch $chans {catch {close $ch}}
+} -result {0 1 2 3 4 5 6 7 8 9}
+test ioCmd-13.11 {open ... a+ must not use O_APPEND: Bug 1773127} -setup {
+    set f [makeFile {} ioutil41.tmp]
+    set fid [open $f wb]
+    puts -nonewline $fid 123
+    close $fid
+} -body {
+    set fid [open $f ab+]
+    puts -nonewline $fid 456
+    seek $fid 2
+    set d [read $fid 2]
+    seek $fid 4
+    puts -nonewline $fid x
+    close $fid
+    set fid [open $f rb]
+    append d [read $fid]
+    close $fid
+    return $d
+} -cleanup {
+    removeFile $f
+} -result 341234x6
+
+
+test iocmd-14.1 {file id parsing errors} {
+    list [catch {eof gorp} msg] $msg $::errorCode
+} {1 {can not find channel named "gorp"} {TCL LOOKUP CHANNEL gorp}}
+test iocmd-14.2 {file id parsing errors} {
+    list [catch {eof filex} msg] $msg
+} {1 {can not find channel named "filex"}}
+test iocmd-14.3 {file id parsing errors} {
+    list [catch {eof file12a} msg] $msg
+} {1 {can not find channel named "file12a"}}
+test iocmd-14.4 {file id parsing errors} {
+    list [catch {eof file123} msg] $msg
+} {1 {can not find channel named "file123"}}
+test iocmd-14.5 {file id parsing errors} {
+    list [catch {eof stdout} msg] $msg
+} {0 0}
+test iocmd-14.6 {file id parsing errors} {
+    list [catch {eof stdin} msg] $msg
+} {0 0}
+test iocmd-14.7 {file id parsing errors} {
+    list [catch {eof stdout} msg] $msg
+} {0 0}
+test iocmd-14.8 {file id parsing errors} {
+    list [catch {eof stderr} msg] $msg
+} {0 0}
+test iocmd-14.9 {file id parsing errors} {
+    list [catch {eof stderr1} msg] $msg
+} {1 {can not find channel named "stderr1"}}
+
+set f [open $path(test1) w]
+close $f
+
+set expect "1 {can not find channel named \"$f\"}"
+test iocmd-14.10 {file id parsing errors} {
+    list [catch {eof $f} msg] $msg
+} $expect
+
+test iocmd-15.1 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy} msg] $msg
+} {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
+test iocmd-15.2 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy 1} msg] $msg
+} {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
+test iocmd-15.3 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy 1 2 3 4 5 6 7} msg] $msg
+} {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
+test iocmd-15.4 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy 1 2 3} msg] $msg
+} {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
+test iocmd-15.5 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy 1 2 3 4 5} msg] $msg
+} {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
+
+set path(test2) [makeFile {} test2]
+set f [open $path(test1) w]
+close $f
+set rfile [open $path(test1) r]
+set wfile [open $path(test2) w]
+
+test iocmd-15.6 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy foo $wfile} msg] $msg
+} {1 {can not find channel named "foo"}}
+test iocmd-15.7 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile foo} msg] $msg
+} {1 {can not find channel named "foo"}}
+test iocmd-15.8 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $wfile $wfile} msg] $msg
+} "1 {channel \"$wfile\" wasn't opened for reading}"
+test iocmd-15.9 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $rfile} msg] $msg
+} "1 {channel \"$rfile\" wasn't opened for writing}"
+test iocmd-15.10 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $wfile foo bar} msg] $msg
+} {1 {bad option "foo": must be -size or -command}}
+test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $wfile -size foo} msg] $msg
+} {1 {expected integer but got "foo"}}
+test iocmd-15.12 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $wfile -command bar -size foo} msg] $msg
+} {1 {expected integer but got "foo"}}
+
+close $rfile
+close $wfile
+
+# ### ### ### ######### ######### #########
+## Testing the reflected channel.
+
+test iocmd-20.0 {chan, wrong#args} {
+    catch {chan} msg
+    set msg
+} {wrong # args: should be "chan subcommand ?arg ...?"}
+test iocmd-20.1 {chan, unknown method} -body {
+    chan foo
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
+
+# --- --- --- --------- --------- ---------
+# chan create, and method "initalize"
+
+test iocmd-21.0 {chan create, wrong#args, not enough} {
+    catch {chan create} msg
+    set msg
+} {wrong # args: should be "chan create mode cmdprefix"}
+test iocmd-21.1 {chan create, wrong#args, too many} {
+    catch {chan create a b c} msg
+    set msg
+} {wrong # args: should be "chan create mode cmdprefix"}
+test iocmd-21.2 {chan create, invalid r/w mode, empty} {
+    proc foo {} {}
+    catch {chan create {} foo} msg
+    rename foo {}
+    set msg
+} {bad mode list: is empty}
+test iocmd-21.3 {chan create, invalid r/w mode, bad string} {
+    proc foo {} {}
+    catch {chan create {c} foo} msg
+    rename foo {}
+    set msg
+} {bad mode "c": must be read or write}
+test iocmd-21.4 {chan create, bad handler, not a list} {
+    catch {chan create {r w} "foo \{"} msg
+    set msg
+} {unmatched open brace in list}
+test iocmd-21.5 {chan create, bad handler, not a command} {
+    catch {chan create {r w} foo} msg
+    set msg
+} {invalid command name "foo"}
+test iocmd-21.6 {chan create, initialize failed, bad signature} {
+    proc foo {} {}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} {wrong # args: should be "foo"}
+test iocmd-21.7 {chan create, initialize failed, bad signature} {
+    proc foo {} {}
+    catch {chan create {r w} ::foo} msg
+    rename foo {}
+    set msg
+} {wrong # args: should be "::foo"}
+test iocmd-21.8 {chan create, initialize failed, bad result, not a list} -body {
+    proc foo {args} {return "\{"}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set ::errorInfo
+} -match glob -result {chan handler "foo initialize" returned non-list: *}
+test iocmd-21.9 {chan create, initialize failed, bad result, not a list} -body {
+    proc foo {args} {return \{\{\}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {chan handler "foo initialize" returned non-list: *}
+test iocmd-21.10 {chan create, initialize failed, bad result, empty list} -body {
+    proc foo {args} {}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*all required methods*}
+test iocmd-21.11 {chan create, initialize failed, bad result, bogus method name} -body {
+    proc foo {args} {return 1}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*bad method "1": must be *}
+test iocmd-21.12 {chan create, initialize failed, bad result, bogus method name} -body {
+    proc foo {args} {return {a b c}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*bad method "c": must be *}
+test iocmd-21.13 {chan create, initialize failed, bad result, required methods missing} -body {
+    proc foo {args} {return {initialize finalize}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*all required methods*}
+test iocmd-21.14 {chan create, initialize failed, bad result, mode/handler mismatch} -body {
+    proc foo {args} {return {initialize finalize watch read}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*lacks a "write" method}
+test iocmd-21.15 {chan create, initialize failed, bad result, mode/handler mismatch} -body {
+    proc foo {args} {return {initialize finalize watch write}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*lacks a "read" method}
+test iocmd-21.16 {chan create, initialize failed, bad result, cget(all) mismatch} -body {
+    proc foo {args} {return {initialize finalize watch cget write read}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*supports "cget" but not "cgetall"}
+test iocmd-21.17 {chan create, initialize failed, bad result, cget(all) mismatch} -body {
+    proc foo {args} {return {initialize finalize watch cgetall read write}}
+    catch {chan create {r w} foo} msg
+    rename foo {}
+    set msg
+} -match glob -result {*supports "cgetall" but not "cget"}
+test iocmd-21.18 {chan create, initialize ok, creates channel} -match glob -body {
+    proc foo {args} {
+	global  res
+	lappend res $args
+	if {[lindex $args 0] ne "initialize"} {return}
+	return {initialize finalize watch read write}
+    }
+    set res {}
+    lappend res [file channel rc*]
+    lappend res [chan create {r w} foo]
+    lappend res [close [lindex $res end]]
+    lappend res [file channel rc*]
+    rename foo {}
+    set res
+} -result {{} {initialize rc* {read write}} rc* {finalize rc*} {} {}}
+test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match glob -body {
+    proc foo {args} {
+	global  res
+	lappend res $args
+	return {}
+    }
+    set res {}
+    lappend res [file channel rc*]
+    lappend res [catch {chan create {r w} foo} msg]
+    lappend res $msg
+    lappend res [file channel rc*]
+    rename foo {}
+    set res
+} -result {{} {initialize rc* {read write}} 1 {*all required methods*} {}}
+test iocmd-21.20 {Bug 88aef05cda} -setup {
+    proc foo {method chan args} {
+	switch -- $method blocking {
+	    chan configure $chan -blocking [lindex $args 0]
+	    return
+	} initialize {
+	    return {initialize finalize watch blocking read write
+		    configure cget cgetall}
+	} finalize {
+	    return
+	}
+    }
+    set ch [chan create {read write} foo]
+} -body {
+    chan configure $ch -blocking 0
+} -cleanup {
+    close $ch
+    rename foo {}
+} -match glob -returnCodes 1 -result {*(infinite loop?)*}
+test iocmd-21.21 {[close] in [read] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    close $chan
+	    return a
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    read $ch 0
+} -cleanup {
+    close $ch
+    rename foo {}
+} -result {}
+test iocmd-21.22 {[close] in [read] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    catch {close $chan}
+	    return a
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    read $ch 1
+} -returnCodes error -cleanup {
+    catch {close $ch}
+    rename foo {}
+} -match glob -result {*invalid argument*}
+test iocmd-21.23 {[close] in [gets] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    catch {close $chan}
+	    return \n
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    gets $ch
+} -cleanup {
+    catch {close $ch}
+    rename foo {}
+} -result {}
+test iocmd-21.24 {[close] in binary [gets] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    catch {close $chan}
+	    return \n
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    chan configure $ch -translation binary
+    gets $ch
+} -cleanup {
+    catch {close $ch}
+    rename foo {}
+} -result {}
+
+# --- --- --- --------- --------- ---------
+# Helper commands to record the arguments to handler methods.
+
+# Stored in a script so that the threads and interpreters needing this
+# code do not need their own copy but can access this variable.
+
+set helperscript {
+
+proc note  {item}  {global res; lappend res $item; return}
+proc track {}      {upvar args item; note $item; return}
+proc notes {items} {foreach i $items {note $i}}
+# This forces the return options to be in the order that the test expects!
+proc noteOpts opts {global res; lappend res [dict merge {
+    -code !?! -level !?! -errorcode !?! -errorline !?! -errorinfo !?!
+} $opts]; return}
+
+# Helper command, canned result for 'initialize' method.
+# Gets the optional methods as arguments. Use return features
+# to post the result higher up.
+
+proc init {args} {
+    lappend args initialize finalize watch read write
+    return -code return $args
+}
+proc oninit {args} {
+    upvar args hargs
+    if {[lindex $hargs 0] ne "initialize"} {return}
+    lappend args initialize finalize watch read write
+    return -code return $args
+}
+proc onfinal {} {
+    upvar args hargs
+    if {[lindex $hargs 0] ne "finalize"} {return}
+    return -code return ""
+}
+}
+
+# Set everything up in the main thread.
+eval $helperscript
+
+# --- --- --- --------- --------- ---------
+# method finalize
+
+test iocmd-22.1 {chan finalize, handler destruction has no effect on channel} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return}
+    note [set c [chan create {r w} foo]]
+    rename foo {}
+    note [file channels rc*]
+    note [catch {close $c} msg]; note $msg
+    note [file channels rc*]
+    set res
+} -result {{initialize rc* {read write}} rc* rc* 1 {invalid command name "foo"} {}}
+test iocmd-22.2 {chan finalize, for close} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return {}}
+    note [set c [chan create {r w} foo]]
+    close $c
+    # Close deleted the channel.
+    note [file channels rc*]
+    # Channel destruction does not kill handler command!
+    note [info command foo]
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} {} foo}
+test iocmd-22.3 {chan finalize, for close, error, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code error 5}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg]; note $msg
+    # Channel is gone despite error.
+    note [file channels rc*]
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 5 {}}
+test iocmd-22.4 {chan finalize, for close, error, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; error FOO}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg]; note $msg; note $::errorInfo
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 FOO {FOO
+*"close $c"}}
+test iocmd-22.5 {chan finalize, for close, arbitrary result, ignored} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return SOMETHING}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg]; note $msg
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 0 {}}
+test iocmd-22.6 {chan finalize, for close, break, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code 3}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg]; note $msg
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
+test iocmd-22.7 {chan finalize, for close, continue, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code 4}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg]; note $msg
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
+test iocmd-22.8 {chan finalize, for close, custom code, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code 777 BANG}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg]; note $msg
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
+test iocmd-22.9 {chan finalize, for close, ignore level, close error} -match glob -setup {
+    set res {}
+} -body {
+    proc foo {args} {track; oninit; return -level 5 -code 777 BANG}
+    note [set c [chan create {r w} foo]]
+    note [catch {close $c} msg opt]; note $msg; noteOpts $opt
+    return $res
+} -cleanup {
+    rename foo {}
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}}
+
+# --- === *** ###########################
+# method read
+
+test iocmd-23.1 {chan read, regular data return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return snarf
+    }
+    set c [chan create {r w} foo]
+    note [read $c 10]
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
+test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return [string repeat snarf 1000]
+    }
+    set c [chan create {r w} foo]
+    note [catch {read $c 2} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 {read delivered more than requested}}
+test iocmd-23.3 {chan read, for non-readable channel} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track; note MUST_NOT_HAPPEN
+    }
+    set c [chan create {w} foo]
+    note [catch {read $c 2} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {1 {channel "rc*" wasn't opened for reading}}
+test iocmd-23.4 {chan read, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {read $c 2} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 BOOM!}
+test iocmd-23.5 {chan read, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code break BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {read $c 2} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code*}
+test iocmd-23.6 {chan read, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {read $c 2} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code*}
+test iocmd-23.7 {chan read, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code 777 BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {read $c 2} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code*}
+test iocmd-23.8 {chan read, level is squashed} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -level 55 -code 777 BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {read $c 2} msg opt]; note $msg; noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
+test iocmd-23.9 {chan read, no data means eof} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return ""
+    }
+    set c [chan create {r w} foo]
+} -body {
+    note [read $c 2]
+    note [eof $c]
+    set res
+} -cleanup {
+    close $c
+    rename foo {}
+    unset res
+} -result {{read rc* 4096} {} 1}
+test iocmd-23.10 {chan read, EAGAIN means no data, yet no eof either} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    note [read $c 2]
+    note [eof $c]
+    set res
+} -cleanup {
+    close $c
+    rename foo {}
+    unset res
+} -result {{read rc* 4096} {} 0}
+test iocmd-23.11 {chan read, close pulls the rug out} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	set args [lassign $args sub id]
+	if {$sub ne "read"} {return}
+	close $id
+	return {}
+    }
+    set c [chan create {r} foo]
+    note [read $c]
+    rename foo {}
+    set res
+} -result {{read rc* 4096} {}}
+
+# --- === *** ###########################
+# method write
+
+test iocmd-24.1 {chan write, regular write} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	set     written [string length [lindex $args 2]]
+	note   $written
+	return $written
+    }
+    set c [chan create {r w} foo]
+    puts -nonewline $c snarf; flush $c
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarf} 5}
+test iocmd-24.2 {chan write, partial write is ok} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	set     written [string length [lindex $args 2]]
+	if {$written > 10} {set written [expr {$written / 2}]}
+	note   $written
+	return $written
+    }
+    set c [chan create {r w} foo]
+    puts -nonewline $c snarfsnarfsnarf; flush $c
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 7 {write rc* arfsnarf} 8}
+test iocmd-24.3 {chan write, failed write} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note -1; return -1}
+    set c [chan create {r w} foo]
+    puts -nonewline $c snarfsnarfsnarf; flush $c
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} -1}
+test iocmd-24.4 {chan write, non-writable channel} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {1 {channel "rc*" wasn't opened for writing}}
+test iocmd-24.5 {chan write, bad result, more written than data} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return 10000}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarf; flush $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarf} 1 {write wrote more than requested}}
+test iocmd-24.6 {chan write, bad result, zero-length write} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return 0}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarf; flush $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarf} 1 {write wrote nothing}}
+test iocmd-24.7 {chan write, failed write, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code error BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+    note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 BOOM!}
+test iocmd-24.8 {chan write, failed write, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; error BOOM!}
+    set c [chan create {r w} foo]
+    notes [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+    note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 BOOM!}
+test iocmd-24.9 {chan write, failed write, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+    note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*}
+test iocmd-24.10 {chan write, failed write, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+    note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*}
+test iocmd-24.11 {chan write, failed write, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code 777 BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+    note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*}
+test iocmd-24.12 {chan write, failed write, non-numeric return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return BANG}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+    note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 {expected integer but got "BANG"}}
+test iocmd-24.13 {chan write, failed write, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -level 55 -code 777 BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg opt]
+    note $msg
+    noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}}
+test iocmd-24.14 {chan write, no EAGAIN means that writing is allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return 3
+    }
+    set c [chan create {r w} foo]
+} -body {
+    note [puts -nonewline $c ABC ; flush $c]
+    set res
+} -cleanup {
+    close $c
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {}}
+test iocmd-24.15 {chan write, EAGAIN means that writing is not allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	# Note: The EAGAIN signals that the channel cannot accept
+	# write requests right now, this in turn causes the IO core to
+	# request the generation of writable events (see expected
+	# result below, and compare to case 24.14 above).
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    note [puts -nonewline $c ABC ; flush $c]
+    set res
+} -cleanup {
+    close $c
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {watch rc* write} {}}
+
+# --- === *** ###########################
+# method cgetall
+
+test iocmd-25.1 {chan configure, cgetall, standard options} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c]
+    close $c
+    rename foo {}
+    set res
+} -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -translation {auto *}}}
+test iocmd-25.2 {chan configure, cgetall, no options} -match glob -body {
+    set res {}
+    proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
+    set c [chan create {r w} foo]
+    note [fconfigure $c]
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -translation {auto *}}}
+test iocmd-25.3 {chan configure, cgetall, regular result} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return "-bar foo -snarf x"
+    }
+    set c [chan create {r w} foo]
+    note [fconfigure $c]
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -translation {auto *} -bar foo -snarf x}}
+test iocmd-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return "-bar"
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 {Expected list with even number of elements, got 1 element instead}}
+test iocmd-25.5 {chan configure, cgetall, bad result, not a list} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return "\{"
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 {unmatched open brace in list}}
+test iocmd-25.6 {chan configure, cgetall, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 BOOM!}
+test iocmd-25.7 {chan configure, cgetall, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code break BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code*}
+test iocmd-25.8 {chan configure, cgetall, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code*}
+test iocmd-25.9 {chan configure, cgetall, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code 777 BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code*}
+test iocmd-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -level 55 -code 777 BANG
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c} msg opt]; note $msg; noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cgetall"*}}
+
+# --- === *** ###########################
+# method configure
+
+test iocmd-26.1 {chan configure, set standard option} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track; note MUST_NOT_HAPPEN; return
+    }
+    set c [chan create {r w} foo]
+    note [fconfigure $c -translation lf]
+    close $c
+    rename foo {}
+    set res
+} -result {{}}
+test iocmd-26.2 {chan configure, set option, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo bar} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 BOOM!}
+test iocmd-26.3 {chan configure, set option, ok return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit configure; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -rc-foo bar]
+    close $c
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} {}}
+test iocmd-26.4 {chan configure, set option, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code break BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo bar} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code*}
+test iocmd-26.5 {chan configure, set option, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo bar} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code*}
+test iocmd-26.6 {chan configure, set option, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code 444 BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo bar} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code*}
+test iocmd-26.7 {chan configure, set option, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -level 55 -code 444 BANG
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo bar} msg opt]; note $msg; noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "configure"*}}
+
+# --- === *** ###########################
+# method cget
+
+test iocmd-27.1 {chan configure, get option, ok return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit cget cgetall; onfinal; track; return foo}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -rc-foo]
+    close $c
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} foo}
+test iocmd-27.2 {chan configure, get option, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 BOOM!}
+test iocmd-27.3 {chan configure, get option, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 BOOM!}
+test iocmd-27.4 {chan configure, get option, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 *bad code*}
+test iocmd-27.5 {chan configure, get option, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code 333 BOOM!
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 *bad code*}
+test iocmd-27.6 {chan configure, get option, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -level 77 -code 333 BANG
+    }
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -rc-foo} msg opt]; note $msg; noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cget"*}}
+
+# --- === *** ###########################
+# method seek
+
+test iocmd-28.1 {chan tell, not supported by handler} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    note [tell $c]
+    close $c
+    rename foo {}
+    set res
+} -result {-1}
+test iocmd-28.2 {chan tell, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code error BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 BOOM!}
+test iocmd-28.3 {chan tell, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code*}
+test iocmd-28.4 {chan tell, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code*}
+test iocmd-28.5 {chan tell, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code 222 BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code*}
+test iocmd-28.6 {chan tell, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -level 11 -code 222 BANG}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg opt]; note $msg; noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}}
+test iocmd-28.7 {chan tell, regular return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return 88}
+    set c [chan create {r w} foo]
+    note [tell $c]
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 88}
+test iocmd-28.8 {chan tell, negative return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -1}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 {Tried to seek before origin}}
+test iocmd-28.9 {chan tell, string return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return BOGUS}
+    set c [chan create {r w} foo]
+    note [catch {tell $c} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 {expected integer but got "BOGUS"}}
+test iocmd-28.10 {chan seek, not supported by handler} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {1 {error during seek on "rc*": invalid argument}}
+test iocmd-28.11 {chan seek, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code error BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 BOOM!}
+test iocmd-28.12 {chan seek, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code*}
+test iocmd-28.13 {chan seek, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code*}
+test iocmd-28.14 {chan seek, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code 99 BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code*}
+test iocmd-28.15 {chan seek, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -level 33 -code 99 BANG}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg opt]; note $msg; noteOpts $opt
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}}
+test iocmd-28.16 {chan seek, bogus return, negative location} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -45}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 {Tried to seek before origin}}
+test iocmd-28.17 {chan seek, bogus return, string return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return BOGUS}
+    set c [chan create {r w} foo]
+    note [catch {seek $c 0 start} msg]; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 {expected integer but got "BOGUS"}}
+test iocmd-28.18 {chan seek, ok result} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return 23}
+    set c [chan create {r w} foo]
+    note [seek $c 0 current]
+    close $c
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} {}}
+foreach {testname code} {
+    iocmd-28.19.0 start
+    iocmd-28.19.1 current
+    iocmd-28.19.2 end
+} {
+    test $testname "chan seek, base conversion, $code" -match glob -body {
+	set res {}
+	proc foo {args} {oninit seek; onfinal; track; return 0}
+	set c [chan create {r w} foo]
+	note [seek $c 0 $code]
+	close $c
+	rename foo {}
+	set res
+    } -result [list [list seek rc* 0 $code] {}]
+}
+
+# --- === *** ###########################
+# method blocking
+
+test iocmd-29.1 {chan blocking, no handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -blocking]
+    close $c
+    rename foo {}
+    set res
+} -result {1}
+test iocmd-29.2 {chan blocking, no handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -blocking 0]
+    note [fconfigure $c -blocking]
+    close $c
+    rename foo {}
+    set res
+} -result {{} 0}
+test iocmd-29.3 {chan blocking, retrieval, handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -blocking]
+    close $c
+    rename foo {}
+    set res
+} -result {1}
+test iocmd-29.4 {chan blocking, resetting, handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -blocking 0]
+    note [fconfigure $c -blocking]
+    close $c
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} {} 0}
+test iocmd-29.5 {chan blocking, setting, handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fconfigure $c -blocking 1]
+    note [fconfigure $c -blocking]
+    close $c
+    rename foo {}
+    set res
+} -result {{blocking rc* 1} {} 1}
+test iocmd-29.6 {chan blocking, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; error BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -blocking 0} msg]; note $msg
+    # Catch the close. It changes blocking mode internally, and runs into the error result.
+    catch {close $c}
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 BOOM!}
+test iocmd-29.7 {chan blocking, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -blocking 0} msg]; note $msg
+    catch {close $c}
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code*}
+test iocmd-29.8 {chan blocking, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -blocking 0} msg]; note $msg
+    catch {close $c}
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code*}
+test iocmd-29.9 {chan blocking, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -code 44 BOOM!}
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -blocking 0} msg]; note $msg
+    catch {close $c}
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code*}
+test iocmd-29.10 {chan blocking, level is ignored} -match glob -setup {
+    set res {}
+} -body {
+    proc foo {args} {oninit blocking; onfinal; track; return -level 99 -code 44 BANG}
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -blocking 0} msg opt]; note $msg; noteOpts $opt
+    catch {close $c}
+    return $res
+} -cleanup {
+    rename foo {}
+} -result {{blocking rc* 0} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "blocking"*}}
+test iocmd-29.11 {chan blocking, regular return ok, value ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return BOGUS}
+    set c [chan create {r w} foo]
+    note [catch {fconfigure $c -blocking 0} msg]; note $msg
+    catch {close $c}
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 0 {}}
+
+# --- === *** ###########################
+# method watch
+
+test iocmd-30.1 {chan watch, read interest, some return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return IGNORED}
+    set c [chan create {r w} foo]
+    note [fileevent $c readable {set tick $tick}]
+    close $c			;# 2nd watch, interest zero.
+    rename foo {}
+    set res
+} -result {{watch rc* read} {} {watch rc* {}}}
+test iocmd-30.2 {chan watch, write interest, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code error BOOM!_IGNORED}
+    set c [chan create {r w} foo]
+    note [fileevent $c writable {set tick $tick}]
+    note [fileevent $c writable {}]
+    close $c
+    rename foo {}
+    set res
+} -result {{watch rc* write} {} {watch rc* {}} {}}
+test iocmd-30.3 {chan watch, accumulated interests} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fileevent $c writable {set tick $tick}]
+    note [fileevent $c readable {set tick $tick}]
+    note [fileevent $c writable {}]
+    note [fileevent $c readable {}]
+    close $c
+    rename foo {}
+    set res
+} -result {{watch rc* write} {} {watch rc* {read write}} {} {watch rc* read} {} {watch rc* {}} {}}
+test iocmd-30.4 {chan watch, unchanged interest not forwarded} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fileevent $c writable {set tick $tick}]
+    note [fileevent $c readable {set tick $tick}] ;# Script is changing,
+    note [fileevent $c readable {set tock $tock}] ;# interest does not.
+    close $c		;# 3rd and 4th watch, removing the event handlers.
+    rename foo {}
+    set res
+} -result {{watch rc* write} {} {watch rc* {read write}} {} {} {watch rc* write} {watch rc* {}}}
+
+# --- === *** ###########################
+# chan postevent
+
+test iocmd-31.1 {chan postevent, restricted to reflected channels} -match glob -body {
+    set c [open [makeFile {} goo] r]
+    catch {chan postevent $c {r w}} msg
+    close $c
+    removeFile goo
+    set msg
+} -result {can not find reflected channel named "file*"}
+test iocmd-31.2 {chan postevent, unwanted events} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    catch {chan postevent $c {r w}} msg; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{tried to post events channel "rc*" is not interested in}}
+test iocmd-31.3 {chan postevent, bad input, empty list} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    catch {chan postevent $c {}} msg; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{bad event list: is empty}}
+test iocmd-31.4 {chan postevent, bad input, illlegal keyword} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    catch {chan postevent $c goo} msg; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{bad event "goo": must be read or write}}
+test iocmd-31.5 {chan postevent, bad input, not a list} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    catch {chan postevent $c "\{"} msg; note $msg
+    close $c
+    rename foo {}
+    set res
+} -result {{unmatched open brace in list}}
+test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fileevent $c readable {note TOCK}]
+    set stop [after 15000 {note TIMEOUT}]
+    after  1000 {note [chan postevent $c r]}
+    vwait ::res
+    catch {after cancel $stop}
+    close $c
+    rename foo {}
+    set res
+} -result {{watch rc* read} {} TOCK {} {watch rc* {}}}
+test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    note [fileevent $c writable {note TOCK}]
+    set stop [after 15000 {note TIMEOUT}]
+    after  1000 {note [chan postevent $c w]}
+    vwait ::res
+    catch {after cancel $stop}
+    close $c
+    rename foo {}
+    set res
+} -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
+test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
+    proc foo {args} {oninit; onfinal; track; return}
+    proc dummy args { return }
+    set c [chan create {r w} foo]
+    fileevent $c readable dummy
+} -body {
+    close $c
+    chan postevent $c read
+} -cleanup {
+    rename foo   {}
+    rename dummy {}
+} -returnCodes error -result {can not find reflected channel named "rc*"}
+
+# --- === *** ###########################
+# 'Pull the rug' tests. Create channel in a interpreter A, move to
+# other interpreter B, destroy the origin interpreter (A) before or
+# during access from B. Must not crash, must return proper errors.
+
+test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
+
+    set ida [interp create];#puts <<$ida>>
+    set idb [interp create];#puts <<$idb>>
+
+    # Magic to get the test* commands in the slaves
+    load {} Tcltest $ida
+    load {} Tcltest $idb
+
+    # Set up channel in interpreter
+    interp eval $ida $helperscript
+    set chan [interp eval $ida {
+	proc foo {args} {oninit seek; onfinal; track; return}
+	set chan [chan create {r w} foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+
+    # Move channel to 2nd interpreter.
+    interp eval $ida [list testchannel cut    $chan]
+    interp eval $idb [list testchannel splice $chan]
+
+    # Kill origin interpreter, then access channel from 2nd interpreter.
+    interp delete $ida
+
+    set     res {}
+    lappend res [catch {interp eval $idb [list puts  $chan shoo]} msg] $msg
+    lappend res [catch {interp eval $idb [list tell  $chan]}      msg] $msg
+    lappend res [catch {interp eval $idb [list seek  $chan 1]}    msg] $msg
+    lappend res [catch {interp eval $idb [list gets  $chan]}      msg] $msg
+    lappend res [catch {interp eval $idb [list close $chan]}      msg] $msg
+    set res
+
+} -cleanup {
+    interp delete $idb
+} -constraints {testchannel} \
+    -result {1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
+
+test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -match glob -body {
+
+    set ida [interp create];#puts <<$ida>>
+    set idb [interp create];#puts <<$idb>>
+
+    # Magic to get the test* commands in the slaves
+    load {} Tcltest $ida
+    load {} Tcltest $idb
+
+    # Set up channel in thread
+    set chan [interp eval $ida $helperscript]
+    set chan [interp eval $ida {
+	proc foo {args} {
+	    oninit; onfinal; track;
+	    # destroy interpreter during channel access
+	    suicide
+	}
+	set chan [chan create {r w} foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+    interp alias $ida suicide {} interp delete $ida
+
+    # Move channel to 2nd thread.
+    interp eval $ida [list testchannel cut    $chan]
+    interp eval $idb [list testchannel splice $chan]
+
+    # Run access from interpreter B, this will give us a synchronous
+    # response.
+
+    interp eval $idb [list set chan $chan]
+    set res [interp eval $idb {
+	# wait a bit, give the main thread the time to start its event
+	# loop to wait for the response from B
+	after 2000
+	catch { puts $chan shoo } res
+	set res
+    }]
+    set res
+} -cleanup {
+    interp delete $idb
+} -constraints {testchannel} -result {Owner lost}
+
+test iocmd-32.2 {delete interp of reflected chan} {
+    # Bug 3034840
+    # Run this test in an interp with memory debugging to panic
+    # on the double free
+    interp create slave
+    slave eval {
+        proc no-op args {}
+        proc driver {sub args} {return {initialize finalize watch read}}
+        chan event [chan create read driver] readable no-op
+    }
+    interp delete slave
+} {}
+
+# ### ### ### ######### ######### #########
+## Same tests as above, but exercising the code forwarding and
+## receiving driver operations to the originator thread.
+
+# -*- tcl -*-
+# ### ### ### ######### ######### #########
+## Testing the reflected channel (Thread forwarding).
+#
+## The id numbers refer to the original test without thread
+## forwarding, and gaps due to tests not applicable to forwarding are
+## left to keep this asociation.
+
+# ### ### ### ######### ######### #########
+## Helper command. Runs a script in a separate thread and returns the
+## result. A channel is transfered into the thread as well, and list of
+## configuation variables
+
+proc inthread {chan script args} {
+    # Test thread.
+
+    set tid [thread::create -preserved]
+    thread::send $tid {load {} Tcltest}
+
+    # Init thread configuration.
+    # - Listed variables
+    # - Id of main thread
+    # - A number of helper commands
+
+    foreach v $args {
+	upvar 1 $v x
+	thread::send $tid [list set $v $x]
+
+    }
+    thread::send $tid [list set mid [thread::id]]
+    thread::send $tid {
+	proc note {item} {global notes; lappend notes $item}
+	proc notes {} {global notes; return $notes}
+	proc noteOpts opts {global notes; lappend notes [dict merge {
+	    -code !?! -level !?! -errorcode !?! -errorline !?! -errorinfo !?!
+	} $opts]}
+    }
+    thread::send $tid [list proc s {} [list uplevel 1 $script]]; # (*)
+
+    # Transfer channel (cut/splice aka detach/attach)
+
+    testchannel cut $chan
+    thread::send $tid [list testchannel splice $chan]
+
+    # Run test script, also run local event loop!
+    # The local event loop waits for the result to come back.
+    # It is also necessary for the execution of forwarded channel
+    # operations.
+
+    set ::tres ""
+    thread::send -async $tid {
+	after 500
+	catch {s} res; # This runs the script, 's' was defined at (*)
+	thread::send -async $mid [list set ::tres $res]
+    }
+    vwait ::tres
+    # Remove test thread, and return the captured result.
+
+    thread::release $tid
+    return $::tres
+}
+
+# ### ### ### ######### ######### #########
+
+# ### ### ### ######### ######### #########
+
+test iocmd.tf-22.2 {chan finalize, for close} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return {}}
+    note [set c [chan create {r w} foo]]
+    note [inthread $c {
+	close $c
+	# Close the deleted the channel.
+	file channels rc*
+    } c]
+    # Channel destruction does not kill handler command!
+    note [info command foo]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{initialize rc* {read write}} rc* {finalize rc*} {} foo}
+test iocmd.tf-22.3 {chan finalize, for close, error, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code error 5}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg]; note $msg
+	# Channel is gone despite error.
+	note [file channels rc*]
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 5 {}}
+test iocmd.tf-22.4 {chan finalize, for close, error, close errror} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; error FOO}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg]; note $msg
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 FOO}
+test iocmd.tf-22.5 {chan finalize, for close, arbitrary result} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return SOMETHING}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg]; note $msg
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{initialize rc* {read write}} rc* {finalize rc*} 0 {}}
+test iocmd.tf-22.6 {chan finalize, for close, break, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code 3}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg]; note $msg
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-22.7 {chan finalize, for close, continue, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code 4}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg]; note $msg
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-22.8 {chan finalize, for close, custom code, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -code 777 BANG}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg]; note $msg
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-22.9 {chan finalize, for close, ignore level, close error} -match glob -body {
+    set res {}
+    proc foo {args} {track; oninit; return -level 5 -code 777 BANG}
+    note [set c [chan create {r w} foo]]
+    notes [inthread $c {
+	note [catch {close $c} msg opt]; note $msg; noteOpts $opt
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}} \
+    -constraints {testchannel thread}
+
+# --- === *** ###########################
+# method read
+
+test iocmd.tf-23.1 {chan read, regular data return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return snarf
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [read $c 10]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
+test iocmd.tf-23.2 {chan read, bad data return, to much} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return [string repeat snarf 1000]
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {[read $c 2]} msg]; note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{read rc* 4096} 1 {read delivered more than requested}}
+test iocmd.tf-23.3 {chan read, for non-readable channel} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track; note MUST_NOT_HAPPEN
+    }
+    set c [chan create {w} foo]
+    notes [inthread $c {
+	note [catch {[read $c 2]} msg]; note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {1 {channel "rc*" wasn't opened for reading}}
+test iocmd.tf-23.4 {chan read, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {read $c 2} msg]; note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-23.5 {chan read, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code break BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {read $c 2} msg]; note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-23.6 {chan read, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {read $c 2} msg]; note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-23.7 {chan read, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -code 777 BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {read $c 2} msg]; note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-23.8 {chan read, level is squashed} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return -level 55 -code 777 BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {read $c 2} msg opt]; note $msg; noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{read rc* 4096} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}} \
+    -constraints {testchannel thread}
+test iocmd.tf-23.9 {chan read, no data means eof} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return ""
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [read $c 2]
+	note [eof $c]
+	close $c
+	notes
+    } c]
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {{read rc* 4096} {} 1} \
+    -constraints {testchannel thread}
+test iocmd.tf-23.10 {chan read, EAGAIN means no data, yet no eof either} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [read $c 2]
+	note [eof $c]
+	close $c
+	notes
+    } c]
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {{read rc* 4096} {} 0} \
+    -constraints {testchannel thread}
+
+# --- === *** ###########################
+# method write
+
+test iocmd.tf-24.1 {chan write, regular write} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	set     written [string length [lindex $args 2]]
+	note   $written
+	return $written
+    }
+    set c [chan create {r w} foo]
+    inthread $c {
+	puts -nonewline $c snarf; flush $c
+	close $c
+    } c
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{write rc* snarf} 5}
+test iocmd.tf-24.2 {chan write, ack partial writes} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	set     written [string length [lindex $args 2]]
+	if {$written > 10} {set written [expr {$written / 2}]}
+	note   $written
+	return $written
+    }
+    set c [chan create {r w} foo]
+    inthread $c {
+	puts -nonewline $c snarfsnarfsnarf; flush $c
+	close $c
+    } c
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{write rc* snarfsnarfsnarf} 7 {write rc* arfsnarf} 8}
+test iocmd.tf-24.3 {chan write, failed write} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note -1; return -1}
+    set c [chan create {r w} foo]
+    inthread $c {
+	puts -nonewline $c snarfsnarfsnarf; flush $c
+	close $c
+    } c
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{write rc* snarfsnarfsnarf} -1}
+test iocmd.tf-24.4 {chan write, non-writable channel} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {1 {channel "rc*" wasn't opened for writing}}
+test iocmd.tf-24.5 {chan write, bad result, more written than data} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return 10000}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{write rc* snarf} 1 {write wrote more than requested}}
+test iocmd.tf-24.6 {chan write, zero writes} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return 0}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{write rc* snarf} 1 {write wrote more than requested}}
+test iocmd.tf-24.7 {chan write, failed write, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code error BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.8 {chan write, failed write, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; error BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.9 {chan write, failed write, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.10 {chan write, failed write, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.11 {chan write, failed write, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code 777 BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.12 {chan write, failed write, non-numeric return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return BANG}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 {expected integer but got "BANG"}} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.13 {chan write, failed write, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -level 55 -code 777 BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg opt]
+	note $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{write rc* snarfsnarfsnarf} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "write"*}} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.14 {chan write, no EAGAIN means that writing is allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	return 3
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [puts -nonewline $c ABC ; flush $c]
+	close $c
+	notes
+    } c]
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {}} \
+    -constraints {testchannel thread}
+test iocmd.tf-24.15 {chan write, EAGAIN means that writing is not allowed at this time, bug 2936225} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	# Note: The EAGAIN signals that the channel cannot accept
+	# write requests right now, this in turn causes the IO core to
+	# request the generation of writable events (see expected
+	# result below, and compare to case 24.14 above).
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [puts -nonewline $c ABC ; flush $c]
+	close $c
+	notes
+    } c]
+    set res
+} -cleanup {
+    proc foo {args} {onfinal; set ::done-24.15 1; return 3}
+    after 1000 {set ::done-24.15 2}
+    vwait done-24.15
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {watch rc* write} {}} \
+    -constraints {testchannel thread}
+
+test iocmd.tf-24.16 {chan write, note the background flush setup by close due to the EAGAIN leaving data in buffers.} -match glob -setup {
+    set res {}
+    proc foo {args} {
+	oninit; onfinal; track
+	# Note: The EAGAIN signals that the channel cannot accept
+	# write requests right now, this in turn causes the IO core to
+	# request the generation of writable events (see expected
+	# result below, and compare to case 24.14 above).
+	error EAGAIN
+    }
+    set c [chan create {r w} foo]
+} -body {
+    notes [inthread $c {
+	note [puts -nonewline $c ABC ; flush $c]
+	close $c
+	notes
+    } c]
+    # Replace handler with all-tracking one which doesn't error.
+    # This will tell us if a write-due-flush is there.
+    proc foo {args} { onfinal; note BG ; track ; set ::endbody-24.16 1}
+    # Flush (sic!) the event-queue to capture the write from a
+    # BG-flush.
+    after 1000 {set ::endbody-24.16 2}
+    vwait endbody-24.16
+    set res
+} -cleanup {
+    proc foo {args} {onfinal; set ::done-24.16 1; return 3}
+    after 1000 {set ::done-24.16 2}
+    vwait done-24.16
+    rename foo {}
+    unset res
+} -result {{write rc* ABC} {watch rc* write} {} BG {write rc* ABC}} \
+    -constraints {testchannel thread}
+
+test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
+    -constraints {testchannel thread} -setup {
+    # This test exposes how the execution of postevent in the handler thread causes
+    # a crash if we are not properly injecting the events into the owning thread instead.
+    # With the injection the test will simply complete without crash.
+
+    set beat 10000
+    set drive 999
+    set data ...---...
+
+    proc LOG {text} {
+	#puts stderr "[thread::id]: $text"
+	return
+    }
+
+    proc POST {hi} {
+	LOG "-> [info level 0]"
+	chan postevent $hi read
+	LOG "<- [info level 0]"
+
+	set ::timer [after $::drive [info level 0]]
+	return
+    }
+
+    proc HANDLER {op ch args} {
+	lappend ::res [lrange [info level 0] 1 end]
+	LOG "-> [info level 0]"
+	set ret {}
+	switch -glob -- $op {
+	    init* {set ret {initialize finalize watch read}}
+	    watch {
+		set l [lindex $args 0]
+		catch {after cancel $::timer}
+		if {[llength $l]} {
+		    set ::timer [after $::drive [list POST $ch]]
+		}
+	    }
+	    finalize {
+		catch { after cancel $::timer }
+		after 500 {set ::forever now}
+	    }
+	    read {
+		set ret $::data
+		set ::data {} ; # Next is EOF.
+	    }
+	}
+	LOG "<- [info level 0] : $ret"
+	return $ret
+    }
+} -body {
+    LOG BEGIN
+    set ch [chan create {read} HANDLER]
+
+    set tid [thread::create {
+	proc LOG {text} {
+	    #puts stderr "\t\t\t\t\t\t[thread::id]: $text"
+	    return
+	}
+	LOG THREAD-STARTED
+	load {} Tcltest
+	proc bgerror s {
+	    LOG BGERROR:$s
+	}
+	vwait forever
+	LOG THREAD-DONE
+    }]
+
+    testchannel cut $ch
+    thread::send $tid [list set thech $ch]
+    thread::send $tid [list set beat $beat]
+    thread::send -async $tid {
+	LOG SPLICE-BEG
+	testchannel splice $thech
+	LOG SPLICE-END
+	proc PROCESS {ch} {
+	    LOG "-> [info level 0]"
+	    if {[eof $ch]} {
+		close $ch
+		set ::done 1
+		set c <<EOF>>
+	    } else {
+		set c [read $ch 1]
+	    }
+	    LOG "GOTCHAR: $c"
+	    LOG "<- [info level 0]"
+	}
+	LOG THREAD-FILEEVENT
+	fconfigure $thech -translation binary -blocking 0
+	fileevent  $thech readable [list PROCESS $thech]
+	LOG THREAD-NOEVENT-LOOP
+	set done 0
+	while {!$done} {
+	    after $beat
+	    LOG THREAD-HEARTBEAT
+	    update
+	}
+	LOG THREAD-LOOP-DONE
+	#thread::exit
+	# Thread exits cause leaks;  Use clean thread shutdown
+	set forever yourGirl
+    }
+
+    LOG MAIN_WAITING
+    vwait forever
+    LOG MAIN_DONE
+
+    set res
+} -cleanup {
+    after cancel $::timer
+    rename LOG {}
+    rename POST {}
+    rename HANDLER {}
+    unset beat drive data forever res tid ch timer
+} -match glob \
+    -result {{initialize rc* read} {watch rc* read} {read rc* 4096} {watch rc* {}} {watch rc* read} {read rc* 4096} {watch rc* {}} {finalize rc*}}
+
+# --- === *** ###########################
+# method cgetall
+
+test iocmd.tf-25.1 {chan configure, cgetall, standard options} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} \
+    -result {{-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -translation {auto *}}}
+test iocmd.tf-25.2 {chan configure, cgetall, no options} -match glob -body {
+    set res {}
+    proc foo {args} {oninit cget cgetall; onfinal; track; return ""}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} \
+    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -translation {auto *}}}
+test iocmd.tf-25.3 {chan configure, cgetall, regular result} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return "-bar foo -snarf x"
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} \
+    -result {{cgetall rc*} {-blocking 1 -buffering full -buffersize 4096 -encoding * -eofchar {{} {}} -translation {auto *} -bar foo -snarf x}}
+test iocmd.tf-25.4 {chan configure, cgetall, bad result, list of uneven length} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return "-bar"
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{cgetall rc*} 1 {Expected list with even number of elements, got 1 element instead}}
+test iocmd.tf-25.5 {chan configure, cgetall, bad result, not a list} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return "\{"
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{cgetall rc*} 1 {unmatched open brace in list}}
+test iocmd.tf-25.6 {chan configure, cgetall, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{cgetall rc*} 1 BOOM!}
+test iocmd.tf-25.7 {chan configure, cgetall, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code break BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-25.8 {chan configure, cgetall, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-25.9 {chan configure, cgetall, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code 777 BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -level 55 -code 777 BANG
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c} msg opt]
+	note $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cgetall rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cgetall"*}} \
+    -constraints {testchannel thread}
+
+# --- === *** ###########################
+# method configure
+
+test iocmd.tf-26.1 {chan configure, set standard option} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track; note MUST_NOT_HAPPEN; return
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -translation lf]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{}}
+test iocmd.tf-26.2 {chan configure, set option, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo bar} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{configure rc* -rc-foo bar} 1 BOOM!}
+test iocmd.tf-26.3 {chan configure, set option, ok return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit configure; onfinal; track; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -rc-foo bar]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{configure rc* -rc-foo bar} {}}
+test iocmd.tf-26.4 {chan configure, set option, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code break BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo bar} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-26.5 {chan configure, set option, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo bar} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-26.6 {chan configure, set option, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -code 444 BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo bar} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-26.7 {chan configure, set option, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit configure; onfinal; track
+	return -level 55 -code 444 BANG
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo bar} msg opt]
+	note $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{configure rc* -rc-foo bar} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "configure"*}} \
+    -constraints {testchannel thread}
+
+# --- === *** ###########################
+# method cget
+
+test iocmd.tf-27.1 {chan configure, get option, ok return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit cget cgetall; onfinal; track; return foo}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -rc-foo]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{cget rc* -rc-foo} foo}
+test iocmd.tf-27.2 {chan configure, get option, error return} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{cget rc* -rc-foo} 1 BOOM!}
+test iocmd.tf-27.3 {chan configure, get option, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code error BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-27.4 {chan configure, get option, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code continue BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-27.5 {chan configure, get option, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -code 333 BOOM!
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-27.6 {chan configure, get option, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {
+	oninit cget cgetall; onfinal; track
+	return -level 77 -code 333 BANG
+    }
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -rc-foo} msg opt]
+	note $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{cget rc* -rc-foo} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "cget"*}} \
+    -constraints {testchannel thread}
+
+# --- === *** ###########################
+# method seek
+
+test iocmd.tf-28.1 {chan tell, not supported by handler} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [tell $c]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {-1} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.2 {chan tell, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code error BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.3 {chan tell, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.4 {chan tell, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.5 {chan tell, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code 222 BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.6 {chan tell, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -level 11 -code 222 BANG}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg opt]
+	note $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.7 {chan tell, regular return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return 88}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [tell $c]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 88} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.8 {chan tell, negative return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -1}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 {Tried to seek before origin}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.9 {chan tell, string return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return BOGUS}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {tell $c} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} 1 {expected integer but got "BOGUS"}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.10 {chan seek, not supported by handler} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {1 {error during seek on "rc*": invalid argument}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.11 {chan seek, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code error BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.12 {chan seek, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.13 {chan seek, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.14 {chan seek, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -code 99 BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.15 {chan seek, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -level 33 -code 99 BANG}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg opt]
+	note $msg
+	noteOpts $opt
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "seek"*}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.16 {chan seek, bogus return, negative location} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return -45}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 {Tried to seek before origin}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.17 {chan seek, bogus return, string return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return BOGUS}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {seek $c 0 start} msg]
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 start} 1 {expected integer but got "BOGUS"}} \
+    -constraints {testchannel thread}
+test iocmd.tf-28.18 {chan seek, ok result} -match glob -body {
+    set res {}
+    proc foo {args} {oninit seek; onfinal; track; return 23}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [seek $c 0 current]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{seek rc* 0 current} {}} \
+    -constraints {testchannel thread}
+foreach {testname code} {
+    iocmd.tf-28.19.0 start
+    iocmd.tf-28.19.1 current
+    iocmd.tf-28.19.2 end
+} {
+    test $testname "chan seek, base conversion, $code" -match glob -body {
+	set res {}
+	proc foo {args} {oninit seek; onfinal; track; return 0}
+	set c [chan create {r w} foo]
+	notes [inthread $c {
+	    note [seek $c 0 $code]
+	    close $c
+	    notes
+	} c code]
+	rename foo {}
+	set res
+    } -result [list [list seek rc* 0 $code] {}] \
+	-constraints {testchannel thread}
+}
+
+# --- === *** ###########################
+# method blocking
+
+test iocmd.tf-29.1 {chan blocking, no handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -blocking]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {1} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.2 {chan blocking, no handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -blocking 0]
+	note [fconfigure $c -blocking]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{} 0} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.3 {chan blocking, retrieval, handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; note MUST_NOT_HAPPEN; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -blocking]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {1} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.4 {chan blocking, resetting, handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -blocking 0]
+	note [fconfigure $c -blocking]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} {} 0} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.5 {chan blocking, setting, handler support} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fconfigure $c -blocking 1]
+	note [fconfigure $c -blocking]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 1} {} 1} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.6 {chan blocking, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; error BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -blocking 0} msg]
+	note $msg
+	# Catch the close. It changes blocking mode internally, and runs into the error result.
+	catch {close $c}
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 BOOM!} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.7 {chan blocking, break return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -code break BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -blocking 0} msg]
+	note $msg
+	catch {close $c}
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.8 {chan blocking, continue return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -code continue BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -blocking 0} msg]
+	note $msg
+	catch {close $c}
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.9 {chan blocking, custom return is error} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -code 44 BOOM!}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -blocking 0} msg]
+	note $msg
+	catch {close $c}
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code*} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.10 {chan blocking, level is ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return -level 99 -code 44 BANG}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -blocking 0} msg opt]
+	note $msg
+	noteOpts $opt
+	catch {close $c}
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "blocking"*}} \
+    -constraints {testchannel thread}
+test iocmd.tf-29.11 {chan blocking, regular return ok, value ignored} -match glob -body {
+    set res {}
+    proc foo {args} {oninit blocking; onfinal; track; return BOGUS}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [catch {fconfigure $c -blocking 0} msg]
+	note $msg
+	catch {close $c}
+	notes
+    } c]
+    rename foo {}
+    set res
+} -result {{blocking rc* 0} 0 {}} \
+    -constraints {testchannel thread}
+
+# --- === *** ###########################
+# method watch
+
+test iocmd.tf-30.1 {chan watch, read interest, some return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return IGNORED}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fileevent $c readable {set tick $tick}]
+	close $c		;# 2nd watch, interest zero.
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{watch rc* read} {watch rc* {}} {}}
+test iocmd.tf-30.2 {chan watch, write interest, error return} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return -code error BOOM!_IGNORED}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fileevent $c writable {set tick $tick}]
+	note [fileevent $c writable {}]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} -result {{watch rc* write} {watch rc* {}} {} {}}
+test iocmd.tf-30.3 {chan watch, accumulated interests} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fileevent $c writable {set tick $tick}]
+	note [fileevent $c readable {set tick $tick}]
+	note [fileevent $c writable {}]
+	note [fileevent $c readable {}]
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} \
+    -result {{watch rc* write} {watch rc* {read write}} {watch rc* read} {watch rc* {}} {} {} {} {}}
+test iocmd.tf-30.4 {chan watch, unchanged interest not forwarded} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	note [fileevent $c writable {set tick $tick}]
+	note [fileevent $c readable {set tick $tick}] ;# Script is changing,
+	note [fileevent $c readable {set tock $tock}] ;# interest does not.
+	close $c	;# 3rd and 4th watch, removing the event handlers.
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} \
+    -result {{watch rc* write} {watch rc* {read write}} {watch rc* write} {watch rc* {}} {} {} {}}
+
+# --- === *** ###########################
+# postevent
+# Not possible from a thread not containing the command handler.
+# Check that this is rejected.
+
+test iocmd.tf-31.8 {chan postevent, bad input} -match glob -body {
+    set res {}
+    proc foo {args} {oninit; onfinal; track; return}
+    set c [chan create {r w} foo]
+    notes [inthread $c {
+	catch {chan postevent $c r} msg
+	note $msg
+	close $c
+	notes
+    } c]
+    rename foo {}
+    set res
+} -constraints {testchannel thread} \
+    -result {{can not find reflected channel named "rc*"}}
+
+# --- === *** ###########################
+# 'Pull the rug' tests. Create channel in a thread A, move to other
+# thread B, destroy the origin thread (A) before or during access from
+# B. Must not crash, must return proper errors.
+
+test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
+
+    #puts <<$tcltest::mainThread>>main
+    set tida [thread::create -preserved];#puts <<$tida>>
+    thread::send $tida {load {} Tcltest}
+
+    set tidb [thread::create -preserved];#puts <<$tidb>>
+    thread::send $tidb {load {} Tcltest}
+
+    # Set up channel in thread
+    thread::send $tida $helperscript
+    set chan [thread::send $tida {
+	proc foo {args} {oninit seek; onfinal; track; return}
+	set chan [chan create {r w} foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+
+    # Move channel to 2nd thread.
+    thread::send $tida [list testchannel cut $chan]
+    thread::send $tidb [list testchannel splice $chan]
+
+    # Kill origin thread, then access channel from 2nd thread.
+    thread::release $tida
+
+    set     res {}
+    lappend res [catch {thread::send $tidb [list puts  $chan shoo]} msg] $msg
+
+    lappend res [catch {thread::send $tidb [list tell  $chan]}      msg] $msg
+    lappend res [catch {thread::send $tidb [list seek  $chan 1]}    msg] $msg
+    lappend res [catch {thread::send $tidb [list gets  $chan]}      msg] $msg
+    lappend res [catch {thread::send $tidb [list close $chan]}      msg] $msg
+    thread::release $tidb
+    set res
+
+} -constraints {testchannel thread} \
+    -result {1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost} 1 {Owner lost}}
+
+
+# The test iocmd.tf-32.1 unavoidably exhibits a memory leak.  We are testing
+# the ability of the reflected channel system to react to the situation where
+# the thread in which the driver routines runs exits during driver operations.
+# In this case, thread exit handlers signal back to the owner thread so that the
+# channel operation does not hang.  There's no way to test this without actually
+# exiting a thread in mid-operation, and that action is unavoidably leaky (which
+# is why [thread::exit] is advised against).
+#
+# Use constraints to skip this test while valgrinding so this expected leak
+# doesn't prevent a finding of "leak-free".
+#
+test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -match glob -body {
+
+    #puts <<$tcltest::mainThread>>main
+    set tida [thread::create -preserved];#puts <<$tida>>
+    thread::send $tida {load {} Tcltest}
+    set tidb [thread::create -preserved];#puts <<$tidb>>
+    thread::send $tidb {load {} Tcltest}
+
+    # Set up channel in thread
+    thread::send $tida $helperscript
+    set chan [thread::send $tida {
+	proc foo {args} {
+	    oninit; onfinal; track;
+	    # destroy thread during channel access
+	    thread::exit
+	    }
+	set chan [chan create {r w} foo]
+	fconfigure $chan -buffering none
+	set chan
+    }]
+
+    # Move channel to 2nd thread.
+    thread::send $tida [list testchannel cut    $chan]
+    thread::send $tidb [list testchannel splice $chan]
+
+    # Run access from thread B, wait for response from A (A is not
+    # using event loop at this point, so the event pile up in the
+    # queue.
+
+    thread::send $tidb [list set chan $chan]
+    thread::send $tidb [list set mid [thread::id]]
+    thread::send -async $tidb {
+	# wait a bit, give the main thread the time to start its event
+	# loop to wait for the response from B
+	after 2000
+	catch { puts $chan shoo } res
+	thread::send -async $mid [list set ::res $res]
+    }
+    vwait ::res
+
+    catch {thread::release $tida}
+    thread::release $tidb
+    set res
+} -constraints {testchannel thread notValgrind} \
+    -result {Owner lost}
+
+# ### ### ### ######### ######### #########
+
+# ### ### ### ######### ######### #########
+
+rename track {}
+# cleanup
+
+
+# Eliminate valgrind "still reachable" reports on outstanding "Detached"
+# structures in the detached list which stem from PipeClose2Proc not waiting
+# around for background processes to complete, meaning that previous calls to
+# Tcl_ReapDetachedProcs might not have had a chance to reap all processes.
+after 10
+exec [info nameofexecutable] << {}
+
+
+foreach file [list test1 test2 test3 test4] {
+    removeFile $file
+}
+# delay long enough for background processes to finish
+after 500
+removeFile test5
+cleanupTests
+return

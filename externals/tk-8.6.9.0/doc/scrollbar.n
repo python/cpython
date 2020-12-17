@@ -1,0 +1,360 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH scrollbar n 4.1 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+scrollbar \- Create and manipulate 'scrollbar' scrolling control and indicator widgets
+.SH SYNOPSIS
+\fBscrollbar\fR \fIpathName \fR?\fIoptions\fR?
+.SO
+\-activebackground	\-highlightcolor	\-repeatdelay
+\-background	\-highlightthickness	\-repeatinterval
+\-borderwidth	\-jump	\-takefocus
+\-cursor	\-orient	\-troughcolor
+\-highlightbackground	\-relief
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-activerelief activeRelief ActiveRelief
+Specifies the relief to use when displaying the element that is
+active, if any.
+Elements other than the active element are always displayed with
+a raised relief.
+.OP \-command command Command
+Specifies the prefix of a Tcl command to invoke to change the view
+in the widget associated with the scrollbar.  When a user requests
+a view change by manipulating the scrollbar, a Tcl command is
+invoked.  The actual command consists of this option followed by
+additional information as described later.  This option almost always has
+a value such as \fB.t xview\fR or \fB.t yview\fR, consisting of the
+name of a widget and either \fBxview\fR (if the scrollbar is for
+horizontal scrolling) or \fByview\fR (for vertical scrolling).
+All scrollable widgets have \fBxview\fR and \fByview\fR commands
+that take exactly the additional arguments appended by the scrollbar
+as described in \fBSCROLLING COMMANDS\fR below.
+.OP \-elementborderwidth elementBorderWidth BorderWidth
+Specifies the width of borders drawn around the internal elements
+of the scrollbar (the two arrows and the slider).  The value may
+have any of the forms acceptable to \fBTk_GetPixels\fR.
+If this value is less than zero, the value of the \fB\-borderwidth\fR
+option is used in its place.
+.OP \-width width Width
+Specifies the desired narrow dimension of the scrollbar window,
+not including 3-D border, if any.  For vertical
+scrollbars this will be the width and for horizontal scrollbars
+this will be the height.
+The value may have any of the forms acceptable to \fBTk_GetPixels\fR.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBscrollbar\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a scrollbar widget.
+Additional options, described above, may be specified on the command
+line or in the option database to configure aspects of the scrollbar
+such as its colors, orientation, and relief.
+The \fBscrollbar\fR command returns its \fIpathName\fR argument.
+At the time this command is invoked, there must not exist a window
+named \fIpathName\fR, but \fIpathName\fR's parent must exist.
+.PP
+A scrollbar is a widget that displays two arrows, one at each end of
+the scrollbar, and a \fIslider\fR in the middle portion of the
+scrollbar.
+It provides information about what is visible in an \fIassociated window\fR
+that displays a document of some sort (such as a file being edited or
+a drawing).
+The position and size of the slider indicate which portion of the
+document is visible in the associated window.  For example, if the
+slider in a vertical scrollbar covers the top third of the area
+between the two arrows, it means that the associated window displays
+the top third of its document.
+.PP
+Scrollbars can be used to adjust the view in the associated window
+by clicking or dragging with the mouse.  See the \fBBINDINGS\fR section
+below for details.
+.SH "ELEMENTS"
+.PP
+A scrollbar displays five elements, which are referred to in the
+widget commands for the scrollbar:
+.TP 10
+\fBarrow1\fR
+The top or left arrow in the scrollbar.
+.TP 10
+\fBtrough1\fR
+The region between the slider and \fBarrow1\fR.
+.TP 10
+\fBslider\fR
+The rectangle that indicates what is visible in the associated widget.
+.TP 10
+\fBtrough2\fR
+The region between the slider and \fBarrow2\fR.
+.TP 10
+\fBarrow2\fR
+The bottom or right arrow in the scrollbar.
+.SH "WIDGET COMMAND"
+.PP
+The \fBscrollbar\fR command creates a new Tcl command whose
+name is \fIpathName\fR.  This
+command may be used to invoke various
+operations on the widget.  It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for scrollbar widgets:
+.TP
+\fIpathName \fBactivate \fR?\fIelement\fR?
+.
+Marks the element indicated by \fIelement\fR as active, which
+causes it to be displayed as specified by the \fB\-activebackground\fR
+and \fB\-activerelief\fR options.
+The only element values understood by this command are \fBarrow1\fR,
+\fBslider\fR, or \fBarrow2\fR.
+If any other value is specified then no element of the scrollbar
+will be active.
+If \fIelement\fR is not specified, the command returns
+the name of the element that is currently active, or an empty string
+if no element is active.
+.TP
+\fIpathName \fBcget \fIoption\fR
+.
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBscrollbar\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+.
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBscrollbar\fR
+command.
+.TP
+\fIpathName \fBdelta \fIdeltaX deltaY\fR
+.
+Returns a real number indicating the fractional change in
+the scrollbar setting that corresponds to a given change
+in slider position.  For example, if the scrollbar is horizontal,
+the result indicates how much the scrollbar setting must change
+to move the slider \fIdeltaX\fR pixels to the right (\fIdeltaY\fR is
+ignored in this case).
+If the scrollbar is vertical, the result indicates how much the
+scrollbar setting must change to move the slider \fIdeltaY\fR pixels
+down.  The arguments and the result may be zero or negative.
+.TP
+\fIpathName \fBfraction \fIx y\fR
+.
+Returns a real number between 0 and 1 indicating where the point
+given by \fIx\fR and \fIy\fR lies in the trough area of the scrollbar.
+The value 0 corresponds to the top or left of the trough, the
+value 1 corresponds to the bottom or right, 0.5 corresponds to
+the middle, and so on.
+\fIX\fR and \fIy\fR must be pixel coordinates relative to the scrollbar
+widget.
+If \fIx\fR and \fIy\fR refer to a point outside the trough, the closest
+point in the trough is used.
+.TP
+\fIpathName \fBget\fR
+.
+Returns the scrollbar settings in the form of a list whose
+elements are the arguments to the most recent \fBset\fR widget command.
+.TP
+\fIpathName \fBidentify \fIx y\fR
+.
+Returns the name of the element under the point given by \fIx\fR and
+\fIy\fR (such as \fBarrow1\fR), or an empty string if the point does
+not lie in any element of the scrollbar.
+\fIX\fR and \fIy\fR must be pixel coordinates relative to the scrollbar
+widget.
+.TP
+\fIpathName \fBset \fIfirst last\fR
+.
+This command is invoked by the scrollbar's associated widget to
+tell the scrollbar about the current view in the widget.
+The command takes two arguments, each of which is a real fraction
+between 0 and 1.
+The fractions describe the range of the document that is visible in
+the associated widget.
+For example, if \fIfirst\fR is 0.2 and \fIlast\fR is 0.4, it means
+that the first part of the document visible in the window is 20%
+of the way through the document, and the last visible part is 40%
+of the way through.
+.SH "SCROLLING COMMANDS"
+.PP
+When the user interacts with the scrollbar, for example by dragging
+the slider, the scrollbar notifies the associated widget that it
+must change its view.
+The scrollbar makes the notification by evaluating a Tcl command
+generated from the scrollbar's \fB\-command\fR option.
+The command may take any of the following forms.
+In each case, \fIprefix\fR is the contents of the
+\fB\-command\fR option, which usually has a form like
+.QW \fB.t yview\fR .
+.TP
+\fIprefix \fBmoveto \fIfraction\fR
+.
+\fIFraction\fR is a real number between 0 and 1.
+The widget should adjust its view so that the point given
+by \fIfraction\fR appears at the beginning of the widget.
+If \fIfraction\fR is 0 it refers to the beginning of the
+document.  1.0 refers to the end of the document, 0.333
+refers to a point one-third of the way through the document,
+and so on.
+.TP
+\fIprefix \fBscroll \fInumber \fBunits\fR
+.
+The widget should adjust its view by \fInumber\fR units.
+The units are defined in whatever way makes sense for the widget,
+such as characters or lines in a text widget.
+\fINumber\fR is either 1, which means one unit should scroll off
+the top or left of the window, or \-1, which means that one unit
+should scroll off the bottom or right of the window.
+.TP
+\fIprefix \fBscroll \fInumber \fBpages\fR
+.
+The widget should adjust its view by \fInumber\fR pages.
+It is up to the widget to define the meaning of a page;  typically
+it is slightly less than what fits in the window, so that there
+is a slight overlap between the old and new views.
+\fINumber\fR is either 1, which means the next page should
+become visible, or \-1, which means that the previous page should
+become visible.
+.SH "OLD COMMAND SYNTAX"
+.PP
+In versions of Tk before 4.0, the \fBset\fR and \fBget\fR widget
+commands used a different form.
+This form is still supported for backward compatibility, but it
+is deprecated.
+In the old command syntax, the \fBset\fR widget command has the
+following form:
+.TP
+\fIpathName \fBset \fItotalUnits windowUnits firstUnit lastUnit\fR
+In this form the arguments are all integers.
+\fITotalUnits\fR gives the total size of the object being displayed in the
+associated widget.  The meaning of one unit depends on the associated
+widget;  for example, in a text editor widget units might
+correspond to lines of
+text.  \fIWindowUnits\fR indicates the total number of units that
+can fit in the associated window at one time.  \fIFirstUnit\fR
+and \fIlastUnit\fR give the indices of the first and last units
+currently visible in the associated window (zero corresponds to the
+first unit of the object).
+.LP
+Under the old syntax the \fBget\fR widget command returns a list
+of four integers, consisting of the \fItotalUnits\fR, \fIwindowUnits\fR,
+\fIfirstUnit\fR, and \fIlastUnit\fR values from the last \fBset\fR
+widget command.
+.PP
+The commands generated by scrollbars also have a different form
+when the old syntax is being used:
+.TP
+\fIprefix\fR \fIunit\fR
+\fIUnit\fR is an integer that indicates what should appear at
+the top or left of the associated widget's window.
+It has the same meaning as the \fIfirstUnit\fR and \fIlastUnit\fR
+arguments to the \fBset\fR widget command.
+.LP
+The most recent \fBset\fR widget command determines whether or not
+to use the old syntax.
+If it is given two real arguments then the new syntax will be
+used in the future, and if it is given four integer arguments then
+the old syntax will be used.
+.SH BINDINGS
+.PP
+Tk automatically creates class bindings for scrollbars that give them
+the following default behavior.
+If the behavior is different for vertical and horizontal scrollbars,
+the horizontal behavior is described in parentheses.
+.IP [1]
+Pressing button 1 over \fBarrow1\fR causes the view in the
+associated widget to shift up (left) by one unit so that the
+document appears to move down (right) one unit.
+If the button is held down, the action auto-repeats.
+.IP [2]
+Pressing button 1 over \fBtrough1\fR causes the view in the
+associated widget to shift up (left) by one screenful so that the
+document appears to move down (right) one screenful.
+If the button is held down, the action auto-repeats.
+.IP [3]
+Pressing button 1 over the slider and dragging causes the view
+to drag with the slider.
+If the \fBjump\fR option is true, then the view does not drag along
+with the slider;  it changes only when the mouse button is released.
+.IP [4]
+Pressing button 1 over \fBtrough2\fR causes the view in the
+associated widget to shift down (right) by one screenful so that the
+document appears to move up (left) one screenful.
+If the button is held down, the action auto-repeats.
+.IP [5]
+Pressing button 1 over \fBarrow2\fR causes the view in the
+associated widget to shift down (right) by one unit so that the
+document appears to move up (left) one unit.
+If the button is held down, the action auto-repeats.
+.IP [6]
+If button 2 is pressed over the trough or the slider, it sets
+the view to correspond to the mouse position;  dragging the
+mouse with button 2 down causes the view to drag with the mouse.
+If button 2 is pressed over one of the arrows, it causes the
+same behavior as pressing button 1.
+.IP [7]
+If button 1 is pressed with the Control key down, then if the
+mouse is over \fBarrow1\fR or \fBtrough1\fR the view changes
+to the very top (left) of the document;  if the mouse is over
+\fBarrow2\fR or \fBtrough2\fR the view changes
+to the very bottom (right) of the document;  if the mouse is
+anywhere else then the button press has no effect.
+.IP [8]
+In vertical scrollbars the Up and Down keys have the same behavior
+as mouse clicks over \fBarrow1\fR and \fBarrow2\fR, respectively.
+In horizontal scrollbars these keys have no effect.
+.IP [9]
+In vertical scrollbars Control-Up and Control-Down have the same
+behavior as mouse clicks over \fBtrough1\fR and \fBtrough2\fR, respectively.
+In horizontal scrollbars these keys have no effect.
+.IP [10]
+In horizontal scrollbars the Up and Down keys have the same behavior
+as mouse clicks over \fBarrow1\fR and \fBarrow2\fR, respectively.
+In vertical scrollbars these keys have no effect.
+.IP [11]
+In horizontal scrollbars Control-Up and Control-Down have the same
+behavior as mouse clicks over \fBtrough1\fR and \fBtrough2\fR, respectively.
+In vertical scrollbars these keys have no effect.
+.IP [12]
+The Prior and Next keys have the same behavior
+as mouse clicks over \fBtrough1\fR and \fBtrough2\fR, respectively.
+.IP [13]
+The Home key adjusts the view to the top (left edge) of the document.
+.IP [14]
+The End key adjusts the view to the bottom (right edge) of the document.
+.SH EXAMPLE
+.PP
+Create a window with a scrollable \fBtext\fR widget:
+.CS
+toplevel .tl
+text .tl.t \-yscrollcommand {.tl.s set}
+\fBscrollbar\fR .tl.s \-command {.tl.t yview}
+grid .tl.t .tl.s \-sticky nsew
+grid columnconfigure .tl 0 \-weight 1
+grid rowconfigure .tl 0 \-weight 1
+.CE
+.SH "SEE ALSO"
+ttk:scrollbar(n)
+.SH KEYWORDS
+scrollbar, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

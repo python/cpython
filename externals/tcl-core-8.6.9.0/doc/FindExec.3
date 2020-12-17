@@ -1,0 +1,63 @@
+'\"
+'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_FindExecutable 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_FindExecutable, Tcl_GetNameOfExecutable \- identify or return the name of the binary file containing the application
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_FindExecutable\fR(\fIargv0\fR)
+.sp
+const char *
+\fBTcl_GetNameOfExecutable\fR()
+.SH ARGUMENTS
+.AS char *argv0
+.AP char *argv0 in
+The first command-line argument to the program, which gives the
+application's name.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBTcl_FindExecutable\fR procedure computes the full path name of
+the executable file from which the application was invoked and saves
+it for Tcl's internal use.
+The executable's path name is needed for several purposes in
+Tcl.  For example, it is needed on some platforms in the
+implementation of the \fBload\fR command.
+It is also returned by the \fBinfo nameofexecutable\fR command.
+.PP
+On UNIX platforms this procedure is typically invoked as the very
+first thing in the application's main program;  it must be passed
+\fIargv[0]\fR as its argument.  It is important not to change the
+working directory before the invocation.
+\fBTcl_FindExecutable\fR uses \fIargv0\fR
+along with the \fBPATH\fR environment variable to find the
+application's executable, if possible.  If it fails to find
+the binary, then future calls to \fBinfo nameofexecutable\fR
+will return an empty string.
+.PP
+On Windows platforms this procedure is typically invoked as the very
+first thing in the application's main program as well; Its \fIargv[0]\fR
+argument is only used to indicate whether the executable has a stderr
+channel (any non-null value) or not (the value null). If \fBTcl_SetPanicProc\fR
+is never called and no debugger is running, this determines whether
+the panic message is sent to stderr or to a standard system dialog.
+.PP
+\fBTcl_GetNameOfExecutable\fR simply returns a pointer to the
+internal full path name of the executable file as computed by
+\fBTcl_FindExecutable\fR.  This procedure call is the C API
+equivalent to the \fBinfo nameofexecutable\fR command.  NULL
+is returned if the internal full path name has not been
+computed or unknown.
+
+.SH KEYWORDS
+binary, executable file

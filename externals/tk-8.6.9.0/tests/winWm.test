@@ -1,0 +1,577 @@
+# This file tests  is a Tcl script to test the procedures in the file
+# tkWinWm.c.  It is organized in the standard fashion for Tcl tests.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+
+test winWm-1.1 {TkWmMapWindow} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm override .t 1
+    wm geometry .t +0+0
+    update
+    list [winfo rootx .t] [winfo rooty .t]
+} -cleanup {
+    destroy .t
+} -result {0 0}
+test winWm-1.2 {TkWmMapWindow} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm transient .t .
+    update
+    wm iconify .
+    update
+    wm deiconify .
+    update
+    wm iconify .t
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {can't iconify ".t": it is a transient}
+test winWm-1.3 {TkWmMapWindow} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    update
+    toplevel .t2
+    update
+    expr {[winfo x .t] != [winfo x .t2]}
+} -cleanup {
+    destroy .t .t2
+} -result 1
+test winWm-1.4 {TkWmMapWindow} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm geometry .t +10+10
+    update
+    toplevel .t2
+    wm geometry .t2 +40+10
+    update
+    list [winfo x .t] [winfo x .t2]
+} -cleanup {
+    destroy .t .t2
+} -result {10 40}
+test winWm-1.5 {TkWmMapWindow} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm iconify .t
+    update
+    wm state .t
+} -result {iconic}
+
+
+test winWm-2.1 {TkpWmSetState} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm geometry .t 150x50+10+10
+    update
+    set result [wm state .t]
+    wm iconify .t
+    update
+    lappend result [wm state .t]
+    wm deiconify .t
+    update
+    lappend result [wm state .t]
+} -cleanup {
+    destroy .t
+} -result {normal iconic normal}
+test winWm-2.2 {TkpWmSetState} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm geometry .t 150x50+10+10
+    update
+    set result [wm state .t]
+    wm withdraw .t
+    update
+    lappend result [wm state .t]
+    wm iconify .t
+    update
+    lappend result [wm state .t]
+    wm deiconify .t
+    update
+    lappend result [wm state .t]
+} -cleanup {
+    destroy .t
+} -result {normal withdrawn iconic normal}
+test winWm-2.3 {TkpWmSetState} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm geometry .t 150x50+10+10
+    update
+    set result [wm state .t]
+    wm state .t withdrawn
+    update
+    lappend result [wm state .t]
+    wm state .t iconic
+    update
+    lappend result [wm state .t]
+    wm state .t normal
+    update
+    lappend result [wm state .t]
+} -cleanup {
+    destroy .t
+} -result {normal withdrawn iconic normal}
+test winWm-2.4 {TkpWmSetState} -constraints win -setup {
+    destroy .t
+    set result {}
+} -body {
+    toplevel .t
+    wm geometry .t 150x50+10+10
+    update
+    lappend result [list [wm state .t] [wm geometry .t]]
+    wm iconify .t
+    update
+    lappend result [list [wm state .t] [wm geometry .t]]
+    wm geometry .t 200x50+10+10
+    update
+    lappend result [list [wm state .t] [wm geometry .t]]
+    wm deiconify .t
+    update
+    lappend result [list [wm state .t] [wm geometry .t]]
+} -cleanup {
+    destroy .t
+} -result {{normal 150x50+10+10} {iconic 150x50+10+10} {iconic 150x50+10+10} {normal 200x50+10+10}}
+
+
+test winWm-3.1 {ConfigureTopLevel: window geometry propagation} -constraints {
+    win
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm geometry .t +0+0
+    button .t.b
+    pack .t.b
+    update
+    set x [winfo x .t.b]
+    destroy .t
+    toplevel .t
+    wm geometry .t +0+0
+    button .t.b
+    update
+    pack .t.b
+    update
+    expr {$x == [winfo x .t.b]}
+} -cleanup {
+    destroy .t
+} -result 1
+
+
+test winWm-4.1 {ConfigureTopLevel: menu resizing} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    frame .t.f -width 100 -height 50
+    pack .t.f
+    menu .t.m
+    .t.m add command -label "thisisreallylong"
+    .t configure -menu .t.m
+    wm geometry .t -0-0
+    update
+    set menuheight [winfo y .t]
+    .t.m add command -label "thisisreallylong"
+    wm geometry .t -0-0
+    update
+    set menuheight [expr {$menuheight - [winfo y .t]}]
+    destroy .t
+
+    toplevel .t
+    frame .t.f -width 150 -height 50 -background red
+    pack .t.f
+    wm geometry .t -0-0
+    update
+    set y [winfo y .t]
+    menu .t.m
+    .t.m add command -label foo
+    .t configure -menu .t.m
+    update
+    expr {$y - [winfo y .t]  eq  $menuheight + 1}
+} -cleanup {
+    destroy .t
+} -result 1
+
+
+# This test works on 8.0p2 but has not worked on anything since 8.2.
+# It would be very strange to have a windows application increase the size
+# of the clientarea when a menu wraps so I believe this test to be wrong.
+# Original result was {50 50 50} new result may depend on the default menu
+# font
+test winWm-5.1 {UpdateGeometryInfo: menu resizing} -constraints win -setup {
+    destroy .t
+    set result {}
+} -body {
+    toplevel .t
+    frame .t.f -width 150 -height 50 -background red
+    pack .t.f
+    update
+    set result [winfo height .t]
+    menu .t.m
+    .t.m add command -label foo
+    .t configure -menu .t.m
+    update
+    lappend result [winfo height .t]
+    .t.m add command -label "thisisreallylong"
+    .t.m add command -label "thisisreallylong"
+    update
+    lappend result [winfo height .t]
+} -cleanup {
+    destroy .t
+} -result {50 50 31}
+test winWm-5.2 {UpdateGeometryInfo: menu resizing} -constraints win -setup {
+    destroy .t
+} -body {
+    set result {}
+    toplevel .t
+    frame .t.f -width 150 -height 50 -background red
+    pack .t.f
+    wm geometry .t -0-0
+    update
+    set y [winfo rooty .t]
+    lappend result [winfo height .t]
+    menu .t.m
+    .t configure -menu .t.m
+    .t.m add command -label foo
+    .t.m add command -label "thisisreallylong"
+    .t.m add command -label "thisisreallylong"
+    update
+    lappend result [winfo height .t]
+    lappend result [expr {$y - [winfo rooty .t]}]
+    destroy .t
+    return $result
+} -cleanup {
+    destroy .t
+} -result {50 50 0}
+
+test winWm-6.1 {wm attributes} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm attributes .t
+} -cleanup {
+    destroy .t
+} -result {-alpha 1.0 -transparentcolor {} -disabled 0 -fullscreen 0 -toolwindow 0 -topmost 0}
+test winWm-6.2 {wm attributes} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm attributes .t -disabled
+} -cleanup {
+    destroy .t
+} -result {0}
+test winWm-6.3 {wm attributes} -constraints win -setup {
+    destroy .t
+} -body {
+    # This isn't quite the correct error message yet, but it works.
+    toplevel .t
+    wm attributes .t -foo
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {wrong # args: should be "wm attributes window ?-alpha ?double?? ?-transparentcolor ?color?? ?-disabled ?bool?? ?-fullscreen ?bool?? ?-toolwindow ?bool?? ?-topmost ?bool??"}
+
+test winWm-6.4 {wm attributes -alpha} -constraints win -setup {
+    destroy .t
+} -body {
+    # Expect this to return all 1.0 {} on pre-2K/XP
+    toplevel .t
+    set res [wm attributes .t -alpha]
+    # we don't return on set yet
+    lappend res [wm attributes .t -alpha 0.5]
+    lappend res [wm attributes .t -alpha]
+    lappend res [wm attributes .t -alpha -100]
+    lappend res [wm attributes .t -alpha]
+    lappend res [wm attributes .t -alpha 100]
+    lappend res [wm attributes .t -alpha]
+    return $res
+} -cleanup {
+    destroy .t
+} -result {1.0 {} 0.5 {} 0.0 {} 1.0}
+
+test winWm-6.5 {wm attributes -alpha} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    wm attributes .t -alpha foo
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {expected floating-point number but got "foo"}
+
+test winWm-6.6 {wm attributes -alpha} -constraints win -setup {
+    destroy .t
+} -body {
+    # This test is just to show off -alpha
+    toplevel .t
+    wm attributes .t -alpha 0.2
+    pack [label .t.l -text "Alpha Toplevel" -font "Helvetica 18 bold"]
+    tk::PlaceWindow .t center
+    update
+    if {$::tcl_platform(osVersion) >= 5.0} {
+    for {set i 0.2} {$i < 0.99} {set i [expr {$i+0.02}]} {
+        wm attributes .t -alpha $i
+        update idle
+        after 20
+    }
+    for {set i 0.99} {$i > 0.2} {set i [expr {$i-0.02}]} {
+        wm attributes .t -alpha $i
+        update idle
+        after 20
+    }
+    }
+} -cleanup {
+    destroy .t
+} -result {}
+
+test winWm-6.7 {wm attributes -transparentcolor} -constraints win -setup {
+    destroy .t
+    set res {}
+} -body {
+    # Expect this to return all "" on pre-2K/XP
+    toplevel .t
+    lappend res [wm attributes .t -transparentcolor]
+    # we don't return on set yet
+    lappend res [wm attributes .t -trans black]
+    lappend res [wm attributes .t -trans]
+    lappend res [wm attributes .t -trans "#FFFFFF"]
+    lappend res [wm attributes .t -trans]
+} -cleanup {
+    destroy .t
+} -result [list {} {} black {} "#FFFFFF"]
+
+test winWm-6.8 {wm attributes -transparentcolor} -constraints win -setup {
+    destroy .t
+} -body {
+    destroy .t
+    toplevel .t
+    wm attributes .t -tr foo
+} -cleanup {
+    destroy .t
+} -returnCodes error -result {unknown color name "foo"}
+
+
+test winWm-7.1 {deiconify on an unmapped toplevel will raise \
+        the window and set the focus} -constraints {
+    win
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    lower .t
+    focus -force .
+    wm deiconify .t
+    update
+    list [wm stackorder .t isabove .] [focus]
+} -cleanup {
+    destroy .t
+} -result {1 .t}
+
+test winWm-7.2 {deiconify on an already mapped toplevel\
+        will raise the window and set the focus} -constraints {
+    win
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    lower .t
+    update
+    focus -force .
+    wm deiconify .t
+    update
+    list [wm stackorder .t isabove .] [focus]
+} -cleanup {
+    destroy .t
+} -result {1 .t}
+
+test winWm-7.3 {UpdateWrapper must maintain Z order} -constraints win -setup {
+    destroy .t
+} -body {
+    destroy .t
+    toplevel .t
+    lower .t
+    update
+    set res [wm stackorder .t isbelow .]
+    wm resizable .t 0 0
+    update
+    list $res [wm stackorder .t isbelow .]
+} -cleanup {
+    destroy .t
+} -result {1 1}
+
+test winWm-7.4 {UpdateWrapper must maintain focus} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    focus -force .t
+    update
+    set res [focus]
+    wm resizable .t 0 0
+    update
+    list $res [focus]
+} -cleanup {
+    destroy .t
+} -result {.t .t}
+
+
+test winWm-8.1 {Tk_WmCmd procedure, "iconphoto" option} -constraints win -body {
+    wm iconph .
+} -returnCodes error -result {wrong # args: should be "wm iconphoto window ?-default? image1 ?image2 ...?"}
+test winWm-8.2 {Tk_WmCmd procedure, "iconphoto" option} -constraints win -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    image create photo blank16 -width 16 -height 16
+    image create photo blank32 -width 32 -height 32
+    # This should just make blank icons for the window
+    wm iconphoto .t blank16 blank32
+    image delete blank16 blank32
+} -cleanup {
+    destroy .t
+} -result {}
+
+test winWm-9.0 "Bug #2799589 - delayed activation of destroyed window" -constraints win -setup {
+    proc winwm90click {w} {
+        if {![winfo ismapped $w]} { update }
+        event generate $w <Enter>
+        focus -force $w
+        event generate $w <ButtonPress-1> -x 5 -y 5
+        event generate $w <ButtonRelease-1> -x 5 -y 5
+    }
+    proc winwm90proc3 {} {
+        global winwm90done winwm90check
+        set w .sd
+        toplevel $w
+        pack [button $w.b -text "OK" -command {set winwm90check 1}]
+        bind $w.b <Map> {after idle {winwm90click %W}}
+        update idletasks
+        tkwait visibility $w
+        grab $w
+        tkwait variable winwm90check
+        grab release $w
+        destroy $w
+        after idle {set winwm90done ok}
+    }
+    proc winwm90proc2 {w} { winwm90proc3; destroy $w }
+    proc winwm90proc1 {w} {
+        toplevel $w
+        pack [button $w.b -text "Do dialog" -command [list winwm90proc2 $w]]
+        bind $w.b <Map> {bind %W <Map> {}; after idle {winwm90click %W}}
+    }
+    global winwm90done
+    set winwm90done wait
+    toplevel .t
+} -body {    
+    pack [button .t.b -text "Show" -command {winwm90proc1 .tx}]
+    bind .t.b <Map> {bind %W <Map> {}; after idle {winwm90click %W}}
+    after 5000 {set winwm90done timeout}
+    vwait winwm90done
+    set winwm90done
+} -cleanup {
+    foreach cmd {proc1 proc2 proc3 click} {
+        rename winwm90$cmd {}
+    }
+    destroy .tx .t .sd
+} -result {ok} 
+
+test winWm-9.1 "delayed activation of grabbed destroyed window" -constraints win -setup {
+    proc winwm91click {w} {
+        if {![winfo ismapped $w]} { update }
+        event generate $w <Enter>
+        focus -force $w
+        event generate $w <ButtonPress-1> -x 5 -y 5
+        event generate $w <ButtonRelease-1> -x 5 -y 5
+    }
+    proc winwm91proc3 {} {
+        global winwm91done winwm91check
+        set w .sd
+        toplevel $w
+        pack [button $w.b -text "OK" -command {set winwm91check 1}]
+        bind $w.b <Map> {after idle {winwm91click %W}}
+        update idletasks
+        tkwait visibility $w
+        grab $w
+        tkwait variable winwm91check
+        #skip the release:  #grab release $w
+        destroy $w
+        after idle {set winwm91done ok}
+    }
+    proc winwm91proc2 {w} { winwm91proc3; destroy $w }
+    proc winwm91proc1 {w} {
+        toplevel $w
+        pack [button $w.b -text "Do dialog" -command [list winwm91proc2 $w]]
+        bind $w.b <Map> {bind %W <Map> {}; after idle {winwm91click %W}}
+    }
+    destroy .t
+    global winwm91done
+    set winwm91done wait
+    toplevel .t
+} -body {    
+    pack [button .t.b -text "Show" -command {winwm91proc1 .tx}]
+    bind .t.b <Map> {bind %W <Map> {}; after idle {winwm91click %W}}
+    after 5000 {set winwm91done timeout}
+    vwait winwm91done
+    set winwm91done
+} -cleanup {
+    foreach cmd {proc1 proc2 proc3 click} {
+        rename winwm91$cmd {}
+    }
+    destroy .tx .t .sd
+} -result {ok}
+
+test winWm-9.2 "check wm forget for unmapped parent (#3205464,#2967911)" -setup {
+    destroy .t
+    toplevel .t
+    set winwm92 {}
+    frame .t.f -background blue -height 200 -width 200
+    frame .t.f.x -background red -height 100 -width 100
+} -body {
+    pack .t.f.x
+    pack .t.f
+    lappend aid [after 2000 {set ::winwm92 timeout}] [after 100 {
+        wm manage .t.f
+        wm iconify .t
+        lappend aid [after 100 {
+            wm forget .t.f
+            wm deiconify .t
+            lappend aid [after 100 {
+                pack .t.f
+                lappend aid [after 100 {
+		    set ::winwm92 [expr {
+			    [winfo rooty .t.f.x] == 0 ? "failed" : "ok"}]}]
+            }]
+        }]
+    }]
+    vwait ::winwm92
+    foreach id $aid {
+	after cancel $id
+    }
+    set winwm92
+} -cleanup {
+    destroy .t.f.x .t.f .t
+    unset -nocomplain winwm92 aid id
+} -result ok
+
+destroy .t
+
+# cleanup
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:
+

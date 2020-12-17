@@ -1,0 +1,58 @@
+<HEAD>
+<TITLE> The Scrolled Listbox Widget<A NAME=231>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html720 HREF=subsubsection3_4_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html718 HREF=subsection3_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html712 HREF=subsection3_4_3.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html722 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html721 HREF=subsubsection3_4_3_2.html> Other Scrolled Widgets</A>
+<B>Up:</B> <A NAME=tex2html719 HREF=subsection3_4_3.html> The Family of </A>
+<B> Previous:</B> <A NAME=tex2html713 HREF=subsection3_4_3.html> The Family of </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00043100000000000000> The Scrolled Listbox Widget<A NAME=231>&nbsp;</A></A></H3>
+<P>
+You can create a scrolled listbox widget using the <tt>tixScrolledListBox</tt>
+  command. Notice that the widget created by the <tt>tixScrolledListBox</tt>
+  command is not itself a listbox widget. Rather, it is a frame widget
+  which contains two scrollbar subwidgets: one is called <tt>hsb</tt> (the
+  horizontal scrollbar) and the other is called <tt>vsb</tt> (the vertical
+  scrollbar). Similarly, the listbox being scrolled is also a subwidget
+  which is appropriately called <tt>listbox</tt>. Therefore, if we need to put
+  things into the listbox (as we always do!), we can use the <tt>subwidget</tt> method. As shown in program 2-7, we first find
+  the pathname of the <tt>listbox</tt> subwidget by calling ``<tt>.sl
+  subwidget listbox</tt>''. Then, we insert some items into the <tt>listbox</tt>
+  subwidget.
+<P>
+<P><blockquote> <P><tt> tixScrolledListBox .sl -scrollbar auto<BR>
+set listbox [.sl subwidget listbox]<BR>
+<BR>
+for {set x 0} {$x $&lt;$ 6} {incr x} {<BR>
+    $listbox insert end &quot;This is item $x&quot;<BR>
+}<BR>
+<BR>
+pack .sl -side left -expand yes -fill both
+</tt>
+<P></blockquote>
+<P><CENTER>(Figure 2-7) Scrolled Listbox Widget<A NAME=27>&nbsp;</A>
+  </CENTER>
+<P>
+<P><CENTER><P><IMG ALIGN="LEFT" SRC="../gif/tix/container/sl-nobar.gif"> <IMG ALIGN="LEFT" SRC="../gif/tix/container/sl-bar.gif"><BR CLEAR=LEFT><CENTER>(Figure 2-8) Scrolled ListBox with Automatic Scrollbars<A NAME=28>&nbsp;</A></CENTER><P>
+  </CENTER>
+<P>
+Also, as seen in the first line of program 2-7, we use
+  the <tt>-scrollbar</tt> option to control the scrolling policy of the
+  TixScrolledListBox widget. Usually, we'll set it to ``<tt>auto</tt>'':
+  the scrollbars are displayed only if they are needed. Other possible
+  values are ``<tt>both</tt>'': the two scrollbars are always displayed;
+  ``<tt>x</tt>'': the horizontal scrollbar is always displayed, while the
+  vertical scrollbar is always hidden; ``<tt>y</tt>'': the opposite of
+  ``<tt>x</tt>''; ``<tt>none</tt>'': the two scrollbars are always
+  hidden. The result of program 2-7 is shown in figure
+  2-8.
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

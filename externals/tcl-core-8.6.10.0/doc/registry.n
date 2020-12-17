@@ -1,0 +1,218 @@
+'\"
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\" Copyright (c) 2002 ActiveState Corporation.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH registry n 1.1 registry "Tcl Bundled Packages"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+registry \- Manipulate the Windows registry
+.SH SYNOPSIS
+.sp
+\fBpackage require registry 1.3\fR
+.sp
+\fBregistry \fR?\fI\-mode\fR? \fIoption\fR \fIkeyName\fR ?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBregistry\fR package provides a general set of operations for
+manipulating the Windows registry.  The package implements the
+\fBregistry\fR Tcl command.  This command is only supported on the
+Windows platform.  Warning: this command should be used with caution
+as a corrupted registry can leave your system in an unusable state.
+.PP
+\fIKeyName\fR is the name of a registry key.  Registry keys must be
+one of the following forms:
+.RS
+.PP
+\fB\e\e\fIhostname\fB\e\fIrootname\fB\e\fIkeypath\fR
+.PP
+\fIrootname\fB\e\fIkeypath\fR
+.PP
+\fIrootname\fR
+.RE
+.PP
+\fIHostname\fR specifies the name of any valid Windows
+host that exports its registry.  The \fIrootname\fR component must be
+one of \fBHKEY_LOCAL_MACHINE\fR, \fBHKEY_USERS\fR,
+\fBHKEY_CLASSES_ROOT\fR, \fBHKEY_CURRENT_USER\fR,
+\fBHKEY_CURRENT_CONFIG\fR, \fBHKEY_PERFORMANCE_DATA\fR, or
+\fBHKEY_DYN_DATA\fR.  The \fIkeypath\fR can be one or more
+registry key names separated by backslash (\fB\e\fR) characters.
+.PP
+.VS 8.6
+The optional \fI\-mode\fR argument indicates which registry to work
+with; when it is \fB\-32bit\fR the 32-bit registry will be used, and
+when it is \fB\-64bit\fR the 64-bit registry will be used. If this
+argument is omitted, the system's default registry will be the subject
+of the requested operation.
+.VE 8.6
+.PP
+\fIOption\fR indicates what to do with the registry key name.  Any
+unique abbreviation for \fIoption\fR is acceptable.  The valid options
+are:
+.TP
+\fBregistry broadcast \fIkeyName\fR ?\fB\-timeout \fImilliseconds\fR?
+.
+Sends a broadcast message to the system and running programs to notify them
+of certain updates.  This is necessary to propagate changes to key registry
+keys like Environment.  The timeout specifies the amount of time, in
+milliseconds, to wait for applications to respond to the broadcast message.
+It defaults to 3000.  The following example demonstrates how to add a path
+to the global Environment and notify applications of the change without
+requiring a logoff/logon step (assumes admin privileges):
+.RS
+.PP
+.CS
+set regPath [join {
+    HKEY_LOCAL_MACHINE
+    SYSTEM
+    CurrentControlSet
+    Control
+    {Session Manager}
+    Environment
+} "\e\e"]
+set curPath [\fBregistry get\fR $regPath "Path"]
+\fBregistry set\fR $regPath "Path" "$curPath;$addPath"
+\fBregistry broadcast\fR "Environment"
+.CE
+.RE
+.TP
+\fBregistry delete \fIkeyName\fR ?\fIvalueName\fR?
+.
+If the optional \fIvalueName\fR argument is present, the specified
+value under \fIkeyName\fR will be deleted from the registry.  If the
+optional \fIvalueName\fR is omitted, the specified key and any subkeys
+or values beneath it in the registry hierarchy will be deleted.  If
+the key could not be deleted then an error is generated.  If the key
+did not exist, the command has no effect.
+.TP
+\fBregistry get \fIkeyName valueName\fR
+.
+Returns the data associated with the value \fIvalueName\fR under the key
+\fIkeyName\fR.  If either the key or the value does not exist, then an
+error is generated.  For more details on the format of the returned
+data, see \fBSUPPORTED TYPES\fR, below.
+.TP
+\fBregistry keys \fIkeyName\fR ?\fIpattern\fR?
+.
+If \fIpattern\fR is not specified, returns a list of names of all the
+subkeys of \fIkeyName\fR.  If \fIpattern\fR is specified, only those
+names matching \fIpattern\fR are returned.  Matching is determined
+using the same rules as for \fBstring match\fR.  If the
+specified \fIkeyName\fR does not exist, then an error is generated.
+.TP
+\fBregistry set \fIkeyName\fR ?\fIvalueName data \fR?\fItype\fR??
+.
+If \fIvalueName\fR is not specified, creates the key \fIkeyName\fR if
+it does not already exist.  If \fIvalueName\fR is specified, creates
+the key \fIkeyName\fR and value \fIvalueName\fR if necessary.  The
+contents of \fIvalueName\fR are set to \fIdata\fR with the type
+indicated by \fItype\fR.  If \fItype\fR is not specified, the type
+\fBsz\fR is assumed.  For more details on the data and type arguments,
+see \fBSUPPORTED TYPES\fR below.
+.TP
+\fBregistry type \fIkeyName valueName\fR
+.
+Returns the type of the value \fIvalueName\fR in the key
+\fIkeyName\fR.  For more information on the possible types, see
+\fBSUPPORTED TYPES\fR, below.
+.TP
+\fBregistry values \fIkeyName\fR ?\fIpattern\fR?
+.
+If \fIpattern\fR is not specified, returns a list of names of all the
+values of \fIkeyName\fR.  If \fIpattern\fR is specified, only those
+names matching \fIpattern\fR are returned.  Matching is determined
+using the same rules as for \fBstring match\fR.
+.SH "SUPPORTED TYPES"
+Each value under a key in the registry contains some data of a
+particular type in a type-specific representation.  The \fBregistry\fR
+command converts between this internal representation and one that can
+be manipulated by Tcl scripts.  In most cases, the data is simply
+returned as a Tcl string.  The type indicates the intended use for the
+data, but does not actually change the representation.  For some
+types, the \fBregistry\fR command returns the data in a different form to
+make it easier to manipulate.  The following types are recognized by the
+registry command:
+.TP 17
+\fBbinary\fR
+.
+The registry value contains arbitrary binary data.  The data is represented
+exactly in Tcl, including any embedded nulls.
+.TP
+\fBnone\fR
+.
+The registry value contains arbitrary binary data with no defined
+type.  The data is represented exactly in Tcl, including any embedded
+nulls.
+.TP
+\fBsz\fR
+.
+The registry value contains a null-terminated string.  The data is 
+represented in Tcl as a string.
+.TP
+\fBexpand_sz\fR
+.
+The registry value contains a null-terminated string that contains
+unexpanded references to environment variables in the normal Windows
+style (for example,
+.QW %PATH% ).
+The data is represented in Tcl as a string.
+.TP
+\fBdword\fR
+.
+The registry value contains a little-endian 32-bit number.  The data is
+represented in Tcl as a decimal string.
+.TP
+\fBdword_big_endian\fR
+.
+The registry value contains a big-endian 32-bit number.  The data is
+represented in Tcl as a decimal string.
+.TP
+\fBlink\fR
+.
+The registry value contains a symbolic link.  The data is represented
+exactly in Tcl, including any embedded nulls.
+.TP
+\fBmulti_sz\fR
+.
+The registry value contains an array of null-terminated strings.  The
+data is represented in Tcl as a list of strings.
+.TP
+\fBresource_list\fR
+.
+The registry value contains a device-driver resource list.  The data
+is represented exactly in Tcl, including any embedded nulls.
+.PP
+In addition to the symbolically named types listed above, unknown
+types are identified using a 32-bit integer that corresponds to the
+type code returned by the system interfaces.  In this case, the data
+is represented exactly in Tcl, including any embedded nulls.
+.SH "PORTABILITY ISSUES"
+The registry command is only available on Windows.
+.SH EXAMPLE
+Print out how double-clicking on a Tcl script file will invoke a Tcl
+interpreter:
+.PP
+.CS
+package require registry
+set ext .tcl
+
+# Read the type name
+set type [\fBregistry get\fR HKEY_CLASSES_ROOT\e\e$ext {}]
+# Work out where to look for the command
+set path HKEY_CLASSES_ROOT\e\e$type\e\eShell\e\eOpen\e\ecommand
+# Read the command!
+set command [\fBregistry get\fR $path {}]
+
+puts "$ext opens with $command"
+.CE
+.SH KEYWORDS
+registry
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

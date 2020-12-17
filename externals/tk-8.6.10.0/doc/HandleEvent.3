@@ -1,0 +1,46 @@
+'\"
+'\" Copyright (c) 1990-1992 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_HandleEvent 3 "" Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_HandleEvent \- invoke event handlers for window system events
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_HandleEvent\fR(\fIeventPtr\fR)
+.SH ARGUMENTS
+.AS XEvent *eventPtr
+.AP XEvent *eventPtr in
+Pointer to X event to dispatch to relevant handler(s). It is important
+that all unused fields of the structure be set to zero.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_HandleEvent\fR is a lower-level procedure that deals with window
+events.  It is called by \fBTcl_ServiceEvent\fR (and indirectly by
+\fBTcl_DoOneEvent\fR), and in a few other cases within Tk.
+It makes callbacks to any window event
+handlers (created by calls to \fBTk_CreateEventHandler\fR)
+that match \fIeventPtr\fR and then returns.  In some cases
+it may be useful for an application to bypass the Tk event
+queue and call \fBTk_HandleEvent\fR directly instead of
+calling \fBTcl_QueueEvent\fR followed by
+\fBTcl_ServiceEvent\fR.
+.PP
+This procedure may be invoked recursively.  For example,
+it is possible to invoke \fBTk_HandleEvent\fR recursively
+from a handler called by \fBTk_HandleEvent\fR.  This sort
+of operation is useful in some modal situations, such
+as when a
+notifier has been popped up and an application wishes to
+wait for the user to click a button in the notifier before
+doing anything else.
+.SH KEYWORDS
+callback, event, handler, window

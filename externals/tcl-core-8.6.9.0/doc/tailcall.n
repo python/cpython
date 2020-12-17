@@ -1,0 +1,69 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tailcall n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tailcall \- Replace the current procedure with another command
+.SH SYNOPSIS
+\fBtailcall \fIcommand\fR ?\fIarg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtailcall\fR command replaces the currently executing procedure, lambda
+application, or method with another command. The \fIcommand\fR, which will
+have \fIarg ...\fR passed as arguments if they are supplied, will be looked up
+in the current namespace context, not in the caller's. Apart from that
+difference in resolution, it is equivalent to:
+.PP
+.CS
+return [uplevel 1 [list \fIcommand\fR ?\fIarg ...\fR?]]
+.CE
+.PP
+This command may not be invoked from within an \fBuplevel\fR into a procedure
+or inside a \fBcatch\fR inside a procedure or lambda.
+'\" TODO: sort out the mess with the [try] command!
+.SH EXAMPLE
+.PP
+Compute the factorial of a number.
+.PP
+.CS
+proc factorial {n {accum 1}} {
+    if {$n < 2} {
+        return $accum
+    }
+    \fBtailcall\fR factorial [expr {$n - 1}] [expr {$accum * $n}]
+}
+.CE
+.PP
+Print the elements of a list with alternating lines having different
+indentations.
+.PP
+.CS
+proc printList {theList} {
+    if {[llength $theList]} {
+        puts "> [lindex $theList 0]"
+        \fBtailcall\fR printList2 [lrange $theList 1 end]
+    }
+}
+proc printList2 {theList} {
+    if {[llength $theList]} {
+        puts "< [lindex $theList 0]"
+        \fBtailcall\fR printList [lrange $theList 1 end]
+    }
+}
+.CE
+.SH "SEE ALSO"
+apply(n), proc(n), uplevel(n)
+.SH KEYWORDS
+call, recursion, tail recursion
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

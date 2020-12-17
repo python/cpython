@@ -1,0 +1,8 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:America/Creston) {
+    {-9223372036854775808 -27964 0 LMT}
+    {-2713882436 -25200 0 MST}
+    {-1680454800 -28800 0 PST}
+    {-1627833600 -25200 0 MST}
+}

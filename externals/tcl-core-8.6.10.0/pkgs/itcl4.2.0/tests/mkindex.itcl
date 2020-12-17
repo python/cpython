@@ -1,0 +1,83 @@
+# Test file for:
+#   auto_mkindex
+#
+# This file provides example cases for testing the Tcl autoloading
+# facility.  Things are much more complicated with namespaces and classes.
+# The "auto_mkindex" facility can no longer be built on top of a simple
+# regular expression parser.  It must recognize constructs like this:
+#
+#   namespace eval foo {
+#       class Internal { ... }
+#       body Internal::func {x y} { ... }
+#       namespace eval bar {
+#           class Another { ... }
+#       }
+#   }
+#
+# Note that class definitions can be nested inside of namespaces.
+#
+# Copyright (c) 1993-1998  Lucent Technologies, Inc.
+
+#
+# Should be able to handle simple class definitions, even if
+# they are prefaced with white space.
+#
+namespace import itcl::*
+
+class Simple1 {
+    variable x 0
+    public method bump {} {incr x}
+}
+  itcl::class Simple2 {
+    variable x 0
+    public variable by 1
+    public method bump {}
+  }
+
+itcl::ensemble ens {
+    part one {x} {}
+    part two {x y} {}
+    part three {x y z} {}
+}
+
+#
+# Should be able to handle "body" and "configbody" declarations.
+#
+body Simple2::bump {} {incr x $by}
+configbody Simple2::by {if {$by <= 0} {error "bad increment"}}
+
+#
+# Should be able to handle class declarations within namespaces,
+# even if they have explicit namespace paths.
+#
+namespace eval buried {
+    class inside {
+        variable x 0
+        public variable by 1
+        public method bump {}
+        method skip {x y z} {}
+        proc find {args} {}
+    }
+    body inside::bump {} {incr x $by}
+    configbody inside::by {if {$by <= 0} {error "bad increment"}}
+
+    class ::top {
+        method skip {x y z} {}
+        method ignore {} {}
+        public proc find {args} {}
+        protected proc notice {args} {}
+    }
+
+    ensemble ens {
+        part one {x} {}
+        part two {x y} {}
+        part three {x y z} {}
+    }
+
+    namespace eval under {
+        itcl::class neath { }
+    }
+    namespace eval deep {
+        ::itcl::class within { }
+    }
+}

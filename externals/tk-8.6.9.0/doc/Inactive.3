@@ -1,0 +1,34 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+.TH Tk_GetUserInactiveTime 3 8.5 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_GetUserInactiveTime, Tk_ResetUserInactiveTime \- discover user inactivity time
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+long
+\fBTk_GetUserInactiveTime(\fIdisplay\fB)\fR
+.sp
+\fBTk_ResetUserInactiveTime(\fIdisplay\fB)\fR
+.SH ARGUMENTS
+.AS Display *display
+.AP Display *display in
+The display on which the user inactivity timer is to be queried or
+reset.
+.BE
+.SH DESCRIPTION
+.PP
+\fBTk_GetUserInactiveTime\fR returns the number of milliseconds that
+have passed since the last user interaction (usually via keyboard or
+mouse) with the respective display. On systems and displays that do not
+support querying the user inactivity time, \fB\-1\fR is returned.
+\fBTk_ResetUserInactiveTime\fR resets the user inactivity timer of the
+given display to zero.  On windowing systems that do not support
+multiple displays \fIdisplay\fR can be passed as \fBNULL\fR.
+.SH KEYWORDS
+idle, inactive

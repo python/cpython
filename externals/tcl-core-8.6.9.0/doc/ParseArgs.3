@@ -1,0 +1,198 @@
+'\"
+'\" Copyright (c) 2008 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_ParseArgsObjv 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_ParseArgsObjv \- parse arguments according to a tabular description
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_ParseArgsObjv\fR(\fIinterp, argTable, objcPtr, objv, remObjv\fR)
+.SH ARGUMENTS
+.AS "const Tcl_ArgvInfo" ***remObjv in/out
+.AP Tcl_Interp *interp out
+Where to store error messages.
+.AP "const Tcl_ArgvInfo" *argTable in
+Pointer to array of option descriptors.
+.AP int *objcPtr in/out
+A pointer to variable holding number of arguments in \fIobjv\fR. Will be
+modified to hold number of arguments left in the unprocessed argument list
+stored in \fIremObjv\fR.
+.AP "Tcl_Obj *const" *objv in
+The array of arguments to be parsed.
+.AP Tcl_Obj ***remObjv out
+Pointer to a variable that will hold the array of unprocessed arguments.
+Should be NULL if no return of unprocessed arguments is required. If
+\fIobjcPtr\fR is updated to a non-zero value, the array returned through this
+must be deallocated using \fBckfree\fR.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBTcl_ParseArgsObjv\fR function provides a system for parsing argument
+lists of the form
+.QW "\fB\-someName \fIsomeValue\fR ..." .
+Such argument lists are commonly found both in the arguments to a program and
+in the arguments to an individual Tcl command. This parser assumes that the
+order of the arguments does not matter, other than in so far as later copies
+of a duplicated option overriding earlier ones.
+.PP
+The argument array is described by the \fIobjcPtr\fR and \fIobjv\fR
+parameters, and an array of unprocessed arguments is returned through the
+\fIobjcPtr\fR and \fIremObjv\fR parameters; if no return of unprocessed
+arguments is desired, the \fIremObjv\fR parameter should be NULL. If any
+problems happen, including if the
+.QW "generate help"
+option is selected, an error message is left in the interpreter result and
+TCL_ERROR is returned. Otherwise, the interpreter result is left unchanged and
+TCL_OK is returned.
+.PP
+The collection of arguments to be parsed is described by the \fIargTable\fR
+parameter. This points to a table of descriptor structures that is terminated
+by an entry with the \fItype\fR field set to TCL_ARGV_END. As convenience, the
+following prototypical entries are provided:
+.TP
+\fBTCL_ARGV_AUTO_HELP\fR
+.
+Enables the argument processor to provide help when passed the argument
+.QW \fB\-help\fR .
+.TP
+\fBTCL_ARGV_AUTO_REST\fR
+.
+Instructs the argument processor that arguments after
+.QW \fB\-\-\fR
+are to be unprocessed.
+.TP
+\fBTCL_ARGV_TABLE_END\fR
+.
+Marks the end of the table of argument descriptors.
+.SS "ARGUMENT DESCRIPTOR ENTRIES"
+.PP
+Each entry of the argument descriptor table must be a structure of type
+\fBTcl_ArgvInfo\fR. The structure is defined as this:
+.PP
+.CS
+typedef struct {
+    int \fItype\fR;
+    const char *\fIkeyStr\fR;
+    void *\fIsrcPtr\fR;
+    void *\fIdstPtr\fR;
+    const char *\fIhelpStr\fR;
+    ClientData \fIclientData\fR;
+} \fBTcl_ArgvInfo\fR;
+.CE
+.PP
+The \fIkeyStr\fR field contains the name of the option; by convention, this
+will normally begin with a
+.QW \fB\-\fR
+character. The \fItype\fR, \fIsrcPtr\fR, \fIdstPtr\fR and \fIclientData\fR
+fields describe the interpretation of the value of the argument, as described
+below. The \fIhelpStr\fR field gives some text that is used to provide help to
+users when they request it.
+.PP
+As noted above, the \fItype\fR field is used to describe the interpretation of
+the argument's value. The following values are acceptable values for
+\fItype\fR:
+.TP
+\fBTCL_ARGV_CONSTANT\fR
+.
+The argument does not take any following value argument. If this argument is
+present, the int pointed to by the \fIsrcPtr\fR field is copied to the
+\fIdstPtr\fR field. The \fIclientData\fR field is ignored.
+.TP
+\fBTCL_ARGV_END\fR
+.
+This value marks the end of all option descriptors in the table. All other
+fields are ignored.
+.TP
+\fBTCL_ARGV_FLOAT\fR
+.
+This argument takes a following floating point value argument. The value (once
+parsed by \fBTcl_GetDoubleFromObj\fR) will be stored as a double-precision
+value in the variable pointed to by the \fIdstPtr\fR field. The \fIsrcPtr\fR
+and \fIclientData\fR fields are ignored.
+.TP
+\fBTCL_ARGV_FUNC\fR
+.
+This argument optionally takes a following value argument; it is up to the
+handler callback function passed in \fIsrcPtr\fR to decide. That function will
+have the following signature:
+.RS
+.PP
+.CS
+typedef int (\fBTcl_ArgvFuncProc\fR)(
+        ClientData \fIclientData\fR,
+        Tcl_Obj *\fIobjPtr\fR,
+        void *\fIdstPtr\fR);
+.CE
+.PP
+The result is a boolean value indicating whether to consume the following
+argument. The \fIclientData\fR is the value from the table entry, the
+\fIobjPtr\fR is the value that represents the following argument or NULL if
+there are no following arguments at all, and the \fIdstPtr\fR argument to the
+\fBTcl_ArgvFuncProc\fR is the location to write the parsed value to.
+.RE
+.TP
+\fBTCL_ARGV_GENFUNC\fR
+.
+This argument takes zero or more following arguments; the handler callback
+function passed in \fIsrcPtr\fR returns how many (or a negative number to
+signal an error, in which case it should also set the interpreter result). The
+function will have the following signature:
+.RS
+.PP
+.CS
+typedef int (\fBTcl_ArgvGenFuncProc\fR)(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIobjc\fR,
+        Tcl_Obj *const *\fIobjv\fR,
+        void *\fIdstPtr\fR);
+.CE
+.PP
+The \fIclientData\fR is the value from the table entry, the \fIinterp\fR is
+where to store any error messages, the \fIkeyStr\fR is the name of the
+argument, \fIobjc\fR and \fIobjv\fR describe an array of all the remaining
+arguments, and \fIdstPtr\fR argument to the \fBTcl_ArgvGenFuncProc\fR is the
+location to write the parsed value (or values) to.
+.RE
+.TP
+\fBTCL_ARGV_HELP\fR
+.
+This special argument does not take any following value argument, but instead
+causes \fBTcl_ParseArgsObjv\fR to generate an error message describing the
+arguments supported. All other fields except the \fIhelpStr\fR field are
+ignored.
+.TP
+\fBTCL_ARGV_INT\fR
+.
+This argument takes a following integer value argument. The value (once parsed
+by \fBTcl_GetIntFromObj\fR) will be stored as an int in the variable pointed
+to by the \fIdstPtr\fR field. The \fIsrcPtr\fR field is ignored.
+.TP
+\fBTCL_ARGV_REST\fR
+.
+This special argument does not take any following value argument, but instead
+marks all following arguments to be left unprocessed. The \fIsrcPtr\fR,
+\fIdstPtr\fR and \fIclientData\fR fields are ignored.
+.TP
+\fBTCL_ARGV_STRING\fR
+.
+This argument takes a following string value argument. A pointer to the string
+will be stored at \fIdstPtr\fR; the string inside will have a lifetime linked
+to the lifetime of the string representation of the argument value that it
+came from, and so should be copied if it needs to be retained. The
+\fIsrcPtr\fR and \fIclientData\fR fields are ignored.
+.SH "SEE ALSO"
+Tcl_GetIndexFromObj(3), Tcl_Main(3), Tcl_CreateObjCommand(3)
+.SH KEYWORDS
+argument, parse
+'\" Local Variables:
+'\" fill-column: 78
+'\" End:

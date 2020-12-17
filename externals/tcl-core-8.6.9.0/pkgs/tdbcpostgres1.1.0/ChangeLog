@@ -1,0 +1,259 @@
+*** Now that tdbcpostgres is under Fossil control, the ChangeLog is
+    no longer being maintained. Please refer to the change history at
+    http://core.tcl.tk/tdbcpostgres/timeline/
+
+2014-10-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.2.
+	* configure: 	TEA update; autoconf 2.68
+
+	* Makefile.in:	At some point docs we're written.  Put them in dist.
+
+	* doc/*.n: [TDBC Bug 00b792] OpenBSD friendly docs.
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.1.
+	* configure: 	autoconf 2.68
+
+2012-11-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Made configurator changes so that tdbc::postgres
+	* Makefile.in:  will `make test` correctly even when running against
+	                an uninstalled TDBC.
+	* configure:    autoconf 2.68
+		*** ADVANCED TO NEW VERSION OF AUTOCONF ***
+
+2012-11-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in:
+	* README:	Advanced version number to 1.0.0.
+	* configure: 	autoconf 2.59
+
+2012-07-26  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* generic/pqStubInit.s:  Make some tables "const"
+	* tclconfig/install-sh:  Update to latest TEA
+	* tclconfig/tcl.m4:
+	* configure:		     autoconf-2.59
+
+2012-07-13   Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcpostgres.c: Corrected a problem where PostgreSQL 9.0
+	                          and beyond return byte arrays in an
+				  incompatible format, yielding silent
+				  data corruption in SELECT operations.
+	                          (Bug [4357c31d89])
+
+2012-07-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcpostgres.c: Fixed a non-static table argument to
+			          Tcl_GetIndexFromObjStruct.
+
+2012-06-10  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* configure.in:	make TDBC API functions MODULE_SCOPE
+	* configure:	autoconf-2.59
+
+2012-06-08  Jan Nijtmans  <jan.nijtmans@gmail.com>
+
+	* tclconfig/ChangeLog:
+	* tclconfig/tcl.m4:	Update to latest TEA
+	* configure:		autoconf-2.59
+
+
+
+2011-07-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in:
+	* Makefile.in:
+	* README:	Advanced version number to 1.0b17.
+
+	* configure: 	autoconf 2.59
+
+2011-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* configure.in: Update to latest TEA 3.9 revisions.
+	* Makefile.in:
+	* tclconfig/*:
+
+	* configure:    autoconf-2.59
+
+2011-04-12  Kevin B. Kenny  <kennybk@acm.org>
+
+	* generic/pqStubDefs.txt:
+		Added stubs for PQdescribePrepared, PQnparams and PQparamtype,
+		needed for correct parameter specification of prepared
+		statements.
+	* generic/pqStubInit.c:
+	* generic/pgStubs.h:
+		make genstubs
+	* generic/tdbcpostgres.c (PrepareStatement, StatementConstructor):
+		Changed statement preparation to *not* specify unknown
+		data types but to let the PostgreSQL server try to deduce
+		them all. Added code to report the deduced parameter types
+		back to the script in the 'params' method. Added code to
+		the statement constructor to accept PostgreSQL type cast
+		syntax as a way to make prepared statements work when they
+		otherwise would give 'could not determine data type' errors.
+	* tests/tdbcpostgres.test (tdbc::postgres-18.[45]):
+		Added test cases for correct reporting of deduced parameter
+		types and for PostgreSQL 
+
+2011-02-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/pqStubInit.c:
+		Revised code to look for libpq.so by SONAME as well
+		as directly, so that ABI version number is taken into
+		account and so that libpq-dev is not required.
+	* generic/pqStubs.h: make genstubs
+
+2011-01-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/tdbc_postgres.n:
+	Added empty comment at the start of each manpage because 'man'
+	interprets comments there as directives. Thanks to Konstantin
+	Kohmoutov for reporting and diagnosing this error.
+
+2011-01-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcpostgres.c: Modified to pass '@' through into the
+				  native SQL to allow session variables.
+				  Fixed a pointer smash if the argument
+				  to "$connection prepare" includes no
+				  SQL statement (e.g. contains only whitespace)
+	* library/tdbcpostgres.tcl: Added 'nextresults' method, which always
+				    returns 0 since PostgreSQL calls return
+				    single result sets.
+	* tests/tdbcpostgres.test: Added test cases (30.0 and 30.1) for the
+	                           above.
+	* configure.in: Added a missing stanza of code for finding the tdbc
+	                library and include in the build dir when building
+	                against an uninstalled tdbc. Thanks to Konstantin
+	                Khomoutov for reporting this error.
+	* configure: autoconf2.59
+
+2010-09-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcpostgres.c:
+			Made the '-port' option work. (Discovered bug when
+			testing on a machine where Postgres was listening
+			on 5433 but the client lib wanted 5432.)
+
+	* tests/tdbcpostgres.test:
+			Changed 'keySequence' in 'foreignkeys' to be
+			'ordinalPosition' for consistency with 'primaryKeys'.
+
+	* configure.in:
+	* Makefile.in:
+	* pkgIndex.tcl.in (new file):
+	* README:
+	* tclconfig/:	Upgraded the build to use TEA 3.9. Changed the
+			approach to pkgIndex.tcl generation. (It's now built
+			at configure time, rather than from the Makefile.)
+			Advanced version number to 1.0b16.
+
+	* configure: 	autoconf 2.59
+
+2010-06-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* Makefile.in:			Revised the code at the suggestion
+	* generic/tdbcpostgres.c:	of Andreas Kupries to avoid using
+	* tests/all.tcl:		'tcl_findLibrary' and instead execute
+	* tests/tdbcpostgres.test:	both 'source' and 'load' commands from
+					'pkgIndex.tcl'. Revised the 'make test'
+					rule, and the test scripts, to
+					test successfully under the new regime.
+					Thanks to Andreas for providing the
+					original patch, and to Joe English
+					for providing ideas for simplifying
+					and repairing 'make test' under the
+					new regime.
+
+2010-05-24  Kevin B. Kenny  <kennybk@acm.org>
+
+	* tests/tdbcpostgres.test: Added test cases for '$db primarykeys'
+				   and '$db foreignkeys'
+
+2010-05-12  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tdbcpostgres.c: Moved the int32_t/int16_t types into the
+	  _WIN32 conditional. Conflicted with HPUX own definitions of
+	  these types and required only for windows.
+
+2010-05-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* aclocal.m4:	Synchronized with tdbc.
+	* configure.in:	Advanced version number to 1.0b15. Advanced TEA
+			version to 3.7. Corrected the way that stub libraries
+			are located on VC++.
+	* generic/tdbcpostgres.c:
+			Corrected a number of errors and warnings in the
+			VC++ build.
+	* README:	Advanced to 1.0b15
+	* tclconfig/:	Advanced to TEA 3.7
+	* configure:	autoconf-2.59
+
+2010-05-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tdbcpostgres.c: Fixed violations of strict C89.
+	* Makefile.in: Removed attempt to generate a stub library. Drivers
+	  do not export stub tables.
+
+2010-05-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/fakehq.h: Fixed inclusion of pqstubs.h -> pqStubs.h.
+
+2010-05-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in:
+	* Makefile.in:
+	* generic/fakepq.h (new file):
+	* generic/pqStubDefs.txt (new file):
+	* generic/pqStubInit.c (new file):
+	* generic/pqStubs.h (new file):
+	* generic/tdbcpostgres.c:
+		Modified to load libpq using Tcl_LoadFile and not
+		link to its client library, nor include the standard
+		pq-fe headers. This change allows tdbc::postgres to
+		build when the build system lacks a PostgreSQL installation.
+	
+2010-04-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure.in: Changed TDBC_* environment variables to tdbc_* for
+	* README:       better TEA compatibility. Advanced version to 1.0b14.
+	* configure:    autoconf 2.59
+	
+2009-09-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/tdbcpostgres.test: Changed all TEST_* environment variables
+				   to TDBCPOSTGRES_* for easier scripting
+			 	   of combined builds and tests.
+	
+2009-09-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tdbcpostgres.c: Removed an ugly workaround for a
+	                          bug in Tcl_SubstObj.
+	* configure.in: 
+	* README:		Advanced version to 1.0b13
+	* configure:		autoconf 2.59
+	
+2009-09-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* configure (New file): autoconf 2.59
+		(Added pre-built 'configure' so that TEA users don't
+		need autoconf, m4 and all that stuff pre-installed)
+	* generic/tdbcpostgres.c:   Many changes to upgrade to Tcl Engineering
+	* library/tdbcpostgres.tcl: Manual conventions and correct memory
+	* tests/current.test:       mismanagement. Introduced a workaround
+			            for a suspected bug in Tcl_SubstObj.
+	
+2009-09-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	Accepted tdbcpostgres from Slawomir Cygan for inclusion in
+	the standard tdbc driver distribution.
+	
+2009-06-22  Slawomir Cygan  <slawomir.cygan@gmail.com>
+	Initial baseline of a TDBC driver for Postgres.

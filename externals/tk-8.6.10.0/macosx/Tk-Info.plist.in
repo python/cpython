@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Copyright (c) 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
+	Copyright 2008-2009, Apple Inc.
+
+	See the file "license.terms" for information on usage and redistribution of
+	this file, and for a DISCLAIMER OF ALL WARRANTIES.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>@TK_LIB_FILE@</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Tk @TK_WINDOWINGSYSTEM@ @TK_VERSION@@TK_PATCH_LEVEL@,
+Copyright © 1989-@TK_YEAR@ Tcl Core Team,
+Copyright © 2002-@TK_YEAR@ Daniel A. Steffen,
+	Copyright © 1989-@TK_YEAR@ Contributors,
+	Copyright © 2011-@TK_YEAR@ Kevin Walzer/WordTech
+	Communications LLC,
+	Copyright © 2014-@TK_YEAR@ Marc Culler,
+Copyright © 2001-2009 Apple Inc.,
+Copyright © 2001-2002 Jim Ingham &amp; Ian Reid</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.tcltk.tklibrary</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Tk @TK_WINDOWINGSYSTEM@ @TK_VERSION@</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@TK_VERSION@@TK_PATCH_LEVEL@</string>
+	<key>CFBundleSignature</key>
+	<string>Tk  </string>
+	<key>CFBundleVersion</key>
+	<string>@TK_VERSION@@TK_PATCH_LEVEL@</string>
+</dict>
+</plist>

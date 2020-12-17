@@ -1,0 +1,100 @@
+'\"
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_CanvasTextInfo 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_CanvasTextInfo \- additional information for managing text items in canvases
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+Tk_CanvasTextInfo *
+\fBTk_CanvasGetTextInfo\fR(\fIcanvas\fR)
+.SH ARGUMENTS
+.AS Tk_Canvas canvas
+.AP Tk_Canvas canvas in
+A token that identifies a particular canvas widget.
+.BE
+.SH DESCRIPTION
+.PP
+Textual canvas items are somewhat more complicated to manage than
+other items, due to things like the selection and the input focus.
+\fBTk_CanvasGetTextInfo\fR may be invoked by a type manager
+to obtain additional information needed for items that display text.
+The return value from \fBTk_CanvasGetTextInfo\fR is a pointer to
+a structure that is shared between Tk and all the items that display
+text.
+The structure has the following form:
+.CS
+typedef struct Tk_CanvasTextInfo {
+    Tk_3DBorder \fIselBorder\fR;
+    int \fIselBorderWidth\fR;
+    XColor *\fIselFgColorPtr\fR;
+    Tk_Item *\fIselItemPtr\fR;
+    int \fIselectFirst\fR;
+    int \fIselectLast\fR;
+    Tk_Item *\fIanchorItemPtr\fR;
+    int \fIselectAnchor\fR;
+    Tk_3DBorder \fIinsertBorder\fR;
+    int \fIinsertWidth\fR;
+    int \fIinsertBorderWidth\fR;
+    Tk_Item *\fIfocusItemPtr\fR;
+    int \fIgotFocus\fR;
+    int \fIcursorOn\fR;
+} \fBTk_CanvasTextInfo\fR;
+.CE
+The \fBselBorder\fR field identifies a Tk_3DBorder that should be
+used for drawing the background under selected text.
+\fIselBorderWidth\fR gives the width of the raised border around
+selected text, in pixels.
+\fIselFgColorPtr\fR points to an XColor that describes the foreground
+color to be used when drawing selected text.
+\fIselItemPtr\fR points to the item that is currently selected, or
+NULL if there is no item selected or if the canvas does not have the
+selection.
+\fIselectFirst\fR and \fIselectLast\fR give the indices of the first
+and last selected characters in \fIselItemPtr\fR, as returned by the
+\fIindexProc\fR for that item.
+\fIanchorItemPtr\fR points to the item that currently has the selection
+anchor;  this is not necessarily the same as \fIselItemPtr\fR.
+\fIselectAnchor\fR is an index that identifies the anchor position
+within \fIanchorItemPtr\fR.
+\fIinsertBorder\fR contains a Tk_3DBorder to use when drawing the
+insertion cursor;  \fIinsertWidth\fR gives the total width of the
+insertion cursor in pixels, and \fIinsertBorderWidth\fR gives the
+width of the raised  border around the insertion cursor.
+\fIfocusItemPtr\fR identifies the item that currently has the input
+focus, or NULL if there is no such item.
+\fIgotFocus\fR is 1 if the canvas widget has the input focus and
+0 otherwise.
+\fIcursorOn\fR is 1 if the insertion cursor should be drawn in
+\fIfocusItemPtr\fR and 0 if it should not be drawn;  this field
+is toggled on and off by Tk to make the cursor blink.
+.PP
+The structure returned by \fBTk_CanvasGetTextInfo\fR
+is shared between Tk and the type managers;  typically the type manager
+calls \fBTk_CanvasGetTextInfo\fR once when an item is created and
+then saves the pointer in the item's record.
+Tk will update information in the Tk_CanvasTextInfo;  for example,
+a \fBconfigure\fR widget command might change the \fIselBorder\fR
+field, or a \fBselect\fR widget command might change the \fIselectFirst\fR
+field, or Tk might change \fIcursorOn\fR in order to make the insertion
+cursor flash on and off during successive redisplays.
+.PP
+Type managers should treat all of the fields of the Tk_CanvasTextInfo
+structure as read-only, except for \fIselItemPtr\fR, \fIselectFirst\fR,
+\fIselectLast\fR, and \fIselectAnchor\fR.
+Type managers may change \fIselectFirst\fR, \fIselectLast\fR, and
+\fIselectAnchor\fR to adjust for insertions and deletions in the
+item (but only if the item is the current owner of the selection or
+anchor, as determined by \fIselItemPtr\fR or \fIanchorItemPtr\fR).
+If all of the selected text in the item is deleted, the item should
+set \fIselItemPtr\fR to NULL to indicate that there is no longer a
+selection.
+.SH KEYWORDS
+canvas, focus, insertion cursor, selection, selection anchor, text

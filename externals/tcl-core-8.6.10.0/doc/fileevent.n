@@ -1,0 +1,156 @@
+'\"
+'\" Copyright (c) 1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2008 Pat Thoyts
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH fileevent n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fileevent \- Execute a script when a channel becomes readable or writable
+.SH SYNOPSIS
+\fBfileevent \fIchannelId \fBreadable \fR?\fIscript\fR?
+.sp
+\fBfileevent \fIchannelId \fBwritable \fR?\fIscript\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+This command is used to create \fIfile event handlers\fR.  A file event
+handler is a binding between a channel and a script, such that the script
+is evaluated whenever the channel becomes readable or writable.  File event
+handlers are most commonly used to allow data to be received from another
+process on an event-driven basis, so that the receiver can continue to
+interact with the user while waiting for the data to arrive.  If an
+application invokes \fBgets\fR or \fBread\fR on a blocking channel when
+there is no input data available, the process will block; until the input
+data arrives, it will not be able to service other events, so it will
+appear to the user to
+.QW "freeze up" .
+With \fBfileevent\fR, the process can
+tell when data is present and only invoke \fBgets\fR or \fBread\fR when
+they will not block.
+.PP
+The \fIchannelId\fR argument to \fBfileevent\fR refers to an open
+channel such as a Tcl standard channel (\fBstdin\fR, \fBstdout\fR,
+or \fBstderr\fR), the return value from an invocation of \fBopen\fR
+or \fBsocket\fR, or the result of a channel creation command provided
+by a Tcl extension.
+.PP
+If the \fIscript\fR argument is specified, then \fBfileevent\fR
+creates a new event handler:  \fIscript\fR will be evaluated
+whenever the channel becomes readable or writable (depending on the
+second argument to \fBfileevent\fR).
+In this case \fBfileevent\fR returns an empty string.
+The \fBreadable\fR and \fBwritable\fR event handlers for a file
+are independent, and may be created and deleted separately.
+However, there may be at most one \fBreadable\fR and one \fBwritable\fR
+handler for a file at a given time in a given interpreter.
+If \fBfileevent\fR is called when the specified handler already
+exists in the invoking interpreter, the new script replaces the old one.
+.PP
+If the \fIscript\fR argument is not specified, \fBfileevent\fR
+returns the current script for \fIchannelId\fR, or an empty string
+if there is none.
+If the \fIscript\fR argument is specified as an empty string
+then the event handler is deleted, so that no script will be invoked.
+A file event handler is also deleted automatically whenever
+its channel is closed or its interpreter is deleted.
+.PP
+A channel is considered to be readable if there is unread data
+available on the underlying device.
+A channel is also considered to be readable if there is unread
+data in an input buffer, except in the special case where the
+most recent attempt to read from the channel was a \fBgets\fR
+call that could not find a complete line in the input buffer.
+This feature allows a file to be read a line at a time in nonblocking mode
+using events.
+A channel is also considered to be readable if an end of file or
+error condition is present on the underlying file or device.
+It is important for \fIscript\fR to check for these conditions
+and handle them appropriately;  for example, if there is no special
+check for end of file, an infinite loop may occur where \fIscript\fR
+reads no data, returns, and is immediately invoked again.
+.PP
+A channel is considered to be writable if at least one byte of data
+can be written to the underlying file or device without blocking,
+or if an error condition is present on the underlying file or device.
+.PP
+Event-driven I/O works best for channels that have been placed into
+nonblocking mode with the \fBfconfigure\fR command.  In blocking mode,
+a \fBputs\fR command may block if you give it more data than the
+underlying file or device can accept, and a \fBgets\fR or \fBread\fR
+command will block if you attempt to read more data than is ready; a
+readable underlying file or device may not even guarantee that a
+blocking [read 1] will succeed (counter-examples being multi-byte
+encodings, compression or encryption transforms ). In all such cases,
+no events will be processed while the commands block.
+.PP
+In nonblocking mode \fBputs\fR, \fBread\fR, and \fBgets\fR never block.
+See the documentation for the individual commands for information
+on how they handle blocking and nonblocking channels.
+.PP
+Testing for the end of file condition should be done after any attempts
+read the channel data. The eof flag is set once an attempt to read the
+end of data has occurred and testing before this read will require an
+additional event to be fired.
+.PP
+The script for a file event is executed at global level (outside the
+context of any Tcl procedure) in the interpreter in which the
+\fBfileevent\fR command was invoked.
+If an error occurs while executing the script then the
+command registered with \fBinterp bgerror\fR is used to report the error.
+In addition, the file event handler is deleted if it ever returns
+an error;  this is done in order to prevent infinite loops due to
+buggy handlers.
+.SH EXAMPLE
+.PP
+In this setup \fBGetData\fR will be called with the channel as an
+argument whenever $chan becomes readable. The \fBread\fR call will
+read whatever binary data is currently available without blocking.
+Here the channel has the fileevent removed when an end of file
+occurs to avoid being continually called (see above). Alternatively
+the channel may be closed on this condition.
+.PP
+.CS
+proc GetData {chan} {
+    set data [read $chan]
+    puts "[string length $data] $data"
+    if {[eof $chan]} {
+        fileevent $chan readable {}
+    }
+}
+
+fconfigure $chan -blocking 0 -encoding binary
+\fBfileevent\fR $chan readable [list GetData $chan]
+.CE
+.PP
+The next example demonstrates use of \fBgets\fR to read line-oriented
+data.
+.PP
+.CS
+proc GetData {chan} {
+    if {[gets $chan line] >= 0} {
+        puts $line
+    }
+    if {[eof $chan]} {
+        close $chan
+    }
+}
+
+fconfigure $chan -blocking 0 -buffering line -translation crlf
+\fBfileevent\fR $chan readable [list GetData $chan]
+.CE
+.SH CREDITS
+.PP
+\fBfileevent\fR is based on the \fBaddinput\fR command created
+by Mark Diekhans.
+.SH "SEE ALSO"
+fconfigure(n), gets(n), interp(n), puts(n), read(n), Tcl_StandardChannels(3)
+.SH KEYWORDS
+asynchronous I/O, blocking, channel, event handler, nonblocking, readable,
+script, writable.

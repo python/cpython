@@ -1,0 +1,48 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tk_FreeXId 3 4.0 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_FreeXId \- make X resource identifier available for reuse
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+\fBTk_FreeXId(\fIdisplay, id\fB)\fR
+.SH ARGUMENTS
+.AS Display *display out
+.AP Display *display in
+Display for which \fIid\fR was allocated.
+.AP XID id in
+Identifier of X resource (window, font, pixmap, cursor, graphics
+context, or colormap) that is no longer in use.
+.BE
+.SH DESCRIPTION
+.PP
+The default allocator for resource identifiers provided by Xlib is very
+simple-minded and does not allow resource identifiers to be re-used.
+If a long-running application reaches the end of the resource id
+space, it will generate an X protocol error and crash.
+Tk replaces the default id allocator with its own allocator, which
+allows identifiers to be reused.
+In order for this to work, \fBTk_FreeXId\fR must be called to
+tell the allocator about resources that have been freed.
+Tk automatically calls \fBTk_FreeXId\fR whenever it frees a
+resource, so if you use procedures like \fBTk_GetFont\fR,
+\fBTk_GetGC\fR, and \fBTk_GetPixmap\fR then you need not call
+\fBTk_FreeXId\fR.
+However, if you allocate resources directly from Xlib, for example
+by calling \fBXCreatePixmap\fR, then you should call \fBTk_FreeXId\fR
+when you call the corresponding Xlib free procedure, such as
+\fBXFreePixmap\fR.
+If you do not call \fBTk_FreeXId\fR then the resource identifier will
+be lost, which could cause problems if the application runs long enough
+to lose all of the available identifiers.
+.SH KEYWORDS
+resource identifier

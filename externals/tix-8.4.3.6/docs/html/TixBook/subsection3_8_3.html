@@ -1,0 +1,82 @@
+<HEAD>
+<TITLE> Writing Methods<A NAME=63>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1186 HREF=subsubsection3_8_3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1184 HREF=section3_8.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1178 HREF=subsubsection3_8_2_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1188 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1187 HREF=subsubsection3_8_3_1.html> Declaring Public Methods</A>
+<B>Up:</B> <A NAME=tex2html1185 HREF=section3_8.html> Tix Object Oriented </A>
+<B> Previous:</B> <A NAME=tex2html1179 HREF=subsubsection3_8_2_1.html> Using the tixWidgetClass </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H2><A NAME=SECTION00083000000000000000> Writing Methods<A NAME=63>&nbsp;</A></A></H2>
+<P>
+After we have declared the new widget class, we can write methods
+  for this class to define its behavior. Methods are just a special
+  type of TCL procedures and they are created by the <tt>proc</tt>
+  command. There are, however, three requirements for methods. First,
+  their names must be prefixed by the command name of their
+  class. Second, they must accept at least one argument and the first
+  argument that they accept must be called <tt>w</tt>. Third, the first
+  command executed inside each method must be:
+<blockquote> <P><tt> upvar #0 $w data
+</tt>
+<P></blockquote>
+<P>For example, the following is an implementation of the invert method
+  for the class TixArrowButton:
+<P>
+<blockquote> <P><tt> proc tixArrowButton:invert {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    set curDirection $data(-direction)<BR>
+    case $curDirection {<BR>
+        n {<BR>
+            set newDirection s<BR>
+        }<BR>
+        s {<BR>
+            set newDirection n<BR>
+        }<BR>
+        # ....<BR>
+    }<BR>
+}</tt>
+<P></blockquote>
+<P>
+   Notice that the name of the method is prefixed by the command name
+  of the class (<tt>tixArrowButton</tt>). Also, the first and only
+  argument that it accepts is <tt>w</tt> and the first line it executes
+  is ``<tt>upvar #0 $wdata</tt>''.
+<P>
+   The argument <tt>w</tt> specifies which widget instance this method
+  should act upon. For example, if the user has issued the command
+<P>
+<blockquote> <P><tt> .up invert
+</tt>
+<P></blockquote>
+   on an instance <tt>.up</tt> of the class tixArrowButton, the method
+  <tt>tixArrowButton:invert</tt> will be called and the argument <tt>w</tt>
+  will have the value <tt>.up</tt>.
+<P>
+   The <tt>invert</tt> method is used to invert the direction of the
+  arrow. Therefore, it should examine the variable <tt>.up(-direction)</tt>, which stores the current direction of the instance
+  <tt>.up</tt>, and modify it appropriately. It turns out that in TCL,
+  the only clean way to access an array whose name is stored in a
+  variable is the ``<tt>upvar #0 $wdata</tt>'' technique: essentially
+  it tells the intepreter that the array data should be an alias for
+  the global array whose name is stored in <tt>$w</tt>. We will soon see
+  how the widget's methods use the data array.
+<P>
+   Once the mysterious ``<tt>upvar #0 $wdata</tt>'' line is explained,
+  it becomes clear what the rest of the <tt>tixArrowButton:invert</tt>
+  method does: it examines the current direction of the arrow, which
+  is stored in <tt>$data(-direction)</tt> and inverts it.
+<P>
+<HR>
+<UL> 
+<LI> <A NAME=tex2html1189 HREF=subsubsection3_8_3_1.html#SECTION00083100000000000000> Declaring Public Methods<A NAME=631>&nbsp;</A></A>
+</UL>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

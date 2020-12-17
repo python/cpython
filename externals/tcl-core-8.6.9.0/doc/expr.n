@@ -1,0 +1,475 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-2000 Sun Microsystems, Inc.
+'\" Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH expr n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+expr \- Evaluate an expression
+.SH SYNOPSIS
+\fBexpr \fIarg \fR?\fIarg arg ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+Concatenates \fIarg\fRs (adding separator spaces between them),
+evaluates the result as a Tcl expression, and returns the value.
+The operators permitted in Tcl expressions include a subset of
+the operators permitted in C expressions.  For those operators
+common to both Tcl and C, Tcl applies the same meaning and precedence
+as the corresponding C operators.
+Expressions almost always yield numeric results
+(integer or floating-point values).
+For example, the expression
+.PP
+.CS
+\fBexpr\fR 8.2 + 6
+.CE
+.PP
+evaluates to 14.2.
+Tcl expressions differ from C expressions in the way that
+operands are specified.  Also, Tcl expressions support
+non-numeric operands and string comparisons, as well as some
+additional operators not found in C.
+.SS OPERANDS
+.PP
+A Tcl expression consists of a combination of operands, operators,
+parentheses and commas.
+White space may be used between the operands and operators and
+parentheses (or commas); it is ignored by the expression's instructions.
+Where possible, operands are interpreted as integer values.
+Integer values may be specified in decimal (the normal case), in binary
+(if the first two characters of the operand are \fB0b\fR), in octal
+(if the first two characters of the operand are \fB0o\fR), or in hexadecimal
+(if the first two characters of the operand are \fB0x\fR).  For
+compatibility with older Tcl releases, an octal integer value is also
+indicated simply when the first character of the operand is \fB0\fR,
+whether or not the second character is also \fBo\fR.
+If an operand does not have one of the integer formats given
+above, then it is treated as a floating-point number if that is
+possible.  Floating-point numbers may be specified in any of several
+common formats making use of the decimal digits, the decimal point \fB.\fR,
+the characters \fBe\fR or \fBE\fR indicating scientific notation, and
+the sign characters \fB+\fR or \fB\-\fR.  For example, all of the
+following are valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
+Also recognized as floating point values are the strings \fBInf\fR
+and \fBNaN\fR making use of any case for each character.
+If no numeric interpretation is possible (note that all literal
+operands that are not numeric or boolean must be quoted with either
+braces or with double quotes), then an operand is left as a string
+(and only a limited set of operators may be applied to it).
+.PP
+Operands may be specified in any of the following ways:
+.IP [1]
+As a numeric value, either integer or floating-point.
+.IP [2]
+As a boolean value, using any form understood by \fBstring is\fR
+\fBboolean\fR.
+.IP [3]
+As a Tcl variable, using standard \fB$\fR notation.
+The variable's value will be used as the operand.
+.IP [4]
+As a string enclosed in double-quotes.
+The expression parser will perform backslash, variable, and
+command substitutions on the information between the quotes,
+and use the resulting value as the operand
+.IP [5]
+As a string enclosed in braces.
+The characters between the open brace and matching close brace
+will be used as the operand without any substitutions.
+.IP [6]
+As a Tcl command enclosed in brackets.
+The command will be executed and its result will be used as
+the operand.
+.IP [7]
+As a mathematical function whose arguments have any of the above
+forms for operands, such as \fBsin($x)\fR.  See \fBMATH FUNCTIONS\fR below for
+a discussion of how mathematical functions are handled.
+.PP
+Where the above substitutions occur (e.g. inside quoted strings), they
+are performed by the expression's instructions.
+However, the command parser may already have performed one round of
+substitution before the expression processor was called.
+As discussed below, it is usually best to enclose expressions
+in braces to prevent the command parser from performing substitutions
+on the contents.
+.PP
+For some examples of simple expressions, suppose the variable
+\fBa\fR has the value 3 and
+the variable \fBb\fR has the value 6.
+Then the command on the left side of each of the lines below
+will produce the value on the right side of the line:
+.PP
+.CS
+.ta 6c
+\fBexpr\fR 3.1 + $a	\fI6.1\fR
+\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
+\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+\fBexpr\fR {{word one} < "word $a"}	\fI0\fR
+.CE
+.SS OPERATORS
+.PP
+The valid operators (most of which are also available as commands in
+the \fBtcl::mathop\fR namespace; see the \fBmathop\fR(n) manual page
+for details) are listed below, grouped in decreasing order of precedence:
+.TP 20
+\fB\-\0\0+\0\0~\0\0!\fR
+.
+Unary minus, unary plus, bit-wise NOT, logical NOT.  None of these operators
+may be applied to string operands, and bit-wise NOT may be
+applied only to integers.
+.TP 20
+\fB**\fR
+.
+Exponentiation.  Valid for any numeric operands.
+.TP 20
+\fB*\0\0/\0\0%\fR
+.
+Multiply, divide, remainder.  None of these operators may be
+applied to string operands, and remainder may be applied only
+to integers.
+The remainder will always have the same sign as the divisor and
+an absolute value smaller than the absolute value of the divisor.
+.RS
+.PP
+When applied to integers, the division and remainder operators can be
+considered to partition the number line into a sequence of equal-sized
+adjacent non-overlapping pieces where each piece is the size of the divisor;
+the division result identifies which piece the divisor lay within, and the
+remainder result identifies where within that piece the divisor lay. A
+consequence of this is that the result of
+.QW "-57 \fB/\fR 10"
+is always -6, and the result of
+.QW "-57 \fB%\fR 10"
+is always 3.
+.RE
+.TP 20
+\fB+\0\0\-\fR
+.
+Add and subtract.  Valid for any numeric operands.
+.TP 20
+\fB<<\0\0>>\fR
+.
+Left and right shift.  Valid for integer operands only.
+A right shift always propagates the sign bit.
+.TP 20
+\fB<\0\0>\0\0<=\0\0>=\fR
+.
+Boolean less, greater, less than or equal, and greater than or equal.
+Each operator produces 1 if the condition is true, 0 otherwise.
+These operators may be applied to strings as well as numeric operands,
+in which case string comparison is used.
+.TP 20
+\fB==\0\0!=\fR
+.
+Boolean equal and not equal.  Each operator produces a zero/one result.
+Valid for all operand types.
+.TP 20
+\fBeq\0\0ne\fR
+.
+Boolean string equal and string not equal.  Each operator produces a
+zero/one result.  The operand types are interpreted only as strings.
+.TP 20
+\fBin\0\0ni\fR
+.
+List containment and negated list containment.  Each operator produces
+a zero/one result and treats its first argument as a string and its
+second argument as a Tcl list.  The \fBin\fR operator indicates
+whether the first argument is a member of the second argument list;
+the \fBni\fR operator inverts the sense of the result.
+.TP 20
+\fB&\fR
+.
+Bit-wise AND.  Valid for integer operands only.
+.TP 20
+\fB^\fR
+.
+Bit-wise exclusive OR.  Valid for integer operands only.
+.TP 20
+\fB|\fR
+.
+Bit-wise OR.  Valid for integer operands only.
+.TP 20
+\fB&&\fR
+.
+Logical AND.  Produces a 1 result if both operands are non-zero,
+0 otherwise.
+Valid for boolean and numeric (integers or floating-point) operands only.
+.TP 20
+\fB||\fR
+.
+Logical OR.  Produces a 0 result if both operands are zero, 1 otherwise.
+Valid for boolean and numeric (integers or floating-point) operands only.
+.TP 20
+\fIx\fB?\fIy\fB:\fIz\fR
+.
+If-then-else, as in C.  If \fIx\fR
+evaluates to non-zero, then the result is the value of \fIy\fR.
+Otherwise the result is the value of \fIz\fR.
+The \fIx\fR operand must have a boolean or numeric value.
+.PP
+See the C manual for more details on the results
+produced by each operator.
+The exponentiation operator promotes types like the multiply and
+divide operators, and produces a result that is the same as the output
+of the \fBpow\fR function (after any type conversions.)
+All of the binary operators but exponentiation group left-to-right
+within the same precedence level; exponentiation groups right-to-left.  For example, the command
+.PP
+.CS
+\fBexpr\fR {4*2 < 7}
+.CE
+.PP
+returns 0, while
+.PP
+.CS
+\fBexpr\fR {2**3**2}
+.CE
+.PP
+returns 512.
+.PP
+The \fB&&\fR, \fB||\fR, and \fB?:\fR operators have
+.QW "lazy evaluation" ,
+just as in C, which means that operands are not evaluated if they are
+not needed to determine the outcome.  For example, in the command
+.PP
+.CS
+\fBexpr\fR {$v ? [a] : [b]}
+.CE
+.PP
+only one of
+.QW \fB[a]\fR
+or
+.QW \fB[b]\fR
+will actually be evaluated,
+depending on the value of \fB$v\fR.  Note, however, that this is
+only true if the entire expression is enclosed in braces;  otherwise
+the Tcl parser will evaluate both
+.QW \fB[a]\fR
+and
+.QW \fB[b]\fR
+before invoking the \fBexpr\fR command.
+.SS "MATH FUNCTIONS"
+.PP
+When the expression parser encounters a mathematical function
+such as \fBsin($x)\fR, it replaces it with a call to an ordinary
+Tcl function in the \fBtcl::mathfunc\fR namespace.  The processing
+of an expression such as:
+.PP
+.CS
+\fBexpr\fR {sin($x+$y)}
+.CE
+.PP
+is the same in every way as the processing of:
+.PP
+.CS
+\fBexpr\fR {[tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]]}
+.CE
+.PP
+which in turn is the same as the processing of:
+.PP
+.CS
+tcl::mathfunc::sin [\fBexpr\fR {$x+$y}]
+.CE
+.PP
+The executor will search for \fBtcl::mathfunc::sin\fR using the usual
+rules for resolving functions in namespaces. Either
+\fB::tcl::mathfunc::sin\fR or \fB[namespace
+current]::tcl::mathfunc::sin\fR will satisfy the request, and others
+may as well (depending on the current \fBnamespace path\fR setting).
+.PP
+Some mathematical functions have several arguments, separated by commas like in C. Thus:
+.PP
+.CS
+\fBexpr\fR {hypot($x,$y)}
+.CE
+.PP
+ends up as
+.PP
+.CS
+tcl::mathfunc::hypot $x $y
+.CE
+.PP
+See the \fBmathfunc\fR(n) manual page for the math functions that are
+available by default.
+.SS "TYPES, OVERFLOW, AND PRECISION"
+.PP
+All internal computations involving integers are done calling on the
+LibTomMath multiple precision integer library as required so that all
+integer calculations are performed exactly.  Note that in Tcl releases
+prior to 8.5, integer calculations were performed with one of the C types
+\fIlong int\fR or \fITcl_WideInt\fR, causing implicit range truncation
+in those calculations where values overflowed the range of those types.
+Any code that relied on these implicit truncations will need to explicitly
+add \fBint()\fR or \fBwide()\fR function calls to expressions at the points
+where such truncation is required to take place.
+.PP
+All internal computations involving floating-point are
+done with the C type \fIdouble\fR.
+When converting a string to floating-point, exponent overflow is
+detected and results in the \fIdouble\fR value of \fBInf\fR or
+\fB\-Inf\fR as appropriate.  Floating-point overflow and underflow
+are detected to the degree supported by the hardware, which is generally
+pretty reliable.
+.PP
+Conversion among internal representations for integer, floating-point,
+and string operands is done automatically as needed.
+For arithmetic computations, integers are used until some
+floating-point number is introduced, after which floating-point is used.
+For example,
+.PP
+.CS
+\fBexpr\fR {5 / 4}
+.CE
+.PP
+returns 1, while
+.PP
+.CS
+\fBexpr\fR {5 / 4.0}
+\fBexpr\fR {5 / ( [string length "abcd"] + 0.0 )}
+.CE
+.PP
+both return 1.25.
+Floating-point values are always returned with a
+.QW \fB.\fR
+or an
+.QW \fBe\fR
+so that they will not look like integer values.  For example,
+.PP
+.CS
+\fBexpr\fR {20.0/5.0}
+.CE
+.PP
+returns \fB4.0\fR, not \fB4\fR.
+.SS "STRING OPERATIONS"
+.PP
+String values may be used as operands of the comparison operators,
+although the expression evaluator tries to do comparisons as integer
+or floating-point when it can,
+i.e., when all arguments to the operator allow numeric interpretations,
+except in the case of the \fBeq\fR and \fBne\fR operators.
+If one of the operands of a comparison is a string and the other
+has a numeric value, a canonical string representation of the numeric
+operand value is generated to compare with the string operand.
+Canonical string representation for integer values is a decimal string
+format.  Canonical string representation for floating-point values
+is that produced by the \fB%g\fR format specifier of Tcl's
+\fBformat\fR command.  For example, the commands
+.PP
+.CS
+\fBexpr\fR {"0x03" > "2"}
+\fBexpr\fR {"0y" > "0x12"}
+.CE
+.PP
+both return 1.  The first comparison is done using integer
+comparison, and the second is done using string comparison.
+Because of Tcl's tendency to treat values as numbers whenever
+possible, it is not generally a good idea to use operators like \fB==\fR
+when you really want string comparison and the values of the
+operands could be arbitrary;  it is better in these cases to use
+the \fBeq\fR or \fBne\fR operators, or the \fBstring\fR command instead.
+.SH "PERFORMANCE CONSIDERATIONS"
+.PP
+Enclose expressions in braces for the best speed and the smallest
+storage requirements.
+This allows the Tcl bytecode compiler to generate the best code.
+.PP
+As mentioned above, expressions are substituted twice:
+once by the Tcl parser and once by the \fBexpr\fR command.
+For example, the commands
+.PP
+.CS
+set a 3
+set b {$a + 2}
+\fBexpr\fR $b*4
+.CE
+.PP
+return 11, not a multiple of 4.
+This is because the Tcl parser will first substitute \fB$a + 2\fR for
+the variable \fBb\fR,
+then the \fBexpr\fR command will evaluate the expression \fB$a + 2*4\fR.
+.PP
+Most expressions do not require a second round of substitutions.
+Either they are enclosed in braces or, if not,
+their variable and command substitutions yield numbers or strings
+that do not themselves require substitutions.
+However, because a few unbraced expressions
+need two rounds of substitutions,
+the bytecode compiler must emit
+additional instructions to handle this situation.
+The most expensive code is required for
+unbraced expressions that contain command substitutions.
+These expressions must be implemented by generating new code
+each time the expression is executed.
+When the expression is unbraced to allow the substitution of a function or
+operator, consider using the commands documented in the \fBmathfunc\fR(n) or
+\fBmathop\fR(n) manual pages directly instead.
+.SH EXAMPLES
+.PP
+Define a procedure that computes an
+.QW interesting
+mathematical function:
+.PP
+.CS
+proc tcl::mathfunc::calc {x y} {
+    \fBexpr\fR { ($x**2 - $y**2) / exp($x**2 + $y**2) }
+}
+.CE
+.PP
+Convert polar coordinates into cartesian coordinates:
+.PP
+.CS
+# convert from ($radius,$angle)
+set x [\fBexpr\fR { $radius * cos($angle) }]
+set y [\fBexpr\fR { $radius * sin($angle) }]
+.CE
+.PP
+Convert cartesian coordinates into polar coordinates:
+.PP
+.CS
+# convert from ($x,$y)
+set radius [\fBexpr\fR { hypot($y, $x) }]
+set angle  [\fBexpr\fR { atan2($y, $x) }]
+.CE
+.PP
+Print a message describing the relationship of two string values to
+each other:
+.PP
+.CS
+puts "a and b are [\fBexpr\fR {$a eq $b ? {equal} : {different}}]"
+.CE
+.PP
+Set a variable to whether an environment variable is both defined at
+all and also set to a true boolean value:
+.PP
+.CS
+set isTrue [\fBexpr\fR {
+    [info exists ::env(SOME_ENV_VAR)] &&
+    [string is true -strict $::env(SOME_ENV_VAR)]
+}]
+.CE
+.PP
+Generate a random integer in the range 0..99 inclusive:
+.PP
+.CS
+set randNum [\fBexpr\fR { int(100 * rand()) }]
+.CE
+.SH "SEE ALSO"
+array(n), for(n), if(n), mathfunc(n), mathop(n), namespace(n), proc(n),
+string(n), Tcl(n), while(n)
+.SH KEYWORDS
+arithmetic, boolean, compare, expression, fuzzy comparison
+.SH COPYRIGHT
+.nf
+Copyright (c) 1993 The Regents of the University of California.
+Copyright (c) 1994-2000 Sun Microsystems Incorporated.
+Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+.fi
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,1360 @@
+# Commands covered:  for, continue, break
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc meminfo {} {lindex [split [memory info] "\n"] 3 3}
+}
+
+# Basic "for" operation.
+
+test for-1.1 {TclCompileForCmd: missing initial command} {
+    list [catch {for} msg] $msg
+} {1 {wrong # args: should be "for start test next command"}}
+test for-1.2 {TclCompileForCmd: error in initial command} -body {
+    list [catch {for {set}} msg] $msg $::errorInfo
+} -match glob -result {1 {wrong # args: should be "for start test next command"} {wrong # args: should be "for start test next command"
+    while *ing
+"for {set}"}}
+catch {unset i}
+test for-1.3 {TclCompileForCmd: missing test expression} {
+    catch {for {set i 0}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-1.4 {TclCompileForCmd: error in test expression} -body {
+    catch {for {set i 0} {$i<}} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "for start test next command"
+    while *ing
+"for {set i 0} {$i<}"}
+test for-1.5 {TclCompileForCmd: test expression is enclosed in quotes} {
+    set i 0
+    for {} "$i > 5" {incr i} {}
+} {}
+test for-1.6 {TclCompileForCmd: missing "next" command} {
+    catch {for {set i 0} {$i < 5}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-1.7 {TclCompileForCmd: missing command body} {
+    catch {for {set i 0} {$i < 5} {incr i}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-1.8 {TclCompileForCmd: error compiling command body} -body {
+    catch {for {set i 0} {$i < 5} {incr i} {set}} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+catch {unset a}
+test for-1.9 {TclCompileForCmd: simple command body} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-1.10 {TclCompileForCmd: command body in quotes} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} "append a x"
+    set a
+} {xxxxx}
+test for-1.11 {TclCompileForCmd: computed command body} {
+    catch {unset x1}
+    catch {unset bb}
+    catch {unset x2}
+    set x1 {append a x1; }
+    set bb {break}
+    set x2 {; append a x2}
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} $x1$bb$x2
+    set a
+} {x1}
+test for-1.12 {TclCompileForCmd: error in "next" command} -body {
+    catch {for {set i 0} {$i < 5} {set} {format $i}} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+test for-1.13 {TclCompileForCmd: long command body} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	if $i>5 continue
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-1.14 {TclCompileForCmd: for command result} {
+    set a [for {set i 0} {$i < 5} {incr i} {}]
+    set a
+} {}
+test for-1.15 {TclCompileForCmd: for command result} {
+    set a [for {set i 0} {$i < 5} {incr i} {if $i==3 break}]
+    set a
+} {}
+
+# Check "for" and "continue".
+
+test for-2.1 {TclCompileContinueCmd: arguments after "continue"} {
+    catch {continue foo} msg
+    set msg
+} {wrong # args: should be "continue"}
+test for-2.2 {TclCompileContinueCmd: continue result} {
+    catch continue
+} 4
+test for-2.3 {continue tests} {
+    set a {}
+    for {set i 1} {$i <= 4} {set i [expr $i+1]} {
+	if {$i == 2} continue
+	set a [concat $a $i]
+    }
+    set a
+} {1 3 4}
+test for-2.4 {continue tests} {
+    set a {}
+    for {set i 1} {$i <= 4} {set i [expr $i+1]} {
+	if {$i != 2} continue
+	set a [concat $a $i]
+    }
+    set a
+} {2}
+test for-2.5 {continue tests, nested loops} {
+    set msg {}
+    for {set i 1} {$i <= 4} {incr i} {
+	for {set a 1} {$a <= 2} {incr a} {
+            if {$i>=2 && $a>=2} continue
+            set msg [concat $msg "$i.$a"]
+        }
+    }
+    set msg
+} {1.1 1.2 2.1 3.1 4.1}
+test for-2.6 {continue tests, long command body} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==2 continue
+	if $i==4 break
+	if $i>5 continue
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	set a [concat $a $i]
+    }
+    set a
+} {1 3}
+test for-2.7 {continue tests, uncompiled [for]} -body {
+    set file [makeFile {
+    	set guard 0
+	for {set i 20} {$i > 0} {incr i -1} {
+	    if {[incr guard]>30} {return BAD}
+	    continue
+	}
+	return GOOD
+    } source.file]
+    source $file
+} -cleanup {
+    removeFile source.file
+} -result GOOD
+
+# Check "for" and "break".
+
+test for-3.1 {TclCompileBreakCmd: arguments after "break"} {
+    catch {break foo} msg
+    set msg
+} {wrong # args: should be "break"}
+test for-3.2 {TclCompileBreakCmd: break result} {
+    catch break
+} 3
+test for-3.3 {break tests} {
+    set a {}
+    for {set i 1} {$i <= 4} {incr i} {
+	if {$i == 3} break
+	set a [concat $a $i]
+    }
+    set a
+} {1 2}
+test for-3.4 {break tests, nested loops} {
+    set msg {}
+    for {set i 1} {$i <= 4} {incr i} {
+	for {set a 1} {$a <= 2} {incr a} {
+            if {$i>=2 && $a>=2} break
+            set msg [concat $msg "$i.$a"]
+        }
+    }
+    set msg
+} {1.1 1.2 2.1 3.1 4.1}
+test for-3.5 {break tests, long command body} {
+    set a {}
+    for {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==2 continue
+	if $i==5 break
+	if $i>5 continue
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if $i==4 break
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	set a [concat $a $i]
+    }
+    set a
+} {1 3}
+# A simplified version of exmh's mail formatting routine to stress "for",
+# "break", "while", and "if".
+proc formatMail {} {
+    array set lines {
+        0 {Return-path: george@tcl} \
+        1 {Return-path: <george@tcl>} \
+        2 {Received: from tcl by tcl.Somewhere.COM (SMI-8.6/SMI-SVR4)} \
+        3 {	id LAA10027; Wed, 11 Sep 1996 11:14:53 -0700} \
+        4 {Message-id: <199609111814.LAA10027@tcl.Somewhere.COM>} \
+        5 {X-mailer: exmh version 1.6.9 8/22/96} \
+        6 {Mime-version: 1.0} \
+        7 {Content-type: text/plain; charset=iso-8859-1} \
+        8 {Content-transfer-encoding: quoted-printable} \
+        9 {Content-length: 2162} \
+        10 {To: fred} \
+        11 {Subject: tcl7.6} \
+        12 {Date: Wed, 11 Sep 1996 11:14:53 -0700} \
+        13 {From: George <george@tcl>} \
+        14 {The Tcl 7.6 and Tk 4.2 releases} \
+        15 {} \
+        16 {This page contains information about Tcl 7.6 and Tk4.2, which are the most recent} \
+        17 {releases of the Tcl scripting language and the Tk toolkit. The first beta versions of these} \
+        18 {releases were released on August 30, 1996. These releases contain only minor changes,} \
+        19 {so we hope to have only a single beta release and to go final in early October, 1996. } \
+        20 {} \
+        21 {} \
+        22 {What's new } \
+        23 {} \
+        24 {The most important changes in the releases are summarized below. See the README} \
+        25 {and changes files in the distributions for more complete information on what has} \
+        26 {changed, including both feature changes and bug fixes. } \
+        27 {} \
+        28 {     There are new options to the file command for copying files (file copy),} \
+        29 {     deleting files and directories (file delete), creating directories (file} \
+        30 {     mkdir), and renaming files (file rename). } \
+        31 {     The implementation of exec has been improved greatly for Windows 95 and} \
+        32 {     Windows NT. } \
+        33 {     There is a new memory allocator for the Macintosh version, which should be} \
+        34 {     more efficient than the old one. } \
+        35 {     Tk's grid geometry manager has been completely rewritten. The layout} \
+        36 {     algorithm produces much better layouts than before, especially where rows or} \
+        37 {     columns were stretchable. } \
+        38 {     There are new commands for creating common dialog boxes:} \
+        39 {     tk_chooseColor, tk_getOpenFile, tk_getSaveFile and} \
+        40 {     tk_messageBox. These use native dialog boxes if they are available. } \
+        41 {     There is a new virtual event mechanism for handling events in a more portable} \
+        42 {     way. See the new command event. It also allows events (both physical and} \
+        43 {     virtual) to be generated dynamically. } \
+        44 {} \
+        45 {Tcl 7.6 and Tk 4.2 are backwards-compatible with Tcl 7.5 and Tk 4.1 except for} \
+        46 {changes in the C APIs for custom channel drivers. Scripts written for earlier releases} \
+        47 {should work on these new releases as well. } \
+        48 {} \
+        49 {Obtaining The Releases} \
+        50 {} \
+        51 {Binary Releases} \
+        52 {} \
+        53 {Pre-compiled releases are available for the following platforms: } \
+        54 {} \
+        55 {     Windows 3.1, Windows 95, and Windows NT: Fetch} \
+        56 {     ftp://ftp.sunlabs.com/pub/tcl/win42b1.exe, then execute it. The file is a} \
+        57 {     self-extracting executable. It will install the Tcl and Tk libraries, the wish and} \
+        58 {     tclsh programs, and documentation. } \
+        59 {     Macintosh (both 68K and PowerPC): Fetch} \
+        60 {     ftp://ftp.sunlabs.com/pub/tcl/mactk4.2b1.sea.hqx. The file is in binhex format,} \
+        61 {     which is understood by Fetch, StuffIt, and many other Mac utilities. The} \
+        62 {     unpacked file is a self-installing executable: double-click on it and it will create a} \
+        63 {     folder containing all that you need to run Tcl and Tk. } \
+        64 {        UNIX (Solaris 2.* and SunOS, other systems soon to follow). Easy to install} \
+        65 {     binary packages are now for sale at the Sun Labs Tcl/Tk Shop. Check it out!} \
+    }
+    set result ""
+    set NL "
+"
+    set tag {level= type=text/plain part=0 sel Charset}
+    set ix [lsearch -regexp $tag text/enriched]
+    if {$ix < 0} {
+	set ranges {}
+	set quote 0
+    }
+    set breakrange {6.42 78.0}
+    set F1 [lindex $breakrange 0]
+    set F2 [lindex $breakrange 1]
+    set breakrange [lrange $breakrange 2 end]
+    if {[string length $F1] == 0} {
+	set F1 -1
+	set break 0
+    } else {
+	set break 1
+    }
+    set xmailer 0
+    set inheaders 1
+    set last [array size lines]
+    set plen 2
+    for {set L 1} {$L < $last} {incr L} {
+	set line $lines($L)
+	if {$inheaders} {
+	    # Blank or empty line terminates headers
+	    # Leading --- terminates headers
+	    if {[regexp {^[ 	]*$} $line] || [regexp {^--+} $line]} {
+		set inheaders 0
+	    }
+	    if {[regexp -nocase {^x-mailer:} $line]} {
+		continue
+	    }
+	}
+	if $inheaders {
+	    set limit 55
+	} else {
+	    set limit 55
+	    # Decide whether or not to break the body line
+	    if {$plen > 0} {
+		if {[string first {> } $line] == 0} {
+		    # This is quoted text from previous message, don't reformat
+		    append result $line $NL
+		    if {$quote && !$inheaders} {
+			# Fix from <sarr@umich.edu> to handle text/enriched
+			if {$L > $L1 && $L < $L2 && $line != {}} {
+			    # enriched requires two newlines for each one.
+			    append result $NL
+			} elseif {$L > $L2} {
+			    set L1 [lindex $ranges 0]
+			    set L2 [lindex $ranges 1]
+			    set ranges [lrange $ranges 2 end]
+			    set quote [llength $L1]
+			}
+		    }
+		    continue
+		}
+	    }
+	    if {$F1 < 0} {
+		# Nothing left to format
+		append result $line $NL
+		continue
+	    } elseif {$L < $F1} {
+		# Not yet to formatted block
+		append result $line $NL
+		continue
+	    } elseif {$L > $F2} {
+		# Past formatted block
+		set F1 [lindex $breakrange 0]
+		set F2 [lindex $breakrange 1]
+		set breakrange [lrange $breakrange 2 end]
+		append result $line $NL
+		if {[string length $F1] == 0} {
+		    set F1 -1
+		}
+		continue
+	    }
+	}
+	set climit [expr $limit-1]
+	set cutoff 50
+	set continuation 0
+
+	while {[string length $line] > $limit} {
+	    for {set c [expr $limit-1]} {$c >= $cutoff} {incr c -1} {
+		set char [string index $line $c]
+		if {$char == " " || $char == "\t"} {
+		    break
+		}
+		if {$char == ">"} {	;# Hack for enriched formatting
+		    break
+		}
+	    }
+	    if {$c < $cutoff} {
+		if {! $inheaders} {
+		    set c [expr $limit-1]
+		} else {
+		    set c [string length $line]
+		}
+	    }
+	    set newline [string range $line 0 $c]
+	    if {! $continuation} {
+		append result $newline $NL
+	    } else {
+		append result \ $newline $NL
+	    }
+	    incr c
+	    set line [string trimright [string range $line $c end]]
+	    if {$inheaders} {
+		set continuation 1
+		set limit $climit
+	    }
+	}
+	if {$continuation} {
+	    if {[string length $line] != 0} {
+		append result \ $line $NL
+	    }
+	} else {
+	    append result $line $NL
+	    if {$quote && !$inheaders} {
+		if {$L > $L1 && $L < $L2 && $line != {}} {
+		    # enriched requires two newlines for each one.
+		    append result "" $NL
+		} elseif {$L > $L2} {
+		    set L1 [lindex $ranges 0]
+		    set L2 [lindex $ranges 1]
+		    set ranges [lrange $ranges 2 end]
+		    set quote [llength $L1]
+		}
+	    }
+	}
+    }
+    return $result
+}
+test for-3.6 {break tests} {
+    formatMail
+} {Return-path: <george@tcl>
+Received: from tcl by tcl.Somewhere.COM (SMI-8.6/SMI-SVR4)
+	id LAA10027; Wed, 11 Sep 1996 11:14:53 -0700
+Message-id: <199609111814.LAA10027@tcl.Somewhere.COM>
+Mime-version: 1.0
+Content-type: text/plain; charset=iso-8859-1
+Content-transfer-encoding: quoted-printable
+Content-length: 2162
+To: fred
+Subject: tcl7.6
+Date: Wed, 11 Sep 1996 11:14:53 -0700
+From: George <george@tcl>
+The Tcl 7.6 and Tk 4.2 releases
+
+This page contains information about Tcl 7.6 and Tk4.2,
+ which are the most recent
+releases of the Tcl scripting language and the Tk toolk
+it. The first beta versions of these
+releases were released on August 30, 1996. These releas
+es contain only minor changes,
+so we hope to have only a single beta release and to 
+go final in early October, 1996.
+
+
+What's new 
+
+The most important changes in the releases are summariz
+ed below. See the README
+and changes files in the distributions for more complet
+e information on what has
+changed, including both feature changes and bug fixes. 
+
+     There are new options to the file command for 
+copying files (file copy),
+     deleting files and directories (file delete), 
+creating directories (file
+     mkdir), and renaming files (file rename). 
+     The implementation of exec has been improved great
+ly for Windows 95 and
+     Windows NT. 
+     There is a new memory allocator for the Macintosh 
+version, which should be
+     more efficient than the old one. 
+     Tk's grid geometry manager has been completely 
+rewritten. The layout
+     algorithm produces much better layouts than before
+, especially where rows or
+     columns were stretchable. 
+     There are new commands for creating common dialog 
+boxes:
+     tk_chooseColor, tk_getOpenFile, tk_getSaveFile and
+     tk_messageBox. These use native dialog boxes if 
+they are available.
+     There is a new virtual event mechanism for handlin
+g events in a more portable
+     way. See the new command event. It also allows 
+events (both physical and
+     virtual) to be generated dynamically. 
+
+Tcl 7.6 and Tk 4.2 are backwards-compatible with Tcl 
+7.5 and Tk 4.1 except for
+changes in the C APIs for custom channel drivers. Scrip
+ts written for earlier releases
+should work on these new releases as well. 
+
+Obtaining The Releases
+
+Binary Releases
+
+Pre-compiled releases are available for the following 
+platforms:
+
+     Windows 3.1, Windows 95, and Windows NT: Fetch
+     ftp://ftp.sunlabs.com/pub/tcl/win42b1.exe, then 
+execute it. The file is a
+     self-extracting executable. It will install the 
+Tcl and Tk libraries, the wish and
+     tclsh programs, and documentation. 
+     Macintosh (both 68K and PowerPC): Fetch
+     ftp://ftp.sunlabs.com/pub/tcl/mactk4.2b1.sea.hqx. 
+The file is in binhex format,
+     which is understood by Fetch, StuffIt, and many 
+other Mac utilities. The
+     unpacked file is a self-installing executable: 
+double-click on it and it will create a
+     folder containing all that you need to run Tcl 
+and Tk.
+        UNIX (Solaris 2.* and SunOS, other systems 
+soon to follow). Easy to install
+     binary packages are now for sale at the Sun Labs 
+Tcl/Tk Shop. Check it out!
+}
+
+# Check that "break" resets the interpreter's result
+
+test for-4.1 {break must reset the interp result} {
+    catch {
+        set z GLOBTESTDIR/dir2/file2.c
+        if [string match GLOBTESTDIR/dir2/* $z] {
+            break
+        }
+    } j
+    set j
+} {}
+
+# Test for incorrect "double evaluation" semantics
+
+test for-5.1 {possible delayed substitution of increment command} {
+    # Increment should be 5, and lappend should always append $a
+    catch {unset a}
+    catch {unset i}
+    set a 5
+    set i {}
+    for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
+    set i
+} {1 6 11}
+
+test for-5.2 {possible delayed substitution of increment command} {
+    # Increment should be 5, and lappend should always append $a
+    catch {rename p ""}
+    proc p {} {
+	set a 5
+	set i {}
+	for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
+	set i
+    }
+    p
+} {1 6 11}
+test for-5.3 {possible delayed substitution of body command} {
+    # Increment should be $a, and lappend should always append 5
+    set a 5
+    set i {}
+    for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
+    set i
+} {5 5 5 5}
+test for-5.4 {possible delayed substitution of body command} {
+    # Increment should be $a, and lappend should always append 5
+    catch {rename p ""}
+    proc p {} {
+	set a 5
+	set i {}
+	for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
+	set i
+    }
+    p
+} {5 5 5 5}
+
+# In the following tests we need to bypass the bytecode compiler by
+# substituting the command from a variable.  This ensures that command
+# procedure is invoked directly.
+
+test for-6.1 {Tcl_ForObjCmd: number of args} {
+    set z for
+    catch {$z} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-6.2 {Tcl_ForObjCmd: number of args} {
+    set z for
+    catch {$z {set i 0}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-6.3 {Tcl_ForObjCmd: number of args} {
+    set z for
+    catch {$z {set i 0} {$i < 5}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-6.4 {Tcl_ForObjCmd: number of args} {
+    set z for
+    catch {$z {set i 0} {$i < 5} {incr i}} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-6.5 {Tcl_ForObjCmd: number of args} {
+    set z for
+    catch {$z {set i 0} {$i < 5} {incr i} {body} extra} msg
+    set msg
+} {wrong # args: should be "for start test next command"}
+test for-6.6 {Tcl_ForObjCmd: error in initial command} -body {
+    set z for
+    list [catch {$z {set} {$i < 5} {incr i} {body}} msg] $msg $::errorInfo
+} -match glob -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"
+    ("for" initial command)
+    invoked from within
+"$z {set} {$i < 5} {incr i} {body}"}}
+test for-6.7 {Tcl_ForObjCmd: error in test expression} -body {
+    set z for
+    catch {$z {set i 0} {i < 5} {incr i} {body}}
+    set ::errorInfo
+} -match glob -result {*"$z {set i 0} {i < 5} {incr i} {body}"}
+test for-6.8 {Tcl_ForObjCmd: test expression is enclosed in quotes} {
+    set z for
+    set i 0
+    $z {set i 6} "$i > 5" {incr i} {set y $i}
+    set i
+} 6
+test for-6.9 {Tcl_ForObjCmd: error executing command body} -body {
+    set z for
+    catch {$z {set i 0} {$i < 5} {incr i} {set}} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"
+    ("for" body line 1)
+    invoked from within
+"$z {set i 0} {$i < 5} {incr i} {set}"}
+test for-6.10 {Tcl_ForObjCmd: simple command body} {
+    set z for
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-6.11 {Tcl_ForObjCmd: command body in quotes} {
+    set z for
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} "append a x"
+    set a
+} {xxxxx}
+test for-6.12 {Tcl_ForObjCmd: computed command body} {
+    set z for
+    catch {unset x1}
+    catch {unset bb}
+    catch {unset x2}
+    set x1 {append a x1; }
+    set bb {break}
+    set x2 {; append a x2}
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} $x1$bb$x2
+    set a
+} {x1}
+test for-6.13 {Tcl_ForObjCmd: error in "next" command} -body {
+    set z for
+    catch {$z {set i 0} {$i < 5} {set} {set j 4}} msg
+    set ::errorInfo
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"
+    ("for" loop-end command)
+    invoked from within
+"$z {set i 0} {$i < 5} {set} {set j 4}"}
+test for-6.14 {Tcl_ForObjCmd: long command body} {
+    set z for
+    set a {}
+    $z {set i 1} {$i<6} {set i [expr $i+1]} {
+	if $i==4 break
+	if $i>5 continue
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	    catch {set a $a} msg
+	    catch {incr i 5} msg
+	    catch {incr i -5} msg
+	}
+	set a [concat $a $i]
+    }
+    set a
+} {1 2 3}
+test for-6.15 {Tcl_ForObjCmd: for command result} {
+    set z for
+    set a [$z {set i 0} {$i < 5} {incr i} {}]
+    set a
+} {}
+test for-6.16 {Tcl_ForObjCmd: for command result} {
+    set z for
+    set a [$z {set i 0} {$i < 5} {incr i} {if $i==3 break}]
+    set a
+} {}
+test for-6.17 {Tcl_ForObjCmd: for command result} {
+    list \
+        [catch {for {break} {1} {} {}} err] $err \
+        [catch {for {continue} {1} {} {}} err] $err \
+        [catch {for {} {[break]} {} {}} err] $err \
+        [catch {for {} {[continue]} {} {}} err] $err \
+        [catch {for {} {1} {break} {}} err] $err \
+        [catch {for {} {1} {continue} {}} err] $err \
+} [list \
+    3 {} \
+    4 {} \
+    3 {} \
+    4 {} \
+    0 {} \
+    4 {} \
+    ]
+test for-6.18 {Tcl_ForObjCmd: for command result} {
+    proc p6181 {} {
+        for {break} {1} {} {}
+    }
+    proc p6182 {} {
+        for {continue} {1} {} {}
+    }
+    proc p6183 {} {
+        for {} {[break]} {} {}
+    }
+    proc p6184 {} {
+        for {} {[continue]} {} {}
+    }
+    proc p6185 {} {
+        for {} {1} {break} {}
+    }
+    proc p6186 {} {
+        for {} {1} {continue} {}
+    }
+    list \
+        [catch {p6181} err] $err \
+        [catch {p6182} err] $err \
+        [catch {p6183} err] $err \
+        [catch {p6184} err] $err \
+        [catch {p6185} err] $err \
+        [catch {p6186} err] $err
+} [list \
+    1 {invoked "break" outside of a loop} \
+    1 {invoked "continue" outside of a loop} \
+    1 {invoked "break" outside of a loop} \
+    1 {invoked "continue" outside of a loop} \
+    0 {} \
+    1 {invoked "continue" outside of a loop} \
+    ]
+
+test for-7.1 {Bug 3614226: ensure that break cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [break] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.2 {Bug 3614226: ensure that continue cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [continue] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[break] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[continue] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.5 {Bug 3614226: ensure that break cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[break] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.6 {Bug 3614226: ensure that continue cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[continue] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.7 {Bug 3614226: ensure that break only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[break] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.8 {Bug 3614226: ensure that continue only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[continue] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.9 {Bug 3614226: ensure that break from invoked command cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [apply {{} {return -code break}}] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.10 {Bug 3614226: ensure that continue from invoked command cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [apply {{} {return -code continue}}] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.11 {Bug 3614226: ensure that break from invoked command cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[apply {{} {return -code break}}] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.12 {Bug 3614226: ensure that continue from invoked command cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[apply {{} {
+		    return -code continue
+		}}] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.13 {Bug 3614226: ensure that break from invoked command cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code break
+		}}] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.14 {Bug 3614226: ensure that continue from invoked command cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code continue
+		}}] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.15 {Bug 3614226: ensure that break from invoked command only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code break
+		}}] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.16 {Bug 3614226: ensure that continue from invoked command only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code continue
+		}}] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.17 {Bug 3614226: ensure that break from expanded command cleans up the stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [{*}$op] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.18 {Bug 3614226: ensure that continue from expanded command cleans up the stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [{*}$op] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+test for-7.19 {Bug 3614226: ensure that break from expanded command cleans up the expansion stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[{*}$op] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.20 {Bug 3614226: ensure that continue from expanded command cleans up the expansion stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[{*}$op] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+test for-7.21 {Bug 3614226: ensure that break from expanded command cleans up the combination of main and expansion stack} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.22 {Bug 3614226: ensure that continue from expanded command cleans up the combination of main and expansion stack} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+test for-7.23 {Bug 3614226: ensure that break from expanded command only cleans up the right amount} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.24 {Bug 3614226: ensure that continue from expanded command only cleans up the right amount} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+
+test for-8.0 {Coverity CID 1251203: break vs continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i; list a [eval {}]} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {6 5 3}
+test for-8.1 {Coverity CID 1251203: break vs continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i;list a [eval break]} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {2 1 3}
+test for-8.2 {Coverity CID 1251203: break vs continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i;list a [eval continue]} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {1 1 3}
+test for-8.3 {break in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i; break} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {2 1 3}
+test for-8.4 {continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i; continue} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {1 1 3}
+test for-8.5 {break in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i; list a [break]} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {2 1 3}
+test for-8.6 {continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i; list a [continue]} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {1 1 3}
+test for-8.7 {break in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i;eval break} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {2 1 3}
+test for-8.8 {continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    list a [\
+	    for {set i 0} {$i < 5} {incr i;eval continue} {
+		incr j
+	    }]
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {1 1 3}
+test for-8.9 {break in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    for {set i 0} {$i < 5} {incr i;eval break} {
+		incr j
+	    }
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {2 1 3}
+test for-8.10 {continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    for {set i 0} {$i < 5} {incr i;eval continue} {
+		incr j
+	    }
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {1 1 3}
+test for-8.11 {break in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    for {set i 0} {$i < 5} {incr i;break} {
+		incr j
+	    }
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {2 1 3}
+test for-8.12 {continue in for-step clause} {
+    apply {{} {
+	for {set k 0} {$k < 3} {incr k} {
+	    set j 0
+	    for {set i 0} {$i < 5} {incr i;continue} {
+		incr j
+	    }
+	    incr i
+	}
+	list $i $j $k
+    }}
+} {1 1 3}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

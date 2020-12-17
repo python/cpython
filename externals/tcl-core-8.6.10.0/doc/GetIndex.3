@@ -1,0 +1,104 @@
+'\"
+'\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct \- lookup string in table of keywords
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_GetIndexFromObj\fR(\fIinterp, objPtr, tablePtr, msg, flags,
+indexPtr\fR)
+.sp
+int
+\fBTcl_GetIndexFromObjStruct\fR(\fIinterp, objPtr, structTablePtr, offset,
+                          msg, flags, indexPtr\fR)
+.SH ARGUMENTS
+.AS "const char" *structTablePtr in/out
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting; if NULL, then no message is
+provided on errors.
+.AP Tcl_Obj *objPtr in/out
+The string value of this value is used to search through \fItablePtr\fR.
+The internal representation is modified to hold the index of the matching
+table entry.
+.AP "const char *const" *tablePtr in
+An array of null-terminated strings.  The end of the array is marked
+by a NULL string pointer.
+Note that references to the \fItablePtr\fR may be retained in the
+internal representation of \fIobjPtr\fR, so this should represent the
+address of a statically-allocated array.
+.AP "const void" *structTablePtr in
+An array of arbitrary type, typically some \fBstruct\fR type.
+The first member of the structure must be a null-terminated string.
+The size of the structure is given by \fIoffset\fR.
+Note that references to the \fIstructTablePtr\fR may be retained in the
+internal representation of \fIobjPtr\fR, so this should represent the
+address of a statically-allocated array of structures.
+.AP int offset in
+The offset to add to structTablePtr to get to the next entry.
+The end of the array is marked by a NULL string pointer.
+.AP "const char" *msg in
+Null-terminated string describing what is being looked up, such as
+\fBoption\fR.  This string is included in error messages.
+.AP int flags in
+OR-ed combination of bits providing additional information for
+operation.  The only bit that is currently defined is \fBTCL_EXACT\fR.
+.AP int *indexPtr out
+The index of the string in \fItablePtr\fR that matches the value of
+\fIobjPtr\fR is returned here.
+.BE
+.SH DESCRIPTION
+.PP
+These procedures provide an efficient way for looking up keywords,
+switch names, option names, and similar things where the literal value of
+a Tcl value must be chosen from a predefined set.
+\fBTcl_GetIndexFromObj\fR compares \fIobjPtr\fR against each of
+the strings in \fItablePtr\fR to find a match.  A match occurs if
+\fIobjPtr\fR's string value is identical to one of the strings in
+\fItablePtr\fR, or if it is a non-empty unique abbreviation
+for exactly one of the strings in \fItablePtr\fR and the
+\fBTCL_EXACT\fR flag was not specified; in either case
+the index of the matching entry is stored at \fI*indexPtr\fR
+and \fBTCL_OK\fR is returned.
+.PP
+If there is no matching entry,
+\fBTCL_ERROR\fR is returned and an error message is left in \fIinterp\fR's
+result if \fIinterp\fR is not NULL.  \fIMsg\fR is included in the
+error message to indicate what was being looked up.  For example,
+if \fImsg\fR is \fBoption\fR the error message will have a form like
+.QW "\fBbad option \N'34'firt\N'34': must be first, second, or third\fR" .
+.PP
+If \fBTcl_GetIndexFromObj\fR completes successfully it modifies the
+internal representation of \fIobjPtr\fR to hold the address of
+the table and the index of the matching entry.  If \fBTcl_GetIndexFromObj\fR
+is invoked again with the same \fIobjPtr\fR and \fItablePtr\fR
+arguments (e.g. during a reinvocation of a Tcl command), it returns
+the matching index immediately without having to redo the lookup
+operation.  Note: \fBTcl_GetIndexFromObj\fR assumes that the entries
+in \fItablePtr\fR are static: they must not change between
+invocations.  If the value of \fIobjPtr\fR is the empty string,
+\fBTcl_GetIndexFromObj\fR will treat it as a non-matching value
+and return \fBTCL_ERROR\fR.
+.PP
+\fBTcl_GetIndexFromObjStruct\fR works just like
+\fBTcl_GetIndexFromObj\fR, except that instead of treating
+\fItablePtr\fR as an array of string pointers, it treats it as a
+pointer to the first string in a series of strings that have
+\fIoffset\fR bytes between them (i.e. that there is a pointer to the
+first array of characters at \fItablePtr\fR, a pointer to the second
+array of characters at \fItablePtr\fR+\fIoffset\fR bytes, etc.)
+This is particularly useful when processing things like
+\fBTk_ConfigurationSpec\fR, whose string keys are in the same place in
+each of several array elements.
+.SH "SEE ALSO"
+prefix(n), Tcl_WrongNumArgs(3)
+.SH KEYWORDS
+index, option, value, table lookup

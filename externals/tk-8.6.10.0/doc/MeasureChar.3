@@ -1,0 +1,127 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tk_MeasureChars 3 8.1 Tk "Tk Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tk_MeasureChars, Tk_TextWidth, Tk_DrawChars, Tk_UnderlineChars \- routines to measure and display simple single-line strings.
+.SH SYNOPSIS
+.nf
+\fB#include <tk.h>\fR
+.sp
+int
+\fBTk_MeasureChars(\fItkfont, string, numBytes, maxPixels, flags, lengthPtr\fB)\fR
+.sp
+int
+\fBTk_TextWidth(\fItkfont, string, numBytes\fB)\fR
+.sp
+\fBTk_DrawChars(\fIdisplay, drawable, gc, tkfont, string, numBytes, x, y\fB)\fR
+.sp
+\fBTk_UnderlineChars(\fIdisplay, drawable, gc, tkfont, string, x, y, firstByte, lastByte\fB)\fR
+.sp
+.SH ARGUMENTS
+.AS "const char" firstChar
+.AP Tk_Font tkfont in
+Token for font in which text is to be drawn or measured.  Must have been
+returned by a previous call to \fBTk_GetFont\fR.
+.AP "const char" *string in
+Text to be measured or displayed.  Need not be null terminated.  Any
+non-printing meta-characters in the string (such as tabs, newlines, and
+other control characters) will be measured or displayed in a
+platform-dependent manner.
+.AP int numBytes in
+The maximum number of bytes to consider when measuring or drawing
+\fIstring\fR.  Must be greater than or equal to 0.
+.AP int maxPixels in
+If \fImaxPixels\fR is >= 0, it specifies the longest permissible
+line length in pixels.  Characters from \fIstring\fR are processed only
+until this many pixels have been covered.  If \fImaxPixels\fR is < 0, then
+the line length is unbounded and the \fIflags\fR argument is ignored.
+.AP int flags in
+Various flag bits OR-ed together: \fBTK_PARTIAL_OK\fR means include a character
+as long as any part of it fits in the length given by \fImaxPixels\fR;
+otherwise, a character must fit completely to be considered.
+\fBTK_WHOLE_WORDS\fR means stop on a word boundary, if possible.  If
+\fBTK_AT_LEAST_ONE\fR is set, it means return at least one character even if no
+characters could fit in the length given by \fImaxPixels\fR.  If
+\fBTK_AT_LEAST_ONE\fR is set and \fBTK_WHOLE_WORDS\fR is also set, it means that if
+not even one word fits on the line, return the first few letters of the
+word that did fit; if not even one letter of the word fit, then the first
+letter will still be returned.
+.AP int *lengthPtr out
+Filled with the number of pixels occupied by the number of characters
+returned as the result of \fBTk_MeasureChars\fR.
+.AP Display *display in
+Display on which to draw.
+.AP Drawable drawable in
+Window or pixmap in which to draw.
+.AP GC gc in
+Graphics context for drawing characters.  The font selected into this GC
+must be the same as the \fItkfont\fR.
+.AP int "x, y" in
+Coordinates at which to place the left edge of the baseline when displaying
+\fIstring\fR.
+.AP int firstByte in
+The index of the first byte of the first character to underline in the
+\fIstring\fR.  Underlining begins at the left edge of this character.
+.AP int lastByte in
+The index of the first byte of the last character up to which the
+underline will be drawn.  The character specified by \fIlastByte\fR
+will not itself be underlined.
+.BE
+.SH DESCRIPTION
+.PP
+These routines are for measuring and displaying simple single-font,
+single-line strings.  To measure and display single-font, multi-line,
+justified text, refer to the documentation for \fBTk_ComputeTextLayout\fR.
+There is no programming interface in the core of Tk that supports
+multi-font, multi-line text; support for that behavior must be built on
+top of simpler layers.
+Note that the interfaces described here are
+byte-oriented not character-oriented, so index values coming from Tcl
+scripts need to be converted to byte offsets using the
+\fBTcl_UtfAtIndex\fR and related routines.
+.PP
+A glyph is the displayable picture of a letter, number, or some other
+symbol.  Not all character codes in a given font have a glyph.
+Characters such as tabs, newlines/returns, and control characters that
+have no glyph are measured and displayed by these procedures in a
+platform-dependent manner; under X, they are replaced with backslashed
+escape sequences, while under Windows and Macintosh hollow or solid boxes
+may be substituted.  Refer to the documentation for
+\fBTk_ComputeTextLayout\fR for a programming interface that supports the
+platform-independent expansion of tab characters into columns and
+newlines/returns into multi-line text.
+.PP
+\fBTk_MeasureChars\fR is used both to compute the length of a given
+string and to compute how many characters from a string fit in a given
+amount of space.  The return value is the number of bytes from
+\fIstring\fR that fit in the space specified by \fImaxPixels\fR subject to
+the conditions described by \fIflags\fR.  If all characters fit, the return
+value will be \fInumBytes\fR.  \fI*lengthPtr\fR is filled with the computed
+width, in pixels, of the portion of the string that was measured.  For
+example, if the return value is 5, then \fI*lengthPtr\fR is filled with the
+distance between the left edge of \fIstring\fR[0] and the right edge of
+\fIstring\fR[4].
+.PP
+\fBTk_TextWidth\fR is a wrapper function that provides a simpler interface
+to the \fBTk_MeasureChars\fR function.  The return value is how much
+space in pixels the given \fIstring\fR needs.
+.PP
+\fBTk_DrawChars\fR draws the \fIstring\fR at the given location in the
+given \fIdrawable\fR.
+.PP
+\fBTk_UnderlineChars\fR underlines the given range of characters in the
+given \fIstring\fR.  It does not draw the characters (which are assumed to
+have been displayed previously by \fBTk_DrawChars\fR); it just draws the
+underline.  This procedure is used to underline a few characters without
+having to construct an underlined font.  To produce natively underlined
+text, the appropriate underlined font should be constructed and used.
+.SH "SEE ALSO"
+font(n), FontId(3)
+.SH KEYWORDS
+font, measurement

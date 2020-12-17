@@ -1,0 +1,4028 @@
+# This file is a Tcl script to test the code in the file tclUtil.c.
+# This file is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1995-1998 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint controversialNaN 1
+testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint testdstring [llength [info commands testdstring]]
+testConstraint testconcatobj [llength [info commands testconcatobj]]
+testConstraint testdoubledigits [llength [info commands testdoubledigits]]
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\xff d \
+		ieeeValues(-NaN)
+	    binary scan \xef\xcd\xab\x89\x67\x45\xfb\xff d \
+		ieeeValues(-NaN(3456789abcdef))
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    binary scan \xff\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-NaN)
+	    binary scan \xff\xfb\x45\x67\x89\xab\xcd\xef d \
+		ieeeValues(-NaN(3456789abcdef))
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+testConstraint ieeeFloatingPoint [testIEEE]
+
+proc convertDouble { x } {
+    variable ieeeValues
+    if { $ieeeValues(littleEndian) } {
+	binary scan [binary format w $x] d result
+    } else {
+	binary scan [binary format W $x] d result
+    }
+    return $result
+}
+
+proc verdonk_test {sig binexp shouldbe exp} {
+    regexp {([-+]?)([0-9a-f]+)} $sig -> signum sig
+    scan $sig %llx sig
+    if {$signum eq {-}} {
+	set signum [expr 1<<63]
+    } else {
+	set signum 0
+    }
+    regexp {E([-+]?[0-9]+)} $binexp -> binexp
+    set word [expr {$signum | (($binexp + 0x3ff)<<52)|($sig & ~(1<<52))}]
+    binary scan [binary format w $word] q double
+    regexp {([-+])(\d+)_(\d+)\&} $shouldbe -> signum digits1 digits2
+    regexp {E([-+]\d+)} $exp -> decexp
+    incr decexp [expr {[string length $digits1] - 1}]
+    lassign [testdoubledigits $double [string length $digits1] e] \
+	outdigits decpt outsign
+    if {[string index $digits2 0] >= 5} {
+	incr digits1
+    }
+    if {$outsign != $signum || $outdigits != $digits1 || $decpt != $decexp} {
+	return -code error "result is ${outsign}0.${outdigits}E$decpt\
+                            should be ${signum}0.${digits1}E$decexp"
+    }
+}
+
+test util-1.1 {TclFindElement procedure - binary element in middle of list} {
+    lindex {0 foo\x00help 1} 1
+} "foo\x00help"
+test util-1.2 {TclFindElement procedure - binary element at end of list} {
+    lindex {0 foo\x00help} 1
+} "foo\x00help"
+
+test util-2.1 {TclCopyAndCollapse procedure - normal string} {
+    lindex {0 foo} 1
+} {foo}
+test util-2.2 {TclCopyAndCollapse procedure - string with backslashes} {
+    lindex {0 foo\n\x00help 1} 1
+} "foo\n\x00help"
+
+test util-3.1 {Tcl_ScanCountedElement procedure - don't leave unmatched braces} {
+    # This test checks for a very tricky feature.  Any list element
+    # generated with Tcl_ScanCountedElement and Tcl_ConvertElement must
+    # have the property that it can be enclosing in curly braces to make
+    # an embedded sub-list.  If this property doesn't hold, then
+    # Tcl_DStringStartSublist doesn't work.
+    set x {}
+    lappend x "# \\\{ \\"
+    concat $x [llength "{$x}"]
+} {\#\ \\\{\ \\ 1}
+test util-3.2 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    list # # a
+} {{#} # a}
+test util-3.3 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    list #\{ # a
+} {\#\{ # a}
+test util-3.4 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc # {} {return #}
+    set result [eval [list #]]
+    rename # {}
+    set result
+} {#}
+test util-3.4.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc # {} {return #}
+    set cmd [list #]
+    append cmd ""	;# force string rep generation
+    set result [eval $cmd]
+    rename # {}
+    set result
+} {#}
+test util-3.5 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc #\{ {} {return #}
+    set result [eval [list #\{]]
+    rename #\{ {}
+    set result
+} {#}
+test util-3.5.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc #\{ {} {return #}
+    set cmd [list #\{]
+    append cmd ""	;# force string rep generation
+    set result [eval $cmd]
+    rename #\{ {}
+    set result
+} {#}
+test util-3.6 {Tcl_ConvertElement, Bug 3371644} {
+    interp create #\\
+    interp alias {} x #\\ concat
+    interp target {} x ;# Crash if bug not fixed
+    interp delete #\\
+} {}
+
+test util-4.1 {Tcl_ConcatObj - backslash-space at end of argument} {
+    concat a {b\ } c
+} {a b\  c}
+test util-4.2 {Tcl_ConcatObj - backslash-space at end of argument} {
+    concat a {b\   } c
+} {a b\  c}
+test util-4.3 {Tcl_ConcatObj - backslash-space at end of argument} {
+    concat a {b\\   } c
+} {a b\\  c}
+test util-4.4 {Tcl_ConcatObj - backslash-space at end of argument} {
+    concat a {b } c
+} {a b c}
+test util-4.5 {Tcl_ConcatObj - backslash-space at end of argument} {
+    concat a { } c
+} {a c}
+test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
+    # Check for Bug #227512.  If this violates C isspace, then it returns \xc3.
+    concat \xe0
+} \xe0
+test util-4.7 {Tcl_ConcatObj - refCount safety} testconcatobj {
+    # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
+    # symptoms was Bug #2055782.
+    testconcatobj
+} {}
+
+proc Wrapper_Tcl_StringMatch {pattern string} {
+    # Forces use of Tcl_StringMatch, not Tcl_UniCharCaseMatch
+    switch -glob -- $string $pattern {return 1} default {return 0}
+}
+test util-5.1 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch ab*c abc
+} 1
+test util-5.2 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch ab**c abc
+} 1
+test util-5.3 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch ab* abcdef
+} 1
+test util-5.4 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch *c abc
+} 1
+test util-5.5 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch *3*6*9 0123456789
+} 1
+test util-5.6 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch *3*6*9 01234567890
+} 0
+test util-5.7 {Tcl_StringMatch: UTF-8} {
+    Wrapper_Tcl_StringMatch *u \u4e4fu
+} 1
+test util-5.8 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch a?c abc
+} 1
+test util-5.9 {Tcl_StringMatch: UTF-8} {
+    # skip one character in string
+    Wrapper_Tcl_StringMatch a?c a\u4e4fc
+} 1
+test util-5.10 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch a??c abc
+} 0
+test util-5.11 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch ?1??4???8? 0123456789
+} 1
+test util-5.12 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {[abc]bc} abc
+} 1
+test util-5.13 {Tcl_StringMatch: UTF-8} {
+    # string += Tcl_UtfToUniChar(string, &ch);
+    Wrapper_Tcl_StringMatch "\[\u4e4fxy\]bc" "\u4e4fbc"
+} 1
+test util-5.14 {Tcl_StringMatch} {
+    # if ((*pattern == ']') || (*pattern == '\0'))
+    # badly formed pattern
+    Wrapper_Tcl_StringMatch {[]} {[]}
+} 0
+test util-5.15 {Tcl_StringMatch} {
+    # if ((*pattern == ']') || (*pattern == '\0'))
+    # badly formed pattern
+    Wrapper_Tcl_StringMatch {[} {[}
+} 0
+test util-5.16 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {a[abc]c} abc
+} 1
+test util-5.17 {Tcl_StringMatch: UTF-8} {
+    # pattern += Tcl_UtfToUniChar(pattern, &endChar);
+    # get 1 UTF-8 character
+    Wrapper_Tcl_StringMatch "a\[a\u4e4fc]c" "a\u4e4fc"
+} 1
+test util-5.18 {Tcl_StringMatch: UTF-8} testbytestring {
+    # pattern += Tcl_UtfToUniChar(pattern, &endChar);
+    # proper advance: wrong answer would match on UTF trail byte of \u4e4f
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [testbytestring a\u008fc]
+} 0
+test util-5.19 {Tcl_StringMatch: UTF-8} {
+    # pattern += Tcl_UtfToUniChar(pattern, &endChar);
+    # proper advance.
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} "acc"
+} 1
+test util-5.20 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {a[xyz]c} abc
+} 0
+test util-5.21 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {12[2-7]45} 12345
+} 1
+test util-5.22 {Tcl_StringMatch: UTF-8 range} {
+    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "0"
+} 0
+test util-5.23 {Tcl_StringMatch: UTF-8 range} {
+    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "\u4e33"
+} 1
+test util-5.24 {Tcl_StringMatch: UTF-8 range} {
+    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "\uff08"
+} 0
+test util-5.25 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12345
+} 1
+test util-5.26 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12b45
+} 1
+test util-5.27 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12d45
+} 1
+test util-5.28 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12145
+} 0
+test util-5.29 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12545
+} 0
+test util-5.30 {Tcl_StringMatch: forwards range} {
+    Wrapper_Tcl_StringMatch {[k-w]} "z"
+} 0
+test util-5.31 {Tcl_StringMatch: forwards range} {
+    Wrapper_Tcl_StringMatch {[k-w]} "w"
+} 1
+test util-5.32 {Tcl_StringMatch: forwards range} {
+    Wrapper_Tcl_StringMatch {[k-w]} "r"
+} 1
+test util-5.33 {Tcl_StringMatch: forwards range} {
+    Wrapper_Tcl_StringMatch {[k-w]} "k"
+} 1
+test util-5.34 {Tcl_StringMatch: forwards range} {
+    Wrapper_Tcl_StringMatch {[k-w]} "a"
+} 0
+test util-5.35 {Tcl_StringMatch: reverse range} {
+    Wrapper_Tcl_StringMatch {[w-k]} "z"
+} 0
+test util-5.36 {Tcl_StringMatch: reverse range} {
+    Wrapper_Tcl_StringMatch {[w-k]} "w"
+} 1
+test util-5.37 {Tcl_StringMatch: reverse range} {
+    Wrapper_Tcl_StringMatch {[w-k]} "r"
+} 1
+test util-5.38 {Tcl_StringMatch: reverse range} {
+    Wrapper_Tcl_StringMatch {[w-k]} "k"
+} 1
+test util-5.39 {Tcl_StringMatch: reverse range} {
+    Wrapper_Tcl_StringMatch {[w-k]} "a"
+} 0
+test util-5.40 {Tcl_StringMatch: skip correct number of ']'} {
+    Wrapper_Tcl_StringMatch {[A-]x} Ax
+} 0
+test util-5.41 {Tcl_StringMatch: skip correct number of ']'} {
+    Wrapper_Tcl_StringMatch {[A-]]x} Ax
+} 1
+test util-5.42 {Tcl_StringMatch: skip correct number of ']'} {
+    Wrapper_Tcl_StringMatch {[A-]]x} \ue1x
+} 0
+test util-5.43 {Tcl_StringMatch: skip correct number of ']'} {
+    Wrapper_Tcl_StringMatch \[A-]\ue1]x \ue1x
+} 1
+test util-5.44 {Tcl_StringMatch: skip correct number of ']'} {
+    Wrapper_Tcl_StringMatch {[A-]h]x} hx
+} 1
+test util-5.45 {Tcl_StringMatch} {
+    # if (*pattern == '\0')
+    # badly formed pattern, still treats as a set
+    Wrapper_Tcl_StringMatch {[a} a
+} 1
+test util-5.46 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {a\*b} a*b
+} 1
+test util-5.47 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {a\*b} ab
+} 0
+test util-5.48 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch {a\*\?\[\]\\\x} "a*?\[\]\\x"
+} 1
+test util-5.49 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch ** ""
+} 1
+test util-5.50 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch *. ""
+} 0
+test util-5.51 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch "" ""
+} 1
+
+test util-6.1 {Tcl_PrintDouble - using tcl_precision} -setup {
+    set old_precision $::tcl_precision
+    set ::tcl_precision 12
+} -body {
+    concat x[expr 1.4]
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {x1.4}
+test util-6.2 {Tcl_PrintDouble - using tcl_precision} -setup {
+    set old_precision $::tcl_precision
+    set ::tcl_precision 12
+} -body {
+    concat x[expr 1.39999999999]
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {x1.39999999999}
+test util-6.3 {Tcl_PrintDouble - using tcl_precision} -setup {
+    set old_precision $::tcl_precision
+    set ::tcl_precision 12
+} -body {
+    concat x[expr 1.399999999999]
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {x1.4}
+test util-6.4 {Tcl_PrintDouble - using tcl_precision} -setup {
+    set old_precision $::tcl_precision
+    set ::tcl_precision 5
+} -body {
+    concat x[expr 1.123412341234]
+} -cleanup {
+    set tcl_precision $old_precision
+} -result {x1.1234}
+test util-6.5 {Tcl_PrintDouble - make sure there's a decimal point} {
+    concat x[expr 2.0]
+} {x2.0}
+test util-6.6 {Tcl_PrintDouble - make sure there's a decimal point} {
+    concat x[expr 3.0e98]
+} {x3e+98}
+
+test util-7.1 {TclPrecTraceProc - unset callbacks} -setup {
+    set old_precision $::tcl_precision
+} -body {
+    set tcl_precision 7
+    set x $tcl_precision
+    unset tcl_precision
+    list $x $tcl_precision
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {7 7}
+test util-7.2 {TclPrecTraceProc - read traces, sharing among interpreters}  -setup {
+    set old_precision $::tcl_precision
+} -body {
+    set tcl_precision 12
+    interp create child
+    set x [child eval set tcl_precision]
+    child eval {set tcl_precision 6}
+    interp delete child
+    list $x $tcl_precision
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {12 6}
+test util-7.3 {TclPrecTraceProc - write traces, safe interpreters} -setup {
+    set old_precision $::tcl_precision
+} -body {
+    set tcl_precision 12
+    interp create -safe child
+    set x [child eval {
+	list [catch {set tcl_precision 8} msg] $msg
+    }]
+    interp delete child
+    list $x $tcl_precision
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {{1 {can't set "tcl_precision": can't modify precision from a safe interpreter}} 12}
+test util-7.4 {TclPrecTraceProc - write traces, bogus values} -setup {
+    set old_precision $::tcl_precision
+} -body {
+    set tcl_precision 12
+    list [catch {set tcl_precision abc} msg] $msg $tcl_precision
+} -cleanup {
+    set ::tcl_precision $old_precision
+} -result {1 {can't set "tcl_precision": improper value for precision} 12}
+
+# This test always succeeded in the C locale anyway...
+test util-8.1 {TclNeedSpace - correct UTF8 handling} {
+    # Bug 411825
+    # Note that this test relies on the fact that
+    # [interp target] calls on Tcl_AppendElement()
+    # which calls on TclNeedSpace().  If [interp target]
+    # is ever updated, this test will no longer test
+    # TclNeedSpace.
+    interp create \u5420
+    interp create [list \u5420 foo]
+    interp alias {} fooset [list \u5420 foo] set
+    set result [interp target {} fooset]
+    interp delete \u5420
+    set result
+} "\u5420 foo"
+test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Bug 411825
+    # This tests the same bug as the previous test, but
+    # should be more future-proof, as the DString
+    # operations will likely continue to call TclNeedSpace
+    testdstring free
+    testdstring append \u5420 -1
+    testdstring element foo
+    llength [testdstring get]
+} 2
+test util-8.3 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Bug 411825 - new variant reported by Dossy Shiobara
+    testdstring free
+    testdstring append \u00A0 -1
+    testdstring element foo
+    llength [testdstring get]
+} 2
+test util-8.4 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Another bug uncovered while fixing 411825
+    testdstring free
+    testdstring append {\ } -1
+    testdstring append \{ -1
+    testdstring element foo
+    llength [testdstring get]
+} 2
+test util-8.5 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Note that in this test TclNeedSpace actually gets it wrong,
+    # claiming we need a space when we really do not.  Extra space
+    # between list elements is harmless though, and better to have
+    # extra space in really weird string reps of lists, than to
+    # invest the effort required to make TclNeedSpace foolproof.
+    testdstring free
+    testdstring append {\\ } -1
+    testdstring element foo
+    list [llength [testdstring get]] [string length [testdstring get]]
+} {2 7}
+test util-8.6 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Another example of TclNeedSpace harmlessly getting it wrong.
+    testdstring free
+    testdstring append {\\ } -1
+    testdstring append \{ -1
+    testdstring element foo
+    testdstring append \} -1
+    list [llength [testdstring get]] [string length [testdstring get]]
+} {2 9}
+
+test util-9.0.0 {TclGetIntForIndex} {
+    string index abcd 0
+} a
+test util-9.0.1 {TclGetIntForIndex} {
+    string index abcd 0x0
+} a
+test util-9.0.2 {TclGetIntForIndex} {
+    string index abcd -0x0
+} a
+test util-9.0.3 {TclGetIntForIndex} {
+    string index abcd { 0 }
+} a
+test util-9.0.4 {TclGetIntForIndex} {
+    string index abcd { 0x0 }
+} a
+test util-9.0.5 {TclGetIntForIndex} {
+    string index abcd { -0x0 }
+} a
+test util-9.0.6 {TclGetIntForIndex} {
+    string index abcd 01
+} b
+test util-9.0.7 {TclGetIntForIndex} {
+    string index abcd { 01 }
+} b
+test util-9.1.0 {TclGetIntForIndex} {
+    string index abcd 3
+} d
+test util-9.1.1 {TclGetIntForIndex} {
+    string index abcd { 3 }
+} d
+test util-9.1.2 {TclGetIntForIndex} {
+    string index abcdefghijk 0xa
+} k
+test util-9.1.3 {TclGetIntForIndex} {
+    string index abcdefghijk { 0xa }
+} k
+test util-9.2.0 {TclGetIntForIndex} {
+    string index abcd end
+} d
+test util-9.2.1 {TclGetIntForIndex} -body {
+    string index abcd { end}
+} -returnCodes error -match glob -result *
+test util-9.2.2 {TclGetIntForIndex} -body {
+    string index abcd {end }
+} -returnCodes error -match glob -result *
+test util-9.3 {TclGetIntForIndex} {
+    # Deprecated
+    string index abcd en
+} d
+test util-9.4 {TclGetIntForIndex} {
+    # Deprecated
+    string index abcd e
+} d
+test util-9.5.0 {TclGetIntForIndex} {
+    string index abcd end-1
+} c
+test util-9.5.1 {TclGetIntForIndex} {
+    string index abcd {end-1 }
+} c
+test util-9.5.2 {TclGetIntForIndex} -body {
+    string index abcd { end-1}
+} -returnCodes error -match glob -result *
+test util-9.6 {TclGetIntForIndex} {
+    string index abcd end+-1
+} c
+test util-9.7 {TclGetIntForIndex} {
+    string index abcd end+1
+} {}
+test util-9.8 {TclGetIntForIndex} {
+    string index abcd end--1
+} {}
+test util-9.9.0 {TclGetIntForIndex} {
+    string index abcd 0+0
+} a
+test util-9.9.1 {TclGetIntForIndex} {
+    string index abcd { 0+0 }
+} a
+test util-9.10 {TclGetIntForIndex} {
+    string index abcd 0-0
+} a
+test util-9.11 {TclGetIntForIndex} {
+    string index abcd 1+0
+} b
+test util-9.12 {TclGetIntForIndex} {
+    string index abcd 1-0
+} b
+test util-9.13 {TclGetIntForIndex} {
+    string index abcd 1+1
+} c
+test util-9.14 {TclGetIntForIndex} {
+    string index abcd 1-1
+} a
+test util-9.15 {TclGetIntForIndex} {
+    string index abcd -1+2
+} b
+test util-9.16 {TclGetIntForIndex} {
+    string index abcd -1--2
+} b
+test util-9.17 {TclGetIntForIndex} {
+    string index abcd { -1+2 }
+} b
+test util-9.18 {TclGetIntForIndex} {
+    string index abcd { -1--2 }
+} b
+test util-9.19 {TclGetIntForIndex} -body {
+    string index a {}
+} -returnCodes error -match glob -result *
+test util-9.20 {TclGetIntForIndex} -body {
+    string index a { }
+} -returnCodes error -match glob -result *
+test util-9.21 {TclGetIntForIndex} -body {
+    string index a " \r\t\n"
+} -returnCodes error -match glob -result *
+test util-9.22 {TclGetIntForIndex} -body {
+    string index a +
+} -returnCodes error -match glob -result *
+test util-9.23 {TclGetIntForIndex} -body {
+    string index a -
+} -returnCodes error -match glob -result *
+test util-9.24 {TclGetIntForIndex} -body {
+    string index a x
+} -returnCodes error -match glob -result *
+test util-9.25 {TclGetIntForIndex} -body {
+    string index a +x
+} -returnCodes error -match glob -result *
+test util-9.26 {TclGetIntForIndex} -body {
+    string index a -x
+} -returnCodes error -match glob -result *
+test util-9.27 {TclGetIntForIndex} -body {
+    string index a 0y
+} -returnCodes error -match glob -result *
+test util-9.28 {TclGetIntForIndex} -body {
+    string index a 1*
+} -returnCodes error -match glob -result *
+test util-9.29 {TclGetIntForIndex} -body {
+    string index a 0+
+} -returnCodes error -match glob -result *
+test util-9.30 {TclGetIntForIndex} -body {
+    string index a {0+ }
+} -returnCodes error -match glob -result *
+test util-9.31 {TclGetIntForIndex} -body {
+    string index a 0x
+} -returnCodes error -match glob -result *
+test util-9.32 {TclGetIntForIndex} -body {
+    string index a 0x1FFFFFFFF+0
+} -returnCodes error -match glob -result *
+test util-9.33 {TclGetIntForIndex} -body {
+    string index a 100000000000+0
+} -returnCodes error -match glob -result *
+test util-9.34 {TclGetIntForIndex} -body {
+    string index a 1.0
+} -returnCodes error -match glob -result *
+test util-9.35 {TclGetIntForIndex} -body {
+    string index a 1e23
+} -returnCodes error -match glob -result *
+test util-9.36 {TclGetIntForIndex} -body {
+    string index a 1.5e2
+} -returnCodes error -match glob -result *
+test util-9.37 {TclGetIntForIndex} -body {
+    string index a 0+x
+} -returnCodes error -match glob -result *
+test util-9.38 {TclGetIntForIndex} -body {
+    string index a 0+0x
+} -returnCodes error -match glob -result *
+test util-9.39 {TclGetIntForIndex} -body {
+    string index a 0+0xg
+} -returnCodes error -match glob -result *
+test util-9.40 {TclGetIntForIndex} -body {
+    string index a 0+0xg
+} -returnCodes error -match glob -result *
+test util-9.41 {TclGetIntForIndex} -body {
+    string index a 0+1.0
+} -returnCodes error -match glob -result *
+test util-9.42 {TclGetIntForIndex} -body {
+    string index a 0+1e2
+} -returnCodes error -match glob -result *
+test util-9.43 {TclGetIntForIndex} -body {
+    string index a 0+1.5e1
+} -returnCodes error -match glob -result *
+test util-9.44 {TclGetIntForIndex} -body {
+    string index a 0+1000000000000
+} -returnCodes error -match glob -result *
+
+test util-10.1 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x0000000000000000
+} {0.0}
+test util-10.2 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x8000000000000000
+} {-0.0}
+test util-10.3 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x7ef754e31cd072da
+} {4e+303}
+test util-10.4 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xd08afcef51f0fb5f
+} {-1e+80}
+test util-10.5 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x7ed754e31cd072da
+} {1e+303}
+test util-10.6 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xfee754e31cd072da
+} {-2e+303}
+test util-10.7 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x0afe07b27dd78b14
+} {1e-255}
+test util-10.8 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x93ae29e9c56687fe
+} {-7e-214}
+test util-10.9 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x376be03d0bf225c7
+} {1e-41}
+test util-10.10 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xa0ca2fe76a3f9475
+} {-1e-150}
+test util-10.11 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x7fa9a2028368022e
+} {9e+306}
+test util-10.12 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xdfc317e5ef3ab327
+} {-2e+153}
+test util-10.13 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x5fd317e5ef3ab327
+} {4e+153}
+test util-10.14 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xdfe317e5ef3ab327
+} {-8e+153}
+test util-10.15 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x00feb8e84fa0b278
+} {7e-304}
+test util-10.16 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x8133339131c46f8b
+} {-7e-303}
+test util-10.17 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x35dc0f92a6276c9d
+} {3e-49}
+test util-10.18 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xa445ce1f143d7ad2
+} {-6e-134}
+test util-10.19 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x2d2c0794d9d40e96
+} {4.3e-91}
+test util-10.20 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xad3c0794d9d40e96
+} {-8.6e-91}
+test util-10.21 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x30ecd5bee57763e6
+} {5.1e-73}
+test util-10.22 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x68ad1c26db7d0dae
+} {1.7e+196}
+test util-10.23 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbfa3f7ced916872b
+} {-0.039}
+test util-10.24 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x64b7d93193f78fc6
+} {1.51e+177}
+test util-10.25 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x98ea82a1631eeb30
+} {-1.19e-188}
+test util-10.26 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xd216c309024bab4b
+} {-2.83e+87}
+test util-10.27 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x0dfdbbac6f83a821
+} {2.7869147e-241}
+test util-10.28 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xdadc569e968e0944
+} {-4.91080654e+129}
+test util-10.29 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x5acc569e968e0944
+} {2.45540327e+129}
+test util-10.30 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xab5fc575867314ee
+} {-9.078555839e-100}
+test util-10.31 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xdabc569e968e0944
+} {-1.227701635e+129}
+test util-10.32 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x2b6fc575867314ee
+} {1.8157111678e-99}
+test util-10.33 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xb3b8bf7e7fa6f02a
+} {-1.5400733123779e-59}
+test util-10.34 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xcd83de005bd620df
+} {-2.6153245263757307e+65}
+test util-10.35 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x6cdf92bacb3cb40c
+} {2.7210404151224248e+216}
+test util-10.36 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xecef92bacb3cb40c
+} {-5.4420808302448496e+216}
+test util-10.37 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x49342dbf25096cf5
+} {4.5e+44}
+test util-10.38 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xd06afcef51f0fb5f
+} {-2.5e+79}
+test util-10.39 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x49002498ea6df0c4
+} {4.5e+43}
+test util-10.40 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xfeb754e31cd072da
+} {-2.5e+302}
+test util-10.41 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x1d22deac01e2b4f7
+} {2.5e-168}
+test util-10.42 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xaccb1df536c13eee
+} {-6.5e-93}
+test util-10.43 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3650711fed5b19a4
+} {4.5e-47}
+test util-10.44 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xb6848d67e8b1e00d
+} {-4.5e-46}
+test util-10.45 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4bac8c574c0c6be7
+} {3.5e+56}
+test util-10.46 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xccd756183c147514
+} {-1.5e+62}
+test util-10.47 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4ca2ab469676c410
+} {1.5e+61}
+test util-10.48 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xcf5539684e774b48
+} {-1.5e+74}
+test util-10.49 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x2e12e5f5dfa4fe9d
+} {9.5e-87}
+test util-10.50 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x8b9bdc2417bf7787
+} {-9.5e-253}
+test util-10.51 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x00eeb8e84fa0b278
+} {3.5e-304}
+test util-10.52 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xadde3cbc9907fdc8
+} {-9.5e-88}
+test util-10.53 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x2bb0ad836f269a17
+} {3.05e-98}
+test util-10.54 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x950b39ae1909c31b
+} {-2.65e-207}
+test util-10.55 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x1bfb2ab18615fcc6
+} {6.865e-174}
+test util-10.56 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x98f3e1f90a573064
+} {-1.785e-188}
+test util-10.57 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x5206c309024bab4b
+} {1.415e+87}
+test util-10.58 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xcc059bd3ad46e346
+} {-1.6955e+58}
+test util-10.59 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x47bdf4170f0fdecc
+} {3.9815e+37}
+test util-10.60 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x59e7e1e0f1c7a4ac
+} {1.263005e+125}
+test util-10.61 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xda1dda592e398dd7
+} {-1.263005e+126}
+test util-10.62 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xdc4e597c0b94b7ae
+} {-4.4118455e+136}
+test util-10.63 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x5aac569e968e0944
+} {6.138508175e+128}
+test util-10.64 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xdabc569e968e0944
+} {-1.227701635e+129}
+test util-10.65 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x6ce7ae0c186d8709
+} {4.081560622683637e+216}
+test util-10.66 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x44b52d02c7e14af7
+} {1.0000000000000001e+23}
+test util-10.67 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc589d971e4fe8402
+} {-1e+27}
+test util-10.68 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4599d971e4fe8402
+} {2e+27}
+test util-10.69 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc5a9d971e4fe8402
+} {-4e+27}
+test util-10.70 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3e45798ee2308c3a
+} {1e-8}
+test util-10.71 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbe55798ee2308c3a
+} {-2e-8}
+test util-10.72 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3e65798ee2308c3a
+} {4e-8}
+test util-10.73 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbabef2d0f5da7dd9
+} {-1e-25}
+test util-10.74 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x44da784379d99db4
+} {5e+23}
+test util-10.75 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc4fa784379d99db4
+} {-2e+24}
+test util-10.76 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4503da329b633647
+} {3e+24}
+test util-10.77 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc54cf389cd46047d
+} {-7e+25}
+test util-10.78 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3fc999999999999a
+} {0.2}
+test util-10.79 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbfd3333333333333
+} {-0.3}
+test util-10.80 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3cf6849b86a12b9b
+} {5e-15}
+test util-10.81 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbd16849b86a12b9b
+} {-2e-14}
+test util-10.82 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3b87ccfc73126788
+} {6.3e-22}
+test util-10.83 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbbbdc03b8fd7016a
+} {-6.3e-21}
+test util-10.84 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3fa3f7ced916872b
+} {0.039}
+test util-10.85 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x460b297cad9f70b6
+} {2.69e+29}
+test util-10.86 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc61b297cad9f70b6
+} {-5.38e+29}
+test util-10.87 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3adcdc06b20ef183
+} {3.73e-25}
+test util-10.88 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x45fb297cad9f70b6
+} {1.345e+29}
+test util-10.89 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc60b297cad9f70b6
+} {-2.69e+29}
+test util-10.90 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbc050a246ecd44f3
+} {-1.4257e-19}
+test util-10.91 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbec19b96f36ec68b
+} {-2.09901e-6}
+test util-10.92 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3dcc06d366394441
+} {5.0980203373e-11}
+test util-10.93 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc79f58ac4db68c90
+} {-1.04166211811e+37}
+test util-10.94 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4569d971e4fe8402
+} {2.5e+26}
+test util-10.95 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc50dc74be914d16b
+} {-4.5e+24}
+test util-10.96 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4534adf4b7320335
+} {2.5e+25}
+test util-10.97 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc54ae22487c1042b
+} {-6.5e+25}
+test util-10.98 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3c987fe49aab41e0
+} {8.5e-17}
+test util-10.99 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbc2f5c05e4b23fd7
+} {-8.5e-19}
+test util-10.100 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3d5faa7ab552a552
+} {4.5e-13}
+test util-10.101 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbdbb7cdfd9d7bdbb
+} {-2.5e-11}
+test util-10.102 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x44f3da329b633647
+} {1.5e+24}
+test util-10.103 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc53cf389cd46047d
+} {-3.5e+25}
+test util-10.104 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x454f04ef12cb04cf
+} {7.5e+25}
+test util-10.105 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc55f04ef12cb04cf
+} {-1.5e+26}
+test util-10.106 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3fc3333333333333
+} {0.15}
+test util-10.107 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbdb07e1fe91b0b70
+} {-1.5e-11}
+test util-10.108 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3de49da7e361ce4c
+} {1.5e-10}
+test util-10.109 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbe19c511dc3a41df
+} {-1.5e-9}
+test util-10.110 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc5caa83d74267822
+} {-1.65e+28}
+test util-10.111 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x4588f1d5969453de
+} {9.65e+26}
+test util-10.112 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3b91d9bd564dcda6
+} {9.45e-22}
+test util-10.113 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbcfa58973ecbede6
+} {-5.85e-15}
+test util-10.114 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x45eb297cad9f70b6
+} {6.725e+28}
+test util-10.115 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc5fb297cad9f70b6
+} {-1.345e+29}
+test util-10.116 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3accdc06b20ef183
+} {1.865e-25}
+test util-10.117 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xbd036071dcae4565
+} {-8.605e-15}
+test util-10.118 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x462cb968d297dde8
+} {1.137885e+30}
+test util-10.119 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0xc661f3e1839eeab1
+} {-1.137885e+31}
+test util-10.120 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x474e9cec176c96f8
+} {3.179033335e+35}
+test util-10.121 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x3dbc06d366394441
+} {2.54901016865e-11}
+test util-10.122 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
+    convertDouble 0x478f58ac4db68c90
+} {5.20831059055e+36}
+
+test util-11.1 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-5
+} {1.1e-5}
+test util-11.2 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-4
+} {0.00011}
+test util-11.3 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-3
+} {0.0011}
+test util-11.4 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-2
+} {0.011}
+test util-11.5 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-1
+} {0.11}
+test util-11.6 {Tcl_PrintDouble - scaling} {
+    expr 1.1e0
+} {1.1}
+test util-11.7 {Tcl_PrintDouble - scaling} {
+    expr 1.1e1
+} {11.0}
+test util-11.8 {Tcl_PrintDouble - scaling} {
+    expr 1.1e2
+} {110.0}
+test util-11.9 {Tcl_PrintDouble - scaling} {
+    expr 1.1e3
+} {1100.0}
+test util-11.10 {Tcl_PrintDouble - scaling} {
+    expr 1.1e4
+} {11000.0}
+test util-11.11 {Tcl_PrintDouble - scaling} {
+    expr 1.1e5
+} {110000.0}
+test util-11.12 {Tcl_PrintDouble - scaling} {
+    expr 1.1e6
+} {1100000.0}
+test util-11.13 {Tcl_PrintDouble - scaling} {
+    expr 1.1e7
+} {11000000.0}
+test util-11.14 {Tcl_PrintDouble - scaling} {
+    expr 1.1e8
+} {110000000.0}
+test util-11.15 {Tcl_PrintDouble - scaling} {
+    expr 1.1e9
+} {1100000000.0}
+test util-11.16 {Tcl_PrintDouble - scaling} {
+    expr 1.1e10
+} {11000000000.0}
+test util-11.17 {Tcl_PrintDouble - scaling} {
+    expr 1.1e11
+} {110000000000.0}
+test util-11.18 {Tcl_PrintDouble - scaling} {
+    expr 1.1e12
+} {1100000000000.0}
+test util-11.19 {Tcl_PrintDouble - scaling} {
+    expr 1.1e13
+} {11000000000000.0}
+test util-11.20 {Tcl_PrintDouble - scaling} {
+    expr 1.1e14
+} {110000000000000.0}
+test util-11.21 {Tcl_PrintDouble - scaling} {
+    expr 1.1e15
+} {1100000000000000.0}
+test util-11.22 {Tcl_PrintDouble - scaling} {
+    expr 1.1e16
+} {11000000000000000.0}
+test util-11.23 {Tcl_PrintDouble - scaling} {
+    expr 1.1e17
+} {1.1e+17}
+
+test util-12.1 {TclDoubleDigits - Inf} {testdoubledigits ieeeFloatingPoint} {
+     testdoubledigits Inf -1 shortest
+} {Infinity 9999 +}
+test util-12.2 {TclDoubleDigits - -Inf} {testdoubledigits ieeeFloatingPoint} {
+     testdoubledigits -Inf -1 shortest
+} {Infinity 9999 -}
+test util-12.3 {TclDoubleDigits - NaN} {testdoubledigits ieeeFloatingPoint} {
+     testdoubledigits $ieeeValues(NaN) -1 shortest
+} {NaN 9999 +}
+test util-12.4 {TclDoubleDigits - NaN} {*}{
+     -constraints {testdoubledigits ieeeFloatingPoint controversialNaN}
+     -body {
+	 testdoubledigits -NaN -1 shortest
+     }
+    -result {NaN 9999 -}
+}
+test util-12.5 {TclDoubleDigits - 0} testdoubledigits {
+     testdoubledigits 0.0 -1 shortest
+} {0 0 +}
+test util-12.6 {TclDoubleDigits - -0} testdoubledigits {
+     testdoubledigits -0.0 -1 shortest
+} {0 0 -}
+
+# Verdonk test vectors
+
+test util-13.1 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1754e31cd072da E+1008 +4_000000000000000000& E+303
+    }
+    -result {}
+}
+test util-13.2 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1afcef51f0fb5f E+265 -1_000000000000000000& E+80
+    }
+    -result {}
+}
+test util-13.3 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1754e31cd072da E+1006 +1_000000000000000000& E+303
+    }
+    -result {}
+}
+test util-13.4 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1754e31cd072da E+1007 -2_000000000000000000& E+303
+    }
+    -result {}
+}
+test util-13.5 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1e07b27dd78b14 E-848 +1_00000000000000000& E-255
+    }
+    -result {}
+}
+test util-13.6 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1e29e9c56687fe E-709 -7_00000000000000000& E-214
+    }
+    -result {}
+}
+test util-13.7 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1be03d0bf225c7 E-137 +1_00000000000000000& E-41
+    }
+    -result {}
+}
+test util-13.8 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1a2fe76a3f9475 E-499 -1_00000000000000000& E-150
+    }
+    -result {}
+}
+test util-13.9 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 19a2028368022e E+1019 +8_999999999999999999& E+306
+    }
+    -result {}
+}
+test util-13.10 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1317e5ef3ab327 E+509 -1_999999999999999999& E+153
+    }
+    -result {}
+}
+test util-13.11 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1317e5ef3ab327 E+510 +3_99999999999999999& E+153
+    }
+    -result {}
+}
+test util-13.12 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1317e5ef3ab327 E+511 -7_99999999999999999& E+153
+    }
+    -result {}
+}
+test util-13.13 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1eb8e84fa0b278 E-1008 +6_999999999999999999& E-304
+    }
+    -result {}
+}
+test util-13.14 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -13339131c46f8b E-1004 -6_999999999999999999& E-303
+    }
+    -result {}
+}
+test util-13.15 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c0f92a6276c9d E-162 +2_999999999999999999& E-49
+    }
+    -result {}
+}
+test util-13.16 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -15ce1f143d7ad2 E-443 -5_99999999999999999& E-134
+    }
+    -result {}
+}
+test util-13.17 {just over exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c0794d9d40e96 E-301 +43_000000000000000000& E-92
+    }
+    -result {}
+}
+test util-13.18 {just over exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1c0794d9d40e96 E-300 -86_000000000000000000& E-92
+    }
+    -result {}
+}
+test util-13.19 {just over exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1cd5bee57763e6 E-241 +51_000000000000000000& E-74
+    }
+    -result {}
+}
+test util-13.20 {just under exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1d1c26db7d0dae E+651 +16_999999999999999999& E+195
+    }
+    -result {}
+}
+test util-13.21 {just under exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -13f7ced916872b E-5 -38_999999999999999999& E-3
+    }
+    -result {}
+}
+test util-13.22 {just over exact - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 17d93193f78fc6 E+588 +151_0000000000000000000& E+175
+    }
+    -result {}
+}
+test util-13.23 {just over exact - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1a82a1631eeb30 E-625 -119_000000000000000000& E-190
+    }
+    -result {}
+}
+test util-13.24 {just under exact - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -16c309024bab4b E+290 -282_999999999999999999& E+85
+    }
+    -result {}
+}
+test util-13.25 {just over exact - 8 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1dbbac6f83a821 E-800 +27869147_0000000000000000000& E-248
+    }
+    -result {}
+}
+test util-13.26 {just under exact - 9 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1c569e968e0944 E+430 -491080653_9999999999999999999& E+121
+    }
+    -result {}
+}
+test util-13.27 {just under exact - 9 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c569e968e0944 E+429 +245540326_9999999999999999999& E+121
+    }
+    -result {}
+}
+test util-13.28 {just over exact - 10 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1fc575867314ee E-330 -9078555839_0000000000000000000& E-109
+    }
+    -result {}
+}
+test util-13.29 {just under exact - 10 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1c569e968e0944 E+428 -1227701634_9999999999999999999& E+120
+    }
+    -result {}
+}
+test util-13.30 {just over exact - 11 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1fc575867314ee E-329 +18157111678_0000000000000000000& E-109
+    }
+    -result {}
+}
+test util-13.31 {just over exact - 14 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -18bf7e7fa6f02a E-196 -15400733123779_0000000000000000000& E-72
+    }
+    -result {}
+}
+test util-13.32 {just over exact - 17 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -13de005bd620df E+217 -26153245263757307_0000000000000000000& E+49
+    }
+    -result {}
+}
+test util-13.33 {just over exact - 18 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1f92bacb3cb40c E+718 +272104041512242479_0000000000000000000& E+199
+    }
+    -result {}
+}
+test util-13.34 {just over exact - 18 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1f92bacb3cb40c E+719 -544208083024484958_0000000000000000000& E+199
+    }
+    -result {}
+}
+test util-13.35 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 142dbf25096cf5 E+148 +4_500000000000000000& E+44
+    }
+    -result {}
+}
+test util-13.36 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1afcef51f0fb5f E+263 -2_500000000000000000& E+79
+    }
+    -result {}
+}
+test util-13.37 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 102498ea6df0c4 E+145 +4_500000000000000000& E+43
+    }
+    -result {}
+}
+test util-13.38 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1754e31cd072da E+1004 -2_500000000000000000& E+302
+    }
+    -result {}
+}
+test util-13.39 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 12deac01e2b4f7 E-557 +2_50000000000000000& E-168
+    }
+    -result {}
+}
+test util-13.40 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1b1df536c13eee E-307 -6_50000000000000000& E-93
+    }
+    -result {}
+}
+test util-13.41 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 10711fed5b19a4 E-154 +4_50000000000000000& E-47
+    }
+    -result {}
+}
+test util-13.42 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -148d67e8b1e00d E-151 -4_50000000000000000& E-46
+    }
+    -result {}
+}
+test util-13.43 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c8c574c0c6be7 E+187 +3_49999999999999999& E+56
+    }
+    -result {}
+}
+test util-13.44 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1756183c147514 E+206 -1_49999999999999999& E+62
+    }
+    -result {}
+}
+test util-13.45 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 12ab469676c410 E+203 +1_49999999999999999& E+61
+    }
+    -result {}
+}
+test util-13.46 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1539684e774b48 E+246 -1_49999999999999999& E+74
+    }
+    -result {}
+}
+test util-13.47 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 12e5f5dfa4fe9d E-286 +9_499999999999999999& E-87
+    }
+    -result {}
+}
+test util-13.48 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1bdc2417bf7787 E-838 -9_499999999999999999& E-253
+    }
+    -result {}
+}
+test util-13.49 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1eb8e84fa0b278 E-1009 +3_499999999999999999& E-304
+    }
+    -result {}
+}
+test util-13.50 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1e3cbc9907fdc8 E-290 -9_499999999999999999& E-88
+    }
+    -result {}
+}
+test util-13.51 {just over half ulp - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 10ad836f269a17 E-324 +30_500000000000000000& E-99
+    }
+    -result {}
+}
+test util-13.52 {just over half ulp - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1b39ae1909c31b E-687 -26_500000000000000000& E-208
+    }
+    -result {}
+}
+test util-13.53 {just over half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1b2ab18615fcc6 E-576 +686_500000000000000000& E-176
+    }
+    -result {}
+}
+test util-13.54 {just over half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -13e1f90a573064 E-624 -178_500000000000000000& E-190
+    }
+    -result {}
+}
+test util-13.55 {just under half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 16c309024bab4b E+289 +141_499999999999999999& E+85
+    }
+    -result {}
+}
+test util-13.56 {just under half ulp - 4 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -159bd3ad46e346 E+193 -1695_499999999999999999& E+55
+    }
+    -result {}
+}
+test util-13.57 {just under half ulp - 4 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1df4170f0fdecc E+124 +3981_499999999999999999& E+34
+    }
+    -result {}
+}
+test util-13.58 {just over half ulp - 6 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 17e1e0f1c7a4ac E+415 +126300_5000000000000000000& E+120
+    }
+    -result {}
+}
+test util-13.59 {just over half ulp - 6 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1dda592e398dd7 E+418 -126300_5000000000000000000& E+121
+    }
+    -result {}
+}
+test util-13.60 {just under half ulp - 7 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1e597c0b94b7ae E+453 -4411845_499999999999999999& E+130
+    }
+    -result {}
+}
+test util-13.61 {just under half ulp - 9 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c569e968e0944 E+427 +613850817_4999999999999999999& E+120
+    }
+    -result {}
+}
+test util-13.62 {just under half ulp - 9 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1c569e968e0944 E+428 -122770163_49999999999999999999& E+121
+    }
+    -result {}
+}
+test util-13.63 {just over half ulp - 18 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 17ae0c186d8709 E+719 +408156062268363718_5000000000000000000& E+199
+    }
+    -result {}
+}
+test util-13.64 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 152d02c7e14af7 E+76 +1_0000000000000000& E+23
+    }
+    -result {}
+}
+test util-13.65 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -19d971e4fe8402 E+89 -1_0000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.66 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 19d971e4fe8402 E+90 +2_0000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.67 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -19d971e4fe8402 E+91 -4_0000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.68 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 15798ee2308c3a E-27 +1_0000000000000000& E-8
+    }
+    -result {}
+}
+test util-13.69 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -15798ee2308c3a E-26 -2_0000000000000000& E-8
+    }
+    -result {}
+}
+test util-13.70 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 15798ee2308c3a E-25 +4_0000000000000000& E-8
+    }
+    -result {}
+}
+test util-13.71 {just over exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1ef2d0f5da7dd9 E-84 -1_0000000000000000& E-25
+    }
+    -result {}
+}
+test util-13.72 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1a784379d99db4 E+78 +4_9999999999999999& E+23
+    }
+    -result {}
+}
+test util-13.73 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1a784379d99db4 E+80 -1_9999999999999999& E+24
+    }
+    -result {}
+}
+test util-13.74 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 13da329b633647 E+81 +2_9999999999999999& E+24
+    }
+    -result {}
+}
+test util-13.75 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1cf389cd46047d E+85 -6_9999999999999999& E+25
+    }
+    -result {}
+}
+test util-13.76 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 19999999999999 E-3 +1_99999999999999999& E-1
+    }
+    -result {}
+}
+test util-13.77 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -13333333333333 E-2 -2_99999999999999999& E-1
+    }
+    -result {}
+}
+test util-13.78 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 16849b86a12b9b E-48 +4_99999999999999999& E-15
+    }
+    -result {}
+}
+test util-13.79 {just under exact - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -16849b86a12b9b E-46 -1_99999999999999999& E-14
+    }
+    -result {}
+}
+test util-13.80 {just over exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 17ccfc73126788 E-71 +63_00000000000000000& E-23
+    }
+    -result {}
+}
+test util-13.81 {just over exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1dc03b8fd7016a E-68 -63_00000000000000000& E-22
+    }
+    -result {}
+}
+test util-13.82 {just under exact - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 13f7ced916872b E-5 +38_999999999999999999& E-3
+    }
+    -result {}
+}
+test util-13.83 {just over exact - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1b297cad9f70b6 E+97 +269_000000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.84 {just over exact - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1b297cad9f70b6 E+98 -538_00000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.85 {just over exact - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1cdc06b20ef183 E-82 +373_00000000000000000& E-27
+    }
+    -result {}
+}
+test util-13.86 {just over exact - 4 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1b297cad9f70b6 E+96 +1345_00000000000000000& E+26
+    }
+    -result {}
+}
+# this one is not 4 digits, it is 3, and it is covered above.
+test util-13.87 {just over exact - 4 digits} {*}{
+    -constraints {testdoubledigits knownBadTest}
+    -body {
+        verdonk_test -1b297cad9f70b6 E+97 -2690_00000000000000000& E+26
+    }
+    -result {}
+}
+test util-13.88 {just over exact - 5 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -150a246ecd44f3 E-63 -14257_00000000000000000& E-23
+    }
+    -result {}
+}
+test util-13.89 {just under exact - 6 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -119b96f36ec68b E-19 -209900_999999999999999999& E-11
+    }
+    -result {}
+}
+test util-13.90 {just over exact - 11 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c06d366394441 E-35 +50980203373_000000000000000000& E-21
+    }
+    -result {}
+}
+test util-13.91 {just under exact - 12 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1f58ac4db68c90 E+122 -104166211810_99999999999999999& E+26
+    }
+    -result {}
+}
+test util-13.92 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 19d971e4fe8402 E+87 +2_5000000000000000& E+26
+    }
+    -result {}
+}
+test util-13.93 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1dc74be914d16b E+81 -4_500000000000000& E+24
+    }
+    -result {}
+}
+test util-13.94 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 14adf4b7320335 E+84 +2_500000000000000& E+25
+    }
+    -result {}
+}
+test util-13.95 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1ae22487c1042b E+85 -6_5000000000000000& E+25
+    }
+    -result {}
+}
+test util-13.96 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 187fe49aab41e0 E-54 +8_5000000000000000& E-17
+    }
+    -result {}
+}
+test util-13.97 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1f5c05e4b23fd7 E-61 -8_5000000000000000& E-19
+    }
+    -result {}
+}
+test util-13.98 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1faa7ab552a552 E-42 +4_5000000000000000& E-13
+    }
+    -result {}
+}
+test util-13.99 {just over half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1b7cdfd9d7bdbb E-36 -2_5000000000000000& E-11
+    }
+    -result {}
+}
+test util-13.100 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 13da329b633647 E+80 +1_4999999999999999& E+24
+    }
+    -result {}
+}
+test util-13.101 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1cf389cd46047d E+84 -3_49999999999999999& E+25
+    }
+    -result {}
+}
+test util-13.102 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1f04ef12cb04cf E+85 +7_4999999999999999& E+25
+    }
+    -result {}
+}
+test util-13.103 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1f04ef12cb04cf E+86 -1_4999999999999999& E+26
+    }
+    -result {}
+}
+test util-13.104 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 13333333333333 E-3 +1_49999999999999999& E-1
+    }
+    -result {}
+}
+test util-13.105 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -107e1fe91b0b70 E-36 -1_49999999999999999& E-11
+    }
+    -result {}
+}
+test util-13.106 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 149da7e361ce4c E-33 +1_49999999999999999& E-10
+    }
+    -result {}
+}
+test util-13.107 {just under half ulp - 1 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -19c511dc3a41df E-30 -1_49999999999999999& E-9
+    }
+    -result {}
+}
+test util-13.108 {just over half ulp - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1aa83d74267822 E+93 -16_5000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.109 {just over half ulp - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 18f1d5969453de E+89 +96_5000000000000000& E+25
+    }
+    -result {}
+}
+test util-13.110 {just over half ulp - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 11d9bd564dcda6 E-70 +94_50000000000000000& E-23
+    }
+    -result {}
+}
+test util-13.111 {just over half ulp - 2 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1a58973ecbede6 E-48 -58_50000000000000000& E-16
+    }
+    -result {}
+}
+test util-13.112 {just over half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1b297cad9f70b6 E+95 +672_50000000000000000& E+26
+    }
+    -result {}
+}
+test util-13.113 {just over half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -1b297cad9f70b6 E+96 -134_500000000000000000& E+27
+    }
+    -result {}
+}
+test util-13.114 {just over half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1cdc06b20ef183 E-83 +186_50000000000000000& E-27
+    }
+    -result {}
+}
+test util-13.115 {just over half ulp - 3 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -136071dcae4565 E-47 -860_50000000000000000& E-17
+    }
+    -result {}
+}
+test util-13.116 {just over half ulp - 6 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1cb968d297dde8 E+99 +113788_50000000000000000& E+25
+    }
+    -result {}
+}
+test util-13.117 {just over half ulp - 6 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test -11f3e1839eeab1 E+103 -113788_50000000000000000& E+26
+    }
+    -result {}
+}
+test util-13.118 {just under half ulp - 9 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1e9cec176c96f8 E+117 +317903333_49999999999999999& E+27
+    }
+    -result {}
+}
+test util-13.119 {just over half ulp - 11 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1c06d366394441 E-36 +25490101686_500000000000000000& E-21
+    }
+    -result {}
+}
+test util-13.120 {just under half ulp - 11 digits} {*}{
+    -constraints testdoubledigits
+    -body {
+        verdonk_test 1f58ac4db68c90 E+121 +52083105905_49999999999999999& E+26
+    }
+    -result {}
+}
+
+test util-14.1 {funky NaN} {*}{
+    -constraints {ieeeFloatingPoint controversialNaN}
+    -body {
+	set ieeeValues(-NaN)
+    }
+    -result -NaN
+}
+
+test util-14.2 {funky NaN} {*}{
+    -constraints {ieeeFloatingPoint controversialNaN}
+    -body {
+	set ieeeValues(-NaN(3456789abcdef))
+    }
+    -result -NaN(3456789abcdef)
+}
+
+test util-15.1 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format w 0x000fffffffffffff] q x
+	set x
+    }
+    -result 2.225073858507201e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.2 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format w 0x800fffffffffffff] q x
+	set x
+    }
+    -result -2.225073858507201e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.3 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format q 2.225073858507201e-308] w x
+	format %#lx $x
+    }
+    -result 0xfffffffffffff
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.4 {largest subnormal} {*}{
+    -body {
+	binary scan [binary format q -2.225073858507201e-308] w x
+	format %#lx $x
+    }
+    -result 0x800fffffffffffff
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.5 {smallest normal} {*}{
+    -body {
+	binary scan [binary format w 0x0010000000000000] q x
+	set x
+    }
+    -result 2.2250738585072014e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.6 {smallest normal} {*}{
+    -body {
+	binary scan [binary format w 0x8010000000000000] q x
+	set x
+    }
+    -result -2.2250738585072014e-308
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.7 {smallest normal} {*}{
+    -body {
+	binary scan [binary format q 2.2250738585072014e-308] w x
+	format %#lx $x
+    }
+    -result 0x10000000000000
+    -cleanup {
+	unset x
+    }
+}
+
+test util-15.8 {smallest normal} {*}{
+    -body {
+	binary scan [binary format q -2.2250738585072014e-308] w x
+	format %#lx $x
+    }
+    -result 0x8010000000000000
+    -cleanup {
+	unset x
+    }
+}
+
+set saved_precision $::tcl_precision
+foreach ::tcl_precision {0 12} {
+    for {set e -312} {$e < -9} {incr e} {
+	test util-16.1.$::tcl_precision.$e {shortening of numbers} \
+	    "expr 1.1e$e" 1.1e$e
+    }
+}
+set tcl_precision 0
+for {set e -9} {$e < -4} {incr e} {
+    test util-16.1.$::tcl_precision.$e {shortening of numbers} \
+	"expr 1.1e$e" 1.1e$e
+}
+set tcl_precision 12
+for {set e -9} {$e < -4} {incr e} {
+    test util-16.1.$::tcl_precision.$e {8.4 compatible formatting of doubles} \
+	"expr 1.1e$e" 1.1e[format %+03d $e]
+}
+foreach ::tcl_precision {0 12} {
+    test util-16.1.$::tcl_precision.-4 {shortening of numbers} \
+	{expr 1.1e-4} \
+	0.00011
+    test util-16.1.$::tcl_precision.-3 {shortening of numbers} \
+	{expr 1.1e-3} \
+	0.0011
+    test util-16.1.$::tcl_precision.-2 {shortening of numbers} \
+	{expr 1.1e-2} \
+	0.011
+    test util-16.1.$::tcl_precision.-1 {shortening of numbers} \
+	{expr 1.1e-1} \
+	0.11
+    test util-16.1.$::tcl_precision.0 {shortening of numbers} \
+	{expr 1.1} \
+	1.1
+    for {set e 1} {$e < 17} {incr e} {
+	test util-16.1.$::tcl_precision.$e {shortening of numbers} \
+	    "expr 11[string repeat 0 [expr {$e-1}]].0" \
+	    11[string repeat 0 [expr {$e-1}]].0
+    }
+    for {set e 17} {$e < 309} {incr e} {
+	test util-16.1.$::tcl_precision.$e {shortening of numbers} \
+	    "expr 1.1e$e" 1.1e+$e
+    }
+}
+set tcl_precision 17
+test util-16.1.17.-300 {8.4 compatible formatting of doubles} \
+    {expr 1e-300} \
+    1e-300
+test util-16.1.17.-299 {8.4 compatible formatting of doubles} \
+    {expr 1e-299} \
+    9.9999999999999999e-300
+test util-16.1.17.-298 {8.4 compatible formatting of doubles} \
+    {expr 1e-298} \
+    9.9999999999999991e-299
+test util-16.1.17.-297 {8.4 compatible formatting of doubles} \
+    {expr 1e-297} \
+    1e-297
+test util-16.1.17.-296 {8.4 compatible formatting of doubles} \
+    {expr 1e-296} \
+    1e-296
+test util-16.1.17.-295 {8.4 compatible formatting of doubles} \
+    {expr 1e-295} \
+    1.0000000000000001e-295
+test util-16.1.17.-294 {8.4 compatible formatting of doubles} \
+    {expr 1e-294} \
+    1e-294
+test util-16.1.17.-293 {8.4 compatible formatting of doubles} \
+    {expr 1e-293} \
+    1.0000000000000001e-293
+test util-16.1.17.-292 {8.4 compatible formatting of doubles} \
+    {expr 1e-292} \
+    1.0000000000000001e-292
+test util-16.1.17.-291 {8.4 compatible formatting of doubles} \
+    {expr 1e-291} \
+    9.9999999999999996e-292
+test util-16.1.17.-290 {8.4 compatible formatting of doubles} \
+    {expr 1e-290} \
+    1.0000000000000001e-290
+test util-16.1.17.-289 {8.4 compatible formatting of doubles} \
+    {expr 1e-289} \
+    1e-289
+test util-16.1.17.-288 {8.4 compatible formatting of doubles} \
+    {expr 1e-288} \
+    1.0000000000000001e-288
+test util-16.1.17.-287 {8.4 compatible formatting of doubles} \
+    {expr 1e-287} \
+    1e-287
+test util-16.1.17.-286 {8.4 compatible formatting of doubles} \
+    {expr 1e-286} \
+    1.0000000000000001e-286
+test util-16.1.17.-285 {8.4 compatible formatting of doubles} \
+    {expr 1e-285} \
+    1.0000000000000001e-285
+test util-16.1.17.-284 {8.4 compatible formatting of doubles} \
+    {expr 1e-284} \
+    1e-284
+test util-16.1.17.-283 {8.4 compatible formatting of doubles} \
+    {expr 1e-283} \
+    9.9999999999999995e-284
+test util-16.1.17.-282 {8.4 compatible formatting of doubles} \
+    {expr 1e-282} \
+    1e-282
+test util-16.1.17.-281 {8.4 compatible formatting of doubles} \
+    {expr 1e-281} \
+    1e-281
+test util-16.1.17.-280 {8.4 compatible formatting of doubles} \
+    {expr 1e-280} \
+    9.9999999999999996e-281
+test util-16.1.17.-279 {8.4 compatible formatting of doubles} \
+    {expr 1e-279} \
+    1.0000000000000001e-279
+test util-16.1.17.-278 {8.4 compatible formatting of doubles} \
+    {expr 1e-278} \
+    9.9999999999999994e-279
+test util-16.1.17.-277 {8.4 compatible formatting of doubles} \
+    {expr 1e-277} \
+    9.9999999999999997e-278
+test util-16.1.17.-276 {8.4 compatible formatting of doubles} \
+    {expr 1e-276} \
+    1.0000000000000001e-276
+test util-16.1.17.-275 {8.4 compatible formatting of doubles} \
+    {expr 1e-275} \
+    9.9999999999999993e-276
+test util-16.1.17.-274 {8.4 compatible formatting of doubles} \
+    {expr 1e-274} \
+    9.9999999999999997e-275
+test util-16.1.17.-273 {8.4 compatible formatting of doubles} \
+    {expr 1e-273} \
+    1.0000000000000001e-273
+test util-16.1.17.-272 {8.4 compatible formatting of doubles} \
+    {expr 1e-272} \
+    9.9999999999999993e-273
+test util-16.1.17.-271 {8.4 compatible formatting of doubles} \
+    {expr 1e-271} \
+    9.9999999999999996e-272
+test util-16.1.17.-270 {8.4 compatible formatting of doubles} \
+    {expr 1e-270} \
+    1e-270
+test util-16.1.17.-269 {8.4 compatible formatting of doubles} \
+    {expr 1e-269} \
+    9.9999999999999996e-270
+test util-16.1.17.-268 {8.4 compatible formatting of doubles} \
+    {expr 1e-268} \
+    9.9999999999999996e-269
+test util-16.1.17.-267 {8.4 compatible formatting of doubles} \
+    {expr 1e-267} \
+    9.9999999999999998e-268
+test util-16.1.17.-266 {8.4 compatible formatting of doubles} \
+    {expr 1e-266} \
+    9.9999999999999998e-267
+test util-16.1.17.-265 {8.4 compatible formatting of doubles} \
+    {expr 1e-265} \
+    9.9999999999999998e-266
+test util-16.1.17.-264 {8.4 compatible formatting of doubles} \
+    {expr 1e-264} \
+    1e-264
+test util-16.1.17.-263 {8.4 compatible formatting of doubles} \
+    {expr 1e-263} \
+    1e-263
+test util-16.1.17.-262 {8.4 compatible formatting of doubles} \
+    {expr 1e-262} \
+    1e-262
+test util-16.1.17.-261 {8.4 compatible formatting of doubles} \
+    {expr 1e-261} \
+    9.9999999999999998e-262
+test util-16.1.17.-260 {8.4 compatible formatting of doubles} \
+    {expr 1e-260} \
+    9.9999999999999996e-261
+test util-16.1.17.-259 {8.4 compatible formatting of doubles} \
+    {expr 1e-259} \
+    1.0000000000000001e-259
+test util-16.1.17.-258 {8.4 compatible formatting of doubles} \
+    {expr 1e-258} \
+    9.9999999999999995e-259
+test util-16.1.17.-257 {8.4 compatible formatting of doubles} \
+    {expr 1e-257} \
+    9.9999999999999998e-258
+test util-16.1.17.-256 {8.4 compatible formatting of doubles} \
+    {expr 1e-256} \
+    9.9999999999999998e-257
+test util-16.1.17.-255 {8.4 compatible formatting of doubles} \
+    {expr 1e-255} \
+    1e-255
+test util-16.1.17.-254 {8.4 compatible formatting of doubles} \
+    {expr 1e-254} \
+    9.9999999999999991e-255
+test util-16.1.17.-253 {8.4 compatible formatting of doubles} \
+    {expr 1e-253} \
+    1.0000000000000001e-253
+test util-16.1.17.-252 {8.4 compatible formatting of doubles} \
+    {expr 1e-252} \
+    9.9999999999999994e-253
+test util-16.1.17.-251 {8.4 compatible formatting of doubles} \
+    {expr 1e-251} \
+    1e-251
+test util-16.1.17.-250 {8.4 compatible formatting of doubles} \
+    {expr 1e-250} \
+    1.0000000000000001e-250
+test util-16.1.17.-249 {8.4 compatible formatting of doubles} \
+    {expr 1e-249} \
+    1.0000000000000001e-249
+test util-16.1.17.-248 {8.4 compatible formatting of doubles} \
+    {expr 1e-248} \
+    9.9999999999999998e-249
+test util-16.1.17.-247 {8.4 compatible formatting of doubles} \
+    {expr 1e-247} \
+    1e-247
+test util-16.1.17.-246 {8.4 compatible formatting of doubles} \
+    {expr 1e-246} \
+    9.9999999999999996e-247
+test util-16.1.17.-245 {8.4 compatible formatting of doubles} \
+    {expr 1e-245} \
+    9.9999999999999993e-246
+test util-16.1.17.-244 {8.4 compatible formatting of doubles} \
+    {expr 1e-244} \
+    9.9999999999999993e-245
+test util-16.1.17.-243 {8.4 compatible formatting of doubles} \
+    {expr 1e-243} \
+    1e-243
+test util-16.1.17.-242 {8.4 compatible formatting of doubles} \
+    {expr 1e-242} \
+    9.9999999999999997e-243
+test util-16.1.17.-241 {8.4 compatible formatting of doubles} \
+    {expr 1e-241} \
+    9.9999999999999997e-242
+test util-16.1.17.-240 {8.4 compatible formatting of doubles} \
+    {expr 1e-240} \
+    9.9999999999999997e-241
+test util-16.1.17.-239 {8.4 compatible formatting of doubles} \
+    {expr 1e-239} \
+    1.0000000000000001e-239
+test util-16.1.17.-238 {8.4 compatible formatting of doubles} \
+    {expr 1e-238} \
+    9.9999999999999999e-239
+test util-16.1.17.-237 {8.4 compatible formatting of doubles} \
+    {expr 1e-237} \
+    9.9999999999999999e-238
+test util-16.1.17.-236 {8.4 compatible formatting of doubles} \
+    {expr 1e-236} \
+    1e-236
+test util-16.1.17.-235 {8.4 compatible formatting of doubles} \
+    {expr 1e-235} \
+    9.9999999999999996e-236
+test util-16.1.17.-234 {8.4 compatible formatting of doubles} \
+    {expr 1e-234} \
+    9.9999999999999996e-235
+test util-16.1.17.-233 {8.4 compatible formatting of doubles} \
+    {expr 1e-233} \
+    9.9999999999999996e-234
+test util-16.1.17.-232 {8.4 compatible formatting of doubles} \
+    {expr 1e-232} \
+    1e-232
+test util-16.1.17.-231 {8.4 compatible formatting of doubles} \
+    {expr 1e-231} \
+    9.9999999999999999e-232
+test util-16.1.17.-230 {8.4 compatible formatting of doubles} \
+    {expr 1e-230} \
+    1e-230
+test util-16.1.17.-229 {8.4 compatible formatting of doubles} \
+    {expr 1e-229} \
+    1.0000000000000001e-229
+test util-16.1.17.-228 {8.4 compatible formatting of doubles} \
+    {expr 1e-228} \
+    1e-228
+test util-16.1.17.-227 {8.4 compatible formatting of doubles} \
+    {expr 1e-227} \
+    9.9999999999999994e-228
+test util-16.1.17.-226 {8.4 compatible formatting of doubles} \
+    {expr 1e-226} \
+    9.9999999999999992e-227
+test util-16.1.17.-225 {8.4 compatible formatting of doubles} \
+    {expr 1e-225} \
+    9.9999999999999996e-226
+test util-16.1.17.-224 {8.4 compatible formatting of doubles} \
+    {expr 1e-224} \
+    1e-224
+test util-16.1.17.-223 {8.4 compatible formatting of doubles} \
+    {expr 1e-223} \
+    9.9999999999999997e-224
+test util-16.1.17.-222 {8.4 compatible formatting of doubles} \
+    {expr 1e-222} \
+    1e-222
+test util-16.1.17.-221 {8.4 compatible formatting of doubles} \
+    {expr 1e-221} \
+    1e-221
+test util-16.1.17.-220 {8.4 compatible formatting of doubles} \
+    {expr 1e-220} \
+    9.9999999999999999e-221
+test util-16.1.17.-219 {8.4 compatible formatting of doubles} \
+    {expr 1e-219} \
+    1e-219
+test util-16.1.17.-218 {8.4 compatible formatting of doubles} \
+    {expr 1e-218} \
+    1e-218
+test util-16.1.17.-217 {8.4 compatible formatting of doubles} \
+    {expr 1e-217} \
+    1.0000000000000001e-217
+test util-16.1.17.-216 {8.4 compatible formatting of doubles} \
+    {expr 1e-216} \
+    1e-216
+test util-16.1.17.-215 {8.4 compatible formatting of doubles} \
+    {expr 1e-215} \
+    1e-215
+test util-16.1.17.-214 {8.4 compatible formatting of doubles} \
+    {expr 1e-214} \
+    9.9999999999999991e-215
+test util-16.1.17.-213 {8.4 compatible formatting of doubles} \
+    {expr 1e-213} \
+    9.9999999999999995e-214
+test util-16.1.17.-212 {8.4 compatible formatting of doubles} \
+    {expr 1e-212} \
+    9.9999999999999995e-213
+test util-16.1.17.-211 {8.4 compatible formatting of doubles} \
+    {expr 1e-211} \
+    1.0000000000000001e-211
+test util-16.1.17.-210 {8.4 compatible formatting of doubles} \
+    {expr 1e-210} \
+    1e-210
+test util-16.1.17.-209 {8.4 compatible formatting of doubles} \
+    {expr 1e-209} \
+    1e-209
+test util-16.1.17.-208 {8.4 compatible formatting of doubles} \
+    {expr 1e-208} \
+    1.0000000000000001e-208
+test util-16.1.17.-207 {8.4 compatible formatting of doubles} \
+    {expr 1e-207} \
+    9.9999999999999993e-208
+test util-16.1.17.-206 {8.4 compatible formatting of doubles} \
+    {expr 1e-206} \
+    1e-206
+test util-16.1.17.-205 {8.4 compatible formatting of doubles} \
+    {expr 1e-205} \
+    1e-205
+test util-16.1.17.-204 {8.4 compatible formatting of doubles} \
+    {expr 1e-204} \
+    1e-204
+test util-16.1.17.-203 {8.4 compatible formatting of doubles} \
+    {expr 1e-203} \
+    1e-203
+test util-16.1.17.-202 {8.4 compatible formatting of doubles} \
+    {expr 1e-202} \
+    1e-202
+test util-16.1.17.-201 {8.4 compatible formatting of doubles} \
+    {expr 1e-201} \
+    9.9999999999999995e-202
+test util-16.1.17.-200 {8.4 compatible formatting of doubles} \
+    {expr 1e-200} \
+    9.9999999999999998e-201
+test util-16.1.17.-199 {8.4 compatible formatting of doubles} \
+    {expr 1e-199} \
+    9.9999999999999998e-200
+test util-16.1.17.-198 {8.4 compatible formatting of doubles} \
+    {expr 1e-198} \
+    9.9999999999999991e-199
+test util-16.1.17.-197 {8.4 compatible formatting of doubles} \
+    {expr 1e-197} \
+    9.9999999999999999e-198
+test util-16.1.17.-196 {8.4 compatible formatting of doubles} \
+    {expr 1e-196} \
+    1e-196
+test util-16.1.17.-195 {8.4 compatible formatting of doubles} \
+    {expr 1e-195} \
+    1.0000000000000001e-195
+test util-16.1.17.-194 {8.4 compatible formatting of doubles} \
+    {expr 1e-194} \
+    1e-194
+test util-16.1.17.-193 {8.4 compatible formatting of doubles} \
+    {expr 1e-193} \
+    1e-193
+test util-16.1.17.-192 {8.4 compatible formatting of doubles} \
+    {expr 1e-192} \
+    1.0000000000000001e-192
+test util-16.1.17.-191 {8.4 compatible formatting of doubles} \
+    {expr 1e-191} \
+    1e-191
+test util-16.1.17.-190 {8.4 compatible formatting of doubles} \
+    {expr 1e-190} \
+    1e-190
+test util-16.1.17.-189 {8.4 compatible formatting of doubles} \
+    {expr 1e-189} \
+    1.0000000000000001e-189
+test util-16.1.17.-188 {8.4 compatible formatting of doubles} \
+    {expr 1e-188} \
+    9.9999999999999995e-189
+test util-16.1.17.-187 {8.4 compatible formatting of doubles} \
+    {expr 1e-187} \
+    1e-187
+test util-16.1.17.-186 {8.4 compatible formatting of doubles} \
+    {expr 1e-186} \
+    9.9999999999999991e-187
+test util-16.1.17.-185 {8.4 compatible formatting of doubles} \
+    {expr 1e-185} \
+    9.9999999999999999e-186
+test util-16.1.17.-184 {8.4 compatible formatting of doubles} \
+    {expr 1e-184} \
+    1.0000000000000001e-184
+test util-16.1.17.-183 {8.4 compatible formatting of doubles} \
+    {expr 1e-183} \
+    1e-183
+test util-16.1.17.-182 {8.4 compatible formatting of doubles} \
+    {expr 1e-182} \
+    1e-182
+test util-16.1.17.-181 {8.4 compatible formatting of doubles} \
+    {expr 1e-181} \
+    1e-181
+test util-16.1.17.-180 {8.4 compatible formatting of doubles} \
+    {expr 1e-180} \
+    1e-180
+test util-16.1.17.-179 {8.4 compatible formatting of doubles} \
+    {expr 1e-179} \
+    1e-179
+test util-16.1.17.-178 {8.4 compatible formatting of doubles} \
+    {expr 1e-178} \
+    9.9999999999999995e-179
+test util-16.1.17.-177 {8.4 compatible formatting of doubles} \
+    {expr 1e-177} \
+    9.9999999999999995e-178
+test util-16.1.17.-176 {8.4 compatible formatting of doubles} \
+    {expr 1e-176} \
+    1e-176
+test util-16.1.17.-175 {8.4 compatible formatting of doubles} \
+    {expr 1e-175} \
+    1e-175
+test util-16.1.17.-174 {8.4 compatible formatting of doubles} \
+    {expr 1e-174} \
+    1e-174
+test util-16.1.17.-173 {8.4 compatible formatting of doubles} \
+    {expr 1e-173} \
+    1e-173
+test util-16.1.17.-172 {8.4 compatible formatting of doubles} \
+    {expr 1e-172} \
+    1e-172
+test util-16.1.17.-171 {8.4 compatible formatting of doubles} \
+    {expr 1e-171} \
+    9.9999999999999998e-172
+test util-16.1.17.-170 {8.4 compatible formatting of doubles} \
+    {expr 1e-170} \
+    9.9999999999999998e-171
+test util-16.1.17.-169 {8.4 compatible formatting of doubles} \
+    {expr 1e-169} \
+    1e-169
+test util-16.1.17.-168 {8.4 compatible formatting of doubles} \
+    {expr 1e-168} \
+    1e-168
+test util-16.1.17.-167 {8.4 compatible formatting of doubles} \
+    {expr 1e-167} \
+    1e-167
+test util-16.1.17.-166 {8.4 compatible formatting of doubles} \
+    {expr 1e-166} \
+    1e-166
+test util-16.1.17.-165 {8.4 compatible formatting of doubles} \
+    {expr 1e-165} \
+    1e-165
+test util-16.1.17.-164 {8.4 compatible formatting of doubles} \
+    {expr 1e-164} \
+    9.9999999999999996e-165
+test util-16.1.17.-163 {8.4 compatible formatting of doubles} \
+    {expr 1e-163} \
+    9.9999999999999992e-164
+test util-16.1.17.-162 {8.4 compatible formatting of doubles} \
+    {expr 1e-162} \
+    9.9999999999999995e-163
+test util-16.1.17.-161 {8.4 compatible formatting of doubles} \
+    {expr 1e-161} \
+    1e-161
+test util-16.1.17.-160 {8.4 compatible formatting of doubles} \
+    {expr 1e-160} \
+    9.9999999999999999e-161
+test util-16.1.17.-159 {8.4 compatible formatting of doubles} \
+    {expr 1e-159} \
+    9.9999999999999999e-160
+test util-16.1.17.-158 {8.4 compatible formatting of doubles} \
+    {expr 1e-158} \
+    1.0000000000000001e-158
+test util-16.1.17.-157 {8.4 compatible formatting of doubles} \
+    {expr 1e-157} \
+    9.9999999999999994e-158
+test util-16.1.17.-156 {8.4 compatible formatting of doubles} \
+    {expr 1e-156} \
+    1e-156
+test util-16.1.17.-155 {8.4 compatible formatting of doubles} \
+    {expr 1e-155} \
+    1e-155
+test util-16.1.17.-154 {8.4 compatible formatting of doubles} \
+    {expr 1e-154} \
+    9.9999999999999997e-155
+test util-16.1.17.-153 {8.4 compatible formatting of doubles} \
+    {expr 1e-153} \
+    1e-153
+test util-16.1.17.-152 {8.4 compatible formatting of doubles} \
+    {expr 1e-152} \
+    1.0000000000000001e-152
+test util-16.1.17.-151 {8.4 compatible formatting of doubles} \
+    {expr 1e-151} \
+    9.9999999999999994e-152
+test util-16.1.17.-150 {8.4 compatible formatting of doubles} \
+    {expr 1e-150} \
+    1e-150
+test util-16.1.17.-149 {8.4 compatible formatting of doubles} \
+    {expr 1e-149} \
+    9.9999999999999998e-150
+test util-16.1.17.-148 {8.4 compatible formatting of doubles} \
+    {expr 1e-148} \
+    9.9999999999999994e-149
+test util-16.1.17.-147 {8.4 compatible formatting of doubles} \
+    {expr 1e-147} \
+    9.9999999999999997e-148
+test util-16.1.17.-146 {8.4 compatible formatting of doubles} \
+    {expr 1e-146} \
+    1e-146
+test util-16.1.17.-145 {8.4 compatible formatting of doubles} \
+    {expr 1e-145} \
+    9.9999999999999991e-146
+test util-16.1.17.-144 {8.4 compatible formatting of doubles} \
+    {expr 1e-144} \
+    9.9999999999999995e-145
+test util-16.1.17.-143 {8.4 compatible formatting of doubles} \
+    {expr 1e-143} \
+    9.9999999999999995e-144
+test util-16.1.17.-142 {8.4 compatible formatting of doubles} \
+    {expr 1e-142} \
+    1e-142
+test util-16.1.17.-141 {8.4 compatible formatting of doubles} \
+    {expr 1e-141} \
+    1e-141
+test util-16.1.17.-140 {8.4 compatible formatting of doubles} \
+    {expr 1e-140} \
+    9.9999999999999998e-141
+test util-16.1.17.-139 {8.4 compatible formatting of doubles} \
+    {expr 1e-139} \
+    1e-139
+test util-16.1.17.-138 {8.4 compatible formatting of doubles} \
+    {expr 1e-138} \
+    1.0000000000000001e-138
+test util-16.1.17.-137 {8.4 compatible formatting of doubles} \
+    {expr 1e-137} \
+    9.9999999999999998e-138
+test util-16.1.17.-136 {8.4 compatible formatting of doubles} \
+    {expr 1e-136} \
+    1e-136
+test util-16.1.17.-135 {8.4 compatible formatting of doubles} \
+    {expr 1e-135} \
+    1e-135
+test util-16.1.17.-134 {8.4 compatible formatting of doubles} \
+    {expr 1e-134} \
+    1e-134
+test util-16.1.17.-133 {8.4 compatible formatting of doubles} \
+    {expr 1e-133} \
+    1.0000000000000001e-133
+test util-16.1.17.-132 {8.4 compatible formatting of doubles} \
+    {expr 1e-132} \
+    9.9999999999999999e-133
+test util-16.1.17.-131 {8.4 compatible formatting of doubles} \
+    {expr 1e-131} \
+    9.9999999999999999e-132
+test util-16.1.17.-130 {8.4 compatible formatting of doubles} \
+    {expr 1e-130} \
+    1.0000000000000001e-130
+test util-16.1.17.-129 {8.4 compatible formatting of doubles} \
+    {expr 1e-129} \
+    9.9999999999999993e-130
+test util-16.1.17.-128 {8.4 compatible formatting of doubles} \
+    {expr 1e-128} \
+    1.0000000000000001e-128
+test util-16.1.17.-127 {8.4 compatible formatting of doubles} \
+    {expr 1e-127} \
+    1e-127
+test util-16.1.17.-126 {8.4 compatible formatting of doubles} \
+    {expr 1e-126} \
+    9.9999999999999995e-127
+test util-16.1.17.-125 {8.4 compatible formatting of doubles} \
+    {expr 1e-125} \
+    1e-125
+test util-16.1.17.-124 {8.4 compatible formatting of doubles} \
+    {expr 1e-124} \
+    9.9999999999999993e-125
+test util-16.1.17.-123 {8.4 compatible formatting of doubles} \
+    {expr 1e-123} \
+    1.0000000000000001e-123
+test util-16.1.17.-122 {8.4 compatible formatting of doubles} \
+    {expr 1e-122} \
+    1.0000000000000001e-122
+test util-16.1.17.-121 {8.4 compatible formatting of doubles} \
+    {expr 1e-121} \
+    9.9999999999999998e-122
+test util-16.1.17.-120 {8.4 compatible formatting of doubles} \
+    {expr 1e-120} \
+    9.9999999999999998e-121
+test util-16.1.17.-119 {8.4 compatible formatting of doubles} \
+    {expr 1e-119} \
+    1e-119
+test util-16.1.17.-118 {8.4 compatible formatting of doubles} \
+    {expr 1e-118} \
+    9.9999999999999999e-119
+test util-16.1.17.-117 {8.4 compatible formatting of doubles} \
+    {expr 1e-117} \
+    1e-117
+test util-16.1.17.-116 {8.4 compatible formatting of doubles} \
+    {expr 1e-116} \
+    9.9999999999999999e-117
+test util-16.1.17.-115 {8.4 compatible formatting of doubles} \
+    {expr 1e-115} \
+    1.0000000000000001e-115
+test util-16.1.17.-114 {8.4 compatible formatting of doubles} \
+    {expr 1e-114} \
+    1.0000000000000001e-114
+test util-16.1.17.-113 {8.4 compatible formatting of doubles} \
+    {expr 1e-113} \
+    9.9999999999999998e-114
+test util-16.1.17.-112 {8.4 compatible formatting of doubles} \
+    {expr 1e-112} \
+    9.9999999999999995e-113
+test util-16.1.17.-111 {8.4 compatible formatting of doubles} \
+    {expr 1e-111} \
+    1.0000000000000001e-111
+test util-16.1.17.-110 {8.4 compatible formatting of doubles} \
+    {expr 1e-110} \
+    1.0000000000000001e-110
+test util-16.1.17.-109 {8.4 compatible formatting of doubles} \
+    {expr 1e-109} \
+    9.9999999999999999e-110
+test util-16.1.17.-108 {8.4 compatible formatting of doubles} \
+    {expr 1e-108} \
+    1e-108
+test util-16.1.17.-107 {8.4 compatible formatting of doubles} \
+    {expr 1e-107} \
+    1e-107
+test util-16.1.17.-106 {8.4 compatible formatting of doubles} \
+    {expr 1e-106} \
+    9.9999999999999994e-107
+test util-16.1.17.-105 {8.4 compatible formatting of doubles} \
+    {expr 1e-105} \
+    9.9999999999999997e-106
+test util-16.1.17.-104 {8.4 compatible formatting of doubles} \
+    {expr 1e-104} \
+    9.9999999999999993e-105
+test util-16.1.17.-103 {8.4 compatible formatting of doubles} \
+    {expr 1e-103} \
+    9.9999999999999996e-104
+test util-16.1.17.-102 {8.4 compatible formatting of doubles} \
+    {expr 1e-102} \
+    9.9999999999999993e-103
+test util-16.1.17.-101 {8.4 compatible formatting of doubles} \
+    {expr 1e-101} \
+    1.0000000000000001e-101
+test util-16.1.17.-100 {8.4 compatible formatting of doubles} \
+    {expr 1e-100} \
+    1e-100
+test util-16.1.17.-99 {8.4 compatible formatting of doubles} \
+    {expr 1e-99} \
+    1e-99
+test util-16.1.17.-98 {8.4 compatible formatting of doubles} \
+    {expr 1e-98} \
+    9.9999999999999994e-99
+test util-16.1.17.-97 {8.4 compatible formatting of doubles} \
+    {expr 1e-97} \
+    1e-97
+test util-16.1.17.-96 {8.4 compatible formatting of doubles} \
+    {expr 1e-96} \
+    9.9999999999999991e-97
+test util-16.1.17.-95 {8.4 compatible formatting of doubles} \
+    {expr 1e-95} \
+    9.9999999999999999e-96
+test util-16.1.17.-94 {8.4 compatible formatting of doubles} \
+    {expr 1e-94} \
+    9.9999999999999996e-95
+test util-16.1.17.-93 {8.4 compatible formatting of doubles} \
+    {expr 1e-93} \
+    9.999999999999999e-94
+test util-16.1.17.-92 {8.4 compatible formatting of doubles} \
+    {expr 1e-92} \
+    9.9999999999999999e-93
+test util-16.1.17.-91 {8.4 compatible formatting of doubles} \
+    {expr 1e-91} \
+    1e-91
+test util-16.1.17.-90 {8.4 compatible formatting of doubles} \
+    {expr 1e-90} \
+    9.9999999999999999e-91
+test util-16.1.17.-89 {8.4 compatible formatting of doubles} \
+    {expr 1e-89} \
+    1e-89
+test util-16.1.17.-88 {8.4 compatible formatting of doubles} \
+    {expr 1e-88} \
+    9.9999999999999993e-89
+test util-16.1.17.-87 {8.4 compatible formatting of doubles} \
+    {expr 1e-87} \
+    1e-87
+test util-16.1.17.-86 {8.4 compatible formatting of doubles} \
+    {expr 1e-86} \
+    1.0000000000000001e-86
+test util-16.1.17.-85 {8.4 compatible formatting of doubles} \
+    {expr 1e-85} \
+    9.9999999999999998e-86
+test util-16.1.17.-84 {8.4 compatible formatting of doubles} \
+    {expr 1e-84} \
+    1e-84
+test util-16.1.17.-83 {8.4 compatible formatting of doubles} \
+    {expr 1e-83} \
+    1e-83
+test util-16.1.17.-82 {8.4 compatible formatting of doubles} \
+    {expr 1e-82} \
+    9.9999999999999996e-83
+test util-16.1.17.-81 {8.4 compatible formatting of doubles} \
+    {expr 1e-81} \
+    9.9999999999999996e-82
+test util-16.1.17.-80 {8.4 compatible formatting of doubles} \
+    {expr 1e-80} \
+    9.9999999999999996e-81
+test util-16.1.17.-79 {8.4 compatible formatting of doubles} \
+    {expr 1e-79} \
+    1e-79
+test util-16.1.17.-78 {8.4 compatible formatting of doubles} \
+    {expr 1e-78} \
+    1e-78
+test util-16.1.17.-77 {8.4 compatible formatting of doubles} \
+    {expr 1e-77} \
+    9.9999999999999993e-78
+test util-16.1.17.-76 {8.4 compatible formatting of doubles} \
+    {expr 1e-76} \
+    9.9999999999999993e-77
+test util-16.1.17.-75 {8.4 compatible formatting of doubles} \
+    {expr 1e-75} \
+    9.9999999999999996e-76
+test util-16.1.17.-74 {8.4 compatible formatting of doubles} \
+    {expr 1e-74} \
+    9.9999999999999996e-75
+test util-16.1.17.-73 {8.4 compatible formatting of doubles} \
+    {expr 1e-73} \
+    1e-73
+test util-16.1.17.-72 {8.4 compatible formatting of doubles} \
+    {expr 1e-72} \
+    9.9999999999999997e-73
+test util-16.1.17.-71 {8.4 compatible formatting of doubles} \
+    {expr 1e-71} \
+    9.9999999999999992e-72
+test util-16.1.17.-70 {8.4 compatible formatting of doubles} \
+    {expr 1e-70} \
+    1e-70
+test util-16.1.17.-69 {8.4 compatible formatting of doubles} \
+    {expr 1e-69} \
+    9.9999999999999996e-70
+test util-16.1.17.-68 {8.4 compatible formatting of doubles} \
+    {expr 1e-68} \
+    1.0000000000000001e-68
+test util-16.1.17.-67 {8.4 compatible formatting of doubles} \
+    {expr 1e-67} \
+    9.9999999999999994e-68
+test util-16.1.17.-66 {8.4 compatible formatting of doubles} \
+    {expr 1e-66} \
+    9.9999999999999998e-67
+test util-16.1.17.-65 {8.4 compatible formatting of doubles} \
+    {expr 1e-65} \
+    9.9999999999999992e-66
+test util-16.1.17.-64 {8.4 compatible formatting of doubles} \
+    {expr 1e-64} \
+    9.9999999999999997e-65
+test util-16.1.17.-63 {8.4 compatible formatting of doubles} \
+    {expr 1e-63} \
+    1.0000000000000001e-63
+test util-16.1.17.-62 {8.4 compatible formatting of doubles} \
+    {expr 1e-62} \
+    1e-62
+test util-16.1.17.-61 {8.4 compatible formatting of doubles} \
+    {expr 1e-61} \
+    1e-61
+test util-16.1.17.-60 {8.4 compatible formatting of doubles} \
+    {expr 1e-60} \
+    9.9999999999999997e-61
+test util-16.1.17.-59 {8.4 compatible formatting of doubles} \
+    {expr 1e-59} \
+    1e-59
+test util-16.1.17.-58 {8.4 compatible formatting of doubles} \
+    {expr 1e-58} \
+    1e-58
+test util-16.1.17.-57 {8.4 compatible formatting of doubles} \
+    {expr 1e-57} \
+    9.9999999999999995e-58
+test util-16.1.17.-56 {8.4 compatible formatting of doubles} \
+    {expr 1e-56} \
+    1e-56
+test util-16.1.17.-55 {8.4 compatible formatting of doubles} \
+    {expr 1e-55} \
+    9.9999999999999999e-56
+test util-16.1.17.-54 {8.4 compatible formatting of doubles} \
+    {expr 1e-54} \
+    1e-54
+test util-16.1.17.-53 {8.4 compatible formatting of doubles} \
+    {expr 1e-53} \
+    1e-53
+test util-16.1.17.-52 {8.4 compatible formatting of doubles} \
+    {expr 1e-52} \
+    1e-52
+test util-16.1.17.-51 {8.4 compatible formatting of doubles} \
+    {expr 1e-51} \
+    1e-51
+test util-16.1.17.-50 {8.4 compatible formatting of doubles} \
+    {expr 1e-50} \
+    1e-50
+test util-16.1.17.-49 {8.4 compatible formatting of doubles} \
+    {expr 1e-49} \
+    9.9999999999999994e-50
+test util-16.1.17.-48 {8.4 compatible formatting of doubles} \
+    {expr 1e-48} \
+    9.9999999999999997e-49
+test util-16.1.17.-47 {8.4 compatible formatting of doubles} \
+    {expr 1e-47} \
+    9.9999999999999997e-48
+test util-16.1.17.-46 {8.4 compatible formatting of doubles} \
+    {expr 1e-46} \
+    1e-46
+test util-16.1.17.-45 {8.4 compatible formatting of doubles} \
+    {expr 1e-45} \
+    9.9999999999999998e-46
+test util-16.1.17.-44 {8.4 compatible formatting of doubles} \
+    {expr 1e-44} \
+    9.9999999999999995e-45
+test util-16.1.17.-43 {8.4 compatible formatting of doubles} \
+    {expr 1e-43} \
+    1.0000000000000001e-43
+test util-16.1.17.-42 {8.4 compatible formatting of doubles} \
+    {expr 1e-42} \
+    1e-42
+test util-16.1.17.-41 {8.4 compatible formatting of doubles} \
+    {expr 1e-41} \
+    1e-41
+test util-16.1.17.-40 {8.4 compatible formatting of doubles} \
+    {expr 1e-40} \
+    9.9999999999999993e-41
+test util-16.1.17.-39 {8.4 compatible formatting of doubles} \
+    {expr 1e-39} \
+    9.9999999999999993e-40
+test util-16.1.17.-38 {8.4 compatible formatting of doubles} \
+    {expr 1e-38} \
+    9.9999999999999996e-39
+test util-16.1.17.-37 {8.4 compatible formatting of doubles} \
+    {expr 1e-37} \
+    1.0000000000000001e-37
+test util-16.1.17.-36 {8.4 compatible formatting of doubles} \
+    {expr 1e-36} \
+    9.9999999999999994e-37
+test util-16.1.17.-35 {8.4 compatible formatting of doubles} \
+    {expr 1e-35} \
+    1e-35
+test util-16.1.17.-34 {8.4 compatible formatting of doubles} \
+    {expr 1e-34} \
+    9.9999999999999993e-35
+test util-16.1.17.-33 {8.4 compatible formatting of doubles} \
+    {expr 1e-33} \
+    1.0000000000000001e-33
+test util-16.1.17.-32 {8.4 compatible formatting of doubles} \
+    {expr 1e-32} \
+    1.0000000000000001e-32
+test util-16.1.17.-31 {8.4 compatible formatting of doubles} \
+    {expr 1e-31} \
+    1.0000000000000001e-31
+test util-16.1.17.-30 {8.4 compatible formatting of doubles} \
+    {expr 1e-30} \
+    1.0000000000000001e-30
+test util-16.1.17.-29 {8.4 compatible formatting of doubles} \
+    {expr 1e-29} \
+    9.9999999999999994e-30
+test util-16.1.17.-28 {8.4 compatible formatting of doubles} \
+    {expr 1e-28} \
+    9.9999999999999997e-29
+test util-16.1.17.-27 {8.4 compatible formatting of doubles} \
+    {expr 1e-27} \
+    1e-27
+test util-16.1.17.-26 {8.4 compatible formatting of doubles} \
+    {expr 1e-26} \
+    1e-26
+test util-16.1.17.-25 {8.4 compatible formatting of doubles} \
+    {expr 1e-25} \
+    1e-25
+test util-16.1.17.-24 {8.4 compatible formatting of doubles} \
+    {expr 1e-24} \
+    9.9999999999999992e-25
+test util-16.1.17.-23 {8.4 compatible formatting of doubles} \
+    {expr 1e-23} \
+    9.9999999999999996e-24
+test util-16.1.17.-22 {8.4 compatible formatting of doubles} \
+    {expr 1e-22} \
+    1e-22
+test util-16.1.17.-21 {8.4 compatible formatting of doubles} \
+    {expr 1e-21} \
+    9.9999999999999991e-22
+test util-16.1.17.-20 {8.4 compatible formatting of doubles} \
+    {expr 1e-20} \
+    9.9999999999999995e-21
+test util-16.1.17.-19 {8.4 compatible formatting of doubles} \
+    {expr 1e-19} \
+    9.9999999999999998e-20
+test util-16.1.17.-18 {8.4 compatible formatting of doubles} \
+    {expr 1e-18} \
+    1.0000000000000001e-18
+test util-16.1.17.-17 {8.4 compatible formatting of doubles} \
+    {expr 1e-17} \
+    1.0000000000000001e-17
+test util-16.1.17.-16 {8.4 compatible formatting of doubles} \
+    {expr 1e-16} \
+    9.9999999999999998e-17
+test util-16.1.17.-15 {8.4 compatible formatting of doubles} \
+    {expr 1e-15} \
+    1.0000000000000001e-15
+test util-16.1.17.-14 {8.4 compatible formatting of doubles} \
+    {expr 1e-14} \
+    1e-14
+test util-16.1.17.-13 {8.4 compatible formatting of doubles} \
+    {expr 1e-13} \
+    1e-13
+test util-16.1.17.-12 {8.4 compatible formatting of doubles} \
+    {expr 1e-12} \
+    9.9999999999999998e-13
+test util-16.1.17.-11 {8.4 compatible formatting of doubles} \
+    {expr 1e-11} \
+    9.9999999999999994e-12
+test util-16.1.17.-10 {8.4 compatible formatting of doubles} \
+    {expr 1e-10} \
+    1e-10
+test util-16.1.17.-9 {8.4 compatible formatting of doubles} \
+    {expr 1e-9} \
+    1.0000000000000001e-09
+test util-16.1.17.-8 {8.4 compatible formatting of doubles} \
+    {expr 1e-8} \
+    1e-08
+test util-16.1.17.-7 {8.4 compatible formatting of doubles} \
+    {expr 1e-7} \
+    9.9999999999999995e-08
+test util-16.1.17.-6 {8.4 compatible formatting of doubles} \
+    {expr 1e-6} \
+    9.9999999999999995e-07
+test util-16.1.17.-5 {8.4 compatible formatting of doubles} \
+    {expr 1e-5} \
+    1.0000000000000001e-05
+test util-16.1.17.-4 {8.4 compatible formatting of doubles} \
+    {expr 1e-4} \
+    0.0001
+test util-16.1.17.-3 {8.4 compatible formatting of doubles} \
+    {expr 1e-3} \
+    0.001
+test util-16.1.17.-2 {8.4 compatible formatting of doubles} \
+    {expr 1e-2} \
+    0.01
+test util-16.1.17.-1 {8.4 compatible formatting of doubles} \
+    {expr 1e-1} \
+    0.10000000000000001
+test util-16.1.17.0 {8.4 compatible formatting of doubles} \
+    {expr 1e0} \
+    1.0
+test util-16.1.17.1 {8.4 compatible formatting of doubles} \
+    {expr 1e1} \
+    10.0
+test util-16.1.17.2 {8.4 compatible formatting of doubles} \
+    {expr 1e2} \
+    100.0
+test util-16.1.17.3 {8.4 compatible formatting of doubles} \
+    {expr 1e3} \
+    1000.0
+test util-16.1.17.4 {8.4 compatible formatting of doubles} \
+    {expr 1e4} \
+    10000.0
+test util-16.1.17.5 {8.4 compatible formatting of doubles} \
+    {expr 1e5} \
+    100000.0
+test util-16.1.17.6 {8.4 compatible formatting of doubles} \
+    {expr 1e6} \
+    1000000.0
+test util-16.1.17.7 {8.4 compatible formatting of doubles} \
+    {expr 1e7} \
+    10000000.0
+test util-16.1.17.8 {8.4 compatible formatting of doubles} \
+    {expr 1e8} \
+    100000000.0
+test util-16.1.17.9 {8.4 compatible formatting of doubles} \
+    {expr 1e9} \
+    1000000000.0
+test util-16.1.17.10 {8.4 compatible formatting of doubles} \
+    {expr 1e10} \
+    10000000000.0
+test util-16.1.17.11 {8.4 compatible formatting of doubles} \
+    {expr 1e11} \
+    100000000000.0
+test util-16.1.17.12 {8.4 compatible formatting of doubles} \
+    {expr 1e12} \
+    1000000000000.0
+test util-16.1.17.13 {8.4 compatible formatting of doubles} \
+    {expr 1e13} \
+    10000000000000.0
+test util-16.1.17.14 {8.4 compatible formatting of doubles} \
+    {expr 1e14} \
+    100000000000000.0
+test util-16.1.17.15 {8.4 compatible formatting of doubles} \
+    {expr 1e15} \
+    1000000000000000.0
+test util-16.1.17.16 {8.4 compatible formatting of doubles} \
+    {expr 1e16} \
+    10000000000000000.0
+test util-16.1.17.17 {8.4 compatible formatting of doubles} \
+    {expr 1e17} \
+    1e+17
+test util-16.1.17.18 {8.4 compatible formatting of doubles} \
+    {expr 1e18} \
+    1e+18
+test util-16.1.17.19 {8.4 compatible formatting of doubles} \
+    {expr 1e19} \
+    1e+19
+test util-16.1.17.20 {8.4 compatible formatting of doubles} \
+    {expr 1e20} \
+    1e+20
+test util-16.1.17.21 {8.4 compatible formatting of doubles} \
+    {expr 1e21} \
+    1e+21
+test util-16.1.17.22 {8.4 compatible formatting of doubles} \
+    {expr 1e22} \
+    1e+22
+test util-16.1.17.23 {8.4 compatible formatting of doubles} \
+    {expr 1e23} \
+    9.9999999999999992e+22
+test util-16.1.17.24 {8.4 compatible formatting of doubles} \
+    {expr 1e24} \
+    9.9999999999999998e+23
+test util-16.1.17.25 {8.4 compatible formatting of doubles} \
+    {expr 1e25} \
+    1.0000000000000001e+25
+test util-16.1.17.26 {8.4 compatible formatting of doubles} \
+    {expr 1e26} \
+    1e+26
+test util-16.1.17.27 {8.4 compatible formatting of doubles} \
+    {expr 1e27} \
+    1e+27
+test util-16.1.17.28 {8.4 compatible formatting of doubles} \
+    {expr 1e28} \
+    9.9999999999999996e+27
+test util-16.1.17.29 {8.4 compatible formatting of doubles} \
+    {expr 1e29} \
+    9.9999999999999991e+28
+test util-16.1.17.30 {8.4 compatible formatting of doubles} \
+    {expr 1e30} \
+    1e+30
+test util-16.1.17.31 {8.4 compatible formatting of doubles} \
+    {expr 1e31} \
+    9.9999999999999996e+30
+test util-16.1.17.32 {8.4 compatible formatting of doubles} \
+    {expr 1e32} \
+    1.0000000000000001e+32
+test util-16.1.17.33 {8.4 compatible formatting of doubles} \
+    {expr 1e33} \
+    9.9999999999999995e+32
+test util-16.1.17.34 {8.4 compatible formatting of doubles} \
+    {expr 1e34} \
+    9.9999999999999995e+33
+test util-16.1.17.35 {8.4 compatible formatting of doubles} \
+    {expr 1e35} \
+    9.9999999999999997e+34
+test util-16.1.17.36 {8.4 compatible formatting of doubles} \
+    {expr 1e36} \
+    1e+36
+test util-16.1.17.37 {8.4 compatible formatting of doubles} \
+    {expr 1e37} \
+    9.9999999999999995e+36
+test util-16.1.17.38 {8.4 compatible formatting of doubles} \
+    {expr 1e38} \
+    9.9999999999999998e+37
+test util-16.1.17.39 {8.4 compatible formatting of doubles} \
+    {expr 1e39} \
+    9.9999999999999994e+38
+test util-16.1.17.40 {8.4 compatible formatting of doubles} \
+    {expr 1e40} \
+    1e+40
+test util-16.1.17.41 {8.4 compatible formatting of doubles} \
+    {expr 1e41} \
+    1e+41
+test util-16.1.17.42 {8.4 compatible formatting of doubles} \
+    {expr 1e42} \
+    1e+42
+test util-16.1.17.43 {8.4 compatible formatting of doubles} \
+    {expr 1e43} \
+    1e+43
+test util-16.1.17.44 {8.4 compatible formatting of doubles} \
+    {expr 1e44} \
+    1.0000000000000001e+44
+test util-16.1.17.45 {8.4 compatible formatting of doubles} \
+    {expr 1e45} \
+    9.9999999999999993e+44
+test util-16.1.17.46 {8.4 compatible formatting of doubles} \
+    {expr 1e46} \
+    9.9999999999999999e+45
+test util-16.1.17.47 {8.4 compatible formatting of doubles} \
+    {expr 1e47} \
+    1e+47
+test util-16.1.17.48 {8.4 compatible formatting of doubles} \
+    {expr 1e48} \
+    1e+48
+test util-16.1.17.49 {8.4 compatible formatting of doubles} \
+    {expr 1e49} \
+    9.9999999999999995e+48
+test util-16.1.17.50 {8.4 compatible formatting of doubles} \
+    {expr 1e50} \
+    1.0000000000000001e+50
+test util-16.1.17.51 {8.4 compatible formatting of doubles} \
+    {expr 1e51} \
+    9.9999999999999999e+50
+test util-16.1.17.52 {8.4 compatible formatting of doubles} \
+    {expr 1e52} \
+    9.9999999999999999e+51
+test util-16.1.17.53 {8.4 compatible formatting of doubles} \
+    {expr 1e53} \
+    9.9999999999999999e+52
+test util-16.1.17.54 {8.4 compatible formatting of doubles} \
+    {expr 1e54} \
+    1.0000000000000001e+54
+test util-16.1.17.55 {8.4 compatible formatting of doubles} \
+    {expr 1e55} \
+    1e+55
+test util-16.1.17.56 {8.4 compatible formatting of doubles} \
+    {expr 1e56} \
+    1.0000000000000001e+56
+test util-16.1.17.57 {8.4 compatible formatting of doubles} \
+    {expr 1e57} \
+    1e+57
+test util-16.1.17.58 {8.4 compatible formatting of doubles} \
+    {expr 1e58} \
+    9.9999999999999994e+57
+test util-16.1.17.59 {8.4 compatible formatting of doubles} \
+    {expr 1e59} \
+    9.9999999999999997e+58
+test util-16.1.17.60 {8.4 compatible formatting of doubles} \
+    {expr 1e60} \
+    9.9999999999999995e+59
+test util-16.1.17.61 {8.4 compatible formatting of doubles} \
+    {expr 1e61} \
+    9.9999999999999995e+60
+test util-16.1.17.62 {8.4 compatible formatting of doubles} \
+    {expr 1e62} \
+    1e+62
+test util-16.1.17.63 {8.4 compatible formatting of doubles} \
+    {expr 1e63} \
+    1.0000000000000001e+63
+test util-16.1.17.64 {8.4 compatible formatting of doubles} \
+    {expr 1e64} \
+    1e+64
+test util-16.1.17.65 {8.4 compatible formatting of doubles} \
+    {expr 1e65} \
+    9.9999999999999999e+64
+test util-16.1.17.66 {8.4 compatible formatting of doubles} \
+    {expr 1e66} \
+    9.9999999999999995e+65
+test util-16.1.17.67 {8.4 compatible formatting of doubles} \
+    {expr 1e67} \
+    9.9999999999999998e+66
+test util-16.1.17.68 {8.4 compatible formatting of doubles} \
+    {expr 1e68} \
+    9.9999999999999995e+67
+test util-16.1.17.69 {8.4 compatible formatting of doubles} \
+    {expr 1e69} \
+    1.0000000000000001e+69
+test util-16.1.17.70 {8.4 compatible formatting of doubles} \
+    {expr 1e70} \
+    1.0000000000000001e+70
+test util-16.1.17.71 {8.4 compatible formatting of doubles} \
+    {expr 1e71} \
+    1e+71
+test util-16.1.17.72 {8.4 compatible formatting of doubles} \
+    {expr 1e72} \
+    9.9999999999999994e+71
+test util-16.1.17.73 {8.4 compatible formatting of doubles} \
+    {expr 1e73} \
+    9.9999999999999998e+72
+test util-16.1.17.74 {8.4 compatible formatting of doubles} \
+    {expr 1e74} \
+    9.9999999999999995e+73
+test util-16.1.17.75 {8.4 compatible formatting of doubles} \
+    {expr 1e75} \
+    9.9999999999999993e+74
+test util-16.1.17.76 {8.4 compatible formatting of doubles} \
+    {expr 1e76} \
+    1e+76
+test util-16.1.17.77 {8.4 compatible formatting of doubles} \
+    {expr 1e77} \
+    9.9999999999999998e+76
+test util-16.1.17.78 {8.4 compatible formatting of doubles} \
+    {expr 1e78} \
+    1e+78
+test util-16.1.17.79 {8.4 compatible formatting of doubles} \
+    {expr 1e79} \
+    9.9999999999999997e+78
+test util-16.1.17.80 {8.4 compatible formatting of doubles} \
+    {expr 1e80} \
+    1e+80
+test util-16.1.17.81 {8.4 compatible formatting of doubles} \
+    {expr 1e81} \
+    9.9999999999999992e+80
+test util-16.1.17.82 {8.4 compatible formatting of doubles} \
+    {expr 1e82} \
+    9.9999999999999996e+81
+test util-16.1.17.83 {8.4 compatible formatting of doubles} \
+    {expr 1e83} \
+    1e+83
+test util-16.1.17.84 {8.4 compatible formatting of doubles} \
+    {expr 1e84} \
+    1.0000000000000001e+84
+test util-16.1.17.85 {8.4 compatible formatting of doubles} \
+    {expr 1e85} \
+    1e+85
+test util-16.1.17.86 {8.4 compatible formatting of doubles} \
+    {expr 1e86} \
+    1e+86
+test util-16.1.17.87 {8.4 compatible formatting of doubles} \
+    {expr 1e87} \
+    9.9999999999999996e+86
+test util-16.1.17.88 {8.4 compatible formatting of doubles} \
+    {expr 1e88} \
+    9.9999999999999996e+87
+test util-16.1.17.89 {8.4 compatible formatting of doubles} \
+    {expr 1e89} \
+    9.9999999999999999e+88
+test util-16.1.17.90 {8.4 compatible formatting of doubles} \
+    {expr 1e90} \
+    9.9999999999999997e+89
+test util-16.1.17.91 {8.4 compatible formatting of doubles} \
+    {expr 1e91} \
+    1.0000000000000001e+91
+test util-16.1.17.92 {8.4 compatible formatting of doubles} \
+    {expr 1e92} \
+    1e+92
+test util-16.1.17.93 {8.4 compatible formatting of doubles} \
+    {expr 1e93} \
+    1e+93
+test util-16.1.17.94 {8.4 compatible formatting of doubles} \
+    {expr 1e94} \
+    1e+94
+test util-16.1.17.95 {8.4 compatible formatting of doubles} \
+    {expr 1e95} \
+    1e+95
+test util-16.1.17.96 {8.4 compatible formatting of doubles} \
+    {expr 1e96} \
+    1e+96
+test util-16.1.17.97 {8.4 compatible formatting of doubles} \
+    {expr 1e97} \
+    1.0000000000000001e+97
+test util-16.1.17.98 {8.4 compatible formatting of doubles} \
+    {expr 1e98} \
+    1e+98
+test util-16.1.17.99 {8.4 compatible formatting of doubles} \
+    {expr 1e99} \
+    9.9999999999999997e+98
+test util-16.1.17.100 {8.4 compatible formatting of doubles} \
+    {expr 1e100} \
+    1e+100
+test util-16.1.17.101 {8.4 compatible formatting of doubles} \
+    {expr 1e101} \
+    9.9999999999999998e+100
+test util-16.1.17.102 {8.4 compatible formatting of doubles} \
+    {expr 1e102} \
+    9.9999999999999998e+101
+test util-16.1.17.103 {8.4 compatible formatting of doubles} \
+    {expr 1e103} \
+    1e+103
+test util-16.1.17.104 {8.4 compatible formatting of doubles} \
+    {expr 1e104} \
+    1e+104
+test util-16.1.17.105 {8.4 compatible formatting of doubles} \
+    {expr 1e105} \
+    9.9999999999999994e+104
+test util-16.1.17.106 {8.4 compatible formatting of doubles} \
+    {expr 1e106} \
+    1.0000000000000001e+106
+test util-16.1.17.107 {8.4 compatible formatting of doubles} \
+    {expr 1e107} \
+    9.9999999999999997e+106
+test util-16.1.17.108 {8.4 compatible formatting of doubles} \
+    {expr 1e108} \
+    1e+108
+test util-16.1.17.109 {8.4 compatible formatting of doubles} \
+    {expr 1e109} \
+    9.9999999999999998e+108
+test util-16.1.17.110 {8.4 compatible formatting of doubles} \
+    {expr 1e110} \
+    1e+110
+test util-16.1.17.111 {8.4 compatible formatting of doubles} \
+    {expr 1e111} \
+    9.9999999999999996e+110
+test util-16.1.17.112 {8.4 compatible formatting of doubles} \
+    {expr 1e112} \
+    9.9999999999999993e+111
+test util-16.1.17.113 {8.4 compatible formatting of doubles} \
+    {expr 1e113} \
+    1e+113
+test util-16.1.17.114 {8.4 compatible formatting of doubles} \
+    {expr 1e114} \
+    1e+114
+test util-16.1.17.115 {8.4 compatible formatting of doubles} \
+    {expr 1e115} \
+    1e+115
+test util-16.1.17.116 {8.4 compatible formatting of doubles} \
+    {expr 1e116} \
+    1e+116
+test util-16.1.17.117 {8.4 compatible formatting of doubles} \
+    {expr 1e117} \
+    1.0000000000000001e+117
+test util-16.1.17.118 {8.4 compatible formatting of doubles} \
+    {expr 1e118} \
+    9.9999999999999997e+117
+test util-16.1.17.119 {8.4 compatible formatting of doubles} \
+    {expr 1e119} \
+    9.9999999999999994e+118
+test util-16.1.17.120 {8.4 compatible formatting of doubles} \
+    {expr 1e120} \
+    9.9999999999999998e+119
+test util-16.1.17.121 {8.4 compatible formatting of doubles} \
+    {expr 1e121} \
+    1e+121
+test util-16.1.17.122 {8.4 compatible formatting of doubles} \
+    {expr 1e122} \
+    1e+122
+test util-16.1.17.123 {8.4 compatible formatting of doubles} \
+    {expr 1e123} \
+    9.9999999999999998e+122
+test util-16.1.17.124 {8.4 compatible formatting of doubles} \
+    {expr 1e124} \
+    9.9999999999999995e+123
+test util-16.1.17.125 {8.4 compatible formatting of doubles} \
+    {expr 1e125} \
+    9.9999999999999992e+124
+test util-16.1.17.126 {8.4 compatible formatting of doubles} \
+    {expr 1e126} \
+    9.9999999999999992e+125
+test util-16.1.17.127 {8.4 compatible formatting of doubles} \
+    {expr 1e127} \
+    9.9999999999999995e+126
+test util-16.1.17.128 {8.4 compatible formatting of doubles} \
+    {expr 1e128} \
+    1.0000000000000001e+128
+test util-16.1.17.129 {8.4 compatible formatting of doubles} \
+    {expr 1e129} \
+    1e+129
+test util-16.1.17.130 {8.4 compatible formatting of doubles} \
+    {expr 1e130} \
+    1.0000000000000001e+130
+test util-16.1.17.131 {8.4 compatible formatting of doubles} \
+    {expr 1e131} \
+    9.9999999999999991e+130
+test util-16.1.17.132 {8.4 compatible formatting of doubles} \
+    {expr 1e132} \
+    9.9999999999999999e+131
+test util-16.1.17.133 {8.4 compatible formatting of doubles} \
+    {expr 1e133} \
+    1e+133
+test util-16.1.17.134 {8.4 compatible formatting of doubles} \
+    {expr 1e134} \
+    9.9999999999999992e+133
+test util-16.1.17.135 {8.4 compatible formatting of doubles} \
+    {expr 1e135} \
+    9.9999999999999996e+134
+test util-16.1.17.136 {8.4 compatible formatting of doubles} \
+    {expr 1e136} \
+    1.0000000000000001e+136
+test util-16.1.17.137 {8.4 compatible formatting of doubles} \
+    {expr 1e137} \
+    1e+137
+test util-16.1.17.138 {8.4 compatible formatting of doubles} \
+    {expr 1e138} \
+    1e+138
+test util-16.1.17.139 {8.4 compatible formatting of doubles} \
+    {expr 1e139} \
+    1e+139
+test util-16.1.17.140 {8.4 compatible formatting of doubles} \
+    {expr 1e140} \
+    1.0000000000000001e+140
+test util-16.1.17.141 {8.4 compatible formatting of doubles} \
+    {expr 1e141} \
+    1e+141
+test util-16.1.17.142 {8.4 compatible formatting of doubles} \
+    {expr 1e142} \
+    1.0000000000000001e+142
+test util-16.1.17.143 {8.4 compatible formatting of doubles} \
+    {expr 1e143} \
+    1e+143
+test util-16.1.17.144 {8.4 compatible formatting of doubles} \
+    {expr 1e144} \
+    1e+144
+test util-16.1.17.145 {8.4 compatible formatting of doubles} \
+    {expr 1e145} \
+    9.9999999999999999e+144
+test util-16.1.17.146 {8.4 compatible formatting of doubles} \
+    {expr 1e146} \
+    9.9999999999999993e+145
+test util-16.1.17.147 {8.4 compatible formatting of doubles} \
+    {expr 1e147} \
+    9.9999999999999998e+146
+test util-16.1.17.148 {8.4 compatible formatting of doubles} \
+    {expr 1e148} \
+    1e+148
+test util-16.1.17.149 {8.4 compatible formatting of doubles} \
+    {expr 1e149} \
+    1e+149
+test util-16.1.17.150 {8.4 compatible formatting of doubles} \
+    {expr 1e150} \
+    9.9999999999999998e+149
+test util-16.1.17.151 {8.4 compatible formatting of doubles} \
+    {expr 1e151} \
+    1e+151
+test util-16.1.17.152 {8.4 compatible formatting of doubles} \
+    {expr 1e152} \
+    1e+152
+test util-16.1.17.153 {8.4 compatible formatting of doubles} \
+    {expr 1e153} \
+    1e+153
+test util-16.1.17.154 {8.4 compatible formatting of doubles} \
+    {expr 1e154} \
+    1e+154
+test util-16.1.17.155 {8.4 compatible formatting of doubles} \
+    {expr 1e155} \
+    1e+155
+test util-16.1.17.156 {8.4 compatible formatting of doubles} \
+    {expr 1e156} \
+    9.9999999999999998e+155
+test util-16.1.17.157 {8.4 compatible formatting of doubles} \
+    {expr 1e157} \
+    9.9999999999999998e+156
+test util-16.1.17.158 {8.4 compatible formatting of doubles} \
+    {expr 1e158} \
+    9.9999999999999995e+157
+test util-16.1.17.159 {8.4 compatible formatting of doubles} \
+    {expr 1e159} \
+    9.9999999999999993e+158
+test util-16.1.17.160 {8.4 compatible formatting of doubles} \
+    {expr 1e160} \
+    1e+160
+test util-16.1.17.161 {8.4 compatible formatting of doubles} \
+    {expr 1e161} \
+    1e+161
+test util-16.1.17.162 {8.4 compatible formatting of doubles} \
+    {expr 1e162} \
+    9.9999999999999994e+161
+test util-16.1.17.163 {8.4 compatible formatting of doubles} \
+    {expr 1e163} \
+    9.9999999999999994e+162
+test util-16.1.17.164 {8.4 compatible formatting of doubles} \
+    {expr 1e164} \
+    1e+164
+test util-16.1.17.165 {8.4 compatible formatting of doubles} \
+    {expr 1e165} \
+    9.999999999999999e+164
+test util-16.1.17.166 {8.4 compatible formatting of doubles} \
+    {expr 1e166} \
+    9.9999999999999994e+165
+test util-16.1.17.167 {8.4 compatible formatting of doubles} \
+    {expr 1e167} \
+    1e+167
+test util-16.1.17.168 {8.4 compatible formatting of doubles} \
+    {expr 1e168} \
+    9.9999999999999993e+167
+test util-16.1.17.169 {8.4 compatible formatting of doubles} \
+    {expr 1e169} \
+    9.9999999999999993e+168
+test util-16.1.17.170 {8.4 compatible formatting of doubles} \
+    {expr 1e170} \
+    1e+170
+test util-16.1.17.171 {8.4 compatible formatting of doubles} \
+    {expr 1e171} \
+    9.9999999999999995e+170
+test util-16.1.17.172 {8.4 compatible formatting of doubles} \
+    {expr 1e172} \
+    1.0000000000000001e+172
+test util-16.1.17.173 {8.4 compatible formatting of doubles} \
+    {expr 1e173} \
+    1e+173
+test util-16.1.17.174 {8.4 compatible formatting of doubles} \
+    {expr 1e174} \
+    1.0000000000000001e+174
+test util-16.1.17.175 {8.4 compatible formatting of doubles} \
+    {expr 1e175} \
+    9.9999999999999994e+174
+test util-16.1.17.176 {8.4 compatible formatting of doubles} \
+    {expr 1e176} \
+    1e+176
+test util-16.1.17.177 {8.4 compatible formatting of doubles} \
+    {expr 1e177} \
+    1e+177
+test util-16.1.17.178 {8.4 compatible formatting of doubles} \
+    {expr 1e178} \
+    1.0000000000000001e+178
+test util-16.1.17.179 {8.4 compatible formatting of doubles} \
+    {expr 1e179} \
+    9.9999999999999998e+178
+test util-16.1.17.180 {8.4 compatible formatting of doubles} \
+    {expr 1e180} \
+    1e+180
+test util-16.1.17.181 {8.4 compatible formatting of doubles} \
+    {expr 1e181} \
+    9.9999999999999992e+180
+test util-16.1.17.182 {8.4 compatible formatting of doubles} \
+    {expr 1e182} \
+    1.0000000000000001e+182
+test util-16.1.17.183 {8.4 compatible formatting of doubles} \
+    {expr 1e183} \
+    9.9999999999999995e+182
+test util-16.1.17.184 {8.4 compatible formatting of doubles} \
+    {expr 1e184} \
+    1e+184
+test util-16.1.17.185 {8.4 compatible formatting of doubles} \
+    {expr 1e185} \
+    9.9999999999999998e+184
+test util-16.1.17.186 {8.4 compatible formatting of doubles} \
+    {expr 1e186} \
+    9.9999999999999998e+185
+test util-16.1.17.187 {8.4 compatible formatting of doubles} \
+    {expr 1e187} \
+    9.9999999999999991e+186
+test util-16.1.17.188 {8.4 compatible formatting of doubles} \
+    {expr 1e188} \
+    1e+188
+test util-16.1.17.189 {8.4 compatible formatting of doubles} \
+    {expr 1e189} \
+    1e+189
+test util-16.1.17.190 {8.4 compatible formatting of doubles} \
+    {expr 1e190} \
+    1.0000000000000001e+190
+test util-16.1.17.191 {8.4 compatible formatting of doubles} \
+    {expr 1e191} \
+    1.0000000000000001e+191
+test util-16.1.17.192 {8.4 compatible formatting of doubles} \
+    {expr 1e192} \
+    1e+192
+test util-16.1.17.193 {8.4 compatible formatting of doubles} \
+    {expr 1e193} \
+    1.0000000000000001e+193
+test util-16.1.17.194 {8.4 compatible formatting of doubles} \
+    {expr 1e194} \
+    9.9999999999999994e+193
+test util-16.1.17.195 {8.4 compatible formatting of doubles} \
+    {expr 1e195} \
+    9.9999999999999998e+194
+test util-16.1.17.196 {8.4 compatible formatting of doubles} \
+    {expr 1e196} \
+    9.9999999999999995e+195
+test util-16.1.17.197 {8.4 compatible formatting of doubles} \
+    {expr 1e197} \
+    9.9999999999999995e+196
+test util-16.1.17.198 {8.4 compatible formatting of doubles} \
+    {expr 1e198} \
+    1e+198
+test util-16.1.17.199 {8.4 compatible formatting of doubles} \
+    {expr 1e199} \
+    1.0000000000000001e+199
+test util-16.1.17.200 {8.4 compatible formatting of doubles} \
+    {expr 1e200} \
+    9.9999999999999997e+199
+test util-16.1.17.201 {8.4 compatible formatting of doubles} \
+    {expr 1e201} \
+    1e+201
+test util-16.1.17.202 {8.4 compatible formatting of doubles} \
+    {expr 1e202} \
+    9.999999999999999e+201
+test util-16.1.17.203 {8.4 compatible formatting of doubles} \
+    {expr 1e203} \
+    9.9999999999999999e+202
+test util-16.1.17.204 {8.4 compatible formatting of doubles} \
+    {expr 1e204} \
+    9.9999999999999999e+203
+test util-16.1.17.205 {8.4 compatible formatting of doubles} \
+    {expr 1e205} \
+    1e+205
+test util-16.1.17.206 {8.4 compatible formatting of doubles} \
+    {expr 1e206} \
+    1e+206
+test util-16.1.17.207 {8.4 compatible formatting of doubles} \
+    {expr 1e207} \
+    1e+207
+test util-16.1.17.208 {8.4 compatible formatting of doubles} \
+    {expr 1e208} \
+    9.9999999999999998e+207
+test util-16.1.17.209 {8.4 compatible formatting of doubles} \
+    {expr 1e209} \
+    1.0000000000000001e+209
+test util-16.1.17.210 {8.4 compatible formatting of doubles} \
+    {expr 1e210} \
+    9.9999999999999993e+209
+test util-16.1.17.211 {8.4 compatible formatting of doubles} \
+    {expr 1e211} \
+    9.9999999999999996e+210
+test util-16.1.17.212 {8.4 compatible formatting of doubles} \
+    {expr 1e212} \
+    9.9999999999999991e+211
+test util-16.1.17.213 {8.4 compatible formatting of doubles} \
+    {expr 1e213} \
+    9.9999999999999998e+212
+test util-16.1.17.214 {8.4 compatible formatting of doubles} \
+    {expr 1e214} \
+    9.9999999999999995e+213
+test util-16.1.17.215 {8.4 compatible formatting of doubles} \
+    {expr 1e215} \
+    9.9999999999999991e+214
+test util-16.1.17.216 {8.4 compatible formatting of doubles} \
+    {expr 1e216} \
+    1e+216
+test util-16.1.17.217 {8.4 compatible formatting of doubles} \
+    {expr 1e217} \
+    9.9999999999999996e+216
+test util-16.1.17.218 {8.4 compatible formatting of doubles} \
+    {expr 1e218} \
+    1.0000000000000001e+218
+test util-16.1.17.219 {8.4 compatible formatting of doubles} \
+    {expr 1e219} \
+    9.9999999999999997e+218
+test util-16.1.17.220 {8.4 compatible formatting of doubles} \
+    {expr 1e220} \
+    1e+220
+test util-16.1.17.221 {8.4 compatible formatting of doubles} \
+    {expr 1e221} \
+    1e+221
+test util-16.1.17.222 {8.4 compatible formatting of doubles} \
+    {expr 1e222} \
+    1e+222
+test util-16.1.17.223 {8.4 compatible formatting of doubles} \
+    {expr 1e223} \
+    1e+223
+test util-16.1.17.224 {8.4 compatible formatting of doubles} \
+    {expr 1e224} \
+    9.9999999999999997e+223
+test util-16.1.17.225 {8.4 compatible formatting of doubles} \
+    {expr 1e225} \
+    9.9999999999999993e+224
+test util-16.1.17.226 {8.4 compatible formatting of doubles} \
+    {expr 1e226} \
+    9.9999999999999996e+225
+test util-16.1.17.227 {8.4 compatible formatting of doubles} \
+    {expr 1e227} \
+    1.0000000000000001e+227
+test util-16.1.17.228 {8.4 compatible formatting of doubles} \
+    {expr 1e228} \
+    9.9999999999999992e+227
+test util-16.1.17.229 {8.4 compatible formatting of doubles} \
+    {expr 1e229} \
+    9.9999999999999999e+228
+test util-16.1.17.230 {8.4 compatible formatting of doubles} \
+    {expr 1e230} \
+    1.0000000000000001e+230
+test util-16.1.17.231 {8.4 compatible formatting of doubles} \
+    {expr 1e231} \
+    1.0000000000000001e+231
+test util-16.1.17.232 {8.4 compatible formatting of doubles} \
+    {expr 1e232} \
+    1.0000000000000001e+232
+test util-16.1.17.233 {8.4 compatible formatting of doubles} \
+    {expr 1e233} \
+    9.9999999999999997e+232
+test util-16.1.17.234 {8.4 compatible formatting of doubles} \
+    {expr 1e234} \
+    1e+234
+test util-16.1.17.235 {8.4 compatible formatting of doubles} \
+    {expr 1e235} \
+    1.0000000000000001e+235
+test util-16.1.17.236 {8.4 compatible formatting of doubles} \
+    {expr 1e236} \
+    1.0000000000000001e+236
+test util-16.1.17.237 {8.4 compatible formatting of doubles} \
+    {expr 1e237} \
+    9.9999999999999994e+236
+test util-16.1.17.238 {8.4 compatible formatting of doubles} \
+    {expr 1e238} \
+    1e+238
+test util-16.1.17.239 {8.4 compatible formatting of doubles} \
+    {expr 1e239} \
+    9.9999999999999999e+238
+test util-16.1.17.240 {8.4 compatible formatting of doubles} \
+    {expr 1e240} \
+    1e+240
+test util-16.1.17.241 {8.4 compatible formatting of doubles} \
+    {expr 1e241} \
+    1.0000000000000001e+241
+test util-16.1.17.242 {8.4 compatible formatting of doubles} \
+    {expr 1e242} \
+    1.0000000000000001e+242
+test util-16.1.17.243 {8.4 compatible formatting of doubles} \
+    {expr 1e243} \
+    1.0000000000000001e+243
+test util-16.1.17.244 {8.4 compatible formatting of doubles} \
+    {expr 1e244} \
+    1.0000000000000001e+244
+test util-16.1.17.245 {8.4 compatible formatting of doubles} \
+    {expr 1e245} \
+    1e+245
+test util-16.1.17.246 {8.4 compatible formatting of doubles} \
+    {expr 1e246} \
+    1.0000000000000001e+246
+test util-16.1.17.247 {8.4 compatible formatting of doubles} \
+    {expr 1e247} \
+    9.9999999999999995e+246
+test util-16.1.17.248 {8.4 compatible formatting of doubles} \
+    {expr 1e248} \
+    1e+248
+test util-16.1.17.249 {8.4 compatible formatting of doubles} \
+    {expr 1e249} \
+    9.9999999999999992e+248
+test util-16.1.17.250 {8.4 compatible formatting of doubles} \
+    {expr 1e250} \
+    9.9999999999999992e+249
+test util-16.1.17.251 {8.4 compatible formatting of doubles} \
+    {expr 1e251} \
+    1e+251
+test util-16.1.17.252 {8.4 compatible formatting of doubles} \
+    {expr 1e252} \
+    1.0000000000000001e+252
+test util-16.1.17.253 {8.4 compatible formatting of doubles} \
+    {expr 1e253} \
+    9.9999999999999994e+252
+test util-16.1.17.254 {8.4 compatible formatting of doubles} \
+    {expr 1e254} \
+    9.9999999999999994e+253
+test util-16.1.17.255 {8.4 compatible formatting of doubles} \
+    {expr 1e255} \
+    9.9999999999999999e+254
+test util-16.1.17.256 {8.4 compatible formatting of doubles} \
+    {expr 1e256} \
+    1e+256
+test util-16.1.17.257 {8.4 compatible formatting of doubles} \
+    {expr 1e257} \
+    1e+257
+test util-16.1.17.258 {8.4 compatible formatting of doubles} \
+    {expr 1e258} \
+    1.0000000000000001e+258
+test util-16.1.17.259 {8.4 compatible formatting of doubles} \
+    {expr 1e259} \
+    9.9999999999999993e+258
+test util-16.1.17.260 {8.4 compatible formatting of doubles} \
+    {expr 1e260} \
+    1.0000000000000001e+260
+test util-16.1.17.261 {8.4 compatible formatting of doubles} \
+    {expr 1e261} \
+    9.9999999999999993e+260
+test util-16.1.17.262 {8.4 compatible formatting of doubles} \
+    {expr 1e262} \
+    1e+262
+test util-16.1.17.263 {8.4 compatible formatting of doubles} \
+    {expr 1e263} \
+    1e+263
+test util-16.1.17.264 {8.4 compatible formatting of doubles} \
+    {expr 1e264} \
+    1e+264
+test util-16.1.17.265 {8.4 compatible formatting of doubles} \
+    {expr 1e265} \
+    1.0000000000000001e+265
+test util-16.1.17.266 {8.4 compatible formatting of doubles} \
+    {expr 1e266} \
+    1e+266
+test util-16.1.17.267 {8.4 compatible formatting of doubles} \
+    {expr 1e267} \
+    9.9999999999999997e+266
+test util-16.1.17.268 {8.4 compatible formatting of doubles} \
+    {expr 1e268} \
+    9.9999999999999997e+267
+test util-16.1.17.269 {8.4 compatible formatting of doubles} \
+    {expr 1e269} \
+    1e+269
+test util-16.1.17.270 {8.4 compatible formatting of doubles} \
+    {expr 1e270} \
+    1e+270
+test util-16.1.17.271 {8.4 compatible formatting of doubles} \
+    {expr 1e271} \
+    9.9999999999999995e+270
+test util-16.1.17.272 {8.4 compatible formatting of doubles} \
+    {expr 1e272} \
+    1.0000000000000001e+272
+test util-16.1.17.273 {8.4 compatible formatting of doubles} \
+    {expr 1e273} \
+    9.9999999999999995e+272
+test util-16.1.17.274 {8.4 compatible formatting of doubles} \
+    {expr 1e274} \
+    9.9999999999999992e+273
+test util-16.1.17.275 {8.4 compatible formatting of doubles} \
+    {expr 1e275} \
+    9.9999999999999996e+274
+test util-16.1.17.276 {8.4 compatible formatting of doubles} \
+    {expr 1e276} \
+    1.0000000000000001e+276
+test util-16.1.17.277 {8.4 compatible formatting of doubles} \
+    {expr 1e277} \
+    1e+277
+test util-16.1.17.278 {8.4 compatible formatting of doubles} \
+    {expr 1e278} \
+    9.9999999999999996e+277
+test util-16.1.17.279 {8.4 compatible formatting of doubles} \
+    {expr 1e279} \
+    1.0000000000000001e+279
+test util-16.1.17.280 {8.4 compatible formatting of doubles} \
+    {expr 1e280} \
+    1e+280
+test util-16.1.17.281 {8.4 compatible formatting of doubles} \
+    {expr 1e281} \
+    1e+281
+test util-16.1.17.282 {8.4 compatible formatting of doubles} \
+    {expr 1e282} \
+    1e+282
+test util-16.1.17.283 {8.4 compatible formatting of doubles} \
+    {expr 1e283} \
+    9.9999999999999996e+282
+test util-16.1.17.284 {8.4 compatible formatting of doubles} \
+    {expr 1e284} \
+    1.0000000000000001e+284
+test util-16.1.17.285 {8.4 compatible formatting of doubles} \
+    {expr 1e285} \
+    9.9999999999999998e+284
+test util-16.1.17.286 {8.4 compatible formatting of doubles} \
+    {expr 1e286} \
+    1e+286
+test util-16.1.17.287 {8.4 compatible formatting of doubles} \
+    {expr 1e287} \
+    1.0000000000000001e+287
+test util-16.1.17.288 {8.4 compatible formatting of doubles} \
+    {expr 1e288} \
+    1e+288
+test util-16.1.17.289 {8.4 compatible formatting of doubles} \
+    {expr 1e289} \
+    1.0000000000000001e+289
+test util-16.1.17.290 {8.4 compatible formatting of doubles} \
+    {expr 1e290} \
+    1.0000000000000001e+290
+test util-16.1.17.291 {8.4 compatible formatting of doubles} \
+    {expr 1e291} \
+    9.9999999999999996e+290
+test util-16.1.17.292 {8.4 compatible formatting of doubles} \
+    {expr 1e292} \
+    1e+292
+test util-16.1.17.293 {8.4 compatible formatting of doubles} \
+    {expr 1e293} \
+    9.9999999999999992e+292
+test util-16.1.17.294 {8.4 compatible formatting of doubles} \
+    {expr 1e294} \
+    1.0000000000000001e+294
+test util-16.1.17.295 {8.4 compatible formatting of doubles} \
+    {expr 1e295} \
+    9.9999999999999998e+294
+test util-16.1.17.296 {8.4 compatible formatting of doubles} \
+    {expr 1e296} \
+    9.9999999999999998e+295
+test util-16.1.17.297 {8.4 compatible formatting of doubles} \
+    {expr 1e297} \
+    1e+297
+test util-16.1.17.298 {8.4 compatible formatting of doubles} \
+    {expr 1e298} \
+    9.9999999999999996e+297
+test util-16.1.17.299 {8.4 compatible formatting of doubles} \
+    {expr 1e299} \
+    1.0000000000000001e+299
+test util-16.1.17.300 {8.4 compatible formatting of doubles} \
+    {expr 1e300} \
+    1.0000000000000001e+300
+test util-16.1.17.301 {8.4 compatible formatting of doubles} \
+    {expr 1e301} \
+    1.0000000000000001e+301
+test util-16.1.17.302 {8.4 compatible formatting of doubles} \
+    {expr 1e302} \
+    1.0000000000000001e+302
+test util-16.1.17.303 {8.4 compatible formatting of doubles} \
+    {expr 1e303} \
+    1e+303
+test util-16.1.17.304 {8.4 compatible formatting of doubles} \
+    {expr 1e304} \
+    9.9999999999999994e+303
+test util-16.1.17.305 {8.4 compatible formatting of doubles} \
+    {expr 1e305} \
+    9.9999999999999994e+304
+test util-16.1.17.306 {8.4 compatible formatting of doubles} \
+    {expr 1e306} \
+    1e+306
+test util-16.1.17.307 {8.4 compatible formatting of doubles} \
+    {expr 1e307} \
+    9.9999999999999999e+306
+
+test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
+    set r {}
+    foreach {input} {
+	0x1ffffffffffffc000
+	0x1ffffffffffffc800
+	0x1ffffffffffffd000
+	0x1ffffffffffffd800
+	0x1ffffffffffffe000
+	0x1ffffffffffffe800
+	0x1fffffffffffff000
+	0x1fffffffffffff800
+    } {
+	binary scan [binary format q [expr double($input)]] wu x
+	lappend r [format %#llx $x]
+	binary scan [binary format q [expr double(-$input)]] wu x
+	lappend r [format %#llx $x]
+    }
+    set r
+} [list {*}{
+    0x43fffffffffffffc 0xc3fffffffffffffc
+    0x43fffffffffffffc 0xc3fffffffffffffc
+    0x43fffffffffffffd 0xc3fffffffffffffd
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43fffffffffffffe 0xc3fffffffffffffe
+    0x43ffffffffffffff 0xc3ffffffffffffff
+    0x4400000000000000 0xc400000000000000
+}]
+
+set ::tcl_precision $saved_precision
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

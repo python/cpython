@@ -1,0 +1,49 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH lappend n "" Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lappend \- Append list elements onto a variable
+.SH SYNOPSIS
+\fBlappend \fIvarName \fR?\fIvalue value value ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command treats the variable given by \fIvarName\fR as a list
+and appends each of the \fIvalue\fR arguments to that list as a separate
+element, with spaces between elements.
+If \fIvarName\fR does not exist, it is created as a list with elements
+given by the \fIvalue\fR arguments.
+\fBLappend\fR is similar to \fBappend\fR except that the \fIvalue\fRs
+are appended as list elements rather than raw text.
+This command provides a relatively efficient way to build up
+large lists.  For example,
+.QW "\fBlappend a $b\fR"
+is much more efficient than
+.QW "\fBset a [concat $a [list $b]]\fR"
+when \fB$a\fR is long.
+.SH EXAMPLE
+.PP
+Using \fBlappend\fR to build up a list of numbers.
+.PP
+.CS
+% set var 1
+1
+% \fBlappend\fR var 2
+1 2
+% \fBlappend\fR var 3 4 5
+1 2 3 4 5
+.CE
+.SH "SEE ALSO"
+list(n), lindex(n), linsert(n), llength(n), lset(n),
+lsort(n), lrange(n)
+.SH KEYWORDS
+append, element, list, variable

@@ -1,0 +1,97 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_SplitPath 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SplitPath, Tcl_JoinPath, Tcl_GetPathType \- manipulate platform-dependent file paths
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_SplitPath\fR(\fIpath, argcPtr, argvPtr\fR)
+.sp
+char *
+\fBTcl_JoinPath\fR(\fIargc, argv, resultPtr\fR)
+.sp
+Tcl_PathType
+\fBTcl_GetPathType\fR(\fIpath\fR)
+.SH ARGUMENTS
+.AS "const char *const" ***argvPtr in/out
+.AP "const char" *path in
+File path in a form appropriate for the current platform (see the
+\fBfilename\fR manual entry for acceptable forms for path names).
+.AP int *argcPtr out
+Filled in with number of path elements in \fIpath\fR.
+.AP "const char" ***argvPtr out
+\fI*argvPtr\fR will be filled in with the address of an array of
+pointers to the strings that are the extracted elements of \fIpath\fR.
+There will be \fI*argcPtr\fR valid entries in the array, followed by
+a NULL entry.
+.AP int argc in
+Number of elements in \fIargv\fR.
+.AP "const char *const" *argv in
+Array of path elements to merge together into a single path.
+.AP Tcl_DString *resultPtr in/out
+A pointer to an initialized \fBTcl_DString\fR to which the result of
+\fBTcl_JoinPath\fR will be appended.
+.BE
+
+.SH DESCRIPTION
+.PP
+These procedures have been superseded by the Tcl-value-aware procedures in
+the \fBFileSystem\fR man page, which are more efficient.
+.PP
+These procedures may be used to disassemble and reassemble file
+paths in a platform independent manner: they provide C-level access to
+the same functionality as the \fBfile split\fR, \fBfile join\fR, and
+\fBfile pathtype\fR commands.
+.PP
+\fBTcl_SplitPath\fR breaks a path into its constituent elements,
+returning an array of pointers to the elements using \fIargcPtr\fR and
+\fIargvPtr\fR.  The area of memory pointed to by \fI*argvPtr\fR is
+dynamically allocated; in addition to the array of pointers, it also
+holds copies of all the path elements.  It is the caller's
+responsibility to free all of this storage.
+For example, suppose that you have called \fBTcl_SplitPath\fR with the
+following code:
+.PP
+.CS
+int argc;
+char *path;
+char **argv;
+\&...
+Tcl_SplitPath(string, &argc, &argv);
+.CE
+.PP
+Then you should eventually free the storage with a call like the
+following:
+.PP
+.CS
+Tcl_Free((char *) argv);
+.CE
+.PP
+\fBTcl_JoinPath\fR is the inverse of \fBTcl_SplitPath\fR: it takes a
+collection of path elements given by \fIargc\fR and \fIargv\fR and
+generates a result string that is a properly constructed path. The
+result string is appended to \fIresultPtr\fR.  \fIResultPtr\fR must
+refer to an initialized \fBTcl_DString\fR.
+.PP
+If the result of \fBTcl_SplitPath\fR is passed to \fBTcl_JoinPath\fR,
+the result will refer to the same location, but may not be in the same
+form.  This is because \fBTcl_SplitPath\fR and \fBTcl_JoinPath\fR
+eliminate duplicate path separators and return a normalized form for
+each platform.
+.PP
+\fBTcl_GetPathType\fR returns the type of the specified \fIpath\fR,
+where \fBTcl_PathType\fR is one of \fBTCL_PATH_ABSOLUTE\fR,
+\fBTCL_PATH_RELATIVE\fR, or \fBTCL_PATH_VOLUME_RELATIVE\fR.  See the
+\fBfilename\fR manual entry for a description of the path types for
+each platform.
+
+.SH KEYWORDS
+file, filename, join, path, split, type

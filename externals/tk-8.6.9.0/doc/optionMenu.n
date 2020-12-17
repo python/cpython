@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH tk_optionMenu n 4.0 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tk_optionMenu \- Create an option menubutton and its menu
+.SH SYNOPSIS
+\fBtk_optionMenu \fIpathName varName value \fR?\fIvalue value ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This procedure creates an option menubutton whose name is \fIpathName\fR,
+plus an associated menu.
+Together they allow the user to select one of the values
+given by the \fIvalue\fR arguments.
+The current value will be stored in the global variable whose
+name is given by \fIvarName\fR and it will also be displayed as the label
+in the option menubutton.
+The user can click on the menubutton to display a menu containing
+all of the \fIvalue\fRs and thereby select a new value.
+Once a new value is selected, it will be stored in the variable
+and appear in the option menubutton.
+The current value can also be changed by setting the variable.
+.PP
+The return value from \fBtk_optionMenu\fR is the name of the menu
+associated with \fIpathName\fR, so that the caller can change its
+configuration options or manipulate it in other ways.
+.SH EXAMPLE
+.PP
+.CS
+tk_optionMenu .foo myVar Foo Bar Boo Spong Wibble
+pack .foo
+.CE
+.SH KEYWORDS
+option menu
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

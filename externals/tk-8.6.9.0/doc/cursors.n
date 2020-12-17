@@ -1,0 +1,191 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+'\" Copyright (c) 2006-2007 Daniel A. Steffen <das@users.sourceforge.net>
+'\" 
+.TH cursors n 8.3 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+cursors \- mouse cursors available in Tk
+.BE
+.SH DESCRIPTION
+.PP
+The \fB\-cursor\fR widget option allows a Tk programmer to change the
+mouse cursor for a particular widget.  The cursor names recognized by
+Tk on all platforms are:
+.CS
+X_cursor
+arrow
+based_arrow_down
+based_arrow_up
+boat
+bogosity
+bottom_left_corner
+bottom_right_corner
+bottom_side
+bottom_tee
+box_spiral
+center_ptr
+circle
+clock
+coffee_mug
+cross
+cross_reverse
+crosshair
+diamond_cross
+dot
+dotbox
+double_arrow
+draft_large
+draft_small
+draped_box
+exchange
+fleur
+gobbler
+gumby
+hand1
+hand2
+heart
+icon
+iron_cross
+left_ptr
+left_side
+left_tee
+leftbutton
+ll_angle
+lr_angle
+man
+middlebutton
+mouse
+none
+pencil
+pirate
+plus
+question_arrow
+right_ptr
+right_side
+right_tee
+rightbutton
+rtl_logo
+sailboat
+sb_down_arrow
+sb_h_double_arrow
+sb_left_arrow
+sb_right_arrow
+sb_up_arrow
+sb_v_double_arrow
+shuttle
+sizing
+spider
+spraycan
+star
+target
+tcross
+top_left_arrow
+top_left_corner
+top_right_corner
+top_side
+top_tee
+trek
+ul_angle
+umbrella
+ur_angle
+watch
+xterm
+.CE
+.PP
+The \fBnone\fR cursor can be specified to eliminate the cursor.
+.SH "PORTABILITY ISSUES"
+.TP
+\fBWindows\fR
+On Windows systems, the following cursors are mapped to native cursors:
+.RS
+.CS
+arrow
+center_ptr
+crosshair
+fleur
+ibeam
+icon
+none
+sb_h_double_arrow
+sb_v_double_arrow
+watch
+xterm
+.CE
+And the following additional cursors are available:
+.CS
+no
+starting
+size
+size_ne_sw
+size_ns
+size_nw_se
+size_we
+uparrow
+wait
+.CE
+.RE
+.TP
+\fBMac OS X\fR
+On Mac OS X systems, the following cursors are mapped to native cursors:
+.RS
+.CS
+arrow
+top_left_arrow
+left_ptr
+cross
+crosshair
+tcross
+ibeam
+none
+xterm
+.CE
+And the following additional native cursors are available:
+.CS
+copyarrow
+aliasarrow
+contextualmenuarrow
+movearrow
+text
+cross-hair
+hand
+openhand
+closedhand
+fist
+pointinghand
+resize
+resizeleft
+resizeright
+resizeleftright
+resizeup
+resizedown
+resizeupdown
+resizebottomleft
+resizetopleft
+resizebottomright
+resizetopright
+notallowed
+poof
+wait
+countinguphand
+countingdownhand
+countingupanddownhand
+spinning
+help
+bucket
+cancel
+eyedrop
+eyedrop-full
+zoom-in
+zoom-out
+.CE
+.RE
+.SH KEYWORDS
+cursor, option
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

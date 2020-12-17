@@ -1,0 +1,66 @@
+'\"
+'\" Copyright (c) 1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_SetErrno 3 8.3 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_SetErrno, Tcl_GetErrno, Tcl_ErrnoId, Tcl_ErrnoMsg \- manipulate errno to store and retrieve error codes
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_SetErrno\fR(\fIerrorCode\fR)
+.sp
+int
+\fBTcl_GetErrno\fR()
+.sp
+const char *
+\fBTcl_ErrnoId\fR()
+.sp
+const char *
+\fBTcl_ErrnoMsg\fR(\fIerrorCode\fR)
+.sp
+.SH ARGUMENTS
+.AS int errorCode
+.AP int errorCode in
+A POSIX error code such as \fBENOENT\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBTcl_SetErrno\fR and \fBTcl_GetErrno\fR provide portable access
+to the \fBerrno\fR variable, which is used to record a POSIX error
+code after system calls and other operations such as \fBTcl_Gets\fR.
+These procedures are necessary because global variable accesses cannot
+be made across module boundaries on some platforms.
+.PP
+\fBTcl_SetErrno\fR sets the \fBerrno\fR variable to the value of the
+\fIerrorCode\fR argument
+C procedures that wish to return error information to their callers
+via \fBerrno\fR should call \fBTcl_SetErrno\fR rather than setting
+\fBerrno\fR directly.
+.PP
+\fBTcl_GetErrno\fR returns the current value of \fBerrno\fR.
+Procedures wishing to access \fBerrno\fR should call this procedure
+instead of accessing \fBerrno\fR directly.
+.PP
+\fBTcl_ErrnoId\fR and \fBTcl_ErrnoMsg\fR return string
+representations of \fBerrno\fR values.  \fBTcl_ErrnoId\fR
+returns a machine-readable textual identifier such as
+.QW EACCES
+that corresponds to the current value of \fBerrno\fR.
+\fBTcl_ErrnoMsg\fR returns a human-readable string such as
+.QW "permission denied"
+that corresponds to the value of its
+\fIerrorCode\fR argument.  The \fIerrorCode\fR argument is
+typically the value returned by \fBTcl_GetErrno\fR.
+The strings returned by these functions are
+statically allocated and the caller must not free or modify them.
+
+.SH KEYWORDS
+errno, error code, global variables

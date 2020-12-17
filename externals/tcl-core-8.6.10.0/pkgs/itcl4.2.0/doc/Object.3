@@ -1,0 +1,38 @@
+'\"
+'\" Copyright (c) 1993-1998  Lucent Technologies, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Itcl_CreateObject 3 3.0 itcl "[incr\ Tcl] Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Itcl_CreateObject, Itcl_DeleteObject, Itcl_FindObject, Itcl_IsObject, Itcl_IsObjectIsa \- Manipulate an class instance.
+.SH SYNOPSIS
+.nf
+\fB#include <itclInt.h>\fR
+
+void
+\fBItcl_PreserveData\fR(\fIcdata\fR)
+
+void
+\fBItcl_ReleaseData\fR(\fIcdata\fR)
+
+void
+\fBItcl_EventuallyFree\fR(\fIcdata, fproc\fR)
+.fi
+.SH ARGUMENTS
+.AP Tcl_FreeProc *fproc in
+Address of function to call when the block is to be freed.
+.AP ClientData clientData in
+Arbitrary one-word value.
+.BE
+
+.SH DESCRIPTION
+.PP
+
+.SH KEYWORDS
+free, memory
+

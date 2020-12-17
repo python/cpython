@@ -1,0 +1,464 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.Deployment.WindowsInstaller.Linq</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseTableAttribute">
+            <summary>
+            Apply to a subclass of QRecord to indicate the name of
+            the table the record type is to be used with.
+            </summary>
+            <remarks>
+            If this attribute is not used on a record type, the default
+            table name will be derived from the record type name. (An
+            optional underscore suffix is stripped.)
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseTableAttribute.#ctor(System.String)">
+            <summary>
+            Creates a new DatabaseTableAttribute for the specified table.
+            </summary>
+            <param name="table">name of the table associated with the record type</param>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseTableAttribute.Table">
+            <summary>
+            Gets or sets the table associated with the record type.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseColumnAttribute">
+            <summary>
+            Apply to a property on a subclass of QRecord to indicate
+            the name of the column the property is to be associated with.
+            </summary>
+            <remarks>
+            If this attribute is not used on a property, the default
+            column name will be the same as the property name.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseColumnAttribute.#ctor(System.String)">
+            <summary>
+            Creates a new DatabaseColumnAttribute which maps a
+            record property to a column.
+            </summary>
+            <param name="column">name of the column associated with the property</param>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseColumnAttribute.Column">
+            <summary>
+            Gets or sets the column associated with the record property.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.Queryable">
+            <summary>
+            Allows any Database instance to be converted into a queryable database.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.Queryable.AsQueryable(Microsoft.Deployment.WindowsInstaller.Database)">
+            <summary>
+            Converts any Database instance into a queryable database.
+            </summary>
+            <param name="db"></param>
+            <returns>Queryable database instance that operates on the same
+            MSI handle.</returns>
+            <remarks>
+            This extension method is meant for convenient on-the-fly conversion.
+            If the existing database instance already happens to be a QDatabase,
+            then it is returned unchanged. Otherwise since the new database
+            carries the same MSI handle, only one of the instances needs to be
+            closed, not both.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase">
+            <summary>
+            Queryable MSI database - extends the base Database class with
+            LINQ query functionality along with predefined entity types
+            for common tables.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.#ctor(System.String)">
+            <summary>
+            Opens an existing database in read-only mode.
+            </summary>
+            <param name="filePath">Path to the database file.</param>
+            <exception cref="T:Microsoft.Deployment.WindowsInstaller.InstallerException">the database could not be created/opened</exception>
+            <remarks>
+            Because this constructor initiates database access, it cannot be used with a
+            running installation.
+            <para>The Database object should be <see cref="M:Microsoft.Deployment.WindowsInstaller.InstallerHandle.Close"/>d after use.
+            The finalizer will close the handle if it is still open, however due to the nondeterministic
+            nature of finalization it is best that the handle be closed manually as soon as it is no
+            longer needed, as leaving lots of unused handles open can degrade performance.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.#ctor(System.String,System.String)">
+            <summary>
+            Opens an existing database with another database as output.
+            </summary>
+            <param name="filePath">Path to the database to be read.</param>
+            <param name="outputPath">Open mode for the database</param>
+            <returns>Database object representing the created or opened database</returns>
+            <exception cref="T:Microsoft.Deployment.WindowsInstaller.InstallerException">the database could not be created/opened</exception>
+            <remarks>
+            When a database is opened as the output of another database, the summary information stream
+            of the output database is actually a read-only mirror of the original database and thus cannot
+            be changed. Additionally, it is not persisted with the database. To create or modify the
+            summary information for the output database it must be closed and re-opened.
+            <para>The returned Database object should be <see cref="M:Microsoft.Deployment.WindowsInstaller.InstallerHandle.Close"/>d after use.
+            The finalizer will close the handle if it is still open, however due to the nondeterministic
+            nature of finalization it is best that the handle be closed manually as soon as it is no
+            longer needed, as leaving lots of unused handles open can degrade performance.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.#ctor(System.String,Microsoft.Deployment.WindowsInstaller.DatabaseOpenMode)">
+            <summary>
+            Opens an existing database or creates a new one.
+            </summary>
+            <param name="filePath">Path to the database file. If an empty string
+            is supplied, a temporary database is created that is not persisted.</param>
+            <param name="mode">Open mode for the database</param>
+            <exception cref="T:Microsoft.Deployment.WindowsInstaller.InstallerException">the database could not be created/opened</exception>
+            <remarks>
+            To make and save changes to a database first open the database in transaction,
+            create or, or direct mode. After making the changes, always call the Commit method
+            before closing the database handle. The Commit method flushes all buffers.
+            <para>Always call the Commit method on a database that has been opened in direct
+            mode before closing the database. Failure to do this may corrupt the database.</para>
+            <para>Because this constructor initiates database access, it cannot be used with a
+            running installation.</para>
+            <para>The Database object should be <see cref="M:Microsoft.Deployment.WindowsInstaller.InstallerHandle.Close"/>d after use.
+            The finalizer will close the handle if it is still open, however due to the nondeterministic
+            nature of finalization it is best that the handle be closed manually as soon as it is no
+            longer needed, as leaving lots of unused handles open can degrade performance.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.#ctor(System.IntPtr,System.Boolean,System.String,Microsoft.Deployment.WindowsInstaller.DatabaseOpenMode)">
+            <summary>
+            Creates a new database from an MSI handle.
+            </summary>
+            <param name="handle">Native MSI database handle.</param>
+            <param name="ownsHandle">True if the handle should be closed
+            when the database object is disposed</param>
+            <param name="filePath">Path of the database file, if known</param>
+            <param name="openMode">Mode the handle was originally opened in</param>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Log">
+            <summary>
+            Gets or sets a log where all MSI SQL queries are written.
+            </summary>
+            <remarks>
+            The log can be useful for debugging, or simply to watch the LINQ magic in action.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Item(System.String)">
+            <summary>
+            Gets a queryable table from the datbaase.
+            </summary>
+            <param name="table">name of the table</param>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Components">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.CreateFolders">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.CustomActions">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Directories">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.DuplicateFiles">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Features">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.FeatureComponents">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Files">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.FileHashes">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.InstallExecuteSequences">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.InstallUISequences">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.LaunchConditions">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Medias">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Properties">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.Registries">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QDatabase.RemoveFiles">
+            <summary>Queryable standard table with predefined specialized record type.</summary>
+        </member>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.QRecord">
+            <summary>
+            Generic record entity for queryable databases,
+            and base for strongly-typed entity subclasses.
+            </summary>
+            <remarks>
+            Several predefined specialized subclasses are provided for common
+            standard tables. Subclasses for additional standard tables
+            or custom tables are not necessary, but they are easy to create
+            and make the coding experience much nicer.
+            <para>When creating subclasses, the following attributes may be
+            useful: <see cref="T:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseTableAttribute"/>,
+            <see cref="T:Microsoft.Deployment.WindowsInstaller.Linq.DatabaseColumnAttribute"/></para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.#ctor">
+            <summary>
+            Do not call. Use QTable.NewRecord() instead.
+            </summary>
+            <remarks>
+            Subclasses must also provide a public parameterless constructor.
+            <para>QRecord constructors are only public due to implementation
+            reasons (to satisfy the new() constraint on the QTable generic
+            class). They are not intended to be called by user code other than
+            a subclass constructor. If the constructor is invoked directly,
+            the record instance will not be properly initialized (associated
+            with a database table) and calls to methods on the instance
+            will throw a NullReferenceException.</para>
+            </remarks>
+            <seealso cref="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.NewRecord"/>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.FieldCount">
+            <summary>
+            Gets the number of fields in the record.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Item(System.String)">
+            <summary>
+            Gets or sets a record field.
+            </summary>
+            <param name="field">column name of the field</param>
+            <remarks>
+            Setting a field value will automatically update the database.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Item(System.Int32)">
+            <summary>
+            Gets or sets a record field.
+            </summary>
+            <param name="index">zero-based column index of the field</param>
+            <remarks>
+            Setting a field value will automatically update the database.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.I(System.Int32)">
+            <summary>
+            Used by subclasses to get a field as an integer.
+            </summary>
+            <param name="index">zero-based column index of the field</param>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.NI(System.Int32)">
+            <summary>
+            Used by subclasses to get a field as a nullable integer.
+            </summary>
+            <param name="index">zero-based column index of the field</param>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.ToString">
+            <summary>
+            Dumps all record fields to a string.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Update(System.Collections.Generic.IList{System.String},System.Collections.Generic.IList{System.String})">
+            <summary>
+            Update multiple fields in the record (and the database).
+            </summary>
+            <param name="fields">column names of fields to update</param>
+            <param name="values">new values for each field being updated</param>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Update(System.Collections.Generic.IList{System.Int32},System.Collections.Generic.IList{System.String})">
+            <summary>
+            Update multiple fields in the record (and the database).
+            </summary>
+            <param name="indexes">column indexes of fields to update</param>
+            <param name="values">new values for each field being updated</param>
+            <remarks>
+            The record (primary keys) must already exist in the table.
+            <para>Updating primary key fields is not yet implemented; use Delete()
+            and Insert() instead.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Insert">
+            <summary>
+            Inserts the record in the database.
+            </summary>
+            <remarks>
+            The record (primary keys) may not already exist in the table.
+            <para>Use <see cref="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.NewRecord"/> to get a new 
+            record. Prmary keys and all required fields
+            must be filled in before insertion.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Insert(System.Boolean)">
+            <summary>
+            Inserts the record into the table.
+            </summary>
+            <param name="temporary">true if the record is temporarily
+            inserted, to be visible only as long as the database is open</param>
+            <remarks>
+            The record (primary keys) may not already exist in the table.
+            <para>Use <see cref="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.NewRecord"/> to get a new 
+            record. Prmary keys and all required fields
+            must be filled in before insertion.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Delete">
+            <summary>
+            Deletes the record from the table if it exists.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Refresh">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Assign">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Merge">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.Validate">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.ValidateNew">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.ValidateFields">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QRecord.ValidateDelete">
+            <summary>
+            Not yet implemented.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1">
+            <summary>
+            Represents one table in a LINQ-queryable Database.
+            </summary>
+            <typeparam name="TRecord">type that represents one record in the table</typeparam>
+            <remarks>
+            This class is the primary gateway to all LINQ to MSI query functionality.
+            <para>The TRecord generic parameter may be the general <see cref="T:Microsoft.Deployment.WindowsInstaller.Linq.QRecord" />
+            class, or a specialized subclass of QRecord.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.InferTableName">
+            <summary>
+            Infers the name of the table this instance will be
+            associated with.
+            </summary>
+            <returns>table name</returns>
+            <remarks>
+            The table name is retrieved from a DatabaseTableAttribute
+            on the record type if it exists; otherwise the name is
+            derived from the name of the record type itself.
+            (An optional underscore suffix on the record type name is dropped.)
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.#ctor(Microsoft.Deployment.WindowsInstaller.Linq.QDatabase)">
+            <summary>
+            Creates a new QTable, inferring the table name
+            from the name of the record type parameter.
+            </summary>
+            <param name="db">database that contains the table</param>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.#ctor(Microsoft.Deployment.WindowsInstaller.Linq.QDatabase,System.String)">
+            <summary>
+            Creates a new QTable with an explicit table name.
+            </summary>
+            <param name="db">database that contains the table</param>
+            <param name="table">name of the table</param>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.TableInfo">
+            <summary>
+            Gets schema information about the table.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.Database">
+            <summary>
+            Gets the database this table is associated with.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.GetEnumerator">
+            <summary>
+            Enumerates over all records in the table.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Deployment.WindowsInstaller.Linq.QTable`1.NewRecord">
+            <summary>
+            Creates a new record that can be inserted into this table.
+            </summary>
+            <returns>a record with all fields initialized to null</returns>
+            <remarks>
+            Primary keys and required fields must be filled in with
+            non-null values before the record can be inserted.
+            <para>The record is tied to this table in this database;
+            it cannot be inserted into another table or database.</para>
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.WindowsInstaller.Linq.Query`1">
+            <summary>
+            Implements the LINQ to MSI query functionality.
+            </summary>
+            <typeparam name="T">the result type of the current query --
+            either some kind of QRecord, or some projection of record data</typeparam>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.WixDistribution">
+            <summary>
+            Distribution specific strings.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.NewsUrl">
+            <summary>
+            News URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.ShortProduct">
+            <summary>
+            Short product name for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.SupportUrl">
+            <summary>
+            Support URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.TelemetryUrlFormat">
+            <summary>
+            Telemetry URL format for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.VSExtensionsLandingUrl">
+            <summary>
+            VS Extensions Landing page Url for the distribution.
+            </summary>
+        </member>
+    </members>
+</doc>

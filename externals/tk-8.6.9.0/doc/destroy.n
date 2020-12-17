@@ -1,0 +1,45 @@
+'\"
+'\" Copyright (c) 1990 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH destroy n "" Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+destroy \- Destroy one or more windows
+.SH SYNOPSIS
+\fBdestroy \fR?\fIwindow window ...\fR?
+.BE
+.SH DESCRIPTION
+.PP
+This command deletes the windows given by the
+\fIwindow\fR arguments, plus all of their descendants.
+If a \fIwindow\fR
+.QW .
+is deleted then all windows will be destroyed and the application will
+(normally) exit.
+The \fIwindow\fRs are destroyed in order, and if an error occurs
+in destroying a window the command aborts without destroying the
+remaining windows.
+No error is returned if \fIwindow\fR does not exist.
+.SH EXAMPLE
+.PP
+Destroy all checkbuttons that are direct children of the given widget:
+.CS
+proc killCheckbuttonChildren {parent} {
+   foreach w [winfo children $parent] {
+      if {[winfo class $w] eq "Checkbutton"} {
+         \fBdestroy\fR $w
+      }
+   }
+}
+.CE
+.SH KEYWORDS
+application, destroy, window
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

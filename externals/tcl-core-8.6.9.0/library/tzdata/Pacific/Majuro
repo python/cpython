@@ -1,0 +1,7 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Majuro) {
+    {-9223372036854775808 41088 0 LMT}
+    {-2177493888 39600 0 +11}
+    {-7988400 43200 0 +12}
+}

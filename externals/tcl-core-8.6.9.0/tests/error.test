@@ -1,0 +1,1211 @@
+# Commands covered:  error, catch, throw, try
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+testConstraint memory [llength [info commands memory]]
+customMatch pairwise {apply {{a b} {
+    string equal [lindex $b 0] [lindex $b 1]
+}}}
+namespace eval ::tcl::test::error {
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
+
+proc foo {} {
+    global errorInfo
+    set a [catch {format [error glorp2]} b]
+    error {Human-generated}
+}
+
+proc foo2 {} {
+    global errorInfo
+    set a [catch {format [error glorp2]} b]
+    error {Human-generated} $errorInfo
+}
+
+# Catch errors occurring in commands and errors from "error" command
+
+test error-1.1 {simple errors from commands} {
+    catch {format [string index]} b
+} 1
+test error-1.2 {simple errors from commands} {
+    catch {format [string index]} b
+    set b
+} {wrong # args: should be "string index string charIndex"}
+test error-1.3 {simple errors from commands} {
+    catch {format [string index]} b
+    set ::errorInfo
+    # This used to return '... while executing ...', but string index is fully
+    # compiled as of 8.4a3
+} {wrong # args: should be "string index string charIndex"
+    while executing
+"string index"}
+test error-1.4 {simple errors from commands} {
+    catch {error glorp} b
+} 1
+test error-1.5 {simple errors from commands} {
+    catch {error glorp} b
+    set b
+} glorp
+test error-1.6 {simple errors from commands} {
+    catch {catch a b c d} b
+} 1
+test error-1.7 {simple errors from commands} {
+    catch {catch a b c d} b
+    set b
+} {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
+test error-1.8 {simple errors from commands} {
+    # This test is non-portable: it generates a memory fault on machines like
+    # DEC Alphas (infinite recursion overflows stack?)
+    #
+    # That claims sounds like a bug to be fixed rather than a portability
+    # problem. Anyhow, I believe it's out of date (bug's been fixed) so this
+    # test is re-enabled.
+    proc p {} {
+        uplevel 1 catch p error
+    }
+    p
+} 0
+
+# Check errors nested in procedures. Also check the optional argument to
+# "error" to generate a new error trace.
+
+test error-2.1 {errors in nested procedures} {
+    catch foo b
+} 1
+test error-2.2 {errors in nested procedures} {
+    catch foo b
+    set b
+} {Human-generated}
+test error-2.3 {errors in nested procedures} {
+    catch foo b
+    set ::errorInfo
+} {Human-generated
+    while executing
+"error {Human-generated}"
+    (procedure "foo" line 4)
+    invoked from within
+"foo"}
+test error-2.4 {errors in nested procedures} {
+    catch foo2 b
+} 1
+test error-2.5 {errors in nested procedures} {
+    catch foo2 b
+    set b
+} {Human-generated}
+test error-2.6 {errors in nested procedures} {
+    catch foo2 b
+    set ::errorInfo
+} {glorp2
+    while executing
+"error glorp2"
+    (procedure "foo2" line 3)
+    invoked from within
+"foo2"}
+
+# Error conditions related to "catch".
+
+test error-3.1 {errors in catch command} {
+    list [catch {catch} msg] $msg
+} {1 {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}}
+test error-3.2 {errors in catch command} {
+    list [catch {catch a b c} msg] $msg
+} {0 1}
+test error-3.3 {errors in catch command} {
+    catch {unset a}
+    set a(0) 22
+    list [catch {catch {format 44} a} msg] $msg
+} {1 {can't set "a": variable is array}}
+catch {unset a}
+
+# More tests related to errorInfo and errorCode
+
+test error-4.1 {errorInfo and errorCode variables} {
+    list [catch {error msg1 msg2 msg3} msg] $msg $::errorInfo $::errorCode
+} {1 msg1 msg2 msg3}
+test error-4.2 {errorInfo and errorCode variables} {
+    list [catch {error msg1 {} msg3} msg] $msg $::errorInfo $::errorCode
+} {1 msg1 {msg1
+    while executing
+"error msg1 {} msg3"} msg3}
+test error-4.3 {errorInfo and errorCode variables} {
+    list [catch {error msg1 {}} msg] $msg $::errorInfo $::errorCode
+} {1 msg1 {msg1
+    while executing
+"error msg1 {}"} NONE}
+test error-4.4 {errorInfo and errorCode variables} {
+    set ::errorCode bogus
+    list [catch {error msg1} msg] $msg $::errorInfo $::errorCode
+} {1 msg1 {msg1
+    while executing
+"error msg1"} NONE}
+test error-4.5 {errorInfo and errorCode variables} {
+    set ::errorCode bogus
+    list [catch {error msg1 msg2 {}} msg] $msg $::errorInfo $::errorCode
+} {1 msg1 msg2 {}}
+
+test error-4.6 {errorstack via info } -body {
+    proc f x {g $x$x}
+    proc g x {error G:$x}
+    catch {f 12}
+    info errorstack
+} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+test error-4.7 {errorstack via options dict } -body {
+    proc f x {g $x$x}
+    proc g x {error G:$x}
+    catch {f 12} m d
+    dict get $d -errorstack
+} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+test error-4.8 {errorstack from exec traces} -body {
+    proc foo args {}
+    proc goo {} foo
+    trace add execution foo enter {error bar;#}
+    catch goo m d
+    dict get $d -errorstack
+} -cleanup {
+    rename goo {}; rename foo {}
+    unset -nocomplain m d
+} -result {INNER {error bar} CALL goo UP 1}
+
+# Errors in error command itself
+
+test error-5.1 {errors in error command} {
+    list [catch {error} msg] $msg
+} {1 {wrong # args: should be "error message ?errorInfo? ?errorCode?"}}
+test error-5.2 {errors in error command} {
+    list [catch {error a b c d} msg] $msg
+} {1 {wrong # args: should be "error message ?errorInfo? ?errorCode?"}}
+
+# Make sure that catch resets error information
+
+test error-6.1 {catch must reset error state} {
+    catch {error outer [catch {error inner inner.errorInfo inner.errorCode}]}
+    list $::errorCode $::errorInfo
+} {NONE 1}
+test error-6.2 {catch must reset error state} {
+    catch {error outer [catch {return -level 0 -code error -errorcode BUG}]}
+    list $::errorCode $::errorInfo
+} {NONE 1}
+test error-6.3 {catch must reset error state} {
+    set ::errorCode BUG
+    catch {error outer [catch set]}
+    list $::errorCode $::errorInfo
+} {NONE 1}
+test error-6.4 {catch must reset error state} {
+    catch {error [catch {error foo bar baz}] 1}
+    list $::errorCode $::errorInfo
+} {NONE 1}
+test error-6.5 {catch must reset error state} {
+    catch {error [catch {return -level 0 -code error -errorcode BUG}] 1}
+    list $::errorCode $::errorInfo
+} {NONE 1}
+test error-6.6 {catch must reset error state} {
+    catch {return -level 0 -code error -errorinfo [catch {error foo bar baz}]}
+    list $::errorCode $::errorInfo
+} {NONE 1}
+test error-6.7 {catch must reset error state} {
+    proc foo {} {
+	return -code error -errorinfo [catch {error foo bar baz}]
+    }
+    catch foo
+    list $::errorCode
+} {NONE}
+test error-6.8 {catch must reset error state} {
+    catch {return -level 0 -code error [catch {error foo bar baz}]}
+    list $::errorCode
+} {NONE}
+test error-6.9 {catch must reset error state} {
+    proc foo {} {
+	return -code error [catch {error foo bar baz}]
+    }
+    catch foo
+    list $::errorCode
+} {NONE}
+test error-6.10 {catch must reset errorstack} -body {
+	proc f x {g $x$x}
+	proc g x {error G:$x}
+	catch {f 12}
+	set e1 [info errorstack]
+	catch {f 13}
+	set e2 [info errorstack]
+	list $e1 $e2
+} -match glob -result {{INNER * CALL {g 1212} CALL {f 12} UP 1} {INNER * CALL {g 1313} CALL {f 13} UP 1}}
+
+test error-7.1 {Bug 1397843} -body {
+    variable cmds
+    proc EIWrite args {
+	variable cmds
+	lappend cmds [lindex [info level -2] 0]
+    }
+    proc BadProc {} {
+	set i a
+	incr i
+    }
+    trace add variable ::errorInfo write [namespace code EIWrite]
+    catch BadProc
+    trace remove variable ::errorInfo write [namespace code EIWrite]
+    set cmds
+} -match glob -result {*BadProc*}
+
+# throw tests
+
+test error-8.1 {throw produces error 1 at level 0} {
+    catch { throw FOO bar }
+} {1}
+test error-8.2 {throw behaves as error does at level 0} {
+    catch { throw FOO bar } em1 opts1
+    catch { error bar {} FOO } em2 opts2
+    dict set opts1 -result $em1
+    dict set opts2 -result $em2
+    foreach key {-code -level -result -errorcode} {
+	if { [dict get $opts1 $key] ne [dict get $opts2 $key] } {
+	    error "error/throw outcome differs on '$key'"
+	}
+    }
+} {}
+test error-8.3 {throw produces error 1 at level > 0} {
+    proc throw_foo {} {
+	throw FOO bar
+    }
+    catch { throw_foo }
+} {1}
+test error-8.4 {throw behaves as error does at level > 0} {
+    proc throw_foo {} {
+	throw FOO bar
+    }
+    proc error_foo {} {
+	error bar {} FOO
+    }
+    catch { throw_foo } em1 opts1
+    catch { error_foo } em2 opts2
+    dict set opts1 -result $em1
+    dict set opts2 -result $em2
+    foreach key {-code -level -result -errorcode} {
+	if { [dict get $opts1 $key] ne [dict get $opts2 $key] } {
+	    error "error/throw outcome differs on '$key'"
+	}
+    }
+} {}
+test error-8.5 {throw syntax checks} -returnCodes error -body {
+    throw
+} -result {wrong # args: should be "throw type message"}
+test error-8.6 {throw syntax checks} -returnCodes error -body {
+    throw a
+} -result {wrong # args: should be "throw type message"}
+test error-8.7 {throw syntax checks} -returnCodes error -body {
+    throw a b c
+} -result {wrong # args: should be "throw type message"}
+test error-8.8 {throw syntax checks} -returnCodes error -body {
+    throw "not a \{ list" foo
+} -result {unmatched open brace in list}
+test error-8.9 {throw syntax checks} -returnCodes error -body {
+    throw {} foo
+} -result {type must be non-empty list}
+test error-8.10 {Bug 33b7abb8a2: throw stack usage} -returnCodes error -body {
+    apply {code {throw $code foo}} {}
+} -result {type must be non-empty list}
+test error-8.11 {Bug 7174354ecb: throw error message} -returnCodes error  -body {
+    throw {not {}a list} x[]y
+} -result {list element in braces followed by "a" instead of space}
+
+# simple try tests: body completes with code ok
+
+test error-9.1 {try (ok, empty result) with no handlers} {
+    try list
+} {}
+test error-9.2 {try (ok, non-empty result) with no handlers} {
+    try { list a b c }
+} {a b c}
+test error-9.3 {try (ok, non-empty result) with trap handler} {
+    try { list a b c } trap {} {} { list d e f }
+} {a b c}
+test error-9.4 {try (ok, non-empty result) with on handler} {
+    try { list a b c } on break {} { list d e f }
+} {a b c}
+test error-9.5 {try (ok, non-empty result) with on ok handler} {
+    try { list a b c } on ok {} { list d e f }
+} {d e f}
+
+# simple try tests - "on" handler matching
+
+test error-10.1 {try with on ok} {
+    try { list a b c } on ok {} { list d e f }
+} {d e f}
+test error-10.2 {try with on 0} {
+    try { list a b c } on 0 {} { list d e f }
+} {d e f}
+test error-10.3 {try with on error (using error)} {
+    try { error a b c } on error {} { list d e f }
+} {d e f}
+test error-10.4 {try with on error (using return -code)} {
+    try { return -level 0 -code 1 a } on error {} { list d e f }
+} {d e f}
+test error-10.5 {try with on error (using throw)} {
+    try { throw c a } on error {} { list d e f }
+} {d e f}
+test error-10.6 {try with on 1 (using error)} {
+    try { error a b c } on 1 {} { list d e f }
+} {d e f}
+test error-10.7 {try with on return} {
+    try { return [list a b c] } on return {} { list d e f }
+} {d e f}
+test error-10.8 {try with on break} {
+    try { break } on break {} { list d e f }
+} {d e f}
+test error-10.9 {try with on continue} {
+    try { continue } on continue {} { list d e f }
+} {d e f}
+test error-10.10 {try with on for arbitrary (decimal) return code} {
+    try { return -level 0 -code 123456 } on 123456 {} { list d e f }
+} {d e f}
+test error-10.11 {try with on for arbitrary (hex) return code} {
+    try { return -level 0 -code 0x123456 } on 0x123456 {} { list d e f }
+} {d e f}
+test error-10.12 {try with on for arbitrary return code (mixed number representations)} {
+    try { return -level 0 -code 0x10 } on 16 {} { list d e f }
+} {d e f}
+
+# simple try tests - "trap" handler matching
+
+test error-11.1 {try with trap all} {
+    try { throw FOO bar  } trap {} {} { list d e f }
+} {d e f}
+test error-11.2 {try with trap (exact)} {
+    try { throw FOO bar  } trap {FOO} {} { list d e f }
+} {d e f}
+test error-11.3 {try with trap (prefix 1)} {
+    try { throw [list FOO A B C D] bar  } trap {FOO} {} { list d e f }
+} {d e f}
+test error-11.4 {try with trap (prefix 2)} {
+    try { throw [list FOO A B C D] bar  } trap {FOO A} {} { list d e f }
+} {d e f}
+test error-11.5 {try with trap (prefix 3)} {
+    try { throw [list FOO A B C D] bar  } trap {FOO A B} {} { list d e f }
+} {d e f}
+test error-11.6 {try with trap (prefix 4)} {
+    try { throw [list FOO A B C D] bar  } trap {FOO A B C} {} { list d e f }
+} {d e f}
+test error-11.7 {try with trap (exact, 5 elements)} {
+    try { throw [list FOO A B C D] bar  } trap {FOO A B C D} {} { list d e f }
+} {d e f}
+
+# simple try tests - variable assignment and result handling
+
+test error-12.1 {try with no variable assignment in on handler} {
+    try { throw FOO bar } on error {} { list d e f }
+} {d e f}
+test error-12.2 {try with result variable assignment in on handler} {
+    try { throw FOO bar } on error {res} { set res }
+} {bar}
+test error-12.3 {try with result variable assignment in on handler, var remains in scope} {
+    try { throw FOO bar } on error {res} { list d e f }
+    set res
+} {bar}
+test error-12.4 {try with result/opts variable assignment in on handler} {
+    try {
+	throw FOO bar
+    } on error {res opts} {
+	set r "$res,[dict get $opts -errorcode]"
+    }
+} {bar,FOO}
+test error-12.5 {try with result/opts variable assignment in on handler, vars remain in scope} {
+    try { throw FOO bar } on error {res opts} { list d e f }
+    set r "$res,[dict get $opts -errorcode]"
+} {bar,FOO}
+test error-12.6 {try result is propagated if no matching handler} {
+    try { list a b c } on error {} { list d e f }
+} {a b c}
+test error-12.7 {handler result is propagated if handler executes} {
+    try { throw FOO bar } on error {} { list d e f }
+} {d e f}
+
+# negative case try tests - bad args to try
+
+test error-13.1 {try with no arguments} -body {
+    # warning: error message may change
+    try
+} -returnCodes error -match glob -result {wrong # args: *}
+test error-13.2 {try with body only (ok)} {
+    try list
+} {}
+test error-13.3 {try with missing finally body} -body {
+    # warning: error message may change
+    try list finally
+} -returnCodes error -match glob -result {wrong # args to finally clause: *}
+test error-13.4 {try with bad handler keyword} -body {
+    # warning: error message may change
+    try list then a b c
+} -returnCodes error -match glob -result {bad handler *}
+test error-13.5 {try with partial handler #1} -body {
+    # warning: error message may change
+    try list on
+} -returnCodes error -match glob -result {wrong # args to on clause: *}
+test error-13.6 {try with partial handler #2} -body {
+    # warning: error message may change
+    try list on error
+} -returnCodes error -match glob -result {wrong # args to on clause: *}
+test error-13.7 {try with partial handler #3} -body {
+    # warning: error message may change
+    try list on error {em opts}
+} -returnCodes error -match glob -result {wrong # args to on clause: *}
+test error-13.8 {try with multiple handlers and finally (ok)} {
+    try list on error {} {} trap {} {} {} finally {}
+} {}
+test error-13.9 {last handler body can't be a fallthrough #1} -body {
+    try list on error {} {} on break {} -
+} -returnCodes error -result {last non-finally clause must not have a body of "-"}
+test error-13.10 {last handler body can't be a fallthrough #2} -body {
+    try list on error {} {} on break {} - finally { list d e f }
+} -returnCodes error -result {last non-finally clause must not have a body of "-"}
+
+# try tests - multiple handlers (left-to-right matching, only one runs)
+
+test error-14.1 {try with multiple handlers (only one matches) #1} {
+    try { throw FOO bar } on ok {} { list a b c } trap FOO {} { list d e f }
+} {d e f}
+test error-14.2 {try with multiple handlers (only one matches) #2} {
+    try { throw FOO bar } trap FOO {} { list d e f } on ok {} { list a b c }
+} {d e f}
+test error-14.3 {try with multiple handlers (only one matches) #3} {
+    try {
+	throw FOO bar
+    } on break {} {
+	list x y z
+    } trap FOO {} {
+	list d e f
+    } on ok {} {
+	list a b c
+    }
+} {d e f}
+test error-14.4 {try with multiple matching handlers (only the first in left-to-right order runs) #1} {
+    try { throw FOO bar } on error {} { list a b c } trap FOO {} { list d e f }
+} {a b c}
+test error-14.5 {try with multiple matching handlers (only the first in left-to-right order runs) #2} {
+    try { throw FOO bar } trap FOO {} { list d e f } on error {} { list a b c }
+} {d e f}
+test error-14.6 {try with multiple matching handlers (only the first in left-to-right order runs) #3} {
+    try { throw FOO bar } trap {} {} { list d e f } on 1 {} { list a b c }
+} {d e f}
+test error-14.7 {try with multiple matching handlers (only the first in left-to-right order runs) #4} {
+    try { throw FOO bar } on 1 {} { list a b c } trap {} {} { list d e f }
+} {a b c}
+test error-14.8 {try with handler-of-last-resort "trap {}"} {
+    try { throw FOO bar } trap FOX {} { list a b c } trap {} {} { list d e f }
+} {d e f}
+test error-14.9 {try with handler-of-last-resort "on error"} {
+    try { foo } trap FOX {} { list a b c } on error {} { list d e f }
+} {d e f}
+
+# try tests - propagation (no matching handlers)
+
+test error-15.1 {try with no handler (ok result propagates)} {
+    try { list a b c }
+} {a b c}
+test error-15.2 {try with no matching handler (ok result propagates)} {
+    try { list a b c } on error {} { list d e f }
+} {a b c}
+test error-15.3 {try with no handler (error result propagates)} -body {
+    try { throw FOO bar }
+} -returnCodes error -result {bar}
+test error-15.4 {try with no matching handler (error result propagates)} -body {
+    try { throw FOO bar } trap FOX {} { list a b c }
+} -returnCodes error -result {bar}
+test error-15.5 {try with no handler (return result propagates)} -body {
+    try { return bar }
+} -returnCodes 2 -result {bar}
+test error-15.6 {try with no matching handler (break result propagates)} -body {
+    try { if {1} break } on error {} { list a b c }
+} -returnCodes 3 -result {}
+test error-15.7 {try with no matching handler (unknown integer result propagates)} -body {
+    try { return -level 0 -code 123456 } trap {} {} { list a b c }
+} -returnCodes 123456 -result {}
+
+foreach level {0 1 2 3} {
+    foreach code {0 1 2 3 4 5} {
+
+	# Following cases have different -errorinfo; avoid false alarms
+	# TODO: examine whether these difference are as they ought to be.
+	if {$level == 0 && $code == 1} continue
+
+	foreach extras {{} {-bar soom}} {
+
+test error-15.8.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+test error-15.9.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script finally {}} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+test error-15.10.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script on $code {x y} {return -options $y $x}} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+	}
+    }
+}
+
+# try tests - propagation (exceptions in handlers, exception chaining)
+
+test error-16.1 {try with successfully executed handler} {
+    try { throw FOO bar } trap FOO {} { list a b c }
+} {a b c}
+test error-16.2 {try with exception (error) in handler} -body {
+    try { throw FOO bar } trap FOO {} { throw BAR foo }
+} -returnCodes error -result {foo}
+test error-16.3 {try with exception (return) in handler} -body {
+    try { throw FOO bar } trap FOO {} { return BAR }
+} -returnCodes 2 -result {BAR}
+test error-16.4 {try with exception (break) in handler #1} -body {
+    try { throw FOO bar } trap FOO {} { break }
+} -returnCodes 3 -result {}
+test error-16.5 {try with exception (break) in handler #2} {
+    for { set i 5 } { $i < 10 } { incr i } {
+	try { throw FOO bar } trap FOO {} { break }
+    }
+    set i
+} {5}
+test error-16.6 {try with variable assignment and propagation #1} {
+    # Ensure that the handler variables preserve the exception off the
+    # try-body, and are not modified by the exception off the handler
+    catch {
+	try { throw FOO bar } trap FOO {em} { throw BAR baz }
+    }
+    set em
+} {bar}
+test error-16.7 {try with variable assignment and propagation #2} {
+    catch {
+	try { throw FOO bar } trap FOO {em opts} { throw BAR baz }
+    }
+    list $em [dict get $opts -errorcode]
+} {bar FOO}
+test error-16.8 {exception chaining (try=ok, handler=error)} -body {
+    #FIXME is the intent of this test correct?
+    catch {
+	try { list a b c } on ok {em opts} { throw BAR baz }
+    } tryem tryopts
+    list $opts [dict get $tryopts -during]
+} -match pairwise -result equal
+test error-16.9 {exception chaining (try=error, handler=error)} -body {
+    # The exception off the handler should chain to the exception off the
+    # try-body (using the -during option)
+    catch {
+	try { throw FOO bar } trap {} {em opts} { throw BAR baz }
+    } tryem tryopts
+    list $opts [dict get $tryopts -during]
+} -match pairwise -result equal
+test error-16.10 {no exception chaining when handler is successful} {
+    catch {
+	try { throw FOO bar } trap {} {em opts} { list d e f }
+    } tryem tryopts
+    dict exists $tryopts -during
+} {0}
+test error-16.11 {no exception chaining when handler is a non-error exception} {
+    catch {
+	try { throw FOO bar } trap {} {em opts} { break }
+    } tryem tryopts
+    dict exists $tryopts -during
+} {0}
+test error-16.12 {compiled try with successfully executed handler} {
+    apply {{} {
+	try { throw FOO bar } trap FOO {} { list a b c }
+    }}
+} {a b c}
+test error-16.13 {compiled try with exception (error) in handler} -body {
+    apply {{} {
+	try { throw FOO bar } trap FOO {} { throw BAR foo }
+    }}
+} -returnCodes error -result {foo}
+test error-16.14 {compiled try with exception (return) in handler} -body {
+    apply {{} {
+	list [catch {
+	    try { throw FOO bar } trap FOO {} { return BAR }
+	} msg] $msg
+    }}
+} -result {2 BAR}
+test error-16.15 {compiled try with exception (break) in handler} {
+    apply {{} {
+	for { set i 5 } { $i < 10 } { incr i } {
+	    try { throw FOO bar } trap FOO {} { break }
+	}
+	return $i
+    }}
+} {5}
+test error-16.16 {compiled try with exception (continue) in handler} {
+    apply {{} {
+	for { set i 5 } { $i < 10 } { incr i } {
+	    try { throw FOO bar } trap FOO {} { continue }
+	    incr i 20
+	}
+	return $i
+    }}
+} {10}
+test error-16.17 {compiled try with variable assignment and propagation #1} {
+    # Ensure that the handler variables preserve the exception off the
+    # try-body, and are not modified by the exception off the handler
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap FOO {em} { throw BAR baz }
+	}
+	return $em
+    }}
+} {bar}
+test error-16.18 {compiled try with variable assignment and propagation #2} {
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap FOO {em opts} { throw BAR baz }
+	}
+	list $em [dict get $opts -errorcode]
+    }}
+} {bar FOO}
+test error-16.19 {compiled try exception chaining (try=ok, handler=error)} -body {
+    #FIXME is the intent of this test correct?
+    apply {{} {
+	catch {
+	    try { list a b c } on ok {em opts} { throw BAR baz }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during]
+    }}
+} -match pairwise -result equal
+test error-16.20 {compiled try exception chaining (try=error, handler=error)} -body {
+    # The exception off the handler should chain to the exception off the
+    # try-body (using the -during option)
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap {} {em opts} { throw BAR baz }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during]
+    }}
+} -match pairwise -result equal
+test error-16.21 {compiled try exception chaining (try=error, finally=error)} {
+    # The exception off the handler should chain to the exception off the
+    # try-body (using the -during option)
+    apply {{} {
+	catch {
+	    try { throw FOO bar } finally { throw BAR baz }
+	} tryem tryopts
+	dict get $tryopts -during -errorcode
+    }}
+} FOO
+test error-16.22 {compiled try: no exception chaining when handler is successful} {
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap {} {em opts} { list d e f }
+	} tryem tryopts
+	dict exists $tryopts -during
+    }}
+} {0}
+test error-16.23 {compiled try: no exception chaining when handler is a non-error exception} {
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap {} {em opts} { break }
+	} tryem tryopts
+	dict exists $tryopts -during
+    }}
+} {0}
+test error-16.24 {compiled try exception chaining (try=ok, handler=error, finally=error)} -body {
+    apply {{} {
+	catch {
+	    try {
+		list a b c
+	    } on ok {em opts} {
+		throw BAR baz
+	    } finally {
+		throw DING dong
+	    }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during -during]
+    }}
+} -match pairwise -result equal
+test error-16.25 {compiled try exception chaining (all errors)} -body {
+    apply {{} {
+	catch {
+	    try {
+		throw FOO bar
+	    } on error {em opts} {
+		throw BAR baz
+	    } finally {
+		throw DING dong
+	    }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during -during]
+    }}
+} -match pairwise -result equal
+
+# try tests - finally
+
+test error-17.1 {finally always runs (try with ok result)} {
+    set RES {}
+    try { list a b c } finally { set RES done }
+    set RES
+} {done}
+test error-17.2 {finally always runs (try with error result)} {
+    set RES {}
+    catch {
+	try { throw FOO bar } finally { set RES done }
+    }
+    set RES
+} {done}
+test error-17.3 {finally always runs (try with matching handler)} {
+    set RES {}
+    try { throw FOO bar } trap FOO {} { list a b c } finally { set RES done }
+    set RES
+} {done}
+test error-17.4 {finally always runs (try with exception in handler)} {
+    set RES {}
+    catch {
+	try {
+	    throw FOO bar
+	} trap FOO {} {
+	    throw BAR baz
+	} finally {
+	    set RES done
+	}
+    }
+    set RES
+} {done}
+test error-17.5 {successful finally doesn't modify try outcome (try=ok)} {
+    try { list a b c } finally { list d e f }
+} {a b c}
+test error-17.6 {successful finally doesn't modify try outcome (try=return)} -body {
+    try { return c } finally { list d e f }
+} -returnCodes 2 -result {c}
+test error-17.7 {successful finally doesn't modify try outcome (try=error)} -body {
+    try { error bar } finally { list d e f }
+} -returnCodes 1 -result {bar}
+test error-17.8 {successful finally doesn't modify handler outcome (handler=ok)} {
+    try { throw FOO bar } trap FOO {} { list a b c } finally { list d e f }
+} {a b c}
+test error-17.9 {successful finally doesn't modify handler outcome (handler=error)} -body {
+    try { throw FOO bar } trap FOO {} { throw BAR baz } finally { list d e f }
+} -returnCodes error -result {baz}
+test error-17.10 {successful finally doesn't affect variable assignment} {
+    catch {
+	try { throw FOO bar } trap FOO {em opts} { list d e f } finally { list d e f }
+    } result
+    list $em $result
+} {bar {d e f}}
+test error-17.11 {successful finally doesn't affect variable assignment or propagation} {
+    catch {
+	try { throw FOO bar } trap FOO {em opts} { throw BAR baz } finally { list d e f }
+    }
+    list $em [dict get $opts -errorcode]
+} {bar FOO}
+
+# try tests - propagation (exceptions in finally, exception chaining)
+
+test error-18.1 {try (ok) with exception in finally (error)} -body {
+    try { list a b c } finally { throw BAR foo }
+} -returnCodes error -result {foo}
+test error-18.2 {try (error) with exception in finally (break)} -body {
+    try { throw FOO bar } finally { break }
+} -returnCodes 3 -result {}
+test error-18.3 {try (ok) with handler (ok) and exception in finally (error)} -body {
+    try { list a b c } on ok {} { list d e f } finally { throw BAR foo }
+} -returnCodes error -result {foo}
+test error-18.4 {try (error) with exception in handler (error) and in finally (arb code)} -body {
+    try { throw FOO bar } on error {} { throw BAR baz } finally { return -level 0 -code 99 zing }
+} -returnCodes 99 -result {zing}
+test error-18.5 {exception in finally doesn't affect variable assignment} {
+    catch {
+	try { throw FOO bar } trap FOO {em opts} { throw BAR baz } finally { throw BAZ zing }
+    }
+    list $em [dict get $opts -errorcode]
+} {bar FOO}
+test error-18.6 {exception chaining in finally (try=ok)} -body {
+    catch {
+	list a b c
+    } em expopts
+    catch {
+	try { list a b c } finally { throw BAR foo }
+    } em opts
+    list $expopts [dict get $opts -during]
+} -match pairwise -result equal
+test error-18.7 {exception chaining in finally (try=error)} {
+    catch {
+	try { throw FOO bar } finally { throw BAR baz }
+    } em opts
+    dict get $opts -during -errorcode
+} {FOO}
+test error-18.8 {exception chaining in finally (try=ok, handler=ok)} {
+    catch {
+	try { list a b c } on ok {} { list d e f } finally { throw BAR baz }
+    } em opts
+    list [dict get $opts -during -code] [dict exists $opts -during -during]
+} {0 0}
+test error-18.9 {exception chaining in finally (try=error, handler=ok)} {
+    catch {
+	try {
+	    throw FOO bar
+	} on error {} {
+	    list d e f
+	} finally {
+	    throw BAR baz
+	}
+    } em opts
+    list [dict get $opts -during -code] [dict exists $opts -during -during]
+} {0 0}
+test error-18.10 {exception chaining in finally (try=error, handler=error)} {
+    catch {
+	try {
+	    throw FOO bar
+	} on error {} {
+	    throw BAR baz
+	} finally {
+	    throw BAR baz
+	}
+    } em opts
+    list [dict get $opts -during -errorcode] [dict get $opts -during -during -errorcode]
+} {BAR FOO}
+test error-18.11 {no exception chaining if finally produces a non-error exception} {
+    catch {
+	try { throw FOO bar } on error {} { throw BAR baz } finally { break }
+    } em opts
+    dict exists $opts -during
+} {0}
+test error-18.12 {variable assignment unaffected by exception in finally} {
+    catch {
+	try {
+	    throw FOO bar
+	} on error {em opts} {
+	    list a b c
+	} finally {
+	    throw BAR baz
+	}
+    }
+    list $em [dict get $opts -errorcode]
+} {bar FOO}
+
+# try tests - fallthough body cases
+
+test error-19.1 {try with fallthrough body #1} {
+    set RES {}
+    try { list a b c } on ok { set RES 0 } - on error {} { set RES 1 }
+    set RES
+} {1}
+test error-19.2 {try with fallthrough body #2} {
+    set RES {}
+    try {
+	throw FOO bar
+    } trap BAR {} {
+    } trap FOO {} - trap {} {} {
+	set RES foo
+    } on error {} {
+	set RES err
+    }
+    set RES
+} {foo}
+test error-19.3 {try with cascade fallthrough} {
+    set RES {}
+    try {
+	throw FOO bar
+    } trap FOO {} - trap BAR {} - trap {} {} {
+	set RES trap
+    } on error {} { set RES err }
+    set RES
+} {trap}
+test error-19.4 {multiple unrelated fallthroughs #1} {
+    set RES {}
+    try {
+	throw FOO bar
+    } trap FOO {} - trap BAR {} {
+	set RES foo
+    } trap {} {} - on error {} {
+	set RES err
+    }
+    set RES
+} {foo}
+test error-19.5 {multiple unrelated fallthroughs #2} {
+    set RES {}
+    try {
+	throw BAZ zing
+    } trap FOO {} - trap BAR {} {
+	set RES foo
+    } trap {} {} - on error {} {
+	set RES err
+    }
+    set RES
+} {err}
+proc addmsg msg {
+    variable RES
+    lappend RES $msg
+}
+test error-19.6 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	    throw bar hello
+	} trap bar {res opt} {
+	    addmsg b
+	} finally {
+	    addmsg c
+	}
+	addmsg d
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a b c d}
+test error-19.7 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	} on error {res opt} {
+	    addmsg b
+	} on ok {} {
+	    addmsg c
+	} finally {
+	    addmsg d
+	}
+	addmsg e
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a c d e}
+test error-19.8 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	    throw bar hello
+	} trap bar {res opt} {
+	    addmsg b
+	}
+	addmsg c
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a b c}
+test error-19.9 {compiled try executes all clauses} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	try {
+	    addmsg a
+	} on error {res opt} {
+	    addmsg b
+	} on ok {} {
+	    addmsg c
+	}
+	addmsg d
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {a c d}
+test error-19.10 {compiled try with chained clauses} -setup {
+    set RES {}
+} -body {
+    list [apply {{} {
+	try {
+	    return good
+	} on return {res} - on ok {res} {
+	    addmsg ok
+	    addmsg $res
+	    return handler
+	} finally {
+	    addmsg finally
+	}
+    } ::tcl::test::error}] $RES
+} -cleanup {
+    unset RES
+} -result {handler {ok good finally}}
+test error-19.11 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.12 {interpreted try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {try {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    $try {
+		addmsg body
+		return a
+	    } on return {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error} try
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.13 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} - on error {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+rename addmsg {}
+
+# FIXME test what vars get set on fallthough ... what is the correct behavior?
+# It would seem appropriate to set at least those for the matching handler and
+# the executed body; possibly for each handler we fall through as well?
+
+# negative case try tests - bad "on" handler
+
+test error-20.1 {bad code name in on handler} -body {
+    try { list a b c } on err {} {}
+} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+test error-20.2 {bad code value in on handler} -body {
+    try { list a b c } on 34985723094872345 {} {}
+} -returnCodes error -match glob -result {bad completion code "34985723094872345": must be ok, error, return, break, continue*, or an integer}
+
+test error-21.1 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10} on ok {} {}
+    }
+} 0
+test error-21.2 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {error [string repeat x 10]} on error {} {}
+    }
+} 0
+test error-21.3 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {throw FOO [string repeat x 10]} trap FOO {} {}
+    }
+} 0
+test error-21.4 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10}
+    }
+} 0
+test error-21.5 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10} on ok {} {} finally {string repeat y 10}
+    }
+} 0
+test error-21.6 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {
+	    error [string repeat x 10]
+	} on error {} {} finally {
+	    string repeat y 10
+	}
+    }
+} 0
+test error-21.7 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {
+	    throw FOO [string repeat x 10]
+	} trap FOO {} {} finally {
+	    string repeat y 10
+	}
+    }
+} 0
+test error-21.8 {memory leaks in try: Bug 2910044} memory {
+    leaktest {
+	try {string repeat x 10} finally {string repeat y 10}
+    }
+} 0
+
+test error-21.9 {Bug cee90e4e88} {
+    # Just don't panic.
+    apply {{} {try {} on ok {} - on return {} {}}}
+} {}
+
+
+# negative case try tests - bad "trap" handler
+# what is the effect if we attempt to trap an errorcode that is not a list?
+# nested try
+# catch inside try
+# no tests for bad varslist?
+# -errorcode but code!=1 doesn't trap
+# throw negative case tests (no args, too many args, etc)
+
+}
+namespace delete ::tcl::test::error
+
+# cleanup
+catch {rename p ""}
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

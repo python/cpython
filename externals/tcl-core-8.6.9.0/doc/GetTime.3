@@ -1,0 +1,109 @@
+'\"
+'\" Copyright (c) 2001 by Kevin B. Kenny <kennykb@acm.org>.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tcl_GetTime 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetTime, Tcl_SetTimeProc, Tcl_QueryTimeProc \- get date and time
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+\fBTcl_GetTime\fR(\fItimePtr\fR)
+.sp
+\fBTcl_SetTimeProc\fR(\fIgetProc, scaleProc, clientData\fR)
+.sp
+\fBTcl_QueryTimeProc\fR(\fIgetProcPtr, scaleProcPtr, clientDataPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_GetTimeProc *getProc in
+.AP Tcl_Time *timePtr out
+Points to memory in which to store the date and time information.
+.AP Tcl_GetTimeProc getProc in
+Pointer to handler function replacing \fBTcl_GetTime\fR's access to the OS.
+.AP Tcl_ScaleTimeProc scaleProc in
+Pointer to handler function for the conversion of time delays in the
+virtual domain to real-time.
+.AP ClientData clientData in
+Value passed through to the two handler functions.
+.AP Tcl_GetTimeProc *getProcPtr out
+Pointer to place the currently registered get handler function into.
+.AP Tcl_ScaleTimeProc *scaleProcPtr out
+Pointer to place the currently registered scale handler function into.
+.AP ClientData *clientDataPtr out
+Pointer to place the currently registered pass-through value into.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBTcl_GetTime\fR function retrieves the current time as a
+\fITcl_Time\fR structure in memory the caller provides.  This
+structure has the following definition:
+.PP
+.CS
+typedef struct Tcl_Time {
+    long \fIsec\fR;
+    long \fIusec\fR;
+} \fBTcl_Time\fR;
+.CE
+.PP
+On return, the \fIsec\fR member of the structure is filled in with the
+number of seconds that have elapsed since the \fIepoch:\fR the epoch
+is the point in time of 00:00 UTC, 1 January 1970.  This number does
+\fInot\fR count leap seconds \- an interval of one day advances it by
+86400 seconds regardless of whether a leap second has been inserted.
+.PP
+The \fIusec\fR member of the structure is filled in with the number of
+microseconds that have elapsed since the start of the second
+designated by \fIsec\fR.  The Tcl library makes every effort to keep
+this number as precise as possible, subject to the limitations of the
+computer system.  On multiprocessor variants of Windows, this number
+may be limited to the 10- or 20-ms granularity of the system clock.
+(On single-processor Windows systems, the \fIusec\fR field is derived
+from a performance counter and is highly precise.)
+.SS "VIRTUALIZED TIME"
+.PP
+The \fBTcl_SetTimeProc\fR function registers two related handler functions
+with the core. The first handler function is a replacement for
+\fBTcl_GetTime\fR, or rather the OS access made by
+\fBTcl_GetTime\fR. The other handler function is used by the Tcl
+notifier to convert wait/block times from the virtual domain into real
+time.
+.PP
+The \fBTcl_QueryTimeProc\fR function returns the currently registered
+handler functions. If no external handlers were set then this will
+return the standard handlers accessing and processing the native time
+of the OS. The arguments to the function are allowed to be NULL; and
+any argument which is NULL is ignored and not set.
+.PP
+The signatures of the handler functions are as follows:
+.PP
+.CS
+typedef void \fBTcl_GetTimeProc\fR(
+        Tcl_Time *\fItimebuf\fR,
+        ClientData \fIclientData\fR);
+typedef void \fBTcl_ScaleTimeProc\fR(
+        Tcl_Time *\fItimebuf\fR,
+        ClientData \fIclientData\fR);
+.CE
+.PP
+The \fItimebuf\fR fields contain the time to manipulate, and the
+\fIclientData\fR fields contain a pointer supplied at the time the handler
+functions were registered.
+.PP
+Any handler pair specified has to return data which is consistent between
+them. In other words, setting one handler of the pair to something assuming a
+10-times slowdown, and the other handler of the pair to something assuming a
+two-times slowdown is wrong and not allowed.
+.PP
+The set handler functions are allowed to run the delivered time backwards,
+however this should be avoided. We have to allow it as the native time can run
+backwards as the user can fiddle with the system time one way or other. Note
+that the insertion of the hooks will not change the behavior of the Tcl core
+with regard to this situation, i.e. the existing behavior is retained.
+.SH "SEE ALSO"
+clock(n)
+.SH KEYWORDS
+date, time

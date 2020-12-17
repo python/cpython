@@ -1,0 +1,783 @@
+#
+# [7Jun2005] TO CHECK: [$tv see {}] -- shouldn't work (at least, shouldn't do
+# what it currently does)
+#
+
+package require Tk 8.5
+package require tcltest ; namespace import -force tcltest::*
+loadTestedCommands
+
+# consistencyCheck --
+#	Traverse the tree to make sure the item data structures
+#	are properly linked.
+#
+#	Since [$tv children] follows ->next links and [$tv index]
+#	follows ->prev links, this should cover all invariants.
+#
+proc consistencyCheck {tv {item {}}} {
+    set i 0;
+    foreach child [$tv children $item] {
+	assert {[$tv parent $child] == $item} "parent $child = $item"
+	assert {[$tv index $child] == $i} "index $child [$tv index $child]=$i"
+	incr i
+	consistencyCheck $tv $child
+    }
+}
+
+proc assert {expr {message ""}} {
+    if {![uplevel 1 [list expr $expr]]} {
+        set error "PANIC! PANIC! PANIC: $message ($expr failed)"
+    	puts stderr $error
+	error $error
+    }
+}
+
+test treeview-0 "treeview test - setup" -body {
+    ttk::treeview .tv -columns {a b c}
+    pack .tv -expand true -fill both
+    update
+}
+
+test treeview-1.1 "columns" -body {
+    .tv configure -columns {a b c}
+}
+
+test treeview-1.2 "Bad columns" -body {
+    #.tv configure -columns {illegal "list"value}
+    ttk::treeview .badtv -columns {illegal "list"value}
+} -returnCodes 1 -result "list element in quotes followed by*" -match glob
+
+test treeview-1.3 "bad displaycolumns" -body {
+    .tv configure -displaycolumns {a b d}
+} -returnCodes 1 -result "Invalid column index d"
+
+test treeview-1.4 "more bad displaycolumns" -body {
+    .tv configure -displaycolumns {1 2 3}
+} -returnCodes 1 -result "Column index 3 out of bounds"
+
+test treeview-1.5 "Don't forget to check negative numbers" -body {
+    .tv configure -displaycolumns {1 -2 3}
+} -returnCodes 1 -result "Column index -2 out of bounds"
+
+# Item creation.
+#
+test treeview-2.1 "insert -- not enough args" -body {
+    .tv insert
+} -returnCodes 1 -result "wrong # args: *" -match glob
+
+test treeview-2.3 "insert -- bad integer index" -body {
+    .tv insert {} badindex
+} -returnCodes 1 -result "expected integer *" -match glob
+
+test treeview-2.4 "insert -- bad parent node" -body {
+    .tv insert badparent end
+} -returnCodes 1 -result "Item badparent not found" -match glob
+
+test treeview-2.5 "insert -- finaly insert a node" -body {
+    .tv insert {} end -id newnode -text "New node"
+} -result newnode
+
+test treeview-2.6 "insert -- make sure node was inserted" -body {
+    .tv children {}
+} -result [list newnode]
+
+test treeview-2.7 "insert -- prevent duplicate node names" -body {
+    .tv insert {} end -id newnode
+} -returnCodes 1 -result "Item newnode already exists"
+
+test treeview-2.8 "insert -- new node at end" -body {
+    .tv insert {} end -id lastnode
+    consistencyCheck .tv
+    .tv children {}
+} -result [list newnode lastnode]
+
+consistencyCheck .tv
+
+test treeview-2.9 "insert -- new node at beginning" -body {
+    .tv insert {} 0 -id firstnode
+    consistencyCheck .tv
+    .tv children {}
+} -result [list firstnode newnode lastnode]
+
+test treeview-2.10 "insert -- one more node" -body {
+    .tv insert {} 2 -id onemore
+    consistencyCheck .tv
+    .tv children {}
+} -result [list firstnode newnode onemore lastnode]
+
+test treeview-2.11 "insert -- and another one" -body {
+    .tv insert {} 2 -id anotherone
+    consistencyCheck .tv
+    .tv children {}
+} -result [list firstnode newnode anotherone onemore lastnode]
+
+test treeview-2.12 "insert -- one more at end" -body {
+    .tv insert {} end -id newlastone
+    consistencyCheck .tv
+    .tv children {}
+} -result [list firstnode newnode anotherone onemore lastnode newlastone]
+
+test treeview-2.13 "insert -- one more at beginning" -body {
+    .tv insert {} 0 -id newfirstone
+    consistencyCheck .tv
+    .tv children {}
+} -result [list newfirstone firstnode newnode anotherone onemore lastnode newlastone]
+
+test treeview-2.14 "insert -- bad options" -body {
+    .tv insert {} end -badoption foo
+} -returnCodes 1 -result {unknown option "-badoption"}
+
+test treeview-2.15 "insert -- at position 0 w/no children" -body {
+    .tv insert newnode 0 -id newnode.n2 -text "Foo"
+    .tv children newnode
+} -result newnode.n2	;# don't crash
+
+test treeview-2.16 "insert -- insert way past end" -body {
+    .tv insert newnode 99 -id newnode.n3 -text "Foo"
+    consistencyCheck .tv
+    .tv children newnode
+} -result [list newnode.n2 newnode.n3]
+
+test treeview-2.17 "insert -- insert before beginning" -body {
+    .tv insert newnode -1 -id newnode.n1 -text "Foo"
+    consistencyCheck .tv
+    .tv children newnode
+}  -result [list newnode.n1 newnode.n2 newnode.n3]
+
+###
+#
+test treeview-3.1 "parent" -body {
+    .tv parent newnode.n1
+} -result newnode
+test treeview-3.2 "parent - top-level node" -body {
+    .tv parent newnode
+} -result {}
+test treeview-3.3 "parent - root node" -body {
+    .tv parent {}
+} -result {}
+test treeview-3.4 "index" -body {
+    list [.tv index newnode.n3] [.tv index newnode.n2] [.tv index newnode.n1]
+} -result [list 2 1 0]
+test treeview-3.5 "index - exhaustive test" -body {
+    set result [list]
+    foreach item [.tv children {}] {
+	lappend result [.tv index $item]
+    }
+    set result
+} -result [list 0 1 2 3 4 5 6]
+
+test treeview-3.6 "detach" -body {
+    .tv detach newnode
+    consistencyCheck .tv
+    .tv children {}
+} -result [list newfirstone firstnode anotherone onemore lastnode newlastone]
+# XREF: treeview-2.13
+
+test treeview-3.7 "detach didn't screw up internal links" -body {
+    consistencyCheck .tv
+    set result [list]
+    foreach item [.tv children {}] {
+	lappend result [.tv index $item]
+    }
+    set result
+} -result [list 0 1 2 3 4 5]
+
+test treeview-3.8 "detached node has no parent, index 0" -body {
+    list [.tv parent newnode] [.tv index newnode]
+} -result [list {} 0]
+# @@@ Can't distinguish detached nodes from first root node
+
+test treeview-3.9 "detached node's children undisturbed" -body {
+    .tv children newnode
+} -result [list newnode.n1 newnode.n2 newnode.n3]
+
+test treeview-3.10 "detach is idempotent" -body {
+    .tv detach newnode
+    consistencyCheck .tv
+    .tv children {}
+} -result [list newfirstone firstnode anotherone onemore lastnode newlastone]
+
+test treeview-3.11 "Can't detach root item" -body {
+    .tv detach [list {}]
+    update
+    consistencyCheck .tv
+} -returnCodes 1 -result "Cannot detach root item"
+consistencyCheck .tv
+
+test treeview-3.12 "Reattach" -body {
+    .tv move newnode {} end
+    consistencyCheck .tv
+    .tv children {}
+} -result [list newfirstone firstnode anotherone onemore lastnode newlastone newnode]
+
+# Bug # ?????
+test treeview-3.13 "Re-reattach" -body {
+    .tv move newnode {} end
+    consistencyCheck .tv
+    .tv children {}
+} -result [list newfirstone firstnode anotherone onemore lastnode newlastone newnode]
+
+catch {
+    .tv insert newfirstone end -id x1
+    .tv insert newfirstone end -id x2
+    .tv insert newfirstone end -id x3
+}
+
+test treeview-3.14 "Duplicated entry in children list" -body {
+    .tv children newfirstone [list x3 x1 x2 x3]
+    # ??? Maybe this should raise an error?
+    consistencyCheck .tv
+    .tv children newfirstone
+} -result [list x3 x1 x2]
+
+test treeview-3.14.1 "Duplicated entry in children list" -body {
+    .tv children newfirstone [list x1 x2 x3 x3 x2 x1]
+    consistencyCheck .tv
+    .tv children newfirstone
+} -result [list x1 x2 x3]
+
+test treeview-3.15 "Consecutive duplicate entries in children list" -body {
+    .tv children newfirstone [list x1 x2 x2 x3]
+    consistencyCheck .tv
+    .tv children newfirstone
+} -result [list x1 x2 x3]
+
+test treeview-3.16 "Insert child after self" -body {
+    .tv move x2 newfirstone 1
+    consistencyCheck .tv
+    .tv children newfirstone
+} -result [list x1 x2 x3]
+
+test treeview-3.17 "Insert last child after self" -body {
+    .tv move x3 newfirstone 2
+    consistencyCheck .tv
+    .tv children newfirstone
+} -result [list x1 x2 x3]
+
+test treeview-3.18 "Insert last child after end" -body {
+    .tv move x3 newfirstone 3
+    consistencyCheck .tv
+    .tv children newfirstone
+} -result [list x1 x2 x3]
+
+test treeview-4.1 "opened - initial state" -body {
+    .tv item newnode -open
+} -result 0
+test treeview-4.2 "opened - open node" -body {
+    .tv item newnode -open 1
+    .tv item newnode -open
+} -result 1
+test treeview-4.3 "opened - closed node" -body {
+    .tv item newnode -open 0
+    .tv item newnode -open
+} -result 0
+
+test treeview-5.1 "item -- error checks" -body {
+    .tv item newnode -text "Bad values" -values "{bad}list"
+} -returnCodes 1 -result "list element in braces followed by*" -match glob
+
+test treeview-5.2 "item -- error leaves options unchanged " -body {
+    .tv item newnode -text
+} -result "New node"
+
+test treeview-5.3 "Heading" -body {
+    .tv heading #0 -text "Heading"
+}
+
+test treeview-5.4 "get cell" -body {
+    set l [list a b c]
+    .tv item newnode -values $l
+    .tv set newnode 1
+} -result b
+
+test treeview-5.5 "set cell" -body {
+    .tv set newnode 1 XXX
+    .tv item newnode -values
+} -result [list a XXX c]
+
+test treeview-5.6 "set illegal cell" -body {
+    .tv set newnode #0 YYY
+} -returnCodes 1 -result "Display column #0 cannot be set"
+
+test treeview-5.7 "set illegal cell" -body {
+    .tv set newnode 3 YY	;# 3 == current #columns
+} -returnCodes 1 -result "Column index 3 out of bounds"
+
+test treeview-5.8 "set display columns" -body {
+    .tv configure -displaycolumns [list 2 1 0]
+    .tv set newnode #1 X
+    .tv set newnode #2 Y
+    .tv set newnode #3 Z
+    .tv item newnode -values
+} -result [list Z Y X]
+
+test treeview-5.9 "display columns part 2" -body {
+    list [.tv column #1 -id] [.tv column #2 -id] [.tv column #3 -id]
+} -result [list c b a]
+
+test treeview-5.10 "cannot set column -id" -body {
+    .tv column #1 -id X
+} -returnCodes 1 -result "Attempt to change read-only option"
+
+test treeview-5.11 "get" -body {
+    .tv set newnode #1
+} -result X
+
+test treeview-5.12 "get dictionary" -body {
+    .tv set newnode
+} -result [list a Z b Y c X]
+
+test treeview-5.13 "get, no value" -body {
+    set newitem [.tv insert {} end]
+    set result [.tv set $newitem #1]
+    .tv delete $newitem
+    set result
+} -result {}
+
+
+test treeview-6.1 "deletion - setup" -body {
+    .tv insert {} end -id dtest
+    foreach id [list a b c d e] {
+	.tv insert dtest end -id $id
+    }
+    .tv children dtest
+} -result [list a b c d e]
+
+test treeview-6.1.1 "delete" -body {
+    .tv delete b
+    consistencyCheck .tv
+    list [.tv exists b] [.tv children dtest]
+} -result [list 0 [list a c d e]]
+
+consistencyCheck .tv
+
+test treeview-6.2 "delete - duplicate items in list" -body {
+    .tv delete [list a e a e]
+    consistencyCheck .tv
+    .tv children dtest
+} -result [list c d]
+
+test treeview-6.3 "delete - descendants removed" -body {
+    .tv insert c  end -id c1
+    .tv insert c  end -id c2
+    .tv insert c1 end -id c11
+    consistencyCheck .tv
+    .tv delete c
+    consistencyCheck .tv
+    list [.tv exists c] [.tv exists c1] [.tv exists c2] [.tv exists c11]
+} -result [list 0 0 0 0]
+
+test treeview-6.4 "delete - delete parent and descendants" -body {
+    .tv insert dtest end -id c
+    .tv insert c  end -id c1
+    .tv insert c  end -id c2
+    .tv insert c1 end -id c11
+    consistencyCheck .tv
+    .tv delete [list c c1 c2 c11]
+    consistencyCheck .tv
+    list [.tv exists c] [.tv exists c1] [.tv exists c2] [.tv exists c11]
+} -result [list 0 0 0 0]
+
+test treeview-6.5 "delete - delete descendants and parent" -body {
+    .tv insert dtest end -id c
+    .tv insert c  end -id c1
+    .tv insert c  end -id c2
+    .tv insert c1 end -id c11
+    consistencyCheck .tv
+    .tv delete [list c11 c1 c2 c]
+    consistencyCheck .tv
+    list [.tv exists c] [.tv exists c1] [.tv exists c2] [.tv exists c11]
+} -result [list 0 0 0 0]
+
+test treeview-6.6 "delete - end" -body {
+    consistencyCheck .tv
+    .tv children dtest
+} -result [list d]
+
+test treeview-7.1 "move" -body {
+    .tv insert d end -id d1
+    .tv insert d end -id d2
+    .tv insert d end -id d3
+    .tv move d3 d 0
+    consistencyCheck .tv
+    .tv children d
+} -result [list d3 d1 d2]
+
+test treeview-7.2 "illegal move" -body {
+   .tv move d d2 end
+} -returnCodes 1 -result "Cannot insert d as descendant of d2"
+
+test treeview-7.3 "illegal move has no effect" -body {
+    consistencyCheck .tv
+    .tv children d
+} -result [list d3 d1 d2]
+
+test treeview-7.4 "Replace children" -body {
+    .tv children d [list d3 d2 d1]
+    consistencyCheck .tv
+    .tv children d
+} -result [list d3 d2 d1]
+
+test treeview-7.5 "replace children - precondition" -body {
+    # Just check to make sure the test suite so far has left
+    # us in the state we expect to be in:
+    list [.tv parent newnode] [.tv children newnode]
+} -result [list {} [list newnode.n1 newnode.n2 newnode.n3]]
+
+test treeview-7.6 "Replace children - illegal move" -body {
+    .tv children newnode.n1 [list newnode.n1 newnode.n2 newnode.n3]
+} -returnCodes 1 -result "Cannot insert newnode.n1 as descendant of newnode.n1"
+
+consistencyCheck .tv
+
+test treeview-8.0 "Selection set" -body {
+    .tv selection set [list newnode.n1 newnode.n3 newnode.n2]
+    .tv selection
+} -result [list newnode.n1 newnode.n2 newnode.n3]
+
+test treeview-8.1 "Selection add" -body {
+    .tv selection add [list newnode]
+    .tv selection
+} -result [list newnode newnode.n1 newnode.n2 newnode.n3]
+
+test treeview-8.2 "Selection toggle" -body {
+    .tv selection toggle [list newnode.n2 d3]
+    .tv selection
+} -result [list newnode newnode.n1 newnode.n3 d3]
+
+test treeview-8.3 "Selection remove" -body {
+    .tv selection remove [list newnode.n2 d3]
+    .tv selection
+} -result [list newnode newnode.n1 newnode.n3]
+
+test treeview-8.4 "Selection - clear" -body {
+    .tv selection set {}
+    .tv selection
+} -result {}
+
+test treeview-8.5 "Selection - bad operation" -body {
+    .tv selection badop foo
+} -returnCodes 1 -match glob -result {bad selection operation "badop": must be *}
+
+test treeview-8.6 "Selection - <<TreeviewSelect>> on selection add" -body {
+    .tv selection set {}
+    bind .tv <<TreeviewSelect>> {set res 1}
+    set res 0
+    .tv selection add newnode.n1
+    update
+    set res
+} -result {1}
+
+test treeview-8.7 "<<TreeviewSelect>> on selected item deletion" -body {
+    .tv selection set {}
+    .tv insert "" end -id selectedDoomed -text DeadItem
+    .tv insert "" end -id doomed -text AlsoDead
+    .tv selection add selectedDoomed
+    update
+    bind .tv <<TreeviewSelect>> {lappend res 1}
+    set res 0
+    .tv delete doomed
+    update
+    set res [expr {$res == 0}]
+    .tv delete selectedDoomed
+    update
+    set res
+} -result {1 1}
+
+### NEED: more tests for see/yview/scrolling
+
+proc scrollcallback {args} {
+    set ::scrolldata $args
+}
+test treeview-9.0 "scroll callback - empty tree" -body {
+    .tv configure -yscrollcommand scrollcallback
+    .tv delete [.tv children {}]
+    update
+    set ::scrolldata
+} -result [list 0.0 1.0]
+
+test treeview-9.1 "scrolling" -setup {
+    pack [ttk::treeview .tree -show tree] -fill y
+    for {set i 1} {$i < 100} {incr i} {
+        .tree insert {} end -text $i
+    }
+} -body {
+    .tree yview scroll 5 units
+    .tree identify item 2 2
+} -cleanup {
+    destroy .tree
+} -result {I006}
+
+### identify tests:
+#
+proc identify* {tv comps args} {
+    foreach {x y} $args {
+	foreach comp $comps {
+	    lappend result [$tv identify $comp $x $y]
+	}
+    }
+    return $result
+}
+
+# get list of column IDs from list of display column ids.
+#
+proc columnids {tv dcols} {
+    set result [list]
+    foreach dcol $dcols {
+	if {[catch {
+	    lappend result [$tv column $dcol -id]
+	}]} {
+	    lappend result ERROR
+	}
+    }
+    return $result
+}
+
+test treeview-identify-setup "identify series - setup" -body {
+    destroy .tv
+    ttk::setTheme default
+    ttk::treeview .tv -columns [list A B C]
+    .tv insert {} end -id branch -text branch -open true
+    .tv insert branch end -id item1 -text item1
+    .tv insert branch end -id item2 -text item2
+    .tv insert branch end -id item3 -text item3
+
+    .tv column #0 -width 50	;# 0-50
+    .tv column A -width 50	;# 50-100
+    .tv column B -width 50	;# 100-150
+    .tv column C -width 50	;# 150-200 (plus slop for margins)
+
+    wm geometry . {} ; pack .tv ; update
+}
+
+test treeview-identify-1 "identify heading" -body {
+    .tv configure -show {headings tree}
+    update idletasks
+    identify* .tv {region column} 10 10
+} -result [list heading #0]
+
+test treeview-identify-2 "identify columns" -body {
+    .tv configure -displaycolumns #all
+    update idletasks
+    columnids .tv [identify* .tv column 25 10  75 10  125 10  175 10]
+} -result [list {} A B C]
+
+test treeview-identify-3 "reordered columns" -body {
+    .tv configure -displaycolumns {B A C}
+    update idletasks
+    columnids .tv [identify* .tv column 25 10  75 10  125 10  175 10]
+} -result [list {} B A C]
+
+test treeview-identify-4 "no tree column" -body {
+    .tv configure -displaycolumns #all -show {headings}
+    update idletasks
+    identify* .tv {region column} 25 10  75 10  125 10  175 10
+} -result [list heading #1 heading #2 heading #3 nothing {}]
+
+# Item height in default theme is 20px
+test treeview-identify-5 "vertical scan - no headings" -body {
+    .tv configure -displaycolumns #all -show {tree}
+    update idletasks
+    identify* .tv {region item} 25 10  25 30  25 50  25 70  25 90
+} -result [list tree branch tree item1 tree item2 tree item3 nothing {}]
+
+test treeview-identify-6 "vertical scan - with headings" -body {
+    .tv configure -displaycolumns #all -show {tree headings}
+    update idletasks
+    identify* .tv {region item} 25 10  25 30  25 50  25 70  25 90
+} -result [list heading {} tree branch tree item1 tree item2 tree item3]
+
+test treeview-identify-7 "vertical scan - headings, no tree" -body {
+    .tv configure -displaycolumns #all -show {headings}
+    update idletasks
+    identify* .tv {region item} 25 10  25 30  25 50  25 70  25 90
+} -result [list heading {} cell branch cell item1 cell item2 cell item3]
+
+# In default theme, -indent and -itemheight both 20px
+# Disclosure element name is "Treeitem.indicator"
+set disclosure "*.indicator"
+test treeview-identify-8 "identify element" -body {
+    .tv configure -show {tree}
+    .tv insert branch  0 -id branch2 -open true
+    .tv insert branch2 0 -id branch3 -open true
+    .tv insert branch3 0 -id leaf3
+    update idletasks;
+    identify* .tv {item element} 10 10  30 30  50 50
+} -match glob -result [list \
+	branch $disclosure branch2 $disclosure branch3 $disclosure]
+
+# See #2381555
+test treeview-identify-9 "identify works when horizontally scrolled" -setup {
+    .tv configure -show {tree headings}
+    foreach column {#0 A B C} {
+	.tv column $column -stretch 0 -width 50
+    }
+    place .tv -x 0 -y 0 -width 100
+} -body {
+    set result [list]
+    foreach xoffs {0 50 100} {
+	.tv xview $xoffs ; update
+	lappend result [identify* .tv {region column} 10 10 60 10]
+    }
+    set result
+} -result [list \
+	[list heading #0 heading #1] \
+	[list heading #1 heading #2] \
+	[list heading #2 heading #3] ]
+
+test treeview-identify-cleanup "identify - cleanup" -body {
+    destroy .tv
+}
+
+### NEED: tests for focus item, selection
+
+### Misc. tests:
+
+destroy .tv
+test treeview-10.1 "Root node properly initialized (#1541739)" -setup {
+    ttk::treeview .tv
+    .tv insert {} end -id a
+    .tv see a
+} -cleanup {
+    destroy .tv
+}
+
+test treeview-3006842 "Null bindings" -setup {
+    ttk::treeview .tv -show tree
+} -body {
+    .tv tag bind empty <ButtonPress-1> {}
+    .tv insert {} end -text "Click me" -tags empty
+    event generate .tv <ButtonPress-1> -x 10 -y 10
+    .tv tag bind empty
+} -result {} -cleanup {
+    destroy .tv
+}
+
+test treeview-3085489-1 "tag add, no -tags" -setup {
+    ttk::treeview .tv
+} -body {
+    set item [.tv insert {} end]
+    .tv tag add foo $item
+    .tv item $item -tags
+} -cleanup {
+    destroy .tv
+} -result [list foo]
+
+test treeview-3085489-2 "tag remove, no -tags" -setup {
+    ttk::treeview .tv
+} -body {
+    set item [.tv insert {} end]
+    .tv tag remove foo $item
+    .tv item $item -tags
+} -cleanup {
+    destroy .tv
+} -result [list]
+
+test treeview-368fa4561e "indicators cannot be clicked on leafs" -setup {
+    pack [ttk::treeview .tv]
+    .tv insert {} end -id foo -text "<-- (1) Click the blank space to my left" 
+    update
+} -body {
+    foreach {x y w h} [.tv bbox foo #0] {}
+    set res [.tv item foo -open]
+    # using $h even for x computation is intentional here in order to simulate
+    # a mouse click on the (invisible since we're on a leaf) indicator
+    event generate .tv <ButtonPress-1> \
+            -x [expr {$x + $h / 2}] \
+            -y [expr {$y + $h / 2}]
+    lappend res [.tv item foo -open]
+    .tv insert foo end -text "sub"
+    lappend res [.tv item foo -open]
+} -cleanup {
+    destroy .tv
+} -result {0 0 0}
+
+test treeview-ce470f20fd-1 "dragging further than the right edge of the treeview is allowed" -setup {
+    pack [ttk::treeview .tv]
+    .tv heading #0 -text "Drag my right edge -->" 
+    update
+} -body {
+    set res [.tv column #0 -width]
+    .tv drag #0 400
+    lappend res [expr {[.tv column #0 -width] > $res}]
+} -cleanup {
+    destroy .tv
+} -result {200 1}
+
+proc nostretch {tv} {
+    foreach col [$tv cget -columns] {
+        $tv column $col -stretch 0
+    }
+    $tv column #0 -stretch 0
+    update idletasks ; # redisplay $tv
+}
+
+test treeview-ce470f20fd-2 "changing -stretch resizes columns" -setup {
+    pack [ttk::treeview .tv -columns {bar colA colB colC foo}]
+    foreach col [.tv cget -columns] {
+        .tv heading $col -text $col
+    }
+    nostretch .tv
+    .tv column colA -width 50 ; .tv column colB -width 50 ; # slack created
+    update idletasks ; # redisplay treeview
+} -body {
+    # when no column is stretchable and one of them becomes stretchable
+    # the stretchable column takes the slack and the widget is redisplayed
+    # automatically at idle time
+    set res [.tv column colA -width]
+    .tv column colA -stretch 1
+    update idletasks ; # no slack anymore, widget redisplayed
+    lappend res [expr {[.tv column colA -width] > $res}]
+} -cleanup {
+    destroy .tv
+} -result {50 1}
+
+test treeview-ce470f20fd-3 "changing -stretch resizes columns" -setup {
+    pack [ttk::treeview .tv -columns {bar colA colB colC foo}]
+    foreach col [.tv cget -columns] {
+        .tv heading $col -text $col
+    }
+    .tv configure -displaycolumns {colB colA colC}
+    nostretch .tv
+    .tv column colA -width 50 ; .tv column colB -width 50 ; # slack created
+    update idletasks ; # redisplay treeview
+} -body {
+    # only some columns are displayed (and in a different order than declared
+    # in -columns), a displayed column becomes stretchable  --> the stretchable
+    # column expands
+    set res [.tv column colA -width]
+    .tv column colA -stretch 1
+    update idletasks ; # no slack anymore, widget redisplayed
+    lappend res [expr {[.tv column colA -width] > $res}]
+} -cleanup {
+    destroy .tv
+} -result {50 1}
+
+test treeview-ce470f20fd-4 "changing -stretch resizes columns" -setup {
+    pack [ttk::treeview .tv -columns {bar colA colB colC foo}]
+    foreach col [.tv cget -columns] {
+        .tv heading $col -text $col
+    }
+    .tv configure -displaycolumns {colB colA colC}
+    nostretch .tv
+    .tv column colA -width 50 ; .tv column bar -width 60 ; # slack created
+    update idletasks ; # redisplay treeview
+} -body {
+    # only some columns are displayed (and in a different order than declared
+    # in -columns), a non-displayed column becomes stretchable  --> nothing 
+    # happens
+    set origTreeWidth [winfo width .tv]
+    set res [list [.tv column bar -width] [.tv column colA -width]]
+    .tv column bar -stretch 1
+    update idletasks ; # no change, widget redisplayed
+    lappend res [.tv column bar -width] [.tv column colA -width]
+    # this column becomes visible  --> widget resizes
+    .tv configure -displaycolumns {bar colC colA colB}
+    update idletasks ; # no slack anymore because the widget resizes (shrinks)
+    lappend res [.tv column bar -width] [.tv column colA -width] \
+                [expr {[winfo width .tv] < $origTreeWidth}]
+} -cleanup {
+    destroy .tv
+} -result {60 50 60 50 60 50 1}
+
+tcltest::cleanupTests

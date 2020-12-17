@@ -1,0 +1,175 @@
+'\"
+'\" Copyright (c) 1990-1994 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH labelframe n 8.4 Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+labelframe \- Create and manipulate 'labelframe' labelled container widgets
+.SH SYNOPSIS
+\fBlabelframe\fR \fIpathName\fR ?\fIoptions\fR?
+.SO
+\-borderwidth	\-highlightbackground	\-pady
+\-cursor	\-highlightcolor	\-relief
+\-font	\-highlightthickness	\-takefocus
+\-foreground	\-padx	\-text
+.SE
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-background background Background
+This option is the same as the standard \fB\-background\fR option
+except that its value may also be specified as an empty string.
+In this case, the widget will display no background or border, and
+no colors will be consumed from its colormap for its background
+and border.
+.OP \-class class Class
+Specifies a class for the window.
+This class will be used when querying the option database for
+the window's other options, and it will also be used later for
+other purposes such as bindings.
+The \fB\-class\fR option may not be changed with the \fBconfigure\fR
+widget command.
+.OP \-colormap colormap Colormap
+Specifies a colormap to use for the window.
+The value may be either \fBnew\fR, in which case a new colormap is
+created for the window and its children, or the name of another
+window (which must be on the same screen and have the same visual
+as \fIpathName\fR), in which case the new window will use the colormap
+from the specified window.
+If the \fB\-colormap\fR option is not specified, the new window
+uses the same colormap as its parent.
+This option may not be changed with the \fBconfigure\fR
+widget command.
+.OP \-height height Height
+Specifies the desired height for the window in any of the forms
+acceptable to \fBTk_GetPixels\fR.
+If this option is less than or equal to zero then the window will
+not request any size at all.
+.OP \-labelanchor labelAnchor LabelAnchor
+Specifies where to place the label. A label is only displayed if the
+\fB\-text\fR option is not the empty string.
+Valid values for this option are (listing them clockwise)
+\fBnw\fR, \fBn\fR, \fBne\fR, \fBen\fR, \fBe\fR, \fBes\fR,
+\fBse\fR, \fBs\fR,\fBsw\fR, \fBws\fR, \fBw\fR and \fBwn\fR.
+The default value is \fBnw\fR.
+.OP \-labelwidget labelWidget LabelWidget
+Specifies a widget to use as label. This overrides any \fB\-text\fR
+option. The widget must exist before being used as \fB\-labelwidget\fR
+and if it is not a descendant of this window, it will be raised
+above it in the stacking order.
+.OP \-visual visual Visual
+Specifies visual information for the new window in any of the
+forms accepted by \fBTk_GetVisual\fR.
+If this option is not specified, the new window will use the same
+visual as its parent.
+The \fB\-visual\fR option may not be modified with the \fBconfigure\fR
+widget command.
+.OP \-width width Width
+Specifies the desired width for the window in any of the forms
+acceptable to \fBTk_GetPixels\fR.
+If this option is less than or equal to zero then the window will
+not request any size at all.
+.BE
+.SH DESCRIPTION
+.PP
+The \fBlabelframe\fR command creates a new window (given by the
+\fIpathName\fR argument) and makes it into a labelframe widget.
+Additional
+options, described above, may be specified on the command line
+or in the option database
+to configure aspects of the labelframe such as its background color
+and relief.  The \fBlabelframe\fR command returns the
+path name of the new window.
+.PP
+A labelframe is a simple widget.  Its primary purpose is to act as a
+spacer or container for complex window layouts.  It has the features
+of a \fBframe\fR plus the ability to display a label.
+.SH "WIDGET COMMAND"
+.PP
+The \fBlabelframe\fR command creates a new Tcl command whose
+name is the same as the path name of the labelframe's window.  This
+command may be used to invoke various
+operations on the widget.  It has the following general form:
+.CS
+\fIpathName option \fR?\fIarg arg ...\fR?
+.CE
+\fIPathName\fR is the name of the command, which is the same as
+the labelframe widget's path name.  \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for frame widgets:
+.TP
+\fIpathName \fBcget\fR \fIoption\fR
+Returns the current value of the configuration option given
+by \fIoption\fR.
+\fIOption\fR may have any of the values accepted by the \fBlabelframe\fR
+command.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+Query or modify the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing all of
+the available options for \fIpathName\fR (see \fBTk_ConfigureInfo\fR for
+information on the format of this list).  If \fIoption\fR is specified
+with no \fIvalue\fR, then the command returns a list describing the
+one named option (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is specified).  If
+one or more \fIoption\-value\fR pairs are specified, then the command
+modifies the given widget option(s) to have the given value(s);  in
+this case the command returns an empty string.
+\fIOption\fR may have any of the values accepted by the \fBlabelframe\fR
+command.
+.SH BINDINGS
+.PP
+When a new labelframe is created, it has no default event bindings:
+labelframes are not intended to be interactive.
+.SH EXAMPLE
+.PP
+This shows how to build part of a GUI for a hamburger vendor. The
+\fBlabelframe\fR widgets are used to organize the available choices by
+the kinds of things that the choices are being made over.
+.PP
+.CS
+grid [\fBlabelframe\fR .burger \-text "Burger"] \e
+     [\fBlabelframe\fR .bun    \-text "Bun"] \-sticky news
+grid [\fBlabelframe\fR .cheese \-text "Cheese Option"] \e
+     [\fBlabelframe\fR .pickle \-text "Pickle Option"] \-sticky news
+foreach {type name val} {
+    burger Beef    beef
+    burger Lamb    lamb
+    burger Vegetarian beans
+
+    bun    Plain   white
+    bun    Sesame  seeds
+    bun    Wholemeal brown
+
+    cheese None    none
+    cheese Cheddar cheddar
+    cheese Edam    edam
+    cheese Brie    brie
+    cheese Gruy\eu00e8re gruyere
+    cheese "Monterey Jack" jack
+
+    pickle None    none
+    pickle Gherkins gherkins
+    pickle Onions  onion
+    pickle Chili   chili
+} {
+    set w [radiobutton .$type.$val \-text $name \-anchor w \e
+            \-variable $type \-value $val]
+    pack $w \-side top \-fill x
+}
+set burger beef
+set bun    white
+set cheese none
+set pickle none
+.CE
+.SH "SEE ALSO"
+frame(n), label(n), ttk::labelframe(n)
+.SH KEYWORDS
+labelframe, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

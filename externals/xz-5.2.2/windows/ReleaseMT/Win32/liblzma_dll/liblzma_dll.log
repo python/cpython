@@ -1,0 +1,100 @@
+﻿  tuklib_cpucores.c
+  tuklib_physmem.c
+..\src\common\tuklib_physmem.c(82): warning C4996: 'GetVersion': was declared deprecated
+          C:\Program Files (x86)\Windows Kits\8.1\Include\um\sysinfoapi.h(110) : see declaration of 'GetVersion'
+..\src\common\tuklib_physmem.c(90): warning C4113: 'FARPROC' differs in parameter lists from 'BOOL (__stdcall *)(LPMEMORYSTATUSEX)'
+  check.c
+  crc32_fast.c
+  crc32_table.c
+  crc64_fast.c
+..\src\liblzma\check\crc64_fast.c(52): warning C4244: 'initializing' : conversion from 'uint64_t' to 'const uint32_t', possible loss of data
+  crc64_table.c
+  sha256.c
+  alone_decoder.c
+  alone_encoder.c
+  auto_decoder.c
+  block_buffer_decoder.c
+  block_buffer_encoder.c
+..\src\liblzma\common\block_buffer_encoder.c(84): warning C4244: 'return' : conversion from 'uint64_t' to 'size_t', possible loss of data
+..\src\liblzma\common\block_buffer_encoder.c(184): warning C4244: '=' : conversion from 'lzma_vli' to 'size_t', possible loss of data
+  block_decoder.c
+  block_encoder.c
+  block_header_decoder.c
+  block_header_encoder.c
+  block_util.c
+  common.c
+  easy_buffer_encoder.c
+  Generating Code...
+  Compiling...
+  easy_decoder_memusage.c
+  easy_encoder.c
+  easy_encoder_memusage.c
+  easy_preset.c
+  filter_buffer_decoder.c
+  filter_buffer_encoder.c
+  filter_common.c
+  filter_decoder.c
+  filter_encoder.c
+  filter_flags_decoder.c
+..\src\liblzma\common\filter_flags_decoder.c(41): warning C4244: 'function' : conversion from 'lzma_vli' to 'size_t', possible loss of data
+..\src\liblzma\common\filter_flags_decoder.c(43): warning C4244: '+=' : conversion from 'lzma_vli' to 'size_t', possible loss of data
+  filter_flags_encoder.c
+  hardware_cputhreads.c
+  hardware_physmem.c
+  index.c
+..\src\liblzma\common\index.c(769): warning C4028: formal parameter 1 different from declaration
+..\src\liblzma\common\index.c(769): warning C4028: formal parameter 2 different from declaration
+..\src\liblzma\common\index.c(888): warning C4244: 'function' : conversion from 'const lzma_vli' to 'size_t', possible loss of data
+..\src\liblzma\common\index.c(899): warning C4244: '=' : conversion from 'const lzma_vli' to 'size_t', possible loss of data
+..\src\liblzma\common\index.c(900): warning C4244: '=' : conversion from 'const lzma_vli' to 'size_t', possible loss of data
+  index_decoder.c
+  index_encoder.c
+  index_hash.c
+  outqueue.c
+  stream_buffer_decoder.c
+  stream_buffer_encoder.c
+  Generating Code...
+  Compiling...
+  stream_decoder.c
+  stream_encoder.c
+  stream_encoder_mt.c
+  stream_flags_common.c
+  stream_flags_decoder.c
+  stream_flags_encoder.c
+  vli_decoder.c
+..\src\liblzma\common\vli_decoder.c(20): warning C4028: formal parameter 1 different from declaration
+..\src\liblzma\common\vli_decoder.c(20): warning C4028: formal parameter 3 different from declaration
+..\src\liblzma\common\vli_decoder.c(20): warning C4028: formal parameter 4 different from declaration
+  vli_encoder.c
+..\src\liblzma\common\vli_encoder.c(20): warning C4028: formal parameter 3 different from declaration
+..\src\liblzma\common\vli_encoder.c(20): warning C4028: formal parameter 4 different from declaration
+  vli_size.c
+  delta_common.c
+  delta_decoder.c
+  delta_encoder.c
+  fastpos_table.c
+  lzma2_decoder.c
+  lzma2_encoder.c
+  lzma_decoder.c
+  lzma_encoder.c
+  lzma_encoder_optimum_fast.c
+  lzma_encoder_optimum_normal.c
+  lzma_encoder_presets.c
+  Generating Code...
+  Compiling...
+  lz_decoder.c
+  lz_encoder.c
+  lz_encoder_mf.c
+  price_table.c
+  arm.c
+  armthumb.c
+  ia64.c
+  powerpc.c
+  simple_coder.c
+  simple_decoder.c
+  simple_encoder.c
+  sparc.c
+  x86.c
+  Generating Code...
+     Creating library C:\CPython\externals\xz-5.2.2\windows\ReleaseMT\Win32\liblzma_dll\liblzma.lib and object C:\CPython\externals\xz-5.2.2\windows\ReleaseMT\Win32\liblzma_dll\liblzma.exp
+  liblzma_dll.vcxproj -> C:\CPython\externals\xz-5.2.2\windows\ReleaseMT\Win32\liblzma_dll\liblzma.dll

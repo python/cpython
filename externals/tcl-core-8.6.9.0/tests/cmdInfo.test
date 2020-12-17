@@ -1,0 +1,107 @@
+# Commands covered:  none
+#
+# This file contains a collection of tests for Tcl_GetCommandInfo,
+# Tcl_SetCommandInfo, Tcl_CreateCommand, Tcl_DeleteCommand, and
+# Tcl_NameOfCommand.  Sourcing this file into Tcl runs the tests
+# and generates output for errors.  No output means no errors were
+# found.
+#
+# Copyright (c) 1993 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testcmdinfo  [llength [info commands testcmdinfo]]
+testConstraint testcmdtoken [llength [info commands testcmdtoken]]
+
+test cmdinfo-1.1 {command procedure and clientData} {testcmdinfo} {
+    testcmdinfo create x1
+    testcmdinfo get x1
+} {CmdProc1 original CmdDelProc1 original :: stringProc}
+test cmdinfo-1.2 {command procedure and clientData} {testcmdinfo} {
+    testcmdinfo create x1
+    x1
+} {CmdProc1 original}
+test cmdinfo-1.3 {command procedure and clientData} {testcmdinfo} {
+    testcmdinfo create x1
+    testcmdinfo modify x1
+    testcmdinfo get x1
+} {CmdProc2 new_command_data CmdDelProc2 new_delete_data :: stringProc}
+test cmdinfo-1.4 {command procedure and clientData} {testcmdinfo} {
+    testcmdinfo create x1
+    testcmdinfo modify x1
+    x1
+} {CmdProc2 new_command_data}
+
+test cmdinfo-2.1 {command deletion callbacks} {testcmdinfo} {
+    testcmdinfo create x1
+    testcmdinfo delete x1
+} {CmdDelProc1 original}
+test cmdinfo-2.2 {command deletion callbacks} {testcmdinfo} {
+    testcmdinfo create x1
+    testcmdinfo modify x1
+    testcmdinfo delete x1
+} {CmdDelProc2 new_delete_data}
+
+test cmdinfo-3.1 {Tcl_Get/SetCommandInfo return values} {testcmdinfo} {
+    testcmdinfo get non_existent
+} {??}
+test cmdinfo-3.2 {Tcl_Get/SetCommandInfo return values} {testcmdinfo} {
+    testcmdinfo create x1
+    testcmdinfo modify x1
+} 1
+test cmdinfo-3.3 {Tcl_Get/SetCommandInfo return values} {testcmdinfo} {
+    testcmdinfo modify non_existent
+} 0
+
+test cmdinfo-4.1 {Tcl_GetCommandName/Tcl_GetCommandFullName procedures} \
+	{testcmdtoken} {
+    set x [testcmdtoken create x1]
+    rename x1 newName
+    set y [testcmdtoken name $x]
+    rename newName x1
+    lappend y {*}[testcmdtoken name $x]
+} {newName ::newName x1 ::x1}
+
+catch {rename newTestCmd {}}
+catch {rename newTestCmd2 {}}
+
+test cmdinfo-5.1 {Names for commands created when inside namespaces} \
+	{testcmdtoken} {
+    # create namespace cmdInfoNs1
+    namespace eval cmdInfoNs1 {}   ;# creates namespace cmdInfoNs1
+    # create namespace cmdInfoNs1::cmdInfoNs2 and execute a script in it
+    set x [namespace eval cmdInfoNs1::cmdInfoNs2 {
+        # the following creates a cmd in the global namespace
+        testcmdtoken create testCmd
+    }]
+    set y [testcmdtoken name $x]
+    rename ::testCmd newTestCmd
+    lappend y {*}[testcmdtoken name $x]
+} {testCmd ::testCmd newTestCmd ::newTestCmd}
+
+test cmdinfo-6.1 {Names for commands created when outside namespaces} \
+	{testcmdtoken} {
+    set x [testcmdtoken create cmdInfoNs1::cmdInfoNs2::testCmd]
+    set y [testcmdtoken name $x]
+    rename cmdInfoNs1::cmdInfoNs2::testCmd newTestCmd2
+    lappend y {*}[testcmdtoken name $x]
+} {testCmd ::cmdInfoNs1::cmdInfoNs2::testCmd newTestCmd2 ::newTestCmd2}
+
+# cleanup
+catch {namespace delete cmdInfoNs1::cmdInfoNs2 cmdInfoNs1}
+catch {rename x1 ""}
+cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

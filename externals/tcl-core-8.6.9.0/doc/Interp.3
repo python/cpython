@@ -1,0 +1,134 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Interp 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_Interp \- client-visible fields of interpreter structures
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+typedef struct {
+    char *\fIresult\fR;
+    Tcl_FreeProc *\fIfreeProc\fR;
+    int \fIerrorLine\fR;
+} \fBTcl_Interp\fR;
+
+typedef void \fBTcl_FreeProc\fR(
+        char *\fIblockPtr\fR);
+.BE
+.SH DESCRIPTION
+.PP
+The \fBTcl_CreateInterp\fR procedure returns a pointer to a Tcl_Interp
+structure.  Callers of \fBTcl_CreateInterp\fR should use this pointer
+as an opaque token, suitable for nothing other than passing back to
+other routines in the Tcl interface.  Accessing fields directly through
+the pointer as described below is no longer supported.  The supported
+public routines \fBTcl_SetResult\fR, \fBTcl_GetResult\fR,
+\fBTcl_SetErrorLine\fR, \fBTcl_GetErrorLine\fR must be used instead.
+.PP
+For legacy programs and extensions no longer being maintained, compiles
+against the Tcl 8.6 header files are only possible with the compiler
+directives
+.CS
+#define USE_INTERP_RESULT
+.CE
+and/or
+.CS
+#define USE_INTERP_ERRORLINE
+.CE
+depending on which fields of the \fBTcl_Interp\fR struct are accessed.
+These directives may be embedded in code or supplied via compiler options.
+.PP
+The \fIresult\fR and \fIfreeProc\fR fields are used to return
+results or error messages from commands.
+This information is returned by command procedures back to \fBTcl_Eval\fR,
+and by \fBTcl_Eval\fR back to its callers.
+The \fIresult\fR field points to the string that represents the
+result or error message, and the \fIfreeProc\fR field tells how
+to dispose of the storage for the string when it is not needed anymore.
+The easiest way for command procedures to manipulate these
+fields is to call procedures like \fBTcl_SetResult\fR
+or \fBTcl_AppendResult\fR;  they
+will hide all the details of managing the fields.
+The description below is for those procedures that manipulate the
+fields directly.
+.PP
+Whenever a command procedure returns, it must ensure
+that the \fIresult\fR field of its interpreter points to the string
+being returned by the command.
+The \fIresult\fR field must always point to a valid string.
+If a command wishes to return no result then \fIinterp->result\fR
+should point to an empty string.
+Normally, results are assumed to be statically allocated,
+which means that the contents will not change before the next time
+\fBTcl_Eval\fR is called or some other command procedure is invoked.
+In this case, the \fIfreeProc\fR field must be zero.
+Alternatively, a command procedure may dynamically
+allocate its return value (e.g. using \fBTcl_Alloc\fR)
+and store a pointer to it in \fIinterp->result\fR.
+In this case, the command procedure must also set \fIinterp->freeProc\fR
+to the address of a procedure that can free the value, or \fBTCL_DYNAMIC\fR
+if the storage was allocated directly by Tcl or by a call to
+\fBTcl_Alloc\fR.
+If \fIinterp->freeProc\fR is non-zero, then Tcl will call \fIfreeProc\fR
+to free the space pointed to by \fIinterp->result\fR before it
+invokes the next command.
+If a client procedure overwrites \fIinterp->result\fR when
+\fIinterp->freeProc\fR is non-zero, then it is responsible for calling
+\fIfreeProc\fR to free the old \fIinterp->result\fR (the \fBTcl_FreeResult\fR
+macro should be used for this purpose).
+.PP
+\fIFreeProc\fR should have arguments and result that match the
+\fBTcl_FreeProc\fR declaration above:  it receives a single
+argument which is a pointer to the result value to free.
+In most applications \fBTCL_DYNAMIC\fR is the only non-zero value ever
+used for \fIfreeProc\fR.
+However, an application may store a different procedure address
+in \fIfreeProc\fR in order to use an alternate memory allocator
+or in order to do other cleanup when the result memory is freed.
+.PP
+As part of processing each command, \fBTcl_Eval\fR initializes
+\fIinterp->result\fR
+and \fIinterp->freeProc\fR just before calling the command procedure for
+the command.  The \fIfreeProc\fR field will be initialized to zero,
+and \fIinterp->result\fR will point to an empty string.  Commands that
+do not return any value can simply leave the fields alone.
+Furthermore, the empty string pointed to by \fIresult\fR is actually
+part of an array of \fBTCL_RESULT_SIZE\fR characters (approximately 200).
+If a command wishes to return a short string, it can simply copy
+it to the area pointed to by \fIinterp->result\fR.  Or, it can use
+the sprintf procedure to generate a short result string at the location
+pointed to by \fIinterp->result\fR.
+.PP
+It is a general convention in Tcl-based applications that the result
+of an interpreter is normally in the initialized state described
+in the previous paragraph.
+Procedures that manipulate an interpreter's result (e.g. by
+returning an error) will generally assume that the result
+has been initialized when the procedure is called.
+If such a procedure is to be called after the result has been
+changed, then \fBTcl_ResetResult\fR should be called first to
+reset the result to its initialized state.  The direct use of
+\fIinterp->result\fR is strongly deprecated (see \fBTcl_SetResult\fR).
+.PP
+The \fIerrorLine\fR
+field is valid only after \fBTcl_Eval\fR returns
+a \fBTCL_ERROR\fR return code.  In this situation the \fIerrorLine\fR
+field identifies the line number of the command being executed when
+the error occurred.  The line numbers are relative to the command
+being executed:  1 means the first line of the command passed to
+\fBTcl_Eval\fR, 2 means the second line, and so on.
+The \fIerrorLine\fR field is typically used in conjunction with
+\fBTcl_AddErrorInfo\fR to report information about where an error
+occurred.
+\fIErrorLine\fR should not normally be modified except by \fBTcl_Eval\fR.
+
+.SH KEYWORDS
+free, initialized, interpreter, malloc, result

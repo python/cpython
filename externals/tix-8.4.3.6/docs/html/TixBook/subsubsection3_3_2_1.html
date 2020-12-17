@@ -1,0 +1,71 @@
+<HEAD>
+<TITLE> Creating a TixControl Widget<A NAME=121>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html288 HREF=subsubsection3_3_2_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html286 HREF=subsection3_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html280 HREF=subsection3_3_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html290 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html289 HREF=subsubsection3_3_2_2.html> Accessing The Value </A>
+<B>Up:</B> <A NAME=tex2html287 HREF=subsection3_3_2.html> Getting Started: the </A>
+<B> Previous:</B> <A NAME=tex2html281 HREF=subsection3_3_2.html> Getting Started: the </A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00032100000000000000> Creating a TixControl Widget<A NAME=121>&nbsp;</A></A></H3>
+<P>
+The following code demonstrates how to create a TixControl widget and
+  specify its options:
+<P>
+<tt>     tixControl .lawyers -label Lawyers: -max 10 -min 0<BR>
+    .lawyers config -integer true -step 2
+</tt>
+<P>
+This example creates a TixControl widget that let us to select the
+  numbers of lawyers we wish to be allowed in this country.  (Figure
+  1-2)
+<P>
+Let us examine the options: the <tt>-label</tt> option specifies a
+  caption for this widget. The <tt>-max</tt> option specifies the maximum
+  number of lawyers we can choose. The <tt>-min</tt> option specifies the
+  minimum number of lawyers we can choose: although we would love to
+  enter a negative number, reality dictate that the lower limit must
+  be zero. The <tt>-integer</tt> option indicates that the number of
+  lawyers must be an integer; that is, we respect the lawyers' rights
+  not to be chopped up into decimal points. Finally, since lawyers
+  seem to go in pairs, we set the <tt>-step</tt> option to <tt>2</tt>, which
+  indicates that when we press the up/down arrow buttons, we want the
+  number of lawyers to go up and down by two each time.
+<P>
+<blockquote> <P><CENTER><IMG SRC="../gif/tix/intro/lawyer.gif">
+  </CENTER>
+</blockquote>
+<P>
+As shown in the example, you can create and manipulate a Tix widget
+  in the same manner as the standard Tk widgets. The options of the
+  widget can be specified during the creation of the widget.
+  Alternatively, they can be changed by the <tt>configure</tt> widget
+  command.  In addition, options can also be specified in the option
+  database or as X resources. Here is an example that produces the
+  same result as the previous code fragment:
+<P>
+<tt>     option add *lawyers.max 10<BR>
+    option add *lawyers.min 0<BR>
+    tixControl .lawyers -label Lawyers: -integer true<BR>
+    .lawyers config -step 2
+</tt>
+<P>
+In figure 1-3, you can see the composition of
+  TixControl: it is made out of a label widget, an entry widget and
+  two button widgets. Widgets that are composed of other widgets, like
+  TixControl, are called <em>mega-widgets</em>. Most widgets in the Tix
+  library are mega-widgets (xx: and as you know this book is about
+  them!).
+<P>
+<blockquote> <P><CENTER><IMG SRC="../gif/tix/intro/law_comp.gif">
+  </CENTER>
+</blockquote>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

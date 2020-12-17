@@ -1,0 +1,312 @@
+'\"
+'\" Copyright (c) 1989-1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_AddErrorInfo 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErrorInfo, Tcl_AddObjErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_SetErrorLine, Tcl_GetErrorLine, Tcl_PosixError, Tcl_LogCommandInfo \- retrieve or record information about errors and other return options
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Obj *
+\fBTcl_GetReturnOptions\fR(\fIinterp, code\fR)
+.sp
+int
+\fBTcl_SetReturnOptions\fR(\fIinterp, options\fR)
+.sp
+\fBTcl_AddErrorInfo\fR(\fIinterp, message\fR)
+.sp
+\fBTcl_AppendObjToErrorInfo\fR(\fIinterp, objPtr\fR)
+.sp
+\fBTcl_AddObjErrorInfo\fR(\fIinterp, message, length\fR)
+.sp
+\fBTcl_SetObjErrorCode\fR(\fIinterp, errorObjPtr\fR)
+.sp
+\fBTcl_SetErrorCode\fR(\fIinterp, element, element, ... \fB(char *) NULL\fR)
+.sp
+\fBTcl_SetErrorCodeVA\fR(\fIinterp, argList\fR)
+.sp
+\fBTcl_GetErrorLine\fR(\fIinterp\fR)
+.sp
+\fBTcl_SetErrorLine\fR(\fIinterp, lineNum\fR)
+.sp
+const char *
+\fBTcl_PosixError\fR(\fIinterp\fR)
+.sp
+void
+\fBTcl_LogCommandInfo\fR(\fIinterp, script, command, commandLength\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp commandLength
+.AP Tcl_Interp *interp in
+Interpreter in which to record information.
+.AP int code
+The code returned from script evaluation.
+.AP Tcl_Obj *options
+A dictionary of return options.
+.AP char *message in
+For \fBTcl_AddErrorInfo\fR,
+this is a conventional C string to append to the \fB\-errorinfo\fR return option.
+For \fBTcl_AddObjErrorInfo\fR,
+this points to the first byte of an array of \fIlength\fR bytes
+containing a string to append to the \fB\-errorinfo\fR return option.
+This byte array may contain embedded null bytes
+unless \fIlength\fR is negative.
+.AP Tcl_Obj *objPtr in
+A message to be appended to the \fB\-errorinfo\fR return option
+in the form of a Tcl_Obj value.
+.AP int length in
+The number of bytes to copy from \fImessage\fR when
+appending to the \fB\-errorinfo\fR return option.
+If negative, all bytes up to the first null byte are used.
+.AP Tcl_Obj *errorObjPtr in
+The \fB\-errorcode\fR return option will be set to this value.
+.AP char *element in
+String to record as one element of the \fB\-errorcode\fR return option.
+Last \fIelement\fR argument must be NULL.
+.AP va_list argList in
+An argument list which must have been initialized using
+\fBva_start\fR, and cleared using \fBva_end\fR.
+.AP int lineNum
+The line number of a script where an error occurred.
+.AP "const char" *script in
+Pointer to first character in script containing command (must be <= command)
+.AP "const char" *command in
+Pointer to first character in command that generated the error
+.AP int commandLength in
+Number of bytes in command; -1 means use all bytes up to first null byte
+.BE
+.SH DESCRIPTION
+.PP
+The \fBTcl_SetReturnOptions\fR and \fBTcl_GetReturnOptions\fR
+routines expose the same capabilities as the \fBreturn\fR and
+\fBcatch\fR commands, respectively, in the form of a C interface.
+.PP
+\fBTcl_GetReturnOptions\fR retrieves the dictionary of return options
+from an interpreter following a script evaluation.
+Routines such as \fBTcl_Eval\fR are called to evaluate a
+script in an interpreter.  These routines return an integer
+completion code.  These routines also leave in the interpreter
+both a result and a dictionary of return options generated
+by script evaluation.  Just as \fBTcl_GetObjResult\fR retrieves
+the result, \fBTcl_GetReturnOptions\fR retrieves the dictionary
+of return options.  The integer completion code should be
+passed as the \fIcode\fR argument to \fBTcl_GetReturnOptions\fR
+so that all required options will be present in the dictionary.
+Specifically, a \fIcode\fR value of \fBTCL_ERROR\fR will
+ensure that entries for the keys \fB\-errorinfo\fR,
+\fB\-errorcode\fR, and \fB\-errorline\fR will appear in the
+dictionary.  Also, the entries for the keys \fB\-code\fR
+and \fB\-level\fR will be adjusted if necessary to agree
+with the value of \fIcode\fR.  The \fB(Tcl_Obj *)\fR returned
+by \fBTcl_GetReturnOptions\fR points to an unshared
+\fBTcl_Obj\fR with reference count of zero.  The dictionary
+may be written to, either adding, removing, or overwriting
+any entries in it, without the need to check for a shared value.
+As with any \fBTcl_Obj\fR with reference count of zero, it is up to
+the caller to arrange for its disposal with \fBTcl_DecrRefCount\fR or
+to a reference to it via \fBTcl_IncrRefCount\fR (or one of the many
+functions that call that, notably including \fBTcl_SetObjResult\fR and
+\fBTcl_SetVar2Ex\fR).
+.PP
+A typical usage for \fBTcl_GetReturnOptions\fR is to
+retrieve the stack trace when script evaluation returns
+\fBTCL_ERROR\fR, like so:
+.PP
+.CS
+int code = Tcl_Eval(interp, script);
+if (code == TCL_ERROR) {
+    Tcl_Obj *options = \fBTcl_GetReturnOptions\fR(interp, code);
+    Tcl_Obj *key = Tcl_NewStringObj("-errorinfo", -1);
+    Tcl_Obj *stackTrace;
+    Tcl_IncrRefCount(key);
+    Tcl_DictObjGet(NULL, options, key, &stackTrace);
+    Tcl_DecrRefCount(key);
+    /* Do something with stackTrace */
+    Tcl_DecrRefCount(options);
+}
+.CE
+.PP
+\fBTcl_SetReturnOptions\fR sets the return options
+of \fIinterp\fR to be \fIoptions\fR.  If \fIoptions\fR
+contains any invalid value for any key, TCL_ERROR will
+be returned, and the interp result will be set to an
+appropriate error message.  Otherwise, a completion code
+in agreement with the \fB\-code\fR and \fB\-level\fR
+keys in \fIoptions\fR will be returned.
+.PP
+As an example, Tcl's \fBreturn\fR command itself could
+be implemented in terms of \fBTcl_SetReturnOptions\fR
+like so:
+.PP
+.CS
+if ((objc % 2) == 0) { /* explicit result argument */
+    objc--;
+    Tcl_SetObjResult(interp, objv[objc]);
+}
+return \fBTcl_SetReturnOptions\fR(interp, Tcl_NewListObj(objc-1, objv+1));
+.CE
+.PP
+(It is not really implemented that way.  Internal access
+privileges allow for a more efficient alternative that meshes
+better with the bytecode compiler.)
+.PP
+Note that a newly created \fBTcl_Obj\fR may be passed
+in as the \fIoptions\fR argument without the need to tend
+to any reference counting.  This is analogous to
+\fBTcl_SetObjResult\fR.
+.PP
+While \fBTcl_SetReturnOptions\fR provides a general interface
+to set any collection of return options, there are a handful
+of return options that are very frequently used.  Most
+notably the \fB\-errorinfo\fR and \fB\-errorcode\fR return
+options should be set properly when the command procedure
+of a command returns \fBTCL_ERROR\fR.  The \fB\-errorline\fR
+return option is also read by commands that evaluate scripts
+and wish to supply detailed error location information in
+the stack trace text they append to the \fB\-errorinfo\fR option.
+Tcl provides several simpler interfaces to more directly set
+these return options.
+.PP
+The \fB\-errorinfo\fR option holds a stack trace of the
+operations that were in progress when an error occurred,
+and is intended to be human-readable.
+The \fB\-errorcode\fR option holds a Tcl list of items that
+are intended to be machine-readable.
+The first item in the \fB\-errorcode\fR value identifies the class of
+error that occurred
+(e.g., POSIX means an error occurred in a POSIX system call)
+and additional elements hold additional pieces
+of information that depend on the class.
+See the manual entry on the \fBerrorCode\fR variable for details on the
+various formats for the \fB\-errorcode\fR option used by Tcl's built-in
+commands.
+.PP
+The \fB\-errorinfo\fR option value is gradually built up as an
+error unwinds through the nested operations.
+Each time an error code is returned to \fBTcl_Eval\fR, or
+any of the routines that performs script evaluation,
+the procedure \fBTcl_AddErrorInfo\fR is called to add
+additional text to the \fB\-errorinfo\fR value describing the
+command that was being executed when the error occurred.
+By the time the error has been passed all the way back
+to the application, it will contain a complete trace
+of the activity in progress when the error occurred.
+.PP
+It is sometimes useful to add additional information to
+the \fB\-errorinfo\fR value beyond what can be supplied automatically
+by the script evaluation routines.
+\fBTcl_AddErrorInfo\fR may be used for this purpose:
+its \fImessage\fR argument is an additional
+string to be appended to the \fB\-errorinfo\fR option.
+For example, when an error arises during the \fBsource\fR command,
+the procedure \fBTcl_AddErrorInfo\fR is called to
+record the name of the file being processed and the
+line number on which the error occurred.
+Likewise, when an error arises during evaluation of a
+Tcl procedures, the procedure name and line number
+within the procedure are recorded, and so on.
+The best time to call \fBTcl_AddErrorInfo\fR is just after
+a script evaluation routine has returned \fBTCL_ERROR\fR.
+The value of the \fB\-errorline\fR return option (retrieved
+via a call to \fBTcl_GetReturnOptions\fR) often makes up
+a useful part of the \fImessage\fR passed to \fBTcl_AddErrorInfo\fR.
+.PP
+\fBTcl_AppendObjToErrorInfo\fR is an alternative interface to the
+same functionality as \fBTcl_AddErrorInfo\fR.  \fBTcl_AppendObjToErrorInfo\fR
+is called when the string value to be appended to the \fB\-errorinfo\fR option
+is available as a \fBTcl_Obj\fR instead of as a \fBchar\fR array.
+.PP
+\fBTcl_AddObjErrorInfo\fR is nearly identical
+to \fBTcl_AddErrorInfo\fR, except that it has an additional \fIlength\fR
+argument.  This allows the \fImessage\fR string to contain
+embedded null bytes.  This is essentially never a good idea.
+If the \fImessage\fR needs to contain the null character \fBU+0000\fR,
+Tcl's usual internal encoding rules should be used to avoid
+the need for a null byte.  If the \fBTcl_AddObjErrorInfo\fR
+interface is used at all, it should be with a negative \fIlength\fR value.
+.PP
+The procedure \fBTcl_SetObjErrorCode\fR is used to set the
+\fB\-errorcode\fR return option to the list value \fIerrorObjPtr\fR
+built up by the caller.
+\fBTcl_SetObjErrorCode\fR is typically invoked just
+before returning an error. If an error is
+returned without calling \fBTcl_SetObjErrorCode\fR or
+\fBTcl_SetErrorCode\fR the Tcl interpreter automatically sets
+the \fB\-errorcode\fR return option to \fBNONE\fR.
+.PP
+The procedure \fBTcl_SetErrorCode\fR is also used to set the
+\fB\-errorcode\fR return option. However, it takes one or more strings to
+record instead of a value. Otherwise, it is similar to
+\fBTcl_SetObjErrorCode\fR in behavior.
+.PP
+\fBTcl_SetErrorCodeVA\fR is the same as \fBTcl_SetErrorCode\fR except that
+instead of taking a variable number of arguments it takes an argument list.
+.PP
+The procedure \fBTcl_GetErrorLine\fR is used to read the integer value
+of the \fB\-errorline\fR return option without the overhead of a full
+call to \fBTcl_GetReturnOptions\fR.  Likewise, \fBTcl_SetErrorLine\fR
+sets the \fB\-errorline\fR return option value.
+.PP
+\fBTcl_PosixError\fR
+sets the \fB\-errorcode\fR variable after an error in a POSIX kernel call.
+It reads the value of the \fBerrno\fR C variable and calls
+\fBTcl_SetErrorCode\fR to set the \fB\-errorcode\fR return
+option in the \fBPOSIX\fR format.
+The caller must previously have called \fBTcl_SetErrno\fR to set
+\fBerrno\fR; this is necessary on some platforms (e.g. Windows) where Tcl
+is linked into an application as a shared library, or when the error
+occurs in a dynamically loaded extension. See the manual entry for
+\fBTcl_SetErrno\fR for more information.
+.PP
+\fBTcl_PosixError\fR returns a human-readable diagnostic message
+for the error
+(this is the same value that will appear as the third element
+in the \fB\-errorcode\fR value).
+It may be convenient to include this string as part of the
+error message returned to the application in
+the interpreter's result.
+.PP
+\fBTcl_LogCommandInfo\fR is invoked after an error occurs in an
+interpreter.  It adds information about the command that was being
+executed when the error occurred to the \fB\-errorinfo\fR value, and
+the line number stored internally in the interpreter is set.
+.PP
+In older releases of Tcl, there was no \fBTcl_GetReturnOptions\fR
+routine.  In its place, the global Tcl variables \fBerrorInfo\fR
+and \fBerrorCode\fR were the only place to retrieve the error
+information.  Much existing code written for older Tcl releases
+still access this information via those global variables.
+.PP
+It is important to realize that while reading from those
+global variables remains a supported way to access these
+return option values, it is important not to assume that
+writing to those global variables will properly set the
+corresponding return options.  It has long been emphasized
+in this manual page that it is important to
+call the procedures described here rather than
+setting \fBerrorInfo\fR or \fBerrorCode\fR directly with
+\fBTcl_ObjSetVar2\fR.
+.PP
+If the procedure \fBTcl_ResetResult\fR is called,
+it clears all of the state of the interpreter associated with
+script evaluation, including the entire return options dictionary.
+In particular, the \fB\-errorinfo\fR and \fB\-errorcode\fR options
+are reset.
+If an error had occurred, the \fBTcl_ResetResult\fR call will
+clear the error state to make it appear as if no error had
+occurred after all.
+The global variables \fBerrorInfo\fR and
+\fBerrorCode\fR are not modified by \fBTcl_ResetResult\fR
+so they continue to hold a record of information about the
+most recent error seen in an interpreter.
+.SH "SEE ALSO"
+Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_Interp(3), Tcl_ResetResult(3),
+Tcl_SetErrno(3), errorCode(n), errorInfo(n)
+.SH KEYWORDS
+error, value, value result, stack, trace, variable

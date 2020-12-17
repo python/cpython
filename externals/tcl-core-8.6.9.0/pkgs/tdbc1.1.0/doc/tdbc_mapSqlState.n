@@ -1,0 +1,93 @@
+'\"
+'\" tdbc_mapSqlState.n --
+'\"
+'\" Copyright (c) 2009 by Kevin B. Kenny.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution of
+'\" this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH "tdbc::mapSqlState" n 8.6 Tcl "Tcl Database Connectivity"
+'\" .so man.macros
+'\" IGNORE
+.if t .wh -1.3i ^B
+.nr ^l \n(.l
+.ad b
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+'\"	Draw four-sided box normally, but don't draw top of
+'\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# CS - begin code excerpt
+.de CS
+.RS
+.nf
+.ta .25i .5i .75i 1i
+..
+'\"	# CE - end code excerpt
+.de CE
+.fi
+.RE
+..
+'\" END IGNORE
+.BS
+.SH "NAME"
+tdbc::mapSqlState \- Map SQLSTATE to error class
+.SH "SYNOPSIS"
+.nf
+package require \fBtdbc 1.0\fR
+
+\fBtdbc::mapSqlState\fR \fIsqlstate\fR
+.fi
+.BE
+.SH "DESCRIPTION"
+.PP
+The \fBtdbc::mapSqlState\fR command accepts a string that is expected
+to be a five-character 'SQL state' as returned from a SQL database when
+an error occurs. It examines the first two characters of the string,
+and returns an error class as a human- and machine-readable name (for example,
+\fBFEATURE_NOT_SUPPORTED\fR, \fBDATA_EXCEPTION\fR or 
+\fBINVALID_CURSOR_STATE\fR).
+.PP
+The TDBC specification requires database drivers to return a description
+of an error in the error code when an error occurs. The description is
+a string that has at least four elements: "\fBTDBC\fR \fIerrorClass\fR
+\fIsqlstate\fR \fIdriverName\fR \fIdetails...\fR". The \fBtdbc::mapSqlState\fR
+command gives a convenient way for a TDBC driver to generate the
+\fIerrorClass\fR element given the SQL state returned from a database. 
+.SH "SEE ALSO"
+tdbc(n), tdbc::tokenize, tdbc::connection(n), tdbc::statement(n), tdbc::resultset(n)
+.SH "KEYWORDS"
+TDBC, SQL, database, state
+.SH "COPYRIGHT"
+Copyright (c) 2009 by Kevin B. Kenny.
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
+'\"

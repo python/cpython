@@ -1,0 +1,60 @@
+# This file is a Tcl script to test the procedures in the file
+# tkCmds.c.  It is organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+namespace import -force tcltest::test
+
+update
+
+test cmds-1.1 {tkwait visibility, argument errors} -body {
+    tkwait visibility
+} -returnCodes {error} -result {wrong # args: should be "tkwait variable|visibility|window name"}
+test cmds-1.2 {tkwait visibility, argument errors} -body {
+    tkwait visibility foo bar
+} -returnCodes {error} -result {wrong # args: should be "tkwait variable|visibility|window name"}
+test cmds-1.3 {tkwait visibility, argument errors} -body {
+    tkwait visibility bad_window
+} -returnCodes {error} -result {bad window path name "bad_window"}
+test cmds-1.4 {tkwait visibility, waiting for window to be mapped} -setup {
+    button .b -text "Test"
+    set x init
+} -body {
+    after 100 {set x delay; place .b -x 0 -y 0}
+    tkwait visibility .b
+    return $x
+} -cleanup {
+    destroy .b
+} -result {delay}
+test cmds-1.5 {tkwait visibility, window gets deleted} -setup {
+    frame .f
+    button .f.b -text "Test"
+    pack .f.b
+    set x init
+} -body {
+    after 100 {set x deleted; destroy .f}
+    tkwait visibility .f.b
+} -returnCodes {error} -result {window ".f.b" was deleted before its visibility changed} 
+test cmds-1.6 {tkwait visibility, window gets deleted} -setup {
+    frame .f
+    button .f.b -text "Test"
+    pack .f.b
+    set x init
+} -body {
+    after 100 {set x deleted; destroy .f}
+    catch {tkwait visibility .f.b}
+    return $x
+} -cleanup {
+    destroy .f
+} -result {deleted}
+
+
+# cleanup
+cleanupTests
+return
+

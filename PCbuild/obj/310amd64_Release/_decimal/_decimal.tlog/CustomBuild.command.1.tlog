@@ -1,0 +1,2 @@
+^C:\CPYTHON\MODULES\_DECIMAL\LIBMPDEC\VCDIV64.ASM
+ml64 /nologo /c /Zi /Fo "C:\cpython\PCbuild\obj\310amd64_Release\_decimal\vcdiv64.obj" "C:\cpython\Modules\_decimal\libmpdec\vcdiv64.asm"

@@ -1,0 +1,490 @@
+# This file is a Tcl script to test out Tk's "tk_getOpenFile" and
+# "tk_getSaveFile" commands. It is organized in the standard fashion
+# for Tcl tests.
+#
+# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.1
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+test fileDialog-0.1 {GetFileName: file types: MakeFilter() fails} {
+    # MacOS type that is too long
+
+    set res [list [catch {tk_getSaveFile -filetypes {{"foo" .foo {\0\0\0\0\0}}}} msg] $msg]
+    regsub -all "\0" $res {\\0}
+} {1 {bad Macintosh file type "\0\0\0\0\0"}}
+test fileDialog-0.2 {GetFileName: file types: MakeFilter() fails} {
+    # MacOS type that is too short, but looks ok in utf (4 bytes).
+
+    set x [catch {tk_getSaveFile -filetypes {{"foo" .foo {\0\0}}}} msg]
+    regsub -all "\0" $msg {\\0} msg
+    list $x $msg
+} {1 {bad Macintosh file type "\0\0"}}
+
+set tk_strictMotif_old $tk_strictMotif
+
+#----------------------------------------------------------------------
+#
+# Procedures needed by this test file
+#
+#----------------------------------------------------------------------
+
+proc ToPressButton {parent btn} {
+    global isNative
+    if {!$isNative} {
+	after 100 SendButtonPress $parent $btn mouse
+    }
+}
+
+proc ToEnterFileByKey {parent fileName fileDir} {
+    global isNative
+    if {!$isNative} {
+	after 100 EnterFileByKey $parent [list $fileName] [list $fileDir]
+    }
+}
+
+proc PressButton {btn} {
+    event generate $btn <Enter>
+    event generate $btn <1> -x 5 -y 5
+    event generate $btn <ButtonRelease-1> -x 5 -y 5
+}
+
+proc EnterFileByKey {parent fileName fileDir} {
+    global tk_strictMotif
+    if {$parent == "."} {
+	set w .__tk_filedialog
+    } else {
+	set w $parent.__tk_filedialog
+    }
+    upvar ::tk::dialog::file::__tk_filedialog data
+
+    if {$tk_strictMotif} {
+	$data(sEnt) delete 0 end
+	$data(sEnt) insert 0 [file join $fileDir $fileName]
+    } else {
+	$data(ent) delete 0 end
+	$data(ent) insert 0 $fileName
+    }
+
+    update
+    SendButtonPress $parent ok mouse
+}
+
+proc SendButtonPress {parent btn type} {
+    global tk_strictMotif
+    if {$parent == "."} {
+	set w .__tk_filedialog
+    } else {
+	set w $parent.__tk_filedialog
+    }
+    upvar ::tk::dialog::file::__tk_filedialog data
+
+    set button $data($btn\Btn)
+    if ![winfo ismapped $button] {
+	update
+    }
+
+    if {$type == "mouse"} {
+	PressButton $button
+    } else {
+	event generate $w <Enter>
+	focus $w
+	event generate $button <Enter>
+	event generate $w <KeyPress> -keysym Return
+    }
+}
+
+
+#----------------------------------------------------------------------
+#
+# The test suite proper
+#
+#----------------------------------------------------------------------
+
+if {$tcl_platform(platform) == "unix"} {
+    set modes "0 1"
+} else {
+    set modes 1
+}
+
+set unknownOptionsMsg(tk_getOpenFile,notAqua) {bad option "-foo": must be -defaultextension, -filetypes, -initialdir, -initialfile, -multiple, -parent, -title, or -typevariable}
+set unknownOptionsMsg(tk_getOpenFile,aqua) {bad option "-foo": must be -defaultextension, -filetypes, -initialdir, -initialfile, -message, -multiple, -parent, -title, -typevariable, or -command}
+set unknownOptionsMsg(tk_getSaveFile,notAqua) {bad option "-foo": must be -confirmoverwrite, -defaultextension, -filetypes, -initialdir, -initialfile, -parent, -title, or -typevariable}
+set unknownOptionsMsg(tk_getSaveFile,aqua) {bad option "-foo": must be -defaultextension, -filetypes, -initialdir, -initialfile, -message, -parent, -title, -typevariable, -command, or -confirmoverwrite}
+
+set tmpFile "filebox.tmp"
+makeFile {
+    # this file can be empty!
+} $tmpFile
+
+array set filters {
+    1 {}
+    2 {
+	{"Text files"		{.txt .doc}	}
+	{"Text files"		{}		TEXT}
+	{"Tcl Scripts"		{.tcl}		TEXT}
+	{"C Source Files"	{.c .h}		}
+	{"All Source Files"	{.tcl .c .h}	}
+	{"Image Files"		{.gif}		}
+	{"Image Files"		{.jpeg .jpg}	}
+	{"Image Files"		""		{GIFF JPEG}}
+	{"All files"		*}
+    }
+    3 {
+	{"Text files"		{.txt .doc}	TEXT}
+	{"Foo"			{""}		TEXT}
+    }
+}
+
+foreach mode $modes {
+    #
+    # Test both the motif version and the "tk" version of the file dialog
+    # box on Unix.
+    #
+    # Note that this means that test names are unusually complex.
+    #
+
+    set addedExtensions {}
+    if {$tcl_platform(platform) == "unix"} {
+	set tk_strictMotif $mode
+	# Extension adding is only done when using the non-motif file
+	# box with an extension-less filename
+	if {!$mode} {
+	    set addedExtensions {NONE {} .txt .txt}
+	}
+    }
+
+    test filebox-1.1.1-$mode "tk_getOpenFile command" -constraints notAqua -body {
+	tk_getOpenFile -foo
+    } -returnCodes error -result $unknownOptionsMsg(tk_getOpenFile,notAqua)
+    test filebox-1.1.2-$mode "tk_getOpenFile command" -constraints aqua -body {
+	tk_getOpenFile -foo
+    } -returnCodes error -result $unknownOptionsMsg(tk_getOpenFile,aqua)
+
+    catch {tk_getOpenFile -foo 1} msg
+    regsub -all ,      $msg "" options
+    regsub \"-foo\" $options "" options
+    
+    foreach option $options {
+        if {[string index $option 0] eq "-"} {
+	    test filebox-1.2-$mode$option "tk_getOpenFile command" -body {
+		tk_getOpenFile $option
+	    } -returnCodes error -result "value for \"$option\" missing"
+        }
+    }
+
+    test filebox-1.3.1-$mode "tk_getOpenFile command" -constraints notAqua -body {
+        tk_getOpenFile -foo bar
+    } -returnCodes error -result $unknownOptionsMsg(tk_getOpenFile,notAqua)
+    test filebox-1.3.2-$mode "tk_getOpenFile command" -constraints aqua -body {
+        tk_getOpenFile -foo bar
+    } -returnCodes error -result $unknownOptionsMsg(tk_getOpenFile,aqua)
+    test filebox-1.4-$mode "tk_getOpenFile command" -body {
+        tk_getOpenFile -initialdir
+    } -returnCodes error -result {value for "-initialdir" missing}
+    test filebox-1.5-$mode "tk_getOpenFile command" -body {
+        tk_getOpenFile -parent foo.bar
+    } -returnCodes error -result {bad window path name "foo.bar"}
+    test filebox-1.6-$mode "tk_getOpenFile command" -body {
+        tk_getOpenFile -filetypes {Foo}
+    } -returnCodes error -result {bad file type "Foo", should be "typeName {extension ?extensions ...?} ?{macType ?macTypes ...?}?"}
+
+    set isNative [expr {
+	[info commands ::tk::MotifFDialog] eq ""   &&
+	[info commands ::tk::dialog::file::] eq ""
+    }]
+
+    set parent .
+
+    set verylongstring longstring:
+    set verylongstring $verylongstring$verylongstring
+    set verylongstring $verylongstring$verylongstring
+    set verylongstring $verylongstring$verylongstring
+    set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+
+    set color #404040
+    test filebox-2.1-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+        ToPressButton $parent cancel
+        tk_getOpenFile -title "Press Cancel ($verylongstring)" -parent $parent
+    } ""
+
+    set fileName $tmpFile
+    set fileDir [tcltest::temporaryDirectory]
+    set pathName [file join $fileDir $fileName]
+
+    test filebox-2.2-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+        ToPressButton $parent ok
+        set choice [tk_getOpenFile -title "Press Ok" \
+		-parent $parent -initialfile $fileName -initialdir $fileDir]
+    } $pathName
+    test filebox-2.3-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+        ToEnterFileByKey $parent $fileName $fileDir
+        set choice [tk_getOpenFile -title "Enter \"$fileName\" and press Ok" \
+		-parent $parent -initialdir $fileDir]
+    } $pathName
+    test filebox-2.4-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+        cd $fileDir
+        ToPressButton $parent ok
+        set choice [tk_getOpenFile -title "Enter \"$fileName\" and press Ok" \
+		-parent $parent -initialdir . -initialfile $fileName]
+    } $pathName
+    test filebox-2.5-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+        ToPressButton $parent ok
+        set choice [tk_getOpenFile -title "Enter \"$fileName\" and press Ok" \
+		-parent $parent -initialdir /badpath -initialfile $fileName]
+    } $pathName
+    test filebox-2.6-$mode "tk_getOpenFile command" -setup {
+        toplevel .t1; toplevel .t2
+        wm geometry .t1 +0+0
+        wm geometry .t2 +0+0
+    } -constraints nonUnixUserInteraction -body {
+        set choice {}
+        ToPressButton .t1 ok
+        lappend choice [tk_getOpenFile \
+		-title "Enter \"$fileName\" and press Ok" \
+		-parent .t1 -initialdir $fileDir \
+		-initialfile $fileName]
+        ToPressButton .t2 ok
+        lappend choice [tk_getOpenFile \
+		-title "Enter \"$fileName\" and press Ok" \
+		-parent .t2 -initialdir $fileDir \
+		-initialfile $fileName]
+        ToPressButton .t1 ok
+        lappend choice [tk_getOpenFile \
+		-title "Enter \"$fileName\" and press Ok" \
+		-parent .t1 -initialdir $fileDir \
+		-initialfile $fileName]
+    } -result [list $pathName $pathName $pathName] -cleanup {
+        destroy .t1
+        destroy .t2
+    }
+
+    foreach x [lsort -integer [array names filters]] {
+        test filebox-3.$x-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+	    ToPressButton $parent ok
+	    set choice [tk_getOpenFile -title "Press Ok" \
+		    -filetypes $filters($x) -parent $parent \
+		    -initialfile $fileName -initialdir $fileDir]
+        } $pathName
+    }
+    foreach {x res} [list 1 "-unset-" 2 "Text files"] {
+	set t [expr {$x + [llength [array names filters]]}]
+        test filebox-3.$t-$mode "tk_getOpenFile command" nonUnixUserInteraction {
+	    catch {unset tv}
+	    catch {unset typeName}
+	    ToPressButton $parent ok
+	    if {[info exists tv]} {
+	    } else {
+	    }
+	    set choice [tk_getOpenFile -title "Press Ok" \
+		    -filetypes $filters($x) -parent $parent \
+		    -initialfile $fileName -initialdir $fileDir \
+		    -typevariable tv]
+	    if {[info exists tv]} {
+		set typeName $tv
+	    } else {
+		set typeName "-unset-"
+	    }
+	    set typeName
+        } $res
+    }
+
+    test filebox-4.1.1-$mode "tk_getSaveFile command" -constraints notAqua -body {
+	tk_getSaveFile -foo
+    } -returnCodes error -result $unknownOptionsMsg(tk_getSaveFile,notAqua)
+    test filebox-4.1.2-$mode "tk_getSaveFile command" -constraints aqua -body {
+	tk_getSaveFile -foo
+    } -returnCodes error -result $unknownOptionsMsg(tk_getSaveFile,aqua)
+
+    catch {tk_getSaveFile -foo 1} msg
+    regsub -all ,      $msg "" options
+    regsub \"-foo\" $options "" options
+
+    foreach option $options {
+	if {[string index $option 0] eq "-"} {
+	    test filebox-4.2-$mode$option "tk_getSaveFile command" -body {
+		tk_getSaveFile $option
+	    } -returnCodes error -result "value for \"$option\" missing"
+	}
+    }
+
+    test filebox-4.3.1-$mode "tk_getSaveFile command" -constraints notAqua -body {
+	tk_getSaveFile -foo bar
+    } -returnCodes error -result $unknownOptionsMsg(tk_getSaveFile,notAqua)
+    test filebox-4.3.2-$mode "tk_getSaveFile command" -constraints aqua -body {
+	tk_getSaveFile -foo bar
+    } -returnCodes error -result $unknownOptionsMsg(tk_getSaveFile,aqua)
+    test filebox-4.4-$mode "tk_getSaveFile command" -body {
+	tk_getSaveFile -initialdir
+    } -returnCodes error -result {value for "-initialdir" missing}
+    test filebox-4.5-$mode "tk_getSaveFile command" -body {
+	tk_getSaveFile -parent foo.bar
+    } -returnCodes error -result {bad window path name "foo.bar"}
+    test filebox-4.6-$mode "tk_getSaveFile command" -body {
+	tk_getSaveFile -filetypes {Foo}
+    } -returnCodes error -result {bad file type "Foo", should be "typeName {extension ?extensions ...?} ?{macType ?macTypes ...?}?"}
+
+    set isNative [expr {
+	[info commands ::tk::MotifFDialog] eq "" &&
+	[info commands ::tk::dialog::file::] eq ""
+    }]
+
+    set parent .
+
+    set verylongstring longstring:
+    set verylongstring $verylongstring$verylongstring
+    set verylongstring $verylongstring$verylongstring
+    set verylongstring $verylongstring$verylongstring
+    set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+    # set verylongstring $verylongstring$verylongstring
+
+    set color #404040
+    test filebox-5.1-$mode "tk_getSaveFile command" nonUnixUserInteraction {
+	ToPressButton $parent cancel
+	tk_getSaveFile -title "Press Cancel ($verylongstring)" -parent $parent
+    } ""
+
+    set fileName "12x 455"
+    set fileDir [pwd]
+    set pathName [file join [pwd] $fileName]
+
+    test filebox-5.2-$mode "tk_getSaveFile command" nonUnixUserInteraction {
+	ToPressButton $parent ok
+	set choice [tk_getSaveFile -title "Press Ok" \
+		-parent $parent -initialfile $fileName -initialdir $fileDir]
+    } $pathName
+    test filebox-5.3-$mode "tk_getSaveFile command" nonUnixUserInteraction {
+	ToEnterFileByKey $parent $fileName $fileDir
+	set choice [tk_getSaveFile -title "Enter \"$fileName\" and press Ok" \
+		-parent $parent -initialdir $fileDir]
+    } $pathName
+    test filebox-5.4-$mode "tk_getSaveFile command" nonUnixUserInteraction {
+	ToPressButton $parent ok
+	set choice [tk_getSaveFile -title "Enter \"$fileName\" and press Ok" \
+		-parent $parent -initialdir . -initialfile $fileName]
+    } $pathName
+    test filebox-5.5-$mode "tk_getSaveFile command" nonUnixUserInteraction {
+	ToPressButton $parent ok
+	set choice [tk_getSaveFile -title "Enter \"$fileName\" and press Ok" \
+		-parent $parent -initialdir /badpath -initialfile $fileName]
+    } $pathName
+
+    test filebox-5.6-$mode "tk_getSaveFile command" -setup {
+	toplevel .t1; toplevel .t2
+	wm geometry .t1 +0+0
+	wm geometry .t2 +0+0
+    } -constraints nonUnixUserInteraction -body {
+	set choice {}
+	ToPressButton .t1 ok
+	lappend choice [tk_getSaveFile \
+		-title "Enter \"$fileName\" and press Ok" \
+		-parent .t1 -initialdir $fileDir -initialfile $fileName]
+	ToPressButton .t2 ok
+	lappend choice [tk_getSaveFile \
+		-title "Enter \"$fileName\" and press Ok" \
+		-parent .t2 -initialdir $fileDir -initialfile $fileName]
+	ToPressButton .t1 ok
+	lappend choice [tk_getSaveFile \
+		-title "Enter \"$fileName\" and press Ok" \
+		-parent .t1 -initialdir $fileDir -initialfile $fileName]
+    } -result [list $pathName $pathName $pathName] -cleanup {
+	destroy .t1
+	destroy .t2
+    }
+
+    foreach x [lsort -integer [array names filters]] {
+	test filebox-6.$x-$mode "tk_getSaveFile command" nonUnixUserInteraction {
+	    ToPressButton $parent ok
+	    set choice [tk_getSaveFile -title "Press Ok" \
+		    -filetypes $filters($x) -parent $parent \
+		    -initialfile $fileName -initialdir $fileDir]
+	} $pathName[lindex $addedExtensions $x]
+    }
+
+    if {!$mode} {
+
+	test filebox-7.1-$mode "tk_getOpenFile - directory not readable" \
+	    -constraints nonUnixUserInteraction \
+	    -setup {
+		rename ::tk_messageBox ::saved_messageBox
+		set ::gotmessage {}
+		proc tk_messageBox args {
+		    set ::gotmessage $args
+		}
+		toplevel .t1
+		file mkdir [file join $fileDir NOTREADABLE]
+		file attributes [file join $fileDir NOTREADABLE] \
+		    -permissions 300
+	    } \
+	    -cleanup {
+		rename ::tk_messageBox {}
+		rename ::saved_messageBox ::tk_messageBox
+		unset ::gotmessage
+		destroy .t1
+		file delete -force [file join $fileDir NOTREADABLE]
+	    } \
+	    -body {
+		ToEnterFileByKey .t1 NOTREADABLE $fileDir
+		ToPressButton .t1 ok
+		ToPressButton .t1 cancel
+		tk_getOpenFile -parent .t1 \
+		    -title "Please select the NOTREADABLE directory" \
+		    -initialdir $fileDir
+		set gotmessage
+	    } \
+	    -match glob \
+	    -result "*NOTREADABLE*"
+
+	test filebox-7.2-$mode "tk_getOpenFile - bad file name" \
+	    -constraints nonUnixUserInteraction \
+	    -setup {
+		rename ::tk_messageBox ::saved_messageBox
+		set ::gotmessage {}
+		proc tk_messageBox args {
+		    set ::gotmessage $args
+		}
+		toplevel .t1
+	    } \
+	    -cleanup {
+		rename ::tk_messageBox {}
+		rename ::saved_messageBox ::tk_messageBox
+		unset ::gotmessage
+		destroy .t1
+	    } \
+	    -body {
+		ToEnterFileByKey .t1 RUBBISH $fileDir
+		ToPressButton .t1 ok
+		ToPressButton .t1 cancel
+		tk_getOpenFile -parent .t1 \
+		    -title "Please enter RUBBISH as a file name" \
+		    -initialdir $fileDir
+		set gotmessage
+	    } \
+	    -match glob \
+	    -result "*RUBBISH*"
+    }
+
+    # The rest of the tests need to be executed on Unix only.
+    # They test whether the dialog box widgets were implemented correctly.
+    # These tests are not
+    # needed on the other platforms because they use native file dialogs.
+}
+
+set tk_strictMotif $tk_strictMotif_old
+
+# cleanup
+removeFile filebox.tmp
+cleanupTests
+return

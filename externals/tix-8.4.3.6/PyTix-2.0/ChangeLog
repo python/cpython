@@ -1,0 +1,67 @@
+$Id: ChangeLog,v 1.1 2000/11/05 19:46:02 idiscovery Exp $
+
+PyTix version 2.0 alpha
+-----------------------
+
+	CHANGES
+	-------
+	1) Made diffs against Python 2.0 and put them in the 2.0 subdirectory.
+	2) Changed _tkinter.c to define TIX_VERSION and call Tix_Init.
+
+	BUG FIXES
+	---------
+	1) Fixed demo/samples/CmpImg.py to make the images be descendents
+	of the root window (see the Python FAQ for an explanation).
+
+PyTix version 1.12
+------------------
+
+	CHANGES
+	-------
+	1) Tkinter.py now only has the addition of the Form class since
+	   the globalsetvar() etc. has been rolled into the 1.4 Tkinter
+	
+	BUG FIXES
+	---------
+	1) Fixed typo in TixWidgets.subwidgets_all()
+	2) Fixed bug in TixWidgets.subwidgets_all where some Tix internal
+	   widgets were causing an exception.
+	3) Added new method config_all to set common configuration options
+	   for a tree of subwidgets
+	4) The label subwidget of the ComboBox was inadvertently left out
+	5) The orientation option of a PanedWindow was not marked static
+
+	
+PyTix Version 1.11
+-------------------
+
+ADDITIONS
+---------
+
+Tix ver. 4.0.1 has enhanced HList functionality and an additional widget (Tree).
+Tix.py V1.11 has been updated to reflect these changes as well. However,
+it will still work with Tix v4.0 since there are no incompatible changes (only
+additions).
+
+A new DisplayStyle class has been added (thanks to Steffen Kremser). This
+allows the user to create a display style and apply it to many items
+subsequently (via the -style switch).
+
+BUG FIXES
+---------
+
+0) In the __init__ methods for all the __dummy... Tix widgets, initialization
+   of the subwidgets was missing in V1.1. Thanks to Guenter Kolousek for
+   pointing this out.
+
+1) Removed listbox child of ComboBox as result of (0). It can now be accessed
+   as combobox.slistbox.listbox
+
+2) The dirlist member in ExFileSelectBox was actually a DirList and not a
+   ScrolledListBox.
+
+3) The HList widget method 'column' was renamed and modified to 'column_width'
+
+4) NoteBook.raised_page() renamed to NoteBook.raised()
+
+5) Various other small bug fixes

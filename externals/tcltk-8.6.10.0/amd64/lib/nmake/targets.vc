@@ -1,0 +1,98 @@
+#------------------------------------------------------------- -*- makefile -*-
+# targets.vc --
+#
+# Part of the nmake based build system for Tcl and its extensions.
+# This file defines some standard targets for the convenience of extensions
+# and can be optionally included by the extension makefile.
+# See TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md) for docs.
+
+$(PROJECT): setup pkgindex $(PRJLIB)
+
+!ifdef PRJ_STUBOBJS
+$(PROJECT): $(PRJSTUBLIB)
+$(PRJSTUBLIB): $(PRJ_STUBOBJS)
+	$(LIBCMD) $**
+
+$(PRJ_STUBOBJS):
+	$(CCSTUBSCMD) %s
+!endif # PRJ_STUBOBJS
+
+!ifdef PRJ_MANIFEST
+$(PROJECT): $(PRJLIB).manifest
+$(PRJLIB).manifest: $(PRJ_MANIFEST)
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+<<
+!endif
+
+!if "$(PROJECT)" != "tcl" && "$(PROJECT)" != "tk"
+$(PRJLIB): $(PRJ_OBJS) $(RESFILE)
+!if $(STATIC_BUILD)
+       $(LIBCMD) $**
+!else
+       $(DLLCMD) $**
+       $(_VC_MANIFEST_EMBED_DLL)
+!endif
+       -@del $*.exp
+!endif
+
+!if "$(PRJ_HEADERS)" != "" && "$(PRJ_OBJS)" != ""
+$(PRJ_OBJS): $(PRJ_HEADERS)
+!endif
+
+# If parent makefile has defined stub objects, add their installation
+# to the default install
+!if "$(PRJ_STUBOBJS)" != ""
+default-install: default-install-stubs
+!endif
+
+# Unlike the other default targets, these cannot be in rules.vc because
+# the executed command depends on existence of macro PRJ_HEADERS_PUBLIC
+# that the parent makefile will not define until after including rules-ext.vc
+!if "$(PRJ_HEADERS_PUBLIC)" != ""
+default-install: default-install-headers
+default-install-headers:
+	@echo Installing headers to '$(INCLUDE_INSTALL_DIR)'
+	@for %f in ($(PRJ_HEADERS_PUBLIC)) do @$(COPY) %f "$(INCLUDE_INSTALL_DIR)"
+!endif
+
+!if "$(DISABLE_STANDARD_TARGETS)" == ""
+DISABLE_STANDARD_TARGETS = 0
+!endif
+
+!if "$(DISABLE_TARGET_setup)" == ""
+DISABLE_TARGET_setup = 0
+!endif
+!if "$(DISABLE_TARGET_install)" == ""
+DISABLE_TARGET_install = 0
+!endif
+!if "$(DISABLE_TARGET_clean)" == ""
+DISABLE_TARGET_clean = 0
+!endif
+!if "$(DISABLE_TARGET_test)" == ""
+DISABLE_TARGET_test = 0
+!endif
+!if "$(DISABLE_TARGET_shell)" == ""
+DISABLE_TARGET_shell = 0
+!endif
+
+!if !$(DISABLE_STANDARD_TARGETS)
+!if !$(DISABLE_TARGET_setup)
+setup: default-setup
+!endif
+!if !$(DISABLE_TARGET_install)
+install: default-install
+!endif
+!if !$(DISABLE_TARGET_clean)
+clean: default-clean
+realclean: hose
+hose: default-hose
+distclean: realclean default-distclean
+!endif
+!if !$(DISABLE_TARGET_test)
+test: default-test
+!endif
+!if !$(DISABLE_TARGET_shell)
+shell: default-shell
+!endif
+!endif # DISABLE_STANDARD_TARGETS

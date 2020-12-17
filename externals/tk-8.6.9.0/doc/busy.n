@@ -1,0 +1,275 @@
+'\"
+'\" Copyright (c) 1993-1998 Lucent Technologies, Inc.
+'\" Copyright (c) 2008 Jos Decoster
+'\"
+'\" Permission to use, copy, modify, and distribute this software and its
+'\" documentation for any purpose and without fee is hereby granted, provided
+'\" that the above copyright notice appear in all copies and that both that
+'\" the copyright notice and warranty disclaimer appear in supporting
+'\" documentation, and that the names of Lucent Technologies any of their
+'\" entities not be used in advertising or publicity pertaining to
+'\" distribution of the software without specific, written prior permission.
+'\"
+'\" Lucent Technologies disclaims all warranties with regard to this software,
+'\" including all implied warranties of merchantability and fitness. In no
+'\" event shall Lucent Technologies be liable for any special, indirect or
+'\" consequential damages or any damages whatsoever resulting from loss of
+'\" use, data or profits, whether in an action of contract, negligence or
+'\" other tortuous action, arising out of or in connection with the use or
+'\" performance of this software.
+'\"
+'\" BLT::busy command created by George Howlett.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH busy n "" Tk "Tk Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+busy \- confine pointer events to a window sub-tree
+.SH SYNOPSIS
+\fBtk busy\fR \fIwindow \fR?\fIoptions\fR?
+.sp
+\fBtk busy hold\fR \fIwindow \fR?\fIoptions\fR?
+.sp
+\fBtk busy configure \fIwindow\fR ?\fIoption value\fR?...
+.sp
+\fBtk busy forget\fR \fIwindow \fR?\fIwindow \fR?...
+.sp
+\fBtk busy current\fR ?\fIpattern\fR?
+.sp
+\fBtk busy status \fIwindow\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBtk busy\fR command provides a simple means to block pointer events from
+Tk widgets, while overriding the widget's cursor with a configurable busy
+cursor. Note this command does not prevent keyboard events from being sent to
+the widgets made busy.
+.SH INTRODUCTION
+.PP
+There are many times in applications where you want to temporarily restrict
+what actions the user can take. For example, an application could have a
+.QW Run
+button that when pressed causes some processing to occur. However, while the
+application is busy processing, you probably don't want the user to be
+able to click the
+.QW Run
+button again. You may also want restrict the user from other tasks such as
+clicking a
+.QW Print
+button.
+.PP
+The \fBtk busy\fR command lets you make Tk widgets busy. This means that user
+interactions such as button clicks, moving the mouse, typing at the keyboard,
+etc.\0are ignored by the widget. You can set a special cursor (like a watch)
+that overrides the widget's normal cursor, providing feedback that the
+application (widget) is temporarily busy.
+.PP
+When a widget is made busy, the widget and all of its descendants will ignore
+pointer events. It's easy to make an entire panel of widgets busy. You can
+simply make the toplevel widget (such as
+.QW . )
+busy. This is easier and far much more efficient than recursively traversing
+the widget hierarchy, disabling each widget and re-configuring its cursor.
+.PP
+Often, the \fBtk busy\fR command can be used instead of Tk's \fBgrab\fR
+command. Unlike \fBgrab\fR which restricts all user interactions to one
+widget, with the \fBtk busy\fR command you can have more than one widget
+active (for example, a
+.QW Cancel
+dialog and a
+.QW Help
+button).
+.SS EXAMPLE
+.PP
+You can make several widgets busy by simply making its ancestor widget busy
+using the \fBhold\fR operation.
+.PP
+.CS
+frame .top
+button .top.button; canvas .top.canvas
+pack .top.button .top.canvas
+pack .top
+# . . .
+\fBtk busy\fR hold .top
+update
+.CE
+.PP
+All the widgets within \fB.top\fR (including \fB.top\fR) are now busy. Using
+\fBupdate\fR insures that \fBtk busy\fR command will take effect before any
+other user events can occur.
+.PP
+When the application is no longer busy processing, you can allow user
+interactions again and free any resources it allocated by the \fBforget\fR
+operation.
+.PP
+.CS
+\fBtk busy\fR forget .top
+.CE
+.PP
+The busy window has a configurable cursor. You can change the busy cursor
+using the \fBconfigure\fR operation.
+.PP
+.CS
+\fBtk busy\fR configure .top \-cursor "watch"
+.CE
+.PP
+Destroying the widget will also clean up any resources allocated by the \fBtk
+busy\fR command.
+.PP
+.SH OPERATIONS
+.PP
+The following operations are available for the \fBtk busy\fR command:
+.TP
+\fBtk busy \fIwindow\fR ?\fIoption value\fR?...
+.
+Shortcut for \fBtk busy hold\fR command.
+.TP
+\fBtk busy hold \fIwindow\fR ?\fIoption value\fR?...
+.
+Makes the specified \fIwindow\fR (and its descendants in the Tk window
+hierarchy) appear busy. \fIWindow\fR must be a valid path name of a Tk widget.
+A transparent window is put in front of the specified window. This transparent
+window is mapped the next time idle tasks are processed, and the specified
+window and its descendants will be blocked from user interactions. Normally
+\fBupdate\fR should be called immediately afterward to insure that the hold
+operation is in effect before the application starts its processing. The
+following configuration options are valid:
+.RS
+.TP
+\fB\-cursor \fIcursorName\fR
+.
+Specifies the cursor to be displayed when the widget is made busy.
+\fICursorName\fR can be in any form accepted by \fBTk_GetCursor\fR. The
+default cursor is \fBwait\fR on Windows and \fBwatch\fR on other platforms.
+.RE
+.TP
+\fBtk busy cget \fIwindow\fR \fIoption\fR
+.
+Queries the \fBtk busy\fR command configuration options for \fIwindow\fR.
+\fIWindow\fR must be the path name of a widget previously made busy by the
+\fBhold\fR operation. The command returns the present value of the specified
+\fIoption\fR. \fIOption\fR may have any of the values accepted by the
+\fBhold\fR operation.
+.TP
+\fBtk busy configure \fIwindow\fR ?\fIoption value\fR?...
+.
+Queries or modifies the \fBtk busy\fR command configuration options for
+\fIwindow\fR. \fIWindow\fR must be the path name of a widget previously made
+busy by the \fBhold\fR operation.  If no options are specified, a list
+describing all of the available options for \fIwindow\fR (see
+\fBTk_ConfigureInfo\fR for information on the format of this list) is
+returned. If \fIoption\fR is specified with no \fIvalue\fR, then the command
+returns a list describing the one named option (this list will be identical to
+the corresponding sublist of the value returned if no \fIoption\fR is
+specified). If one or more \fIoption\-value\fR pairs are specified, then the
+command modifies the given widget option(s) to have the given value(s); in
+this case the command returns the empty string. \fIOption\fR may have any of
+the values accepted by the \fBhold\fR operation.
+.RS
+.PP
+Please note that the option database is referenced through \fIwindow\fR. For
+example, if the widget \fB.frame\fR is to be made busy, the busy cursor can be
+specified for it by either \fBoption\fR command:
+.PP
+.CS
+option add *frame.busyCursor gumby
+option add *Frame.BusyCursor gumby
+.CE
+.RE
+.TP
+\fBtk busy forget \fIwindow\fR ?\fIwindow\fR?...
+.
+Releases resources allocated by the \fBtk busy\fR command for \fIwindow\fR,
+including the transparent window. User events will again be received by
+\fIwindow\fR. Resources are also released when \fIwindow\fR is destroyed.
+\fIWindow\fR must be the name of a widget specified in the \fBhold\fR
+operation, otherwise an error is reported.
+.TP
+\fBtk busy current \fR?\fIpattern\fR?
+.
+Returns the pathnames of all widgets that are currently busy. If a
+\fIpattern\fR is given, only the path names of busy widgets matching
+\fIpattern\fR are returned.
+.TP
+\fBtk busy status \fIwindow\fR
+.
+Returns the status of a widget \fIwindow\fR. If \fIwindow\fR presently can not
+receive user interactions, \fB1\fR is returned, otherwise \fB0\fR.
+.SH "EVENT HANDLING"
+.SS BINDINGS
+.PP
+The event blocking feature is implemented by creating and mapping a
+transparent window that completely covers the widget. When the busy window is
+mapped, it invisibly shields the widget and its hierarchy from all events that
+may be sent. Like Tk widgets, busy windows have widget names in the Tk window
+hierarchy. This means that you can use the \fBbind\fR command, to handle
+events in the busy window.
+.PP
+.CS
+\fBtk busy\fR hold .frame.canvas
+bind .frame.canvas_Busy <Enter> { ... }
+.CE
+.PP
+Normally the busy window is a sibling of the widget. The name of the busy
+window is
+.QW \fIwidget\fB_Busy\fR
+where \fIwidget\fR is the name of the widget to be made busy. In the previous
+example, the pathname of the busy window is
+.QW \fB.frame.canvas_Busy\fR .
+The exception is when the widget is a toplevel widget (such as
+.QW . )
+where the busy window can't be made a sibling. The busy window is then a child
+of the widget named
+.QW \fIwidget\fB._Busy\fR
+where \fIwidget\fR is the name of the toplevel widget. In the following
+example, the pathname of the busy window is
+.QW \fB._Busy\fR .
+.PP
+.CS
+\fBtk busy\fR hold .
+bind ._Busy <Enter> { ... }
+.CE
+.SS "ENTER/LEAVE EVENTS"
+.PP
+Mapping and unmapping busy windows generates Enter/Leave events for all
+widgets they cover. Please note this if you are tracking Enter/Leave events in
+widgets.
+.SS "KEYBOARD EVENTS"
+.PP
+When a widget is made busy, the widget is prevented from gaining the keyboard
+focus by a user clicking on it by the busy window. But if the widget already had
+focus, it still may receive keyboard events. The widget can also still receive
+focus through keyboard traversal. To prevent this, you must move
+focus to another window and make sure the focus can not go back to the widgets
+made busy (e.g. but restricting focus to a cancel button).
+.PP
+.CS
+pack [frame .frame]
+pack [text .frame.text]
+\fBtk busy\fR hold .frame
+pack [button .cancel -text "Cancel" -command exit]
+focus .cancel
+bind .cancel <Tab> {break}
+bind .cancel <Shift-Tab> {break}
+update
+.CE
+.PP
+The above example moves the focus from .frame immediately after invoking the
+\fBhold\fR so that no keyboard events will be sent to \fB.frame\fR or any of
+its descendants. It also makes sure it's not possible to leave button
+\fB.cancel\fR using the keyboard.
+.SH PORTABILITY
+.PP
+Note that the \fBtk busy\fR command does not currently have any effect on OSX
+when Tk is built using Aqua support.
+.SH "SEE ALSO"
+grab(n)
+.SH KEYWORDS
+busy, keyboard events, pointer events, window
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -1,0 +1,425 @@
+#
+# Tests for information accessed by the "info" command
+# ----------------------------------------------------------------------
+#   AUTHOR:  Michael J. McLennan
+#            Bell Labs Innovations for Lucent Technologies
+#            mmclennan@lucent.com
+#            http://www.tcltk.com/itcl
+# ----------------------------------------------------------------------
+#            Copyright (c) 1993-1998  Lucent Technologies, Inc.
+# ======================================================================
+# See the file "license.terms" for information on usage and
+# redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2.2
+namespace import ::tcltest::test
+::tcltest::loadTestedCommands
+package require itcl
+
+# ----------------------------------------------------------------------
+#  Class definition with one of everything
+# ----------------------------------------------------------------------
+test info-1.1 {define a simple class} {
+    itcl::class test_info_base {
+        method base {} {return "default"}
+        variable base {}
+
+        method do {args} {eval $args}
+    }
+    itcl::class test_info {
+        inherit test_info_base
+
+        constructor {args} {
+            foreach v [info variable] {
+                catch {set $v "new-[set $v]"}
+            }
+        }
+        destructor {}
+
+        method defm {} {return "default method"}
+        public method pubm {x} {return "public method"}
+        protected method prom {x y} {return "protected method"}
+        private method prim {x y z} {return "private method"}
+
+        proc defp {} {return "default proc"}
+        public proc pubp {x} {return "public proc"}
+        protected proc prop {x y} {return "protected proc"}
+        private proc prip {x y z} {return "private proc"}
+
+        variable defv "default"
+        public variable pubv "public" {set pubv "public: $pubv"}
+        protected variable prov "protected"
+        private variable priv "private"
+
+        common defc "default"
+        public common pubc "public"
+        protected common proc "protected"
+        private common pric "private"
+
+        method uninitm
+        proc uninitp {x y}
+        variable uninitv
+        common uninitc
+        set uninitc(0) zero
+        set uninitc(1) one
+    }
+} ""
+
+test info-1.2 {info: errors trigger usage info} {
+    list [catch {namespace eval test_info {info}} msg] $msg
+} {1 {wrong # args: should be one of...
+  info args procname
+  info body procname
+  info class
+  info function ?name? ?-protection? ?-type? ?-name? ?-args? ?-body?
+  info heritage
+  info inherit
+  info variable ?name? ?-protection? ?-type? ?-name? ?-init? ?-value? ?-config? ?-scope?
+...and others described on the man page}}
+
+test info-1.3 {info: errors trigger usage info} {
+    test_info ti
+    list [catch {ti info} msg] $msg
+} {1 {wrong # args: should be one of...
+  info args procname
+  info body procname
+  info class
+  info function ?name? ?-protection? ?-type? ?-name? ?-args? ?-body?
+  info heritage
+  info inherit
+  info variable ?name? ?-protection? ?-type? ?-name? ?-init? ?-value? ?-config? ?-scope?
+...and others described on the man page}}
+
+test info-1.4 {info: info class works on class itself} {
+    namespace eval test_info { info class }
+} {::test_info}
+
+# ----------------------------------------------------------------------
+#  Data members
+# ----------------------------------------------------------------------
+test info-2.1 {info: all variables} {
+    lsort [ti info variable]
+} {::test_info::defc ::test_info::defv ::test_info::pric ::test_info::priv ::test_info::proc ::test_info::prov ::test_info::pubc ::test_info::pubv ::test_info::this ::test_info::uninitc ::test_info::uninitv ::test_info_base::base}
+
+test info-2.2a {info: public variables} {
+    ti info variable pubv
+} {public variable ::test_info::pubv public {set pubv "public: $pubv"} new-public}
+
+test info-2.2b {info: public variables} -body {
+    list [ti info variable pubv -protection] \
+         [ti info variable pubv -type] \
+         [ti info variable pubv -name] \
+         [ti info variable pubv -init] \
+         [ti info variable pubv -config] \
+         [ti info variable pubv -value] \
+         [ti info variable pubv -scope] \
+} -match glob -result {public variable ::test_info::pubv public {set pubv "public: $pubv"} new-public ::itcl::internal::variables::oo::Obj*::test_info::pubv}
+
+test info-2.3a {info: protected variables} {
+    ti info variable prov
+} {protected variable ::test_info::prov protected new-protected}
+
+test info-2.3b {info: protected variables} -body {
+    list [ti info variable prov -protection] \
+         [ti info variable prov -type] \
+         [ti info variable prov -name] \
+         [ti info variable prov -init] \
+         [ti info variable prov -value] \
+         [ti info variable prov -scope] \
+} -match glob -result {protected variable ::test_info::prov protected new-protected ::itcl::internal::variables::oo::Obj*::test_info::prov}
+
+test info-2.4a {info: private variables} {
+    ti info variable priv
+} {private variable ::test_info::priv private new-private}
+
+test info-2.4b {info: private variables} -body {
+    list [ti info variable priv -protection] \
+         [ti info variable priv -type] \
+         [ti info variable priv -name] \
+         [ti info variable priv -init] \
+         [ti info variable priv -value] \
+         [ti info variable priv -scope] \
+} -match glob -result {private variable ::test_info::priv private new-private ::itcl::internal::variables::oo::Obj*::test_info::priv}
+
+test info-2.5 {"this" variable is built in} {
+    ti info variable this
+} {protected variable ::test_info::this ::ti ::ti}
+
+test info-2.6 {info: protected/private variables have no "config" code} {
+    list [ti info variable prov -config] [ti info variable priv -config]
+} {{} {}}
+
+test info-2.7 {by default, variables are "protected"} {
+    ti info variable defv
+} {protected variable ::test_info::defv default new-default}
+
+test info-2.8 {data members may be uninitialized} {
+    ti info variable uninitv
+} {protected variable ::test_info::uninitv <undefined> <undefined>}
+
+test info-2.9a {info: public common variables} {
+    ti info variable pubc
+} {public common ::test_info::pubc public new-public}
+
+test info-2.9b {info: public common variables} {
+    list [ti info variable pubc -protection] \
+         [ti info variable pubc -type] \
+         [ti info variable pubc -name] \
+         [ti info variable pubc -init] \
+         [ti info variable pubc -value] \
+         [ti info variable pubc -scope] \
+} {public common ::test_info::pubc public new-public ::test_info::pubc}
+
+test info-2.10a {info: protected common variables} {
+    ti info variable proc
+} {protected common ::test_info::proc protected new-protected}
+
+test info-2.10b {info: protected common variables} {
+    list [ti info variable proc -protection] \
+         [ti info variable proc -type] \
+         [ti info variable proc -name] \
+         [ti info variable proc -init] \
+         [ti info variable proc -value] \
+         [ti info variable proc -scope] \
+} {protected common ::test_info::proc protected new-protected ::itcl::internal::variables::test_info::proc}
+
+test info-2.11a {info: private common variables} {
+    ti info variable pric
+} {private common ::test_info::pric private new-private}
+
+test info-2.11b {info: private common variables} {
+    list [ti info variable pric -protection] \
+         [ti info variable pric -type] \
+         [ti info variable pric -name] \
+         [ti info variable pric -init] \
+         [ti info variable pric -value] \
+         [ti info variable pric -scope] \
+} {private common ::test_info::pric private new-private ::itcl::internal::variables::test_info::pric}
+
+test info-2.12 {info: public/protected/private vars have no "config" code} {
+    list [ti info variable pubc -config] \
+         [ti info variable proc -config] \
+         [ti info variable pric -config]
+} {{} {} {}}
+
+test info-2.13 {by default, variables are "protected"} {
+    ti info variable defc
+} {protected common ::test_info::defc default new-default}
+
+test info-2.14 {data members may be uninitialized} {
+    ti info variable uninitc
+} {protected common ::test_info::uninitc <undefined> <undefined>}
+
+test info-2.15 {common vars can be initialized within class definition} {
+    list [namespace eval test_info {lsort [array names uninitc]}] \
+         [namespace eval test_info {set uninitc(0)}] \
+         [namespace eval test_info {set uninitc(1)}]
+} {{0 1} zero one}
+
+test info-2.16 {flag syntax errors} {
+    list [catch {ti info variable defv -xyzzy} msg] $msg
+} {1 {bad option "-xyzzy": must be -config, -init, -name, -protection, -type, -value, or -scope}}
+
+# ----------------------------------------------------------------------
+#  Member functions
+# ----------------------------------------------------------------------
+test info-3.1 {info: all functions} {
+    lsort [ti info function]
+} {::test_info::constructor ::test_info::defm ::test_info::defp ::test_info::destructor ::test_info::prim ::test_info::prip ::test_info::prom ::test_info::prop ::test_info::pubm ::test_info::pubp ::test_info::uninitm ::test_info::uninitp ::test_info_base::base ::test_info_base::cget ::test_info_base::configure ::test_info_base::do ::test_info_base::isa}
+
+test info-3.2a {info: public methods} {
+    ti info function pubm
+} {public method ::test_info::pubm x {return "public method"}}
+
+test info-3.2b {info: public methods} {
+    list [ti info function pubm -protection] \
+         [ti info function pubm -type] \
+         [ti info function pubm -name] \
+         [ti info function pubm -args] \
+         [ti info function pubm -body]
+} {public method ::test_info::pubm x {return "public method"}}
+
+test info-3.3a {info: protected methods} {
+    ti info function prom
+} {protected method ::test_info::prom {x y} {return "protected method"}}
+
+test info-3.3b {info: protected methods} {
+    list [ti info function prom -protection] \
+         [ti info function prom -type] \
+         [ti info function prom -name] \
+         [ti info function prom -args] \
+         [ti info function prom -body]
+} {protected method ::test_info::prom {x y} {return "protected method"}}
+
+test info-3.4a {info: private methods} {
+    ti info function prim
+} {private method ::test_info::prim {x y z} {return "private method"}}
+
+test info-3.4b {info: private methods} {
+    list [ti info function prim -protection] \
+         [ti info function prim -type] \
+         [ti info function prim -name] \
+         [ti info function prim -args] \
+         [ti info function prim -body]
+} {private method ::test_info::prim {x y z} {return "private method"}}
+
+test info-3.5 {"configure" function is built in} {
+    ti info function configure
+} {public method ::test_info_base::configure {?-option? ?value -option value...?} @itcl-builtin-configure}
+
+test info-3.6 {by default, methods are "public"} {
+    ti info function defm
+} {public method ::test_info::defm {} {return "default method"}}
+
+test info-3.7 {methods may not have arg lists or bodies defined} {
+    ti info function uninitm
+} {public method ::test_info::uninitm <undefined> <undefined>}
+
+test info-3.8a {info: public procs} {
+    ti info function pubp
+} {public proc ::test_info::pubp x {return "public proc"}}
+
+test info-3.8b {info: public procs} {
+    list [ti info function pubp -protection] \
+         [ti info function pubp -type] \
+         [ti info function pubp -name] \
+         [ti info function pubp -args] \
+         [ti info function pubp -body]
+} {public proc ::test_info::pubp x {return "public proc"}}
+
+test info-3.9a {info: protected procs} {
+    ti info function prop
+} {protected proc ::test_info::prop {x y} {return "protected proc"}}
+
+test info-3.9b {info: protected procs} {
+    list [ti info function prop -protection] \
+         [ti info function prop -type] \
+         [ti info function prop -name] \
+         [ti info function prop -args] \
+         [ti info function prop -body]
+} {protected proc ::test_info::prop {x y} {return "protected proc"}}
+
+test info-3.10a {info: private procs} {
+    ti info function prip
+} {private proc ::test_info::prip {x y z} {return "private proc"}}
+
+test info-3.10b {info: private procs} {
+    list [ti info function prip -protection] \
+         [ti info function prip -type] \
+         [ti info function prip -name] \
+         [ti info function prip -args] \
+         [ti info function prip -body]
+} {private proc ::test_info::prip {x y z} {return "private proc"}}
+
+test info-3.11 {by default, procs are "public"} {
+    ti info function defp
+} {public proc ::test_info::defp {} {return "default proc"}}
+
+test info-3.12 {procs may not have arg lists or bodies defined} {
+    ti info function uninitp
+} {public proc ::test_info::uninitp {x y} <undefined>}
+
+test info-3.13 {flag syntax errors} {
+    list [catch {ti info function defm -xyzzy} msg] $msg
+} {1 {bad option "-xyzzy": must be -args, -body, -name, -protection, or -type}}
+
+# ----------------------------------------------------------------------
+#  Other object-related queries
+# ----------------------------------------------------------------------
+
+test info-4.1a {query class (wrong # args)} {
+    list [catch {ti info class x} result] $result
+} {1 {wrong # args: should be "info class"}}
+
+test info-4.1b {query most-specific class} {
+    list [ti info class] [ti do info class]
+} {::test_info ::test_info}
+
+test info-4.2a {query inheritance info (wrong # args)} {
+    list [catch {ti info inherit x} result] $result
+} {1 {wrong # args: should be "info inherit"}}
+
+test info-4.2b {query inheritance info} {
+    list [ti info inherit] [ti do info inherit]
+} {::test_info_base {}}
+
+test info-4.2c {query inheritance info} {
+    ti do ti info inherit
+} {::test_info_base}
+
+test info-4.3a {query heritage info (wrong # args)} {
+    list [catch {ti info heritage x} result] $result
+} {1 {wrong # args: should be "info heritage"}}
+
+test info-4.3b {query heritage info} {
+    list [ti info heritage] [ti do info heritage]
+} {{::test_info ::test_info_base} ::test_info_base}
+
+test info-4.3c {query heritage info} {
+    ti do ti info heritage
+} {::test_info ::test_info_base}
+
+test info-4.4a {query argument list (wrong # args)} {
+    list [catch {ti info args} result] $result \
+         [catch {ti info args x y} result] $result
+} {1 {wrong # args: should be "info args function"} 1 {wrong # args: should be "info args function"}}
+
+test info-4.4b {query argument list} {
+    ti info args prim
+} {x y z}
+
+test info-4.4c {query argument list (undefined)} {
+    ti info args uninitm
+} {<undefined>}
+
+test info-4.4d {query argument list of real proc} {
+    ti info args ::unknown
+} {args}
+
+test info-4.4e {query argument list of real proc} {
+    itcl::builtin::Info args ::unknown
+} {args}
+
+test info-4.5a {query body (wrong # args)} {
+    list [catch {ti info body} result] $result \
+         [catch {ti info body x y} result] $result
+} {1 {wrong # args: should be "info body function"} 1 {wrong # args: should be "info body function"}}
+
+test info-4.5b {query body} {
+    ti info body prim
+} {return "private method"}
+
+test info-4.5c {query body (undefined)} {
+    ti info body uninitm
+} {<undefined>}
+
+# ----------------------------------------------------------------------
+#  Other parts of the usual "info" command
+# ----------------------------------------------------------------------
+
+test info-5.1 {info vars} {
+    ti do info vars
+} {args}
+
+test info-5.2 {info exists} {
+    list [ti do info exists args] [ti do info exists xyzzy]
+} {1 0}
+
+test info-6.0 {Bug a03f579f7d} -setup {
+    # Must not segfault
+    itcl::class C {
+	proc p {} {info vars}
+    }
+} -body {
+    C::p
+} -cleanup {
+    itcl::delete class C
+} -result {}
+
+# ----------------------------------------------------------------------
+#  Clean up
+# ----------------------------------------------------------------------
+itcl::delete class test_info test_info_base
+
+::tcltest::cleanupTests
+return

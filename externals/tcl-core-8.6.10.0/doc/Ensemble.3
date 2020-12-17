@@ -1,0 +1,219 @@
+'\"
+'\" Copyright (c) 2005 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+'\" This documents the C API introduced in TIP#235
+'\"
+.TH Tcl_Ensemble 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tcl_CreateEnsemble, Tcl_FindEnsemble, Tcl_GetEnsembleFlags, Tcl_GetEnsembleMappingDict, Tcl_GetEnsembleNamespace, Tcl_GetEnsembleParameterList, Tcl_GetEnsembleUnknownHandler, Tcl_GetEnsembleSubcommandList, Tcl_IsEnsemble, Tcl_SetEnsembleFlags, Tcl_SetEnsembleMappingDict, Tcl_SetEnsembleParameterList, Tcl_SetEnsembleSubcommandList, Tcl_SetEnsembleUnknownHandler \- manipulate ensemble commands
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Command
+\fBTcl_CreateEnsemble\fR(\fIinterp, name, namespacePtr, ensFlags\fR)
+.sp
+Tcl_Command
+\fBTcl_FindEnsemble\fR(\fIinterp, cmdNameObj, flags\fR)
+.sp
+int
+\fBTcl_IsEnsemble\fR(\fItoken\fR)
+.sp
+int
+\fBTcl_GetEnsembleFlags\fR(\fIinterp, token, ensFlagsPtr\fR)
+.sp
+int
+\fBTcl_SetEnsembleFlags\fR(\fIinterp, token, ensFlags\fR)
+.sp
+int
+\fBTcl_GetEnsembleMappingDict\fR(\fIinterp, token, dictObjPtr\fR)
+.sp
+int
+\fBTcl_SetEnsembleMappingDict\fR(\fIinterp, token, dictObj\fR)
+.sp
+.VS 8.6
+int
+\fBTcl_GetEnsembleParameterList\fR(\fIinterp, token, listObjPtr\fR)
+.sp
+int
+\fBTcl_SetEnsembleParameterList\fR(\fIinterp, token, listObj\fR)
+.VE 8.6
+.sp
+int
+\fBTcl_GetEnsembleSubcommandList\fR(\fIinterp, token, listObjPtr\fR)
+.sp
+int
+\fBTcl_SetEnsembleSubcommandList\fR(\fIinterp, token, listObj\fR)
+.sp
+int
+\fBTcl_GetEnsembleUnknownHandler\fR(\fIinterp, token, listObjPtr\fR)
+.sp
+int
+\fBTcl_SetEnsembleUnknownHandler\fR(\fIinterp, token, listObj\fR)
+.sp
+int
+\fBTcl_GetEnsembleNamespace\fR(\fIinterp, token, namespacePtrPtr\fR)
+.SH ARGUMENTS
+.AS Tcl_Namespace **namespacePtrPtr in/out
+.AP Tcl_Interp *interp in/out
+The interpreter in which the ensemble is to be created or found. Also
+where error result messages are written. The functions whose names
+start with \fBTcl_GetEnsemble\fR may have a NULL for the \fIinterp\fR,
+but all other functions must not.
+.AP "const char" *name in
+The name of the ensemble command to be created.
+.AP Tcl_Namespace *namespacePtr in
+The namespace to which the ensemble command is to be bound, or NULL
+for the current namespace.
+.AP int ensFlags in
+An ORed set of flag bits describing the basic configuration of the
+ensemble. Currently only one bit has meaning, \fBTCL_ENSEMBLE_PREFIX\fR,
+which is present when the ensemble command should also match
+unambiguous prefixes of subcommands.
+.AP Tcl_Obj *cmdNameObj in
+A value holding the name of the ensemble command to look up.
+.AP int flags in
+An ORed set of flag bits controlling the behavior of
+\fBTcl_FindEnsemble\fR. Currently only \fBTCL_LEAVE_ERR_MSG\fR is supported.
+.AP Tcl_Command token in
+A normal command token that refers to an ensemble command, or which
+you wish to use for testing as an ensemble command in \fBTcl_IsEnsemble\fR.
+.AP int *ensFlagsPtr out
+Pointer to a variable into which to write the current ensemble flag
+bits; currently only the bit \fBTCL_ENSEMBLE_PREFIX\fR is defined.
+.AP Tcl_Obj *dictObj in
+A dictionary value to use for the subcommand to implementation command
+prefix mapping dictionary in the ensemble. May be NULL if the mapping
+dictionary is to be removed.
+.AP Tcl_Obj **dictObjPtr out
+Pointer to a variable into which to write the current ensemble mapping
+dictionary.
+.AP Tcl_Obj *listObj in
+A list value to use for the list of formal pre-subcommand parameters, the
+defined list of subcommands in the dictionary or the unknown subcommand
+handler command prefix. May be NULL if the subcommand list or unknown handler
+are to be removed.
+.AP Tcl_Obj **listObjPtr out
+Pointer to a variable into which to write the current list of formal
+pre-subcommand parameters, the defined list of subcommands or the current
+unknown handler prefix.
+.AP Tcl_Namespace **namespacePtrPtr out
+Pointer to a variable into which to write the handle of the namespace
+to which the ensemble is bound.
+.BE
+.SH DESCRIPTION
+An ensemble is a command, bound to some namespace, which consists of a
+collection of subcommands implemented by other Tcl commands. The first
+argument to the ensemble command is always interpreted as a selector
+that states what subcommand to execute.
+.PP
+Ensembles are created using \fBTcl_CreateEnsemble\fR, which takes four
+arguments: the interpreter to work within, the name of the ensemble to
+create, the namespace within the interpreter to bind the ensemble to,
+and the default set of ensemble flags. The result of the function is
+the command token for the ensemble, which may be used to further
+configure the ensemble using the API described below in
+\fBENSEMBLE PROPERTIES\fR.
+.PP
+Given the name of an ensemble command, the token for that command may
+be retrieved using \fBTcl_FindEnsemble\fR. If the given command name
+(in \fIcmdNameObj\fR) does not refer to an ensemble command, the
+result of the function is NULL and (if the \fBTCL_LEAVE_ERR_MSG\fR bit is
+set in \fIflags\fR) an error message is left in the interpreter
+result.
+.PP
+A command token may be checked to see if it refers to an ensemble
+using \fBTcl_IsEnsemble\fR. This returns 1 if the token refers to an
+ensemble, or 0 otherwise.
+.SS "ENSEMBLE PROPERTIES"
+Every ensemble has four read-write properties and a read-only
+property. The properties are:
+.TP
+\fBflags\fR (read-write)
+.
+The set of flags for the ensemble, expressed as a
+bit-field. Currently, the only public flag is \fBTCL_ENSEMBLE_PREFIX\fR
+which is set when unambiguous prefixes of subcommands are permitted to
+be resolved to implementations as well as exact matches. The flags may
+be read and written using \fBTcl_GetEnsembleFlags\fR and
+\fBTcl_SetEnsembleFlags\fR respectively. The result of both of those
+functions is a Tcl result code (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if
+the token does not refer to an ensemble).
+.TP
+\fBmapping dictionary\fR (read-write)
+.
+A dictionary containing a mapping from subcommand names to lists of
+words to use as a command prefix (replacing the first two words of the
+command which are the ensemble command itself and the subcommand
+name), or NULL if every subcommand is to be mapped to the command with
+the same unqualified name in the ensemble's bound namespace. Defaults
+to NULL. May be read and written using
+\fBTcl_GetEnsembleMappingDict\fR and \fBTcl_SetEnsembleMappingDict\fR
+respectively. The result of both of those functions is a Tcl result
+code (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an
+ensemble) and the dictionary obtained from
+\fBTcl_GetEnsembleMappingDict\fR should always be treated as immutable
+even if it is unshared.
+All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
+must be fully qualified.
+.TP
+\fBformal pre-subcommand parameter list\fR (read-write)
+.VS 8.6
+A list of formal parameter names (the names only being used when generating
+error messages) that come at invocation of the ensemble between the name of
+the ensemble and the subcommand argument. NULL (the default) is equivalent to
+the empty list. May be read and written using
+\fBTcl_GetEnsembleParameterList\fR and \fBTcl_SetEnsembleParameterList\fR
+respectively. The result of both of those functions is a Tcl result code
+(\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an
+ensemble) and the
+dictionary obtained from \fBTcl_GetEnsembleParameterList\fR should always be
+treated as immutable even if it is unshared.
+.VE 8.6
+.TP
+\fBsubcommand list\fR (read-write)
+.
+A list of all the subcommand names for the ensemble, or NULL if this
+is to be derived from either the keys of the mapping dictionary (see
+above) or (if that is also NULL) from the set of commands exported by
+the bound namespace. May be read and written using
+\fBTcl_GetEnsembleSubcommandList\fR and
+\fBTcl_SetEnsembleSubcommandList\fR respectively. The result of both
+of those functions is a Tcl result code (\fBTCL_OK\fR, or
+\fBTCL_ERROR\fR if the
+token does not refer to an ensemble) and the list obtained from
+\fBTcl_GetEnsembleSubcommandList\fR should always be treated as
+immutable even if it is unshared.
+.TP
+\fBunknown subcommand handler command prefix\fR (read-write)
+.
+A list of words to prepend on the front of any subcommand when the
+subcommand is unknown to the ensemble (according to the current prefix
+handling rule); see the \fBnamespace ensemble\fR command for more
+details. If NULL, the default behavior \- generate a suitable error
+message \- will be used when an unknown subcommand is encountered. May
+be read and written using \fBTcl_GetEnsembleUnknownHandler\fR and
+\fBTcl_SetEnsembleUnknownHandler\fR respectively. The result of both
+functions is a Tcl result code (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if
+the token does
+not refer to an ensemble) and the list obtained from
+\fBTcl_GetEnsembleUnknownHandler\fR should always be treated as
+immutable even if it is unshared.
+.TP
+\fBbound namespace\fR (read-only)
+.
+The namespace to which the ensemble is bound; when the namespace is
+deleted, so too will the ensemble, and this namespace is also the
+namespace whose list of exported commands is used if both the mapping
+dictionary and the subcommand list properties are NULL. May be read
+using \fBTcl_GetEnsembleNamespace\fR which returns a Tcl result code
+(\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an ensemble).
+.SH "SEE ALSO"
+namespace(n), Tcl_DeleteCommandFromToken(3)
+.SH KEYWORDS
+command, ensemble

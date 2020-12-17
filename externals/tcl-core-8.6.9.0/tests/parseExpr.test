@@ -1,0 +1,1079 @@
+# This file contains a collection of tests for the procedures in the
+# file tclCompExpr.c.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import ::tcltest::*
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+# Note that the Tcl expression parser (tclCompExpr.c) does not check
+# the semantic validity of the expressions it parses. It does not check,
+# for example, that a math function actually exists, or that the operands
+# of "<<" are integers.
+
+testConstraint testexprparser [llength [info commands testexprparser]]
+testConstraint testbytestring [llength [info commands testbytestring]]
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+testConstraint ieeeFloatingPoint [testIEEE]
+
+######################################################################
+
+test parseExpr-1.1 {Tcl_ParseExpr procedure, computing string length} {testexprparser testbytestring} {
+    testexprparser [testbytestring "1+2\0 +3"] -1
+} {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-1.2 {Tcl_ParseExpr procedure, computing string length} testexprparser {
+    testexprparser "1  + 2" -1
+} {- {} 0 subexpr {1  + 2} 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-1.3 {Tcl_ParseExpr procedure, error getting initial lexeme} testexprparser {
+    testexprparser 12345678901234567890 -1
+} {- {} 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-1.4 {Tcl_ParseExpr procedure, error in conditional expression} \
+    -constraints testexprparser -body {
+        testexprparser {foo+} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-1.5 {Tcl_ParseExpr procedure, lexemes after the expression} -constraints testexprparser -body {
+    testexprparser {1+2 345} -1
+} -returnCodes error -match glob -result *
+
+test parseExpr-2.1 {ParseCondExpr procedure, valid test subexpr} testexprparser {
+    testexprparser {2>3? 1 : 0} -1
+} {- {} 0 subexpr {2>3? 1 : 0} 11 operator ? 0 subexpr 2>3 5 operator > 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-2.2 {ParseCondExpr procedure, error in test subexpr} \
+	-constraints testexprparser -body {
+            testexprparser {0 || foo} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-2.3 {ParseCondExpr procedure, next lexeme isn't "?"} testexprparser {
+    testexprparser {1+2} -1
+} {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-2.4 {ParseCondExpr procedure, next lexeme is "?"} testexprparser {
+    testexprparser {1+2 ? 3 : 4} -1
+} {- {} 0 subexpr {1+2 ? 3 : 4} 11 operator ? 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-2.5 {ParseCondExpr procedure, bad lexeme after "?"} testexprparser {
+    testexprparser {1+2 ? 12345678901234567890 : 0} -1
+} {- {} 0 subexpr {1+2 ? 12345678901234567890 : 0} 11 operator ? 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-2.6 {ParseCondExpr procedure, valid "then" subexpression} testexprparser {
+    testexprparser {1? 3 : 4} -1
+} {- {} 0 subexpr {1? 3 : 4} 7 operator ? 0 subexpr 1 1 text 1 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-2.7 {ParseCondExpr procedure, error in "then" subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1? fred : martha} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-2.8 {ParseCondExpr procedure, lexeme after "then" subexpr isn't ":"} -constraints testexprparser -body {
+    testexprparser {1? 2 martha 3} -1
+} -returnCodes error -match glob -result *
+test parseExpr-2.9 {ParseCondExpr procedure, valid "else" subexpression} testexprparser {
+    testexprparser {27||3? 3 : 4&&9} -1
+} {- {} 0 subexpr {27||3? 3 : 4&&9} 15 operator ? 0 subexpr 27||3 5 operator || 0 subexpr 27 1 text 27 0 subexpr 3 1 text 3 0 subexpr 3 1 text 3 0 subexpr 4&&9 5 operator && 0 subexpr 4 1 text 4 0 subexpr 9 1 text 9 0 {}}
+test parseExpr-2.10 {ParseCondExpr procedure, error in "else" subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1? 2 : martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-3.1 {ParseLorExpr procedure, valid logical and subexpr} testexprparser {
+    testexprparser {1&&2 || 3} -1
+} {- {} 0 subexpr {1&&2 || 3} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-3.2 {ParseLorExpr procedure, error in logical and subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1&&foo || 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-3.3 {ParseLorExpr procedure, next lexeme isn't "||"} testexprparser {
+    testexprparser {1&&2? 1 : 0} -1
+} {- {} 0 subexpr {1&&2? 1 : 0} 11 operator ? 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-3.4 {ParseLorExpr procedure, next lexeme is "||"} testexprparser {
+    testexprparser {1&&2 || 3} -1
+} {- {} 0 subexpr {1&&2 || 3} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-3.5 {ParseLorExpr procedure, bad lexeme after "||"} testexprparser {
+    testexprparser {1&&2 || 12345678901234567890} -1
+} {- {} 0 subexpr {1&&2 || 12345678901234567890} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-3.6 {ParseLorExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1&&2 || 3 || 4} -1
+} {- {} 0 subexpr {1&&2 || 3 || 4} 13 operator || 0 subexpr {1&&2 || 3} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-3.7 {ParseLorExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1&&2 || 3 || martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-4.1 {ParseLandExpr procedure, valid LHS "|" subexpr} testexprparser {
+    testexprparser {1|2 && 3} -1
+} {- {} 0 subexpr {1|2 && 3} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-4.2 {ParseLandExpr procedure, error in LHS "|" subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1&&foo && 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-4.3 {ParseLandExpr procedure, next lexeme isn't "&&"} testexprparser {
+    testexprparser {1|2? 1 : 0} -1
+} {- {} 0 subexpr {1|2? 1 : 0} 11 operator ? 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-4.4 {ParseLandExpr procedure, next lexeme is "&&"} testexprparser {
+    testexprparser {1|2 && 3} -1
+} {- {} 0 subexpr {1|2 && 3} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-4.5 {ParseLandExpr procedure, bad lexeme after "&&"} testexprparser {
+    testexprparser {1|2 && 12345678901234567890} -1
+} {- {} 0 subexpr {1|2 && 12345678901234567890} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-4.6 {ParseLandExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1|2 && 3 && 4} -1
+} {- {} 0 subexpr {1|2 && 3 && 4} 13 operator && 0 subexpr {1|2 && 3} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-4.7 {ParseLandExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1|2 && 3 && martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-5.1 {ParseBitOrExpr procedure, valid LHS "^" subexpr} testexprparser {
+    testexprparser {1^2 | 3} -1
+} {- {} 0 subexpr {1^2 | 3} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-5.2 {ParseBitOrExpr procedure, error in LHS "^" subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1|foo | 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-5.3 {ParseBitOrExpr procedure, next lexeme isn't "|"} testexprparser {
+    testexprparser {1^2? 1 : 0} -1
+} {- {} 0 subexpr {1^2? 1 : 0} 11 operator ? 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-5.4 {ParseBitOrExpr procedure, next lexeme is "|"} testexprparser {
+    testexprparser {1^2 | 3} -1
+} {- {} 0 subexpr {1^2 | 3} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-5.5 {ParseBitOrExpr procedure, bad lexeme after "|"} testexprparser {
+    testexprparser {1^2 | 12345678901234567890} -1
+} {- {} 0 subexpr {1^2 | 12345678901234567890} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-5.6 {ParseBitOrExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1^2 | 3 | 4} -1
+} {- {} 0 subexpr {1^2 | 3 | 4} 13 operator | 0 subexpr {1^2 | 3} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-5.7 {ParseBitOrExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1^2 | 3 | martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-6.1 {ParseBitXorExpr procedure, valid LHS "&" subexpr} testexprparser {
+    testexprparser {1&2 ^ 3} -1
+} {- {} 0 subexpr {1&2 ^ 3} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-6.2 {ParseBitXorExpr procedure, error in LHS "&" subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1^foo ^ 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-6.3 {ParseBitXorExpr procedure, next lexeme isn't "^"} testexprparser {
+    testexprparser {1&2? 1 : 0} -1
+} {- {} 0 subexpr {1&2? 1 : 0} 11 operator ? 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-6.4 {ParseBitXorExpr procedure, next lexeme is "^"} testexprparser {
+    testexprparser {1&2 ^ 3} -1
+} {- {} 0 subexpr {1&2 ^ 3} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-6.5 {ParseBitXorExpr procedure, bad lexeme after "^"} testexprparser {
+    testexprparser {1&2 ^ 12345678901234567890} -1
+} {- {} 0 subexpr {1&2 ^ 12345678901234567890} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-6.6 {ParseBitXorExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1&2 ^ 3 ^ 4} -1
+} {- {} 0 subexpr {1&2 ^ 3 ^ 4} 13 operator ^ 0 subexpr {1&2 ^ 3} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-6.7 {ParseBitXorExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1&2 ^ 3 ^ martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-7.1 {ParseBitAndExpr procedure, valid LHS equality subexpr} testexprparser {
+    testexprparser {1==2 & 3} -1
+} {- {} 0 subexpr {1==2 & 3} 9 operator & 0 subexpr 1==2 5 operator == 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-7.2 {ParseBitAndExpr procedure, error in LHS equality subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1!=foo & 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-7.3 {ParseBitAndExpr procedure, next lexeme isn't "&"} testexprparser {
+    testexprparser {1==2? 1 : 0} -1
+} {- {} 0 subexpr {1==2? 1 : 0} 11 operator ? 0 subexpr 1==2 5 operator == 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-7.4 {ParseBitAndExpr procedure, next lexeme is "&"} testexprparser {
+    testexprparser {1>2 & 3} -1
+} {- {} 0 subexpr {1>2 & 3} 9 operator & 0 subexpr 1>2 5 operator > 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-7.5 {ParseBitAndExpr procedure, bad lexeme after "&"} {testexprparser} {
+    testexprparser {1==2 & 12345678901234567890} -1
+} {- {} 0 subexpr {1==2 & 12345678901234567890} 9 operator & 0 subexpr 1==2 5 operator == 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-7.6 {ParseBitAndExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1<2 & 3 & 4} -1
+} {- {} 0 subexpr {1<2 & 3 & 4} 13 operator & 0 subexpr {1<2 & 3} 9 operator & 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-7.7 {ParseBitAndExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1==2 & 3>2 & martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-8.1 {ParseEqualityExpr procedure, valid LHS relational subexpr} testexprparser {
+    testexprparser {1<2 == 3} -1
+} {- {} 0 subexpr {1<2 == 3} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-8.2 {ParseEqualityExpr procedure, error in LHS relational subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1>=foo == 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-8.3 {ParseEqualityExpr procedure, next lexeme isn't "==" or "!="} testexprparser {
+    testexprparser {1<2? 1 : 0} -1
+} {- {} 0 subexpr {1<2? 1 : 0} 11 operator ? 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-8.4 {ParseEqualityExpr procedure, next lexeme is "==" or "!="} testexprparser {
+    testexprparser {1<2 == 3} -1
+} {- {} 0 subexpr {1<2 == 3} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-8.5 {ParseEqualityExpr procedure, next lexeme is "==" or "!="} testexprparser {
+    testexprparser {1<2 != 3} -1
+} {- {} 0 subexpr {1<2 != 3} 9 operator != 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-8.6 {ParseEqualityExpr procedure, bad lexeme after "==" or "!="} testexprparser {
+    testexprparser {1<2 == 12345678901234567890} -1
+} {- {} 0 subexpr {1<2 == 12345678901234567890} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-8.7 {ParseEqualityExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1<2 == 3 == 4} -1
+} {- {} 0 subexpr {1<2 == 3 == 4} 13 operator == 0 subexpr {1<2 == 3} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-8.8 {ParseEqualityExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1<2 == 3 != martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-9.1 {ParseRelationalExpr procedure, valid LHS shift subexpr} testexprparser {
+    testexprparser {1<<2 < 3} -1
+} {- {} 0 subexpr {1<<2 < 3} 9 operator < 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-9.2 {ParseRelationalExpr procedure, error in LHS shift subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1>=foo < 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-9.3 {ParseRelationalExpr procedure, next lexeme isn't relational op} testexprparser {
+    testexprparser {1<<2? 1 : 0} -1
+} {- {} 0 subexpr {1<<2? 1 : 0} 11 operator ? 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-9.4 {ParseRelationalExpr procedure, next lexeme is relational op} testexprparser {
+    testexprparser {1<<2 < 3} -1
+} {- {} 0 subexpr {1<<2 < 3} 9 operator < 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-9.5 {ParseRelationalExpr procedure, next lexeme is relational op} testexprparser {
+    testexprparser {1>>2 > 3} -1
+} {- {} 0 subexpr {1>>2 > 3} 9 operator > 0 subexpr 1>>2 5 operator >> 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-9.6 {ParseRelationalExpr procedure, next lexeme is relational op} testexprparser {
+    testexprparser {1<<2 <= 3} -1
+} {- {} 0 subexpr {1<<2 <= 3} 9 operator <= 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-9.7 {ParseRelationalExpr procedure, next lexeme is relational op} testexprparser {
+    testexprparser {1<<2 >= 3} -1
+} {- {} 0 subexpr {1<<2 >= 3} 9 operator >= 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-9.8 {ParseRelationalExpr procedure, bad lexeme after relational op} testexprparser {
+    testexprparser {1<<2 < 12345678901234567890} -1
+} {- {} 0 subexpr {1<<2 < 12345678901234567890} 9 operator < 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-9.9 {ParseRelationalExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1<<2 < 3 < 4} -1
+} {- {} 0 subexpr {1<<2 < 3 < 4} 13 operator < 0 subexpr {1<<2 < 3} 9 operator < 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-9.10 {ParseRelationalExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1<<2 < 3 > martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-10.1 {ParseShiftExpr procedure, valid LHS add subexpr} testexprparser {
+    testexprparser {1+2 << 3} -1
+} {- {} 0 subexpr {1+2 << 3} 9 operator << 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-10.2 {ParseShiftExpr procedure, error in LHS add subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1-foo << 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-10.3 {ParseShiftExpr procedure, next lexeme isn't "<<" or ">>"} testexprparser {
+    testexprparser {1+2? 1 : 0} -1
+} {- {} 0 subexpr {1+2? 1 : 0} 11 operator ? 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-10.4 {ParseShiftExpr procedure, next lexeme is "<<" or ">>"} testexprparser {
+    testexprparser {1+2 << 3} -1
+} {- {} 0 subexpr {1+2 << 3} 9 operator << 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-10.5 {ParseShiftExpr procedure, next lexeme is "<<" or ">>"} testexprparser {
+    testexprparser {1+2 >> 3} -1
+} {- {} 0 subexpr {1+2 >> 3} 9 operator >> 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-10.6 {ParseShiftExpr procedure, bad lexeme after "<<" or ">>"} testexprparser {
+    testexprparser {1+2 << 12345678901234567890} -1
+} {- {} 0 subexpr {1+2 << 12345678901234567890} 9 operator << 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-10.7 {ParseShiftExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1+2 << 3 << 4} -1
+} {- {} 0 subexpr {1+2 << 3 << 4} 13 operator << 0 subexpr {1+2 << 3} 9 operator << 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-10.8 {ParseShiftExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1+2 << 3 >> martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-11.1 {ParseAddExpr procedure, valid LHS multiply subexpr} testexprparser {
+    testexprparser {1*2 + 3} -1
+} {- {} 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-11.2 {ParseAddExpr procedure, error in LHS multiply subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1/foo + 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-11.3 {ParseAddExpr procedure, next lexeme isn't "+" or "-"} testexprparser {
+    testexprparser {1*2? 1 : 0} -1
+} {- {} 0 subexpr {1*2? 1 : 0} 11 operator ? 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-11.4 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexprparser {
+    testexprparser {1*2 + 3} -1
+} {- {} 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-11.5 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexprparser {
+    testexprparser {1*2 - 3} -1
+} {- {} 0 subexpr {1*2 - 3} 9 operator - 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-11.6 {ParseAddExpr procedure, bad lexeme after "+" or "-"} testexprparser {
+    testexprparser {1*2 + 12345678901234567890} -1
+} {- {} 0 subexpr {1*2 + 12345678901234567890} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-11.7 {ParseAddExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1*2 + 3 + 4} -1
+} {- {} 0 subexpr {1*2 + 3 + 4} 13 operator + 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-11.8 {ParseAddExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1*2 + 3 - martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-12.1 {ParseAddExpr procedure, valid LHS multiply subexpr} testexprparser {
+    testexprparser {1*2 + 3} -1
+} {- {} 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-12.2 {ParseAddExpr procedure, error in LHS multiply subexpr} \
+    -constraints testexprparser -body {
+        testexprparser {1/foo + 3} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-12.3 {ParseAddExpr procedure, next lexeme isn't "+" or "-"} testexprparser {
+    testexprparser {1*2? 1 : 0} -1
+} {- {} 0 subexpr {1*2? 1 : 0} 11 operator ? 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-12.4 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexprparser {
+    testexprparser {1*2 + 3} -1
+} {- {} 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-12.5 {ParseAddExpr procedure, next lexeme is "+" or "-"} testexprparser {
+    testexprparser {1*2 - 3} -1
+} {- {} 0 subexpr {1*2 - 3} 9 operator - 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-12.6 {ParseAddExpr procedure, bad lexeme after "+" or "-"} testexprparser {
+    testexprparser {1*2 + 12345678901234567890} -1
+} {- {} 0 subexpr {1*2 + 12345678901234567890} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-12.7 {ParseAddExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {1*2 + 3 + 4} -1
+} {- {} 0 subexpr {1*2 + 3 + 4} 13 operator + 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-12.8 {ParseAddExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {1*2 + 3 - martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-13.1 {ParseMultiplyExpr procedure, valid LHS unary subexpr} testexprparser {
+    testexprparser {+2 * 3} -1
+} {- {} 0 subexpr {+2 * 3} 7 operator * 0 subexpr +2 3 operator + 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-13.2 {ParseMultiplyExpr procedure, error in LHS unary subexpr} testexprparser {
+    testexprparser {-12345678901234567890 * 3} -1
+} {- {} 0 subexpr {-12345678901234567890 * 3} 7 operator * 0 subexpr -12345678901234567890 3 operator - 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-13.3 {ParseMultiplyExpr procedure, next lexeme isn't "*", "/", or "%"} testexprparser {
+    testexprparser {+2? 1 : 0} -1
+} {- {} 0 subexpr {+2? 1 : 0} 9 operator ? 0 subexpr +2 3 operator + 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-13.4 {ParseMultiplyExpr procedure, next lexeme is "*", "/", or "%"} testexprparser {
+    testexprparser {-123 * 3} -1
+} {- {} 0 subexpr {-123 * 3} 7 operator * 0 subexpr -123 3 operator - 0 subexpr 123 1 text 123 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-13.5 {ParseMultiplyExpr procedure, next lexeme is "*", "/", or "%"} testexprparser {
+    testexprparser {+-456 / 3} -1
+} {- {} 0 subexpr {+-456 / 3} 9 operator / 0 subexpr +-456 5 operator + 0 subexpr -456 3 operator - 0 subexpr 456 1 text 456 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-13.6 {ParseMultiplyExpr procedure, next lexeme is "*", "/", or "%"} testexprparser {
+    testexprparser {+-456 % 3} -1
+} {- {} 0 subexpr {+-456 % 3} 9 operator % 0 subexpr +-456 5 operator + 0 subexpr -456 3 operator - 0 subexpr 456 1 text 456 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-13.7 {ParseMultiplyExpr procedure, bad lexeme after "*", "/", or "%"} testexprparser {
+    testexprparser {--++5 / 12345678901234567890} -1
+} {- {} 0 subexpr {--++5 / 12345678901234567890} 13 operator / 0 subexpr --++5 9 operator - 0 subexpr -++5 7 operator - 0 subexpr ++5 5 operator + 0 subexpr +5 3 operator + 0 subexpr 5 1 text 5 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-13.8 {ParseMultiplyExpr procedure, valid RHS subexpression} testexprparser {
+    testexprparser {-2 / 3 % 4} -1
+} {- {} 0 subexpr {-2 / 3 % 4} 11 operator % 0 subexpr {-2 / 3} 7 operator / 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-13.9 {ParseMultiplyExpr procedure, error in RHS subexpression} \
+    -constraints testexprparser -body {
+        testexprparser {++2 / 3 * martha} -1
+    } -match glob -returnCodes error -result *
+
+test parseExpr-14.1 {ParseUnaryExpr procedure, first token is unary operator} testexprparser {
+    testexprparser {+2} -1
+} {- {} 0 subexpr +2 3 operator + 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-14.2 {ParseUnaryExpr procedure, first token is unary operator} testexprparser {
+    testexprparser {-2} -1
+} {- {} 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-14.3 {ParseUnaryExpr procedure, first token is unary operator} testexprparser {
+    testexprparser {~2} -1
+} {- {} 0 subexpr ~2 3 operator ~ 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-14.4 {ParseUnaryExpr procedure, first token is unary operator} testexprparser {
+    testexprparser {!2} -1
+} {- {} 0 subexpr !2 3 operator ! 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-14.5 {ParseUnaryExpr procedure, error in lexeme after unary op} testexprparser {
+    testexprparser {-12345678901234567890} -1
+} {- {} 0 subexpr -12345678901234567890 3 operator - 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-14.6 {ParseUnaryExpr procedure, simple unary expr after unary op} testexprparser {
+    testexprparser {+"1234"} -1
+} {- {} 0 subexpr +\"1234\" 3 operator + 0 subexpr {"1234"} 1 text 1234 0 {}}
+test parseExpr-14.7 {ParseUnaryExpr procedure, another unary expr after unary op} testexprparser {
+    testexprparser {~!{fred}} -1
+} {- {} 0 subexpr ~!{fred} 5 operator ~ 0 subexpr !{fred} 3 operator ! 0 subexpr {{fred}} 1 text fred 0 {}}
+test parseExpr-14.8 {ParseUnaryExpr procedure, error in unary expr after unary op} -constraints testexprparser -body {
+    testexprparser {+-||27} -1
+} -returnCodes error -match glob -result *
+test parseExpr-14.9 {ParseUnaryExpr procedure, error in unary expr after unary op} -constraints testexprparser -body {
+    testexprparser {+-||27} -1
+} -returnCodes error -match glob -result *
+test parseExpr-14.10 {ParseUnaryExpr procedure, first token is not unary op} testexprparser {
+    testexprparser {123} -1
+} {- {} 0 subexpr 123 1 text 123 0 {}}
+test parseExpr-14.11 {ParseUnaryExpr procedure, not unary expr, complex primary expr} testexprparser {
+    testexprparser {(1+2)} -1
+} {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-14.12 {ParseUnaryExpr procedure, not unary expr, error in primary expr} testexprparser {
+    testexprparser {(12345678901234567890)} -1
+} {- {} 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+
+test parseExpr-15.1 {ParsePrimaryExpr procedure, just parenthesized subexpr} testexprparser {
+    testexprparser {({abc}/{def})} -1
+} {- {} 0 subexpr {{abc}/{def}} 5 operator / 0 subexpr {{abc}} 1 text abc 0 subexpr {{def}} 1 text def 0 {}}
+test parseExpr-15.2 {ParsePrimaryExpr procedure, bad lexeme after "("} {testexprparser} {
+    testexprparser {(12345678901234567890)} -1
+} {- {} 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-15.3 {ParsePrimaryExpr procedure, valid parenthesized subexpr} testexprparser {
+    testexprparser {({abc}? 2*4 : -6)} -1
+} {- {} 0 subexpr {{abc}? 2*4 : -6} 13 operator ? 0 subexpr {{abc}} 1 text abc 0 subexpr 2*4 5 operator * 0 subexpr 2 1 text 2 0 subexpr 4 1 text 4 0 subexpr -6 3 operator - 0 subexpr 6 1 text 6 0 {}}
+test parseExpr-15.4 {ParsePrimaryExpr procedure, error in parenthesized subexpr} -constraints testexprparser -body {
+    testexprparser {(? 123 : 456)} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.5 {ParsePrimaryExpr procedure, missing ")" after in parenthesized subexpr} -constraints testexprparser -body {
+    testexprparser {({abc}/{def}} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.6 {ParsePrimaryExpr procedure, primary is literal} testexprparser {
+    testexprparser {12345} -1
+} {- {} 0 subexpr 12345 1 text 12345 0 {}}
+test parseExpr-15.7 {ParsePrimaryExpr procedure, primary is literal} testexprparser {
+    testexprparser {12345.6789} -1
+} {- {} 0 subexpr 12345.6789 1 text 12345.6789 0 {}}
+test parseExpr-15.8 {ParsePrimaryExpr procedure, primary is var reference} testexprparser {
+    testexprparser {$a} -1
+} {- {} 0 subexpr {$a} 2 variable {$a} 1 text a 0 {}}
+test parseExpr-15.9 {ParsePrimaryExpr procedure, primary is var reference} testexprparser {
+    testexprparser {$a(hello$there)} -1
+} {- {} 0 subexpr {$a(hello$there)} 5 variable {$a(hello$there)} 4 text a 0 text hello 0 variable {$there} 1 text there 0 {}}
+test parseExpr-15.10 {ParsePrimaryExpr procedure, primary is var reference} testexprparser {
+    testexprparser {$a()} -1
+} {- {} 0 subexpr {$a()} 3 variable {$a()} 2 text a 0 text {} 0 {}}
+test parseExpr-15.11 {ParsePrimaryExpr procedure, error in var reference} -constraints testexprparser -body {
+    testexprparser {$a(} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.12 {ParsePrimaryExpr procedure, primary is quoted string} testexprparser {
+    testexprparser {"abc $xyz def"} -1
+} {- {} 0 subexpr {"abc $xyz def"} 5 word {"abc $xyz def"} 4 text {abc } 0 variable {$xyz} 1 text xyz 0 text { def} 0 {}}
+test parseExpr-15.13 {ParsePrimaryExpr procedure, error in quoted string} -constraints testexprparser -body {
+    testexprparser {"$a(12"} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.14 {ParsePrimaryExpr procedure, quoted string has multiple tokens} testexprparser {
+    testexprparser {"abc [xyz] $def"} -1
+} {- {} 0 subexpr {"abc [xyz] $def"} 6 word {"abc [xyz] $def"} 5 text {abc } 0 command {[xyz]} 0 text { } 0 variable {$def} 1 text def 0 {}}
+test parseExpr-15.15 {ParsePrimaryExpr procedure, primary is command} testexprparser {
+    testexprparser {[def]} -1
+} {- {} 0 subexpr {[def]} 1 command {[def]} 0 {}}
+test parseExpr-15.16 {ParsePrimaryExpr procedure, primary is multiple commands} testexprparser {
+    testexprparser {[one; two; three; four;]} -1
+} {- {} 0 subexpr {[one; two; three; four;]} 1 command {[one; two; three; four;]} 0 {}}
+test parseExpr-15.17 {ParsePrimaryExpr procedure, primary is multiple commands} testexprparser {
+    testexprparser {[one; two; three; four;]} -1
+} {- {} 0 subexpr {[one; two; three; four;]} 1 command {[one; two; three; four;]} 0 {}}
+test parseExpr-15.18 {ParsePrimaryExpr procedure, missing close bracket} -constraints testexprparser -body {
+    testexprparser {[one} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.19 {ParsePrimaryExpr procedure, primary is braced string} testexprparser {
+    testexprparser {{hello world}} -1
+} {- {} 0 subexpr {{hello world}} 1 text {hello world} 0 {}}
+test parseExpr-15.20 {ParsePrimaryExpr procedure, error in primary, which is braced string} -constraints testexprparser -body {
+    testexprparser "\{abc\\\n" -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.21 {ParsePrimaryExpr procedure, primary is braced string with multiple tokens} testexprparser {
+    testexprparser "\{  \\
+ +123 \}" -1
+} {- {} 0 subexpr \{\ \ \\\n\ +123\ \} 4 word \{\ \ \\\n\ +123\ \} 3 text {  } 0 backslash \\\n\  0 text {+123 } 0 {}}
+test parseExpr-15.22 {ParsePrimaryExpr procedure, primary is function call} testexprparser {
+    testexprparser {foo(123)} -1
+} {- {} 0 subexpr foo(123) 3 operator foo 0 subexpr 123 1 text 123 0 {}}
+test parseExpr-15.23 {ParsePrimaryExpr procedure, bad lexeme after function name} -constraints testexprparser -body {
+    testexprparser {foo 12345678901234567890 123)} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.24 {ParsePrimaryExpr procedure, lexeme after function name isn't "("} \
+    -constraints testexprparser -body {
+        testexprparser {foo 27.4 123)} -1
+    } -match glob -returnCodes error -result *
+test parseExpr-15.25 {ParsePrimaryExpr procedure, bad lexeme after "("} testexprparser {
+    testexprparser {foo(12345678901234567890)} -1
+} {- {} 0 subexpr foo(12345678901234567890) 3 operator foo 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-15.26 {ParsePrimaryExpr procedure, function call, one arg} testexprparser {
+    testexprparser {foo(27*4)} -1
+} {- {} 0 subexpr foo(27*4) 7 operator foo 0 subexpr 27*4 5 operator * 0 subexpr 27 1 text 27 0 subexpr 4 1 text 4 0 {}}
+test parseExpr-15.27 {ParsePrimaryExpr procedure, error in function arg} -constraints testexprparser -body {
+    testexprparser {foo(*1-2)} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.28 {ParsePrimaryExpr procedure, error in function arg} -constraints testexprparser -body {
+    testexprparser {foo(*1-2)} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.29 {ParsePrimaryExpr procedure, function call, comma after arg} testexprparser {
+    testexprparser {foo(27-2, (-2*[foo]))} -1
+} {- {} 0 subexpr {foo(27-2, (-2*[foo]))} 15 operator foo 0 subexpr 27-2 5 operator - 0 subexpr 27 1 text 27 0 subexpr 2 1 text 2 0 subexpr {-2*[foo]} 7 operator * 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 subexpr {[foo]} 1 command {[foo]} 0 {}}
+test parseExpr-15.30 {ParsePrimaryExpr procedure, bad lexeme after comma} testexprparser {
+    testexprparser {foo(123, 12345678901234567890)} -1
+} {- {} 0 subexpr {foo(123, 12345678901234567890)} 5 operator foo 0 subexpr 123 1 text 123 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-15.31 {ParsePrimaryExpr procedure, lexeme not "," or ")" after arg} -constraints  testexprparser -body {
+    testexprparser {foo(123 [foo])} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.32 {ParsePrimaryExpr procedure, bad lexeme after primary} -constraints testexprparser -body {
+    testexprparser {123 12345678901234567890} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.33 {ParsePrimaryExpr procedure, comma-specific message} -constraints testexprparser -body {
+    testexprparser {123+,456} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.34 {ParsePrimaryExpr procedure, single equal-specific message} -constraints testexprparser -body {
+    testexprparser {123+=456} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.35 {ParsePrimaryExpr procedure, error in parenthesized subexpr} -constraints testexprparser -body {
+    testexprparser {(: 123 : 456)} -1
+} -returnCodes error -match glob -result *
+test parseExpr-15.36 {ParsePrimaryExpr procedure, missing close-bracket} -constraints testexprparser -body {
+    # Test for Bug 681841
+    testexprparser {[set a [format bc]} -1
+} -returnCodes error -match glob -result *
+
+test parseExpr-16.1 {GetLexeme procedure, whitespace before lexeme} testexprparser {
+    testexprparser {   123} -1
+} {- {} 0 subexpr 123 1 text 123 0 {}}
+test parseExpr-16.2 {GetLexeme procedure, whitespace before lexeme} testexprparser {
+    testexprparser {  \
+456} -1
+} {- {} 0 subexpr 456 1 text 456 0 {}}
+test parseExpr-16.3 {GetLexeme procedure, no lexeme after whitespace} testexprparser {
+    testexprparser { 123 \
+   } -1
+} {- {} 0 subexpr 123 1 text 123 0 {}}
+test parseExpr-16.4 {GetLexeme procedure, integer lexeme} testexprparser {
+    testexprparser {000} -1
+} {- {} 0 subexpr 000 1 text 000 0 {}}
+test parseExpr-16.5 {GetLexeme procedure, integer lexeme too big} testexprparser {
+    testexprparser {12345678901234567890} -1
+} {- {} 0 subexpr 12345678901234567890 1 text 12345678901234567890 0 {}}
+test parseExpr-16.6 {GetLexeme procedure, bad integer lexeme} -constraints testexprparser -body {
+    testexprparser {0o999} -1
+} -returnCodes error -match glob -result {*invalid octal number*}
+test parseExpr-16.7 {GetLexeme procedure, double lexeme} testexprparser {
+    testexprparser {0.999} -1
+} {- {} 0 subexpr 0.999 1 text 0.999 0 {}}
+test parseExpr-16.8 {GetLexeme procedure, double lexeme} testexprparser {
+    testexprparser {.123} -1
+} {- {} 0 subexpr .123 1 text .123 0 {}}
+test parseExpr-16.9 {GetLexeme procedure, double lexeme} {testexprparser unix} {
+    testexprparser {nan} -1
+} {- {} 0 subexpr nan 1 text nan 0 {}}
+test parseExpr-16.10 {GetLexeme procedure, double lexeme} {testexprparser unix} {
+    testexprparser {NaN} -1
+} {- {} 0 subexpr NaN 1 text NaN 0 {}}
+test parseExpr-16.11a {GetLexeme procedure, bad double lexeme too big} {testexprparser && !ieeeFloatingPoint} {
+    list [catch {testexprparser {123.e+99999999999999} -1} msg] $msg
+} {1 {floating-point value too large to represent}}
+test parseExpr-16.11b {GetLexeme procedure, bad double lexeme too big} {testexprparser && ieeeFloatingPoint} {
+    list [catch {testexprparser {123.e+99999999999999} -1} msg] $msg
+} {0 {- {} 0 subexpr 123.e+99999999999999 1 text 123.e+99999999999999 0 {}}}
+test parseExpr-16.12 {GetLexeme procedure, bad double lexeme} -constraints testexprparser -body {
+    testexprparser {123.4x56} -1
+} -returnCodes error -match glob -result *
+test parseExpr-16.13 {GetLexeme procedure, lexeme is "["} testexprparser {
+    testexprparser {[foo]} -1
+} {- {} 0 subexpr {[foo]} 1 command {[foo]} 0 {}}
+test parseExpr-16.14 {GetLexeme procedure, lexeme is open brace} testexprparser {
+    testexprparser {{bar}} -1
+} {- {} 0 subexpr {{bar}} 1 text bar 0 {}}
+test parseExpr-16.15 {GetLexeme procedure, lexeme is "("} testexprparser {
+    testexprparser {(123)} -1
+} {- {} 0 subexpr 123 1 text 123 0 {}}
+test parseExpr-16.16 {GetLexeme procedure, lexeme is ")"} testexprparser {
+    testexprparser {(2*3)} -1
+} {- {} 0 subexpr 2*3 5 operator * 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.17 {GetLexeme procedure, lexeme is "$"} testexprparser {
+    testexprparser {$wombat} -1
+} {- {} 0 subexpr {$wombat} 2 variable {$wombat} 1 text wombat 0 {}}
+test parseExpr-16.18 "GetLexeme procedure, lexeme is '\"'" testexprparser {
+    testexprparser {"fred"} -1
+} {- {} 0 subexpr {"fred"} 1 text fred 0 {}}
+test parseExpr-16.19 {GetLexeme procedure, lexeme is ","} testexprparser {
+    testexprparser {foo(1,2)} -1
+} {- {} 0 subexpr foo(1,2) 5 operator foo 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.20 {GetLexeme procedure, lexeme is "*"} testexprparser {
+    testexprparser {$a*$b} -1
+} {- {} 0 subexpr {$a*$b} 7 operator * 0 subexpr {$a} 2 variable {$a} 1 text a 0 subexpr {$b} 2 variable {$b} 1 text b 0 {}}
+test parseExpr-16.21 {GetLexeme procedure, lexeme is "/"} testexprparser {
+    testexprparser {5/6} -1
+} {- {} 0 subexpr 5/6 5 operator / 0 subexpr 5 1 text 5 0 subexpr 6 1 text 6 0 {}}
+test parseExpr-16.22 {GetLexeme procedure, lexeme is "%"} testexprparser {
+    testexprparser {5%[xxx]} -1
+} {- {} 0 subexpr {5%[xxx]} 5 operator % 0 subexpr 5 1 text 5 0 subexpr {[xxx]} 1 command {[xxx]} 0 {}}
+test parseExpr-16.23 {GetLexeme procedure, lexeme is "+"} testexprparser {
+    testexprparser {1+2} -1
+} {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.24 {GetLexeme procedure, lexeme is "-"} testexprparser {
+    testexprparser {.12-0e27} -1
+} {- {} 0 subexpr .12-0e27 5 operator - 0 subexpr .12 1 text .12 0 subexpr 0e27 1 text 0e27 0 {}}
+test parseExpr-16.25 {GetLexeme procedure, lexeme is "?" or ":"} testexprparser {
+    testexprparser {$b? 1 : 0} -1
+} {- {} 0 subexpr {$b? 1 : 0} 8 operator ? 0 subexpr {$b} 2 variable {$b} 1 text b 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
+test parseExpr-16.26 {GetLexeme procedure, lexeme is "<"} testexprparser {
+    testexprparser {2<3} -1
+} {- {} 0 subexpr 2<3 5 operator < 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.27 {GetLexeme procedure, lexeme is "<<"} testexprparser {
+    testexprparser {2<<3} -1
+} {- {} 0 subexpr 2<<3 5 operator << 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.28 {GetLexeme procedure, lexeme is "<="} testexprparser {
+    testexprparser {2<=3} -1
+} {- {} 0 subexpr 2<=3 5 operator <= 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.29 {GetLexeme procedure, lexeme is ">"} testexprparser {
+    testexprparser {2>3} -1
+} {- {} 0 subexpr 2>3 5 operator > 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.30 {GetLexeme procedure, lexeme is ">>"} testexprparser {
+    testexprparser {2>>3} -1
+} {- {} 0 subexpr 2>>3 5 operator >> 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.31 {GetLexeme procedure, lexeme is ">="} testexprparser {
+    testexprparser {2>=3} -1
+} {- {} 0 subexpr 2>=3 5 operator >= 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.32 {GetLexeme procedure, lexeme is "=="} testexprparser {
+    testexprparser {2==3} -1
+} {- {} 0 subexpr 2==3 5 operator == 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.33 {GetLexeme procedure, bad lexeme starting with "="} -constraints testexprparser -body {
+    testexprparser {2=+3} -1
+} -returnCodes error -match glob -result *
+test parseExpr-16.34 {GetLexeme procedure, lexeme is "!="} testexprparser {
+    testexprparser {2!=3} -1
+} {- {} 0 subexpr 2!=3 5 operator != 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.35 {GetLexeme procedure, lexeme is "!"} testexprparser {
+    testexprparser {!2} -1
+} {- {} 0 subexpr !2 3 operator ! 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.36 {GetLexeme procedure, lexeme is "&&"} testexprparser {
+    testexprparser {2&&3} -1
+} {- {} 0 subexpr 2&&3 5 operator && 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.37 {GetLexeme procedure, lexeme is "&"} testexprparser {
+    testexprparser {1&2} -1
+} {- {} 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.38 {GetLexeme procedure, lexeme is "^"} testexprparser {
+    testexprparser {1^2} -1
+} {- {} 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.39 {GetLexeme procedure, lexeme is "||"} testexprparser {
+    testexprparser {2||3} -1
+} {- {} 0 subexpr 2||3 5 operator || 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.40 {GetLexeme procedure, lexeme is "|"} testexprparser {
+    testexprparser {1|2} -1
+} {- {} 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.41 {GetLexeme procedure, lexeme is "~"} testexprparser {
+    testexprparser {~2} -1
+} {- {} 0 subexpr ~2 3 operator ~ 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-16.42 {GetLexeme procedure, lexeme is func name} testexprparser {
+    testexprparser {george()} -1
+} {- {} 0 subexpr george() 1 operator george 0 {}}
+test parseExpr-16.43 {GetLexeme procedure, lexeme is func name} testexprparser {
+    testexprparser {harmonic_ratio(2,3)} -1
+} {- {} 0 subexpr harmonic_ratio(2,3) 5 operator harmonic_ratio 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
+test parseExpr-16.44 {GetLexeme procedure, unknown lexeme} -constraints testexprparser -body {
+    testexprparser {@27} -1
+} -returnCodes error -match glob -result *
+
+test parseExpr-17.1 {PrependSubExprTokens procedure, expand token array} testexprparser {
+    testexprparser {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]} -1
+} {- {} 0 subexpr {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]} 13 operator && 0 subexpr {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]} 9 operator && 0 subexpr {[string compare [format %c $i] [string index $a $i]]&&[string compare [format %c $i] [string index $a $i]]} 5 operator && 0 subexpr {[string compare [format %c $i] [string index $a $i]]} 1 command {[string compare [format %c $i] [string index $a $i]]} 0 subexpr {[string compare [format %c $i] [string index $a $i]]} 1 command {[string compare [format %c $i] [string index $a $i]]} 0 subexpr {[string compare [format %c $i] [string index $a $i]]} 1 command {[string compare [format %c $i] [string index $a $i]]} 0 subexpr {[string compare [format %c $i] [string index $a $i]]} 1 command {[string compare [format %c $i] [string index $a $i]]} 0 {}}
+
+test parseExpr-18.1 {LogSyntaxError procedure, error in expr longer than 60 chars} -constraints testexprparser -body {
+    testexprparser {(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)/} -1
+} -returnCodes error -match glob -result *
+
+test parseExpr-19.1 {TclParseInteger: [Bug 648441]} -body {
+    # Should see this as integer "0" followed by incomplete function "x"
+    # Thus, syntax error.
+    # If Bug 648441 is not fixed, "0x" will be seen as floating point 0.0
+    expr 0x
+} -returnCodes error -match glob -result *
+
+test parseExpr-20.1 {Bug 1451233} {
+    expr 1000000000000000000042
+} 1000000000000000000042
+test parseExpr-20.2 {Bug 1451233} {
+    expr 10000000000000000000420000000042
+} 10000000000000000000420000000042
+test parseExpr-20.3 {Bug 1451233} {
+    expr 10000000000000000000020000000002
+} 10000000000000000000020000000002
+
+test parseExpr-21.1 {error messages} -body {
+    expr @
+} -returnCodes error -result {invalid character "@"
+in expression "@"}
+test parseExpr-21.2 {error messages} -body {
+    expr =
+} -returnCodes error -result {incomplete operator "="
+in expression "="}
+test parseExpr-21.3 {error messages} -body {
+    expr x
+} -returnCodes error -result {invalid bareword "x"
+in expression "x";
+should be "$x" or "{x}" or "x(...)" or ...}
+test parseExpr-21.4 {error messages} -body {
+    expr abcdefghijklmnopqrstuvwxyz
+} -returnCodes error -result {invalid bareword "abcdefghijklmnopqrstuv..."
+in expression "abcdefghijklmnopqrstuv...";
+should be "$abcdefghijklmnopqrstuv..." or "{abcdefghijklmnopqrstuv...}" or "abcdefghijklmnopqrstuv...(...)" or ...}
+test parseExpr-21.5 {error messages} -body {
+    expr {[][]}
+} -returnCodes error -result {missing operator at _@_
+in expression "[]_@_[]"}
+test parseExpr-21.6 {error messages} -body {
+    expr {0 0}
+} -returnCodes error -result {missing operator at _@_
+in expression "0 _@_0"}
+test parseExpr-21.7 {error messages} -body {
+    expr {0o8}
+} -returnCodes error -match glob -result {*invalid octal number*}
+test parseExpr-21.8 {error messages} -body {
+    expr {0o8x}
+} -returnCodes error -match glob -result {*invalid octal number*}
+test parseExpr-21.9 {error messages} -body {
+    expr {"} 
+} -returnCodes error -result {missing "
+in expression """}
+test parseExpr-21.10 {error messages} -body {
+    expr \{ 
+} -returnCodes error -result "missing close-brace
+in expression \"\{\""
+test parseExpr-21.11 {error messages} -body {
+    expr $
+} -returnCodes error -result {invalid character "$"
+in expression "$"}
+test parseExpr-21.12 {error messages} -body {
+    expr {$(}
+} -returnCodes error -result {missing )
+in expression "$("}
+test parseExpr-21.13 {error messages} -body {
+    expr {[""x]}
+} -returnCodes error -result {extra characters after close-quote
+in expression "[""x]"}
+test parseExpr-21.14 {error messages} -body {
+    expr {[}
+} -returnCodes error -result {missing close-bracket
+in expression "["}
+test parseExpr-21.15 {error messages} -body {
+    expr 0~0
+} -returnCodes error -result {missing operator at _@_
+in expression "0_@_~0"}
+test parseExpr-21.16 {error messages} -body {
+    expr ()
+} -returnCodes error -result {empty subexpression at _@_
+in expression "(_@_)"}
+test parseExpr-21.17 {error messages} -body {
+    expr (
+} -returnCodes error -result {unbalanced open paren
+in expression "("}
+test parseExpr-21.18 {error messages} -body {
+    expr a(0,)
+} -returnCodes error -result {missing function argument at _@_
+in expression "a(0,_@_)"}
+test parseExpr-21.19 {error messages} -body {
+    expr {}
+} -returnCodes error -result {empty expression
+in expression ""}
+test parseExpr-21.20 {error messages} -body {
+    expr )
+} -returnCodes error -result {unbalanced close paren
+in expression ")"}
+test parseExpr-21.21 {error messages} -body {
+    expr a(,0)
+} -returnCodes error -result {missing function argument at _@_
+in expression "a(_@_,0)"}
+test parseExpr-21.22 {error messages} -body {
+    expr 0&|0
+} -returnCodes error -result {missing operand at _@_
+in expression "0&_@_|0"}
+test parseExpr-21.23 {error messages} -body {
+    expr 0^^0
+} -returnCodes error -result {missing operand at _@_
+in expression "0^_@_^0"}
+test parseExpr-21.24 {error messages} -body {
+    expr 0|&0
+} -returnCodes error -result {missing operand at _@_
+in expression "0|_@_&0"}
+test parseExpr-21.25 {error messages} -body {
+    expr a(1+,0)
+} -returnCodes error -result {missing operand at _@_
+in expression "a(1+_@_,0)"}
+test parseExpr-21.26 {error messages} -body {
+    expr (0
+} -returnCodes error -result {unbalanced open paren
+in expression "(0"}
+test parseExpr-21.27 {error messages} -body {
+    expr 0?0
+} -returnCodes error -result {missing operator ":" at _@_
+in expression "0?0_@_"}
+test parseExpr-21.28 {error messages} -body {
+    expr 0:0
+} -returnCodes error -result {unexpected operator ":" without preceding "?"
+in expression "0:0"}
+test parseExpr-21.29 {error messages} -body {
+    expr 0)
+} -returnCodes error -result {unbalanced close paren
+in expression "0)"}
+test parseExpr-21.30 {error messages} -body {
+    expr 0,
+} -returnCodes error -result {unexpected "," outside function argument list
+in expression "0,"}
+test parseExpr-21.31 {error messages} -body {
+    expr 0,0
+} -returnCodes error -result {unexpected "," outside function argument list
+in expression "0,0"}
+test parseExpr-21.32 {error messages} -body {
+    expr (0,0)
+} -returnCodes error -result {unexpected "," outside function argument list
+in expression "(0,0)"}
+test parseExpr-21.33 {error messages} -body {
+    expr a(0:0,0)
+} -returnCodes error -result {unexpected operator ":" without preceding "?"
+in expression "a(0:0,0)"}
+test parseExpr-21.34 {error messages} -body {
+    expr {"abcdefghijklmnopqrstuvwxyz"@0}
+} -returnCodes error -result {invalid character "@"
+in expression "...fghijklmnopqrstuvwxyz"@0"}
+test parseExpr-21.35 {error messages} -body {
+    expr {0@"abcdefghijklmnopqrstuvwxyz"}
+} -returnCodes error -result {invalid character "@"
+in expression "0@"abcdefghijklmnopqrstu..."}
+test parseExpr-21.36 {error messages} -body {
+    expr {"abcdefghijklmnopqrstuvwxyz"@"abcdefghijklmnopqrstuvwxyz"}
+} -returnCodes error -result {invalid character "@"
+in expression "...fghijklmnopqrstuvwxyz"@"abcdefghijklmnopqrstu..."}
+test parseExpr-21.37 {error messages} -body {
+    expr [format {"%s" @ 0} [string repeat \u00a7 25]]
+} -returnCodes error -result [format {invalid character "@"
+in expression "...%s" @ 0"} [string repeat \u00a7 10]]
+test parseExpr-21.38 {error messages} -body {
+    expr [format {0 @ "%s"} [string repeat \u00a7 25]]
+} -returnCodes error -result [format {invalid character "@"
+in expression "0 @ "%s..."} [string repeat \u00a7 10]]
+test parseExpr-21.39 {error messages} -body {
+    expr [format {"%s" @ "%s"} [string repeat \u00a7 25] [string repeat \u00a7 25]]
+} -returnCodes error -result [format {invalid character "@"
+in expression "...%s" @ "%s..."} [string repeat \u00a7 10] [string repeat \u00a7 10]]
+test parseExpr-21.40 {error messages} -body {
+    catch {expr {"abcdefghijklmnopqrstuvwxyz"@0}} m o
+    dict get $o -errorinfo
+} -result {invalid character "@"
+in expression "...fghijklmnopqrstuvwxyz"@0"
+    (parsing expression ""abcdefghijklmnopqrstu...")
+    invoked from within
+"expr {"abcdefghijklmnopqrstuvwxyz"@0}"}
+test parseExpr-21.41 {error messages} -body {
+    catch {expr [format {"%s" @ 0} [string repeat \u00a7 25]]} m o
+    dict get $o -errorinfo
+} -result [format {invalid character "@"
+in expression "...%s" @ 0"
+    (parsing expression ""%s...")
+    invoked from within
+"expr [format {"%%s" @ 0} [string repeat \u00a7 25]]"} [string repeat \u00a7 10] [string repeat \u00a7 10]]
+test parseExpr-21.42 {error message} -body {
+    expr {123456789012345678901234567890*"abcdefghijklmnopqrstuvwxyz}
+} -returnCodes error -result {missing "
+in expression "...012345678901234567890*"abcdefghijklmnopqrstuv..."}
+test parseExpr-21.43 {error message} -body {
+    expr "123456789012345678901234567890*\"foobar\$\{abcdefghijklmnopqrstuvwxyz\""
+} -returnCodes error -result "missing close-brace for variable name
+in expression \"...8901234567890*\"foobar\$\{abcdefghijklmnopqrstuv...\""
+test parseExpr-21.44 {error message} -body {
+    expr {123456789012345678901234567890*"foo$bar(abcdefghijklmnopqrstuvwxyz"}
+} -returnCodes error -result {missing )
+in expression "...8901234567890*"foo$bar(abcdefghijklmnopqrstuv..."}
+test parseExpr-21.45 {error message} -body {
+    expr {123456789012345678901234567890*"foo$bar([{}abcdefghijklmnopqrstuvwxyz])"}
+} -returnCodes error -result {extra characters after close-brace
+in expression "...234567890*"foo$bar([{}abcdefghijklmnopqrstuv..."}
+test parseExpr-21.46 {error message} -body {
+    expr {123456789012345678901234567890*"foo$bar([""abcdefghijklmnopqrstuvwxyz])"}
+} -returnCodes error -result {extra characters after close-quote
+in expression "...234567890*"foo$bar([""abcdefghijklmnopqrstuv..."}
+test parseExpr-21.47 {error message} -body {
+    expr {123456789012345678901234567890*"foo$bar([abcdefghijklmnopqrstuvwxyz)"}
+} -returnCodes error -result {missing close-bracket
+in expression "...901234567890*"foo$bar([abcdefghijklmnopqrstuv..."}
+test parseExpr-21.48 {error message} -body {
+    expr "123456789012345678901234567890*\"foo\$bar(\[\{abcdefghijklmnopqrstuvwxyz])\""
+} -returnCodes error -result "missing close-brace
+in expression \"...01234567890*\"foo\$bar(\[\{abcdefghijklmnopqrstuv...\""
+
+test parseExpr-21.49 {error message} -body {
+    expr "123456789012345678901234567890*\{abcdefghijklmnopqrstuvwxyz"
+} -returnCodes error -result "missing close-brace
+in expression \"...012345678901234567890*\{abcdefghijklmnopqrstuv...\""
+
+test parseExpr-21.50 {error message} -body {
+    expr {123456789012345678901234567890*$foo(["abcdefghijklmnopqrstuvwxyz])}
+} -returnCodes error -result {missing "
+in expression "...678901234567890*$foo(["abcdefghijklmnopqrstuv..."}
+test parseExpr-21.51 {error message} -body {
+    expr "123456789012345678901234567890*\$\{abcdefghijklmnopqrstuvwxyz"
+} -returnCodes error -result "missing close-brace for variable name
+in expression \"...12345678901234567890*\$\{abcdefghijklmnopqrstuv...\""
+test parseExpr-21.52 {error message} -body {
+    expr {123456789012345678901234567890*$bar(abcdefghijklmnopqrstuvwxyz}
+} -returnCodes error -result {missing )
+in expression "...45678901234567890*$bar(abcdefghijklmnopqrstuv..."}
+test parseExpr-21.53 {error message} -body {
+    expr {123456789012345678901234567890*$bar([{}abcdefghijklmnopqrstuvwxyz])"}
+} -returnCodes error -result {extra characters after close-brace
+in expression "...8901234567890*$bar([{}abcdefghijklmnopqrstuv..."}
+test parseExpr-21.54 {error message} -body {
+    expr {123456789012345678901234567890*$bar([""abcdefghijklmnopqrstuvwxyz])"}
+} -returnCodes error -result {extra characters after close-quote
+in expression "...8901234567890*$bar([""abcdefghijklmnopqrstuv..."}
+test parseExpr-21.55 {error message} -body {
+    expr {123456789012345678901234567890*$bar([abcdefghijklmnopqrstuvwxyz)"}
+} -returnCodes error -result {missing close-bracket
+in expression "...5678901234567890*$bar([abcdefghijklmnopqrstuv..."}
+test parseExpr-21.56 {error message} -body {
+    expr "123456789012345678901234567890*\$bar(\[\{abcdefghijklmnopqrstuvwxyz])"
+} -returnCodes error -result "missing close-brace
+in expression \"...678901234567890*\$bar(\[\{abcdefghijklmnopqrstuv...\""
+
+test parseExpr-21.57 {error message} -body {
+    expr {123456789012345678901234567890*["abcdefghijklmnopqrstuvwxyz]}
+} -returnCodes error -result {missing "
+in expression "...12345678901234567890*["abcdefghijklmnopqrstuv..."}
+test parseExpr-21.58 {error message} -body {
+    expr "123456789012345678901234567890*\[\$\{abcdefghijklmnopqrstuvwxyz]"
+} -returnCodes error -result "missing close-brace for variable name
+in expression \"...2345678901234567890*\[\$\{abcdefghijklmnopqrstuv...\""
+test parseExpr-21.59 {error message} -body {
+    expr {123456789012345678901234567890*[$bar(abcdefghijklmnopqrstuvwxyz]}
+} -returnCodes error -result {missing )
+in expression "...5678901234567890*[$bar(abcdefghijklmnopqrstuv..."}
+test parseExpr-21.60 {error message} -body {
+    expr {123456789012345678901234567890*[{}abcdefghijklmnopqrstuvwxyz]"}
+} -returnCodes error -result {extra characters after close-brace
+in expression "...345678901234567890*[{}abcdefghijklmnopqrstuv..."}
+test parseExpr-21.61 {error message} -body {
+    expr {123456789012345678901234567890*[""abcdefghijklmnopqrstuvwxyz]"}
+} -returnCodes error -result {extra characters after close-quote
+in expression "...345678901234567890*[""abcdefghijklmnopqrstuv..."}
+test parseExpr-21.62 {error message} -body {
+    expr {123456789012345678901234567890*[abcdefghijklmnopqrstuvwxyz"}
+} -returnCodes error -result {missing close-bracket
+in expression "...012345678901234567890*[abcdefghijklmnopqrstuv..."}
+test parseExpr-21.63 {error message} -body {
+    expr "123456789012345678901234567890*\[\{abcdefghijklmnopqrstuvwxyz]"
+} -returnCodes error -result "missing close-brace
+in expression \"...12345678901234567890*\[\{abcdefghijklmnopqrstuv...\""
+
+test parseExpr-22.1 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 2a() 1
+} -result {- {} 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-22.2 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nana() 3
+} -result {- {} 0 subexpr nan 1 text nan 0 {}}
+test parseExpr-22.3 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 2a() -1
+} -result {- {} 0 subexpr 2a() 1 operator 2a 0 {}}
+test parseExpr-22.4 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nana() -1
+} -result {- {} 0 subexpr nana() 1 operator nana 0 {}}
+test parseExpr-22.5 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nan9() -1
+} -result {- {} 0 subexpr nan9() 1 operator nan9 0 {}}
+test parseExpr-22.6 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 2_() -1
+} -result {- {} 0 subexpr 2_() 1 operator 2_ 0 {}}
+test parseExpr-22.7 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nan_() -1
+} -result {- {} 0 subexpr nan_() 1 operator nan_ 0 {}}
+test parseExpr-22.8 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser nan!() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR MISSING}
+test parseExpr-22.9 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 1e3_() -1
+} -result {- {} 0 subexpr 1e3_() 1 operator 1e3_ 0 {}}
+test parseExpr-22.10 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 1.3_() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADCHAR}
+test parseExpr-22.11 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 1e-3_() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADCHAR}
+test parseExpr-22.12 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser naneq() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR EMPTY}
+test parseExpr-22.13 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser naner() -1
+} -result {- {} 0 subexpr naner() 1 operator naner 0 {}}
+
+test parseExpr-22.14 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 08 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
+test parseExpr-22.15 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0o8 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
+test parseExpr-22.16 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0o08 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
+test parseExpr-22.17 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0b2 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER BINARY}
+test parseExpr-22.18 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0b02 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER BINARY}
+
+test parseExpr-22.19 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u0433 -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.20 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u043f -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.21 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser in\u0433(0) -1
+} -returnCodes error -match glob -result {missing operand*}
+
+# cleanup
+cleanupTests
+return

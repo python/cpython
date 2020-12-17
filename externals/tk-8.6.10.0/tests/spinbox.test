@@ -1,0 +1,3850 @@
+# This file is a Tcl script to test spinbox widgets in Tk.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+eval tcltest::configure $argv
+tcltest::loadTestedCommands
+
+# For xscrollcommand
+proc scroll args {
+        global scrollInfo
+        set scrollInfo $args
+}
+# For trace variable 
+proc override args {
+        global x
+        set x 12345
+}
+
+# Procedures used in widget VALIDATION tests
+proc doval {W d i P s S v V} {
+        set ::vVals [list $W $d $i $P $s $S $v $V]
+        return 1
+}
+proc doval2 {W d i P s S v V} {
+        set ::vVals [list $W $d $i $P $s $S $v $V]
+        set ::e mydata
+        return 1
+}
+proc doval3 {W d i P s S v V} {
+        set ::vVals [list $W $d $i $P $s $S $v $V]
+        return 0
+}
+
+set cy [font metrics {Courier -12} -linespace]
+
+test spinbox-1.1 {configuration option: "activebackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -activebackground #ff0000
+    .e cget -activebackground
+} -cleanup {
+    destroy .e
+} -result {#ff0000}
+test spinbox-1.2 {configuration option: "activebackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -activebackground non-existent
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test spinbox-1.3 {configuration option: "background"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -background #ff0000
+    .e cget -background
+} -cleanup {
+    destroy .e
+} -result {#ff0000}
+test spinbox-1.4 {configuration option: "background" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -background non-existent
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test spinbox-1.5 {configuration option: "bd"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -bd 4
+    .e cget -bd
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-1.6 {configuration option: "bd" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -bd badValue
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+test spinbox-1.7 {configuration option: "bg"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -bg #ff0000
+    .e cget -bg
+} -cleanup {
+    destroy .e
+} -result {#ff0000}
+test spinbox-1.8 {configuration option: "bg" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -bg non-existent
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test spinbox-1.9 {configuration option: "borderwidth"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -borderwidth 1.3
+    .e cget -borderwidth
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-1.10 {configuration option: "borderwidth" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -borderwidth badValue
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+test spinbox-1.11 {configuration option: "buttonbackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -buttonbackground #ff0000
+    .e cget -buttonbackground
+} -cleanup {
+    destroy .e
+} -result {#ff0000}
+test spinbox-1.12 {configuration option: "buttonbackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -buttonbackground non-existent
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test spinbox-1.13 {configuration option: "buttoncursor"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -buttoncursor arrow
+    .e cget -buttoncursor
+} -cleanup {
+    destroy .e
+} -result {arrow}
+test spinbox-1.14 {configuration option: "buttoncursor" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -buttoncursor badValue
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad cursor spec "badValue"}
+
+test spinbox-1.15 {configuration option: "command"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -command {a command}
+    .e cget -command
+} -cleanup {
+    destroy .e
+} -result {a command}
+
+test spinbox-1.16 {configuration option: "cursor"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -cursor arrow
+    .e cget -cursor
+} -cleanup {
+    destroy .e
+} -result {arrow}
+test spinbox-1.17 {configuration option: "cursor" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -cursor badValue
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad cursor spec "badValue"}
+
+test spinbox-1.18 {configuration option: "disabledbackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -disabledbackground green
+    .e cget -disabledbackground
+} -cleanup {
+    destroy .e
+} -result {green}
+test spinbox-1.19 {configuration option: "disabledbackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -disabledbackground non-existent
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test spinbox-1.20 {configuration option: "disabledforeground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -disabledforeground #110022
+    .e cget -disabledforeground
+} -cleanup {
+    destroy .e
+} -result {#110022}
+test spinbox-1.21 {configuration option: "disabledforeground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -disabledforeground bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.22 {configuration option: "exportselection"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -exportselection yes
+    .e cget -exportselection
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-1.23 {configuration option: "exportselection" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -exportselection xyzzy
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected boolean value but got "xyzzy"}
+
+test spinbox-1.24 {configuration option: "fg"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -fg #110022
+    .e cget -fg
+} -cleanup {
+    destroy .e
+} -result {#110022}
+test spinbox-1.25 {configuration option: "fg" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -fg bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.26 {configuration option: "font"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -font -Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*
+    .e cget -font
+} -cleanup {
+    destroy .e
+} -result {-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*}
+test spinbox-1.27 {configuration option: "font" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -font {}
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {font "" doesn't exist}
+
+test spinbox-1.28 {configuration option: "foreground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -foreground #110022
+    .e cget -foreground
+} -cleanup {
+    destroy .e
+} -result {#110022}
+test spinbox-1.29 {configuration option: "foreground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -foreground bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.30 {configuration option: "format"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -format %0.5f
+    .e cget -format
+} -cleanup {
+    destroy .e
+} -result {%0.5f}
+test spinbox-1.31 {configuration option: "format" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -format %d
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad spinbox format specifier "%d"}
+
+test spinbox-1.32 {configuration option: "from"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -from -10
+    .e cget -from
+} -cleanup {
+    destroy .e
+} -result {-10.0}
+test spinbox-1.33 {configuration option: "from" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -from bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected floating-point number but got "bogus"}
+
+test spinbox-1.34 {configuration option: "highlightbackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightbackground #123456
+    .e cget -highlightbackground
+} -cleanup {
+    destroy .e
+} -result {#123456}
+test spinbox-1.35 {configuration option: "highlightbackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightbackground ugly
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "ugly"}
+
+test spinbox-1.36 {configuration option: "highlightcolor"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightcolor #123456
+    .e cget -highlightcolor
+} -cleanup {
+    destroy .e
+} -result {#123456}
+test spinbox-1.37 {configuration option: "highlightcolor" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightcolor bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.38 {configuration option: "highlightthickness"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightthickness 6
+    .e cget -highlightthickness
+} -cleanup {
+    destroy .e
+} -result {6}
+test spinbox-1.39 {configuration option: "highlightthickness" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightthickness bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad screen distance "bogus"}
+
+test spinbox-1.40 {configuration option: "highlightthickness"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -highlightthickness -2
+    .e cget -highlightthickness
+} -cleanup {
+    destroy .e
+} -result {0}
+
+test spinbox-1.41 {configuration option: "increment"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -increment 1.0
+    .e cget -increment
+} -cleanup {
+    destroy .e
+} -result {1.0}
+test spinbox-1.42 {configuration option: "increment" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -increment bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected floating-point number but got "bogus"}
+
+test spinbox-1.43 {configuration option: "insertbackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertbackground #110022
+    .e cget -insertbackground
+} -cleanup {
+    destroy .e
+} -result {#110022}
+test spinbox-1.44 {configuration option: "insertbackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertbackground bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.45 {configuration option: "insertborderwidth"} -setup {
+        spinbox .e -borderwidth 2 -insertwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertborderwidth 1.3
+    .e cget -insertborderwidth
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-1.46 {configuration option: "insertborderwidth" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertborderwidth 2.6x
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad screen distance "2.6x"}
+
+test spinbox-1.47 {configuration option: "insertofftime"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertofftime 100
+    .e cget -insertofftime
+} -cleanup {
+    destroy .e
+} -result {100}
+test spinbox-1.48 {configuration option: "insertofftime" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertofftime 3.2
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected integer but got "3.2"}
+
+test spinbox-1.49 {configuration option: "insertontime"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertontime 100
+    .e cget -insertontime
+} -cleanup {
+    destroy .e
+} -result {100}
+test spinbox-1.50 {configuration option: "insertontime" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -insertontime 3.2
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected integer but got "3.2"}
+
+test spinbox-1.51 {configuration option: "invalidcommand"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -invalidcommand "a command"
+    .e cget -invalidcommand
+} -cleanup {
+    destroy .e
+} -result {a command}
+
+test spinbox-1.52 {configuration option: "invcmd"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -invcmd "a command"
+    .e cget -invcmd
+} -cleanup {
+    destroy .e
+} -result {a command}
+
+test spinbox-1.53 {configuration option: "justify"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -justify right
+    .e cget -justify
+} -cleanup {
+    destroy .e
+} -result {right}
+test spinbox-1.54 {configuration option: "justify" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -justify bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad justification "bogus": must be left, right, or center}
+
+test spinbox-1.55 {configuration option: "readonlybackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -readonlybackground green
+    .e cget -readonlybackground
+} -cleanup {
+    destroy .e
+} -result {green}
+test spinbox-1.56 {configuration option: "readonlybackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -readonlybackground non-existent
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "non-existent"}
+
+test spinbox-1.57 {configuration option: "relief"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -relief groove
+    .e cget -relief
+} -cleanup {
+    destroy .e
+} -result {groove}
+test spinbox-1.58 {configuration option: "relief" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -relief 1.5
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad relief "1.5": must be flat, groove, raised, ridge, solid, or sunken}
+
+test spinbox-1.59 {configuration option: "repeatdelay"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -repeatdelay 500
+    .e cget -repeatdelay
+} -cleanup {
+    destroy .e
+} -result {500}
+test spinbox-1.60 {configuration option: "repeatdelay" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -repeatdelay 3p
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected integer but got "3p"}
+
+test spinbox-1.61 {configuration option: "repeatinterval"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -repeatinterval -500
+    .e cget -repeatinterval
+} -cleanup {
+    destroy .e
+} -result {-500}
+test spinbox-1.62 {configuration option: "repeatinterval" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -repeatinterval 3p
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected integer but got "3p"}
+
+test spinbox-1.63 {configuration option: "selectbackground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -selectbackground #110022
+    .e cget -selectbackground
+} -cleanup {
+    destroy .e
+} -result {#110022}
+test spinbox-1.64 {configuration option: "selectbackground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -selectbackground bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.65 {configuration option: "selectborderwidth"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -selectborderwidth 1.3
+    .e cget -selectborderwidth
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-1.66 {configuration option: "selectborderwidth" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -selectborderwidth badValue
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad screen distance "badValue"}
+
+test spinbox-1.67 {configuration option: "selectforeground"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -selectforeground #654321
+    .e cget -selectforeground
+} -cleanup {
+    destroy .e
+} -result {#654321}
+test spinbox-1.68 {configuration option: "selectforeground" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -selectforeground bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {unknown color name "bogus"}
+
+test spinbox-1.69 {configuration option: "state"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -state n
+    .e cget -state
+} -cleanup {
+    destroy .e
+} -result {normal}
+test spinbox-1.70 {configuration option: "state" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -state bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad state "bogus": must be disabled, normal, or readonly}
+
+test spinbox-1.71 {configuration option: "takefocus"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -takefocus "any string"
+    .e cget -takefocus
+} -cleanup {
+    destroy .e
+} -result {any string}
+
+test spinbox-1.72 {configuration option: "textvariable"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -textvariable i
+    .e cget -textvariable
+} -cleanup {
+    destroy .e
+} -result {i}
+
+test spinbox-1.73 {configuration option: "to"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -to 14.9
+    .e cget -to
+} -cleanup {
+    destroy .e
+} -result {14.9}
+test spinbox-1.74 {configuration option: "to" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -to bogus
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected floating-point number but got "bogus"}
+
+test spinbox-1.75 {configuration option: "validate"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -validate "key"
+    .e cget -validate
+} -cleanup {
+    destroy .e
+} -result {key}
+test spinbox-1.76 {configuration option: "validate" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -validate "bogus"
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {bad validate "bogus": must be all, key, focus, focusin, focusout, or none}
+
+test spinbox-1.77 {configuration option: "validatecommand"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -validatecommand "a command"
+    .e cget -validatecommand
+} -cleanup {
+    destroy .e
+} -result {a command}
+
+test spinbox-1.78 {configuration option: "values"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -values {mon tue wed thur}
+    .e cget -values
+} -cleanup {
+    destroy .e
+} -result {mon tue wed thur}
+test spinbox-1.79 {configuration option: "values" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -values {bad {}list}
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {list element in braces followed by "list" instead of space}
+
+test spinbox-1.80 {configuration option: "vcmd"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -vcmd "a command"
+    .e cget -vcmd
+} -cleanup {
+    destroy .e
+} -result {a command}
+
+test spinbox-1.81 {configuration option: "width"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -width 402
+    .e cget -width
+} -cleanup {
+    destroy .e
+} -result {402}
+test spinbox-1.82 {configuration option: "width" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -width 3p
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected integer but got "3p"}
+
+test spinbox-1.83 {configuration option: "wrap"} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -wrap yes
+    .e cget -wrap
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-1.84 {configuration option: "wrap" for spinbox} -setup {
+        spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -wrap xyzzy
+} -cleanup {
+    destroy .e
+} -returnCodes {error} -result {expected boolean value but got "xyzzy"}
+
+test spinbox-1.85 {configuration option: "xscrollcommand"} -setup {
+    spinbox .e -borderwidth 2 -highlightthickness 2 -font {Helvetica -12} \
+        -relief sunken
+    pack .e
+    update
+} -body {
+    .e configure -xscrollcommand {Some command}
+    .e cget -xscrollcommand
+} -cleanup {
+    destroy .e
+} -result {Some command}
+
+
+test spinbox-2.1 {Tk_SpinboxCmd procedure} -body {
+    spinbox
+} -returnCodes error -result {wrong # args: should be "spinbox pathName ?-option value ...?"}
+test spinbox-2.2 {Tk_SpinboxCmd procedure} -body {
+    spinbox gorp
+} -returnCodes error -result {bad window path name "gorp"}
+test spinbox-2.3 {Tk_SpinboxCmd procedure} -body {
+    spinbox .e
+    pack .e
+    update
+    list [winfo exists .e] [winfo class .e] [info commands .e]
+} -cleanup {
+    destroy .e
+} -result {1 Spinbox .e}
+test spinbox-2.4 {Tk_SpinboxCmd procedure} -body {
+    spinbox .e -gorp foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {unknown option "-gorp"}
+test spinbox-2.4.1 {Tk_SpinboxCmd procedure} -body {
+    catch {spinbox .e -gorp foo}
+    list [winfo exists .e] [info commands .e]
+} -cleanup {
+    destroy .e
+} -result {0 {}}
+test spinbox-2.5 {Tk_SpinboxCmd procedure} -body {
+    spinbox .e
+} -cleanup {
+    destroy .e
+} -result {.e}
+
+
+test spinbox-3.1 {SpinboxWidgetCmd procedure} -setup {
+    spinbox .e 
+    pack .e
+    update
+} -body {
+    .e
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e option ?arg ...?"}
+test spinbox-3.2 {SpinboxWidgetCmd procedure, "bbox" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e bbox
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e bbox index"}
+test spinbox-3.3 {SpinboxWidgetCmd procedure, "bbox" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e bbox a b
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e bbox index"}
+test spinbox-3.4 {SpinboxWidgetCmd procedure, "bbox" widget command} -setup {
+    spinbox .e 
+    pack .e
+    update
+} -body {
+    .e bbox bogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "bogus"}
+test spinbox-3.5 {SpinboxWidgetCmd procedure, "bbox" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+   .e bbox 0
+} -cleanup {
+    destroy .e
+} -result [list 5 5 0 $cy]
+
+# Oryginaly the result was count using measurements 
+# and metrics. It was changed to less verbose solution - the result is the one
+# that passes fonts constraint (this concerns tests 3.6, 3.7, 3.8, 3.10)
+test spinbox-3.6 {SpinboxWidgetCmd procedure, "bbox" widget command} -constraints {
+	fonts
+} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2
+    pack .e
+    update
+} -body {
+# Tcl_UtfAtIndex(): no utf chars
+    .e insert 0 "abc"
+    list [.e bbox 3] [.e bbox end]
+} -cleanup {
+    destroy .e
+} -result {{19 5 7 13} {19 5 7 13}}
+test spinbox-3.7 {SpinboxWidgetCmd procedure, "bbox" widget command} -constraints {
+	fonts
+} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+# Tcl_UtfAtIndex(): utf at end
+    .e insert 0 "ab\u4e4e"
+    .e bbox end
+} -cleanup {
+    destroy .e
+} -result {19 5 12 13}
+test spinbox-3.8 {SpinboxWidgetCmd procedure, "bbox" widget command} -constraints {
+	fonts
+} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+# Tcl_UtfAtIndex(): utf before index
+    .e insert 0 "ab\u4e4ec"
+    .e bbox 3
+} -cleanup {
+    destroy .e
+} -result {31 5 7 13}
+test spinbox-3.9 {SpinboxWidgetCmd procedure, "bbox" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+# Tcl_UtfAtIndex(): no chars
+    .e bbox end
+} -cleanup {
+    destroy .e
+} -result "5 5 0 $cy"
+test spinbox-3.10 {SpinboxWidgetCmd procedure, "bbox" widget command} -constraints {
+	fonts
+} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert 0 "abcdefghij\u4e4eklmnop"
+    list [.e bbox 0] [.e bbox 1] [.e bbox 10] [.e bbox end]
+} -cleanup {
+    destroy .e
+} -result {{5 5 7 13} {12 5 7 13} {75 5 12 13} {122 5 7 13}}
+test spinbox-3.11 {SpinboxWidgetCmd procedure, "cget" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e cget
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e cget option"}
+test spinbox-3.12 {SpinboxWidgetCmd procedure, "cget" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e cget a b
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e cget option"}
+test spinbox-3.13 {SpinboxWidgetCmd procedure, "cget" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e cget -gorp
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {unknown option "-gorp"}
+test spinbox-3.14 {SpinboxWidgetCmd procedure, "cget" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e configure -bd 4
+    .e cget -bd
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-3.15 {SpinboxWidgetCmd procedure, "configure" widget command} -setup {
+    spinbox .e 
+    pack .e
+    update
+} -body {
+    llength [.e configure]
+} -cleanup {
+    destroy .e
+} -result {49}
+test spinbox-3.16 {SpinboxWidgetCmd procedure, "configure" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e configure -foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {unknown option "-foo"}
+test spinbox-3.17 {SpinboxWidgetCmd procedure, "configure" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e configure -bd 4
+    .e configure -bg #ffffff
+    lindex [.e configure -bd] 4
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-3.18 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e delete
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e delete firstIndex ?lastIndex?"}
+test spinbox-3.19 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e delete a b c
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e delete firstIndex ?lastIndex?"}
+test spinbox-3.20 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e delete foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "foo"}
+test spinbox-3.21 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e delete 0 bar
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "bar"}
+test spinbox-3.22 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e
+    pack .e
+    update 
+} -body {
+    .e insert end "01234567890"
+    .e delete 2 4
+    .e get
+} -cleanup {
+    destroy .e
+} -result {014567890}
+test spinbox-3.23 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert end "01234567890"
+    .e delete 6
+    .e get
+} -cleanup {
+    destroy .e
+} -result {0123457890}
+test spinbox-3.24 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e
+    pack .e
+    update 
+    set x {}
+} -body {
+# UTF
+    .e insert end "01234\u4e4e67890"
+    .e delete 6
+    lappend x [.e get]
+    .e delete 0 end
+    .e insert end "012345\u4e4e7890"
+    .e delete 6
+    lappend x [.e get]
+    .e delete 0 end
+    .e insert end "0123456\u4e4e890"
+    .e delete 6
+    lappend x [.e get]
+} -cleanup {
+    destroy .e
+} -result [list "01234\u4e4e7890" "0123457890" "012345\u4e4e890"]
+test spinbox-3.25 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "01234567890"
+    .e delete 6 5
+    .e get
+} -cleanup {
+    destroy .e
+} -result {01234567890}
+test spinbox-3.26 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "01234567890"
+    .e configure -state disabled
+    .e delete 2 8
+    .e configure -state normal
+    .e get
+} -cleanup {
+    destroy .e
+} -result {01234567890}
+test spinbox-3.26.1 {SpinboxWidgetCmd procedure, "delete" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "01234567890"
+    .e configure -state readonly
+    .e delete 2 8
+    .e configure -state normal
+    .e get
+} -cleanup {
+    destroy .e
+} -result {01234567890}
+test spinbox-3.27 {SpinboxWidgetCmd procedure, "get" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e get foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e get"}
+test spinbox-3.28 {SpinboxWidgetCmd procedure, "icursor" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e icursor
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e icursor pos"}
+test spinbox-3.29 {SpinboxWidgetCmd procedure, "icursor" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e icursor foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "foo"}
+test spinbox-3.30 {SpinboxWidgetCmd procedure, "icursor" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert end "01234567890"
+    .e icursor 4
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-3.31 {SpinboxWidgetCmd procedure, "index" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e in
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {ambiguous option "in": must be bbox, cget, configure, delete, get, icursor, identify, index, insert, invoke, scan, selection, set, validate, or xview}
+test spinbox-3.32 {SpinboxWidgetCmd procedure, "index" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e index
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e index string"}
+test spinbox-3.33 {SpinboxWidgetCmd procedure, "index" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e index foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "foo"}
+test spinbox-3.34 {SpinboxWidgetCmd procedure, "index" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e index 0
+} -cleanup {
+    destroy .e
+} -returnCodes {ok} -match glob -result {*}
+test spinbox-3.35 {SpinboxWidgetCmd procedure, "index" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+# UTF
+    .e insert 0 abc\u4e4e\u0153def
+    list [.e index 3] [.e index 4] [.e index end]
+} -cleanup {
+    destroy .e
+} -result {3 4 8}
+test spinbox-3.36 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert a
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e insert index text"}
+test spinbox-3.37 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert a b c
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e insert index text"}
+test spinbox-3.38 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert foo Text
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "foo"}
+test spinbox-3.39 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "01234567890"
+    .e insert 3 xxx
+    .e get
+} -cleanup {
+    destroy .e
+} -result {012xxx34567890}
+test spinbox-3.40 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "01234567890"
+    .e configure -state disabled
+    .e insert 3 xxx
+    .e configure -state normal
+    .e get
+} -cleanup {
+    destroy .e
+} -result {01234567890}
+test spinbox-3.40.1 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "01234567890"
+    .e configure -state readonly
+    .e insert 3 xxx
+    .e configure -state normal
+    .e get
+} -cleanup {
+    destroy .e
+} -result {01234567890}
+test spinbox-3.41 {SpinboxWidgetCmd procedure, "insert" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert a b c
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e insert index text"}
+test spinbox-3.42 {SpinboxWidgetCmd procedure, "scan" widget command} -setup {
+    spinbox .e 
+    pack .e
+    update
+} -body {
+    .e scan a
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e scan mark|dragto x"}
+test spinbox-3.43 {SpinboxWidgetCmd procedure, "scan" widget command} -setup {
+    spinbox .e
+    pack .e
+    update 
+} -body {
+    .e scan a b c
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e scan mark|dragto x"}
+test spinbox-3.44 {SpinboxWidgetCmd procedure, "scan" widget command} -setup {
+    spinbox .e
+    pack .e
+    update 
+} -body {
+    .e scan foobar 20
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad scan option "foobar": must be mark or dragto}
+test spinbox-3.45 {SpinboxWidgetCmd procedure, "scan" widget command} -setup {
+    spinbox .e
+    pack .e
+    update 
+} -body {
+    .e scan mark 20.1
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {expected integer but got "20.1"}
+
+# This test is non-portable because character sizes vary.
+test spinbox-3.46 {SpinboxWidgetCmd procedure, "scan" widget command} -constraints {
+    fonts
+} -setup {
+    spinbox .e -font {Helvetica -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long string, in fact a "
+    .e insert end "very very long string"
+    .e scan mark 30
+    .e scan dragto 28
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {2}
+test spinbox-3.47 {SpinboxWidgetCmd procedure, "select" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e select
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection option ?index?"}
+test spinbox-3.48 {SpinboxWidgetCmd procedure, "select" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e select foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad selection option "foo": must be adjust, clear, element, from, present, range, or to}
+
+test spinbox-3.49 {SpinboxWidgetCmd procedure, "select clear" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e select clear gorp
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection clear"}
+test spinbox-3.50 {SpinboxWidgetCmd procedure, "select clear" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e insert end "0123456789"
+    .e select from 1
+    .e select to 4
+    update
+    .e select clear
+    selection get 
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {PRIMARY selection doesn't exist or form "STRING" not defined}
+test spinbox-3.50.1 {SpinboxWidgetCmd procedure, "select clear" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end "0123456789"
+    .e select from 1
+    .e select to 4
+    update
+    .e select clear
+    catch {selection get}
+    selection own
+} -cleanup {
+    destroy .e
+} -result {.e}
+
+test spinbox-3.51 {SpinboxWidgetCmd procedure, "selection present" widget command} -setup {
+    spinbox .e 
+} -body {
+    .e selection present foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection present"}
+test spinbox-3.52 {SpinboxWidgetCmd procedure, "selection present" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end 0123456789
+    .e select from 3
+    .e select to 6
+    .e selection present
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-3.53 {SpinboxWidgetCmd procedure, "selection present" widget command} -setup {
+    spinbox .e
+    pack .e
+    update  
+} -body {
+    .e insert end 0123456789
+    .e select from 3
+    .e select to 6
+    .e configure -exportselection false
+    .e selection present
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-3.54 {SpinboxWidgetCmd procedure, "selection present" widget command} -setup {
+    spinbox .e
+    pack .e
+    update 
+} -body {
+    .e insert end 0123456789
+    .e select from 3
+    .e select to 6
+    .e delete 0 end
+    .e selection present
+} -cleanup {
+    destroy .e
+} -result {0}
+test spinbox-3.55 {SpinboxWidgetCmd procedure, "selection adjust" widget command} -setup {
+    spinbox .e
+} -body {
+    .e select adjust x
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "x"}
+test spinbox-3.56 {SpinboxWidgetCmd procedure, "selection adjust" widget command} -setup {
+    spinbox .e
+} -body {
+    .e select adjust 2 3
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection adjust index"}
+test spinbox-3.57 {SpinboxWidgetCmd procedure, "selection adjust" widget command} -setup {
+    spinbox .e
+    pack .e
+    update
+} -body {
+    .e insert end "0123456789"
+    .e select from 1
+    .e select to 5
+    update
+    .e select adjust 4
+    selection get
+} -cleanup {
+    destroy .e
+} -result {123}
+test spinbox-3.58 {SpinboxWidgetCmd procedure, "selection adjust" widget command} -setup {
+    spinbox .e
+    pack .e
+    update
+} -body {
+    .e insert end "0123456789"
+    .e select from 1
+    .e select to 5
+    update
+    .e select adjust 2
+    selection get
+} -cleanup {
+    destroy .e
+} -result {234}
+test spinbox-3.59 {SpinboxWidgetCmd procedure, "selection from" widget command} -setup {
+    spinbox .e
+} -body {
+    .e select from 2 3
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection from index"}
+
+test spinbox-3.60 {SpinboxWidgetCmd procedure, "selection range" widget command} -setup {
+    spinbox .e
+} -body {
+    .e select range 2
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection range start end"}
+test spinbox-3.61 {SpinboxWidgetCmd procedure, "selection range" widget command} -setup {
+    spinbox .e
+} -body {
+    .e selection range 2 3 4
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection range start end"}
+test spinbox-3.62 {SpinboxWidgetCmd procedure, "selection range" widget command} -setup {
+    spinbox .e
+} -body {
+    .e insert end 0123456789
+    .e select from 1
+    .e select to 5
+    .e select range 4 4
+    .e index sel.first
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {selection isn't in widget .e}
+test spinbox-3.63 {SpinboxWidgetCmd procedure, "selection range" widget command} -setup {
+    spinbox .e
+    pack .e
+    update
+} -body {
+    .e insert end 0123456789
+    .e select from 3
+    .e select to 7
+    .e select range 2 9
+    list [.e index sel.first] [.e index sel.last] [.e index anchor]
+} -cleanup {
+    destroy .e
+} -result {2 9 3}
+test spinbox-3.64 {SpinboxWidgetCmd procedure, "selection to" widget command} -setup {
+    spinbox .e
+    pack .e
+    update
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+} -body {
+    .e select to 2 3
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e selection to index"}
+test spinbox-3.64.1 {SpinboxWidgetCmd procedure, "selection" widget command} -setup {
+    spinbox .e
+    pack .e
+    update
+} -body {
+    .e insert end 0123456789
+    .e selection range 0 end
+    .e configure -state disabled
+    .e selection range 2 4
+    .e configure -state normal
+    list [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {0 10}
+test spinbox-3.64.2 {SpinboxWidgetCmd procedure, "selection" widget command} -setup {
+    spinbox .e
+    pack .e
+    update
+} -body {
+    .e insert end 0123456789
+    .e selection range 0 end
+    .e configure -state readonly
+    .e selection range 2 4
+    .e configure -state normal
+    list [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {2 4}
+
+test spinbox-3.65 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e xview 5
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.053763 0.268817}
+test spinbox-3.66 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e xview gorp
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "gorp"}
+test spinbox-3.67 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e xview 0
+    .e icursor 10
+    .e xview insert
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.107527 0.322581}
+test spinbox-3.68 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e xview moveto foo bar
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e xview moveto fraction"}
+test spinbox-3.69 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e xview moveto foo
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {expected floating-point number but got "foo"}
+test spinbox-3.70 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e xview moveto 0.5
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.505376 0.720430}
+test spinbox-3.71 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e xview scroll 24
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {wrong # args: should be ".e xview scroll number units|pages"}
+test spinbox-3.72 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview scroll gorp units
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {expected integer but got "gorp"}
+test spinbox-3.73 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview moveto 0
+    .e xview scroll 1 pages
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.193548 0.408602}
+test spinbox-3.74 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e xview moveto .9
+    update
+    .e xview scroll -2 p
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.397849 0.612903}
+test spinbox-3.75 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview 30
+    update
+    .e xview scroll 2 units 
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {32}
+test spinbox-3.76 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview 30
+    update
+    .e xview scroll -1 units 
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {29}
+test spinbox-3.77 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview scroll 23 foobars
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad argument "foobars": must be units or pages}
+test spinbox-3.78 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview eat 23 hamburgers
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {unknown option "eat": must be moveto or scroll}
+test spinbox-3.79 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e xview 0
+    update
+    .e xview -4
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {0}
+test spinbox-3.80 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    update
+    .e xview 300
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {73}
+test spinbox-3.81 {SpinboxWidgetCmd procedure, "xview" widget command} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e insert end "This is quite a long text string, so long that it "
+    .e insert end "runs off the end of the window quite a bit."
+    .e insert 10 \u4e4e
+    update
+# UTF
+# If Tcl_NumUtfChars wasn't used, wrong answer would be:
+# 0.106383 0.117021 0.117021
+    set x {}
+    .e xview moveto .1
+    lappend x [format {%.6f} [lindex [.e xview] 0]]
+    .e xview moveto .11
+    lappend x [format {%.6f} [lindex [.e xview] 0]]
+    .e xview moveto .12
+    lappend x [format {%.6f} [lindex [.e xview] 0]]
+} -cleanup {
+    destroy .e
+} -result {0.095745 0.106383 0.117021}
+
+test spinbox-3.82 {SpinboxWidgetCmd procedure} -setup {
+    spinbox .e -font {Courier -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+    update
+} -body {
+    .e gorp
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad option "gorp": must be bbox, cget, configure, delete, get, icursor, identify, index, insert, invoke, scan, selection, set, validate, or xview}
+
+test spinbox-5.1 {ConfigureSpinbox procedure, -textvariable} -body {
+    set x 12345
+    spinbox .e -textvariable x
+    .e get
+} -cleanup {
+    destroy .e
+} -result {12345}
+test spinbox-5.2 {ConfigureSpinbox procedure, -textvariable} -body {
+    set x 12345
+    spinbox .e -textvariable x
+    set y abcde
+    .e configure -textvariable y
+    set x 54321
+    .e get
+} -cleanup {
+    destroy .e
+} -result {abcde}
+test spinbox-5.3 {ConfigureSpinbox procedure, -textvariable} -setup {
+    unset -nocomplain x
+    spinbox .e
+} -body {
+    .e insert 0 "Some text"
+    .e configure -textvariable x
+    set x
+} -cleanup {
+    destroy .e
+} -result {Some text}
+test spinbox-5.4 {ConfigureSpinbox procedure, -textvariable} -setup {
+    unset -nocomplain x
+    spinbox .e
+} -body {
+    trace variable x w override
+    .e insert 0 "Some text"
+    .e configure -textvariable x
+    list $x [.e get]
+} -cleanup {
+    destroy .e
+    trace vdelete x w override
+} -result {12345 12345}
+
+test spinbox-5.5 {ConfigureSpinbox procedure} -setup {
+    set x {}
+    spinbox .e1
+    spinbox .e2
+} -body {
+    .e2 insert end "This is some sample text"
+    .e1 configure -exportselection false
+    .e1 insert end "0123456789"
+    pack .e1 .e2
+    .e2 select from 0
+    .e2 select to 10
+    lappend x [selection get]
+    .e1 select from 1
+    .e1 select to 5
+    lappend x [selection get]
+    .e1 configure -exportselection 1
+    lappend x [selection get]
+    set x
+} -cleanup {
+    destroy .e1 .e2
+} -result {{This is so} {This is so} 1234}
+test spinbox-5.6 {ConfigureSpinbox procedure} -setup {
+    spinbox .e 
+    pack .e
+} -body {
+    .e insert end "0123456789"
+    .e select from 1
+    .e select to 5
+    .e configure -exportselection 0
+    selection get 
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {PRIMARY selection doesn't exist or form "STRING" not defined}
+test spinbox-5.6.1 {ConfigureSpinbox procedure} -setup {
+    spinbox .e
+    pack .e
+} -body {
+    .e insert end "0123456789"
+    .e select from 1
+    .e select to 5
+    .e configure -exportselection 0
+    catch {selection get} 
+    list [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {1 5}
+
+test spinbox-5.7 {ConfigureSpinbox procedure} -setup {
+    spinbox .e -font {Helvetica -12} -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -width 4 -xscrollcommand scroll
+    .e insert end "01234567890"
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    .e configure -width 5
+    format {%.6f %.6f} {*}$scrollInfo
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {0.000000 0.363636}
+
+test spinbox-5.8 {ConfigureSpinbox procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -borderwidth 2 -highlightthickness 2 
+    pack .e
+} -body {
+    .e configure -width 0 -font {Helvetica -12}
+    .e insert end "0123"
+    update
+    .e configure -font {Helvetica -24}
+    update
+    winfo geom .e
+} -cleanup {
+    destroy .e
+} -result {79x37+0+0}
+test spinbox-5.9 {ConfigureSpinbox procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -borderwidth 2 -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised
+    .e insert end "0123"
+    update
+    list [.e index @10] [.e index @11] [.e index @12] [.e index @13]
+} -cleanup {
+    destroy .e
+} -result {0 0 1 1}
+test spinbox-5.10 {ConfigureSpinbox procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -borderwidth 2 -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief flat
+    .e insert end "0123"
+    update
+    list [.e index @10] [.e index @11] [.e index @12] [.e index @13]
+} -cleanup {
+    destroy .e
+} -result {0 0 1 1}
+test spinbox-5.11 {ConfigureSpinbox procedure} -setup {
+    spinbox .e -borderwidth 2 -highlightthickness 2
+    pack .e
+} -body {
+# If "0" in selected font had 0 width, caused divide-by-zero error.
+    .e configure -font {{open look glyph}}
+    .e scan dragto 30
+    update
+} -cleanup {
+    destroy .e
+} -result {}
+
+# No tests for DisplaySpinbox.
+
+test spinbox-6.1 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e 
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised -width 20 -highlightthickness 3
+    .e insert end 012\t45
+    update
+    list [.e index @61] [.e index @62]
+} -cleanup {
+    destroy .e
+} -result {3 4}
+test spinbox-6.2 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e 
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised -width 20 -justify center \
+	    -highlightthickness 3
+    .e insert end 012\t45
+    update
+    list [.e index @96] [.e index @97]
+} -cleanup {
+    destroy .e
+} -result {3 4}
+test spinbox-6.3 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e 
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised -width 20 -justify right \
+	    -highlightthickness 3
+    .e insert end 012\t45
+    update
+    list [.e index @131] [.e index @132]
+} -cleanup {
+    destroy .e
+} -result {3 4}
+test spinbox-6.4 {SpinboxComputeGeometry procedure} -setup {
+    spinbox .e 
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised -width 5
+    .e insert end "01234567890"
+    update
+    .e xview 6
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {6}
+test spinbox-6.5 {SpinboxComputeGeometry procedure} -setup {
+    spinbox .e -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised -width 5 	    
+    .e insert end "01234567890"
+    update
+    .e xview 7
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {6}
+test spinbox-6.6 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Courier -12} -bd 2 -relief raised -width 10 
+    .e insert end "01234\t67890"
+    update
+    .e xview 3
+    list [.e index @39] [.e index @40]
+} -cleanup {
+    destroy .e
+} -result {5 6}
+test spinbox-6.7 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Helvetica -24} -bd 3 -relief raised -width 5
+    .e insert end "01234567"
+    update
+    list [winfo reqwidth .e] [winfo reqheight .e]
+} -cleanup {
+    destroy .e
+} -result {94 39}
+test spinbox-6.8 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Helvetica -24} -bd 3 -relief raised -width 0
+    .e insert end "01234567"
+    update
+    list [winfo reqwidth .e] [winfo reqheight .e]
+} -cleanup {
+    destroy .e
+} -result {133 39}
+test spinbox-6.9 {SpinboxComputeGeometry procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -highlightthickness 2
+    pack .e
+} -body {
+    .e configure -font {Helvetica -24} -bd 3 -relief raised -width 0 
+    update
+    list [winfo reqwidth .e] [winfo reqheight .e]
+} -cleanup {
+    destroy .e
+} -result {42 39}
+
+
+test spinbox-7.1 {InsertChars procedure} -setup {
+    unset -nocomplain contents 
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2
+    pack .e
+    focus .e
+} -body {
+    .e configure -textvariable contents -xscrollcommand scroll
+    .e insert 0 abcde
+    .e insert 2 XXX
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    list [.e get] $contents [format {%.6f %.6f} {*}$scrollInfo]
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {abXXXcde abXXXcde {0.000000 1.000000}}
+
+test spinbox-7.2 {InsertChars procedure} -setup {
+    unset -nocomplain contents 
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e configure -textvariable contents -xscrollcommand scroll
+    .e insert 0 abcde
+    .e insert 500 XXX
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    list [.e get] $contents [format {%.6f %.6f} {*}$scrollInfo]
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {abcdeXXX abcdeXXX {0.000000 1.000000}}
+test spinbox-7.3 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2
+    pack .e
+} -body {
+    .e insert 0 0123456789
+    .e select from 2
+    .e select to 6
+    .e insert 2 XXX
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 8
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {5 9 5 8}
+test spinbox-7.4 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2
+    pack .e
+} -body {
+    .e insert 0 0123456789
+    .e select from 2
+    .e select to 6
+    .e insert 3 XXX
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 8
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {2 9 2 8}
+test spinbox-7.5 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2
+    pack .e
+} -body {
+    .e insert 0 0123456789
+    .e select from 2
+    .e select to 6
+    .e insert 5 XXX
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 8
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {2 9 2 8}
+test spinbox-7.6 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2
+    pack .e
+} -body {
+    .e insert 0 0123456789
+    .e select from 2
+    .e select to 6
+    .e insert 6 XXX
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 5
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {2 6 2 5}
+test spinbox-7.7 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -xscrollcommand scroll
+    .e insert 0 0123456789
+    .e icursor 4
+    .e insert 4 XXX
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {7}
+test spinbox-7.8 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e insert 0 0123456789
+    .e icursor 4
+    .e insert 5 XXX
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-7.9 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e insert 0 "This is a very long string"
+    update
+    .e xview 4
+    .e insert 3 XXX
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {7}
+test spinbox-7.10 {InsertChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e insert 0 "This is a very long string"
+    update
+    .e xview 4
+    .e insert 4 XXX
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {4}
+
+test spinbox-7.11 {InsertChars procedure} -constraints {
+    fonts
+} -setup {
+    spinbox .e -width 0 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e insert 0 "xyzzy"
+    update
+    .e insert 2 00
+    winfo reqwidth .e
+} -cleanup {
+    destroy .e
+} -result {70}
+
+test spinbox-8.1 {DeleteChars procedure} -setup {
+    unset -nocomplain contents 
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e configure -textvariable contents -xscrollcommand scroll
+    .e insert 0 abcde
+    .e delete 2 4
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    list [.e get] $contents [format {%.6f %.6f} {*}$scrollInfo]
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {abe abe {0.000000 1.000000}}
+test spinbox-8.2 {DeleteChars procedure} -setup {
+    unset -nocomplain contents 
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e configure -textvariable contents -xscrollcommand scroll
+    .e insert 0 abcde
+    .e delete -2 2
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    list [.e get] $contents [format {%.6f %.6f} {*}$scrollInfo]
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {cde cde {0.000000 1.000000}}
+test spinbox-8.3 {DeleteChars procedure} -setup {
+    unset -nocomplain contents 
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e configure -textvariable contents -xscrollcommand scroll
+    .e insert 0 abcde
+    .e delete 3 1000
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    list [.e get] $contents [format {%.6f %.6f} {*}$scrollInfo]
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {abc abc {0.000000 1.000000}}
+test spinbox-8.4 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 3
+    .e select to 8
+    .e delete 1 3
+    update
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 5
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {1 6 1 5}
+test spinbox-8.5 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 3
+    .e select to 8
+    .e delete 1 4
+    update
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 4
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {1 5 1 4}
+test spinbox-8.6 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 3
+    .e select to 8
+    .e delete 1 7
+    update
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 5
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {1 2 1 5}
+test spinbox-8.7 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 3
+    .e select to 8
+    .e delete 1 8
+    update
+    .e index sel.first
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {selection isn't in widget .e}
+test spinbox-8.8 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 3
+    .e select to 8
+    .e delete 3 7
+    update
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 8
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {3 4 3 8}
+test spinbox-8.9 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 3
+    .e select to 8
+    .e delete 3 8
+    update
+    .e index sel.first
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {selection isn't in widget .e}
+test spinbox-8.10 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 8
+    .e select to 3
+    .e delete 5 8
+    update
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 8
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {3 5 5 8}
+test spinbox-8.11 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e select from 8
+    .e select to 3
+    .e delete 8 10
+    update
+    set x "[.e index sel.first] [.e index sel.last]"
+    .e select to 4
+    lappend x [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {3 8 4 8}
+test spinbox-8.12 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e icursor 4
+    .e delete 1 4
+    update
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-8.13 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e icursor 4
+    .e delete 1 5
+    update
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-8.14 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 0123456789abcde
+    .e icursor 4
+    .e delete 4 6
+    update
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-8.15 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 "This is a very long string"
+    .e xview 4
+    .e delete 1 4
+    update
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-8.16 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 "This is a very long string"
+    .e xview 4
+    .e delete 1 5
+    update
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-8.17 {DeleteChars procedure} -setup {
+    spinbox .e -width 10 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 "This is a very long string"
+    .e xview 4
+    .e delete 4 6
+    update
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-8.18 {DeleteChars procedure} -setup {
+    spinbox .e -width 0 -font {Courier -12} -highlightthickness 2 -bd 2 
+    pack .e
+    focus .e
+} -body {
+    .e insert 0 "xyzzy"
+    update
+    .e delete 2 4
+    winfo reqwidth .e
+} -cleanup {
+    destroy .e
+} -result {42}
+
+test spinbox-9.1 {SpinboxValueChanged procedure} -setup {
+    unset -nocomplain x
+} -body {
+    trace variable x w override
+    spinbox .e -textvariable x -width 0
+    .e insert 0 foo
+    list $x [.e get]
+} -cleanup {
+    destroy .e
+    trace vdelete x w override
+} -result {12345 12345}
+
+
+test spinbox-10.1 {SpinboxSetValue procedure} -constraints fonts -body {
+    set x abcde
+    set y ab
+    spinbox .e  -font {Helvetica -12} -highlightthickness 2 -bd 2  -width 0
+    pack .e
+    .e configure -textvariable x 
+    .e configure -textvariable y
+    update
+    list [.e get] [winfo reqwidth .e]
+} -cleanup {
+    destroy .e
+} -result {ab 35}
+test spinbox-10.2 {SpinboxSetValue procedure, updating selection} -setup {
+    unset -nocomplain x
+    spinbox .e -font {Helvetica -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -textvariable x
+    .e insert 0 "abcdefghjklmnopqrstu"
+    .e selection range 4 10
+    set x "a"
+    .e index sel.first
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {selection isn't in widget .e}
+test spinbox-10.3 {SpinboxSetValue procedure, updating selection} -setup {
+    unset -nocomplain x
+    spinbox .e -font {Helvetica -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -textvariable x
+    .e insert 0 "abcdefghjklmnopqrstu"
+    .e selection range 4 10
+    set x "abcdefg"
+    list [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {4 7}
+test spinbox-10.4 {SpinboxSetValue procedure, updating selection} -setup {
+    unset -nocomplain x
+    spinbox .e -font {Helvetica -12} -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -textvariable x
+    .e insert 0 "abcdefghjklmnopqrstu"
+    .e selection range 4 10
+    set x "abcdefghijklmn"
+    list [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {4 10}
+test spinbox-10.5 {SpinboxSetValue procedure, updating display position} -setup {
+    unset -nocomplain x
+    spinbox .e -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -width 10 -font {Courier -12} -textvariable x
+    .e insert 0 "abcdefghjklmnopqrstuvwxyz"
+    .e xview 10
+    update
+    set x "abcdefg"
+    update
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {0}
+test spinbox-10.6 {SpinboxSetValue procedure, updating display position} -setup {
+    unset -nocomplain x
+    spinbox .e -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -width 10 -font {Courier -12} -textvariable x
+    pack .e
+    .e insert 0 "abcdefghjklmnopqrstuvwxyz"
+    .e xview 10
+    update
+    set x "1234567890123456789012"
+    update
+    .e index @0
+} -cleanup {
+    destroy .e
+} -result {10}
+test spinbox-10.7 {SpinboxSetValue procedure, updating insertion cursor} -setup {
+    unset -nocomplain x
+    spinbox .e -highlightthickness 2 -bd 2 
+    pack .e
+    update
+} -body {
+    .e configure -width 10 -font {Courier -12} -textvariable x
+    pack .e
+    .e insert 0 "abcdefghjklmnopqrstuvwxyz"
+    .e icursor 5
+    set x "123"
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {3}
+test spinbox-10.8 {SpinboxSetValue procedure, updating insertion cursor} -setup {
+    unset -nocomplain x
+    spinbox .e -highlightthickness 2 -bd 2 
+    pack .e
+} -body {
+    .e configure -width 10 -font {Courier -12} -textvariable x
+    pack .e
+    .e insert 0 "abcdefghjklmnopqrstuvwxyz"
+    .e icursor 5
+    set x "123456"
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {5}
+
+test spinbox-11.1 {SpinboxEventProc procedure} -setup {
+    spinbox .e -highlightthickness 2 -bd 2 -font {Helvetica -12}
+    pack .e
+} -body {
+    .e insert 0 abcdefg
+    destroy .e
+    update
+} -cleanup {
+    destroy .e
+} -result {}
+test spinbox-11.2 {SpinboxEventProc procedure} -setup {
+    set x {}
+} -body {
+    spinbox .e1 -fg #112233
+    rename .e1 .e2
+    lappend x [winfo children .]
+    lappend x [.e2 cget -fg]
+    destroy .e1
+    lappend x [info command .e*] [winfo children .]
+} -cleanup {
+    destroy .e1
+} -result {.e1 #112233 {} {}}
+
+test spinbox-12.1 {SpinboxCmdDeletedProc procedure} -body {
+    button .b -text "xyz_123"
+    rename .b {}
+    list [info command .b*] [winfo children .]
+} -cleanup {
+    destroy .b
+} -result {{} {}}
+
+
+test spinbox-13.1 {GetSpinboxIndex procedure} -setup {
+    spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+    pack .e
+} -body {
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index end
+} -cleanup {
+    destroy .e
+} -result {21}
+test spinbox-13.2 {GetSpinboxIndex procedure} -body {
+    spinbox .e 
+    .e index abogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "abogus"}
+test spinbox-13.3 {GetSpinboxIndex procedure} -setup {
+    spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+    pack .e
+} -body {
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e select from 1
+    .e select to 6
+    .e index anchor
+} -cleanup {
+    destroy .e
+} -result {1}
+test spinbox-13.4 {GetSpinboxIndex procedure} -setup {
+    spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+    pack .e
+} -body {
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e select from 4
+    .e select to 1
+    .e index anchor
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-13.5 {GetSpinboxIndex procedure} -setup {
+    spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+    pack .e
+} -body {
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e select from 3
+    .e select to 15
+    .e select adjust 4
+    .e index anchor
+} -cleanup {
+    destroy .e
+} -result {15}
+test spinbox-13.6 {GetSpinboxIndex procedure} -setup {
+    spinbox .e
+} -body {
+    .e index ebogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "ebogus"}
+test spinbox-13.7 {GetSpinboxIndex procedure} -setup {
+    spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+    pack .e
+} -body {
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e icursor 2
+    .e index insert
+} -cleanup {
+    destroy .e
+} -result {2}
+test spinbox-13.8 {GetSpinboxIndex procedure} -setup {
+    spinbox .e
+} -body {
+    .e index ibogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "ibogus"}
+test spinbox-13.9 {GetSpinboxIndex procedure} -setup {
+    spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+    pack .e
+} -body {
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+} -cleanup {
+    destroy .e
+} -result {1 6}
+
+test spinbox-13.10 {GetSpinboxIndex procedure} -constraints x11 -body {
+# On unix, when selection is cleared, spinbox widget's internal 
+# selection range is reset.
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e
+    .e index sel.first
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {selection isn't in widget .e}
+
+test spinbox-13.11 {GetSpinboxIndex procedure} -constraints aquaOrWin32 -body {
+# On mac and pc, when selection is cleared, spinbox widget remembers
+# last selected range.  When selection ownership is restored to 
+# spinbox, the old range will be rehighlighted.
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e
+    catch {selection get}
+    .e index sel.first
+} -cleanup {
+    destroy .e
+} -result {1}           
+
+test spinbox-13.12 {GetSpinboxIndex procedure} -constraints x11 -body {
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e
+    .e index sbogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {selection isn't in widget .e}
+
+test spinbox-13.12.1 {GetSpinboxIndex procedure} -constraints unix -body {
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e
+    .e index bogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "bogus"}
+
+test spinbox-13.13 {GetSpinboxIndex procedure} -constraints win -body {
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e
+    .e index sbogus
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "sbogus"}
+
+test spinbox-13.14 {GetSpinboxIndex procedure} -constraints win -body {
+# On mac and pc, when selection is cleared, spinbox widget remembers
+# last selected range.  When selection ownership is restored to 
+# spinbox, the old range will be rehighlighted.
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e
+    selection get 
+} -cleanup {
+    destroy .e
+} -returnCodes error -match glob -result {*}
+
+test spinbox-13.14.1 {GetSpinboxIndex procedure} -constraints win -body {
+# On mac and pc, when selection is cleared, spinbox widget remembers
+# last selected range.  When selection ownership is restored to 
+# spinbox, the old range will be rehighlighted.
+# Previous settings:
+	spinbox .e -font {Courier -12} -width 5 -bd 2 -relief sunken
+	pack .e
+	.e insert 0 012345678901234567890
+	.e xview 4
+	update
+    .e select from 1
+    .e select to 6
+    list [.e index sel.first] [.e index sel.last]
+# Testing:
+    selection clear .e  
+    catch {selection get} 
+    .e index sbogus      
+} -cleanup {
+    destroy .e
+} -returnCodes error -match glob -result {*}
+
+test spinbox-13.15 {GetSpinboxIndex procedure} -body {
+    spinbox .e
+    selection clear .e
+    .e index @xyz
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "@xyz"}
+
+test spinbox-13.16 {GetSpinboxIndex procedure} -constraints fonts -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index @4
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-13.17 {GetSpinboxIndex procedure} -constraints fonts -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index @11
+} -cleanup {
+    destroy .e
+} -result {4}
+test spinbox-13.18 {GetSpinboxIndex procedure} -constraints fonts -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index @12
+} -cleanup {
+    destroy .e
+} -result {5}
+test spinbox-13.19 {GetSpinboxIndex procedure} -constraints fonts -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index @[expr {[winfo width .e] - 6-11}]
+} -cleanup {
+    destroy .e
+} -result {8}
+test spinbox-13.20 {GetSpinboxIndex procedure} -constraints fonts -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index @[expr {[winfo width .e] - 5}]
+} -cleanup {
+    destroy .e
+} -result {9}
+test spinbox-13.21 {GetSpinboxIndex procedure} -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index @1000
+} -cleanup {
+    destroy .e
+} -result {9}
+test spinbox-13.22 {GetSpinboxIndex procedure} -setup {
+    spinbox .e 
+    pack .e
+    update
+} -body {
+    .e index 1xyz
+} -cleanup {
+    destroy .e
+} -returnCodes error -result {bad spinbox index "1xyz"}
+test spinbox-13.23 {GetSpinboxIndex procedure} -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index -10
+} -cleanup {
+    destroy .e
+} -result {0}
+test spinbox-13.24 {GetSpinboxIndex procedure} -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index 12
+} -cleanup {
+    destroy .e
+} -result {12}
+test spinbox-13.25 {GetSpinboxIndex procedure} -body {
+    spinbox .e -width 5 -relief sunken -highlightthickness 2 -bd 2 \
+        -font {Courier -12} 
+    pack .e
+    .e insert 0 012345678901234567890
+    .e xview 4
+    update
+    .e index 49
+} -cleanup {
+    destroy .e
+} -result {21}
+
+# XXX Still need to write tests for SpinboxScanTo and SpinboxSelectTo.
+
+test spinbox-14.1 {SpinboxFetchSelection procedure} -body {
+    spinbox .e
+    .e insert end "This is a test string"
+    .e select from 1
+    .e select to 18
+    selection get
+} -cleanup {
+    destroy .e
+} -result {his is a test str}
+test spinbox-14.3 {SpinboxFetchSelection procedure} -setup {
+    set x {}
+    for {set i 1} {$i <= 500} {incr i} {
+        append x "This is line $i, out of 500\n"
+}
+} -body {
+    spinbox .e
+    .e insert end $x    
+    .e select from 0
+    .e select to end
+    string compare [selection get] $x
+} -cleanup {
+    destroy .e
+} -result {0}
+
+test spinbox-15.1 {SpinboxLostSelection} -body {
+    spinbox .e
+    .e insert 0 "Text"
+    .e select from 0
+    .e select to 4
+    set result [selection get]
+    selection clear
+    .e select from 0
+    .e select to 4
+    lappend result [selection get]
+} -cleanup {
+    destroy .e
+} -result {Text Text}
+
+
+test spinbox-16.1 {SpinboxVisibleRange procedure} -constraints fonts  -body {
+    spinbox .e -width 10 -font {Helvetica -12}
+    pack .e
+    update
+    .e insert 0 "............................." 
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.000000 0.827586}
+test spinbox-16.2 {SpinboxVisibleRange procedure} -body {
+    spinbox .e
+    format {%.6f %.6f} {*}[.e xview]
+} -cleanup {
+    destroy .e
+} -result {0.000000 1.000000}
+
+
+test spinbox-17.1 {SpinboxUpdateScrollbar procedure} -body {
+    spinbox .e -width 10 -xscrollcommand scroll -font {Courier -12}
+    pack .e
+    .e delete 0 end
+    .e insert 0 123
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    format {%.6f %.6f} {*}$scrollInfo
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {0.000000 1.000000}
+test spinbox-17.2 {SpinboxUpdateScrollbar procedure} -body {
+    spinbox .e -width 10 -xscrollcommand scroll -font {Courier -12}
+    pack .e
+    .e insert 0 0123456789abcdef
+    .e xview 3
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    format {%.6f %.6f} {*}$scrollInfo
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {0.187500 0.812500}
+test spinbox-17.3 {SpinboxUpdateScrollbar procedure} -body {
+    spinbox .e -width 10 -xscrollcommand scroll -font {Courier -12}
+    pack .e
+    .e insert 0 abcdefghijklmnopqrs
+    .e xview 6
+    set timeout [after 500 {set $scrollInfo "timeout"}]
+    vwait scrollInfo
+    format {%.6f %.6f} {*}$scrollInfo
+} -cleanup {
+    destroy .e
+    after cancel $timeout
+} -result {0.315789 0.842105}
+test spinbox-17.4 {SpinboxUpdateScrollbar procedure} -setup {
+    proc bgerror msg {
+	global x
+	set x $msg
+}
+} -body {
+    spinbox .e -width 5 -xscrollcommand thisisnotacommand
+    pack .e
+    vwait x
+    list $x $errorInfo
+} -cleanup {
+    destroy .e
+    rename bgerror {}
+} -result {{invalid command name "thisisnotacommand"} {invalid command name "thisisnotacommand"
+    while executing
+"thisisnotacommand 0.0 1.0"
+    (horizontal scrolling command executed by .e)}}
+
+
+test spinbox-18.1 {Spinbox widget vs hiding} -setup {
+    spinbox .e
+} -body {
+    set l [interp hidden]
+    interp hide {} .e
+    destroy .e
+    set res1 [list [winfo children .] [interp hidden]]
+    set res2 [list {} $l]
+    expr {$res1 == $res2}
+} -result {1} 
+
+##
+## Spinbox widget VALIDATION tests
+##
+# The validation tests build each one upon the previous, so cascading
+# failures aren't good
+#
+# 19.* test cases in previous version highly depended on the previous
+# test cases. This was replaced by inserting recently set configurations
+# that matters for the test case
+test spinbox-19.1 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 a
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e 1 0 a {} a all key}
+
+test spinbox-19.2 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 a   ;# previous settings
+    .e insert 1 b
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e 1 1 ab a b all key}
+
+test spinbox-19.3 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 ab   ;# previous settings
+    .e insert end c
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e 1 2 abc ab c all key}
+
+test spinbox-19.4 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 abc   ;# previous settings
+    .e insert 1 123
+    list $::vVals $::e
+} -cleanup {
+    destroy .e
+} -result {{.e 1 1 a123bc abc 123 all key} a123bc}
+
+test spinbox-19.5 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 a123bc   ;# previous settings
+    .e delete 2
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e 0 2 a13bc a123bc 2 all key}
+
+test spinbox-19.6 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 a13bc   ;# previous settings
+    .e configure -validate key
+    .e delete 1 3
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e 0 1 abc a13bc 13 key key}
+
+test spinbox-19.7 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focus \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abc                 ;# previous settings
+    set ::vVals {}
+    .e insert end d
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {}
+
+test spinbox-19.8 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e configure -validate focus    ;# previous settings
+    .e insert end abcd              ;# previous settings
+    focus -force .e
+# update necessary to process FocusIn event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e -1 -1 abcd abcd {} focus focusin}
+
+test spinbox-19.9 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focus \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd      ;# previous settings
+    focus -force .e         ;# previous settings
+    update                  ;# previous settings
+# update necessary to process FocusIn event
+    focus -force .
+# update necessary to process FocusOut event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e -1 -1 abcd abcd {} focus focusout}
+
+test spinbox-19.10 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd          ;# previous settings
+    focus -force .e
+# update necessary to process FocusIn event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e -1 -1 abcd abcd {} all focusin}
+
+test spinbox-19.11 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd          ;# previous settings
+    focus -force .e             ;# previous settings
+# update necessary to process FocusIn event
+    update                      ;# previous settings
+    focus -force .
+# update necessary to process FocusOut event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e -1 -1 abcd abcd {} all focusout}
+
+test spinbox-19.12 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focusin \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert 0 abcd              ;# previous settings
+    focus -force .e
+# update necessary to process FocusIn event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e -1 -1 abcd abcd {} focusin focusin}
+
+test spinbox-19.13 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focusin \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd              ;# previous settings
+    set ::vVals {}
+    focus -force .
+# update necessary to process FocusOut event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {}
+
+test spinbox-19.14 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focuso \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd              ;# previous settings
+    set ::vVals {}                  ;# previous settings
+    focus -force .e
+# update necessary to process FocusIn event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {}
+
+test spinbox-19.15 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focuso \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd              ;# previous settings
+    set ::vVals {}                  ;# previous settings
+    focus -force .e                 ;# previous settings
+# update necessary to process FocusIn event
+    update                          ;# previous settings
+    focus -force .
+# update necessary to process FocusOut event
+    update
+    set ::vVals
+} -cleanup {
+    destroy .e
+} -result {.e -1 -1 abcd abcd {} focusout focusout}
+
+# the same as 19.16 but added [.e validate] to returned list
+test spinbox-19.16 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focuso \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd              ;# previous settings
+    set ::vVals {}                  ;# previous settings
+    focus -force .e                 ;# previous settings
+# update necessary to process FocusIn event
+    update                          ;# previous settings
+    focus -force .
+# update necessary to process FocusOut event
+    update
+    list [.e validate] $::vVals
+} -cleanup {
+    destroy .e
+} -result {1 {.e -1 -1 abcd abcd {} all forced}}
+
+
+test spinbox-19.17 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate focuso \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    .e insert end abcd              ;# previous settings
+    set ::e newdata
+    list [.e cget -validate] $::vVals
+} -cleanup {
+    destroy .e
+} -result {focusout {.e -1 -1 newdata abcd {} focusout forced}}
+
+
+# proc doval changed - returns 0
+test spinbox-19.18 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval3 %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    set ::e newdata                 ;# previous settings
+    .e configure -validate all
+    set ::e nextdata
+    list [.e cget -validate] $::vVals
+} -cleanup {
+    destroy .e
+} -result {none {.e -1 -1 nextdata newdata {} all forced}}
+
+
+## This sets validate to none because it shows that we prevent a possible
+## loop condition in the validation, when the spinbox textvar is also set
+# proc doval2 used
+test spinbox-19.19 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval3 %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    set ::e nextdata                 ;# previous settings
+    
+    .e configure -validatecommand [list doval2 %W %d %i %P %s %S %v %V]
+    .e validate
+    list [.e cget -validate] [.e get] $::vVals
+} -cleanup {
+    destroy .e
+} -result {none mydata {.e -1 -1 nextdata nextdata {} all forced}}
+
+## This leaves validate alone because we trigger validation through the
+## textvar (a write trace), and the write during validation triggers
+## nothing (by definition of avoiding loops on var traces).  This is
+## one of those "dangerous" conditions where the user will have a
+## different value in the spinbox widget shown as is in the textvar.
+test spinbox-19.20 {spinbox widget validation} -setup {
+    unset -nocomplain ::e ::vVals
+} -body {
+    spinbox .e -validate all \
+        -validatecommand [list doval %W %d %i %P %s %S %v %V] \
+        -invalidcommand bell \
+        -textvariable ::e \
+        -background red -foreground white
+    pack .e
+    set ::e nextdata                 ;# previous settings
+    .e configure -validatecommand [list doval2 %W %d %i %P %s %S %v %V] ;# prev
+    .e validate                     ;# previous settings
+    
+    .e configure -validate all
+    set ::e testdata
+    list [.e cget -validate] [.e get] $::e $::vVals
+} -cleanup {
+    destroy .e
+} -result {all testdata mydata {.e -1 -1 testdata mydata {} all forced}}
+##
+## End validation tests
+##
+
+test spinbox-20.1 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %2f
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.2 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %2.2f
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.3 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %.2f
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.4 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %2.f
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.5 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %2e-1f
+} -cleanup {
+    destroy .e
+}  -returnCodes {error} -result {bad spinbox format specifier "%2e-1f"}
+test spinbox-20.6 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format 2.2
+} -cleanup {
+    destroy .e
+}  -returnCodes {error} -result {bad spinbox format specifier "2.2"}
+test spinbox-20.7 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %2.-2f
+} -cleanup {
+    destroy .e
+}  -returnCodes {error} -result {bad spinbox format specifier "%2.-2f"}
+test spinbox-20.8 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format %-2.02f
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.9 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format "% 2.02f"
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.10 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format "% -2.200f"
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.11 {spinbox config, -format specifier} -body {
+    spinbox .e
+    .e config -format "%09.200f"
+} -cleanup {
+    destroy .e
+} -returnCodes ok
+test spinbox-20.12 {spinbox config, -format specifier does something} -setup {
+    spinbox .e
+    set out {}
+} -body {
+    .e config -format "%02.f"
+    .e config -values {} -from 0 -to 10 -increment 1
+    lappend out [.e set 0]; # set currently doesn't force format
+    .e invoke buttonup
+    lappend out [.e set]; # but after invoke it should be formatted
+    lappend out [.e set 3]; # set currently doesn't force format
+    .e config -format "%03.f"
+    lappend out [.e set]; # changing -format should cause formatting
+} -cleanup {
+    destroy .e
+} -result {0 01 3 003}
+
+
+test spinbox-21.1 {spinbox button, out of range checking} -body {
+    spinbox .e -from -10 -to 20 -increment 2
+    set out {}
+    lappend out [.e get]; # -10
+    .e delete 0 end
+    .e insert 0 25; # set outside of range
+    .e invoke buttondown; # should constrain
+    lappend out [.e get]; # 20
+    .e delete 0 end
+    .e insert 0 25; # set outside of range
+    .e invoke buttonup; # should constrain
+    lappend out [.e get]; # 20
+    .e delete 0 end
+    .e insert 0 -100; # set outside of range
+    .e invoke buttonup; # should constrain
+    lappend out [.e get]; # -10
+    .e delete 0 end
+    .e insert 0 -100; # set outside of range
+    .e invoke buttondown; # should constrain
+    lappend out [.e get]; # -10
+    .e delete 0 end
+    .e insert 0 bogus; # set to a bogus value
+    .e invoke buttondown; # should use fromValue
+    lappend out [.e get]; # -10
+    .e delete 0 end
+    .e insert 0 19; # set just inside of range
+    .e invoke buttonup; # no wrap
+    lappend out [.e get]; # 20
+    .e invoke buttonup; # no wrap
+    lappend out [.e get]; # 20
+    .e invoke buttondown
+    lappend out [.e get]; # 18
+    .e delete 0 end
+    .e insert 0 -9; # set just inside of range
+    .e invoke buttondown; # no wrap
+    lappend out [.e get]; # -10
+    .e invoke buttondown; # no wrap
+    lappend out [.e get]; # -10
+    .e invoke buttonup; # no wrap
+    lappend out [.e get]; # -8
+
+    .e configure -wrap 1
+    .e delete 0 end
+    .e insert 0 19; # set just inside of range
+    .e invoke buttonup; # wrap
+    lappend out [.e get]; # -10
+    .e invoke buttonup
+    lappend out [.e get]; # -8
+    .e invoke buttondown
+    lappend out [.e get]; # -10
+    .e delete 0 end
+    .e insert 0 -9; # set just inside of range
+    .e invoke buttondown; # wrap
+    lappend out [.e get]; # 20
+    .e invoke buttondown
+    lappend out [.e get]; # 18
+    .e invoke buttonup; # no wrap
+    lappend out [.e get]; # 20
+} -cleanup {
+    destroy .e
+} -result {-10 20 20 -10 -10 -10 20 20 18 -10 -10 -8 -10 -8 -10 20 18 20}
+
+test spinbox-22.1 {spinbox config, -from changes SF bug 559078} -body {
+    set val 5
+    spinbox .e -from 1 -to 10 -textvariable val
+    set val
+} -cleanup {
+    destroy .e
+} -result {5}
+test spinbox-22.2 {spinbox config, -from changes SF bug 559078} -body {
+    set val 5
+    spinbox .e -from 1 -to 10 -textvariable val
+    .e configure -from 3 -to 10
+    set val
+} -cleanup {
+    destroy .e
+} -result {5}
+test spinbox-22.3 {spinbox config, -from changes SF bug 559078} -body {
+    set val 5
+    spinbox .e -from 3 -to 10 -textvariable val
+    .e configure -from 6 -to 10
+    set val
+} -cleanup {
+    destroy .e
+} -result {6}
+
+test spinbox-23.1 {selection present while disabled, bug 637828} -body {
+    spinbox .e
+    .e insert end 0123456789
+    .e select from 3
+    .e select to 6
+    set out [.e selection present]
+    .e configure -state disabled
+# still return 1 when disabled, because 'selection get' will work,
+# but selection cannot be changed (new behavior since 8.4)
+    .e select to 9
+    lappend out [.e selection present] [selection get]
+} -cleanup {
+    destroy .e
+} -result {1 1 345}
+
+test spinbox-24.1 {error in trace proc attached to the textvariable} -setup {
+    destroy .s
+} -body {
+    trace variable myvar w traceit
+    proc traceit args {error "Intentional error here!"}
+    spinbox .s -textvariable myvar -from 1 -to 10
+    catch {.s set mystring} result1
+    catch {.s insert 0 mystring} result2
+    catch {.s delete 0} result3
+    catch {.s invoke buttonup} result4
+    list $result1 $result2 $result3 $result4
+} -cleanup {
+    destroy .s
+} -result [list {can't set "myvar": Intentional error here!} \
+    {can't set "myvar": Intentional error here!} \
+    {can't set "myvar": Intentional error here!} \
+    {can't set "myvar": Intentional error here!}]
+
+test spinbox-25.1 {textvariable lives in a non-existing namespace} -setup {
+    destroy .s
+} -body {
+    catch {spinbox .s -textvariable thisnsdoesntexist::myvar} result1
+    set result1
+} -cleanup {
+    destroy .s
+} -result {can't trace "thisnsdoesntexist::myvar": parent namespace doesn't exist}
+
+# Collected comments about lacks from the test
+# XXX Still need to write tests for SpinboxBlinkProc, SpinboxFocusProc,
+# and SpinboxTextVarProc.
+# No tests for DisplaySpinbox.
+# XXX Still need to write tests for SpinboxScanTo and SpinboxSelectTo.
+# No tests for EventuallyRedraw
+
+# option clear
+# cleanup
+cleanupTests
+return
+
+

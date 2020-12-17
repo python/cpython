@@ -1,0 +1,48 @@
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH pid n 7.0 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+pid \- Retrieve process identifiers
+.SH SYNOPSIS
+\fBpid \fR?\fIfileId\fR?
+.BE
+
+.SH DESCRIPTION
+.PP
+If the \fIfileId\fR argument is given then it should normally
+refer to a process pipeline created with the \fBopen\fR command.
+In this case the \fBpid\fR command will return a list whose elements
+are the process identifiers of all the processes in the pipeline,
+in order.
+The list will be empty if \fIfileId\fR refers to an open file
+that is not a process pipeline.
+If no \fIfileId\fR argument is given then \fBpid\fR returns the process
+identifier of the current process.
+All process identifiers are returned as decimal strings.
+.SH EXAMPLE
+Print process information about the processes in a pipeline using the
+SysV \fBps\fR program before reading the output of that pipeline:
+.PP
+.CS
+set pipeline [open "| zcat somefile.gz | grep foobar | sort -u"]
+# Print process information
+exec ps -fp [\fBpid\fR $pipeline] >@stdout
+# Print a separator and then the output of the pipeline
+puts [string repeat - 70]
+puts [read $pipeline]
+close $pipeline
+.CE
+
+.SH "SEE ALSO"
+exec(n), open(n)
+
+.SH KEYWORDS
+file, pipeline, process identifier

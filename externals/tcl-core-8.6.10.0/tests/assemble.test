@@ -1,0 +1,3384 @@
+# assemble.test --
+#
+#	Test suite for the 'tcl::unsupported::assemble' command
+#
+# Copyright (c) 2010 by Ozgur Dogan Ugurlu.
+# Copyright (c) 2010 by Kevin B. Kenny.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#-----------------------------------------------------------------------------
+
+# Commands covered: assemble
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.2
+    namespace import -force ::tcltest::*
+}
+namespace eval tcl::unsupported {namespace export assemble}
+namespace import tcl::unsupported::assemble
+
+# Procedure to make code that fills the literal and local variable tables, to
+# force instructions to spill to four bytes.
+
+proc fillTables {} {
+    set s {}
+    set sep {}
+    for {set i 0} {$i < 256} {incr i} {
+	append s $sep [list set v$i literal$i]
+	set sep \n
+    }
+    return $s
+}
+
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
+
+# assemble-1 - TclNRAssembleObjCmd
+
+test assemble-1.1 {wrong # args, direct eval} {
+    -body {
+	eval [list assemble]
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+test assemble-1.2 {wrong # args, direct eval} {
+    -body {
+	eval [list assemble too many]
+    }
+    -returnCodes error
+    -result {wrong # args*}
+    -match glob
+}
+test assemble-1.3 {error reporting, direct eval} {
+    -body {
+	list [catch {
+	    eval [list assemble {
+		# bad opcode
+		rubbish
+	    }]
+	} result] $result $errorInfo
+    }
+    -match glob
+    -result {1 {bad instruction "rubbish":*} {bad instruction "rubbish":*
+    while executing
+"rubbish"
+    ("assemble" body, line 3)*}}
+    -cleanup {unset result}
+}
+test assemble-1.4 {simple direct eval} {
+    -body {
+	eval [list assemble {push {this is a test}}]
+    }
+    -result {this is a test}
+}
+
+# assemble-2 - CompileAssembleObj
+
+test assemble-2.1 {bytecode reuse, direct eval} {
+    -body {
+	set x {push "this is a test"}
+	list [eval [list assemble $x]] \
+	    [eval [list assemble $x]]
+    }
+    -result {{this is a test} {this is a test}}
+}
+test assemble-2.2 {bytecode discard, direct eval} {
+    -body {
+	set x {load value}
+	proc p1 {x} {
+	    set value value1
+	    assemble $x
+	}
+	proc p2 {x} {
+	    set a b
+	    set value value2
+	    assemble $x
+	}
+	list [p1 $x] [p2 $x]
+    }
+    -result {value1 value2}
+    -cleanup {
+	unset x
+	rename p1 {}
+	rename p2 {}
+    }
+}
+test assemble-2.3 {null script, direct eval} {
+    -body {
+	set x {}
+	assemble $x
+    }
+    -result {}
+    -cleanup {unset x}
+}
+
+# assemble-3 - TclCompileAssembleCmd
+
+test assemble-3.1 {wrong # args, compiled path} {
+    -body {
+	proc x {} {
+	    assemble
+	}
+	x
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args:*}
+}
+test assemble-3.2 {wrong # args, compiled path} {
+    -body {
+	proc x {} {
+	    assemble too many
+	}
+	x
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args:*}
+    -cleanup {
+	rename x {}
+    }
+}
+
+# assemble-4 - TclAssembleCode mainline
+
+test assemble-4.1 {syntax error} {
+    -body {
+	proc x {} {
+	    assemble {
+		{}extra
+	    }
+	}
+	list [catch x result] $result $::errorInfo
+    }
+    -cleanup {
+	rename x {}
+	unset result
+    }
+    -match glob
+    -result {1 {extra characters after close-brace} {extra characters after close-brace
+    while executing
+"{}e"
+    ("assemble" body, line 2)*}}
+}
+test assemble-4.2 {null command} {
+    -body {
+	proc x {} {
+	    assemble {
+		push hello; pop;;push goodbye
+	    }
+	}
+	x
+    }
+    -result goodbye
+    -cleanup {
+	rename x {}
+    }
+}
+
+# assemble-5 - GetNextOperand off-nominal cases
+
+test assemble-5.1 {unsupported expansion} {
+    -body {
+	proc x {y} {
+	    assemble {
+		{*}$y
+	    }
+	}
+	list [catch {x {push hello}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {
+	rename x {}
+	unset result
+    }
+}
+test assemble-5.2 {unsupported substitution} {
+    -body {
+	proc x {y} {
+	    assemble {
+		$y
+	    }
+	}
+	list [catch {x {nop}} result] $result $::errorCode
+    }
+    -cleanup {
+	rename x {}
+	unset result
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+}
+test assemble-5.3 {unsupported substitution} {
+    -body {
+	proc x {} {
+	    assemble {
+		[x]
+	    }
+	}
+	list [catch {x} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+}
+test assemble-5.4 {backslash substitution} {
+    -body {
+	proc x {} {
+	    assemble {
+		p\x75sh\
+		    hello\ world
+	    }
+	}
+	x
+    }
+    -cleanup {
+	rename x {}
+    }
+    -result {hello world}
+}
+
+# assemble-6 - ASSEM_PUSH
+
+test assemble-6.1 {push, wrong # args} {
+    -body {
+	assemble push
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-6.2 {push, wrong # args} {
+    -body {
+	assemble {push too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-6.3 {push} {
+    -body {
+	eval [list assemble {push hello}]
+    }
+    -result hello
+}
+test assemble-6.4 {push4} {
+    -body {
+	proc x {} "
+            [fillTables]
+            assemble {push hello}
+        "
+	x
+    }
+    -cleanup {
+	rename x {}
+    }
+    -result hello
+}
+
+# assemble-7 - ASSEM_1BYTE
+
+test assemble-7.1 {add, wrong # args} {
+    -body {
+	assemble {add excess}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-7.2 {add} {
+    -body { 
+	assemble {
+	    push 2
+	    push 2
+	    add
+	} 
+    }
+    -result {4}
+}
+test assemble-7.3 {appendArrayStk} {
+    -body {
+	set a(b) {hello, }
+	assemble {
+	    push a
+	    push b
+	    push world
+	    appendArrayStk
+	}
+	set a(b)
+    }
+    -result {hello, world}
+    -cleanup {unset a}
+}
+test assemble-7.4 {appendStk} {
+    -body {
+	set a {hello, }
+	assemble {
+	    push a
+	    push world
+	    appendStk
+	}
+	set a
+    }
+    -result {hello, world}
+    -cleanup {unset a}
+}
+test assemble-7.5 {bitwise ops} {
+    -body {
+	list \
+	    [assemble {push 0b1100; push 0b1010; bitand}] \
+	    [assemble {push 0b1100; bitnot}] \
+	    [assemble {push 0b1100; push 0b1010; bitor}] \
+	    [assemble {push 0b1100; push 0b1010; bitxor}]
+    }
+    -result {8 -13 14 6}
+}
+test assemble-7.6 {div} {
+    -body {
+	assemble {push 999999; push 7; div} 
+    }
+    -result 142857
+}
+test assemble-7.7 {dup} {
+    -body {
+	assemble {
+	    push 1; dup; dup; add; dup; add; dup; add; add
+	}
+    }
+    -result 9
+}	
+test assemble-7.8 {eq} {
+    -body {
+	list \
+	    [assemble {push able; push baker; eq}] \
+	    [assemble {push able; push able;  eq}]
+    }
+    -result {0 1}
+}
+test assemble-7.9 {evalStk} {
+    -body {
+	assemble {
+	    push {concat test 7.3}
+	    evalStk
+	}
+    }
+    -result {test 7.3}
+}
+test assemble-7.9a {evalStk, syntax} {
+    -body {
+	assemble {
+	    push {{}bad}
+	    evalStk
+	}
+    }
+    -returnCodes error
+    -result {extra characters after close-brace}
+}
+test assemble-7.9b {evalStk, backtrace} {
+    -body {
+	proc y {z} {
+	    error testing
+	}
+	proc x {} {
+	    assemble {
+		push {
+		    # test error in evalStk
+		    y asd
+		}
+		evalStk
+	    }
+	}
+	list [catch x result] $result $errorInfo
+    }
+    -result {1 testing {testing
+    while executing
+"error testing"
+    (procedure "y" line 2)
+    invoked from within
+"y asd"*}}
+    -match glob
+    -cleanup {
+	rename y {}
+	rename x {}
+    }
+}
+test assemble-7.10 {existArrayStk} {
+    -body {
+	proc x {name key} {
+	    set a(b) c
+	    assemble {
+		load name; load key; existArrayStk
+	    }
+	}
+	list [x a a] [x a b] [x b a] [x b b]
+    }
+    -result {0 1 0 0}
+    -cleanup {rename x {}}
+}
+test assemble-7.11 {existStk} {
+    -body {
+	proc x {name} {
+	    set a b
+	    assemble {
+		load name; existStk
+	    }
+	}
+	list [x a] [x b]
+    }
+    -result {1 0}
+    -cleanup {rename x {}}
+}
+test assemble-7.12 {expon} {
+    -body {
+	assemble {push 3; push 4; expon}
+    }
+    -result 81
+}
+test assemble-7.13 {exprStk} {
+    -body {
+	assemble {
+	    push {acos(-1)}
+	    exprStk
+	}
+    }
+    -result 3.141592653589793
+}
+test assemble-7.13a {exprStk, syntax} {
+    -body {
+	assemble {
+	    push {2+}
+	    exprStk
+	}
+    }
+    -returnCodes error
+    -result {missing operand at _@_
+in expression "2+_@_"}
+}
+test assemble-7.13b {exprStk, backtrace} {
+    -body {
+	proc y {z} {
+	    error testing
+	}
+	proc x {} {
+	    assemble {
+		push {[y asd]}
+		exprStk
+	    }
+	}
+	list [catch x result] $result $errorInfo
+    }
+    -result {1 testing {testing
+    while executing
+"error testing"
+    (procedure "y" line 2)
+    invoked from within
+"y asd"*}}
+    -match glob
+    -cleanup {
+	rename y {}
+	rename x {}
+    }
+}
+test assemble-7.14 {ge gt le lt} {
+    -body {
+	proc x {a b} {
+	    list [assemble {load a; load b; ge}] \
+		[assemble {load a; load b; gt}] \
+		[assemble {load a; load b; le}] \
+		[assemble {load a; load b; lt}]
+	}
+	list [x 0 0] [x 0 1] [x 1 0]
+    }
+    -result {{1 0 1 0} {0 0 1 1} {1 1 0 0}}
+    -cleanup {rename x {}}
+}
+test assemble-7.15 {incrArrayStk} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {
+		push a; push b; push 7; incrArrayStk
+	    }
+	}
+	x
+    }
+    -result 12
+    -cleanup {rename x {}}
+}
+test assemble-7.16 {incrStk} {
+    -body {
+	proc x {} {
+	    set a 5
+	    assemble {
+		push a; push 7; incrStk
+	    }
+	}
+	x
+    }
+    -result 12
+    -cleanup {rename x {}}
+}
+test assemble-7.17 {land/lor} {
+    -body {
+	proc x {a b} {
+	    list \
+		[assemble {load a; load b; land}] \
+		[assemble {load a; load b; lor}]
+	}
+	list [x 0 0] [x 0 23] [x 35 0] [x 47 59]
+    }
+    -result {{0 0} {0 1} {0 1} {1 1}}
+    -cleanup {rename x {}}
+}
+test assemble-7.18 {lappendArrayStk} {
+    -body {
+	proc x {} {
+	    set able(baker) charlie
+	    assemble {
+		push able
+		push baker
+		push dog
+		lappendArrayStk
+	    }
+	}
+	x
+    }
+    -result {charlie dog}
+    -cleanup {rename x {}}
+}
+test assemble-7.19 {lappendStk} {
+    -body {
+	proc x {} {
+	    set able baker
+	    assemble {
+		push able
+		push charlie
+		lappendStk
+	    }
+	}
+	x
+    }
+    -result {baker charlie}
+    -cleanup {rename x {}}
+}
+test assemble-7.20 {listIndex} {
+    -body {
+	assemble {
+	    push {a b c d}
+	    push 2
+	    listIndex
+	}
+    }
+    -result c
+}
+test assemble-7.21 {listLength} {
+    -body {
+	assemble {
+	    push {a b c d}
+	    listLength
+	}
+    }
+    -result 4
+}
+test assemble-7.22 {loadArrayStk} {
+    -body {
+	proc x {} {
+	    set able(baker) charlie
+	    assemble {
+		push able
+		push baker
+		loadArrayStk
+	    }
+	}
+	x
+    }
+    -result charlie
+    -cleanup {rename x {}}
+}
+test assemble-7.23 {loadStk} {
+    -body {
+	proc x {} {
+	    set able baker
+	    assemble {
+		push able
+		loadStk
+	    }
+	}
+	x
+    }
+    -result baker
+    -cleanup {rename x {}}
+}
+test assemble-7.24 {lsetList} {
+    -body {
+	proc x {} {
+	    set l {{a b} {c d} {e f} {g h}}
+	    assemble {
+		push {2 1}; push i; load l; lsetList
+	    }
+	}
+	x
+    }
+    -result {{a b} {c d} {e i} {g h}}
+}
+test assemble-7.25 {lshift} {
+    -body {
+	assemble {push 16; push 4; lshift}
+    } 
+    -result 256
+}
+test assemble-7.26 {mod} {
+    -body {
+	assemble {push 123456; push 1000; mod}
+    }
+    -result 456
+}
+test assemble-7.27 {mult} {
+    -body {
+	assemble {push 12345679; push 9; mult}
+    }
+    -result 111111111
+}
+test assemble-7.28 {neq} {
+    -body {
+	list \
+	    [assemble {push able; push baker; neq}] \
+	    [assemble {push able; push able;  neq}]
+    }
+    -result {1 0}
+}
+test assemble-7.29 {not} {
+    -body {
+	list \
+	    [assemble {push 17; not}] \
+	    [assemble {push 0; not}]
+    }
+    -result {0 1}
+}
+test assemble-7.30 {pop} {
+    -body {
+	assemble {push this; pop; push that}
+    }
+    -result that
+}
+test assemble-7.31 {rshift} {
+    -body {
+	assemble {push 257; push 4; rshift}
+    } 
+    -result 16
+}
+test assemble-7.32 {storeArrayStk} {
+    -body {
+	proc x {} {
+	    assemble {
+		push able; push baker; push charlie; storeArrayStk
+	    }
+	    array get able
+	}
+	x
+    }
+    -result {baker charlie}
+    -cleanup {rename x {}}
+}
+test assemble-7.33 {storeStk} {
+    -body {
+	proc x {} {
+	    assemble {
+		push able; push baker; storeStk
+	    }
+	    set able
+	}
+	x
+    }
+    -result {baker}
+    -cleanup {rename x {}}
+}
+test assemble-7,34 {strcmp} {
+    -body {
+	proc x {a b} {
+	    assemble {
+		load a; load b; strcmp
+	    }
+	}
+	list [x able baker] [x baker able] [x baker baker]
+    }
+    -result {-1 1 0}
+    -cleanup {rename x {}}
+}
+test assemble-7.35 {streq/strneq} {
+    -body {
+	proc x {a b} {
+	    list \
+		[assemble {load a; load b; streq}] \
+		[assemble {load a; load b; strneq}]
+	}
+	list [x able able] [x able baker]
+    }
+    -result {{1 0} {0 1}}
+    -cleanup {rename x {}}
+}
+test assemble-7.36 {strindex} {
+    -body {
+	assemble {push testing; push 4; strindex}
+    }
+    -result i
+}
+test assemble-7.37 {strlen} {
+    -body {
+	assemble {push testing; strlen}
+    }
+    -result 7
+}
+test assemble-7.38 {sub} {
+    -body {
+	assemble {push 42; push 17; sub}
+    }
+    -result 25
+}
+test assemble-7.39 {tryCvtToNumeric} {
+    -body {
+	assemble {
+	    push 42; tryCvtToNumeric
+	}
+    }
+    -result 42
+}
+# assemble-7.40 absent
+test assemble-7.41 {uminus} {
+    -body {
+	assemble {
+	    push 42; uminus
+	}
+    }
+    -result -42
+}
+test assemble-7.42 {uplus} {
+    -body {
+	assemble {
+	    push 42; uplus
+	}
+    }
+    -result 42
+}
+test assemble-7.43 {uplus} {
+    -body {
+	assemble {
+	    push NaN; uplus
+	}
+    }
+    -returnCodes error
+    -result {can't use non-numeric floating-point value as operand of "+"}
+}
+test assemble-7.43.1 {tryCvtToNumeric} {
+    -body {
+	assemble {
+	    push NaN; tryCvtToNumeric
+	}
+    }
+    -returnCodes error
+    -result {domain error: argument not in valid range}
+}
+test assemble-7.44 {listIn} {
+    -body {
+	assemble {
+	    push b; push {a b c}; listIn
+	}
+    }
+    -result 1
+}
+test assemble-7.45 {listNotIn} {
+    -body {
+	assemble {
+	    push d; push {a b c}; listNotIn
+	}
+    }
+    -result 1
+}
+test assemble-7.46 {nop} {
+    -body {
+	assemble { push x; nop; nop; nop}
+    }
+    -result x
+}
+
+# assemble-8 ASSEM_LVT and FindLocalVar
+
+test assemble-8.1 {load, wrong # args} {
+    -body {
+	assemble load
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-8.2 {load, wrong # args} {
+    -body {
+	assemble {load too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-8.3 {nonlocal var} {
+    -body {
+	list [catch {assemble {load ::env}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+test assemble-8.4 {bad context} {
+    -body {
+	set x 1
+	list [catch {assemble {load x}} result] $result $errorCode
+    }
+    -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
+    -cleanup {unset result}
+}
+test assemble-8.5 {bad context} {
+    -body {
+	namespace eval assem {
+	    set x 1
+	    list [catch {assemble {load x}} result opts] $result [dict get $opts -errorcode]
+	}
+    }
+    -result {1 {cannot use this instruction to create a variable in a non-proc context} {TCL ASSEM LVT}}
+    -cleanup {namespace delete assem}
+}
+test assemble-8.6 {load1} {
+    -body {
+	proc x {a} {
+	    assemble {
+		load a
+	    }
+	}
+	x able
+    }
+    -result able
+    -cleanup {rename x {}}
+}
+test assemble-8.7 {load4} {
+    -body {
+	proc x {a} "
+	    [fillTables]
+            set b \$a
+            assemble {load b}
+        "
+	x able
+    }
+    -result able
+    -cleanup {rename x {}}
+}
+test assemble-8.8 {loadArray1} {
+    -body {
+	proc x {} {
+	    set able(baker) charlie
+	    assemble {
+		push baker
+		loadArray able
+	    }
+	}
+	x
+    }
+    -result charlie
+    -cleanup {rename x {}}
+}
+test assemble-8.9 {loadArray4} {
+    -body "
+	proc x {} {
+            [fillTables]
+	    set able(baker) charlie
+	    assemble {
+		push baker
+		loadArray able
+	    }
+	}
+	x
+    "
+    -result charlie
+    -cleanup {rename x {}}
+}
+test assemble-8.10 {append1} {
+    -body {
+	proc x {} {
+	    set y {hello, }
+	    assemble {
+		push world; append y
+	    }
+	}
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.11 {append4} {
+    -body {
+	proc x {} "
+            [fillTables]
+	    set y {hello, }
+	    assemble {
+		push world; append y
+	    }
+	"
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.12 {appendArray1} {
+    -body {
+	proc x {} {
+	    set y(z) {hello, }
+	    assemble {
+		push z; push world; appendArray y
+	    }
+	}
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.13 {appendArray4} {
+    -body {
+	proc x {} "
+            [fillTables]
+	    set y(z) {hello, }
+	    assemble {
+		push z; push world; appendArray y
+	    }
+	"
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.14 {lappend1} {
+    -body {
+	proc x {} {
+	    set y {hello,}
+	    assemble {
+		push world; lappend y
+	    }
+	}
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.15 {lappend4} {
+    -body {
+	proc x {} "
+            [fillTables]
+	    set y {hello,}
+	    assemble {
+		push world; lappend y
+	    }
+	"
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.16 {lappendArray1} {
+    -body {
+	proc x {} {
+	    set y(z) {hello,}
+	    assemble {
+		push z; push world; lappendArray y
+	    }
+	}
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.17 {lappendArray4} {
+    -body {
+	proc x {} "
+            [fillTables]
+	    set y(z) {hello,}
+	    assemble {
+		push z; push world; lappendArray y
+	    }
+	"
+	x
+    }
+    -result {hello, world}
+    -cleanup {rename x {}}
+}
+test assemble-8.18 {store1} {
+    -body {
+	proc x {} {
+	    assemble {
+		push test; store y
+	    }
+	    set y
+	}
+	x
+    }
+    -result {test}
+    -cleanup {rename x {}}
+}
+test assemble-8.19 {store4} {
+    -body {
+	proc x {} "
+            [fillTables]
+	    assemble {
+		push test; store y
+	    }
+            set y
+	"
+	x
+    }
+    -result test
+    -cleanup {rename x {}}
+}
+test assemble-8.20 {storeArray1} {
+    -body {
+	proc x {} {
+	    assemble {
+		push z; push test; storeArray y
+	    }
+	    set y(z)
+	}
+	x
+    }
+    -result test
+    -cleanup {rename x {}}
+}
+test assemble-8.21 {storeArray4} {
+    -body {
+	proc x {} "
+            [fillTables]
+	    assemble {
+		push z; push test; storeArray y
+	    }
+	"
+	x
+    }
+    -result test
+    -cleanup {rename x {}}
+}
+
+# assemble-9 - ASSEM_CONCAT1, GetIntegerOperand, CheckOneByte
+
+test assemble-9.1 {wrong # args} {
+    -body {assemble concat}
+    -result {wrong # args*}
+    -match glob
+    -returnCodes error
+}
+test assemble-9.2 {wrong # args} {
+    -body {assemble {concat too many}}
+    -result {wrong # args*}
+    -match glob
+    -returnCodes error
+}
+test assemble-9.3 {not a number} {
+    -body {assemble {concat rubbish}}
+    -result {expected integer but got "rubbish"}
+    -returnCodes error
+}
+test assemble-9.4 {too small} {
+    -body {assemble {concat -1}}
+    -result {operand does not fit in one byte}
+    -returnCodes error
+}
+test assemble-9.5 {too small} {
+    -body {assemble {concat 256}}
+    -result {operand does not fit in one byte}
+    -returnCodes error
+}
+test assemble-9.6 {concat} {
+    -body {
+	assemble {push h; push e; push l; push l; push o; concat 5}
+    }
+    -result hello
+}
+test assemble-9.7 {concat} {
+    -body {
+	list [catch {assemble {concat 0}} result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {unset result}
+}
+
+# assemble-10 -- eval and expr
+
+test assemble-10.1 {eval - wrong # args} {
+    -body {
+	assemble {eval}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-10.2 {eval - wrong # args} {
+    -body {
+	assemble {eval too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-10.3 {eval} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 3
+		store n
+		pop
+		eval {expr {3*$n + 1}}
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+    -cleanup {rename x {}}
+}
+test assemble-10.4 {expr} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 3
+		store n
+		pop
+		expr {3*$n + 1}
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+    -cleanup {rename x {}}
+}
+test assemble-10.5 {eval and expr - nonsimple} {
+    -body {
+	proc x {} {
+	    assemble {
+		eval "s\x65t n 3"
+		pop
+		expr "\x33*\$n + 1"
+		push 1
+		add
+	    }
+	}
+	x
+    }
+    -result 11
+    -cleanup {
+	rename x {}
+    }
+}
+test assemble-10.6 {eval - noncompilable} {
+    -body {
+	list [catch {assemble {eval $x}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+}
+test assemble-10.7 {expr - noncompilable} {
+    -body {
+	list [catch {assemble {expr $x}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+}
+
+# assemble-11 - ASSEM_LVT4 (exist, existArray, dictAppend, dictLappend,
+#			    nsupvar, variable, upvar)
+		
+test assemble-11.1 {exist - wrong # args} {
+    -body {
+	assemble {exist}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-11.2 {exist - wrong # args} {
+    -body {
+	assemble {exist too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-11.3 {nonlocal var} {
+    -body {
+	list [catch {assemble {exist ::env}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+test assemble-11.4 {exist} {
+    -body {
+	proc x {} {
+	    set y z
+	    list [assemble {exist y}] \
+		[assemble {exist z}]
+	}
+	x
+    }
+    -result {1 0}
+    -cleanup {rename x {}}
+}
+test assemble-11.5 {existArray} {
+    -body {
+	proc x {} {
+	    set a(b) c
+	    list [assemble {push b; existArray a}] \
+		[assemble {push c; existArray a}] \
+		[assemble {push a; existArray b}]
+	}
+	x
+    }
+    -result {1 0 0}
+    -cleanup {rename x {}}
+}
+test assemble-11.6 {dictAppend} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; push 22; dictAppend dict}
+	}
+	x
+    }
+    -result {a 1 b 222 c 3}
+    -cleanup {rename x {}}
+}
+test assemble-11.7 {dictLappend} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; push 2; dictLappend dict}
+	}
+	x
+    }
+    -result {a 1 b {2 2} c 3}
+    -cleanup {rename x {}}
+}
+test assemble-11.8 {upvar} {
+    -body {
+	proc x {v} {
+	    assemble {push 1; load v; upvar w; pop; load w}
+	}
+	proc y {} {
+	    set z 123
+	    x z
+	}
+	y
+    }
+    -result 123
+    -cleanup {rename x {}; rename y {}}
+}
+test assemble-11.9 {nsupvar} {
+    -body {
+	namespace eval q { variable v 123 }
+	proc x {} {
+	    assemble {push q; push v; nsupvar y; pop; load y}
+	}
+	x
+    }
+    -result 123
+    -cleanup {namespace delete q; rename x {}}
+}
+test assemble-11.10 {variable} {
+    -body {
+	namespace eval q { namespace eval r {variable v 123}}
+	proc x {} {
+	    assemble {push q::r::v; variable y; load y}
+	}
+	x
+    }
+    -result 123
+    -cleanup {namespace delete q; rename x {}}
+}
+
+# assemble-12 - ASSEM_LVT1 (incr and incrArray)
+		
+test assemble-12.1 {incr - wrong # args} {
+    -body {
+	assemble {incr}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-12.2 {incr - wrong # args} {
+    -body {
+	assemble {incr too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-12.3 {incr nonlocal var} {
+    -body {
+	list [catch {assemble {incr ::env}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+test assemble-12.4 {incr} {
+    -body {
+	proc x {} {
+	    set y 5
+	    assemble {push 3; incr y}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+test assemble-12.5 {incrArray} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {push b; push 3; incrArray a}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+test assemble-12.6 {incr, stupid stack restriction} {
+    -body {
+	proc x {} "
+	    [fillTables]
+            set y 5
+            assemble {push 3; incr y}
+        "
+	list [catch {x} result] $result $errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {unset result; rename x {}}
+}
+
+# assemble-13 -- ASSEM_LVT1_SINT1 - incrImm and incrArrayImm
+
+test assemble-13.1 {incrImm - wrong # args} {
+    -body {
+	assemble {incrImm x}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-13.2 {incrImm - wrong # args} {
+    -body {
+	assemble {incrImm too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-13.3 {incrImm nonlocal var} {
+    -body {
+	list [catch {assemble {incrImm ::env 2}} result] $result $errorCode
+    }
+    -result {1 {variable "::env" is not local} {TCL ASSEM NONLOCAL ::env}}
+    -cleanup {unset result}
+}
+test assemble-13.4 {incrImm not a number} {
+    -body {
+	proc x {} {
+	    assemble {incrImm x rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-13.5 {incrImm too big} {
+    -body {
+	proc x {} {
+	    assemble {incrImm x 0x80}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-13.6 {incrImm too small} {
+    -body {
+	proc x {} {
+	    assemble {incrImm x -0x81}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-13.7 {incrImm} {
+    -body {
+	proc x {} {
+	    set y 1
+	    list [assemble {incrImm y -0x80}] [assemble {incrImm y 0x7f}]
+	}
+	x
+    }
+    -result {-127 0}
+    -cleanup {rename x {}}
+}
+test assemble-13.8 {incrArrayImm} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {push b; incrArrayImm a 3}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+test assemble-13.9 {incrImm, stupid stack restriction} {
+    -body {
+	proc x {} "
+	    [fillTables]
+            set y 5
+            assemble {incrImm y 3}
+        "
+	list [catch {x} result] $result $errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {unset result; rename x {}}
+}
+
+# assemble-14 -- ASSEM_SINT1 (incrArrayStkImm and incrStkImm)
+
+test assemble-14.1 {incrStkImm - wrong # args} {
+    -body {
+	assemble {incrStkImm}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-14.2 {incrStkImm - wrong # args} {
+    -body {
+	assemble {incrStkImm too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-14.3 {incrStkImm not a number} {
+    -body {
+	proc x {} {
+	    assemble {incrStkImm rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-14.4 {incrStkImm too big} {
+    -body {
+	proc x {} {
+	    assemble {incrStkImm 0x80}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-14.5 {incrStkImm too small} {
+    -body {
+	proc x {} {
+	    assemble {incrStkImm -0x81}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand does not fit in one byte} {TCL ASSEM 1BYTE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-14.6 {incrStkImm} {
+    -body {
+	proc x {} {
+	    set y 1
+	    list [assemble {push y; incrStkImm -0x80}] \
+		[assemble {push y; incrStkImm 0x7f}]
+	}
+	x
+    }
+    -result {-127 0}
+    -cleanup {rename x {}}
+}
+test assemble-14.7 {incrArrayStkImm} {
+    -body {
+	proc x {} {
+	    set a(b) 5
+	    assemble {push a; push b; incrArrayStkImm 3}
+	}
+	x
+    }
+    -result 8
+    -cleanup {rename x {}}
+}
+
+# assemble-15 - listIndexImm
+
+test assemble-15.1 {listIndexImm - wrong # args} {
+    -body {
+	assemble {listIndexImm}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-15.2 {listIndexImm - wrong # args} {
+    -body {
+	assemble {listIndexImm too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-15.3 {listIndexImm - bad substitution} {
+    -body {
+	list [catch {assemble {listIndexImm $foo}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {unset result}
+}
+test assemble-15.4 {listIndexImm - invalid index} {
+    -body {
+	assemble {listIndexImm rubbish}
+    }
+    -returnCodes error
+    -match glob
+    -result {bad index "rubbish"*}
+}
+test assemble-15.5 {listIndexImm} {
+    -body {
+	assemble {push {a b c}; listIndexImm 2}
+    }
+    -result c
+}
+test assemble-15.6 {listIndexImm} {
+    -body {
+	assemble {push {a b c}; listIndexImm end-1}
+    }
+    -result b
+}
+test assemble-15.7 {listIndexImm} {
+    -body {
+	assemble {push {a b c}; listIndexImm end}
+    }
+    -result c
+}
+test assemble-15.8 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm end+2}
+} {}
+test assemble-15.9 {listIndexImm} {
+    assemble {push {a b c}; listIndexImm -1-1}
+} {}
+
+# assemble-16 - invokeStk
+
+test assemble-16.1 {invokeStk - wrong # args} {
+    -body {
+	assemble {invokeStk}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-16.2 {invokeStk - wrong # args} {
+    -body {
+	assemble {invokeStk too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-16.3 {invokeStk - not a number} {
+    -body {
+	proc x {} {
+	    assemble {invokeStk rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-16.4 {invokeStk - no operands} {
+    -body {
+	proc x {} {
+	    assemble {invokeStk 0}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-16.5 {invokeStk1} {
+    -body {
+	tcl::unsupported::assemble {push concat; push 1; push 2; invokeStk 3}
+    }
+    -result {1 2}
+}
+test assemble-16.6 {invokeStk4} {
+    -body {
+	proc x {n} {
+	    set code {push concat}
+	    set shouldbe {}
+	    for {set i 1} {$i < $n} {incr i} {
+		append code \n {push a} $i
+		lappend shouldbe a$i
+	    }
+	    append code \n {invokeStk} { } $n
+	    set is [assemble $code]
+	    expr {$is eq $shouldbe}
+	}
+	list [x 254] [x 255] [x 256] [x 257]
+    }
+    -result {1 1 1 1}
+    -cleanup {rename x {}}
+}
+
+# assemble-17 -- jumps and labels
+
+test assemble-17.1 {label, wrong # args} {
+    -body {
+	assemble {label}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-17.2 {label, wrong # args} {
+    -body {
+	assemble {label too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-17.3 {label, bad subst} {
+    -body {
+	list [catch {assemble {label $foo}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {unset result}
+}
+test assemble-17.4 {duplicate label} {
+    -body {
+	list [catch {assemble {label foo; label foo}} result] \
+	    $result $::errorCode
+    }
+    -result {1 {duplicate definition of label "foo"} {TCL ASSEM DUPLABEL foo}}
+}
+test assemble-17.5 {jump, wrong # args} {
+    -body {
+	assemble {jump}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-17.6 {jump, wrong # args} {
+    -body {
+	assemble {jump too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-17.7 {jump, bad subst} {
+    -body {
+	list [catch {assemble {jump $foo}} result] $result $::errorCode
+    }
+    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+    -cleanup {unset result}
+}
+test assemble-17.8 {jump - ahead and back} {
+    -body {
+	assemble {
+	    jump three
+
+	    label one
+	    push a
+	    jump four
+
+	    label two
+	    push b
+	    jump six
+
+	    label three
+	    push c
+	    jump five
+
+	    label four
+	    push d
+	    jump two
+
+	    label five
+	    push e
+	    jump one
+
+	    label six
+	    push f
+	    concat 6
+	}
+    }
+    -result ceadbf
+}
+test assemble-17.9 {jump - resolve a label multiple times} {
+    -body {
+	proc x {} {
+	    set case 0
+	    set result {}
+	    assemble {
+		jump common
+		
+		label zero
+		pop		
+		incrImm case 1
+		pop
+		push a
+		append result
+		pop
+		jump common
+		
+		label one
+		pop
+		incrImm case 1
+		pop
+		push b
+		append result
+		pop
+		jump common
+		
+		label common
+		load case
+		dup
+		push 0
+		eq
+		jumpTrue zero
+		dup
+		push 1
+		eq
+		jumpTrue one
+		dup
+		push 2
+		eq
+		jumpTrue two
+		dup
+		push 3
+		eq
+		jumpTrue three
+		
+		label two
+		pop
+		incrImm case 1
+		pop
+		push c
+		append result
+		pop
+		jump common
+		
+		label three
+		pop
+		incrImm case 1
+		pop
+		push d
+		append result
+	    }
+	}
+	x
+    }
+    -result abcd
+    -cleanup {rename x {}}
+}
+test assemble-17.10 {jump4 needed} {
+    -body {
+	assemble "push x; jump one; label two; [string repeat {dup; pop;} 128]
+	      jump three; label one; jump two; label three"
+    }
+    -result x
+}
+test assemble-17.11 {jumpTrue} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTrue then
+		push no
+		jump else
+		label then
+		push yes
+		label else
+	    }
+	}
+	list [x 0] [x 1]
+    }
+    -result {no yes}
+    -cleanup {rename x {}}
+}
+test assemble-17.12 {jumpFalse} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpFalse then
+		push no
+		jump else
+		label then
+		push yes
+		label else
+	    }
+	}
+	list [x 0] [x 1]
+    }
+    -result {yes no}
+    -cleanup {rename x {}}
+}
+test assemble-17.13 {jump to undefined label} {
+    -body {
+	list [catch {assemble {jump nowhere}} result] $result $::errorCode
+    }
+    -result {1 {undefined label "nowhere"} {TCL ASSEM NOLABEL nowhere}}
+}
+test assemble-17.14 {jump to undefined label, line number correct?} {
+    -body {
+	catch {assemble {#1
+	    #2
+	    #3
+	    jump nowhere
+	    #5
+	    #6
+	}}
+	set ::errorInfo
+    }
+    -match glob
+    -result {*"assemble" body, line 4*}
+}
+test assemble-17.15 {multiple passes of code resizing} {
+    -setup {
+	set body {
+	    push -
+	}
+	for {set i 0} {$i < 14} {incr i} {
+	    append body "label a" $i \
+		"; push a; concat 2; nop; nop; jump b" \
+		$i \n
+	}
+	append body {label a14; push a; concat 2; push 1; jumpTrue b14} \n
+	append body {label a15; push a; concat 2; push 0; jumpFalse b15} \n
+	for {set i 0} {$i < 15} {incr i} {
+	    append body "label b" $i \
+		"; push b; concat 2; nop; nop; jump a" \
+		[expr {$i+1}] \n
+	}
+	append body {label c; push -; concat 2; nop; nop; nop; jump d} \n
+	append body {label b15; push b; concat 2; nop; nop; jump c} \n
+	append body {label d}
+	proc x {} [list assemble $body]
+    }	
+    -body {
+	x
+    }
+    -cleanup {
+	catch {unset body}
+	catch {rename x {}}
+    }
+    -result -abababababababababababababababab-
+}
+
+# assemble-18 - lindexMulti
+
+test assemble-18.1 {lindexMulti - wrong # args} {
+    -body {
+	assemble {lindexMulti}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-18.2 {lindexMulti - wrong # args} {
+    -body {
+	assemble {lindexMulti too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-18.3 {lindexMulti - bad subst} {
+    -body {
+	assemble {lindexMulti $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-18.4 {lindexMulti - not a number} {
+    -body {
+	proc x {} {
+	    assemble {lindexMulti rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-18.5 {lindexMulti - bad operand count} {
+    -body {
+	proc x {} {
+	    assemble {lindexMulti 0}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-18.6 {lindexMulti} {
+    -body {
+	assemble {push {{a b c} {d e f} {g h j}}; lindexMulti 1}
+    }
+    -result {{a b c} {d e f} {g h j}}
+}
+test assemble-18.7 {lindexMulti} {
+    -body {
+	assemble {push {{a b c} {d e f} {g h j}}; push 1; lindexMulti 2}
+    }
+    -result {d e f}
+}
+test assemble-18.8 {lindexMulti} {
+    -body {
+	assemble {push {{a b c} {d e f} {g h j}}; push 2; push 1; lindexMulti 3}
+    }
+    -result h
+}
+
+# assemble-19 - list
+
+test assemble-19.1 {list - wrong # args} {
+    -body {
+	assemble {list}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-19.2 {list - wrong # args} {
+    -body {
+	assemble {list too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-19.3 {list - bad subst} {
+    -body {
+	assemble {list $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-19.4 {list - not a number} {
+    -body {
+	proc x {} {
+	    assemble {list rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-19.5 {list - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {list -1}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-19.6 {list - no args} {
+    -body {
+	assemble {list 0}
+    }
+    -result {}
+}
+test assemble-19.7 {list - 1 arg} {
+    -body {
+	assemble {push hello; list 1}
+    }
+    -result hello
+}
+test assemble-19.8 {list - 2 args} {
+    -body {
+	assemble {push hello; push world; list 2}
+    }
+    -result {hello world}
+}
+
+# assemble-20 - lsetFlat
+
+test assemble-20.1 {lsetFlat - wrong # args} {
+    -body {
+	assemble {lsetFlat}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-20.2 {lsetFlat - wrong # args} {
+    -body {
+	assemble {lsetFlat too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-20.3 {lsetFlat - bad subst} {
+    -body {
+	assemble {lsetFlat $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-20.4 {lsetFlat - not a number} {
+    -body {
+	proc x {} {
+	    assemble {lsetFlat rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-20.5 {lsetFlat - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {lsetFlat 1}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be >=2} {TCL ASSEM OPERAND>=2}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-20.6 {lsetFlat} {
+    -body {
+	assemble {push b; push a; lsetFlat 2}
+    } 
+    -result b
+}
+test assemble-20.7 {lsetFlat} {
+    -body {
+	assemble {push 1; push d; push {a b c}; lsetFlat 3}
+    }
+    -result {a d c}
+}
+
+# assemble-21 - over
+
+test assemble-21.1 {over - wrong # args} {
+    -body {
+	assemble {over}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-21.2 {over - wrong # args} {
+    -body {
+	assemble {over too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-21.3 {over - bad subst} {
+    -body {
+	assemble {over $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-21.4 {over - not a number} {
+    -body {
+	proc x {} {
+	    assemble {over rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-21.5 {over - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {over -1}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-21.6 {over} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		over 0
+		store x
+		pop
+		pop
+		pop
+		pop
+		load x
+	    }
+	}
+	x
+    }
+    -result 3
+    -cleanup {rename x {}}
+}
+test assemble-21.7 {over} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		over 2
+		store x
+		pop
+		pop
+		pop
+		pop
+		load x
+	    }
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+
+# assemble-22 - reverse
+
+test assemble-22.1 {reverse - wrong # args} {
+    -body {
+	assemble {reverse}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-22.2 {reverse - wrong # args} {
+    -body {
+	assemble {reverse too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test assemble-22.3 {reverse - bad subst} {
+    -body {
+	assemble {reverse $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+
+test assemble-22.4 {reverse - not a number} {
+    -body {
+	proc x {} {
+	    assemble {reverse rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-22.5 {reverse - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {reverse -1}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-22.6 {reverse - zero operand count} {
+    -body {
+	proc x {} {
+	    assemble {push 1; reverse 0}
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+test assemble-22.7 {reverse} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		reverse 1
+		store x
+		pop
+		pop
+		pop
+		load x
+	    }
+	}
+	x
+    }
+    -result 3
+    -cleanup {rename x {}}
+}
+test assemble-22.8 {reverse} {
+    -body {
+	proc x {} {
+	    assemble {
+		push 1
+		push 2
+		push 3
+		reverse 3
+		store x
+		pop
+		pop
+		pop
+		load x
+	    }
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+
+# assemble-23 - ASSEM_BOOL (strmatch, unsetStk, unsetArrayStk)
+
+test assemble-23.1 {strmatch - wrong # args} {
+    -body {
+	assemble {strmatch}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-23.2 {strmatch - wrong # args} {
+    -body {
+	assemble {strmatch too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-23.3 {strmatch - bad subst} {
+    -body {
+	assemble {strmatch $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-23.4 {strmatch - not a boolean} {
+    -body {
+	proc x {} {
+	    assemble {strmatch rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected boolean value but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-23.5 {strmatch} {
+    -body {
+	proc x {a b} {
+	    list [assemble {load a; load b; strmatch 0}] \
+		[assemble {load a; load b; strmatch 1}]
+	}
+	list [x foo*.grill fengbar.grill] [x foo*.grill foobar.grill] [x foo*.grill FOOBAR.GRILL]
+    }
+    -result {{0 0} {1 1} {0 1}}
+    -cleanup {rename x {}}
+}
+test assemble-23.6 {unsetStk} {
+    -body {
+	proc x {} {
+	    set a {}
+	    assemble {push a; unsetStk false}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-23.7 {unsetStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; unsetStk false}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-23.8 {unsetStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; unsetStk true}
+	    info exists a
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a": no such variable}
+    -cleanup {rename x {}}
+}
+test assemble-23.9 {unsetArrayStk} {
+    -body {
+	proc x {} {
+	    set a(b) {}
+	    assemble {push a; push b; unsetArrayStk false}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-23.10 {unsetArrayStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; push b; unsetArrayStk false}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-23.11 {unsetArrayStk} {
+    -body {
+	proc x {} {
+	    assemble {push a; push b; unsetArrayStk true}
+	    info exists a(b)
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a(b)": no such variable}
+    -cleanup {rename x {}}
+}
+
+# assemble-24 -- ASSEM_BOOL_LVT4 (unset; unsetArray)
+
+test assemble-24.1 {unset - wrong # args} {
+    -body {
+	assemble {unset one}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-24.2 {unset - wrong # args} {
+    -body {
+	assemble {unset too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-24.3 {unset - bad subst -arg 1} {
+    -body {
+	assemble {unset $foo bar}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-24.4 {unset - not a boolean} {
+    -body {
+	proc x {} {
+	    assemble {unset rubbish trash}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected boolean value but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-24.5 {unset - bad subst - arg 2} {
+    -body {
+	assemble {unset true $bar}
+    }
+    -returnCodes error
+    -result {assembly code may not contain substitutions}
+}
+test assemble-24.6 {unset - nonlocal var} {
+    -body {
+	assemble {unset true ::foo::bar}
+    }
+    -returnCodes error
+    -result {variable "::foo::bar" is not local}
+}
+test assemble-24.7 {unset} {
+    -body {
+	proc x {} {
+	    set a {}
+	    assemble {unset false a}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-24.8 {unset} {
+    -body {
+	proc x {} {
+	    assemble {unset false a}
+	    info exists a
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-24.9 {unset} {
+    -body {
+	proc x {} {
+	    assemble {unset true a}
+	    info exists a
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a": no such variable}
+    -cleanup {rename x {}}
+}
+test assemble-24.10 {unsetArray} {
+    -body {
+	proc x {} {
+	    set a(b) {}
+	    assemble {push b; unsetArray false a}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-24.11 {unsetArray} {
+    -body {
+	proc x {} {
+	    assemble {push b; unsetArray false a}
+	    info exists a(b)
+	}
+	x
+    }
+    -result 0
+    -cleanup {rename x {}}
+}
+test assemble-24.12 {unsetArray} {
+    -body {
+	proc x {} {
+	    assemble {push b; unsetArray true a}
+	    info exists a(b)
+	}
+	x
+    }
+    -returnCodes error
+    -result {can't unset "a(b)": no such variable}
+    -cleanup {rename x {}}
+}
+
+# assemble-25 - dict get
+
+test assemble-25.1 {dict get - wrong # args} {
+    -body {
+	assemble {dictGet}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-25.2 {dict get - wrong # args} {
+    -body {
+	assemble {dictGet too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-25.3 {dictGet - bad subst} {
+    -body {
+	assemble {dictGet $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-25.4 {dict get - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictGet rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-25.5 {dictGet - negative operand count} {
+    -body {
+	proc x {} {
+	    assemble {dictGet 0}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-25.6 {dictGet - 1 index} {
+    -body {
+	assemble {push {a 1 b 2}; push a; dictGet 1}
+    }
+    -result 1
+}
+
+# assemble-26 - dict set
+
+test assemble-26.1 {dict set - wrong # args} {
+    -body {
+	assemble {dictSet 1}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-26.2 {dict get - wrong # args} {
+    -body {
+	assemble {dictSet too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-26.3 {dictSet - bad subst} {
+    -body {
+	assemble {dictSet 1 $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-26.4 {dictSet - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictSet rubbish foo}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-26.5 {dictSet - zero operand count} {
+    -body {
+	proc x {} {
+	    assemble {dictSet 0 foo}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-26.6 {dictSet - bad local} {
+    -body {
+	proc x {} {
+	    assemble {dictSet 1 ::foo::bar}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {variable "::foo::bar" is not local} {TCL ASSEM NONLOCAL ::foo::bar}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-26.7 {dictSet} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; push 4; dictSet 1 dict}
+	}
+	x
+    }
+    -result {a 1 b 4 c 3}
+    -cleanup {rename x {}}
+}
+
+# assemble-27 - dictUnset
+
+test assemble-27.1 {dictUnset - wrong # args} {
+    -body {
+	assemble {dictUnset 1}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-27.2 {dictUnset - wrong # args} {
+    -body {
+	assemble {dictUnset too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-27.3 {dictUnset - bad subst} {
+    -body {
+	assemble {dictUnset 1 $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-27.4 {dictUnset - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictUnset rubbish foo}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-27.5 {dictUnset - zero operand count} {
+    -body {
+	proc x {} {
+	    assemble {dictUnset 0 foo}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-27.6 {dictUnset - bad local} {
+    -body {
+	proc x {} {
+	    assemble {dictUnset 1 ::foo::bar}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {variable "::foo::bar" is not local} {TCL ASSEM NONLOCAL ::foo::bar}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-27.7 {dictUnset} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; dictUnset 1 dict}
+	}
+	x
+    }
+    -result {a 1 c 3}
+    -cleanup {rename x {}}
+}
+
+# assemble-28 - dictIncrImm
+
+test assemble-28.1 {dictIncrImm - wrong # args} {
+    -body {
+	assemble {dictIncrImm 1}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-28.2 {dictIncrImm - wrong # args} {
+    -body {
+	assemble {dictIncrImm too many args}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-28.3 {dictIncrImm - bad subst} {
+    -body {
+	assemble {dictIncrImm 1 $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-28.4 {dictIncrImm - not a number} {
+    -body {
+	proc x {} {
+	    assemble {dictIncrImm rubbish foo}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected integer but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-28.5 {dictIncrImm - bad local} {
+    -body {
+	proc x {} {
+	    assemble {dictIncrImm 1 ::foo::bar}
+	}
+	list [catch x result] $result $::errorCode
+    }
+    -result {1 {variable "::foo::bar" is not local} {TCL ASSEM NONLOCAL ::foo::bar}}
+    -cleanup {rename x {}; unset result}
+}
+test assemble-28.6 {dictIncrImm} {
+    -body {
+	proc x {} {
+	    set dict {a 1 b 2 c 3}
+	    assemble {push b; dictIncrImm 42 dict}
+	}
+	x
+    }
+    -result {a 1 b 44 c 3}
+    -cleanup {rename x {}}
+}
+
+# assemble-29 - ASSEM_REGEXP
+
+test assemble-29.1 {regexp - wrong # args} {
+    -body {
+	assemble {regexp}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-29.2 {regexp - wrong # args} {
+    -body {
+	assemble {regexp too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-29.3 {regexp - bad subst} {
+    -body {
+	assemble {regexp $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-29.4 {regexp - not a boolean} {
+    -body {
+	proc x {} {
+	    assemble {regexp rubbish}
+	}
+	x
+    }
+    -returnCodes error
+    -result {expected boolean value but got "rubbish"}
+    -cleanup {rename x {}}
+}
+test assemble-29.5 {regexp} {
+    -body {
+	assemble {push br.*br; push abracadabra; regexp false}
+    }
+    -result 1
+}
+test assemble-29.6 {regexp} {
+    -body {
+	assemble {push br.*br; push aBRacadabra; regexp false}
+    }
+    -result 0
+}
+test assemble-29.7 {regexp} {
+    -body {
+	assemble {push br.*br; push aBRacadabra; regexp true}
+    }
+    -result 1
+}
+
+# assemble-30 - Catches
+
+test assemble-30.1 {simplest possible catch} {
+    -body {
+	proc x {} {
+	    assemble {
+		beginCatch @bad
+		push error
+		push testing
+		invokeStk 2
+		pop
+		push 0
+		jump @ok
+		label @bad
+		push 1; # should be pushReturnCode
+		label @ok
+		endCatch
+	    }
+	}
+	x
+    }
+    -result 1
+    -cleanup {rename x {}}
+}
+test assemble-30.2 {catch in external catch conntext} {
+    -body {
+	proc x {} {
+	    list [catch {
+		assemble {
+		    beginCatch @bad
+		    push error
+		    push testing
+		    invokeStk 2
+		    pop
+		    push 0
+		    jump @ok
+		    label @bad
+		    pushReturnCode
+		    label @ok
+		    endCatch
+		}
+	    } result] $result
+	}
+	x
+    }
+    -result {0 1}
+    -cleanup {rename x {}}
+}
+test assemble-30.3 {embedded catches} {
+    -body {
+	proc x {} {
+	    list [catch {
+		assemble {
+		    beginCatch @bad
+		    push error
+		    eval { list [catch {error whatever} result] $result }
+		    invokeStk 2
+		    push 0
+		    reverse 2
+		    jump @done
+		    label @bad
+		    pushReturnCode
+		    pushResult
+		    label @done
+		    endCatch
+		    list 2
+		}
+	    } result2] $result2
+	}
+	x
+    }
+    -result {0 {1 {1 whatever}}}
+    -cleanup {rename x {}}
+}
+test assemble-30.4 {throw in wrong context} {
+    -body {
+	proc x {} {
+	    list [catch {
+		assemble {
+		    beginCatch @bad
+		    push error
+		    eval { list [catch {error whatever} result] $result }
+		    invokeStk 2
+		    push 0
+		    reverse 2
+		    jump @done
+
+		    label @bad
+		    load x
+		    pushResult
+
+		    label @done
+		    endCatch
+		    list 2
+		}
+	    } result] $result $::errorCode [split $::errorInfo \n]
+	}
+	x
+    }
+    -match glob
+    -result {1 {"loadScalar1" instruction may not appear in a context where an exception has been caught and not disposed of.} {TCL ASSEM BADTHROW} {{"loadScalar1" instruction may not appear in a context where an exception has been caught and not disposed of.} {    in assembly code between lines 10 and 15}*}}
+    -cleanup {rename x {}}
+}
+test assemble-30.5 {unclosed catch} {
+    -body {
+	proc x {} {
+	    assemble {
+		beginCatch @error
+		push 0
+		jump @done
+		label @error
+		push 1
+		label @done
+		push ""
+		pop
+	    }
+	}
+	list [catch {x} result] $result $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {catch still active on exit from assembly code} {TCL ASSEM UNCLOSEDCATCH} {catch still active on exit from assembly code
+    ("assemble" body, line 2)*}}
+    -cleanup {rename x {}}
+}
+test assemble-30.6 {inconsistent catch contexts} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTrue @inblock
+		beginCatch @error
+		label @inblock
+		push 0
+		jump @done
+		label @error
+		push 1
+		label @done
+	    }
+	}
+	list [catch {x 2} result] $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {TCL ASSEM BADCATCH} {execution reaches an instruction in inconsistent exception contexts
+    ("assemble" body, line 5)*}}
+    -cleanup {rename x {}}
+}
+
+# assemble-31 - Jump tables
+
+test assemble-31.1 {jumpTable, wrong # args} {
+    -body {
+	assemble {jumpTable}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-31.2 {jumpTable, wrong # args} {
+    -body {
+	assemble {jumpTable too many}
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+test assemble-31.3 {jumpTable - bad subst} {
+    -body {
+	assemble {jumpTable $foo}
+    }
+    -returnCodes error
+    -match glob
+    -result {assembly code may not contain substitutions}
+}
+test assemble-31.4 {jumptable - not a list} {
+    -body {
+	assemble {jumpTable \{rubbish}
+    }
+    -returnCodes error
+    -result {unmatched open brace in list}
+}
+test assemble-31.5 {jumpTable, badly structured} {
+    -body {
+	list [catch {assemble {
+	    # line 2
+	    jumpTable {one two three};# line 3
+	}} result] \
+	    $result $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {jump table must have an even number of list elements} {TCL ASSEM BADJUMPTABLE} {jump table must have an even number of list elements*("assemble" body, line 3)*}}
+}
+test assemble-31.6 {jumpTable, missing symbol} {
+    -body {
+	list [catch {assemble {
+	    # line 2
+	    jumpTable {1 a};# line 3
+	}} result] \
+	    $result $::errorCode $::errorInfo
+    }
+    -match glob
+    -result {1 {undefined label "a"} {TCL ASSEM NOLABEL a} {undefined label "a"*("assemble" body, line 3)*}}
+}
+test assemble-31.7 {jumptable, actual example} {
+    -setup {
+	proc x {} {
+	    set result {}
+	    for {set i 0} {$i < 5} {incr i} {
+		lappend result [assemble {
+		    load i
+		    jumpTable {1 @one 2 @two 3 @three}
+		    push {none of the above}
+		    jump @done
+		    label @one
+		    push one
+		    jump @done
+		    label @two
+		    push two
+		    jump @done
+		    label @three
+		    push three
+		    label @done
+		}]
+	    }
+	    set tcl_traceCompile 2
+	    set result
+	}
+    }
+    -body x
+    -result {{none of the above} one two three {none of the above}}
+    -cleanup {set tcl_traceCompile 0; rename x {}}
+}
+
+test assemble-40.1 {unbalanced stack} {
+    -body {
+	list \
+	    [catch {
+		assemble {
+		    push 3
+		    dup 
+		    mult 
+		    push 4
+		    dup 
+		    mult 
+		    pop 
+		    expon
+		}
+	    } result] $result $::errorInfo
+    }
+    -result {1 {stack underflow} {stack underflow
+    in assembly code between lines 1 and end of assembly code*}}
+    -match glob
+   -returnCodes ok
+}
+test assemble-40.2 {unbalanced stack} {*}{
+    -body {
+	list \
+	    [catch {
+		assemble {
+		    label a
+		    push {}
+		    label b
+		    pop
+		    label c
+		    pop
+		    label d
+		    push {}
+		}
+	    } result] $result $::errorInfo
+    }
+    -result {1 {stack underflow} {stack underflow
+    in assembly code between lines 7 and 9*}}
+    -match glob
+   -returnCodes ok
+}
+
+test assemble-41.1 {Inconsistent stack usage} {*}{
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpFalse else
+		push 0
+		jump then
+	      label else
+		push 1
+		push 2
+	      label then
+		pop
+	    }
+	}
+	catch {x 1}
+	set errorInfo
+    }
+    -match glob
+    -result {inconsistent stack depths on two execution paths
+    ("assemble" body, line 10)*}
+}
+test assemble-41.2 {Inconsistent stack, jumptable and default} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTable {0 else}
+		push 0
+	      label else
+		pop
+	    }
+	}
+	catch {x 1}
+	set errorInfo
+    }
+    -match glob
+    -result {inconsistent stack depths on two execution paths
+    ("assemble" body, line 6)*}
+}
+test assemble-41.3 {Inconsistent stack, two legs of jumptable} {
+    -body {
+	proc x {y} {
+	    assemble {
+		load y
+		jumpTable {0 no 1 yes}
+		label no
+		push 0
+		label yes
+		pop
+	    }
+	}
+	catch {x 1}
+	set errorInfo
+    }
+    -match glob
+    -result {inconsistent stack depths on two execution paths
+    ("assemble" body, line 7)*}
+}
+
+test assemble-50.1 {Ulam's 3n+1 problem, TAL implementation} {
+    -body {
+	proc ulam {n} {
+	    assemble {
+		load n;		# max
+		dup;		# max n
+		jump start;     # max n
+	    
+		label loop;	# max n
+		over 1;         # max n max
+		over 1;		# max in max n
+		ge;             # man n max>=n
+		jumpTrue skip;  # max n
+
+		reverse 2;      # n max
+		pop;            # n
+		dup;            # n n
+	    
+		label skip;	# max n
+		dup;            # max n n
+		push 2;         # max n n 2
+		mod;            # max n n%2
+		jumpTrue odd;   # max n
+	    
+		push 2;         # max n 2
+		div;            # max n/2 -> max n
+		jump start;     # max n
+	     
+		label odd;	# max n
+		push 3;         # max n 3
+		mult;           # max 3*n
+		push 1;         # max 3*n 1
+		add;            # max 3*n+1
+	    
+		label start;	# max n
+		dup;		# max n n
+		push 1;		# max n n 1
+		neq;		# max n n>1
+		jumpTrue loop;	# max n
+	    
+		pop;		# max
+	    }
+	}
+	set result {}
+	for {set i 1} {$i < 30} {incr i} {
+	    lappend result [ulam $i]
+	}
+	set result
+    }
+    -result {1 2 16 4 16 16 52 8 52 16 52 16 40 52 160 16 52 52 88 20 64 52 160 24 88 40 9232 52 88}
+}
+
+test assemble-51.1 {memory leak testing} memory {
+    leaktest {
+	apply {{} {assemble {push hello}}}
+    }
+} 0
+test assemble-51.2 {memory leak testing} memory {
+    leaktest {
+	apply {{{x 0}} {assemble {incrImm x 1}}}
+    }
+} 0
+test assemble-51.3 {memory leak testing} memory {
+    leaktest {
+	apply {{n} {
+	    assemble {
+		load n;		# max
+		dup;		# max n
+		jump start;     # max n
+	    
+		label loop;	# max n
+		over 1;         # max n max
+		over 1;		# max in max n
+		ge;             # man n max>=n
+		jumpTrue skip;  # max n
+
+		reverse 2;      # n max
+		pop;            # n
+		dup;            # n n
+	    
+		label skip;	# max n
+		dup;            # max n n
+		push 2;         # max n n 2
+		mod;            # max n n%2
+		jumpTrue odd;   # max n
+	    
+		push 2;         # max n 2
+		div;            # max n/2 -> max n
+		jump start;     # max n
+	     
+		label odd;	# max n
+		push 3;         # max n 3
+		mult;           # max 3*n
+		push 1;         # max 3*n 1
+		add;            # max 3*n+1
+	    
+		label start;	# max n
+		dup;		# max n n
+		push 1;		# max n n 1
+		neq;		# max n n>1
+		jumpTrue loop;	# max n
+	    
+		pop;		# max
+	    }
+	}} 1
+    }
+} 0
+test assemble-51.4 {memory leak testing} memory {
+    leaktest {
+	catch {
+	    apply {{} {
+		assemble {reverse polish notation}
+	    }}
+	}
+    }
+} 0
+
+test assemble-52.1 {Bug 3154ea2759} {
+    apply {{} {
+	# Needs six exception ranges to force the range allocations to use the
+	# malloced store.
+	::tcl::unsupported::assemble {
+	    beginCatch @badLabel
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel
+	    label @badLabel
+	    push 1;		# should be pushReturnCode
+	    label @okLabel
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel2
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel2
+	    label @badLabel2
+	    push 1;		# should be pushReturnCode
+	    label @okLabel2
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel3
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel3
+	    label @badLabel3
+	    push 1;		# should be pushReturnCode
+	    label @okLabel3
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel4
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel4
+	    label @badLabel4
+	    push 1;		# should be pushReturnCode
+	    label @okLabel4
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel5
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel5
+	    label @badLabel5
+	    push 1;		# should be pushReturnCode
+	    label @okLabel5
+	    endCatch
+	    pop
+	    
+	    beginCatch @badLabel6
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel6
+	    label @badLabel6
+	    push 1;		# should be pushReturnCode
+	    label @okLabel6
+	    endCatch
+	    pop
+	}
+    }}
+} {};				# must not crash
+
+rename fillTables {}
+rename assemble {}
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

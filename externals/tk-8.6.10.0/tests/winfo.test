@@ -1,0 +1,492 @@
+# This file is a Tcl script to test out the "winfo" command.  It is
+# organized in the standard fashion for Tcl tests.
+#
+# Copyright (c) 1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+
+package require tcltest 2.2
+namespace import ::tcltest::*
+tcltest::configure {*}$argv
+tcltest::loadTestedCommands
+
+# eatColors --
+# Creates a toplevel window and allocates enough colors in it to
+# use up all the slots in the colormap.
+#
+# Arguments:
+# w -        Name of toplevel window to create.
+# options -    Options for w, such as "-colormap new".
+
+proc eatColors {w {options ""}} {
+    destroy $w
+    eval toplevel $w $options
+    wm geom $w +0+0
+    canvas $w.c -width 400 -height 200 -bd 0
+    pack $w.c
+    for {set y 0} {$y < 8} {incr y} {
+        for {set x 0} {$x < 40} {incr x} {
+            set color [format #%02x%02x%02x [expr {$x*6}] [expr {$y*30}] 0]
+            $w.c create rectangle [expr {10*$x}] [expr {20*$y}] \
+                [expr {10*$x + 10}] [expr {20*$y + 20}] -outline {} \
+                -fill $color
+        }
+    }
+    update
+}
+
+# XXX - This test file is woefully incomplete.  At present, only a
+# few of the winfo options are tested.
+
+# ----------------------------------------------------------------------
+
+test winfo-1.1 {"winfo atom" command} -body {
+    winfo atom
+} -returnCodes error -result {wrong # args: should be "winfo atom ?-displayof window? name"}
+test winfo-1.2 {"winfo atom" command} -body {
+    winfo atom a b
+} -returnCodes error -result {wrong # args: should be "winfo atom ?-displayof window? name"}
+test winfo-1.3 {"winfo atom" command} -body {
+    winfo atom a b c d
+} -returnCodes error -result {wrong # args: should be "winfo atom ?-displayof window? name"}
+test winfo-1.4 {"winfo atom" command} -body {
+    winfo atom -displayof geek foo
+} -returnCodes error -result {bad window path name "geek"}
+test winfo-1.5 {"winfo atom" command} -body {
+    winfo atom PRIMARY
+} -result 1
+test winfo-1.6 {"winfo atom" command} -body {
+    winfo atom -displayof . PRIMARY
+} -result 1
+
+
+test winfo-2.1 {"winfo atomname" command} -body {
+    winfo atomname
+} -returnCodes error -result {wrong # args: should be "winfo atomname ?-displayof window? id"}
+test winfo-2.2 {"winfo atomname" command} -body {
+    winfo atomname a b
+} -returnCodes error -result {wrong # args: should be "winfo atomname ?-displayof window? id"}
+test winfo-2.3 {"winfo atomname" command} -body {
+    winfo atomname a b c d
+} -returnCodes error -result {wrong # args: should be "winfo atomname ?-displayof window? id"}
+test winfo-2.4 {"winfo atomname" command} -body {
+    winfo atomname -displayof geek foo
+} -returnCodes error -result {bad window path name "geek"}
+test winfo-2.5 {"winfo atomname" command} -body {
+    winfo atomname 44215
+} -returnCodes error -result {no atom exists with id "44215"}
+test winfo-2.6 {"winfo atomname" command} -body {
+    winfo atomname 2
+} -result SECONDARY
+test winfo-2.7 {"winfo atom" command} -body {
+    winfo atomname -displayof . 2
+} -result SECONDARY
+
+
+test winfo-3.1 {"winfo colormapfull" command} -constraints {
+    defaultPseudocolor8
+} -body {
+    winfo colormapfull
+} -returnCodes error -result {wrong # args: should be "winfo colormapfull window"}
+test winfo-3.2 {"winfo colormapfull" command} -constraints {
+    defaultPseudocolor8
+} -body {
+    winfo colormapfull a b
+} -returnCodes error -result {wrong # args: should be "winfo colormapfull window"}
+test winfo-3.3 {"winfo colormapfull" command} -constraints {
+    defaultPseudocolor8
+} -body {
+    winfo colormapfull foo
+} -returnCodes error -result {bad window path name "foo"}
+test winfo-3.4 {"winfo colormapfull" command} -constraints {
+    unix defaultPseudocolor8
+} -body {
+    eatColors .t {-colormap new}
+    set result [list [winfo colormapfull .] [winfo colormapfull .t]]
+    .t.c delete 34
+    lappend result [winfo colormapfull .t]
+    .t.c create rectangle 30 30 80 80 -fill #441739
+    lappend result [winfo colormapfull .t]
+    .t.c create rectangle 40 40 90 90 -fill #ffeedd
+    lappend result [winfo colormapfull .t]
+    destroy .t.c
+    lappend result [winfo colormapfull .t]
+} -cleanup {
+    destroy .t
+} -result {0 1 0 0 1 0}
+
+
+
+test winfo-4.1 {"winfo containing" command} -body {
+    winfo containing 22
+} -returnCodes error -result {wrong # args: should be "winfo containing ?-displayof window? rootX rootY"}
+test winfo-4.2 {"winfo containing" command} -body {
+    winfo containing a b c
+} -returnCodes error -result {wrong # args: should be "winfo containing ?-displayof window? rootX rootY"}
+test winfo-4.3 {"winfo containing" command} -body {
+    winfo containing a b c d e
+} -returnCodes error -result {wrong # args: should be "winfo containing ?-displayof window? rootX rootY"}
+test winfo-4.4 {"winfo containing" command} -body {
+    winfo containing -displayof geek 25 30
+} -returnCodes error -result {bad window path name "geek"}
+test winfo-4.5 {"winfo containing" command} -body {
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 550 -height 400
+    frame .t.f -width 80 -height 60 -bd 2 -relief raised
+    place .t.f -x 50 -y 50
+    wm geom .t +0+0
+    update
+
+    raise .t
+    winfo containing [winfo rootx .t.f] [winfo rooty .t.f]
+} -cleanup {
+    destroy .t
+} -result .t.f
+test winfo-4.6 {"winfo containing" command} -constraints {
+    nonPortable
+} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 550 -height 400
+    frame .t.f -width 80 -height 60 -bd 2 -relief raised
+    place .t.f -x 50 -y 50
+    wm geom .t +0+0
+    update
+
+    winfo containing [expr {[winfo rootx .t.f]-1}] [expr {[winfo rooty .t.f]-1}]
+} -cleanup {
+    destroy .t
+} -result .t
+test winfo-4.7 {"winfo containing" command} -setup {
+    destroy .t
+} -body {
+    toplevel .t -width 550 -height 400
+    frame .t.f -width 80 -height 60 -bd 2 -relief raised
+    place .t.f -x 50 -y 50
+    wm geom .t +0+0
+    update
+
+    set x [winfo containing -display .t.f [expr {[winfo rootx .t]+600}] \
+        [expr {[winfo rooty .t.f]+450}]]
+    expr {($x == ".") || ($x == "")}
+} -cleanup {
+    destroy .t
+} -result {1}
+
+
+test winfo-5.1 {"winfo interps" command} -body {
+    winfo interps a
+} -returnCodes error -result {wrong # args: should be "winfo interps ?-displayof window?"}
+test winfo-5.2 {"winfo interps" command} -body {
+    winfo interps a b c
+} -returnCodes error -result {wrong # args: should be "winfo interps ?-displayof window?"}
+test winfo-5.3 {"winfo interps" command} -body {
+    winfo interps -displayof geek
+} -returnCodes error -result {bad window path name "geek"}
+test winfo-5.4 {"winfo interps" command} -constraints unix -body {
+    expr {[lsearch -exact [winfo interps] [tk appname]] >= 0}
+} -result {1}
+test winfo-5.5 {"winfo interps" command} -constraints unix -body {
+    expr {[lsearch -exact [winfo interps -displayof .] [tk appname]] >= 0}
+} -result {1}
+
+
+test winfo-6.1 {"winfo exists" command} -body {
+    winfo exists
+} -returnCodes error -result {wrong # args: should be "winfo exists window"}
+test winfo-6.2 {"winfo exists" command} -body {
+    winfo exists a b
+} -returnCodes error -result {wrong # args: should be "winfo exists window"}
+test winfo-6.3 {"winfo exists" command} -body {
+    winfo exists gorp
+} -result {0}
+test winfo-6.4 {"winfo exists" command} -body {
+    winfo exists .
+} -result {1}
+test winfo-6.5 {"winfo exists" command} -setup {
+    destroy .b
+} -body {
+    button .b -text "Test button"
+    set x [winfo exists .b]
+    pack .b
+    update
+    bind .b <Destroy> {lappend x [winfo exists .x]}
+    destroy .b
+    lappend x [winfo exists .x]
+} -result {1 0 0}
+
+
+test winfo-7.1 {"winfo pathname" command} -body {
+    winfo pathname
+} -returnCodes error -result {wrong # args: should be "winfo pathname ?-displayof window? id"}
+test winfo-7.2 {"winfo pathname" command} -body {
+    winfo pathname a b
+} -returnCodes error -result {wrong # args: should be "winfo pathname ?-displayof window? id"}
+test winfo-7.3 {"winfo pathname" command} -body {
+    winfo pathname a b c d
+} -returnCodes error -result {wrong # args: should be "winfo pathname ?-displayof window? id"}
+test winfo-7.4 {"winfo pathname" command} -body {
+    winfo pathname -displayof geek 25
+} -returnCodes error -result {bad window path name "geek"}
+test winfo-7.5 {"winfo pathname" command} -body {
+    winfo pathname xyz
+} -returnCodes error -result {expected integer but got "xyz"}
+test winfo-7.6 {"winfo pathname" command} -body {
+    winfo pathname 224
+} -returnCodes error -result {window id "224" doesn't exist in this application}
+test winfo-7.7 {"winfo pathname" command} -setup {
+    destroy .b
+    button .b -text "Help"
+    update
+} -body {
+    winfo pathname -displayof .b [winfo id .]
+} -cleanup {
+    destroy .b
+} -result {.}
+test winfo-7.8 {"winfo pathname" command} -constraints {
+    unix testwrapper
+} -body {
+    winfo pathname [testwrapper .]
+} -result {}
+
+
+test winfo-8.1 {"winfo pointerx" command} -setup {
+    destroy .b
+    button .b -text "Help"
+    update
+} -body {
+    catch [winfo pointerx .b]
+} -body {
+    catch [winfo pointerx .b]
+} -result 1
+test winfo-8.2 {"winfo pointery" command} -setup {
+    destroy .b
+    button .b -text "Help"
+    update
+} -body {
+    catch [winfo pointery .b]
+} -body {
+    catch [winfo pointerx .b]
+} -result 1
+test winfo-8.3 {"winfo pointerxy" command} -setup {
+    destroy .b
+    button .b -text "Help"
+    update
+} -body {
+    catch [winfo pointerxy .b]
+} -body {
+    catch [winfo pointerx .b]
+} -result 1
+
+
+test winfo-9.1 {"winfo viewable" command} -body {
+    winfo viewable
+} -returnCodes error -result {wrong # args: should be "winfo viewable window"}
+test winfo-9.2 {"winfo viewable" command} -body {
+    winfo viewable foo
+} -returnCodes error -result {bad window path name "foo"}
+test winfo-9.3 {"winfo viewable" command} -body {
+    winfo viewable .
+} -result {1}
+test winfo-9.4 {"winfo viewable" command} -body {
+    wm iconify .
+    winfo viewable .
+} -cleanup {
+    wm deiconify .
+} -result {0}
+test winfo-9.5 {"winfo viewable" command} -setup {
+    deleteWindows
+} -body {
+    frame .f1 -width 100 -height 100 -relief raised -bd 2
+    place .f1 -x 0 -y 0
+    frame .f1.f2 -width 50 -height 50 -relief raised -bd 2
+    place .f1.f2 -x 0 -y 0
+    update
+    list [winfo viewable .f1] [winfo viewable .f1.f2]
+} -cleanup {
+    deleteWindows
+} -result {1 1}
+test winfo-9.6 {"winfo viewable" command} -setup {
+    deleteWindows
+} -body {
+    frame .f1 -width 100 -height 100 -relief raised -bd 2
+    frame .f1.f2 -width 50 -height 50 -relief raised -bd 2
+    place .f1.f2 -x 0 -y 0
+    update
+    list [winfo viewable .f1] [winfo viewable .f1.f2]
+} -cleanup {
+    deleteWindows
+} -result {0 0}
+test winfo-9.7 {"winfo viewable" command} -setup {
+    deleteWindows
+} -body {
+    frame .f1 -width 100 -height 100 -relief raised -bd 2
+    place .f1 -x 0 -y 0
+    frame .f1.f2 -width 50 -height 50 -relief raised -bd 2
+    place .f1.f2 -x 0 -y 0
+    update
+    wm iconify .
+    list [winfo viewable .f1] [winfo viewable .f1.f2]
+} -cleanup {
+    wm deiconify .
+    deleteWindows
+} -result {0 0}
+
+
+test winfo-10.1 {"winfo visualid" command} -body {
+    winfo visualid
+} -returnCodes error -result {wrong # args: should be "winfo visualid window"}
+test winfo-10.2 {"winfo visualid" command} -body {
+    winfo visualid gorp
+} -returnCodes error -result {bad window path name "gorp"}
+test winfo-10.3 {"winfo visualid" command} -body {
+    expr {2 + [winfo visualid .] - [winfo visualid .]}
+} -result {2}
+
+
+test winfo-11.1 {"winfo visualid" command} -body {
+    winfo visualsavailable
+} -returnCodes error -result {wrong # args: should be "winfo visualsavailable window ?includeids?"}
+test winfo-11.2 {"winfo visualid" command} -body {
+    winfo visualsavailable gorp
+} -returnCodes error -result {bad window path name "gorp"}
+test winfo-11.3 {"winfo visualid" command} -body {
+    winfo visualsavailable . includeids foo
+} -returnCodes error -result {wrong # args: should be "winfo visualsavailable window ?includeids?"}
+test winfo-11.4 {"winfo visualid" command} -body {
+    llength [lindex [winfo visualsa .] 0]
+} -result {2}
+test winfo-11.5 {"winfo visualid" command} -body {
+    llength [lindex [winfo visualsa . includeids] 0]
+} -result {3}
+test winfo-11.6 {"winfo visualid" command} -body {
+    set x [lindex [lindex [winfo visualsa . includeids] 0] 2]
+    expr {$x + 2 - $x}
+} -result {2}
+
+
+test winfo-12.1 {GetDisplayOf procedure} -body {
+    winfo atom - foo x
+} -returnCodes error -result {wrong # args: should be "winfo atom ?-displayof window? name"}
+test winfo-12.2 {GetDisplayOf procedure} -body {
+    winfo atom -d bad_window x
+} -returnCodes error -result {bad window path name "bad_window"}
+
+
+# Some embedding tests
+#
+test winfo-13.1 {root coordinates of embedded toplevel} -setup {
+    deleteWindows
+} -body {
+    frame .con -container 1
+    pack .con -expand yes -fill both
+    toplevel .emb -use [winfo id .con] -bd 0 -highlightthickness 0
+    button .emb.b
+    pack .emb.b -expand yes -fill both
+    update
+
+    list rootx [expr {[winfo rootx .emb] == [winfo rootx .con]}] \
+        rooty [expr {[winfo rooty .emb] == [winfo rooty .con]}]
+} -cleanup {
+    deleteWindows
+} -result {rootx 1 rooty 1}
+
+# Windows does not destroy the container when an embedded window is
+# destroyed.  Unix and macOS do destroy it.  See ticket [67384bce7d].
+if {[tk windowingsystem] == "win32"} {
+   set result_13_2 {embedded 0 container 1}
+} else {
+   set result_13_2 {embedded 0 container 0}
+}
+test winfo-13.2 {destroying embedded toplevel} -setup {
+    deleteWindows
+} -body {
+    frame .con -container 1
+    pack .con -expand yes -fill both
+    toplevel .emb -use [winfo id .con] -bd 0 -highlightthickness 0
+    button .emb.b
+    pack .emb.b -expand yes -fill both
+    update
+
+    destroy .emb
+    update
+    list embedded [winfo exists .emb.b] container [winfo exists .con]
+} -cleanup {
+    deleteWindows
+} -result $result_13_2
+
+test winfo-13.3 {destroying container window} -setup {
+    deleteWindows
+} -body {
+    frame .con -container 1
+    pack .con -expand yes -fill both
+    toplevel .emb -use [winfo id .con] -bd 0 -highlightthickness 0
+    button .emb.b
+    pack .emb.b -expand yes -fill both
+    update
+
+    destroy .con
+    update
+    list child [winfo exists .emb.b] parent [winfo exists .emb]
+} -cleanup {
+    deleteWindows
+} -result {child 0 parent 0}
+
+test winfo-13.4 {[winfo containing] with embedded windows} -setup {
+    deleteWindows
+} -body {
+    frame .con -container 1
+    pack .con -expand yes -fill both
+    toplevel .emb -use [winfo id .con] -bd 0 -highlightthickness 0
+    button .emb.b
+    pack .emb.b -expand yes -fill both
+    update
+
+    button .b
+    pack .b -expand yes -fill both
+    update
+    string compare .emb.b \
+        [winfo containing [winfo rootx .emb.b] [winfo rooty .emb.b]]
+} -cleanup {
+    deleteWindows
+} -result 0
+
+
+test winfo-14.1 {usage} -body {
+    winfo ismapped
+} -returnCodes error -result {wrong # args: should be "winfo ismapped window"}
+
+test winfo-14.2 {usage} -body {
+    winfo ismapped . .
+} -returnCodes error -result {wrong # args: should be "winfo ismapped window"}
+
+test winfo-14.3 {initially unmapped} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    winfo ismapped .t
+} -cleanup {
+    destroy .t
+} -result 0
+
+test winfo-14.4 {mapped at idle time} -setup {
+    destroy .t
+} -body {
+    toplevel .t
+    update idletasks
+    winfo ismapped .t
+} -cleanup {
+    destroy .t
+} -result 1
+
+deleteWindows
+# cleanup
+cleanupTests
+return
+
+# Local variables:
+# mode: tcl
+# End:

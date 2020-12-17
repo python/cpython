@@ -1,0 +1,605 @@
+# This file contains a collection of tests for the procedures in the
+# file tclTimer.c, which includes the "after" Tcl command.  Sourcing
+# this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test timer-1.1 {Tcl_CreateTimerHandler procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x ""
+    foreach i {100 200 1000 50 150} {
+	after $i lappend x $i
+    }
+    after 200 set done 1
+    vwait done
+    return $x
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {50 100 150 200}
+
+test timer-2.1 {Tcl_DeleteTimerHandler procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x ""
+    foreach i {100 200 1000 50 150} {
+	after $i lappend x $i
+    }
+    after cancel lappend x 150
+    after cancel lappend x 50
+    after 200 set done 1
+    vwait done
+    return $x
+} -result {100 200}
+
+# No tests for Tcl_ServiceTimer or ResetTimer, since it is already tested
+# above.
+
+test timer-3.1 {TimerHandlerEventProc procedure: event masks} {
+    set x start
+    after 100 { set x fired }
+    update idletasks
+    set result $x
+    after 200
+    update
+    lappend result $x
+} {start fired}
+test timer-3.2 {TimerHandlerEventProc procedure: multiple timers} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    foreach i {200 600 1000} {
+	after $i lappend x $i
+    }
+    after 200
+    set result ""
+    set x ""
+    update
+    lappend result $x
+    after 400
+    update
+    lappend result $x
+    after 400
+    update
+    lappend result $x
+} -result {200 {200 600} {200 600 1000}}
+test timer-3.3 {TimerHandlerEventProc procedure: reentrant timer deletion} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    after 100 lappend x 100
+    set i [after 300 lappend x 300]
+    after 200 after cancel $i
+    after 400
+    update
+    return $x
+} -result 100
+test timer-3.4 {TimerHandlerEventProc procedure: all expired timers fire} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    after 100 lappend x a
+    after 200 lappend x b
+    after 300 lappend x c
+    after 300
+    vwait x
+    return $x
+} -result {a b c}
+test timer-3.5 {TimerHandlerEventProc procedure: reentrantly added timers don't fire} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    after 100 {lappend x a; after 0 lappend x b}
+    after 100
+    vwait x
+    return $x
+} -result a
+test timer-3.6 {TimerHandlerEventProc procedure: reentrantly added timers don't fire} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x {}
+    after 100 {lappend x a; after 100 lappend x b; after 100}
+    after 100
+    vwait x
+    set result $x
+    vwait x
+    lappend result $x
+} -result {a {a b}}
+
+# No tests for Tcl_DoWhenIdle:  it's already tested by other tests
+# below.
+
+test timer-4.1 {Tcl_CancelIdleCall procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x before
+    set y before
+    set z before
+    after idle set x after1
+    after idle set y after2
+    after idle set z after3
+    after cancel set y after2
+    update idletasks
+    list $x $y $z
+} -result {after1 before after3}
+test timer-4.2 {Tcl_CancelIdleCall procedure} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x before
+    set y before
+    set z before
+    after idle set x after1
+    after idle set y after2
+    after idle set z after3
+    after cancel set x after1
+    update idletasks
+    list $x $y $z
+} -result {before after2 after3}
+
+test timer-5.1 {Tcl_ServiceIdle, self-rescheduling handlers} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x 1
+    set y 23
+    after idle {incr x; after idle {incr x; after idle {incr x}}}
+    after idle {incr y}
+    vwait x
+    set result "$x $y"
+    update idletasks
+    lappend result $x
+} -result {2 24 4}
+
+test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
+    after
+} -result {wrong # args: should be "after option ?arg ...?"}
+test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
+    after 2x
+} -result {bad argument "2x": must be cancel, idle, info, or an integer}
+test timer-6.3 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
+    after gorp
+} -result {bad argument "gorp": must be cancel, idle, info, or an integer}
+test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
+    set x before
+    after 400 {set x after}
+    after 200
+    update
+    set y $x
+    after 400
+    update
+    list $y $x
+} {before after}
+test timer-6.5 {Tcl_AfterCmd procedure, ms argument} {
+    set x before
+    after 300 set x after
+    after 200
+    update
+    set y $x
+    after 200
+    update
+    list $y $x
+} {before after}
+test timer-6.6 {Tcl_AfterCmd procedure, cancel option} -body {
+    after cancel
+} -returnCodes error -result {wrong # args: should be "after cancel id|command"}
+test timer-6.7 {Tcl_AfterCmd procedure, cancel option} {
+    after cancel after#1
+} {}
+test timer-6.8 {Tcl_AfterCmd procedure, cancel option} {
+    after cancel {foo bar}
+} {}
+test timer-6.9 {Tcl_AfterCmd procedure, cancel option} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x before
+    set y [after 100 set x after]
+    after cancel $y
+    after 200
+    update
+    return $x
+} -result {before}
+test timer-6.10 {Tcl_AfterCmd procedure, cancel option} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x before
+    after 100 set x after
+    after cancel {set x after}
+    after 200
+    update
+    return $x
+} -result {before}
+test timer-6.11 {Tcl_AfterCmd procedure, cancel option} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x before
+    after 100 set x after
+    set id [after 300 set x after]
+    after cancel $id
+    after 200
+    update
+    set y $x
+    set x cleared
+    after 200
+    update
+    list $y $x
+} -result {after cleared}
+test timer-6.12 {Tcl_AfterCmd procedure, cancel option} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x first
+    after idle lappend x second
+    after idle lappend x third
+    set i [after idle lappend x fourth]
+    after cancel {lappend x second}
+    after cancel $i
+    update idletasks
+    return $x
+} -result {first third}
+test timer-6.13 {Tcl_AfterCmd procedure, cancel option, multiple arguments for command} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x first
+    after idle lappend x second
+    after idle lappend x third
+    set i [after idle lappend x fourth]
+    after cancel lappend x second
+    after cancel $i
+    update idletasks
+    return $x
+} -result {first third}
+test timer-6.14 {Tcl_AfterCmd procedure, cancel option, cancel during handler, used to dump core} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set id [
+	after 100 {
+	    set x done
+	    after cancel $id
+	}
+    ]
+    vwait x
+} -result {}
+test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    interp create x
+    x eval {set a before; set b before; after idle {set a a-after};
+	    after idle {set b b-after}}
+    set result [llength [x eval after info]]
+    lappend result [llength [after info]]
+    after cancel {set b b-after}
+    set a aaa
+    set b bbb
+    x eval {after cancel set a a-after}
+    update idletasks
+    lappend result $a $b [x eval {list $a $b}]
+} -cleanup {
+    interp delete x
+} -result {2 0 aaa bbb {before b-after}}
+test timer-6.16 {Tcl_AfterCmd procedure, idle option} -body {
+    after idle
+} -returnCodes error -result {wrong # args: should be "after idle script ?script ...?"}
+test timer-6.17 {Tcl_AfterCmd procedure, idle option} {
+    set x before
+    after idle {set x after}
+    set y $x
+    update idletasks
+    list $y $x
+} {before after}
+test timer-6.18 {Tcl_AfterCmd procedure, idle option} {
+    set x before
+    after idle set x after
+    set y $x
+    update idletasks
+    list $y $x
+} {before after}
+
+set event1 [after idle event 1]
+set event2 [after 1000 event 2]
+interp create x
+set childEvent [x eval {after idle event in child}]
+test timer-6.19 {Tcl_AfterCmd, info option} {
+    lsort [after info]
+} [lsort "$event1 $event2"]
+test timer-6.20 {Tcl_AfterCmd, info option} -returnCodes error -body {
+    after info a b
+} -result {wrong # args: should be "after info ?id?"}
+test timer-6.21 {Tcl_AfterCmd, info option} -returnCodes error -body {
+    after info $childEvent
+} -result "event \"$childEvent\" doesn't exist"
+test timer-6.22 {Tcl_AfterCmd, info option} {
+    list [after info $event1] [after info $event2]
+} {{{event 1} idle} {{event 2} timer}}
+after cancel $event1
+after cancel $event2
+interp delete x
+
+test timer-6.23 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    after 1 "set x ab\0cd"
+    after 10
+    update
+    string length $x
+} -result {5}
+test timer-6.24 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    after 1 set x ab\0cd
+    after 10
+    update
+    string length $x
+} -result {5}
+test timer-6.25 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    after 1 set x ab\0cd
+    after cancel "set x ab\0ef"
+    llength [after info]
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {1}
+test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    after 1 set x ab\0cd
+    after cancel set x ab\0ef
+    llength [after info]
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result {1}
+test timer-6.27 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    after idle "set x ab\0cd"
+    update
+    string length $x
+} -result {5}
+test timer-6.28 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    after idle set x ab\0cd
+    update
+    string length $x
+} -result {5}
+test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NUL} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    set x "hello world"
+    set id junk
+    set id [after 10 set x ab\0cd]
+    update
+    string length [lindex [lindex [after info $id] 0] 2]
+} -cleanup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -result 5
+
+set event [after idle foo bar]
+scan $event after#%d lastId
+test timer-7.1 {GetAfterEvent procedure} -returnCodes error -body {
+    after info xfter#$lastId
+} -result "event \"xfter#$lastId\" doesn't exist"
+test timer-7.2 {GetAfterEvent procedure} -returnCodes error -body {
+    after info afterx$lastId
+} -result "event \"afterx$lastId\" doesn't exist"
+test timer-7.3 {GetAfterEvent procedure} -returnCodes error -body {
+    after info after#ab
+} -result {event "after#ab" doesn't exist}
+test timer-7.4 {GetAfterEvent procedure} -returnCodes error -body {
+    after info after#
+} -result {event "after#" doesn't exist}
+test timer-7.5 {GetAfterEvent procedure} -returnCodes error -body {
+    after info after#${lastId}x
+} -result "event \"after#${lastId}x\" doesn't exist"
+test timer-7.6 {GetAfterEvent procedure} -returnCodes error -body {
+    after info afterx[expr {$lastId+1}]
+} -result "event \"afterx[expr {$lastId+1}]\" doesn't exist"
+after cancel $event
+
+test timer-8.1 {AfterProc procedure} {
+    set x before
+    proc foo {} {
+	set x untouched
+	after 100 {set x after}
+	after 200
+	update
+	return $x
+    }
+    list [foo] $x
+} {untouched after}
+test timer-8.2 {AfterProc procedure} -setup {
+    variable x empty
+    proc myHandler {msg options} {
+	variable x [list $msg [dict get $options -errorinfo]]
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
+    after 100 {error "After error"}
+    after 200
+    set y $x
+    update
+    list $y $x
+} -cleanup {
+    interp bgerror {} $handler
+} -result {empty {{After error} {After error
+    while executing
+"error "After error""
+    ("after" script)}}}
+test timer-8.3 {AfterProc procedure, deleting handler from itself} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    proc foo {} {
+	global x
+	set x {}
+	foreach i [after info] {
+	    lappend x [after info $i]
+	}
+	after cancel foo
+    }
+    after idle foo
+    after 1000 {error "I shouldn't ever have executed"}
+    update idletasks
+    return $x
+} -result {{{error "I shouldn't ever have executed"} timer}}
+test timer-8.4 {AfterProc procedure, deleting handler from itself} -setup {
+    foreach i [after info] {
+	after cancel $i
+    }
+} -body {
+    proc foo {} {
+	global x
+	set x {}
+	foreach i [after info] {
+	    lappend x [after info $i]
+	}
+	after cancel foo
+    }
+    after 1000 {error "I shouldn't ever have executed"}
+    after idle foo
+    update idletasks
+    return $x
+} -result {{{error "I shouldn't ever have executed"} timer}}
+
+foreach i [after info] {
+    after cancel $i
+}
+
+# No test for FreeAfterPtr, since it is already tested above.
+
+test timer-9.1 {AfterCleanupProc procedure} -setup {
+    catch {interp delete x}
+} -body {
+    interp create x
+    x eval {after 200 {
+	lappend x after
+	puts "part 1: this message should not appear"
+    }}
+    after 200 {lappend x after2}
+    x eval {after 200 {
+	lappend x after3
+	puts "part 2: this message should not appear"
+    }}
+    after 200 {lappend x after4}
+    x eval {after 200 {
+	lappend x after5
+	puts "part 3: this message should not appear"
+    }}
+    interp delete x
+    set x before
+    after 300
+    update
+    return $x
+} -result {before after2 after4}
+
+test timer-10.1 {Bug 1016167: [after] overwrites imports} -setup {
+    interp create slave
+    slave eval namespace export after
+    slave eval namespace eval foo namespace import ::after
+} -body {
+    slave eval foo::after 1
+    slave eval namespace origin foo::after
+} -cleanup {
+    # Bug will cause crash here; would cause failure otherwise
+    interp delete slave
+} -result ::after
+
+test timer-11.1 {Bug 1350291: [after] overflowing 32-bit field} -body {
+    set b ok
+    set a [after 0x100000001 {set b "after fired early"}]
+    after 100 set done 1
+    vwait done
+    return $b
+} -cleanup {
+    catch {after cancel $a}
+} -result ok
+test timer-11.2 {Bug 1350293: [after] negative argument} -body {
+    set l {}
+    after 100 {lappend l 100; set done 1}
+    after -1 {lappend l -1}
+    vwait done
+    return $l
+} -result {-1 100}
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:

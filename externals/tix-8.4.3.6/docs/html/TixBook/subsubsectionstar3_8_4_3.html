@@ -1,0 +1,80 @@
+<HEAD>
+<TITLE>  The tixChainMethod call<A NAME=6412>&nbsp;</A></TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000ff" VLINK="#000080">
+<FONT FACE="Tahoma, Arial, Helvetica">
+ <HR> <A NAME=tex2html1245 HREF=subsubsection3_8_4_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/next_motif.gif"></A> <A NAME=tex2html1243 HREF=subsection3_8_4.html><IMG ALIGN=MIDDLE SRC="../gif/icons/up_motif.gif"></A> <A NAME=tex2html1237 HREF=subsubsectionstar3_8_4_2.html><IMG ALIGN=MIDDLE SRC="../gif/icons/previous_motif.gif"></A> <A NAME=tex2html1247 HREF=tableofcontents3_1.html><IMG ALIGN=MIDDLE SRC="../gif/icons/contents_motif.gif"></A> <BR>
+<B> Next:</B> <A NAME=tex2html1246 HREF=subsubsection3_8_4_4.html> The ConstructWidget Method</A>
+<B>Up:</B> <A NAME=tex2html1244 HREF=subsection3_8_4.html> Standard Initialization Methods</A>
+<B> Previous:</B> <A NAME=tex2html1238 HREF=subsubsectionstar3_8_4_2.html>  Chaining Methods</A>
+<HR> <P>
+<A NAME=Contents>&nbsp;</A><H3><A NAME=SECTION00084300000000000000>  The tixChainMethod call<A NAME=6412>&nbsp;</A></A></H3>
+<P>
+The above implementation of <tt>tixArrowButton:InitWidgetRec</tt> is
+  correct but it may be cumbersome if we want to switch
+  superclasses. For example, suppose we want to create a new base class
+  TixArrowWidget, which presumably defines common attributes of any
+  class that have arrows in them. Then, instead of deriving
+  TixArrowButton directly from TixPrimitive, we decide to derive
+  TixArrowButton from TixArrowWidget, which is in turn derived from
+  TixPrimitive:
+<P>
+<blockquote> <P><tt> tixWidgetClass tixArrowWidget {<BR>
+    -superclass tixPrimitive<BR>
+    ...<BR>
+}<BR>
+tixWidgetClass tixArrowButton {<BR>
+    -superclass tixArrowWidget<BR>
+    ...<BR>
+}</tt>
+<P></blockquote>
+<P>Now we would need to change all the method chaining calls in
+  TixArrowButton from:
+<P>
+<blockquote> <P><tt> tixPrimitive:SomeMethod
+</tt>
+<P></blockquote>
+<P>to:
+<P>
+<blockquote> <P><tt> tixArrowWidget:SomeMethod
+</tt>
+<P></blockquote>
+<P>This may be a lot of work because you may have chained methods in many
+  places in the original implementation of TixArrowButton.
+<P>The <tt>tixChainMethod</tt> command solves this problem. It will
+  automatically find a superclass that defines the method we want to
+  chain and calls this method for us. For example, the following is a
+  better implementation of <tt>tixArrowButton:InitWidgetRec</tt> that
+  uses <tt>tixChainMethod</tt> to avoid calling <tt>tixPrimitive:InitWidgetRec</tt> directly:
+<P>
+<blockquote> <P><tt> proc tixArrowButton:InitWidgetRec {w} {<BR>
+    upvar #0 $w data<BR>
+<BR>
+    tixChainMethod $w InitWidgetRec<BR>
+    set data(count) 0<BR>
+}</tt>
+<P></blockquote>
+<P>Notice the order of the arguments for tixChainMethod: the name of
+  the instance, <tt>$w</tt>, is passed before the method we want to
+  chain, <tt>InitWidgetRec</tt>. In general, if the method we want to
+  chain has $1+n$arguments:
+<P>
+<blockquote> <P><tt> proc tixPrimitive:MethodToChain {w arg1 arg2 ... argn} {<BR>
+    ...<BR>
+}</tt>
+<P></blockquote>
+<P>We call it with the arguments in the following order
+<P>
+<blockquote> <P><tt> tixChainMethod $w MethodToChain $arg1 $arg2 ... $argn</tt>
+<P></blockquote>
+<P>We'll come back to more detailed discussion of <tt>tixChainMethod</tt>
+  shortly. For the time being, let's take it for granted that <tt>tixChainMethod</tt> must be used in the three standard initialization
+  methods: <tt>InitWidgetRec</tt>, <tt>ConstructWidget</tt> and <tt>SetBindings</tt>
+<P>
+<HR>
+
+</FONT>
+</BODY>
+<P><ADDRESS>
+<A HREF=http://tix.sourceforge.net>http://tix.sourceforge.net</A><BR>
+</ADDRESS>

@@ -1,0 +1,5 @@
+Issues:
+
+-timeout configuration option now only sets connect_timeout option for PGconnect(), so the value
+has now nothing to do with timeouts during operation (only with connection process to server). It's left as
+readonly for now, but needs some improval or renaming.

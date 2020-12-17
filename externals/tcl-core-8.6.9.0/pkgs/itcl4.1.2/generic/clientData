@@ -1,0 +1,16 @@
+itcl2TclOO.c:    framePtr->clientData = NULL;
+itcl2TclOO.c:    framePtr->objc = objc;
+itcl2TclOO.c:    framePtr->objv = objv;
+itcl2TclOO.c:    framePtr->procPtr = procPtr;
+itcl2TclOO.c:    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+itcl2TclOO.c:    contextPtr = framePtr->clientData;
+itcl2TclOO.c:    if (framePtr == NULL || !(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+itclMigrate2TclCore.c:        framePtr->isProcCallFrame |= FRAME_HAS_RESOLVER;
+itclMigrate2TclCore.c:	framePtr->resolvePtr = resolvePtr;
+itclMigrate2TclCore.c:        framePtr = framePtr->callerVarPtr;
+itclMigrate2TclCore.c:        framePtr = framePtr->callerVarPtr;
+itclMigrate2TclCore.c:    return (Tcl_Namespace *)framePtr->nsPtr;
+itclMigrate2TclCore.c:    return framePtr->clientData;
+itclMigrate2TclCore.c:    ((Interp *)interp)->framePtr->nsPtr = (Namespace *)nsPtr;
+itclMigrate2TclCore.c:    return ((Interp *)interp)->framePtr->objc;
+itclMigrate2TclCore.c:    return ((Interp *)interp)->framePtr->objv;

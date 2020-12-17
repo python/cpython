@@ -1,0 +1,200 @@
+'\"
+'\" Copyright (c) 2004 Joe English
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH ttk::combobox n 8.5 Tk "Tk Themed Widget"
+.so man.macros
+.BS
+.SH NAME
+ttk::combobox \- text field with popdown selection list
+.SH SYNOPSIS
+\fBttk::combobox\fR \fIpathName \fR?\fIoptions\fR?
+.BE
+.SH DESCRIPTION
+.PP
+A \fBttk::combobox\fR combines a text field with a pop-down list of values;
+the user may select the value of the text field from among the
+values in the list.
+.SO ttk_widget
+\-class	\-cursor	\-takefocus
+\-style
+.SE
+.\" ALSO: Other entry widget options
+.SH "WIDGET-SPECIFIC OPTIONS"
+.OP \-exportselection exportSelection ExportSelection
+Boolean value.
+If set, the widget selection is linked to the X selection.
+.OP \-justify justify Justify
+Specifies how the text is aligned within the widget.
+Must be one of \fBleft\fR, \fBcenter\fR, or \fBright\fR.
+.OP \-height height Height
+Specifies the height of the pop-down listbox, in rows.
+.OP \-postcommand postCommand PostCommand
+A Tcl script to evaluate immediately before displaying the listbox.
+The \fB\-postcommand\fR script may specify the \fB\-values\fR to display.
+.OP \-state state State
+One of \fBnormal\fR, \fBreadonly\fR, or \fBdisabled\fR.
+In the \fBreadonly\fR state,
+the value may not be edited directly, and
+the user can only select one of the \fB\-values\fR from the
+dropdown list.
+In the \fBnormal\fR state,
+the text field is directly editable.
+In the \fBdisabled\fR state, no interaction is possible.
+.OP \-textvariable textVariable TextVariable
+Specifies the name of a global variable whose value is linked
+to the widget value.
+Whenever the variable changes value the widget value is updated,
+and vice versa.
+.OP \-values values Values
+Specifies the list of values to display in the drop-down listbox.
+.OP \-width width Width
+Specifies an integer value indicating the desired width of the entry window,
+in average-size characters of the widget's font.
+.SH "WIDGET COMMAND"
+.PP
+The following subcommands are possible for combobox widgets:
+'\".TP
+'\"\fIpathName \fBcget\fR \fIoption\fR
+'\"Returns the current value of the specified \fIoption\fR.
+'\"See \fIttk::widget(n)\fR.
+'\".TP
+'\"\fIpathName \fBconfigure\fR ?\fIoption\fR? ?\fIvalue option value ...\fR?
+'\"Modify or query widget options.
+'\"See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBcurrent\fR ?\fInewIndex\fR?
+If \fInewIndex\fR is supplied, sets the combobox value
+to the element at position \fInewIndex\fR in the list of \fB\-values\fR
+(in addition to integers, the \fBend\fR index is supported and indicates
+the last element of the list).
+Otherwise, returns the index of the current value in the list of
+\fB\-values\fR or \fB\-1\fR if the current value does not appear in the list.
+.TP
+\fIpathName \fBget\fR
+Returns the current value of the combobox.
+'\".TP
+'\"\fIpathName \fBidentify \fIx y\fR
+'\"Returns the name of the element at position \fIx\fR, \fIy\fR.
+'\"See \fIttk::widget(n)\fR.
+'\".TP
+'\"\fIpathName \fBinstate \fIstateSpec\fR ?\fIscript\fR?
+'\"Test the widget state.
+'\"See \fIttk::widget(n)\fR.
+.TP
+\fIpathName \fBset\fR \fIvalue\fR
+Sets the value of the combobox to \fIvalue\fR.
+'\".TP
+'\"\fIpathName \fBstate\fR ?\fIstateSpec\fR?
+'\"Modify or query the widget state.
+'\"See \fIttk::widget(n)\fR.
+.PP
+The combobox widget also supports the following \fBttk::entry\fR
+widget subcommands (see \fIttk::entry(n)\fR for details):
+.DS
+.ta 5.5c 11c
+\fBbbox\fR	\fBdelete\fR	\fBicursor\fR
+\fBindex\fR	\fBinsert\fR	\fBselection\fR
+\fBxview\fR
+.DE
+The combobox widget also supports the following generic \fBttk::widget\fR
+widget subcommands (see \fIttk::widget(n)\fR for details):
+.DS
+.ta 5.5c 11c
+\fBcget\fR	\fBconfigure\fR	\fBidentify\fR
+\fBinstate\fR	\fBstate\fR
+.DE
+.SH "VIRTUAL EVENTS"
+.PP
+The combobox widget generates a \fB<<ComboboxSelected>>\fR virtual event
+when the user selects an element from the list of values.
+If the selection action unposts the listbox,
+this event is delivered after the listbox is unposted.
+.SH "STYLING OPTIONS"
+.PP
+The class name for a \fBttk::combobox\fP is \fBTCombobox\fP.
+The \fBttk::combobox\fP uses the \fBentry\fP and
+\fBlistbox\fP widgets internally.
+The listbox frame has a class name of \fBComboboxPopdownFrame\fP.
+.PP
+Dynamic states: \fBdisabled\fP, \fBfocus\fP, \fBpressed\fP, \fBreadonly\fP.
+.PP
+\fBTCombobox\fP styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-arrowcolor\fP \fIcolor\fP
+.br
+\fB\-arrowsize\fP \fIamount\fP
+.br
+\fB\-background\fP \fIcolor\fP
+.br
+\fB\-bordercolor\fP \fIcolor\fP
+.br
+\fB\-darkcolor\fP \fIcolor\fP
+.br
+\fB\-focusfill\fP \fIcolor\fP
+.br
+\fB\-foreground\fP \fIcolor\fP
+.br
+\fB\-fieldbackground\fP \fIcolor\fP
+.RS
+Can only be changed when using non-native and non-graphical themes.
+.RE
+\fB\-insertwidth\fP \fIamount\fP
+.br
+\fB\-lightcolor\fP \fIcolor\fP
+.br
+\fB\-padding\fP \fIpadding\fP
+.br
+\fB\-postoffset\fP \fIpadding\fP
+.br
+\fB\-selectbackground\fP \fIcolor\fP
+.RS
+Text entry select background.
+.RE
+\fB\-selectforeground\fP \fIcolor\fP
+.RS
+Text entry select foreground.
+.RE
+.PP
+The \fBttk::combobox\fP popdown listbox cannot be configured using
+\fBttk::style\fP nor via the widget \fBconfigure\fP command.  The listbox
+can be configured using the option database.
+.PP
+option add *TCombobox*Listbox.background \fIcolor\fP
+.br
+option add *TCombobox*Listbox.font \fIfont\fP
+.br
+option add *TCombobox*Listbox.foreground \fIcolor\fP
+.br
+option add *TCombobox*Listbox.selectBackground \fIcolor\fP
+.br
+option add *TCombobox*Listbox.selectForeground \fIcolor\fP
+.PP
+To configure a specific listbox (subject to future change):
+.CS
+set popdown [ttk::combobox::PopdownWindow .mycombobox]
+$popdown.f.l configure \-font \fIfont\fP
+.CE
+.PP
+\fBComboboxPopdownFrame\fP
+styling options configurable with \fBttk::style\fP
+are:
+.PP
+\fB\-borderwidth\fP \fIamount\fP
+.br
+\fB\-relief\fP \fIrelief\fP
+.PP
+Some options are only available for specific themes.
+.PP
+See the \fBttk::style\fP manual page for information on how to configure
+ttk styles.
+.SH "SEE ALSO"
+ttk::widget(n), ttk::entry(n)
+.SH KEYWORDS
+choice, entry, list box, text box, widget
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

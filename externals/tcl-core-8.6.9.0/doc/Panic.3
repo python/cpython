@@ -1,0 +1,89 @@
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Panic 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\"  Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_Panic, Tcl_PanicVA, Tcl_SetPanicProc \- report fatal error and abort
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_Panic\fR(\fIformat\fR, \fIarg\fR, \fIarg\fR, \fI...\fR)
+.sp
+void
+\fBTcl_PanicVA\fR(\fIformat\fR, \fIargList\fR)
+.sp
+void
+\fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_PanicProc *panicProc
+.AP "const char*" format in
+A printf-style format string.
+.AP "" arg in
+Arguments matching the format string.
+.AP va_list argList in
+An argument list of arguments matching the format string.
+Must have been initialized using \fBva_start\fR,
+and cleared using \fBva_end\fR.
+.AP Tcl_PanicProc *panicProc in
+Procedure to report fatal error message and abort.
+.BE
+.SH DESCRIPTION
+.PP
+When the Tcl library detects that its internal data structures are in an
+inconsistent state, or that its C procedures have been called in a
+manner inconsistent with their documentation, it calls \fBTcl_Panic\fR
+to display a message describing the error and abort the process.  The
+\fIformat\fR argument is a format string describing how to format the
+remaining arguments \fIarg\fR into an error message, according to the
+same formatting rules used by the \fBprintf\fR family of functions.  The
+same formatting rules are also used by the built-in Tcl command
+\fBformat\fR.
+.PP
+In a freshly loaded Tcl library, \fBTcl_Panic\fR prints the formatted
+error message to the standard error file of the process, and then
+calls \fBabort\fR to terminate the process.  \fBTcl_Panic\fR does not
+return. On Windows, when a debugger is running, the formatted error
+message is sent to the debugger in stead. If the windows executable
+does not have a stderr channel (e.g. \fBwish.exe\fR), then a
+system dialog box is used to display the panic message.
+.PP
+\fBTcl_SetPanicProc\fR may be used to modify the behavior of
+\fBTcl_Panic\fR.  The \fIpanicProc\fR argument should match the
+type \fBTcl_PanicProc\fR:
+.PP
+.CS
+typedef void \fBTcl_PanicProc\fR(
+        const char *\fBformat\fR,
+        \fBarg\fR, \fBarg\fR,...);
+.CE
+.PP
+After \fBTcl_SetPanicProc\fR returns, any future calls to
+\fBTcl_Panic\fR will call \fIpanicProc\fR, passing along the
+\fIformat\fR and \fIarg\fR arguments. \fIpanicProc\fR should avoid
+making calls into the Tcl library, or into other libraries that may
+call the Tcl library, since the original call to \fBTcl_Panic\fR
+indicates the Tcl library is not in a state of reliable operation.
+.PP
+The typical use of \fBTcl_SetPanicProc\fR arranges for the error message
+to be displayed or reported in a manner more suitable for the
+application or the platform.
+.PP
+Although the primary callers of \fBTcl_Panic\fR are the procedures of
+the Tcl library, \fBTcl_Panic\fR is a public function and may be called
+by any extension or application that wishes to abort the process and
+have a panic message displayed the same way that panic messages from Tcl
+will be displayed.
+.PP
+\fBTcl_PanicVA\fR is the same as \fBTcl_Panic\fR except that instead of
+taking a variable number of arguments it takes an argument list.
+.SH "SEE ALSO"
+abort(3), printf(3), exec(n), format(n)
+.SH KEYWORDS
+abort, fatal, error

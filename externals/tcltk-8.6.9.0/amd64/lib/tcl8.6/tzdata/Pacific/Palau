@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Pacific/Palau) {
+    {-9223372036854775808 32276 0 LMT}
+    {-2177485076 32400 0 +09}
+}

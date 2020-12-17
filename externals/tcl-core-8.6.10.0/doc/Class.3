@@ -1,0 +1,251 @@
+'\"
+'\" Copyright (c) 2007 Donal K. Fellows
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_ClassGetMetadata, Tcl_ClassSetMetadata, Tcl_CopyObjectInstance, Tcl_GetClassAsObject, Tcl_GetObjectAsClass, Tcl_GetObjectCommand, Tcl_GetObjectFromObj, Tcl_GetObjectName, Tcl_GetObjectNamespace, Tcl_NewObjectInstance, Tcl_ObjectDeleted, Tcl_ObjectGetMetadata, Tcl_ObjectGetMethodNameMapper, Tcl_ObjectSetMetadata, Tcl_ObjectSetMethodNameMapper \- manipulate objects and classes
+.SH SYNOPSIS
+.nf
+\fB#include <tclOO.h>\fR
+.sp
+Tcl_Object
+\fBTcl_GetObjectFromObj\fR(\fIinterp, objPtr\fR)
+.sp
+Tcl_Object
+\fBTcl_GetClassAsObject\fR(\fIclass\fR)
+.sp
+Tcl_Class
+\fBTcl_GetObjectAsClass\fR(\fIobject\fR)
+.sp
+Tcl_Obj *
+\fBTcl_GetObjectName\fR(\fIinterp, object\fR)
+.sp
+Tcl_Command
+\fBTcl_GetObjectCommand\fR(\fIobject\fR)
+.sp
+Tcl_Namespace *
+\fBTcl_GetObjectNamespace\fR(\fIobject\fR)
+.sp
+Tcl_Object
+\fBTcl_NewObjectInstance\fR(\fIinterp, class, name, nsName, objc, objv, skip\fR)
+.sp
+Tcl_Object
+\fBTcl_CopyObjectInstance\fR(\fIinterp, object, name, nsName\fR)
+.sp
+int
+\fBTcl_ObjectDeleted\fR(\fIobject\fR)
+.sp
+ClientData
+\fBTcl_ObjectGetMetadata\fR(\fIobject, metaTypePtr\fR)
+.sp
+\fBTcl_ObjectSetMetadata\fR(\fIobject, metaTypePtr, metadata\fR)
+.sp
+ClientData
+\fBTcl_ClassGetMetadata\fR(\fIclass, metaTypePtr\fR)
+.sp
+\fBTcl_ClassSetMetadata\fR(\fIclass, metaTypePtr, metadata\fR)
+.sp
+Tcl_ObjectMapMethodNameProc
+\fBTcl_ObjectGetMethodNameMapper\fR(\fIobject\fR)
+.sp
+\fBTcl_ObjectSetMethodNameMapper\fR(\fIobject\fR, \fImethodNameMapper\fR)
+.SH ARGUMENTS
+.AS ClientData metadata in/out
+.AP Tcl_Interp *interp in/out
+Interpreter providing the context for looking up or creating an object, and
+into whose result error messages will be written on failure.
+.AP Tcl_Obj *objPtr in
+The name of the object to look up.
+.AP Tcl_Object object in
+Reference to the object to operate upon.
+.AP Tcl_Class class in
+Reference to the class to operate upon.
+.AP "const char" *name in
+The name of the object to create, or NULL if a new unused name is to be
+automatically selected.
+.AP "const char" *nsName in
+The name of the namespace to create for the object's private use, or NULL if a
+new unused name is to be automatically selected. The namespace must not
+already exist.
+.AP int objc in
+The number of elements in the \fIobjv\fR array.
+.AP "Tcl_Obj *const" *objv in
+The arguments to the command to create the instance of the class.
+.AP int skip in
+The number of arguments at the start of the argument array, \fIobjv\fR, that
+are not arguments to any constructors. This allows the generation of correct
+error messages even when complicated calling patterns are used (e.g., via the
+\fBnext\fR command).
+.AP Tcl_ObjectMetadataType *metaTypePtr in
+The type of \fImetadata\fR being set with \fBTcl_ClassSetMetadata\fR or
+retrieved with \fBTcl_ClassGetMetadata\fR.
+.AP ClientData metadata in
+An item of metadata to attach to the class, or NULL to remove the metadata
+associated with a particular \fImetaTypePtr\fR.
+.AP "Tcl_ObjectMapMethodNameProc" "methodNameMapper" in
+A pointer to a function to call to adjust the mapping of objects and method
+names to implementations, or NULL when no such mapping is required.
+.BE
+.SH DESCRIPTION
+.PP
+Objects are typed entities that have a set of operations ("methods")
+associated with them. Classes are objects that can manufacture objects. Each
+class can be viewed as an object itself; the object view can be retrieved
+using \fBTcl_GetClassAsObject\fR which always returns the object when applied
+to a non-destroyed class, and an object can be viewed as a class with the aid
+of the \fBTcl_GetObjectAsClass\fR (which either returns the class, or NULL if
+the object is not a class). An object may be looked up using the
+\fBTcl_GetObjectFromObj\fR function, which either returns an object or NULL
+(with an error message in the interpreter result) if the object cannot be
+found. The correct way to look up a class by name is to look up the object
+with that name, and then to use \fBTcl_GetObjectAsClass\fR.
+.PP
+Every object has its own command and namespace associated with it. The command
+may be retrieved using the \fBTcl_GetObjectCommand\fR function, the name of
+the object (and hence the name of the command) with \fBTcl_GetObjectName\fR,
+and the namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR
+function. Note that the Tcl_Obj reference returned by \fBTcl_GetObjectName\fR
+is a shared reference. You can also get whether the object has been marked for
+deletion with \fBTcl_ObjectDeleted\fR (it returns true if deletion of the
+object has begun); this can be useful during the processing of methods.
+.PP
+Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
+creates an object from any class (and which is internally called by both
+the \fBcreate\fR and \fBnew\fR methods of the \fBoo::class\fR class). It takes
+parameters that optionally give the name of the object and namespace to
+create, and which describe the arguments to pass to the class's constructor
+(if any). The result of the function will be either a reference to the newly
+created object, or NULL if the creation failed (when an error message will be
+left in the interpreter result). In addition, objects may be copied by using
+\fBTcl_CopyObjectInstance\fR which creates a copy of an object without running
+any constructors.
+.PP
+Note that the lifetime management of objects is handled internally within
+TclOO, and does not use \fBTcl_Preserve\fR. \fIIt is not safe to put a
+Tcl_Object handle in a C structure with a lifespan different to the object;\fR
+you should use the object's command name (as retrieved with
+\fBTcl_GetObjectName\fR) instead. It is safe to use a Tcl_Object handle for
+the lifespan of a call of a method on that object; handles do not become
+invalid while there is an outstanding call on their object (even if the only
+operation guaranteed to be safe on them is \fBTcl_ObjectDeleted\fR; the other
+operations are only guaranteed to work on non-deleted objects).
+.SH "OBJECT AND CLASS METADATA"
+.PP
+Every object and every class may have arbitrary amounts of metadata attached
+to it, which the object or class attaches no meaning to beyond what is
+described in a Tcl_ObjectMetadataType structure instance. Metadata to be
+attached is described by the type of the metadata (given in the
+\fImetaTypePtr\fR argument) and an arbitrary pointer (the \fImetadata\fR
+argument) that are given to \fBTcl_ObjectSetMetadata\fR and
+\fBTcl_ClassSetMetadata\fR, and a particular piece of metadata can be
+retrieved given its type using \fBTcl_ObjectGetMetadata\fR and
+\fBTcl_ClassGetMetadata\fR. If the \fImetadata\fR parameter to either
+\fBTcl_ObjectSetMetadata\fR or \fBTcl_ClassSetMetadata\fR is NULL, the
+metadata is removed if it was attached, and the results of
+\fBTcl_ObjectGetMetadata\fR and \fBTcl_ClassGetMetadata\fR are NULL if the
+given type of metadata was not attached. It is not an error to request or
+remove a piece of metadata that was not attached.
+.SS "TCL_OBJECTMETADATATYPE STRUCTURE"
+.PP
+The contents of the Tcl_ObjectMetadataType structure are as follows:
+.PP
+.CS
+typedef const struct {
+    int \fIversion\fR;
+    const char *\fIname\fR;
+    Tcl_ObjectMetadataDeleteProc *\fIdeleteProc\fR;
+    Tcl_CloneProc *\fIcloneProc\fR;
+} \fBTcl_ObjectMetadataType\fR;
+.CE
+.PP
+The \fIversion\fR field allows for future expansion of the structure, and
+should always be declared equal to TCL_OO_METADATA_VERSION_CURRENT. The
+\fIname\fR field provides a human-readable name for the type, and is reserved
+for debugging.
+.PP
+The \fIdeleteProc\fR field gives a function of type
+Tcl_ObjectMetadataDeleteProc that is used to delete a particular piece of
+metadata, and is called when the attached metadata is replaced or removed; the
+field must not be NULL.
+.PP
+The \fIcloneProc\fR field gives a function that is used to copy a piece of
+metadata (used when a copy of an object is created using
+\fBTcl_CopyObjectInstance\fR); if NULL, the metadata will be just directly
+copied.
+.SS "TCL_OBJECTMETADATADELETEPROC FUNCTION SIGNATURE"
+.PP
+Functions matching this signature are used to delete metadata associated with
+a class or object.
+.PP
+.CS
+typedef void \fBTcl_ObjectMetadataDeleteProc\fR(
+        ClientData \fImetadata\fR);
+.CE
+.PP
+The \fImetadata\fR argument gives the address of the metadata to be
+deleted.
+.SS "TCL_CLONEPROC FUNCTION SIGNATURE"
+.PP
+Functions matching this signature are used to create copies of metadata
+associated with a class or object.
+.PP
+.CS
+typedef int \fBTcl_CloneProc\fR(
+        Tcl_Interp *\fIinterp\fR,
+        ClientData \fIsrcMetadata\fR,
+        ClientData *\fIdstMetadataPtr\fR);
+.CE
+.PP
+The \fIinterp\fR argument gives a place to write an error message when the
+attempt to clone the object is to fail, in which case the clone procedure must
+also return TCL_ERROR; it should return TCL_OK otherwise.
+The \fIsrcMetadata\fR argument gives the address of the metadata to be cloned,
+and the cloned metadata should be written into the variable pointed to by
+\fIdstMetadataPtr\fR; a NULL should be written if the metadata is to not be
+cloned but the overall object copy operation is still to succeed.
+.SH "OBJECT METHOD NAME MAPPING"
+It is possible to control, on a per-object basis, what methods are invoked
+when a particular method is invoked. Normally this is done by looking up the
+method name in the object and then in the class hierarchy, but fine control of
+exactly what the value used to perform the look up is afforded through the
+ability to set a method name mapper callback via
+\fBTcl_ObjectSetMethodNameMapper\fR (and its introspection counterpart,
+\fBTcl_ObjectGetMethodNameMapper\fR, which returns the current mapper). The
+current mapper (if any) is invoked immediately before looking up what chain of
+method implementations is to be used.
+.SS "TCL_OBJECTMAPMETHODNAMEPROC FUNCTION SIGNATURE"
+The \fITcl_ObjectMapMethodNameProc\fR callback is defined as follows:
+.PP
+.CS
+typedef int \fBTcl_ObjectMapMethodNameProc\fR(
+        Tcl_Interp *\fIinterp\fR,
+        Tcl_Object \fIobject\fR,
+        Tcl_Class *\fIstartClsPtr\fR,
+        Tcl_Obj *\fImethodNameObj\fR);
+.CE
+.PP
+If the result is TCL_OK, the remapping is assumed to have been done. If the
+result is TCL_ERROR, an error message will have been left in \fIinterp\fR and
+the method call will fail. If the result is TCL_BREAK, the standard method
+name lookup rules will be used; the behavior of other result codes is
+currently undefined. The \fIobject\fR parameter says which object is being
+processed. The \fIstartClsPtr\fR parameter points to a variable that contains
+the first class to provide a definition in the method chain to process, or
+NULL if the whole chain is to be processed (the argument itself is never
+NULL); this variable may be updated by the callback. The \fImethodNameObj\fR
+parameter gives an unshared object containing the name of the method being
+invoked, as provided by the user; this object may be updated by the callback.
+.SH "SEE ALSO"
+Method(3), oo::class(n), oo::copy(n), oo::define(n), oo::object(n)
+.SH KEYWORDS
+class, constructor, object
+.\" Local variables:
+.\" mode: nroff
+.\" fill-column: 78
+.\" End:

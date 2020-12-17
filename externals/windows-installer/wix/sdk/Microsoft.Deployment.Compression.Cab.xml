@@ -1,0 +1,495 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.Deployment.Compression.Cab</name>
+    </assembly>
+    <members>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabPacker.Dispose(System.Boolean)">
+            <summary>
+            Disposes of resources allocated by the cabinet engine.
+            </summary>
+            <param name="disposing">If true, the method has been called directly or indirectly by a user's code,
+            so managed and unmanaged resources will be disposed. If false, the method has been called by the 
+            runtime from inside the finalizer, and only unmanaged resources will be disposed.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.CabEngine">
+            <summary>
+            Engine capable of packing and unpacking archives in the cabinet format.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabEngine.#ctor">
+            <summary>
+            Creates a new instance of the cabinet engine.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabEngine.Dispose(System.Boolean)">
+            <summary>
+            Disposes of resources allocated by the cabinet engine.
+            </summary>
+            <param name="disposing">If true, the method has been called directly
+            or indirectly by a user's code, so managed and unmanaged resources
+            will be disposed. If false, the method has been called by the runtime
+            from inside the finalizer, and only unmanaged resources will be
+            disposed.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabEngine.Pack(Microsoft.Deployment.Compression.IPackStreamContext,System.Collections.Generic.IEnumerable{System.String},System.Int64)">
+            <summary>
+            Creates a cabinet or chain of cabinets.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of cabinet and file streams.</param>
+            <param name="files">The paths of the files in the archive (not
+            external file paths).</param>
+            <param name="maxArchiveSize">The maximum number of bytes for one
+            cabinet before the contents are chained to the next cabinet, or zero
+            for unlimited cabinet size.</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The cabinet could not be
+            created.</exception>
+            <remarks>
+            The stream context implementation may provide a mapping from the
+            file paths within the cabinet to the external file paths.
+            <para>Smaller folder sizes can make it more efficient to extract
+            individual files out of large cabinet packages.</para>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabEngine.IsArchive(System.IO.Stream)">
+            <summary>
+            Checks whether a Stream begins with a header that indicates
+            it is a valid cabinet file.
+            </summary>
+            <param name="stream">Stream for reading the cabinet file.</param>
+            <returns>True if the stream is a valid cabinet file
+            (with no offset); false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabEngine.GetFileInfo(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Gets information about files in a cabinet or cabinet chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of cabinet and file streams.</param>
+            <param name="fileFilter">A predicate that can determine
+            which files to process, optional.</param>
+            <returns>Information about files in the cabinet stream.</returns>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The cabinet provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabEngine.Unpack(Microsoft.Deployment.Compression.IUnpackStreamContext,System.Predicate{System.String})">
+            <summary>
+            Extracts files from a cabinet or cabinet chain.
+            </summary>
+            <param name="streamContext">A context interface to handle opening
+            and closing of cabinet and file streams.</param>
+            <param name="fileFilter">An optional predicate that can determine
+            which files to process.</param>
+            <exception cref="T:Microsoft.Deployment.Compression.ArchiveException">The cabinet provided
+            by the stream context is not valid.</exception>
+            <remarks>
+            The <paramref name="fileFilter"/> predicate takes an internal file
+            path and returns true to include the file or false to exclude it.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabWorker.Dispose(System.Boolean)">
+            <summary>
+            Disposes of resources allocated by the cabinet engine.
+            </summary>
+            <param name="disposing">If true, the method has been called directly or indirectly by a user's code,
+            so managed and unmanaged resources will be disposed. If false, the method has been called by the 
+            runtime from inside the finalizer, and only unmanaged resources will be disposed.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.CabException">
+            <summary>
+            Exception class for cabinet operations.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabException.#ctor(System.String,System.Exception)">
+            <summary>
+            Creates a new CabException with a specified error message and a reference to the
+            inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+            <param name="innerException">The exception that is the cause of the current exception. If the
+            innerException parameter is not a null reference (Nothing in Visual Basic), the current exception
+            is raised in a catch block that handles the inner exception.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabException.#ctor(System.String)">
+            <summary>
+            Creates a new CabException with a specified error message.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabException.#ctor">
+            <summary>
+            Creates a new CabException.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the CabException class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.CabException.Error">
+            <summary>
+            Gets the FCI or FDI cabinet engine error number.
+            </summary>
+            <value>A cabinet engine error number, or 0 if the exception was
+            not related to a cabinet engine error number.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.CabException.ErrorCode">
+            <summary>
+            Gets the Win32 error code.
+            </summary>
+            <value>A Win32 error code, or 0 if the exception was
+            not related to a Win32 error.</value>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabException.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the SerializationInfo with information about the exception.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabUnpacker.Dispose(System.Boolean)">
+            <summary>
+            Disposes of resources allocated by the cabinet engine.
+            </summary>
+            <param name="disposing">If true, the method has been called directly or indirectly by a user's code,
+            so managed and unmanaged resources will be disposed. If false, the method has been called by the 
+            runtime from inside the finalizer, and only unmanaged resources will be disposed.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.CabFileInfo">
+            <summary>
+            Object representing a compressed file within a cabinet package; provides operations for getting
+            the file properties and extracting the file.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabFileInfo.#ctor(Microsoft.Deployment.Compression.Cab.CabInfo,System.String)">
+            <summary>
+            Creates a new CabinetFileInfo object representing a file within a cabinet in a specified path.
+            </summary>
+            <param name="cabinetInfo">An object representing the cabinet containing the file.</param>
+            <param name="filePath">The path to the file within the cabinet. Usually, this is a simple file
+            name, but if the cabinet contains a directory structure this may include the directory.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabFileInfo.#ctor(System.String,System.Int32,System.Int32,System.IO.FileAttributes,System.DateTime,System.Int64)">
+            <summary>
+            Creates a new CabinetFileInfo object with all parameters specified,
+            used internally when reading the metadata out of a cab.
+            </summary>
+            <param name="filePath">The internal path and name of the file in the cab.</param>
+            <param name="cabFolder">The folder number containing the file.</param>
+            <param name="cabNumber">The cabinet number where the file starts.</param>
+            <param name="attributes">The stored attributes of the file.</param>
+            <param name="lastWriteTime">The stored last write time of the file.</param>
+            <param name="length">The uncompressed size of the file.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabFileInfo.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the CabinetFileInfo class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabFileInfo.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the SerializationInfo with information about the archive.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data.</param>
+            <param name="context">The StreamingContext that contains contextual information
+            about the source or destination.</param>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.CabFileInfo.Cabinet">
+            <summary>
+            Gets or sets the cabinet that contains this file.
+            </summary>
+            <value>
+            The CabinetInfo instance that retrieved this file information -- this
+            may be null if the CabinetFileInfo object was returned directly from a
+            stream.
+            </value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.CabFileInfo.CabinetName">
+            <summary>
+            Gets the full path of the cabinet that contains this file.
+            </summary>
+            <value>The full path of the cabinet that contains this file.</value>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.CabFileInfo.CabinetFolderNumber">
+            <summary>
+            Gets the number of the folder containing this file.
+            </summary>
+            <value>The number of the cabinet folder containing this file.</value>
+            <remarks>A single folder or the first folder of a cabinet
+            (or chain of cabinets) is numbered 0.</remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabFileInfo.Refresh(Microsoft.Deployment.Compression.ArchiveFileInfo)">
+            <summary>
+            Refreshes the information in this object with new data retrieved
+            from an archive.
+            </summary>
+            <param name="newFileInfo">Fresh instance for the same file just
+            read from the archive.</param>
+            <remarks>
+            This implementation refreshes the <see cref="P:Microsoft.Deployment.Compression.Cab.CabFileInfo.CabinetFolderNumber"/>.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.CabInfo">
+            <summary>
+            Object representing a cabinet file on disk; provides access to
+            file-based operations on the cabinet file.
+            </summary>
+            <remarks>
+            Generally, the methods on this class are much easier to use than the
+            stream-based interfaces provided by the <see cref="T:Microsoft.Deployment.Compression.Cab.CabEngine"/> class.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabInfo.#ctor(System.String)">
+            <summary>
+            Creates a new CabinetInfo object representing a cabinet file in a specified path.
+            </summary>
+            <param name="path">The path to the cabinet file. When creating a cabinet file, this file does not
+            necessarily exist yet.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabInfo.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the CabinetInfo class with serialized data.
+            </summary>
+            <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabInfo.CreateCompressionEngine">
+            <summary>
+            Creates a compression engine that does the low-level work for
+            this object.
+            </summary>
+            <returns>A new <see cref="T:Microsoft.Deployment.Compression.Cab.CabEngine"/> instance.</returns>
+            <remarks>
+            Each instance will be <see cref="M:Microsoft.Deployment.Compression.CompressionEngine.Dispose"/>d
+            immediately after use.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabInfo.GetFiles">
+            <summary>
+            Gets information about the files contained in the archive.
+            </summary>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.Cab.CabFileInfo"/> objects, each
+            containing information about a file in the archive.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.CabInfo.GetFiles(System.String)">
+            <summary>
+            Gets information about the certain files contained in the archive file.
+            </summary>
+            <param name="searchPattern">The search string, such as
+            &quot;*.txt&quot;.</param>
+            <returns>A list of <see cref="T:Microsoft.Deployment.Compression.Cab.CabFileInfo"/> objects, each containing
+            information about a file in the archive.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.HandleManager`1">
+            <summary>
+            Generic class for managing allocations of integer handles
+            for objects of a certain type.
+            </summary>
+            <typeparam name="T">The type of objects the handles refer to.</typeparam>
+        </member>
+        <member name="F:Microsoft.Deployment.Compression.Cab.HandleManager`1.handles">
+            <summary>
+            Auto-resizing list of objects for which handles have been allocated.
+            Each handle is just an index into this list. When a handle is freed,
+            the list item at that index is set to null.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.HandleManager`1.#ctor">
+            <summary>
+            Creates a new HandleManager instance.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.HandleManager`1.Item(System.Int32)">
+            <summary>
+            Gets the object of a handle, or null if the handle is invalid.
+            </summary>
+            <param name="handle">The integer handle previously allocated
+            for the desired object.</param>
+            <returns>The object for which the handle was allocated.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.HandleManager`1.AllocHandle(`0)">
+            <summary>
+            Allocates a new handle for an object.
+            </summary>
+            <param name="obj">Object that the handle will refer to.</param>
+            <returns>New handle that can be later used to retrieve the object.</returns>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.HandleManager`1.FreeHandle(System.Int32)">
+            <summary>
+            Frees a handle that was previously allocated. Afterward the handle
+            will be invalid and the object it referred to can no longer retrieved.
+            </summary>
+            <param name="handle">Handle to be freed.</param>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods">
+            <summary>
+            Native DllImport methods and related structures and constants used for
+            cabinet creation and extraction via cabinet.dll.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI">
+            <summary>
+            A direct import of constants, enums, structures, delegates, and functions from fci.h.
+            Refer to comments in fci.h for documentation.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.ERROR">
+            <summary>
+            Error codes that can be returned by FCI.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.TCOMP">
+            <summary>
+            FCI compression algorithm types and parameters.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.STATUS">
+            <summary>
+            Reason for FCI status callback.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.CCAB">
+            <summary>
+            Cabinet information structure used for FCI initialization and GetNextCabinet callback.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.Handle">
+            <summary>
+            Ensures that the FCI handle is safely released.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.Handle.#ctor">
+            <summary>
+            Creates a new unintialized handle. The handle will be initialized
+            when it is marshalled back from native code.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.Handle.IsInvalid">
+            <summary>
+            Checks if the handle is invalid. An FCI handle is invalid when it is zero.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.NativeMethods.FCI.Handle.ReleaseHandle">
+            <summary>
+            Releases the handle by calling FDIDestroy().
+            </summary>
+            <returns>True if the release succeeded.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI">
+            <summary>
+            A direct import of constants, enums, structures, delegates, and functions from fdi.h.
+            Refer to comments in fdi.h for documentation.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.ERROR">
+            <summary>
+            Error codes that can be returned by FDI.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.NOTIFICATIONTYPE">
+            <summary>
+            Type of notification message for the FDI Notify callback.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.CABINFO">
+            <summary>
+            Cabinet information structure filled in by FDI IsCabinet.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.NOTIFICATION">
+            <summary>
+            Cabinet notification details passed to the FDI Notify callback.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.Handle">
+            <summary>
+            Ensures that the FDI handle is safely released.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.Handle.#ctor">
+            <summary>
+            Creates a new unintialized handle. The handle will be initialized
+            when it is marshalled back from native code.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.Handle.IsInvalid">
+            <summary>
+            Checks if the handle is invalid. An FDI handle is invalid when it is zero.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.NativeMethods.FDI.Handle.ReleaseHandle">
+            <summary>
+            Releases the handle by calling FDIDestroy().
+            </summary>
+            <returns>True if the release succeeded.</returns>
+        </member>
+        <member name="T:Microsoft.Deployment.Compression.Cab.NativeMethods.ERF">
+            <summary>
+            Error info structure for FCI and FDI.
+            </summary>
+            <remarks>Before being passed to FCI or FDI, this structure is
+            pinned in memory via a GCHandle. The pinning is necessary
+            to be able to read the results, since the ERF structure doesn't
+            get marshalled back out after an error.</remarks>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.NativeMethods.ERF.Oper">
+            <summary>
+            Gets or sets the cabinet error code.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.NativeMethods.ERF.Type">
+            <summary>
+            Gets or sets the Win32 error code.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Deployment.Compression.Cab.NativeMethods.ERF.Error">
+            <summary>
+            GCHandle doesn't like the bool type, so use an int underneath.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Deployment.Compression.Cab.NativeMethods.ERF.Clear">
+            <summary>
+            Clears the error information.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Tools.WindowsInstallerXml.WixDistribution">
+            <summary>
+            Distribution specific strings.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.NewsUrl">
+            <summary>
+            News URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.ShortProduct">
+            <summary>
+            Short product name for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.SupportUrl">
+            <summary>
+            Support URL for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.TelemetryUrlFormat">
+            <summary>
+            Telemetry URL format for the distribution.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Tools.WindowsInstallerXml.WixDistribution.VSExtensionsLandingUrl">
+            <summary>
+            VS Extensions Landing page Url for the distribution.
+            </summary>
+        </member>
+    </members>
+</doc>

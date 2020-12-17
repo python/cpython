@@ -1,0 +1,723 @@
+# Commands covered:  exec
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1991-1994 The Regents of the University of California.
+# Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# There is no point in running Valgrind on cases where [exec] forks but then
+# fails and the child process doesn't go through full cleanup.
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+
+package require tcltests
+
+# All tests require the "exec" command.
+# Skip them if exec is not defined.
+testConstraint exec [llength [info commands exec]]
+unset -nocomplain path
+
+# Utilities that are like bourne shell stalwarts, but cross-platform.
+set path(echo) [makeFile {
+    puts -nonewline [lindex $argv 0]
+    foreach str [lrange $argv 1 end] {
+	puts -nonewline " $str"
+    }
+    puts {}
+    exit
+} echo]
+set path(echo2) [makeFile {
+    puts stdout [join $argv]
+    puts stderr [lindex $argv 1]
+    exit
+} echo2]
+set path(cat) [makeFile {
+    if {$argv eq ""} {
+	set argv -
+    }
+    fconfigure stdout -translation binary
+    foreach name $argv {
+	if {$name eq "-"} {
+	    set f stdin
+	} elseif {[catch {open $name r} f] != 0} {
+	    puts stderr $f
+	    continue
+	}
+	fconfigure $f -translation binary
+	while {[eof $f] == 0} {
+	    puts -nonewline [read $f]
+	}
+	if {$f ne "stdin"} {
+	    close $f
+	}
+    }
+    exit
+} cat]
+set path(wc) [makeFile {
+    set data [read stdin]
+    set lines [regsub -all "\n" $data {} dummy]
+    set words [regsub -all "\[^ \t\n]+" $data {} dummy]
+    set chars [string length $data]
+    puts [format "%8.d%8.d%8.d" $lines $words $chars]
+    exit
+} wc]
+set path(sh) [makeFile {
+    if {[lindex $argv 0] ne "-c"} {
+	error "sh: unexpected arguments $argv"
+    }
+    set cmd [lindex $argv 1]
+    lappend cmd ";"
+    set newcmd {}
+    foreach arg $cmd {
+	if {$arg eq ";"} {
+	    exec >@stdout 2>@stderr [info nameofexecutable] {*}$newcmd
+	    set newcmd {}
+	    continue
+	}
+	if {$arg eq "1>&2"} {
+	    set arg >@stderr
+	}
+	lappend newcmd $arg
+    }
+    exit
+} sh]
+set path(sh2) [makeFile {
+    if {[lindex $argv 0] ne "-c"} {
+	error "sh: unexpected arguments $argv"
+    }
+    set cmd [lindex $argv 1]
+    lappend cmd ";"
+    set newcmd {}
+    foreach arg $cmd {
+	if {$arg eq ";"} {
+	    exec -ignorestderr >@stdout [info nameofexecutable] {*}$newcmd
+	    set newcmd {}
+	    continue
+	}
+	lappend newcmd $arg
+    }
+    exit
+} sh2]
+set path(sleep) [makeFile {
+    after [expr $argv*1000]
+    exit
+} sleep]
+set path(exit) [makeFile {
+    exit $argv
+} exit]
+
+proc readfile filename {
+    set f [open $filename]
+    set d [read $f]
+    close $f
+    return [string trimright $d \n]
+}
+
+# ----------------------------------------------------------------------
+# Basic operations.
+
+test exec-1.1 {basic exec operation} {exec} {
+    exec [interpreter] $path(echo) a b c
+} "a b c"
+test exec-1.2 {pipelining} {exec stdio} {
+    exec [interpreter] $path(echo) a b c d | [interpreter] $path(cat) | [interpreter] $path(cat)
+} "a b c d"
+test exec-1.3 {pipelining} {exec stdio} {
+    set a [exec [interpreter] $path(echo) a b c d | [interpreter] $path(cat) | [interpreter] $path(wc)]
+    list [scan $a "%d %d %d" b c d] $b $c
+} {3 1 4}
+set arg {12345678901234567890123456789012345678901234567890}
+set arg "$arg$arg$arg$arg$arg$arg"
+test exec-1.4 {long command lines} {exec} {
+    exec [interpreter] $path(echo) $arg
+} $arg
+set arg {}
+
+# I/O redirection: input from Tcl command.
+
+test exec-2.1 {redirecting input from immediate source} {exec stdio} {
+    exec [interpreter] $path(cat) << "Sample text"
+} {Sample text}
+test exec-2.2 {redirecting input from immediate source} {exec stdio} {
+    exec << "Sample text" [interpreter] $path(cat) | [interpreter] $path(cat)
+} {Sample text}
+test exec-2.3 {redirecting input from immediate source} {exec stdio} {
+    exec [interpreter] $path(cat) << "Sample text" | [interpreter] $path(cat)
+} {Sample text}
+test exec-2.4 {redirecting input from immediate source} {exec stdio} {
+    exec [interpreter] $path(cat) | [interpreter] $path(cat) << "Sample text"
+} {Sample text}
+test exec-2.5 {redirecting input from immediate source} {exec} {
+    exec [interpreter] $path(cat) "<<Joined to arrows"
+} {Joined to arrows}
+test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
+    set sysenc [encoding system]
+    encoding system iso8859-1
+    proc quotenonascii s {
+	regsub -all {\[|\\|\]} $s {\\&} s
+	regsub -all "\[\u007f-\uffff\]" $s \
+	    {[apply {c {format {\u%04x} [scan $c %c]}} &]} s
+	return [subst -novariables $s]
+    }
+} -constraints {exec} -body {
+    # If this fails, it may give back: "\uC3\uA9\uC3\uA0\uC3\uBC\uC3\uB1"
+    # If it does, this means that the UTF -> external conversion did not occur
+    # before writing out the temp file.
+    quotenonascii [exec [interpreter] $path(cat) << "\uE9\uE0\uFC\uF1"]
+} -cleanup {
+    encoding system $sysenc
+    rename quotenonascii {}
+} -result {\u00e9\u00e0\u00fc\u00f1}
+
+# I/O redirection: output to file.
+
+set path(gorp.file) [makeFile {} gorp.file]
+file delete $path(gorp.file)
+
+test exec-3.1 {redirecting output to file} {exec} {
+    exec [interpreter] $path(echo) "Some simple words" > $path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "Some simple words"
+test exec-3.2 {redirecting output to file} {exec stdio} {
+    exec [interpreter] $path(echo) "More simple words" | >$path(gorp.file) [interpreter] $path(cat) | [interpreter] $path(cat)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "More simple words"
+test exec-3.3 {redirecting output to file} {exec stdio} {
+    exec > $path(gorp.file) [interpreter] $path(echo) "Different simple words" | [interpreter] $path(cat) | [interpreter] $path(cat)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "Different simple words"
+test exec-3.4 {redirecting output to file} {exec} {
+    exec [interpreter] $path(echo) "Some simple words" >$path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "Some simple words"
+test exec-3.5 {redirecting output to file} {exec} {
+    exec [interpreter] $path(echo) "First line" >$path(gorp.file)
+    exec [interpreter] $path(echo) "Second line" >> $path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "First line\nSecond line"
+test exec-3.6 {redirecting output to file} {exec} {
+    exec [interpreter] $path(echo) "First line" >$path(gorp.file)
+    exec [interpreter] $path(echo) "Second line" >>$path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "First line\nSecond line"
+test exec-3.7 {redirecting output to file} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f "Line 1"
+    flush $f
+    exec [interpreter] $path(echo) "More text" >@ $f
+    exec [interpreter] $path(echo) >@$f "Even more"
+    puts $f "Line 3"
+    close $f
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "Line 1\nMore text\nEven more\nLine 3"
+
+# I/O redirection: output and stderr to file.
+
+file delete $path(gorp.file)
+
+test exec-4.1 {redirecting output and stderr to file} {exec} {
+    exec [interpreter] $path(echo) "test output" >& $path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "test output"
+test exec-4.2 {redirecting output and stderr to file} {exec} {
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" >&$path(gorp.file)] \
+	    [exec [interpreter] $path(cat) $path(gorp.file)]
+} {{} {foo bar}}
+test exec-4.3 {redirecting output and stderr to file} {exec} {
+    exec [interpreter] $path(echo) "first line" > $path(gorp.file)
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" >>&$path(gorp.file)] \
+	    [exec [interpreter] $path(cat) $path(gorp.file)]
+} "{} {first line\nfoo bar}"
+test exec-4.4 {redirecting output and stderr to file} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f "Line 1"
+    flush $f
+    exec [interpreter] $path(echo) "More text" >&@ $f
+    exec [interpreter] $path(echo) >&@$f "Even more"
+    puts $f "Line 3"
+    close $f
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "Line 1\nMore text\nEven more\nLine 3"
+test exec-4.5 {redirecting output and stderr to file} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f "Line 1"
+    flush $f
+    exec >&@ $f [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2"
+    exec >&@$f [interpreter] $path(sh) -c "\"$path(echo)\" xyzzy 1>&2"
+    puts $f "Line 3"
+    close $f
+    exec [interpreter] $path(cat) $path(gorp.file)
+} "Line 1\nfoo bar\nxyzzy\nLine 3"
+
+# I/O redirection: input from file.
+
+if {[testConstraint exec]} {
+    exec [interpreter] $path(echo) "Just a few thoughts" > $path(gorp.file)
+}
+test exec-5.1 {redirecting input from file} {exec} {
+    exec [interpreter] $path(cat) < $path(gorp.file)
+} {Just a few thoughts}
+test exec-5.2 {redirecting input from file} {exec stdio} {
+    exec [interpreter] $path(cat) | [interpreter] $path(cat) < $path(gorp.file)
+} {Just a few thoughts}
+test exec-5.3 {redirecting input from file} {exec stdio} {
+    exec [interpreter] $path(cat) < $path(gorp.file) | [interpreter] $path(cat)
+} {Just a few thoughts}
+test exec-5.4 {redirecting input from file} {exec stdio} {
+    exec < $path(gorp.file) [interpreter] $path(cat) | [interpreter] $path(cat)
+} {Just a few thoughts}
+test exec-5.5 {redirecting input from file} {exec} {
+    exec [interpreter] $path(cat) <$path(gorp.file)
+} {Just a few thoughts}
+test exec-5.6 {redirecting input from file} -constraints {exec} -body {
+    set f [open $path(gorp.file) r]
+    exec [interpreter] $path(cat) <@ $f
+} -cleanup {
+    close $f
+} -result {Just a few thoughts}
+test exec-5.7 {redirecting input from file} -constraints {exec} -body {
+    set f [open $path(gorp.file) r]
+    exec <@$f [interpreter] $path(cat)
+} -cleanup {
+    close $f
+} -result {Just a few thoughts}
+
+# I/O redirection: standard error through a pipeline.
+
+test exec-6.1 {redirecting stderr through a pipeline} {exec stdio} {
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar" |& [interpreter] $path(cat)
+} "foo bar"
+test exec-6.2 {redirecting stderr through a pipeline} {exec stdio} {
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" |& [interpreter] $path(cat)
+} "foo bar"
+test exec-6.3 {redirecting stderr through a pipeline} {exec stdio} {
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" \
+	|& [interpreter] $path(sh) -c "\"$path(echo)\" second msg 1>&2 ; \"$path(cat)\"" |& [interpreter] $path(cat)
+} "second msg\nfoo bar"
+
+# I/O redirection: combinations.
+
+set path(gorp.file2) [makeFile {} gorp.file2]
+
+test exec-7.1 {multiple I/O redirections} {exec} {
+    exec << "command input" > $path(gorp.file2) [interpreter] $path(cat) < $path(gorp.file)
+    exec [interpreter] $path(cat) $path(gorp.file2)
+} {Just a few thoughts}
+test exec-7.2 {multiple I/O redirections} {exec} {
+    exec < $path(gorp.file) << "command input" [interpreter] $path(cat)
+} {command input}
+
+# Long input to command and output from command.
+set a "0123456789 xxxxxxxxx abcdefghi ABCDEFGHIJK\n"
+set a [concat $a $a $a $a]
+set a [concat $a $a $a $a]
+set a [concat $a $a $a $a]
+set a [concat $a $a $a $a]
+test exec-8.1 {long input and output} {exec} {
+    exec [interpreter] $path(cat) << $a
+} $a
+# More than 20 arguments to exec.
+test exec-8.2 {long input and output} {exec} {
+    exec [interpreter] $path(echo) 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23}
+
+# Commands that return errors.
+
+test exec-9.1 {commands returning errors} {exec notValgrind} {
+    set x [catch {exec gorp456} msg]
+    list $x [string tolower $msg] [string tolower $errorCode]
+} {1 {couldn't execute "gorp456": no such file or directory} {posix enoent {no such file or directory}}}
+test exec-9.2 {commands returning errors} {exec notValgrind} {
+    string tolower [list [catch {exec [interpreter] echo foo | foo123} msg] $msg $errorCode]
+} {1 {couldn't execute "foo123": no such file or directory} {posix enoent {no such file or directory}}}
+test exec-9.3 {commands returning errors} -constraints {exec stdio} -body {
+    exec [interpreter] $path(sleep) 1 | [interpreter] $path(exit) 43 | [interpreter] $path(sleep) 1
+} -returnCodes error -result {child process exited abnormally}
+test exec-9.4 {commands returning errors} -constraints {exec stdio} -body {
+    exec [interpreter] $path(exit) 43 | [interpreter] $path(echo) "foo bar"
+} -returnCodes error -result {foo bar
+child process exited abnormally}
+test exec-9.5 {commands returning errors} -constraints {exec stdio notValgrind} -body {
+    exec gorp456 | [interpreter] echo a b c
+} -returnCodes error -result {couldn't execute "gorp456": no such file or directory}
+test exec-9.6 {commands returning errors} -constraints {exec} -body {
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2"
+} -returnCodes error -result {error msg}
+test exec-9.7 {commands returning errors} -constraints {exec stdio nonPortable} -body {
+    # This test can fail easily on multiprocessor machines
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1" \
+	| [interpreter] $path(sh) -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1"
+} -returnCodes error -result {error msg
+error msg}
+set path(err) [makeFile {} err]
+test exec-9.8 {commands returning errors} -constraints {exec} -setup {
+    set f [open $path(err) w]
+    puts $f {
+	puts stdout out
+	puts stderr err
+    }
+    close $f
+} -body {
+    exec [interpreter] $path(err)
+} -returnCodes error -result {out
+err}
+
+# Errors in executing the Tcl command, as opposed to errors in the processes
+# that are invoked.
+
+test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
+    exec
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
+test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
+    exec | cat
+} -returnCodes error -result {illegal use of | or |& in command}
+test exec-10.3 {errors in exec invocation} -constraints {exec} -body {
+    exec cat |
+} -returnCodes error -result {illegal use of | or |& in command}
+test exec-10.4 {errors in exec invocation} -constraints {exec} -body {
+    exec cat | | cat
+} -returnCodes error -result {illegal use of | or |& in command}
+test exec-10.5 {errors in exec invocation} -constraints {exec} -body {
+    exec cat | |& cat
+} -returnCodes error -result {illegal use of | or |& in command}
+test exec-10.6 {errors in exec invocation} -constraints {exec} -body {
+    exec cat |&
+} -returnCodes error -result {illegal use of | or |& in command}
+test exec-10.7 {errors in exec invocation} -constraints {exec} -body {
+    exec cat <
+} -returnCodes error -result {can't specify "<" as last word in command}
+test exec-10.8 {errors in exec invocation} -constraints {exec} -body {
+    exec cat >
+} -returnCodes error -result {can't specify ">" as last word in command}
+test exec-10.9 {errors in exec invocation} -constraints {exec} -body {
+    exec cat <<
+} -returnCodes error -result {can't specify "<<" as last word in command}
+test exec-10.10 {errors in exec invocation} -constraints {exec} -body {
+    exec cat >>
+} -returnCodes error -result {can't specify ">>" as last word in command}
+test exec-10.11 {errors in exec invocation} -constraints {exec} -body {
+    exec cat >&
+} -returnCodes error -result {can't specify ">&" as last word in command}
+test exec-10.12 {errors in exec invocation} -constraints {exec} -body {
+    exec cat >>&
+} -returnCodes error -result {can't specify ">>&" as last word in command}
+test exec-10.13 {errors in exec invocation} -constraints {exec} -body {
+    exec cat >@
+} -returnCodes error -result {can't specify ">@" as last word in command}
+test exec-10.14 {errors in exec invocation} -constraints {exec} -body {
+    exec cat <@
+} -returnCodes error -result {can't specify "<@" as last word in command}
+test exec-10.15 {errors in exec invocation} -constraints {exec} -body {
+    exec cat < a/b/c
+} -returnCodes error -result {couldn't read file "a/b/c": no such file or directory}
+test exec-10.16 {errors in exec invocation} -constraints {exec} -body {
+    exec cat << foo > a/b/c
+} -returnCodes error -result {couldn't write file "a/b/c": no such file or directory}
+test exec-10.17 {errors in exec invocation} -constraints {exec} -body {
+    exec cat << foo > a/b/c
+} -returnCodes error -result {couldn't write file "a/b/c": no such file or directory}
+set f [open $path(gorp.file) w]
+test exec-10.18 {errors in exec invocation} -constraints {exec} -body {
+    exec cat <@ $f
+} -returnCodes error -result "channel \"$f\" wasn't opened for reading"
+close $f
+set f [open $path(gorp.file) r]
+test exec-10.19 {errors in exec invocation} -constraints {exec} -body {
+    exec cat >@ $f
+} -returnCodes error -result "channel \"$f\" wasn't opened for writing"
+close $f
+test exec-10.20 {errors in exec invocation} -constraints {exec notValgrind} -body {
+    exec ~non_existent_user/foo/bar
+} -returnCodes error -result {user "non_existent_user" doesn't exist}
+test exec-10.21 {errors in exec invocation} -constraints {exec notValgrind} -body {
+    exec [interpreter] true | ~xyzzy_bad_user/x | false
+} -returnCodes error -result {user "xyzzy_bad_user" doesn't exist}
+test exec-10.22 {errors in exec invocation} -constraints {exec notValgrind} -body {
+    exec echo test > ~non_existent_user/foo/bar
+} -returnCodes error -result {user "non_existent_user" doesn't exist}
+# Commands in background.
+
+test exec-11.1 {commands in background} {exec} {
+    set time [time {exec [interpreter] $path(sleep) 2 &}]
+    expr {[lindex $time 0] < 1000000}
+} 1
+test exec-11.2 {commands in background} -constraints {exec} -body {
+    exec [interpreter] $path(echo) a &b
+} -result {a &b}
+test exec-11.3 {commands in background} {exec} {
+    llength [exec [interpreter] $path(sleep) 1 &]
+} 1
+test exec-11.4 {commands in background} {exec stdio} {
+    llength [exec [interpreter] $path(sleep) 1 | [interpreter] $path(sleep) 1 | [interpreter] $path(sleep) 1 &]
+} 3
+test exec-11.5 {commands in background} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f [list catch [list exec [info nameofexecutable] $path(echo) foo &]]
+    close $f
+    exec [interpreter] $path(gorp.file)
+} foo
+
+# Make sure that background commands are properly reaped when they
+# eventually die.
+
+if {[testConstraint exec] && [testConstraint nonPortable]} {
+    after 1300
+    exec [interpreter] $path(sleep) 1
+}
+test exec-12.1 {reaping background processes} {exec unix nonPortable} {
+    for {set i 0} {$i < 20} {incr i} {
+	exec echo foo > /dev/null &
+    }
+    after 1000
+    catch {exec ps | fgrep "echo foo" | fgrep -v fgrep | wc} msg
+    lindex $msg 0
+} 0
+test exec-12.2 {reaping background processes} {exec unix nonPortable} {
+    exec sleep 2 | sleep 2 | sleep 2 &
+    catch {exec ps | fgrep -i "sleep" | fgrep -i -v fgrep | wc} msg
+    set x [lindex $msg 0]
+    after 3000
+    catch {exec ps | fgrep -i "sleep" | fgrep -i -v fgrep | wc} msg
+    list $x [lindex $msg 0]
+} {3 0}
+test exec-12.3 {reaping background processes} {exec unix nonPortable} {
+    exec sleep 1000 &
+    exec sleep 1000 &
+    set x [exec ps | fgrep "sleep" | fgrep -v fgrep]
+    set pids {}
+    foreach i [split $x \n] {
+	lappend pids [lindex $i 0]
+    }
+    foreach i $pids {
+	catch {exec kill -STOP $i}
+    }
+    catch {exec ps | fgrep "sleep" | fgrep -v fgrep | wc} msg
+    set x [lindex $msg 0]
+    foreach i $pids {
+	catch {exec kill -KILL $i}
+    }
+    catch {exec ps | fgrep "sleep" | fgrep -v fgrep | wc} msg
+    list $x [lindex $msg 0]
+} {2 0}
+
+# Make sure "errorCode" is set correctly.
+
+test exec-13.1 {setting errorCode variable} {exec} {
+    list [catch {exec [interpreter] $path(cat) < a/b/c} msg] [string tolower $errorCode]
+} {1 {posix enoent {no such file or directory}}}
+test exec-13.2 {setting errorCode variable} {exec} {
+    list [catch {exec [interpreter] $path(cat) > a/b/c} msg] [string tolower $errorCode]
+} {1 {posix enoent {no such file or directory}}}
+test exec-13.3 {setting errorCode variable} {exec notValgrind} {
+    set x [catch {exec _weird_cmd_} msg]
+    list $x [string tolower $msg] [lindex $errorCode 0] \
+	    [string tolower [lrange $errorCode 2 end]]
+} {1 {couldn't execute "_weird_cmd_": no such file or directory} POSIX {{no such file or directory}}}
+test exec-13.4 {extended exit result codes} -setup {
+    set tmp [makeFile {exit 0x00000101} tmpfile.exec-13.4]
+} -constraints {win} -body {
+    list [catch {exec [interpreter] $tmp} err] [lreplace $::errorCode 1 1 {}]
+} -cleanup {
+    removeFile $tmp
+} -result {1 {CHILDSTATUS {} 257}}
+test exec-13.5 {extended exit result codes: max value} -setup {
+    set tmp [makeFile {exit 0x3fffffff} tmpfile.exec-13.5]
+} -constraints {win} -body {
+    list [catch {exec [interpreter] $tmp} err] [lreplace $::errorCode 1 1 {}]
+} -cleanup {
+    removeFile $tmp
+} -result {1 {CHILDSTATUS {} 1073741823}}
+test exec-13.6 {extended exit result codes: signalled} -setup {
+    set tmp [makeFile {exit 0xC0000016} tmpfile.exec-13.6]
+} -constraints {win} -body {
+    list [catch {exec [interpreter] $tmp} err] [lreplace $::errorCode 1 1 {}]
+} -cleanup {
+    removeFile $tmp
+} -result {1 {CHILDKILLED {} SIGABRT SIGABRT}}
+
+# Switches before the first argument
+
+test exec-14.1 {-keepnewline switch} {exec} {
+    exec -keepnewline [interpreter] $path(echo) foo
+} "foo\n"
+test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
+    exec -keepnewline
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
+test exec-14.3 {unknown switch} -constraints {exec} -body {
+    exec -gorp
+} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
+test exec-14.4 {-- switch} -constraints {exec notValgrind} -body {
+    exec -- -gorp
+} -returnCodes error -result {couldn't execute "-gorp": no such file or directory}
+test exec-14.5 {-ignorestderr switch} {exec} {
+    # Alas, the use of -ignorestderr is buried here :-(
+    exec [interpreter] $path(sh2) -c [list $path(echo2) foo bar] 2>@1
+} "foo bar\nbar"
+
+# Redirecting standard error separately from standard output
+
+test exec-15.1 {standard error redirection} {exec} {
+    exec [interpreter] $path(echo) "First line" > $path(gorp.file)
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" 2> $path(gorp.file)] \
+	    [exec [interpreter] $path(cat) $path(gorp.file)]
+} {{} {foo bar}}
+test exec-15.2 {standard error redirection} {exec stdio} {
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" \
+	      | [interpreter] $path(echo) biz baz >$path(gorp.file) 2> $path(gorp.file2)] \
+	[exec [interpreter] $path(cat) $path(gorp.file)] \
+	[exec [interpreter] $path(cat) $path(gorp.file2)]
+} {{} {biz baz} {foo bar}}
+test exec-15.3 {standard error redirection} {exec stdio} {
+    list [exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" \
+	      | [interpreter] $path(echo) biz baz 2>$path(gorp.file) > $path(gorp.file2)] \
+	[exec [interpreter] $path(cat) $path(gorp.file)] \
+	[exec [interpreter] $path(cat) $path(gorp.file2)]
+} {{} {foo bar} {biz baz}}
+test exec-15.4 {standard error redirection} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f "Line 1"
+    flush $f
+    exec [interpreter] $path(sh) -c "\"$path(echo)\" foo bar 1>&2" 2>@ $f
+    puts $f "Line 3"
+    close $f
+    readfile $path(gorp.file)
+} {Line 1
+foo bar
+Line 3}
+test exec-15.5 {standard error redirection} {exec} {
+    exec [interpreter] $path(echo) "First line" > "$path(gorp.file)"
+    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" 2>> "$path(gorp.file)"
+    readfile $path(gorp.file)
+} {First line
+foo bar}
+test exec-15.6 {standard error redirection} {exec stdio} {
+    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" > "$path(gorp.file2)" 2> "$path(gorp.file)" \
+	    >& "$path(gorp.file)" 2> "$path(gorp.file2)" | [interpreter] $path(echo) biz baz
+    list [readfile $path(gorp.file)] [readfile $path(gorp.file2)]
+} {{biz baz} {foo bar}}
+test exec-15.7 {standard error redirection 2>@1} {exec stdio} {
+    # This redirects stderr output into normal result output from exec
+    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" 2>@1
+} {foo bar}
+
+test exec-16.1 {flush output before exec} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f "First line"
+    exec [interpreter] $path(echo) "Second line" >@ $f
+    puts $f "Third line"
+    close $f
+    readfile $path(gorp.file)
+} {First line
+Second line
+Third line}
+test exec-16.2 {flush output before exec} {exec} {
+    set f [open $path(gorp.file) w]
+    puts $f "First line"
+    exec [interpreter] << {puts stderr {Second line}} >&@ $f > $path(gorp.file2)
+    puts $f "Third line"
+    close $f
+    readfile $path(gorp.file)
+} {First line
+Second line
+Third line}
+
+test exec-17.1 {inheriting standard I/O} -constraints {exec} -setup {
+    set path(script) [makeFile {} script]
+    set f [open $path(script) w]
+    puts $f [list lassign [list \
+	    [info nameofexecutable] $path(gorp.file) $path(echo) $path(sleep) \
+        ] exe file echo sleep]
+    puts $f {
+	close stdout
+	set f [open $file w]
+	catch {exec $exe $echo foobar &}
+	exec $exe $sleep 2
+	close $f
+    }
+    close $f
+} -body {
+    catch {exec [interpreter] $path(script)} result
+    list $result [readfile $path(gorp.file)]
+} -cleanup {
+    removeFile $path(script)
+} -result {{} foobar}
+
+test exec-18.1 {exec deals with weird file names} -body {
+    set path(fooblah) [makeFile {contents} "foo\[\{blah"]
+    exec [interpreter] $path(cat) $path(fooblah)
+} -constraints {exec} -cleanup {
+    removeFile $path(fooblah)
+} -result contents
+test exec-18.2 {exec cat deals with weird file names} -body {
+    # This is cross-platform, but the cat isn't predictably correct on
+    # Windows.
+    set path(fooblah) [makeFile {contents} "foo\[\{blah"]
+    exec cat $path(fooblah)
+} -constraints {exec tempNotWin} -cleanup {
+    removeFile $path(fooblah)
+} -result contents
+
+# Note that this test cannot be adapted to work on Windows; that platform has
+# no kernel support for an analog of O_APPEND. OTOH, that means we can assume
+# that there is a POSIX shell...
+test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix notValgrind} -setup {
+    set tmpfile [makeFile {0} tmpfile.exec-19.1]
+} -body {
+    # Note that we have to allow for the current contents of the temporary
+    # file, which is why the result is 14 and not 12
+    exec /bin/sh -c \
+	    {for a in 1 2 3; do sleep 1; echo $a; done} >>$tmpfile &
+    exec /bin/sh -c \
+	    {for a in 4 5 6; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
+    exec /bin/sh -c \
+	    {for a in a b c; do sleep 1; echo $a; done} >>$tmpfile &
+    exec /bin/sh -c \
+	    {for a in d e f; do sleep 1; echo $a >&2; done} 2>>$tmpfile &
+    # The above four shell invocations take about 3 seconds to finish, so allow
+    # 5s (in case the machine is busy)
+    after 5000
+    # Check that no bytes have got lost through mixups with overlapping
+    # appends, which is only guaranteed to work when we set O_APPEND on the
+    # file descriptor in the [exec >>...]
+    file size $tmpfile
+} -cleanup {
+    removeFile $tmpfile
+} -result 26
+
+# Tests to ensure batch files and .CMD (Bug 9ece99d58b)
+# can be executed on Windows
+test exec-20.0 {exec .bat file} -constraints {win} -body {
+    set log [makeFile {} exec20.log]
+    exec [makeFile "echo %1> $log" exec20.bat] "Testing exec-20.0"
+    viewFile $log
+} -result "\"Testing exec-20.0\""
+test exec-20.1 {exec .CMD file} -constraints {win} -body {
+    set log [makeFile {} exec201.log]
+    exec [makeFile "echo %1> $log" exec201.CMD] "Testing exec-20.1"
+    viewFile $log
+} -result "\"Testing exec-20.1\""
+    
+
+
+
+# ----------------------------------------------------------------------
+# cleanup
+
+foreach file {gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
+    removeFile $file
+}
+unset -nocomplain path
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
