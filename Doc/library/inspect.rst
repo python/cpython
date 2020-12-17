@@ -556,7 +556,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, \*, follow_wrapped=True)
+.. function:: signature(callable, *, follow_wrapped=True)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -597,7 +597,7 @@ function.
       C provide no metadata about their arguments.
 
 
-.. class:: Signature(parameters=None, \*, return_annotation=Signature.empty)
+.. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
 
    A Signature object represents the call signature of a function and its return
    annotation.  For each parameter accepted by the function it stores a
@@ -668,7 +668,7 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj, \*, follow_wrapped=True)
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
        ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
@@ -684,7 +684,7 @@ function.
        .. versionadded:: 3.5
 
 
-.. class:: Parameter(name, kind, \*, default=Parameter.empty, annotation=Parameter.empty)
+.. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
    you can use :meth:`Parameter.replace` to create a modified copy.
