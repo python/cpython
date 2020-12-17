@@ -197,11 +197,12 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(copy.deepcopy(uname), uname)
 
     def test_uname_pickle(self):
-        uname = platform.uname()
+        orig = platform.uname()
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(protocol=proto):
-                pickled = pickle.dumps(uname, proto)
-                self.assertEqual(pickle.loads(pickled), uname)
+                pickled = pickle.dumps(orig, proto)
+                restored = pickle.loads(pickled)
+                self.assertEqual(restored, orig)
 
     def test_uname_slices(self):
         res = platform.uname()

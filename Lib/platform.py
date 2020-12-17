@@ -787,12 +787,6 @@ class uname_result(
     except when needed.
     """
 
-    def __new__(cls, *args):
-        # exclude 'processor' arg
-        num_fields = len(cls._fields)
-        args = args[:num_fields] + args[num_fields + 1:]
-        return super().__new__(cls, *args)
-
     @functools.cached_property
     def processor(self):
         return _unknown_as_blank(_Processor.get())
@@ -818,6 +812,15 @@ class uname_result(
 
     def __len__(self):
         return len(tuple(iter(self)))
+
+    def __new__(cls, *args):
+        # exclude 'processor' arg
+        num_fields = len(cls._fields)
+        args = args[:num_fields] + args[num_fields + 1:]
+        return super().__new__(cls, *args)
+
+    def __reduce__(self):
+        return uname_result, tuple(self)
 
 
 _uname_cache = None
