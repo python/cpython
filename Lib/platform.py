@@ -813,14 +813,8 @@ class uname_result(
     def __len__(self):
         return len(tuple(iter(self)))
 
-    def __new__(cls, *args):
-        # exclude 'processor' arg
-        num_fields = len(cls._fields)
-        args = args[:num_fields] + args[num_fields + 1:]
-        return super().__new__(cls, *args)
-
     def __reduce__(self):
-        return uname_result, tuple(self)
+        return uname_result, tuple(self)[:len(self._fields)]
 
 
 _uname_cache = None
