@@ -532,9 +532,9 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       instance holds information related to the function's profile such as how
       long the function took to run, how many times it was called, etc...
 
-       .. versionadded:: 3.9
-          Added the following dataclasses: StatsProfile, FunctionProfile.
-          Added the following function: get_stats_profile.
+      .. versionadded:: 3.9
+         Added the following dataclasses: StatsProfile, FunctionProfile.
+         Added the following function: get_stats_profile.
 
 .. _deterministic-profiling:
 
