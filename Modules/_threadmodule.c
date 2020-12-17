@@ -809,6 +809,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static int
 local_traverse(localobject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->args);
     Py_VISIT(self->kw);
     Py_VISIT(self->dummies);
