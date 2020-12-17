@@ -313,9 +313,9 @@ dis_traceback = """\
         >>   50 LOAD_CONST               0 (None)
              52 STORE_FAST               0 (e)
              54 DELETE_FAST              0 (e)
-             56 RERAISE
+             56 RERAISE                  1
 
-%3d     >>   58 RERAISE
+%3d     >>   58 RERAISE                  0
 """ % (TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
        TRACEBACK_CODE.co_firstlineno + 5,
@@ -370,7 +370,7 @@ dis_tryfinally = """\
         >>   14 LOAD_FAST                1 (b)
              16 CALL_FUNCTION            0
              18 POP_TOP
-             20 RERAISE
+             20 RERAISE                  0
 """ % (_tryfinally.__code__.co_firstlineno + 1,
        _tryfinally.__code__.co_firstlineno + 2,
        _tryfinally.__code__.co_firstlineno + 4,
@@ -389,7 +389,7 @@ dis_tryfinallyconst = """\
         >>   14 LOAD_FAST                0 (b)
              16 CALL_FUNCTION            0
              18 POP_TOP
-             20 RERAISE
+             20 RERAISE                  0
 """ % (_tryfinallyconst.__code__.co_firstlineno + 1,
        _tryfinallyconst.__code__.co_firstlineno + 2,
        _tryfinallyconst.__code__.co_firstlineno + 4,
@@ -1076,7 +1076,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=136, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_EXCEPT', opcode=89, arg=None, argval=None, argrepr='', offset=138, starts_line=None, is_jump_target=False),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=46, argval=188, argrepr='to 188', offset=140, starts_line=None, is_jump_target=False),
-  Instruction(opname='RERAISE', opcode=48, arg=None, argval=None, argrepr='', offset=142, starts_line=None, is_jump_target=True),
+  Instruction(opname='RERAISE', opcode=119, arg=0, argval=0, argrepr='', offset=142, starts_line=None, is_jump_target=True),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=144, starts_line=25, is_jump_target=True),
   Instruction(opname='SETUP_WITH', opcode=143, arg=24, argval=172, argrepr='to 172', offset=146, starts_line=None, is_jump_target=False),
   Instruction(opname='STORE_FAST', opcode=125, arg=1, argval='dodgy', argrepr='dodgy', offset=148, starts_line=None, is_jump_target=False),
@@ -1093,7 +1093,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=16, argval=188, argrepr='to 188', offset=170, starts_line=None, is_jump_target=False),
   Instruction(opname='WITH_EXCEPT_START', opcode=49, arg=None, argval=None, argrepr='', offset=172, starts_line=None, is_jump_target=True),
   Instruction(opname='POP_JUMP_IF_TRUE', opcode=115, arg=178, argval=178, argrepr='', offset=174, starts_line=None, is_jump_target=False),
-  Instruction(opname='RERAISE', opcode=48, arg=None, argval=None, argrepr='', offset=176, starts_line=None, is_jump_target=False),
+  Instruction(opname='RERAISE', opcode=119, arg=1, argval=1, argrepr='', offset=176, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=178, starts_line=None, is_jump_target=True),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=180, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=182, starts_line=None, is_jump_target=False),
@@ -1110,7 +1110,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='LOAD_CONST', opcode=100, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=204, starts_line=None, is_jump_target=False),
   Instruction(opname='CALL_FUNCTION', opcode=131, arg=1, argval=1, argrepr='', offset=206, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=208, starts_line=None, is_jump_target=False),
-  Instruction(opname='RERAISE', opcode=48, arg=None, argval=None, argrepr='', offset=210, starts_line=None, is_jump_target=False),
+  Instruction(opname='RERAISE', opcode=119, arg=0, argval=0, argrepr='', offset=210, starts_line=None, is_jump_target=False),
 ]
 
 # One last piece of inspect fodder to check the default line number handling
