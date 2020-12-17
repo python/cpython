@@ -1,0 +1,9 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Africa/Nairobi) {
+    {-9223372036854775808 8836 0 LMT}
+    {-1309746436 10800 0 EAT}
+    {-1262314800 9000 0 +0230}
+    {-946780200 9900 0 +0245}
+    {-315629100 10800 0 EAT}
+}

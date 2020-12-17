@@ -1,0 +1,450 @@
+#!/bin/sh
+# the next line restarts using wish \
+exec wish "$0" "$@"
+
+# widget --
+#
+#       This script demonstrates the various widgets provided by Tix,
+#       along with many of the features of the Tix library. This file
+#       only contains code to generate the main window for the
+#       application, which invokes individual demonstrations.  The
+#       code for the actual demonstrations is contained in separate
+#       ".tcl" files in the samples/ subdirectory, which are sourced
+#       by this script as needed.
+#
+# Copyright (c) 1992-1994 The Regents of the University of California.
+# Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-2000 Scriptics Corporation.
+# Copyright (c) 2000-2001 Tix Project Group.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# $Id: widget,v 1.7 2008/03/17 22:58:51 hobbs Exp $
+
+package require Tix
+tix initstyle
+eval destroy [winfo child .]
+wm title . "Tix Widget Tour"
+set tix_demo_running 1
+set demo_dir [file dirname [info script]]
+tix addbitmapdir [file join $demo_dir bitmaps]
+
+# createMainWindow --
+#
+#       Creates the main window, consisting of a menu bar and a text
+#       widget that explains how to use the program, plus lists all of
+#       the demos as hypertext items.
+
+proc createMainWindow {} {
+    global tcl_platform old_cursor
+
+    switch $tcl_platform(platform) {
+        "windows" {
+            set font {Arial 12}
+        }
+        "unix" {
+            set font {Helvetica 12}
+        }
+        default {
+            set font {Helvetica 12}
+        }
+    }
+
+    menu .menuBar -tearoff 0
+    .menuBar add cascade -menu .menuBar.file -label "File" -underline 0
+    menu .menuBar.file -tearoff 0
+
+    # On the Mac use the specia .apple menu for the about item
+    if {$tcl_platform(platform) eq "macintosh"} {
+        .menuBar add cascade -menu .menuBar.apple
+        menu .menuBar.apple -tearoff 0
+        .menuBar.apple add command -label "About ..." -command "aboutBox"
+    } else {
+        .menuBar.file add command -label "About ..." -command "aboutBox"
+        .menuBar.file add sep
+    }
+
+    .menuBar.file add command -label "Exit" -command "exit"
+    . configure -menu .menuBar
+
+    frame .statusBar
+    label .statusBar.lab -text "   " -relief sunken -bd 1 \
+        -font -*-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* -anchor w
+    label .statusBar.foo -width 8 -relief sunken -bd 1 \
+        -font -*-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-* -anchor w
+    pack .statusBar.lab -side left -padx 2 -expand yes -fill both
+    pack .statusBar.foo -side left -padx 2
+    pack .statusBar -side bottom -fill x -pady 2
+
+    frame .textFrame
+    scrollbar .s -orient vertical -command {.t yview} -highlightthickness 0 \
+        -takefocus 1
+    pack .s -in .textFrame -side right -fill y
+    text .t -yscrollcommand {.s set} -wrap word -width 55 -height 30 \
+        -font $font \
+        -setgrid 1 -highlightthickness 0 -padx 4 -pady 2 -takefocus 0
+    pack .t -in .textFrame -expand y -fill both -padx 1
+    pack  .textFrame -expand yes -fill both
+
+    if {$tcl_platform(platform) eq "windows"} {
+        #
+        # Make the scrollbar look win32
+        #
+
+        .textFrame config -bd 2 -relief sunken
+        .t config -bd 0
+        pack .t -padx 0
+    }
+
+    set old_cursor [.t cget -cursor]
+
+    # Create a bunch of tags to use in the text widget, such as those for
+    # section titles and demo descriptions.  Also define the bindings for
+    # tags.
+
+    .t tag configure title -font {Helvetica 18 bold} -justify center
+    .t tag configure header -font {Helvetica 14 bold}
+
+    # We put some "space" characters to the left and right of each
+    # demo description so that the descriptions are highlighted only
+    # when the mouse cursor is right over them (but not when the
+    # cursor is to their left or right)
+    #
+    .t tag configure demospace -lmargin1 1c -lmargin2 1c -spacing1 1
+    .t tag configure codeicon -lmargin1 1c -lmargin2 1c
+
+    if {[winfo depth .] == 1} {
+        .t tag configure demo -lmargin1 1c -lmargin2 1c \
+            -underline 1
+        .t tag configure visited -lmargin1 1c -lmargin2 1c \
+            -underline 1
+        .t tag configure hot -background black -foreground white
+    } else {
+        .t tag configure demo -lmargin1 1c -lmargin2 1c \
+            -foreground blue -underline 1
+        .t tag configure visited -lmargin1 1c -lmargin2 1c \
+            -foreground #303080 -underline 1
+        .t tag configure hot -foreground red -underline 1
+    }
+    .t tag bind demo <ButtonRelease-1> {
+        invoke [.t index {@%x,%y}]
+    }
+    .t tag bind codeicon <ButtonRelease-1> {
+        showCode [.t index [list {@%x,%y} +2 chars]]
+    }
+    global lastLine
+    set lastLine ""
+    .t tag bind demo <Enter> {
+        set lastLine [.t index {@%x,%y linestart}]
+        .t tag add hot [list $lastLine +3 chars] \
+            [list $lastLine lineend -1 chars]
+        .t config -cursor hand2
+        showStatus run [.t index {@%x,%y}]
+    }
+    .t tag bind demo <Leave> {
+        .t tag remove hot 1.0 end
+        .t config -cursor $old_cursor
+        .statusBar.lab config -text ""
+    }
+    .t tag bind demo <Motion> {
+        set newLine [.t index {@%x,%y linestart}]
+        if {[string compare $newLine $lastLine] != 0} {
+            .t tag remove hot 1.0 end
+            set lastLine $newLine
+
+            set tags [.t tag names {@%x,%y}]
+            set i [lsearch -glob $tags demo-*]
+            if {$i >= 0} {
+                .t tag add hot [list $lastLine +3 chars] \
+                    [list $lastLine lineend -1 chars]
+            }
+        }
+        showStatus run [.t index {@%x,%y}]
+    }
+
+    .t tag bind codeicon <Enter> {
+        .t config -cursor hand2
+    }
+    .t tag bind codeicon <Leave> {
+        .t config -cursor $old_cursor
+    }
+    .t tag bind codeicon <Motion> {
+        set tags [.t tag names [list {@%x,%y} +2 chars]]
+        set i [lsearch -glob $tags demo-*]
+        if {$i >= 0} {
+            showStatus code [.t index [list {@%x,%y} +2 chars]]
+        } else {
+            showStatus code ""
+        }
+    }
+
+    # Create the text for the text widget.
+
+    .t insert end "Tix Widget Tour\n" title
+    addNewLine .t
+    addText .t {
+        This program demonstrates the features of the Tix
+        library. Click on one of the highlighted lines below to run
+        the sample program and click on the
+    }
+    addSpace .t
+    .t image create end -image [tix getimage code]
+    addSpace .t
+    addText .t {
+        icon to view its source code.
+    }
+
+    addNewLine .t
+    addNewLine .t
+
+    addHeader .t "Hierachical ListBox"
+
+    addDemo .t HList1.tcl       "Simple HList"
+    addDemo .t ChkList.tcl      "CheckList"
+    addDemo .t SHList.tcl       "ScrolledHList (1)"
+    addDemo .t SHList2.tcl      "ScrolledHList (2)"
+    addDemo .t Tree.tcl         "Simple Tree"
+
+    # TODO
+    # addDemo .t "Dynamic Tree"		DynTree.tcl
+
+    addHeader .t "Tabular ListBox"
+
+    addDemo .t STList1.tcl      "ScrolledTList (1)"
+    addDemo .t STList2.tcl      "ScrolledTList (2)"
+    addDemo .t STList3.tcl      "TList File Viewer"
+
+    addHeader .t "Grid Widget"
+
+    addDemo .t SGrid0.tcl       "Simple Grid"
+    addDemo .t SGrid1.tcl       "ScrolledGrid"
+    addDemo .t EditGrid.tcl     "Editable Grid"
+
+    addHeader .t "Manager Widgets"
+
+    addDemo .t ListNBK.tcl      ListNoteBook
+    addDemo .t NoteBook.tcl     NoteBook
+    addDemo .t PanedWin.tcl     PanedWindow
+
+    addHeader .t "Scrolled Widgets"
+
+    addDemo .t SListBox.tcl     ScrolledListBox
+    addDemo .t SText.tcl        ScrolledText
+    addDemo .t SWindow.tcl      ScrolledWindow
+    addDemo .t CObjView.tcl     "Canvas Object View"
+
+    addHeader .t "Miscellaneous Widgets"
+
+    addDemo .t Balloon.tcl      Balloon
+    addDemo .t BtnBox.tcl       ButtonBox
+    addDemo .t ComboBox.tcl     ComboBox
+    addDemo .t Control.tcl      Control
+    addDemo .t LabEntry.tcl     LabelEntry
+    addDemo .t LabFrame.tcl     LabelFrame
+    addDemo .t Meter.tcl        Meter
+    addDemo .t OptMenu.tcl      OptionMenu
+    addDemo .t PopMenu.tcl      PopupMenu
+    addDemo .t Select.tcl       Select
+    addDemo .t StdBBox.tcl      StdButtonBox
+
+    addHeader .t "Image Types"
+
+    addDemo .t CmpImg.tcl       "Compound image in buttons"
+    addDemo .t CmpImg3.tcl      "Compound image in icons"
+    #addDemo .t CmpImg2.tcl      "Compound image in notebook"
+    #addDemo .t CmpImg4.tcl \
+    #    "Create color tabs in notebook using compound image"
+
+    addDemo .t Xpm.tcl          "XPM pixmap image in buttons"
+    addDemo .t Xpm1.tcl         "XPM pixmap image in menu"
+
+    .t configure -state disabled
+    focus .s
+
+    #
+    # Because .t is disabled and not focused, we have to do the 
+    # following hacks to make the scrolling work well
+    #
+    bind .s <MouseWheel> {
+        .t yview scroll [expr {- (%D / 120) * 2}] units
+    }
+    bind .s <Up> {
+        .t yview scroll -1 units
+    }
+    bind .s <Down> {
+        .t yview scroll 1 units
+    }
+    bind .s <Prior> {
+        .t yview scroll -1 page
+    }
+    bind .s <Next> {
+        .t yview scroll 1 page
+    }
+    bind .s <Home> {
+        .t yview 1.0
+    }
+    bind .s <End> {
+        .t yview end
+    }
+}
+
+# invoke --
+# This procedure is called when the user clicks on a demo description.
+# It is responsible for invoking the demonstration.
+#
+# Arguments:
+# index -	The index of the character that the user clicked on.
+
+proc invoke {index} {
+    global demo_dir
+
+    # Find out which sample to run
+    set tags [.t tag names $index]
+    set i [lsearch -glob $tags demo-*]
+    if {$i < 0} {
+	return
+    }
+    set demo [string range [lindex $tags $i] 5 end]
+    set title [string trim [.t get [list $index linestart +3 chars] \
+            [list $index lineend]]]
+    # Get the name of this sample
+    set w .[lindex [split $demo .] 0]
+    set w [string tolower $w]
+
+    if [winfo exists $w] {
+	wm deiconify $w
+	raise $w
+	return
+    }
+
+    # Load the sample if it's not running
+    set cursor [.t cget -cursor]
+    .t configure -cursor watch
+    update
+    uplevel #0 [list source [file join $demo_dir samples $demo]]
+
+    toplevel $w 
+    wm title $w $title
+    RunSample $w
+    
+    update
+    .t configure -cursor $cursor
+
+    .t tag add visited "$index linestart +1 chars" "$index lineend -1 chars"
+}
+
+# showStatus --
+#
+#	Show the name of the demo program in the status bar. This procedure
+#	is called when the user moves the cursor over a demo description.
+#
+
+proc showStatus {which index} {
+    set tags [.t tag names $index]
+    set i [lsearch -glob $tags demo-*]
+    set cursor [.t cget -cursor]
+    if {$i < 0} {
+	.statusBar.lab config -text " "
+	set newcursor xterm
+    } else {
+	set demo [string range [lindex $tags $i] 5 end]
+        if {"$which" == "run"} {
+            set text "Run the \"$demo\" sample program"
+        } else {
+            set text "Show code of the \"$demo\" sample program"
+        }
+	.statusBar.lab config -text $text
+	set newcursor hand2
+    }
+    if [string compare $cursor $newcursor] {
+	.t config -cursor $newcursor
+    }
+}
+
+# showCode --
+# This procedure is called when the user clicks on the "code" icon.
+# It is responsible for displaying the code of the selected sample program.
+#
+# Arguments:
+# index -	The index of the character that the user clicked on.
+
+proc showCode {index} {
+    global demo_dir
+
+    set tags [.t tag names $index]
+    set i [lsearch -glob $tags demo-*]
+    if {$i < 0} {
+	return
+    }
+    set cursor [.t cget -cursor]
+    .t configure -cursor watch
+    update
+    set demo [string range [lindex $tags $i] 5 end]
+
+    # Create the .code window
+    if {![winfo exists .code]} {
+	toplevel .code
+        frame .code.f
+        tixScrolledText .code.st
+        button .code.close -text Close -width 6 -command "wm withdraw .code"
+        pack .code.f -side bottom -fill x
+        pack .code.st -side top -fill both -expand yes
+        pack .code.close -in .code.f -side right -padx 10 -pady 10
+    }
+    set text [.code.st subwidget text]
+    $text delete 1.0 end
+    set fd [open [file join $demo_dir samples $demo]]
+    set data [read $fd]
+    close $fd
+    $text insert end $data
+
+    wm deiconify .code
+    wm title .code [file nativename [file join $demo_dir samples $demo]]
+    update
+    .t configure -cursor $cursor
+}
+
+proc addText {t text} {
+    regsub -all \n+ $text " " text
+    regsub -all {[ ]+} $text " " text
+    $t insert end [string trim $text]
+}
+
+proc addHeader {t text} {
+    addNewLine $t
+    $t insert end [string trim $text] header
+    addNewLine $t
+}
+
+proc addNewLine {t} {
+    $t insert end "\n" {demospace}
+}
+
+proc addSpace {t} {
+    $t insert end " " {demospace}
+}
+
+proc addDemo {t name text} {
+    $t insert end " " demospace
+    $t image create end -image [tix getimage code]
+    $t tag add codeicon [list end -2 chars] [list end -1 chars]
+    $t insert end " " demospace
+    $t insert end $text [list demo demo-$name]
+    $t insert end " " demospace
+    addNewLine $t
+}
+
+# aboutBox --
+#
+#	Pops up a message box with an "about" message
+#
+proc aboutBox {} {
+    tk_messageBox -icon info -type ok -title "About Widget Tour" -message \
+"Tix widget tour\n\nCopyright (c) 2000-2001 Tix Project Group."
+}
+
+#
+# Start the program
+#
+
+createMainWindow

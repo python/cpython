@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:America/Port_of_Spain) {
+    {-9223372036854775808 -14764 0 LMT}
+    {-1825098836 -14400 0 AST}
+}

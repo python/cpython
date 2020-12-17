@@ -1,0 +1,4 @@
+#define decr_width 7
+#define decr_height 4
+static char decr_bits[] = {
+   0x7f, 0x3e, 0x1c, 0x08};

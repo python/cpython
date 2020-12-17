@@ -1,0 +1,381 @@
+#!/usr/local/bin/tclsh
+# Undocumented program. Don't use it.
+#
+# Usage:
+# 
+# 	tixmkpref option name.src > name.tcl
+#
+
+proc tixDefOption {classes specs {level \$tixOption(prioLevel)}} {
+    global isFont tixOption
+
+    foreach class $classes {
+	foreach spec $specs {
+	    if [regexp (Font)|(font) $spec] {
+		if {$isFont} {
+		    puts "option add *$class$spec $level"
+		}
+	    } else {
+		if {!$isFont} {
+		    set aspec [subst $spec]
+		    puts "option add *$class$spec $level"
+		}
+	    }
+	}
+    }
+}
+
+proc option {classes specs {level \$tixOption(prioLevel)}} {
+    tixDefOption $classes $specs $level
+}
+
+proc tixInitOptionDatabase {strictTK} {
+    global tixOption isFont
+
+    # general stuff, everything gets these defaults unless otherwise specified
+    #-------------------------------------------------------------------------
+    tixDefOption {""} {{Font			$tixOption(font)}}
+    tixDefOption {""} {{font			$tixOption(font)}}
+
+    tixDefOption {""} {{background 		$tixOption(bg)}}	10
+    tixDefOption {""} {{Background		$tixOption(bg)}}
+    tixDefOption {""} {{background		$tixOption(bg)}}
+    tixDefOption {""} {{Foreground		$tixOption(fg)}}
+    tixDefOption {""} {{foreground		$tixOption(fg)}}
+    tixDefOption {""} {{activeBackground	$tixOption(active_bg)}}
+    tixDefOption {""} {{activeForeground	$tixOption(active_fg)}}
+    tixDefOption {""} {{HighlightBackground	$tixOption(bg)}}
+    tixDefOption {""} {{selectBackground	$tixOption(select_bg)}}
+    tixDefOption {""} {{selectForeground	$tixOption(select_fg)}}
+    tixDefOption {""} {{selectBorderWidth	0}}
+
+    #----------------------------------------
+    # Standard TK Widget Options
+    #
+    # We set up the options for the TK widgets only if
+    # the strictTK option is not selected.
+    #----------------------------------------
+
+    tixDefOption {Menu TixMenu} {
+	{.font			$tixOption(menu_font)}
+	{.selectColor		$tixOption(selector)}
+    }
+
+    tixDefOption {Menubutton} {
+	{.font			$tixOption(menu_font)}
+	{.padY			5}
+    }
+
+    tixDefOption {Button} {
+	{.borderWidth		2}
+	{.anchor		c}
+    }
+
+    tixDefOption {Checkbutton Radiobutton} {
+	{.selectColor		$tixOption(selector)}
+    }
+
+    tixDefOption {Entry} {
+	{.relief		sunken}
+	{.highlightBackground	$tixOption(bg)}
+	{.background		$tixOption(input1_bg)}
+	{.foreground		black}
+	{.insertBackground	black}
+    }
+
+    tixDefOption {Label} {
+	{.anchor		w}
+	{.borderWidth		0}
+	{.font              	$tixOption(bold_font)}
+    }
+
+    tixDefOption {Listbox} {
+	{.background		$tixOption(light1_bg)}
+	{.relief		sunken}
+    }
+
+    tixDefOption {Scale} {
+	{.foreground		$tixOption(fg)}
+	{.activeForeground	$tixOption(bg)}
+	{.background		$tixOption(bg)}
+	{.sliderForeground	$tixOption(bg)}
+	{.sliderBackground	$tixOption(light1_bg)}
+	{.font			$tixOption(italic_font)}
+    }
+
+    tixDefOption {Scrollbar} {
+	{.background		$tixOption(bg)}
+	{.troughColor		$tixOption(light1_bg)}
+	{.relief		sunken}
+	{.borderWidth		1}
+	{.width			15}
+    }
+
+    tixDefOption {Text} {
+	{.background		$tixOption(input1_bg)}
+	{.relief		sunken}
+    }
+
+    #----------------------------------------------------------------------
+    # TIX WIDGETS
+    #----------------------------------------------------------------------
+
+    tixDefOption {TixBalloon} {
+	{*background 			#ffff60}
+	{*foreground 			black}
+	{.background 			black}
+	{*Label.font 			$tixOption(font)}
+	{*Label.anchor 			w}
+    }
+
+    tixDefOption {TixBitmapButton} {
+	{*label.font 			$tixOption(font)}
+    }
+
+    tixDefOption {TixControl} {
+	{*entry.highlightBackground	$tixOption(bg)}
+	{*entry.background		$tixOption(input1_bg)}
+	{*entry.foreground		black}
+	{*entry.insertBackground	black}
+	{*label.font              	$tixOption(bold_font)}
+    }
+
+    # DLG_BTNS
+    #
+    tixDefOption {TixStdButtonBox} {
+    }
+
+    # DIR_LIST
+    #
+    tixDefOption {TixDirTree TixDirList TixScrolledHList TixTree} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{*hlist.highlightBackground	$tixOption(bg)}
+	{*hlist.background		$tixOption(light1_bg)}
+	{*hlist.activeBackground	$tixOption(light1_bg)}
+	{*hlist.disabledBackground	$tixOption(light1_bg)}
+	{*f1.borderWidth		1}
+	{*f1.relief			sunken}
+    }
+
+    tixDefOption {TixFileEntry} {
+	{*Entry.background 		$tixOption(input1_bg)}
+    }
+
+    tixDefOption {TixHList} {
+	{.background			$tixOption(light1_bg)}
+	{.activeBackground		$tixOption(light1_bg)}
+	{.disabledBackground		$tixOption(light1_bg)}
+    }
+
+    tixDefOption {TixLabelEntry} {
+	{*entry.highlightBackground	$tixOption(bg)}
+	{*entry.background		$tixOption(input1_bg)}
+	{*entry.foreground		black}
+	{*entry.insertBackground	black}
+	{*label.font              	$tixOption(bold_font)}
+    }
+
+    tixDefOption {TixLabelFrame} {
+	{*label.font 	 		$tixOption(bold_font)}
+    }
+
+    tixDefOption {TixMultiList} {
+	{*Listbox.borderWidth		0}
+	{*Listbox.highlightThickness	0}
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{*Scrollbar.relief		sunken}
+	{*Scrollbar.width		15}
+	{*f1.borderWidth		2}
+	{*f1.relief			sunken}
+	{*f1.highlightThickness		2}
+    }
+
+    # MwmClient
+    #
+    tixDefOption {TixMwmClient} {
+	{*title.font			$tixOption(menu_font)}
+    }
+
+    tixDefOption {TixMDIMenuBar} {
+	{*menubar.relief		raised}
+	{*menubar.borderWidth		2}
+	{*Menubutton.padY 		2}
+    }
+
+    # NoteBook
+    #
+    tixDefOption {TixNoteBook} {
+	{.Background			$tixOption(bg)}
+	{.nbframe.Background		$tixOption(bg)}
+	{.nbframe.font			$tixOption(menu_font)}
+	{.nbframe.backPageColor		$tixOption(bg)}
+	{.nbframe.inactiveBackground	$tixOption(inactive_bg)}
+    }
+ 
+    # OPTION_MENU
+    #
+    tixDefOption {TixOptionMenu} {
+	{*menubutton.font		$tixOption(font)}
+    }
+
+    # PANED_WINDOW
+    #
+    tixDefOption {TixPanedWindow} {
+	{.handleActiveBg 		$tixOption(active_bg)}
+	{.seperatorBg    		$tixOption(bg)}
+	{.handleBg       		$tixOption(dark1_bg)}
+    }
+
+    # POPUP MENU
+    #
+    tixDefOption {TixPopupMenu} {
+	{*menubutton.background 	$tixOption(dark1_bg)}
+    }
+
+    # SCROLLED_HLIST
+    #
+    tixDefOption {TixScrolledHList} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{*hlist.highlightBackground	$tixOption(bg)}
+	{*hlist.background		$tixOption(light1_bg)}
+    }
+
+    tixDefOption {TixScrolledTList} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{*tlist.highlightBackground	$tixOption(bg)}
+	{*tlist.background		$tixOption(light1_bg)}
+    }
+
+    # SCROLLED_LISTBOX, .. ETC
+    #
+    tixDefOption {TixScrolledListBox} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{*listbox.highlightBackground	$tixOption(bg)}
+	{*listbox.background		$tixOption(light1_bg)}
+    }
+
+    tixDefOption {TixScrolledText} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+    }
+
+
+    # SCROLLED_WINDOW
+    #
+    tixDefOption {TixScrolledWindow} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{.frame.background		$tixOption(light1_bg)}
+    }
+
+
+    # SELECT
+    #
+    tixDefOption {TixSelect} {
+    }
+
+    tixDefOption {TixTree} {
+	{*Scrollbar.background		$tixOption(bg)}
+	{*Scrollbar.troughColor		$tixOption(light1_bg)}
+	{*hlist.highlightBackground	$tixOption(bg)}
+	{*hlist.background		$tixOption(light1_bg)}
+	{*hlist.borderWidth		1}
+    }
+    # NON ALPHABETICAL ORDER WIDGETS
+
+    # Since TK's option database follows the order-of-declaration rule, not
+    # specific-vs-general rule, the options of the widgets below depends on
+    # the options of the widget above, so their options must be defined here
+
+    # COMBOBOX
+    tixDefOption {TixComboBox} {
+	{*Entry.font				$tixOption(font)}
+	{*Entry.highlightBackground		$tixOption(bg)}
+	{*Entry.background			$tixOption(input1_bg)}
+	{*Entry.foreground			black}
+	{*Entry.insertBackground		black}
+    }
+
+    # FILE_SELECT_BOX
+    #
+    tixDefOption {TixFileSelectBox} {
+	{*Label.font            		$tixOption(bold_font)}
+    }
+
+    tixDefOption {TixExFileSelectBox} {
+    }
+}
+
+#----------------------------------------------------------------------
+# The default fontset and schemes
+#
+#----------------------------------------------------------------------
+
+source ../DefSchm.tcl
+rename tixSetDefaultFontset 		tixSetFontset
+rename tixSetDefaultScheme-Color 	tixSetScheme-Color
+rename tixSetDefaultScheme-Mono 	tixSetScheme-Mono
+
+#----------------------------------------------------------------------
+# Action:
+#----------------------------------------------------------------------
+if [string match TK* [lindex $argv 1]] {
+    set isTK 1
+} else {
+    set isTK 0
+}
+set schemeName [lindex [split [lindex $argv 1] "."] 0]
+source [lindex $argv 1]
+
+
+tixSetFontset
+
+if {[lindex $argv 0] == "-font"} {
+
+    set isFont 1
+
+    # FontSets will be set in two steps.
+    # (1) init fontsets
+    #     ... tix checks the validity of the fonts ...
+    # (2) add the fontsets into the option database.
+    #
+    puts "proc tixPref:InitFontSet:$schemeName {} { "
+    puts [info body tixSetFontset]
+    puts "}"
+
+    puts "proc tixPref:SetFontSet:$schemeName {} { "
+    puts "global tixOption"
+    if {! $isTK} {
+	tixInitOptionDatabase 0
+    }
+    puts "}"
+
+
+} else {
+    set isFont 0
+
+    # Do the Color First
+    #
+    puts "proc tixPref:SetScheme-Color:$schemeName {} {"
+    puts [info body tixSetScheme-Color]
+    if {! $isTK} {
+	tixSetScheme-Color
+	tixInitOptionDatabase 0
+    }
+    puts "}"
+
+    # Now Do the Mono
+    #
+    puts "proc tixPref:SetScheme-Mono:$schemeName {} {"
+    puts [info body tixSetScheme-Mono]
+    if {! $isTK} {
+	tixSetScheme-Mono
+	tixInitOptionDatabase 0
+    }
+    puts "}"
+}

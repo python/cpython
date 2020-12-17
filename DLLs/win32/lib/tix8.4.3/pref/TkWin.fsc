@@ -1,0 +1,34 @@
+#
+# $Id: TkWin.fsc,v 1.2 2001/12/09 05:03:09 idiscovery Exp $
+#
+proc tixPref:InitFontSet:TkWin {} { 
+
+
+    global tixOption
+
+    set tixOption(font)         "windows-message"
+    set tixOption(bold_font)    "windows-status"
+    set tixOption(menu_font)    "windows-menu"
+    set tixOption(italic_font)  "windows-message"
+    set tixOption(fixed_font)   "systemfixed"
+    set tixOption(border1)      1
+
+}
+proc tixPref:SetFontSet:TkWin {} { 
+global tixOption
+option add *Menu.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *TixMenu.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *Menubutton.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *Label.font              	$tixOption(bold_font) $tixOption(prioLevel)
+option add *Scale.font			$tixOption(italic_font) $tixOption(prioLevel)
+option add *TixBalloon*Label.font 			$tixOption(font) $tixOption(prioLevel)
+option add *TixBitmapButton*label.font 			$tixOption(font) $tixOption(prioLevel)
+option add *TixControl*label.font              	$tixOption(bold_font) $tixOption(prioLevel)
+option add *TixLabelEntry*label.font              	$tixOption(bold_font) $tixOption(prioLevel)
+option add *TixLabelFrame*label.font 	 		$tixOption(bold_font) $tixOption(prioLevel)
+option add *TixMwmClient*title.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *TixNoteBook.nbframe.font			$tixOption(menu_font) $tixOption(prioLevel)
+option add *TixOptionMenu*menubutton.font		$tixOption(font) $tixOption(prioLevel)
+option add *TixComboBox*Entry.font				$tixOption(font) $tixOption(prioLevel)
+option add *TixFileSelectBox*Label.font            		$tixOption(bold_font) $tixOption(prioLevel)
+}

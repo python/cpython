@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Antarctica/Syowa) {
+    {-9223372036854775808 0 0 -00}
+    {-407808000 10800 0 +03}
+}

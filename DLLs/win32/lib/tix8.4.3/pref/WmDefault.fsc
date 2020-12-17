@@ -1,0 +1,57 @@
+# -*-mode: tcl; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
+#
+#	$Id: WmDefault.fsc,v 1.2 2001/12/09 05:03:09 idiscovery Exp $
+#
+#
+
+proc tixPref:InitFontSet:WmDefault {} { 
+    global tixOption
+
+    package require wm_default
+    if {1 || ![info exists ::wm_default::wm]} {
+	wm_default::setup
+	wm_default::addoptions
+    }
+
+    set tixOption(font) 	$::wm_default::system_font
+    set tixOption(bold_font)    [concat $::wm_default::system_font bold]
+    set tixOption(menu_font)    $::wm_default::menu_font        
+    set tixOption(italic_font)  [concat $::wm_default::system_font italic]
+    set tixOption(fixed_font)   $::wm_default::fixed_font
+    set tixOption(border1)      $::wm_default::borderwidth
+
+}
+
+proc tixPref:SetFontSet:WmDefault {} { 
+    global tixOption
+
+    package require wm_default
+    if {1 || ![info exists ::wm_default::wm]} {
+	wm_default::setup
+	wm_default::addoptions
+    }
+
+    set pri $tixOption(prioLevel)
+
+    set tixOption(font) 	$::wm_default::system_font
+    set tixOption(bold_font)    [concat $::wm_default::system_font bold]
+    set tixOption(menu_font)    $::wm_default::menu_font        
+    set tixOption(italic_font)  [concat $::wm_default::system_font italic]
+    set tixOption(fixed_font)   $::wm_default::fixed_font
+    set tixOption(text_font)    $::wm_default::text_font
+    set tixOption(border1)      $::wm_default::borderwidth
+
+    option add *TixBalloon*Label.font 		$tixOption(font) $pri
+    option add *TixBitmapButton*label.font 	$tixOption(font) $pri
+    option add *TixControl*label.font          	$tixOption(font) $pri
+    option add *TixLabelEntry*label.font       	$tixOption(font) $pri
+    option add *TixLabelFrame*label.font 	$tixOption(font) $pri
+    option add *TixMenu.font			$tixOption(menu_font) $pri
+    option add *TixMwmClient*title.font		$tixOption(font) $pri
+    option add *TixNoteBook.nbframe.font	$tixOption(font) $pri
+    # Although its a menubutton, it's more like a button than a menu IMHO
+    option add *TixOptionMenu*menubutton.font	$tixOption(font) $pri
+    option add *TixComboBox*Entry.font		$tixOption(font) $pri
+    option add *TixFileSelectBox*Label.font    	$tixOption(font) $pri
+
+}
