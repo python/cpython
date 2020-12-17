@@ -4,8 +4,8 @@
 @rem rebuild.
 @rem This is only meant as a convenience for developing CPython
 @rem and using it outside of that context is ill-advised.
-@echo Release of CPython x64 interpreter. CPython 3.10.0a3+ compiled by Ferrnando O on day Dec 16 2020, at hour 22:57:38.
-@echo fochoao[at]pm.me
+@echo CPython 3.10.0a3+ x64 Release compiled by Fernando O on day Dec 16 2020, at hour 22:57:38.
+@echo Mail: fochoao[at]pm.me
 @setlocal
 @set PYTHONHOME=C:\cpython\
 

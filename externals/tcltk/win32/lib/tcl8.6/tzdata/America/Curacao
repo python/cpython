@@ -1,0 +1,7 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:America/Curacao) {
+    {-9223372036854775808 -16547 0 LMT}
+    {-1826738653 -16200 0 -0430}
+    {-157750200 -14400 0 AST}
+}

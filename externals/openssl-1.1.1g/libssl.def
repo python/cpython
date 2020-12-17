@@ -1,8 +1,8 @@
 ;
-; Definition file for the DLL version of the libssl-1_1-x64 library from OpenSSL
+; Definition file for the DLL version of the libssl-1_1 library from OpenSSL
 ;
 
-LIBRARY         libssl-1_1-x64	
+LIBRARY         libssl-1_1	
 
 EXPORTS
     BIO_f_ssl

@@ -1,8 +1,8 @@
 ;
-; Definition file for the DLL version of the libcrypto-1_1-x64 library from OpenSSL
+; Definition file for the DLL version of the libcrypto-1_1 library from OpenSSL
 ;
 
-LIBRARY         libcrypto-1_1-x64	
+LIBRARY         libcrypto-1_1	
 
 EXPORTS
     ACCESS_DESCRIPTION_free
@@ -1254,7 +1254,6 @@ EXPORTS
     EC_KEY_check_key
     EC_KEY_clear_flags
     EC_KEY_copy
-    EC_KEY_decoded_from_explicit_params
     EC_KEY_dup
     EC_KEY_free
     EC_KEY_generate_key
@@ -3367,7 +3366,6 @@ EXPORTS
     X509V3_string_free
     X509_ALGORS_it
     X509_ALGOR_cmp
-    X509_ALGOR_copy
     X509_ALGOR_dup
     X509_ALGOR_free
     X509_ALGOR_get0
@@ -3600,8 +3598,6 @@ EXPORTS
     X509_REQ_print
     X509_REQ_print_ex
     X509_REQ_print_fp
-    X509_REQ_set0_signature
-    X509_REQ_set1_signature_algo
     X509_REQ_set_extension_nids
     X509_REQ_set_pubkey
     X509_REQ_set_subject_name

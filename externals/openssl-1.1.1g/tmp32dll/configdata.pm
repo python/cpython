@@ -132,7 +132,7 @@ our %target = (
   LDFLAGS => "/nologo /debug",
   MT => "mt",
   MTFLAGS => "-nologo",
-  RANLIB => "CODE(0x2603658)",
+  RANLIB => "CODE(0x26678c0)",
   RC => "rc",
   _conf_fname_int => [ "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\00-base-templates.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\10-main.conf", "C:\\cpython\\externals\\openssl-1.1.1g\\Configurations\\shared-info.pl" ],
   aes_asm_src => "aes_core.c aes_cbc.c",
@@ -3194,9 +3194,9 @@ our %unified_info = (
                 {
                     "deps" =>
                         [
-                            "ms\\applink.o",
-                            "ms\\applink.o",
                             "ms\\uplink.o",
+                            "ms\\applink.o",
+                            "ms\\applink.o",
                         ],
                     "products" =>
                         {
@@ -3215,8 +3215,6 @@ our %unified_info = (
                 {
                     "deps" =>
                         [
-                            "ssl\\packet.o",
-                            "ssl\\tls13_enc.o",
                             "ssl\\bio_ssl.o",
                             "ssl\\d1_lib.o",
                             "ssl\\d1_msg.o",
@@ -3246,6 +3244,8 @@ our %unified_info = (
                             "ssl\\t1_trce.o",
                             "ssl\\tls13_enc.o",
                             "ssl\\tls_srp.o",
+                            "ssl\\packet.o",
+                            "ssl\\tls13_enc.o",
                         ],
                     "products" =>
                         {
@@ -9940,12 +9940,12 @@ our %unified_info = (
                 ],
             "ms\\applink.o" =>
                 [
-                    "apps",
                     ".",
                     "include",
-                    "..\\apps",
+                    "apps",
                     "..",
                     "..\\include",
+                    "..\\apps",
                 ],
             "ms\\uplink.o" =>
                 [

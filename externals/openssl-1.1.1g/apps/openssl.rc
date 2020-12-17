@@ -3,8 +3,8 @@
 LANGUAGE 0x09,0x01
 
 1 VERSIONINFO
-  FILEVERSION 1,1,1,9
-  PRODUCTVERSION 1,1,1,9
+  FILEVERSION 1,1,1,7
+  PRODUCTVERSION 1,1,1,7
   FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
   FILEFLAGS 0x01L
@@ -22,11 +22,11 @@ BEGIN
             // Required:
             VALUE "CompanyName", "The OpenSSL Project, https://www.openssl.org/\0"
             VALUE "FileDescription", "OpenSSL application\0"
-            VALUE "FileVersion", "1.1.1i\0"
+            VALUE "FileVersion", "1.1.1g\0"
             VALUE "InternalName", "openssl\0"
             VALUE "OriginalFilename", "openssl\0"
             VALUE "ProductName", "The OpenSSL Toolkit\0"
-            VALUE "ProductVersion", "1.1.1i\0"
+            VALUE "ProductVersion", "1.1.1g\0"
             // Optional:
             //VALUE "Comments", "\0"
             VALUE "LegalCopyright", "Copyright 1998-2020 The OpenSSL Authors. All rights reserved.\0"

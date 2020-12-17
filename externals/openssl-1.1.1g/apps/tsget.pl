@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!C:\Strawberry\perl\bin\perl.exe
 # Copyright 2002-2018 The OpenSSL Project Authors. All Rights Reserved.
 # Copyright (c) 2002 The OpenTSA Project. All rights reserved.
 #
@@ -47,7 +47,7 @@ sub create_curl {
     $curl->setopt(CURLOPT_VERBOSE, 1) if $options{d};
     $curl->setopt(CURLOPT_FAILONERROR, 1);
     $curl->setopt(CURLOPT_USERAGENT,
-        "OpenTSA tsget.pl/openssl-1.1.1i");
+        "OpenTSA tsget.pl/openssl-1.1.1g");
 
     # Options for POST method.
     $curl->setopt(CURLOPT_UPLOAD, 1);

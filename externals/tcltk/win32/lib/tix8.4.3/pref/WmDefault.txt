@@ -1,0 +1,142 @@
+One of the bad things about Tk/Tkinter is that it does not pick up
+the current color and font scheme from the prevailing CDE/KDE/GNOME/Windows 
+window manager scheme.
+
+One of the good things about Tk/Tkinter is that it is not tied to one
+particular widget set so it could pick up the current color and font scheme 
+from the prevailing CDE/KDE/GNOME/Windows window manager scheme.
+
+The WmDefault package is for making Tk/Tkinter applications use the 
+prevailing CDE/KDE/GNOME/Windows scheme. It tries to find the files
+and/or settings that the current window manager is using, and then
+sets the Tk options database accordingly (plus a few other things as well). 
+
+
+DOWNLOAD
+--------
+
+Download the latest version of wm_default from http://tix.sourceforge.net
+either as a part of the standard Tix distribution, or as a part of the
+Tix Applications: http://tix.sourceforge.net/Tide. wm_default does not
+require Tix, but is Tix enabled.
+
+
+USAGE:
+------
+
+For Tix versions 8.1.2 and above from http://tix.sourceforge.net,
+WmDefault is the default Tix scheme, so there is nothing else to do.
+
+For Tk applications, it should be sufficent at the beginning of a wish
+app to simply:
+
+	    package require wm_default
+	    wm_default::setup
+	    wm_default::addoptions
+
+The process is divided into 2 steps:
+
+1) find the files and/or settings (::wm_default::setup).
+   This is complete for Windows, pretty good for KDE and CDE, and
+ still barely supported for GNOME because of the difficulty
+ of finding and parsing sawfish definition files.
+ setup takes one optional argument: wm, the name of the window manager
+ as a string, if known. One of: windows gnome kde1 kde2 cde.
+
+2) Setting the Tk options database (::wm_default::addoptions).
+You can override the settings in 1) by adding your values to the call
+to addoptions:
+   ::wm_default::addoptions -foreground red -background blue
+
+You can examine the settings with
+    ::wm_default::getoptions
+which returns a Tcl array of the current settings, and
+    ::wm_default::parray
+which returns a string of the current settings, one value-pair per line.
+
+There are a number of assumptions built into the heuristics of addoptions,
+that may need fine tuning. Post patches to http://tix.sourceforge.net.
+
+
+PYTHON
+______
+
+If you are using Tix versions 8.1.2 and above from http://tix.sourceforge.net
+with Python 2.1  and above, WmDefault is the default Tix scheme, 
+so there is nothing else you need to do.
+
+The easiest way to install WmDefault for Tkinter is to copy the WmDefault.*
+AND THE FILE pkgIndex.tcl from lib/tix8.1/pref to a directory on your
+PYTHONPATH. Then the following should work:
+
+	    import Tkinter
+	    root = Tkinter.Tk()
+	    import WmDefault
+	    WmDefault.setup(root)
+	    WmDefault.addoptions(root, {'foreground': 'red'})
+	    print WmDefault.getoptions(root)
+
+
+SETTINGS
+--------
+
+Here is a list of all the settings controlled by WmDefault:
+	wm		  	- one of windows gnome kde1 kde2 cde kde
+	background		
+	foreground		
+	disabledforeground		
+	disabledbackground		
+	textfamily			
+	systemfamily		
+	menufamily 			
+	fixedfamily		
+	fontsize		- in pixels under Unix, in points under Windows
+	textbackground		
+	textforeground		
+	disabledtextbackground		
+	selectbackground		
+	selectforeground		
+	selectcolor		
+	highlightcolor		
+	highlightbackground		
+	scrollbars		- scrollbar trough color
+	borderwidth		
+	priority		
+	menubackground		
+	menuforeground		
+	activebackground		
+	activeforeground		
+	system_font 		- a Tcl font spec, a list of family size weight
+	menu_font 		
+	fixed_font 		
+	text_font 		
+	linkcolor		- not working completely yet
+	vlinkcolor
+	alinkcolor
+
+
+
+TO MAKE A PREVIOUS TIX USE THIS AS THE DEFAULT SCHEME:
+------------------------------------------------------
+
+1) Compile Tix with 
+	-DTIX_DEF_SCHEME "WmDefault"
+	-DTIX_DEF_FONTSET "WmDefault"
+or change the defines in generic/tixInit.c 
+
+#define TIX_DEF_SCHEME "WmDefault"
+#define TIX_DEF_FONTSET "WmDefault"
+
+2) Edit the installed lib/8.1/Tix.tcl and change the -configspec 
+in tixClass tixAppContext with the following
+	{-fontset    		WmDefault}
+	{-scheme     		WmDefault}
+
+3) Copy the files WmDefault.* AND pkgIndex.tcl to the installed
+   lib/tix8.1/pref
+
+4) Make or edit the file lib/tix8.1/pkgIndex.tcl and add the lines
+
+package ifneeded wm_default 1.0 \
+	[list source [file join $dir pref WmDefault.tcl]]
+

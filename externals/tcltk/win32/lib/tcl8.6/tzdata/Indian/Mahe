@@ -1,0 +1,6 @@
+# created by tools/tclZIC.tcl - do not edit
+
+set TZData(:Indian/Mahe) {
+    {-9223372036854775808 13308 0 LMT}
+    {-2006653308 14400 0 +04}
+}
