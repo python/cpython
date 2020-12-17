@@ -3880,7 +3880,7 @@ See \`config.log' for more details" "$LINENO" 5; }
 $as_echo "$as_me:${as_lineno-$LINENO}: checking for C compiler version" >&5
 set X $ac_compile
 ac_compiler=$2
-for ac_option in --version -v -V -qversion; do
+for ac_option in --version; do
   { { ac_try="$ac_compiler $ac_option >&5"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -6471,44 +6471,10 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_RULE="build_all"
   case $CC in
     *gcc*)
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
-$as_echo_n "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
-if ${ax_cv_check_cflags___fno_semantic_interposition+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fno-semantic-interposition"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_check_cflags___fno_semantic_interposition=yes
-else
-  ax_cv_check_cflags___fno_semantic_interposition=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_semantic_interposition" >&5
-$as_echo "$ax_cv_check_cflags___fno_semantic_interposition" >&6; }
-if test "x$ax_cv_check_cflags___fno_semantic_interposition" = xyes; then :
-
+      AX_CHECK_COMPILE_FLAG(-fno-semantic-interposition,
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
-
-else
-  :
-fi
-
+      )
       ;;
   esac
 
