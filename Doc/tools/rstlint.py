@@ -133,7 +133,7 @@ def hide_literal_blocks(lines):
     """Tool to remove literal blocks from given lines.
 
     It yields empty lines in place of blocks, so line numbers are
-    still meaningfull.
+    still meaningful.
     """
     in_block = False
     for line in lines:
