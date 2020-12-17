@@ -582,7 +582,7 @@ loops that truncate the stream.
 
    Before :func:`product` runs, it completely consumes the input iterables,
    keeping pools of values in memory to generate the products.  Accordingly,
-   it only useful with finite inputs.
+   it is only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
