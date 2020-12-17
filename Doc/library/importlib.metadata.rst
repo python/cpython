@@ -260,9 +260,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 
 
 .. rubric:: Footnotes
-
-.. [#f1] Technically, the returned distribution metadata object is an
-         :class:`email.message.EmailMessage`
-         instance, but this is an implementation detail, and not part of the
-         stable API.  You should only use dictionary-like methods and syntax
-         to access the metadata contents.
