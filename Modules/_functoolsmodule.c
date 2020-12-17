@@ -42,6 +42,8 @@ get_functools_state(PyObject *module)
 
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
+static PyObject *
+partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
@@ -68,9 +70,9 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func)->tp_new == partial_new) {
+    if (Py_TYPE(func)->tp_call == (ternaryfunc)partial_call) {
         // The type of "func" might not be exactly the same type object
-        // as "type", but if it is called using partial_new, it must have the
+        // as "type", but if it is called using partial_call, it must have the
         // same memory layout (fn, args and kw members).
         // We can use its underlying function directly and merge the arguments.
         partialobject *part = (partialobject *)func;
