@@ -35,45 +35,45 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
 .. function:: dictConfig(config)
 
-    Takes the logging configuration from a dictionary.  The contents of
-    this dictionary are described in :ref:`logging-config-dictschema`
-    below.
+   Takes the logging configuration from a dictionary.  The contents of
+   this dictionary are described in :ref:`logging-config-dictschema`
+   below.
 
-    If an error is encountered during configuration, this function will
-    raise a :exc:`ValueError`, :exc:`TypeError`, :exc:`AttributeError`
-    or :exc:`ImportError` with a suitably descriptive message.  The
-    following is a (possibly incomplete) list of conditions which will
-    raise an error:
+   If an error is encountered during configuration, this function will
+   raise a :exc:`ValueError`, :exc:`TypeError`, :exc:`AttributeError`
+   or :exc:`ImportError` with a suitably descriptive message.  The
+   following is a (possibly incomplete) list of conditions which will
+   raise an error:
 
-    * A ``level`` which is not a string or which is a string not
-      corresponding to an actual logging level.
-    * A ``propagate`` value which is not a boolean.
-    * An id which does not have a corresponding destination.
-    * A non-existent handler id found during an incremental call.
-    * An invalid logger name.
-    * Inability to resolve to an internal or external object.
+   * A ``level`` which is not a string or which is a string not
+     corresponding to an actual logging level.
+   * A ``propagate`` value which is not a boolean.
+   * An id which does not have a corresponding destination.
+   * A non-existent handler id found during an incremental call.
+   * An invalid logger name.
+   * Inability to resolve to an internal or external object.
 
-    Parsing is performed by the :class:`DictConfigurator` class, whose
-    constructor is passed the dictionary used for configuration, and
-    has a :meth:`configure` method.  The :mod:`logging.config` module
-    has a callable attribute :attr:`dictConfigClass`
-    which is initially set to :class:`DictConfigurator`.
-    You can replace the value of :attr:`dictConfigClass` with a
-    suitable implementation of your own.
+   Parsing is performed by the :class:`DictConfigurator` class, whose
+   constructor is passed the dictionary used for configuration, and
+   has a :meth:`configure` method.  The :mod:`logging.config` module
+   has a callable attribute :attr:`dictConfigClass`
+   which is initially set to :class:`DictConfigurator`.
+   You can replace the value of :attr:`dictConfigClass` with a
+   suitable implementation of your own.
 
-    :func:`dictConfig` calls :attr:`dictConfigClass` passing
-    the specified dictionary, and then calls the :meth:`configure` method on
-    the returned object to put the configuration into effect::
+   :func:`dictConfig` calls :attr:`dictConfigClass` passing
+   the specified dictionary, and then calls the :meth:`configure` method on
+   the returned object to put the configuration into effect::
 
-          def dictConfig(config):
-              dictConfigClass(config).configure()
+         def dictConfig(config):
+             dictConfigClass(config).configure()
 
-    For example, a subclass of :class:`DictConfigurator` could call
-    ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
-    set up custom prefixes which would be usable in the subsequent
-    :meth:`configure` call. :attr:`dictConfigClass` would be bound to
-    this new subclass, and then :func:`dictConfig` could be called exactly as
-    in the default, uncustomized state.
+   For example, a subclass of :class:`DictConfigurator` could call
+   ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
+   set up custom prefixes which would be usable in the subsequent
+   :meth:`configure` call. :attr:`dictConfigClass` would be bound to
+   this new subclass, and then :func:`dictConfig` could be called exactly as
+   in the default, uncustomized state.
 
    .. versionadded:: 3.2
 
