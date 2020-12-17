@@ -437,7 +437,8 @@ async def wait_for(fut, timeout):
                 return fut.result()
             else:
                 fut.remove_done_callback(cb)
-                fut.cancel()
+                # See https://bugs.python.org/issue42600
+                await _cancel_and_wait(fut, loop=loop)
                 raise
 
         if fut.done():

@@ -1264,6 +1264,23 @@ class BaseTaskTests:
 
         loop.run_until_complete(foo())
 
+    def test_wait_for_must_cancel_child(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        f = loop.create_future()
+
+        async def foo():
+            task = loop.create_task(asyncio.wait_for(f, 10))
+            await asyncio.sleep(0)
+            task.cancel()
+            await task
+
+        with self.assertRaises(asyncio.CancelledError):
+            loop.run_until_complete(foo())
+
+        self.assertTrue(f.cancelled())
+
     def test_wait(self):
 
         def gen():
