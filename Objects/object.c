@@ -12,6 +12,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "interpreteridobject.h"
+#include "rewind.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -2202,6 +2203,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
+    Rewind_Dealloc(op);
     destructor dealloc = Py_TYPE(op)->tp_dealloc;
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);

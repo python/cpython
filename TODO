@@ -1,0 +1,62 @@
+# Events/Instructions To Track
+
+* Bug: recycled objects are not re-registered (done)
+* function calls (such as print)
+* register objects as each object is encountered (in progress)
+* lists in lists (in progress)
+* come up with a format for printing heap objects based on id (done)
+* RETURN_VALUE (done)
+* STORE_NAME (done)
+* String
+    * concatenation
+    * str.replace
+    * str.translate
+    * str.lstrip/rstrip/strip
+    * other generating methods
+* List
+    * BUILD_LIST (done)
+    * LIST_EXTEND (fix 2 different formats of call)
+    * list.append (done)
+    * DELETE_SUBSCR (done)
+    * STORE_SUBSCR (done)
+    * list.remove (done)
+    * list.extend (done)
+    * list.insert (done)
+    * list.pop (done)
+    * list.clear (done)
+    * concatenation with +/* (done)
+    * list.reverse (done)
+    * LIST_APPEND (done)
+    * list.sort
+* Dict
+    * BUILD_MAP
+    * dict.update
+    * dict.clear
+    * dict.pop
+    * dict.popitem
+    * intersection and difference with &/^/-
+    * union with |
+    * DELETE_SUBSCR
+    * STORE_SUBSCR
+* Set
+    * SET_ADD
+    * calling constructor set()
+    * set.add
+    * set.update
+    * set.discard
+    * set.remove
+    * set.pop
+    * set.clear
+    * difference (-)
+    * intersection (&) 
+    * symmetric difference (^)
+    * union (|)
+    * -=
+    * &=
+    * ^=
+    * set.difference_update
+    * set.intersection_update
+    * set.symmetric_difference_update
+    * add elements from another set with |=
+* Problem: what if a data structure/object is modified outside of my
+supervision? Such as from a native C module?

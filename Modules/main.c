@@ -6,6 +6,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "rewind.h"
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -34,6 +35,8 @@ static PyStatus
 pymain_init(const _PyArgv *args)
 {
     PyStatus status;
+
+    Rewind_Initialize();
 
     status = _PyRuntime_Initialize();
     if (_PyStatus_EXCEPTION(status)) {
@@ -655,6 +658,8 @@ Py_RunMain(void)
     if (_Py_UnhandledKeyboardInterrupt) {
         exitcode = exit_sigint();
     }
+
+    Rewind_Cleanup();
 
     return exitcode;
 }
