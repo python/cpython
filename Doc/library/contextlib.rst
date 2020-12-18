@@ -243,7 +243,25 @@ Functions and classes provided:
           with cm as file:
               # Perform processing on the file
 
+   It can also be used as a stand-in for
+   :ref:`asynchronous context managers <async-context-managers>`::
+
+       async def send_http(session=None):
+          if not session:
+              # If no http session, create it with aiohttp
+              cm = aiohttp.ClientSession()
+          else:
+              # Caller is responsible for closing the session
+              cm = nullcontext(session)
+
+          async with cm as session:
+              # Send http requests with session
+
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.10
+      :term:`asynchronous context manager` support was added.
+
 
 
 .. function:: suppress(*exceptions)
@@ -409,11 +427,11 @@ Functions and classes provided:
    .. versionadded:: 3.2
 
 
-.. class:: AsyncContextManager
+.. class:: AsyncContextDecorator
 
-   Similar as ContextManger only for async
+   Similar to :class:`ContextDecorator` but only for asynchronous functions.
 
-   Example of ``ContextDecorator``::
+   Example of ``AsyncContextDecorator``::
 
       from asyncio import run
       from contextlib import AsyncContextDecorator
@@ -444,6 +462,8 @@ Functions and classes provided:
       Starting
       The bit in the middle
       Finishing
+
+   .. versionadded:: 3.10
 
 
 .. class:: ExitStack()

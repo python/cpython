@@ -252,7 +252,7 @@ class ExceptionTests(unittest.TestCase):
         check('from __future__ import doesnt_exist', 1, 1)
         check('from __future__ import braces', 1, 1)
         check('x=1\nfrom __future__ import division', 2, 1)
-        check('foo(1=2)', 1, 5)
+        check('foo(1=2)', 1, 6)
         check('def f():\n  x, y: int', 2, 3)
         check('[*x for x in xs]', 1, 2)
         check('foo(x for x in range(10), 100)', 1, 5)
@@ -1046,7 +1046,7 @@ class ExceptionTests(unittest.TestCase):
                 # tstate->recursion_depth is equal to (recursion_limit - 1)
                 # and is equal to recursion_limit when _gen_throw() calls
                 # PyErr_NormalizeException().
-                recurse(setrecursionlimit(depth + 2) - depth - 1)
+                recurse(setrecursionlimit(depth + 2) - depth)
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
@@ -1075,6 +1075,54 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'RecursionError: maximum recursion depth exceeded '
                       b'while normalizing an exception', err)
         self.assertIn(b'Done.', out)
+
+
+    def test_recursion_in_except_handler(self):
+
+        def set_relative_recursion_limit(n):
+            depth = 1
+            while True:
+                try:
+                    sys.setrecursionlimit(depth)
+                except RecursionError:
+                    depth += 1
+                else:
+                    break
+            sys.setrecursionlimit(depth+n)
+
+        def recurse_in_except():
+            try:
+                1/0
+            except:
+                recurse_in_except()
+
+        def recurse_after_except():
+            try:
+                1/0
+            except:
+                pass
+            recurse_after_except()
+
+        def recurse_in_body_and_except():
+            try:
+                recurse_in_body_and_except()
+            except:
+                recurse_in_body_and_except()
+
+        recursionlimit = sys.getrecursionlimit()
+        try:
+            set_relative_recursion_limit(10)
+            for func in (recurse_in_except, recurse_after_except, recurse_in_body_and_except):
+                with self.subTest(func=func):
+                    try:
+                        func()
+                    except RecursionError:
+                        pass
+                    else:
+                        self.fail("Should have raised a RecursionError")
+        finally:
+            sys.setrecursionlimit(recursionlimit)
+
 
     @cpython_only
     def test_recursion_normalizing_with_no_memory(self):
@@ -1112,7 +1160,7 @@ class ExceptionTests(unittest.TestCase):
             except MemoryError as e:
                 tb = e.__traceback__
             else:
-                self.fail("Should have raises a MemoryError")
+                self.fail("Should have raised a MemoryError")
             return traceback.format_tb(tb)
 
         tb1 = raiseMemError()
@@ -1438,6 +1486,89 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+
+class PEP626Tests(unittest.TestCase):
+
+    def lineno_after_raise(self, f, line):
+        try:
+            f()
+        except Exception as ex:
+            t = ex.__traceback__
+            while t.tb_next:
+                t = t.tb_next
+            frame = t.tb_frame
+            self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+
+    def test_lineno_after_raise_simple(self):
+        def simple():
+            1/0
+            pass
+        self.lineno_after_raise(simple, 1)
+
+    def test_lineno_after_raise_in_except(self):
+        def in_except():
+            try:
+                1/0
+            except:
+                1/0
+                pass
+        self.lineno_after_raise(in_except, 4)
+
+    def test_lineno_after_other_except(self):
+        def other_except():
+            try:
+                1/0
+            except TypeError as ex:
+                pass
+        self.lineno_after_raise(other_except, 3)
+
+    def test_lineno_in_named_except(self):
+        def in_named_except():
+            try:
+                1/0
+            except Exception as ex:
+                1/0
+                pass
+        self.lineno_after_raise(in_named_except, 4)
+
+    def test_lineno_in_try(self):
+        def in_try():
+            try:
+                1/0
+            finally:
+                pass
+        self.lineno_after_raise(in_try, 4)
+
+    def test_lineno_in_finally_normal(self):
+        def in_finally_normal():
+            try:
+                pass
+            finally:
+                1/0
+                pass
+        self.lineno_after_raise(in_finally_normal, 4)
+
+    def test_lineno_in_finally_except(self):
+        def in_finally_except():
+            try:
+                1/0
+            finally:
+                1/0
+                pass
+        self.lineno_after_raise(in_finally_except, 4)
+
+    def test_lineno_after_with(self):
+        class Noop:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+        def after_with():
+            with Noop():
+                1/0
+                pass
+        self.lineno_after_raise(after_with, 2)
 
 
 if __name__ == '__main__':

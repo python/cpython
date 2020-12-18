@@ -1547,7 +1547,7 @@ static int tune_config(void)
 }
 
 
-static int test_set_config(void)
+static int test_init_set_config(void)
 {
     // Initialize core
     PyConfig config;
@@ -1742,7 +1742,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_init_warnoptions", test_init_warnoptions},
-    {"test_init_set_config", test_set_config},
+    {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
     {"test_get_argc_argv", test_get_argc_argv},
 

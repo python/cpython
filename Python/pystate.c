@@ -303,6 +303,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     _PyAST_Fini(interp);
     _PyWarnings_Fini(interp);
+    _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their
@@ -605,7 +606,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->frame = NULL;
     tstate->recursion_depth = 0;
-    tstate->overflowed = 0;
+    tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
     tstate->use_tracing = 0;

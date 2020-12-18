@@ -32,7 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
-* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
+* On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -1323,12 +1323,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_APPEND
 
-    Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
-    flag. This flag is meaningful only for :func:`os.pwritev`, and its
-    effect applies only to the data range written by the system call. The
-    *offset* argument does not affect the write operation; the data is always
-    appended to the end of the file. However, if the *offset* argument is
-    ``-1``, the current file *offset* is updated.
+   Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
+   flag. This flag is meaningful only for :func:`os.pwritev`, and its
+   effect applies only to the data range written by the system call. The
+   *offset* argument does not affect the write operation; the data is always
+   appended to the end of the file. However, if the *offset* argument is
+   ``-1``, the current file *offset* is updated.
 
    .. availability:: Linux 4.16 and newer.
 
@@ -1418,6 +1418,39 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.3
 
+
+.. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
+
+   Transfer *count* bytes from file descriptor *src*, starting from offset
+   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+   At least one of the file descriptors must refer to a pipe. If *offset_src*
+   is None, then *src* is read from the current position; respectively for
+   *offset_dst*. The offset associated to the file descriptor that refers to a
+   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   the same filesystem, otherwise an :exc:`OSError` is raised with
+   :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+
+   This copy is done without the additional cost of transferring data
+   from the kernel to user space and then back into the kernel. Additionally,
+   some filesystems could implement extra optimizations. The copy is done as if
+   both files are opened as binary.
+
+   Upon successful completion, returns the number of bytes spliced to or from
+   the pipe. A return value of 0 means end of input. If *src* refers to a
+   pipe, then this means that there was no data to transfer, and it would not
+   make sense to block because there are no writers connected to the write end
+   of the pipe.
+
+   .. availability:: Linux kernel >= 2.6.17 and glibc >= 2.5
+
+   .. versionadded:: 3.10
+
+
+.. data:: SPLICE_F_MOVE
+          SPLICE_F_NONBLOCK
+          SPLICE_F_MORE
+
+   .. versionadded:: 3.10
 
 .. function:: readv(fd, buffers)
 
@@ -1958,7 +1991,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: lstat(path, \*, dir_fd=None)
+.. function:: lstat(path, *, dir_fd=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
@@ -2465,7 +2498,7 @@ features:
       On the first, uncached call, a system call is required on Windows but
       not on Unix.
 
-   .. method:: is_dir(\*, follow_symlinks=True)
+   .. method:: is_dir(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a directory or a symbolic link pointing
       to a directory; return ``False`` if the entry is or points to any other
@@ -2489,7 +2522,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: is_file(\*, follow_symlinks=True)
+   .. method:: is_file(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a file or a symbolic link pointing to a
       file; return ``False`` if the entry is or points to a directory or other
@@ -2519,7 +2552,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: stat(\*, follow_symlinks=True)
+   .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
       follows symbolic links by default; to stat a symbolic link add the
@@ -2551,7 +2584,7 @@ features:
       for :class:`bytes` paths on Windows.
 
 
-.. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
+.. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
@@ -3274,6 +3307,102 @@ features:
       ``MFD_HUGE*`` flags are only available since Linux 4.14.
 
    .. versionadded:: 3.8
+
+
+.. function:: eventfd(initval[, flags=os.EFD_CLOEXEC])
+
+   Create and return an event file descriptor. The file descriptors supports
+   raw :func:`read` and :func:`write` with a buffer size of 8,
+   :func:`~select.select`, :func:`~select.poll` and similar. See man page
+   :manpage:`eventfd(2)` for more information.  By default, the
+   new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   *initval* is the initial value of the event counter. The initial value
+   must be an 32 bit unsigned integer. Please note that the initial value is
+   limited to a 32 bit unsigned int although the event counter is an unsigned
+   64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
+
+   *flags* can be constructed from :const:`EFD_CLOEXEC`,
+   :const:`EFD_NONBLOCK`, and :const:`EFD_SEMAPHORE`.
+
+   If :const:`EFD_SEMAPHORE` is specified and the event counter is non-zero,
+   :func:`eventfd_read` returns 1 and decrements the counter by one.
+
+   If :const:`EFD_SEMAPHORE` is not specified and the event counter is
+   non-zero, :func:`eventfd_read` returns the current event counter value and
+   resets the counter to zero.
+
+   If the event counter is zero and :const:`EFD_NONBLOCK` is not
+   specified, :func:`eventfd_read` blocks.
+
+   :func:`eventfd_write` increments the event counter. Write blocks if the
+   write operation would increment the counter to a value larger than
+   2\ :sup:`64`\ -\ 2.
+
+   Example::
+
+       import os
+
+       # semaphore with start value '1'
+       fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+       try:
+           # acquire semaphore
+           v = os.eventfd_read(fd)
+           try:
+               do_work()
+           finally:
+               # release semaphore
+               os.eventfd_write(fd, v)
+       finally:
+           os.close(fd)
+
+   .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
+
+.. function:: eventfd_read(fd)
+
+   Read value from an :func:`eventfd` file descriptor and return a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. function:: eventfd_write(fd, value)
+
+   Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_CLOEXEC
+
+   Set close-on-exec flag for new :func:`eventfd` file descriptor.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_NONBLOCK
+
+   Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
+   descriptor.
+
+   .. availability:: See :func:`eventfd`
+
+   .. versionadded:: 3.10
+
+.. data:: EFD_SEMAPHORE
+
+   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   descriptor. On read the internal counter is decremented by one.
+
+   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
+
+   .. versionadded:: 3.10
 
 
 Linux extended attributes

@@ -53,9 +53,8 @@ basic.events = [(0, 'call'),
 # following that clause?
 
 
-# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." are optimized
-# away.  No code # exists for them, so the line numbers skip directly from
-# "del x" to "x = 1".
+# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." could be optimized
+# away.  Make sure that those lines aren't skipped.
 def arigo_example0():
     x = 1
     del x
@@ -66,6 +65,7 @@ def arigo_example0():
 arigo_example0.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (5, 'line'),
                         (5, 'return')]
 
@@ -79,6 +79,7 @@ def arigo_example1():
 arigo_example1.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (5, 'line'),
                         (5, 'return')]
 
@@ -94,6 +95,7 @@ def arigo_example2():
 arigo_example2.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (4, 'line'),
                         (7, 'line'),
                         (7, 'return')]
@@ -220,8 +222,7 @@ ireturn_example.events = [(0, 'call'),
                           (2, 'line'),
                           (3, 'line'),
                           (4, 'line'),
-                          (6, 'line'),
-                          (6, 'return')]
+                          (4, 'return')]
 
 # Tight loop with while(1) example (SF #765624)
 def tightloop_example():
@@ -237,9 +238,13 @@ tightloop_example.events = [(0, 'call'),
                             (1, 'line'),
                             (2, 'line'),
                             (3, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
                             (5, 'exception'),
                             (6, 'line'),
@@ -602,6 +607,17 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(doit_async.__code__.co_firstlineno,
                             tracer.events, events)
 
+    def test_21_repeated_pass(self):
+        def func():
+            pass
+            pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'return')])
+
     def test_loop_in_try_except(self):
         # https://bugs.python.org/issue41670
 
@@ -618,6 +634,162 @@ class TraceTestCase(unittest.TestCase):
              (2, 'line'),
              (3, 'line'),
              (3, 'return')])
+
+    def test_try_except_no_exception(self):
+
+        def func():
+            try:
+                2
+            except:
+                4
+            finally:
+                6
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (6, 'line'),
+             (6, 'return')])
+
+    def test_nested_loops(self):
+
+        def func():
+            for i in range(2):
+                for j in range(2):
+                    a = i + j
+            return a == 1
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (4, 'line'),
+             (4, 'return')])
+
+    def test_if_break(self):
+
+        def func():
+            seq = [1, 0]
+            while seq:
+                n = seq.pop()
+                if n:
+                    break   # line 5
+            else:
+                n = 99
+            return n        # line 8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (8, 'line'),
+             (8, 'return')])
+
+    def test_break_through_finally(self):
+
+        def func():
+            a, c, d, i = 1, 1, 1, 99
+            try:
+                for i in range(3):
+                    try:
+                        a = 5
+                        if i > 0:
+                            break                   # line 7
+                        a = 8
+                    finally:
+                        c = 10
+            except:
+                d = 12                              # line 12
+            assert a == 5 and c == 10 and d == 1    # line 13
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (10, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (10, 'line'),
+             (13, 'line'),
+             (13, 'return')])
+
+    def test_continue_through_finally(self):
+
+        def func():
+            a, b, c, d, i = 1, 1, 1, 1, 99
+            try:
+                for i in range(2):
+                    try:
+                        a = 5
+                        if i > 0:
+                            continue                # line 7
+                        b = 8
+                    finally:
+                        c = 10
+            except:
+                d = 12                              # line 12
+            assert (a, b, c, d) == (5, 8, 10, 1)    # line 13
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (10, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (10, 'line'),
+             (3, 'line'),
+             (13, 'line'),
+             (13, 'return')])
+
+    def test_return_through_finally(self):
+
+        def func():
+            try:
+                return 2
+            finally:
+                4
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (4, 'line'),
+             (4, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
@@ -766,7 +938,7 @@ class JumpTracer:
         if (self.firstLine is None and frame.f_code == self.code and
                 event == 'line'):
             self.firstLine = frame.f_lineno - 1
-        if (event == self.event and self.firstLine and
+        if (event == self.event and self.firstLine is not None and
                 frame.f_lineno == self.firstLine + self.jumpFrom):
             f = frame
             while f is not None and f.f_code != self.code:
@@ -980,7 +1152,7 @@ class JumpTestCase(unittest.TestCase):
             pass
         output.append(12)
 
-    @jump_test(3, 4, [1], (ValueError, 'unreachable'))
+    @jump_test(3, 4, [1], (ValueError, 'after'))
     def test_no_jump_infinite_while_loop(output):
         output.append(1)
         while True:
@@ -1540,7 +1712,7 @@ output.append(4)
 """, "<fake module>", "exec")
         class fake_function:
             __code__ = code
-        tracer = JumpTracer(fake_function, 2, 0)
+        tracer = JumpTracer(fake_function, 4, 1)
         sys.settrace(tracer.trace)
         namespace = {"output": []}
         exec(code, namespace)

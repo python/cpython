@@ -1,0 +1,2 @@
+Enum: private names do not become members / do not generate errors -- they
+remain normal attributes

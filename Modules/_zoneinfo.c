@@ -172,7 +172,7 @@ static void
 update_strong_cache(const PyTypeObject *const type, PyObject *key,
                     PyObject *zone);
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *key);
+zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
 
 static PyObject *
 zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
@@ -1214,15 +1214,9 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
         return -1;
     }
 
-    // day is an unsigned integer, so day < 0 should always return false, but
-    // if day's type changes to a signed integer *without* changing this value,
-    // it may create a bug. Considering that the compiler should be able to
-    // optimize out the first comparison if day is an unsigned integer anyway,
-    // we will leave this comparison in place and disable the compiler warning.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
-    if (day < 0 || day > 6) {
-#pragma GCC diagnostic pop
+    // If the 'day' parameter type is changed to a signed type,
+    // "day < 0" check must be added.
+    if (/* day < 0 || */ day > 6) {
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
     }

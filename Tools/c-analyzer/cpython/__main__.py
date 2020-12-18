@@ -105,7 +105,11 @@ def cmd_parse(filenames=None, **kwargs):
     filenames = _resolve_filenames(filenames)
     if 'get_file_preprocessor' not in kwargs:
         kwargs['get_file_preprocessor'] = _parser.get_preprocessor()
-    c_parser.cmd_parse(filenames, **kwargs)
+    c_parser.cmd_parse(
+        filenames,
+        relroot=REPO_ROOT,
+        **kwargs
+    )
 
 
 def _cli_check(parser, **kwargs):
@@ -131,6 +135,7 @@ def cmd_analyze(filenames=None, **kwargs):
     kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
     c_analyzer.cmd_analyze(
         filenames,
+        relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         formats=formats,
         **kwargs

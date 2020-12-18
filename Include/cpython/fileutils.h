@@ -95,10 +95,6 @@ PyAPI_FUNC(FILE *) _Py_wfopen(
     const wchar_t *path,
     const wchar_t *mode);
 
-PyAPI_FUNC(FILE*) _Py_fopen(
-    const char *pathname,
-    const char *mode);
-
 PyAPI_FUNC(FILE*) _Py_fopen_obj(
     PyObject *path,
     const char *mode);

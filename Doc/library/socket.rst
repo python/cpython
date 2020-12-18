@@ -56,12 +56,12 @@ created.  Socket addresses are represented as follows:
   bytes-like object can be used for either type of address when
   passing it as an argument.
 
-   .. versionchanged:: 3.3
-      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
-      encoding.
+  .. versionchanged:: 3.3
+     Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+     encoding.
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+  .. versionchanged:: 3.5
+     Writable :term:`bytes-like object` is now accepted.
 
 .. _host_port:
 
@@ -283,6 +283,8 @@ Exceptions
 
 .. exception:: timeout
 
+   A deprecated alias of :exc:`TimeoutError`.
+
    A subclass of :exc:`OSError`, this exception is raised when a timeout
    occurs on a socket which has had timeouts enabled via a prior call to
    :meth:`~socket.settimeout` (or implicitly through
@@ -291,6 +293,9 @@ Exceptions
 
    .. versionchanged:: 3.3
       This class was made a subclass of :exc:`OSError`.
+
+   .. versionchanged:: 3.10
+      This class was made an alias of :exc:`TimeoutError`.
 
 
 Constants
@@ -1208,7 +1213,7 @@ to sockets.
    address family --- see above.)
 
    If the connection is interrupted by a signal, the method waits until the
-   connection completes, or raise a :exc:`socket.timeout` on timeout, if the
+   connection completes, or raise a :exc:`TimeoutError` on timeout, if the
    signal handler doesn't raise an exception and the socket is blocking or has
    a timeout. For non-blocking sockets, the method raises an
    :exc:`InterruptedError` exception if the connection is interrupted by a

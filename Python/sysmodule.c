@@ -1181,7 +1181,6 @@ static PyObject *
 sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 /*[clinic end generated code: output=35e1c64754800ace input=b0f7a23393924af3]*/
 {
-    int mark;
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (new_limit < 1) {
@@ -1199,8 +1198,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
        Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
-    mark = _Py_RecursionLimitLowerWaterMark(new_limit);
-    if (tstate->recursion_depth >= mark) {
+    if (tstate->recursion_depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
@@ -2841,6 +2839,11 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
         }
     }
 
+    /* adding sys.path_hooks and sys.path_importer_cache */
+    SET_SYS("meta_path", PyList_New(0));
+    SET_SYS("path_importer_cache", PyDict_New());
+    SET_SYS("path_hooks", PyList_New(0));
+
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }
@@ -2922,15 +2925,22 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #define SET_SYS_FROM_WSTR(KEY, VALUE) \
         SET_SYS(KEY, PyUnicode_FromWideChar(VALUE, -1));
 
-    COPY_LIST("path", config->module_search_paths);
+#define COPY_WSTR(SYS_ATTR, WSTR) \
+    if (WSTR != NULL) { \
+        SET_SYS_FROM_WSTR(SYS_ATTR, WSTR); \
+    }
 
-    SET_SYS_FROM_WSTR("executable", config->executable);
-    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
-    SET_SYS_FROM_WSTR("prefix", config->prefix);
-    SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
-    SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
-    SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
-    SET_SYS_FROM_WSTR("platlibdir", config->platlibdir);
+    if (config->module_search_paths_set) {
+        COPY_LIST("path", config->module_search_paths);
+    }
+
+    COPY_WSTR("executable", config->executable);
+    COPY_WSTR("_base_executable", config->base_executable);
+    COPY_WSTR("prefix", config->prefix);
+    COPY_WSTR("base_prefix", config->base_prefix);
+    COPY_WSTR("exec_prefix", config->exec_prefix);
+    COPY_WSTR("base_exec_prefix", config->base_exec_prefix);
+    COPY_WSTR("platlibdir", config->platlibdir);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2944,8 +2954,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
 
-#undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
+#undef COPY_LIST
+#undef COPY_WSTR
 
     // sys.flags
     PyObject *flags = _PySys_GetObject(tstate, "flags");  // borrowed ref

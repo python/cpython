@@ -9,7 +9,7 @@ from types import MethodType, GenericAlias
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
            "AsyncExitStack", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "redirect_stderr", "suppress"]
+           "redirect_stdout", "redirect_stderr", "suppress", "aclosing"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -704,7 +704,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
         return received_exc and suppressed_exc
 
 
-class nullcontext(AbstractContextManager):
+class nullcontext(AbstractContextManager, AbstractAsyncContextManager):
     """Context manager that does no additional processing.
 
     Used as a stand-in for a normal context manager, when a particular
@@ -722,4 +722,10 @@ class nullcontext(AbstractContextManager):
         return self.enter_result
 
     def __exit__(self, *excinfo):
+        pass
+
+    async def __aenter__(self):
+        return self.enter_result
+
+    async def __aexit__(self, *excinfo):
         pass

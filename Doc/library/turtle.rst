@@ -913,8 +913,8 @@ Color control
       Set pencolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the outline of that polygon is drawn with the
-    newly set pencolor.
+   If turtleshape is a polygon, the outline of that polygon is drawn with the
+   newly set pencolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -962,8 +962,8 @@ Color control
       Set fillcolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the interior of that polygon is drawn
-    with the newly set fillcolor.
+   If turtleshape is a polygon, the interior of that polygon is drawn
+   with the newly set fillcolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1001,8 +1001,8 @@ Color control
       Equivalent to ``pencolor(colorstring1)`` and ``fillcolor(colorstring2)``
       and analogously if the other input format is used.
 
-    If turtleshape is a polygon, outline and interior of that polygon is drawn
-    with the newly set colors.
+   If turtleshape is a polygon, outline and interior of that polygon is drawn
+   with the newly set colors.
 
    .. doctest::
       :skipif: _tkinter is None

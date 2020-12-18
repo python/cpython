@@ -38,7 +38,7 @@ struct PyCodeObject {
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
-    PyObject *co_lnotab;        /* string (encoding addr<->lineno mapping) See
+    PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;       /* for optimization only (see frameobject.c) */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
@@ -135,16 +135,18 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
-typedef struct _addr_pair {
-        int ap_lower;
-        int ap_upper;
-} PyAddrPair;
+typedef struct _line_offsets {
+    int ar_start;
+    int ar_end;
+    int ar_line;
+    int ar_computed_line;
+    char *lo_next;
+} PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
    same line as lasti.  Return the number of that line.
 */
-PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
-                                        int lasti, PyAddrPair *bounds);
+PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
 
 /* Create a comparable key used to compare constants taking in account the
  * object type. It is used to make sure types are not coerced (e.g., float and
@@ -163,3 +165,15 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
+
+/** API for initializing the line number table. */
+int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+
+/** Out of process API for initializing the line number table. */
+void PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range);
+
+/** API for traversing the line number table. */
+int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
+

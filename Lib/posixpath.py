@@ -262,6 +262,9 @@ def expanduser(path):
             # password database, return the path unchanged
             return path
         userhome = pwent.pw_dir
+    # if no user home, return the path unchanged on VxWorks
+    if userhome is None and sys.platform == "vxworks":
+        return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
         root = b'/'
