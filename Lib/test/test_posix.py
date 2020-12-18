@@ -724,10 +724,19 @@ class PosixTester(unittest.TestCase):
         chown_func(first_param, uid, -1)
         check_stat(uid, gid)
 
-        if uid == 0:
+        if sys.platform == "vxworks":
+            # On VxWorks, root user id is 1 and 0 means no login user:
+            # both are super users.
+            is_root = (uid in (0, 1))
+        else:
+            is_root = (uid == 0)
+        if is_root:
             # Try an amusingly large uid/gid to make sure we handle
             # large unsigned values.  (chown lets you use any
             # uid/gid you like, even if they aren't defined.)
+            #
+            # On VxWorks uid_t is defined as unsigned short. A big
+            # value greater than 65535 will result in underflow error.
             #
             # This problem keeps coming up:
             #   http://bugs.python.org/issue1747858
@@ -738,7 +747,7 @@ class PosixTester(unittest.TestCase):
             # This part of the test only runs when run as root.
             # Only scary people run their tests as root.
 
-            big_value = 2**31
+            big_value = (2**31 if sys.platform != "vxworks" else 2**15)
             chown_func(first_param, big_value, big_value)
             check_stat(big_value, big_value)
             chown_func(first_param, -1, -1)
@@ -1045,6 +1054,7 @@ class PosixTester(unittest.TestCase):
 
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
+    @unittest.skipUnless(hasattr(os, 'popen'), "test needs os.popen()")
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()

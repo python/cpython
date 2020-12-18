@@ -74,11 +74,12 @@ _PyAtExit_Fini(PyInterpreterState *interp)
     struct atexit_state *state = &interp->atexit;
     atexit_cleanup(state);
     PyMem_Free(state->callbacks);
+    state->callbacks = NULL;
 }
 
 
 static void
-atexit_callfuncs(struct atexit_state *state, int ignore_exc)
+atexit_callfuncs(struct atexit_state *state)
 {
     assert(!PyErr_Occurred());
 
@@ -86,7 +87,6 @@ atexit_callfuncs(struct atexit_state *state, int ignore_exc)
         return;
     }
 
-    PyObject *exc_type = NULL, *exc_value, *exc_tb;
     for (int i = state->ncallbacks - 1; i >= 0; i--) {
         atexit_callback *cb = state->callbacks[i];
         if (cb == NULL) {
@@ -95,24 +95,7 @@ atexit_callfuncs(struct atexit_state *state, int ignore_exc)
 
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            if (ignore_exc) {
-                _PyErr_WriteUnraisableMsg("in atexit callback", cb->func);
-            }
-            else {
-                /* Maintain the last exception, but don't leak if there are
-                   multiple exceptions. */
-                if (exc_type) {
-                    Py_DECREF(exc_type);
-                    Py_XDECREF(exc_value);
-                    Py_XDECREF(exc_tb);
-                }
-                PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
-                if (!PyErr_GivenExceptionMatches(exc_type, PyExc_SystemExit)) {
-                    PySys_WriteStderr("Error in atexit._run_exitfuncs:\n");
-                    PyErr_NormalizeException(&exc_type, &exc_value, &exc_tb);
-                    PyErr_Display(exc_type, exc_value, exc_tb);
-                }
-            }
+            _PyErr_WriteUnraisableMsg("in atexit callback", cb->func);
         }
         else {
             Py_DECREF(res);
@@ -121,14 +104,7 @@ atexit_callfuncs(struct atexit_state *state, int ignore_exc)
 
     atexit_cleanup(state);
 
-    if (ignore_exc) {
-        assert(!PyErr_Occurred());
-    }
-    else {
-        if (exc_type) {
-            PyErr_Restore(exc_type, exc_value, exc_tb);
-        }
-    }
+    assert(!PyErr_Occurred());
 }
 
 
@@ -136,7 +112,7 @@ void
 _PyAtExit_Call(PyThreadState *tstate)
 {
     struct atexit_state *state = &tstate->interp->atexit;
-    atexit_callfuncs(state, 1);
+    atexit_callfuncs(state);
 }
 
 
@@ -177,8 +153,9 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
         state->callback_len += 16;
         size_t size = sizeof(atexit_callback*) * (size_t)state->callback_len;
         r = (atexit_callback**)PyMem_Realloc(state->callbacks, size);
-        if (r == NULL)
+        if (r == NULL) {
             return PyErr_NoMemory();
+        }
         state->callbacks = r;
     }
 
@@ -203,16 +180,15 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
 "_run_exitfuncs() -> None\n\
 \n\
-Run all registered exit functions.");
+Run all registered exit functions.\n\
+\n\
+If a callaback raises an exception, it is logged with sys.unraisablehook.");
 
 static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 {
     struct atexit_state *state = get_atexit_state();
-    atexit_callfuncs(state, 0);
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
+    atexit_callfuncs(state);
     Py_RETURN_NONE;
 }
 

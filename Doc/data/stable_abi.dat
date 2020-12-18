@@ -743,6 +743,7 @@ Py_FileSystemDefaultEncodeErrors
 Py_FileSystemDefaultEncoding
 Py_Finalize
 Py_FinalizeEx
+Py_FrozenMain
 Py_GenericAlias
 Py_GenericAliasType
 Py_GetBuildInfo

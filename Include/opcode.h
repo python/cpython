@@ -30,7 +30,6 @@ extern "C" {
 #define BINARY_TRUE_DIVIDE       27
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
-#define RERAISE                  48
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
 #define GET_ANEXT                51
@@ -96,6 +95,7 @@ extern "C" {
 #define LOAD_GLOBAL             116
 #define IS_OP                   117
 #define CONTAINS_OP             118
+#define RERAISE                 119
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
