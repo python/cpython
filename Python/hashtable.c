@@ -111,7 +111,7 @@ round_size(size_t s)
         return HASHTABLE_MIN_SIZE;
     // 1 << _Py_bit_length(s) is the smallest value k so that 1 << k > s
     // subtract one in case s is an exact power of two, saving space
-    return 1 << _Py_bit_length_size_t(s - 1);
+    return (size_t)1 << _Py_bit_length_size_t(s - 1);
 }
 
 
