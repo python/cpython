@@ -46,6 +46,7 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
+#include "pycore_bitutils.h"
 
 #define HASHTABLE_MIN_SIZE 16
 #define HASHTABLE_HIGH 0.50
