@@ -103,19 +103,6 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> mean([D("0.5"), D("0.75"), D("0.625"), D("0.375")])
       Decimal('0.5625')
 
-   .. note::
-
-      The mean is strongly affected by outliers and is not a robust estimator
-      for central location: the mean is not necessarily a typical example of
-      the data points.  For more robust measures of central location, see
-      :func:`median` and :func:`mode`.
-
-      The sample mean gives an unbiased estimate of the true population mean,
-      so that when taken on average over all the possible samples,
-      ``mean(sample)`` converges on the true mean of the entire population.  If
-      *data* represents the entire population rather than a sample, then
-      ``mean(data)`` is equivalent to calculating the true population mean μ.
-
 
 .. function:: fmean(data)
 
