@@ -367,13 +367,8 @@ callasynciter_anext(callasynciterobject *it)
 
     if (it->it_callable == NULL) {
         /* Can we raise this at this point, or do we need to return an awaitable
-         * that raises it?
-         */
-        PyObject *value = _PyObject_New((PyTypeObject *) PyExc_StopAsyncIteration);
-        if (value == NULL) {
-            return NULL;
-        }
-        PyErr_SetObject(PyExc_StopAsyncIteration, value);
+         * that raises it? */
+        PyErr_SetNone(PyExc_StopAsyncIteration);
         return NULL;
     }
 
