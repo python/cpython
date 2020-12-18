@@ -264,7 +264,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
-"set_trace_callback($self, trace_callback, /)\n"
+"set_trace_callback($self, /, trace_callback)\n"
 "--\n"
 "\n"
 "Sets a trace callback called for each SQL statement (passed as unicode).\n"
@@ -272,7 +272,31 @@ PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
 "Non-standard.");
 
 #define PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF    \
-    {"set_trace_callback", (PyCFunction)pysqlite_connection_set_trace_callback, METH_O, pysqlite_connection_set_trace_callback__doc__},
+    {"set_trace_callback", (PyCFunction)(void(*)(void))pysqlite_connection_set_trace_callback, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_trace_callback__doc__},
+
+static PyObject *
+pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
+                                            PyObject *trace_callback);
+
+static PyObject *
+pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"trace_callback", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_trace_callback", 0};
+    PyObject *argsbuf[1];
+    PyObject *trace_callback;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    trace_callback = args[0];
+    return_value = pysqlite_connection_set_trace_callback_impl(self, trace_callback);
+
+exit:
+    return return_value;
+}
 
 #if !defined(SQLITE_OMIT_LOAD_EXTENSION)
 
@@ -487,4 +511,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=e14085c0abc0a407 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb14a52e4c682f3b input=a9049054013a1b77]*/
