@@ -172,7 +172,7 @@ _Py_bit_length(unsigned long x)
 
 // Same routine as above, for size_t, if that is bigger than unsigned long
 // This means bitscanreverse (as used above) is not going to work
-#if SIZEOF_SIZE_T > 4
+#if SIZEOF_SIZE_T > SIZEOF_LONG
 static inline int
 _Py_bit_length(size_t x)
 {
