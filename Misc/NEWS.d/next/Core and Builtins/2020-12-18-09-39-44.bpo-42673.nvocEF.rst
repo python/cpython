@@ -1,0 +1,2 @@
+Improved the performance of the round_size routine in hashtable.c by calling bit_length instead of using a loop.
+This prevents branch misprediction delays.
