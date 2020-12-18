@@ -280,6 +280,10 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: 3.9.2
+      This type can now be subclassed.
+
+
 .. data:: Union
 
    The type of :ref:`union type expressions<types-union>`.
