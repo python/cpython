@@ -84,11 +84,5 @@ jobs:
     - name: Configure CPython
       run: ./configure
     - name: 'Build CPython and measure coverage'
-      run: xvfb-run make -j4 coverage-report
-    - name: 'Publish code coverage results'
-      if: always()
-      run: |
-        make pythoninfo
-        bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
-      env:
+      run: xvfb-run make -j4 coverage-repor
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
