@@ -93,7 +93,7 @@ are always available.  They are listed here in alphabetical order.
 
    When awaited, return the next item from the given :term:`asynchronous
    iterator`, or *default* if given and the iterator is exhausted.
-   
+
    This is the async variant of the :func:`next()` builtin, and behaves
    similarly.
 

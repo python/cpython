@@ -90,7 +90,7 @@ Glossary
 
    asynchronous callable
       Any callable that returns an :term:`awaitable`. Examples include
-      :term:`coroutine functions <coroutine function>` and the built-in 
+      :term:`coroutine functions <coroutine function>` and the built-in
       :func:`anext` function.
 
    asynchronous context manager
