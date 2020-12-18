@@ -187,7 +187,7 @@ _Py_bit_length_size_t(size_t x)
 #elif defined(_MSC_VER)
     // _BitScanReverse() is documented to search 32 bits.
     Py_BUILD_ASSERT(sizeof(size_t) <= 4);
-    size_t msb;
+    unsigned long msb;
     if (_BitScanReverse(&msb, x)) {
         return (int)msb + 1;
     }
