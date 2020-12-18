@@ -170,6 +170,39 @@ _Py_bit_length(unsigned long x)
 }
 
 
+// Same routine as above, for size_t, if that is bigger than unsigned long
+// This means bitscanreverse (as used above) is not going to work
+#if sizeof(size_t) > sizeof(unsigned long)
+static inline int
+_Py_bit_length(size_t x)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    if (x != 0) {
+        // __builtin_clzl() is available since GCC 3.4.
+        // Undefined behavior for x == 0.
+        return (int)sizeof(size_t) * 8 - __builtin_clzl(x);
+    }
+    else {
+        return 0;
+    }
+#else
+    const int BIT_LENGTH_TABLE[32] = {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+    };
+    int msb = 0;
+    while (x >= 32) {
+        msb += 6;
+        x >>= 6;
+    }
+    msb += BIT_LENGTH_TABLE[x];
+    return msb;
+#endif
+
+#endif
+}
+
+
 #ifdef __cplusplus
 }
 #endif
