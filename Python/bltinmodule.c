@@ -1558,7 +1558,6 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
                         "iter(v, w): v must be callable");
         return NULL;
     }
-    // PyObject *sentinel = args[1];
     return PyCallAsyncIter_New(aiterable, sentinel);
 }
 
@@ -2888,13 +2887,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
-    {"aiter",            (PyCFunction)(void(*)(void))builtin_aiter,       METH_FASTCALL, aiter_doc},
+    {"aiter",           (PyCFunction)(void(*)(void))builtin_aiter,       METH_FASTCALL, aiter_doc},
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
-    {"anext",            (PyCFunction)(void(*)(void))builtin_anext,       METH_FASTCALL, anext_doc},
+    {"anext",           (PyCFunction)(void(*)(void))builtin_anext,       METH_FASTCALL, anext_doc},
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
