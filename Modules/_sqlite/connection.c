@@ -1724,7 +1724,6 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
 /*[clinic end generated code: output=0f63b8995565ae22 input=5c3898813a776cf2]*/
 {
     PyObject* uppercase_name = 0;
-    PyObject* name;
     Py_ssize_t i, len;
     _Py_IDENTIFIER(upper);
     const char *uppercase_name_str;
