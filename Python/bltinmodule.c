@@ -1562,14 +1562,14 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
     return PyCallAsyncIter_New(aiterable, sentinel);
 }
 
-// TODO
 PyDoc_STRVAR(aiter_doc,
-"iter(iterable) -> iterator\n\
-iter(callable, sentinel) -> iterator\n\
+"aiter(iterable) -> iterator\n\
+aiter(acallable, sentinel) -> iterator\n\
 \n\
-Get an iterator from an object.  In the first form, the argument must\n\
-supply its own iterator, or be a sequence.\n\
-In the second form, the callable is called until it returns the sentinel.");
+Get an async iterator from an object. In the first form, the\n\
+argument must supply its own async iterator.\n\
+In the second form, the async callable is called and awaited\n\
+until it returns the sentinel.");
 
 /*[clinic input]
 anext as builtin_anext
@@ -1599,19 +1599,18 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
     if (default_value == NULL) {
-        // do we need to account for _NOT_PROVIDED i.e. if the default is None?
         return awaitable;
     }
 
     return PyAnextAwaitable_New(awaitable, default_value);
 }
 
-// TODO
 PyDoc_STRVAR(anext_doc,
-"anext(iterator[, default])\n\
+"anext(aiterator[, default])\n\
 \n\
-Return the next item from the iterator. If default is given and the iterator\n\
-is exhausted, it is returned instead of raising StopIteration.");
+When awaited, return the next item from the given async iterator.\n\
+If the iterator is exhausted and *default* is given, return *default*.\n\
+Otherwise, raise StopAsyncIteration.");
 
 
 /*[clinic input]

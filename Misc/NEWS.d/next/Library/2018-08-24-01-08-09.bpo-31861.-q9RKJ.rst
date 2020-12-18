@@ -1,1 +1,2 @@
-Add the operator.aiter and operator.anext functions. Patch by Josh Bronson.
+Add builtins.aiter and builtins.anext.
+Patch by Daniel Pope, Joshua Bronson, and Justin Wang.

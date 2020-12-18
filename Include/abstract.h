@@ -324,7 +324,9 @@ PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
    returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 
-// TODO
+/* Takes an object and returns an async iterator for it.
+   This is typically a new iterator but if the argument is an async iterator,
+   this returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetAiter(PyObject *);
 
 /* Returns 1 if the object 'obj' provides iterator protocols, and 0 otherwise.

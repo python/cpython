@@ -331,6 +331,13 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
     (Py_TYPE(obj)->tp_iternext != NULL && \
      Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
+#define PyAiter_Check(obj) \
+    (Py_TYPE(obj)->tp_as_async != NULL && \
+     Py_TYPE(obj)->tp_as_async->am_aiter != NULL && \
+     Py_TYPE(obj)->tp_as_async->am_aiter != &_PyObject_NextNotImplemented && \
+     Py_TYPE(obj)->tp_as_async->am_anext != NULL && \
+     Py_TYPE(obj)->tp_as_async->am_anext != &_PyObject_NextNotImplemented)
+
 /* === Sequence protocol ================================================ */
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not

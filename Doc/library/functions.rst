@@ -10,33 +10,33 @@ are always available.  They are listed here in alphabetical order.
 +---------------------------------------------------------------------------------------------------+
 |                                        Built-in Functions                                         |
 +=========================+=======================+=======================+=========================+
-| | **A**                 | |  **E**              | |  **L**              | |  **R**                |
-| | :func:`abs`           | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| | :func:`aiter`         | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| | :func:`all`           | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| | :func:`any`           | |                     | |                     | |  :func:`round`        |
-| | :func:`anext`         | |  **F**              | |  **M**              | |                       |
-| | :func:`ascii`         | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
+| |  **A**                | |  **E**              | |  **L**              | |  **R**                |
+| |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
+| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
+| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
+| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
+| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| | **B**                 | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| | :func:`bin`           | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| | :func:`bool`          | |                     | |                     | |  :func:`sorted`       |
-| | :func:`breakpoint`    | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| | |func-bytearray|_     | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| | |func-bytes|_         | |  :func:`globals`    | |                     | |  :func:`sum`          |
+| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
+| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
+| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
 | |                       | |                     | |  **O**              | |  :func:`super`        |
-| | **C**                 | |  **H**              | |  :func:`object`     | |                       |
-| | :func:`callable`      | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| | :func:`chr`           | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| | :func:`classmethod`   | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| | :func:`compile`       | |  :func:`hex`        | |                     | |                       |
-| | :func:`complex`       | |                     | |  **P**              | |  **V**                |
+| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
+| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
+| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
+| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
+| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
 | |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| | **D**                 | |  :func:`id`         | |  :func:`print`      | |                       |
-| | :func:`delattr`       | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| | |func-dict|_          | |  :func:`int`        | |                     | |  :func:`zip`          |
-| | :func:`dir`           | |  :func:`isinstance` | |                     | |                       |
-| | :func:`divmod`        | |  :func:`issubclass` | |                     | |  **_**                |
+| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
+| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
+| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
+| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
