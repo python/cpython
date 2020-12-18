@@ -109,10 +109,9 @@ round_size(size_t s)
     size_t i;
     if (s < HASHTABLE_MIN_SIZE)
         return HASHTABLE_MIN_SIZE;
-    i = 1;
-    while (i < s)
-        i <<= 1;
-    return i;
+    // 1 << _Py_bit_length(s) is the smallest value k so that 1 << k > s
+    // subtract one in case s is an exact power of two
+    return 1 << _Py_bit_length(s - 1);
 }
 
 
