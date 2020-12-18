@@ -514,6 +514,8 @@ The available presentation types for :class:`float` and
    |         | this rounds the number to ``p`` significant digits and   |
    |         | then formats the result in either fixed-point format     |
    |         | or in scientific notation, depending on its magnitude.   |
+   |         | A precision of ``0`` is treated as equivalent to a       |
+   |         | precision of ``1``.                                      |
    |         |                                                          |
    |         | The precise rules are as follows: suppose that the       |
    |         | result formatted with presentation type ``'e'`` and      |
@@ -528,16 +530,19 @@ The available presentation types for :class:`float` and
    |         | removed if there are no remaining digits following it,   |
    |         | unless the ``'#'`` option is used.                       |
    |         |                                                          |
+   |         | With no precision given, uses a precision of ``6``       |
+   |         | significant digits for :class:`float`. For               |
+   |         | :class:`~decimal.Decimal`, the coefficient of the result |
+   |         | is formed from the coefficient digits of the value;      |
+   |         | scientific notation is used for values smaller than      |
+   |         | ``1e-6`` in absolute value and values where the place    |
+   |         | value of the least significant digit is larger than 1,   |
+   |         | and fixed-point notation is used otherwise.              |
+   |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
    |         | ``0``, ``-0`` and ``nan`` respectively, regardless of    |
    |         | the precision.                                           |
-   |         |                                                          |
-   |         | A precision of ``0`` is treated as equivalent to a       |
-   |         | precision of ``1``. With no precision given, uses a      |
-   |         | precision of ``6`` significant digits for                |
-   |         | :class:`float`, and shows all coefficient digits         |
-   |         | for :class:`~decimal.Decimal`.                           |
    +---------+----------------------------------------------------------+
    | ``'G'`` | General format. Same as ``'g'`` except switches to       |
    |         | ``'E'`` if the number gets too large. The                |
@@ -550,12 +555,18 @@ The available presentation types for :class:`float` and
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | Similar to ``'g'``, except that fixed-point notation,    |
-   |         | when used, has at least one digit past the decimal point.|
-   |         | The default precision is as high as needed to represent  |
-   |         | the particular value. The overall effect is to match the |
-   |         | output of :func:`str` as altered by the other format     |
-   |         | modifiers.                                               |
+   | None    | For :class:`float` this is the same as ``'g'``, except   |
+   |         | that when fixed-point notation is used to format the     |
+   |         | result, it always includes at least one digit past the   |
+   |         | decimal point. The precision used is as large as needed  |
+   |         | to represent the given value faithfully.                 |
+   |         |                                                          |
+   |         | For :class:`~decimal.Decimal`, this is the same as       |
+   |         | either ``'g'`` or ``'G'`` depending on the value of      |
+   |         | ``context.capitals`` for the current decimal context.    |
+   |         |                                                          |
+   |         | The overall effect is to match the output of :func:`str` |
+   |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
 
 
