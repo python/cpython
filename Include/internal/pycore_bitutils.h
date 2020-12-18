@@ -198,9 +198,8 @@ _Py_bit_length(size_t x)
     msb += BIT_LENGTH_TABLE[x];
     return msb;
 #endif
-
-#endif
 }
+#endif
 
 
 #ifdef __cplusplus
