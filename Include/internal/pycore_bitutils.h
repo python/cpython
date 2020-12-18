@@ -172,15 +172,24 @@ _Py_bit_length(unsigned long x)
 
 // Same routine as above, for size_t, if that is bigger than unsigned long
 // This means bitscanreverse (as used above) is not going to work
-#if SIZEOF_SIZE_T > SIZEOF_LONG
 static inline int
-_Py_bit_length(size_t x)
+_Py_bit_length_size_t(size_t x)
 {
 #if (defined(__clang__) || defined(__GNUC__))
     if (x != 0) {
         // __builtin_clzl() is available since GCC 3.4.
         // Undefined behavior for x == 0.
         return (int)sizeof(size_t) * 8 - __builtin_clzl(x);
+    }
+    else {
+        return 0;
+    }
+#elif defined(_MSC_VER)
+    // _BitScanReverse() is documented to search 32 bits.
+    Py_BUILD_ASSERT(sizeof(size_t) <= 4);
+    size_t msb;
+    if (_BitScanReverse(&msb, x)) {
+        return (int)msb + 1;
     }
     else {
         return 0;
@@ -199,7 +208,6 @@ _Py_bit_length(size_t x)
     return msb;
 #endif
 }
-#endif
 
 
 #ifdef __cplusplus
