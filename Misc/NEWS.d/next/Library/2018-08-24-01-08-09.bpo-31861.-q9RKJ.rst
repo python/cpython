@@ -1,2 +1,2 @@
 Add builtins.aiter and builtins.anext.
-Patch by Daniel Pope, Joshua Bronson, and Justin Wang.
+Patch by Daniel Pope (@lordmauve), Joshua Bronson (@jab), and Justin Wang (@justin39).

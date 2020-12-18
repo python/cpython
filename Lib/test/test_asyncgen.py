@@ -1,5 +1,4 @@
 import inspect
-import operator
 import types
 import unittest
 
@@ -389,7 +388,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         with self.assertRaises(StopAsyncIteration):
             self.loop.run_until_complete(consume())
 
-    def test_async_gen_operator_aiter(self):
+    def test_async_gen_aiter(self):
         async def gen():
             yield 1
             yield 2
@@ -399,7 +398,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         res = self.loop.run_until_complete(consume())
         self.assertEqual(res, [1, 2])
 
-    def test_async_gen_operator_aiter_class(self):
+    def test_async_gen_aiter_class(self):
         results = []
         loop = self.loop
         class Gen:
@@ -418,7 +417,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(consume())
         self.assertEqual(results, [1, 2])
 
-    def test_async_gen_operator_aiter_2_arg(self):
+    def test_async_gen_aiter_2_arg(self):
         async def gen():
             yield 1
             yield 2
@@ -445,7 +444,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
     def test_anext_bad_args(self):
         self._test_bad_args(anext)
 
-    def test_operator_aiter_bad_args(self):
+    def test_aiter_bad_args(self):
         self._test_bad_args(aiter)
 
     def _test_bad_args(self, afn):

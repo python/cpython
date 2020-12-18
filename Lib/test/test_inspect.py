@@ -3812,7 +3812,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         no_signature = set()
         # These need PEP 457 groups
         needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"}
+                        "next", "iter", "anext", "aiter", "vars"}
         no_signature |= needs_groups
         # These need PEP 457 groups or a signature change to accept None
         needs_semantic_update = {"round"}

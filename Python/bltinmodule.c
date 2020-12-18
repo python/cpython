@@ -1562,8 +1562,8 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
 }
 
 PyDoc_STRVAR(aiter_doc,
-"aiter(iterable) -> iterator\n\
-aiter(acallable, sentinel) -> iterator\n\
+"aiter(async_iterable) -> async_iterator\n\
+aiter(async_callable, sentinel) -> async_iterator\n\
 \n\
 Get an async iterator from an object. In the first form, the\n\
 argument must supply its own async iterator.\n\
@@ -1605,7 +1605,7 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
 }
 
 PyDoc_STRVAR(anext_doc,
-"anext(aiterator[, default])\n\
+"anext(async_iterator[, default])\n\
 \n\
 When awaited, return the next item from the given async iterator.\n\
 If the iterator is exhausted and *default* is given, return *default*.\n\
@@ -2887,13 +2887,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
-    {"aiter",           (PyCFunction)(void(*)(void))builtin_aiter,       METH_FASTCALL, aiter_doc},
+    {"aiter",           (PyCFunction)(void(*)(void))builtin_aiter,      METH_FASTCALL, aiter_doc},
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
-    {"anext",           (PyCFunction)(void(*)(void))builtin_anext,       METH_FASTCALL, anext_doc},
+    {"anext",           (PyCFunction)(void(*)(void))builtin_anext,      METH_FASTCALL, anext_doc},
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
