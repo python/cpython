@@ -88,6 +88,11 @@ Glossary
       :ref:`the difference between arguments and parameters
       <faq-argument-vs-parameter>`, and :pep:`362`.
 
+   asynchronous callable
+      Any callable that returns an :term:`awaitable`. Examples include
+      :term:`coroutine functions <coroutine function>` and the built-in 
+      :func:`anext` function.
+
    asynchronous context manager
       An object which controls the environment seen in an
       :keyword:`async with` statement by defining :meth:`__aenter__` and

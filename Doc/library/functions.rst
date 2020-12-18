@@ -63,17 +63,18 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: aiter(object, [sentinel])
 
-   Return an async iterator object. This is the async variant of the
-   :func:`iter()` builtin, and behaves similarly.
+   Return an :term:`asynchronous iterator` object. This is the async variant
+   of the :func:`iter()` builtin, and behaves similarly.
 
-   If sentinel is omitted, then *object* must be an async iterable object, and
-   ``aiter()`` returns an iterator for it.
+   If sentinel is omitted, then *object* must be an
+   :term:`asynchronous iterable` object, and ``aiter()`` returns an iterator
+   for it.
 
-   Otherwise, *object* must be an async callable (a callable which returns an
-   awaitable). When the returned async iterator is async iterated, the callable
-   is called and awaited and the values it returns becomes the values produced
-   by the iterator. When the awaited return value is equal to sentinel, the
-   async iterator terminates with :cls:`StopAsyncIteration`.
+   Otherwise, *object* must be an :term:`asynchronous callable`. When the
+   resulting async iterator is async iterated, the passed callable is
+   called and awaited and the values returned become the values produced
+   by the iterator. When the awaited return value is equal to sentinel,
+   the async iterator terminates with :exc:`StopAsyncIteration`.
 
 
 .. function:: all(iterable)
@@ -86,6 +87,20 @@ are always available.  They are listed here in alphabetical order.
               if not element:
                   return False
           return True
+
+
+.. awaitablefunction:: anext(async_iterator[, default])
+
+   When awaited, return the next item from the given :term:`asynchronous
+   iterator`, or *default* if given and the iterator is exhausted.
+   
+   This is the async variant of the :func:`next()` builtin, and behaves
+   similarly.
+
+   Immediately, call the :meth:`~object.__anext__` method of *async_iterator*,
+   then return an :term:`awaitable`. Awaiting this returns the next value of the
+   iterator. If *default* is given, it is returned if the iterator is exhausted,
+   otherwise :exc:`StopAsyncIteration` is raised.
 
 
 .. function:: any(iterable)
