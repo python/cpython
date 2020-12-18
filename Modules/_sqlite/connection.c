@@ -1100,7 +1100,13 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self,
     }
 
     if (trace_callback == Py_None) {
-        /* None clears the trace callback previously set */
+        /*
+         * None clears the trace callback previously set
+         *
+         * Ref.
+         * - https://sqlite.org/c3ref/c_trace.html
+         * - https://sqlite.org/c3ref/trace_v2.html
+         */
 #ifdef HAVE_TRACE_V2
         sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, 0, 0);
 #else
