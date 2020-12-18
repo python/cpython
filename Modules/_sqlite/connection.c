@@ -1021,15 +1021,14 @@ static void _trace_callback(void* user_arg, const char* statement_string)
 _sqlite3.Connection.set_authorizer as pysqlite_connection_set_authorizer
 
     authorizer_callback as authorizer_cb: object
-    /
 
 Sets authorizer callback. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_set_authorizer(pysqlite_Connection *self,
-                                   PyObject *authorizer_cb)
-/*[clinic end generated code: output=4f2f5f3f84d99092 input=1c43aa0c0939fec4]*/
+pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
+                                        PyObject *authorizer_cb)
+/*[clinic end generated code: output=f18ba575d788b35c input=df079724c020d2f2]*/
 {
     int rc;
 

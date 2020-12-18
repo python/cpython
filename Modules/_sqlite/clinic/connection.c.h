@@ -192,13 +192,37 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_connection_set_authorizer__doc__,
-"set_authorizer($self, authorizer_callback, /)\n"
+"set_authorizer($self, /, authorizer_callback)\n"
 "--\n"
 "\n"
 "Sets authorizer callback. Non-standard.");
 
 #define PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF    \
-    {"set_authorizer", (PyCFunction)pysqlite_connection_set_authorizer, METH_O, pysqlite_connection_set_authorizer__doc__},
+    {"set_authorizer", (PyCFunction)(void(*)(void))pysqlite_connection_set_authorizer, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_authorizer__doc__},
+
+static PyObject *
+pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
+                                        PyObject *authorizer_cb);
+
+static PyObject *
+pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"authorizer_callback", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "set_authorizer", 0};
+    PyObject *argsbuf[1];
+    PyObject *authorizer_cb;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    authorizer_cb = args[0];
+    return_value = pysqlite_connection_set_authorizer_impl(self, authorizer_cb);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(pysqlite_connection_set_progress_handler__doc__,
 "set_progress_handler($self, /, progress_handler, n)\n"
@@ -463,4 +487,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=773cc0362d80078c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e14085c0abc0a407 input=a9049054013a1b77]*/
