@@ -1,0 +1,48 @@
+{% extends "!search.html" %}
+{% block extrahead %}
+    {{ super() }}
+    <script type="text/javascript">
+        var GLOSSARY_PAGE = 'glossary.html';
+
+        jQuery(function() {
+            $.getJSON("_static/glossary.json", function(glossary) {
+                var RESULT_TEMPLATE = '<div style="display: none" class="admonition seealso" id="glossary-result">' + 
+                                      '  <p class="topic-title">' +
+                                      '    <a class="glossary-title" href="#"></a>' +
+                                      '  </p>' +
+                                      '  <div class="glossary-body"></div>' +
+                                      '</div>';
+                $("#search-results").prepend(RESULT_TEMPLATE);
+
+                var params = $.getQueryParameters();
+                if (params.q) {
+                    var search_param = params.q[0].toLowerCase();
+                    var glossary_item = glossary[search_param];
+                    if (glossary_item) {
+                        var resultDiv = $("#glossary-result");
+                        
+                        // set up the title text with a link to the glossary page
+                        resultDiv.find(".glossary-title").text('Glossary: ' + glossary_item.title);
+                        var link_target = search_param.replace(/ /g, '-');
+                        resultDiv.find(".glossary-title").attr(
+                            'href', GLOSSARY_PAGE + '#term-' + link_target
+                        );
+
+                        // rewrite any anchor links (to other glossary terms)
+                        // to have a full reference to the glossary page
+                        var body = $(glossary_item.body).children();
+                        body.find("a[href^='#']").each(function() {
+                            var current_url = $(this).attr('href');
+                            $(this).attr('href', GLOSSARY_PAGE + current_url);
+                        });
+                        resultDiv.find(".glossary-body").html(body);
+
+                        resultDiv.show();
+                    } else {
+                        $("#glossary-result").hide('');
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
