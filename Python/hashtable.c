@@ -107,7 +107,6 @@ _Py_hashtable_compare_direct(const void *key1, const void *key2)
 static size_t
 round_size(size_t s)
 {
-    size_t i;
     if (s < HASHTABLE_MIN_SIZE)
         return HASHTABLE_MIN_SIZE;
     // 1 << _Py_bit_length(s) is the smallest value k so that 1 << k > s
