@@ -46,6 +46,13 @@ typedef struct {
     char locked; /* for sanity checking */
 } lockobject;
 
+static int
+lock_traverse(lockobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 lock_dealloc(lockobject *self)
 {
@@ -59,7 +66,7 @@ lock_dealloc(lockobject *self)
         PyThread_free_lock(self->lock_lock);
     }
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Free(self);
+    tp->tp_free((PyObject*)self);
     Py_DECREF(tp);
 }
 
@@ -292,6 +299,7 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_repr, (reprfunc)lock_repr},
     {Py_tp_doc, (void *)lock_doc},
     {Py_tp_methods, lock_methods},
+    {Py_tp_traverse, lock_traverse},
     {Py_tp_members, lock_type_members},
     {0, 0}
 };
@@ -299,7 +307,7 @@ static PyType_Slot lock_type_slots[] = {
 static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = lock_type_slots,
 };
 
@@ -580,7 +588,8 @@ newlockobject(PyObject *module)
 {
     thread_module_state *state = get_thread_state(module);
 
-    lockobject *self = PyObject_New(lockobject, state->lock_type);
+    PyTypeObject *type = state->lock_type;
+    lockobject *self = (lockobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
