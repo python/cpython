@@ -1497,3 +1497,22 @@ functions and options conditionally available based on the operating system
 version in use at runtime ("weaklinking").
 
 (Contributed by Ronald Oussoren and Lawrence D'Anna in :issue:`41100`.)
+
+Notable changes in Python 3.9.2
+===============================
+
+collections.abc
+---------------
+
+:class:`collections.abc.Callable` generic now flattens type parameters, similar
+to what :data:`typing.Callable` currently does.  This means that
+``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+``(int, str, str)``; previously this was ``([int, str], str)``.  To allow this
+change, :class:`types.GenericAlias` can now be subclassed, and a subclass will
+be returned when subscripting the :class:`collections.abc.Callable` type.
+Code which accesses the arguments via :func:`typing.get_args` or ``__args__``
+need to account for this change.  A :exc:`DeprecationWarning` may be emitted for
+invalid forms of parameterizing :class:`collections.abc.Callable` which may have
+passed silently in Python 3.9.1.  This :exc:`DeprecationWarning` will instead
+raise a :exc:`TypeError` in Python 3.10.
+(Contributed by Ken Jin in :issue:`42195`.)

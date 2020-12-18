@@ -260,6 +260,9 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.9
 
+   .. versionchanged:: 3.9.2
+      This type can now be subclassed.
+
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
