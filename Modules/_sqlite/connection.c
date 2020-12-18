@@ -1083,7 +1083,6 @@ pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
 _sqlite3.Connection.set_trace_callback as pysqlite_connection_set_trace_callback
 
     trace_callback: object
-    /
 
 Sets a trace callback called for each SQL statement (passed as unicode).
 
@@ -1091,9 +1090,9 @@ Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_set_trace_callback(pysqlite_Connection *self,
-                                       PyObject *trace_callback)
-/*[clinic end generated code: output=efd1bf439e81696c input=05a4a14360e0e034]*/
+pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
+                                            PyObject *trace_callback)
+/*[clinic end generated code: output=fb0e307b9924d454 input=56d60fd38d763679]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1130,7 +1129,7 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.enable_load_extension as pysqlite_connection_enable_load_extension
 
-    enable as onoff: int
+    enable as onoff: bool(accept={int})
     /
 
 Enable dynamic loading of SQLite extension modules. Non-standard.
@@ -1139,7 +1138,7 @@ Enable dynamic loading of SQLite extension modules. Non-standard.
 static PyObject *
 pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
                                                int onoff)
-/*[clinic end generated code: output=9cac37190d388baf input=7df2986f1602d6bd]*/
+/*[clinic end generated code: output=9cac37190d388baf input=5c0da5b121121cbc]*/
 {
     int rc;
 
