@@ -1,2 +1,2 @@
-Fix issue when ``asyncio.wait_for`` doesn't cancel passed future. Patch
-provided by Yurii Karabas.
+Fix issue when ``asyncio.wait_for`` doesn't wait for canceled future.
+Patch provided by Yurii Karabas.
