@@ -10,15 +10,14 @@ for convenience.
 This is the pure Python implementation of the module.
 """
 
-__all__ = [
-    'abs', 'add', 'aiter', 'anext', 'and_', 'attrgetter', 'concat', 'contains',
-    'countOf', 'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd',
-    'iand', 'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
-    'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift', 'is_',
-    'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le', 'length_hint',
-    'lshift', 'lt', 'matmul', 'methodcaller', 'mod', 'mul', 'ne', 'neg', 'not_',
-    'or_', 'pos', 'pow', 'rshift', 'setitem', 'sub', 'truediv', 'truth', 'xor',
-]
+__all__ = ['abs', 'add', 'and_', 'attrgetter', 'concat', 'contains', 'countOf',
+           'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
+           'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
+           'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
+           'is_', 'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le',
+           'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
+           'mul', 'ne', 'neg', 'not_', 'or_', 'pos', 'pow', 'rshift',
+           'setitem', 'sub', 'truediv', 'truth', 'xor']
 
 from builtins import abs as _abs
 
@@ -403,107 +402,6 @@ def ixor(a, b):
     "Same as a ^= b."
     a ^= b
     return a
-
-
-# Asynchronous Iterator Operations ********************************************#
-
-
-_NOT_PROVIDED = object()  # sentinel object to detect when a kwarg was not given
-
-
-def aiter(obj, sentinel=_NOT_PROVIDED):
-    """aiter(async_iterable) -> async_iterator
-    aiter(async_callable, sentinel) -> async_iterator
-
-    Like the iter() builtin but for async iterables and callables.
-    """
-    from collections.abc import AsyncIterable, AsyncIterator
-    if sentinel is _NOT_PROVIDED:
-        if not isinstance(obj, AsyncIterable):
-            raise TypeError(f'aiter expected an AsyncIterable, got {type(obj)}')
-        ait = type(obj).__aiter__(obj)
-        if not isinstance(ait, AsyncIterator):
-            raise TypeError(f'obj.__aiter__() returned non-AsyncIterator: {type(ait)}')
-        return ait
-
-    if not callable(obj):
-        raise TypeError(f'aiter expected an async callable, got {type(obj)}')
-
-    return _aiter_callable(obj, sentinel)
-
-
-class _aiter_callable:
-    __slots__ = ('acallable', 'sentinel')
-
-    def __init__(self, acallable, sentinel):
-        self.acallable = acallable
-        self.sentinel = sentinel
-
-    def __aiter__(self):
-        return self
-
-    def __anext__(self):
-        return _aiter_anext(self.acallable().__await__(), self.sentinel)
-
-
-class _aiter_anext:
-    __slots__ = ('iterator', 'sentinel')
-
-    def __init__(self, iterator, sentinel):
-        self.iterator = iterator
-        self.sentinel = sentinel
-
-    def __await__(self):
-        return self
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            return next(self.iterator)
-        except StopIteration as end:
-            if end.value == self.sentinel:
-                raise StopAsyncIteration(end.value) from None
-            raise
-
-
-def anext(async_iterator, default=_NOT_PROVIDED):
-    """anext(async_iterator[, default])
-
-    Return the next item from the async iterator.
-    If default is given and the iterator is exhausted,
-    it is returned instead of raising StopAsyncIteration.
-    """
-    from collections.abc import AsyncIterator
-    if not isinstance(async_iterator, AsyncIterator):
-        raise TypeError(f'anext expected an AsyncIterator, got {type(async_iterator)}')
-    anxt = type(async_iterator).__anext__(async_iterator)
-
-    if default is _NOT_PROVIDED:
-        return anxt
-
-    return _anext_default(anxt.__await__(), default)
-
-
-class _anext_default:
-    __slots__ = ('iterator', 'default')
-
-    def __init__(self, iterator, default):
-        self.iterator = iterator
-        self.default = default
-
-    def __await__(self):
-        return self
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            return next(self.iterator)
-        except StopAsyncIteration:
-            raise StopIteration(self.default) from None
 
 
 try:
