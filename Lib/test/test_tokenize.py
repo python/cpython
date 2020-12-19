@@ -1409,6 +1409,7 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('{}', token.LBRACE, token.RBRACE)
         self.assertExactTypeEqual('==', token.EQEQUAL)
         self.assertExactTypeEqual('!=', token.NOTEQUAL)
+        self.assertExactTypeEqual('<>', token.NOTEQUAL)
         self.assertExactTypeEqual('<=', token.LESSEQUAL)
         self.assertExactTypeEqual('>=', token.GREATEREQUAL)
         self.assertExactTypeEqual('~', token.TILDE)

@@ -32,7 +32,6 @@ import itertools as _itertools
 import re
 import sys
 from token import *
-from token import EXACT_TOKEN_TYPES
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -40,6 +39,10 @@ blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
                            "untokenize", "TokenInfo"]
+EXACT_TOKEN_TYPES = {
+    **token.EXACT_TOKEN_TYPES,
+    "<>": NOTEQUAL,
+}
 del token
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
