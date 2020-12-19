@@ -1056,8 +1056,8 @@ interpreted as another type, such as a :class:`float` or :class:`int`.  The
 ``type`` keyword for :meth:`~ArgumentParser.add_argument` allows any
 necessary type-checking and type conversions to be performed.
 
-If the type_ keyword is used with default_ keyword, the type converter is
-only applied if the default is a string.
+If the type_ keyword is used with the default_ keyword, the type converter
+is only applied if the default is a string.
 
 The argument to ``type`` can be any callable that accepts a single string.
 If the function raises :exc:`ArgumentTypeError`, :exc:`TypeError`, or
