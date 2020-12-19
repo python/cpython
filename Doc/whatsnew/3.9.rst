@@ -1513,6 +1513,6 @@ be returned when subscripting the :class:`collections.abc.Callable` type.
 Code which accesses the arguments via :func:`typing.get_args` or ``__args__``
 need to account for this change.  A :exc:`DeprecationWarning` may be emitted for
 invalid forms of parameterizing :class:`collections.abc.Callable` which may have
-passed silently in Python 3.9.1.  This :exc:`DeprecationWarning` will instead
-raise a :exc:`TypeError` in Python 3.10.
+passed silently in Python 3.9.1.  This :exc:`DeprecationWarning` will
+become a :exc:`TypeError` in Python 3.10.
 (Contributed by Ken Jin in :issue:`42195`.)
