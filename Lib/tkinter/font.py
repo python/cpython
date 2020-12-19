@@ -69,7 +69,7 @@ class Font:
     def __init__(self, root=None, font=None, name=None, exists=False,
                  **options):
         if not root:
-            root = tkinter._default_root
+            root = tkinter._get_default_root('use font')
         tk = getattr(root, 'tk', root)
         if font:
             # get actual settings corresponding to the given font
@@ -184,7 +184,7 @@ class Font:
 def families(root=None, displayof=None):
     "Get font families (as a tuple)"
     if not root:
-        root = tkinter._default_root
+        root = tkinter._get_default_root('use font.families()')
     args = ()
     if displayof:
         args = ('-displayof', displayof)
@@ -194,7 +194,7 @@ def families(root=None, displayof=None):
 def names(root=None):
     "Get names of defined fonts (as a tuple)"
     if not root:
-        root = tkinter._default_root
+        root = tkinter._get_default_root('use font.names()')
     return root.tk.splitlist(root.tk.call("font", "names"))
 
 

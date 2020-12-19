@@ -6,7 +6,7 @@ import sys
 
 from tkinter.test.test_ttk.test_functions import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
-                                  simulate_mouse_click)
+                                  simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
@@ -1860,12 +1860,22 @@ class SizegripTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Sizegrip(self.root, **kwargs)
 
+
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_frame(self):
+        self._test_widget(ttk.Frame)
+
+    def test_label(self):
+        self._test_widget(ttk.Label)
+
+
 tests_gui = (
         ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
         FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
         NotebookTest, PanedWindowTest, ProgressbarTest,
         RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest,
+        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest, DefaultRootTest,
         )
 
 if __name__ == "__main__":
