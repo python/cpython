@@ -242,10 +242,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
         try:
             self.doTest(".py", files, TESTMOD)
-        except ImportError:
-            pass
-        else:
-            self.fail("expected ImportError; import from bad pyc")
+            self.fail("This should not be reached")
+        except zipimport.ZipImportError as exc:
+            self.assertIsInstance(exc.__cause__, ImportError)
+            self.assertIn("magic number", exc.__cause__.msg)
 
     def testBadMTime(self):
         badtime_pyc = bytearray(test_pyc)
