@@ -1107,9 +1107,9 @@ better reporting than can be given by the ``type`` keyword.  An
 :exc:`FileNotFound` exception would not be handled at all.
 
 Even :class:`~argparse.FileType` has its limitations for use with the ``type``
-keyword.  If two arguments use *FileType* and the second one fails, an error is
-reported but the first file is not automatically closed.  In this case, it would
-be better to wait until after the parser has run and then use the
+keyword.  If one argument uses *FileType* and then a subsequent argument fails,
+an error is reported but the file is not automatically closed.  In this case, it
+would be better to wait until after the parser has run and then use the
 :keyword:`with`-statement to manage the files.
 
 For type checkers that simply check against a fixed set of values, consider
