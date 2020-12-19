@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from tkinter import font
 from test.support import requires, run_unittest, gc_collect, ALWAYS_EQ
-from tkinter.test.support import AbstractTkTest
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
 
@@ -107,7 +107,37 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         )
 
 
-tests_gui = (FontTest, )
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_families(self):
+        self.assertRaises(RuntimeError, font.families)
+        root = tkinter.Tk()
+        families = font.families()
+        self.assertIsInstance(families, tuple)
+        self.assertTrue(families)
+        for family in families:
+            self.assertIsInstance(family, str)
+            self.assertTrue(family)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, font.families)
+
+    def test_names(self):
+        self.assertRaises(RuntimeError, font.names)
+        root = tkinter.Tk()
+        names = font.names()
+        self.assertIsInstance(names, tuple)
+        self.assertTrue(names)
+        for name in names:
+            self.assertIsInstance(name, str)
+            self.assertTrue(name)
+        self.assertIn(fontname, names)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, font.names)
+
+
+tests_gui = (FontTest, DefaultRootTest)
 
 if __name__ == "__main__":
     run_unittest(*tests_gui)
