@@ -64,10 +64,10 @@ are always available.  They are listed here in alphabetical order.
 .. function:: aiter(object, [sentinel])
 
    Return an :term:`asynchronous iterator` object. This is the async variant
-   of the :func:`iter()` builtin, and behaves similarly.
+   of the :func:`iter` builtin, and behaves similarly.
 
    If sentinel is omitted, then *object* must be an
-   :term:`asynchronous iterable` object, and ``aiter()`` returns an iterator
+   :term:`asynchronous iterable` object, and :func:`aiter` returns an iterator
    for it.
 
    Otherwise, *object* must be an :term:`asynchronous callable`. When the
@@ -94,7 +94,7 @@ are always available.  They are listed here in alphabetical order.
    When awaited, return the next item from the given :term:`asynchronous
    iterator`, or *default* if given and the iterator is exhausted.
 
-   This is the async variant of the :func:`next()` builtin, and behaves
+   This is the async variant of the :func:`next` builtin, and behaves
    similarly.
 
    Immediately, call the :meth:`~object.__anext__` method of *async_iterator*,

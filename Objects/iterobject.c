@@ -302,7 +302,7 @@ typedef struct {
         The iterator returned by the callable, unwrapped via __await__.
 
         If NULL this means that the iterator is already exhausted and when
-        iterated it should raise StopAsyncIteration;
+        iterated it should raise StopAsyncIteration.
     */
     callasynciterobject *it; /* The iterator object, in order to clear it when done. */
 } callasynciterawaitableobject;
@@ -356,7 +356,6 @@ callasyncawaitable_traverse(callasynciterawaitableobject *obj, visitproc visit, 
     Py_VISIT(obj->it);
     return 0;
 }
-
 
 static PyObject *
 callasynciter_anext(callasynciterobject *it)
@@ -439,8 +438,6 @@ asynccallawaitable_iternext(callasynciterawaitableobject *obj)
     PyErr_SetNone(PyExc_StopAsyncIteration);
     return NULL;
 }
-
-
 
 static PyAsyncMethods async_iter_as_async = {
     PyObject_SelfIter,                          /* am_await */

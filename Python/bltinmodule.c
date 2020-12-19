@@ -1555,7 +1555,7 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
 
     if (!PyCallable_Check(aiterable)) {
         PyErr_SetString(PyExc_TypeError,
-                        "iter(v, w): v must be callable");
+                        "aiter(v, w): v must be async callable");
         return NULL;
     }
     return PyCallAsyncIter_New(aiterable, sentinel);
