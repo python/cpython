@@ -282,6 +282,8 @@ def NoDefaultRoot():
     """
     global _support_default_root, _default_root
     _support_default_root = False
+    # Delete, so any use of _default_root will immediately raise an exception.
+    # Rebind before deletion, so repeated calls will not fail.
     _default_root = None
     del _default_root
 
