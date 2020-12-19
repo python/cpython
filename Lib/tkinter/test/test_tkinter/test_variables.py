@@ -1,7 +1,9 @@
 import unittest
 import gc
+import tkinter
 from tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
+from tkinter.test.support import AbstractDefaultRootTest
 
 
 class Var(Variable):
@@ -301,8 +303,21 @@ class TestBooleanVar(TestBase):
             v.get()
 
 
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_variable(self):
+        self.assertRaises(RuntimeError, Variable)
+        root = tkinter.Tk()
+        v = Variable()
+        v.set("value")
+        self.assertEqual(v.get(), "value")
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, Variable)
+
+
 tests_gui = (TestVariable, TestStringVar, TestIntVar,
-             TestDoubleVar, TestBooleanVar)
+             TestDoubleVar, TestBooleanVar, DefaultRootTest)
 
 
 if __name__ == "__main__":
