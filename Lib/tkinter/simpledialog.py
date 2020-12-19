@@ -157,9 +157,24 @@ class Dialog(Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
 
-        if parent is not None:
-            self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                      parent.winfo_rooty()+50))
+        minwidth = self.winfo_reqwidth()
+        minheight = self.winfo_reqheight()
+        maxwidth = self.winfo_vrootwidth()
+        maxheight = self.winfo_vrootheight()
+        if parent is not None and parent.winfo_ismapped():
+            x = parent.winfo_rootx() + (parent.winfo_width() - minwidth) // 2
+            y = parent.winfo_rooty() + (parent.winfo_height() - minheight) // 2
+            vrootx = self.winfo_vrootx()
+            vrooty = self.winfo_vrooty()
+            x = min(x, vrootx + maxwidth - minwidth)
+            x = max(x, vrootx)
+            y = min(y, vrooty + maxheight - minheight)
+            y = max(y, vrooty)
+        else:
+            x = (self.winfo_screenwidth() - minwidth) // 2
+            y = (self.winfo_screenheight() - minheight) // 2
+        self.wm_maxsize(maxwidth, maxheight)
+        self.geometry("+%d+%d" % (x, y))
 
         self.deiconify() # become visible now
 
