@@ -11,7 +11,7 @@ from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
-from collections import Counter
+from collections import abc, Counter
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -162,6 +162,22 @@ class TestBasicOps:
         with self.assertWarns(DeprecationWarning):
             population = {10, 20, 30, 40, 50, 60, 70}
             self.gen.sample(population, k=5)
+
+    def test_sample_on_seqsets(self):
+        class SeqSet(abc.Sequence, abc.Set):
+            def __init__(self, items):
+                self._items = items
+
+            def __len__(self):
+                return len(self._items)
+
+            def __getitem__(self, index):
+                return self._items[index]
+
+        population = SeqSet([2, 4, 1, 3])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.gen.sample(population, k=2)
 
     def test_sample_with_counts(self):
         sample = self.gen.sample
