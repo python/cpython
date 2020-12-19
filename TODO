@@ -1,18 +1,33 @@
 # Events/Instructions To Track
 
+* recursively track a dict
+* recursively track a set
+* test on some solved leetcode problems
+* log parameters to built-in function calls (print)
+* list.sort
+* dict.popitem
+* set.pop
+* set.difference_update
+* set.intersection_update
+* set.symmetric_difference_update
+* Problem: what if a data structure/object is modified outside of my
+supervision? Such as from a native C module?
+    * Option 1: Have a dirty flag or version flag inside the data structure
+
+## Done
+
+* print 
+* register an object instance (done)
 * Bug: recycled objects are not re-registered (done)
-* function calls (such as print)
-* register objects as each object is encountered (in progress)
-* lists in lists (in progress)
+* track built-in functions like print (done)
+* register objects as each object is encountered (done)
+* lists in lists (done)
 * come up with a format for printing heap objects based on id (done)
 * RETURN_VALUE (done)
 * STORE_NAME (done)
-* String
-    * concatenation
-    * str.replace
-    * str.translate
-    * str.lstrip/rstrip/strip
-    * other generating methods
+* classes and instances
+    * STORE_ATTR (done)
+* String (done)
 * List
     * BUILD_LIST (done)
     * LIST_EXTEND (fix 2 different formats of call)
@@ -27,36 +42,28 @@
     * concatenation with +/* (done)
     * list.reverse (done)
     * LIST_APPEND (done)
-    * list.sort
 * Dict
-    * BUILD_MAP
-    * dict.update
-    * dict.clear
-    * dict.pop
+    * NEW_DICT (done)
+    * BUILD_MAP (done)
+    * dict.update (done)
+    * dict.clear (done)
+    * dict.pop (done)
     * dict.popitem
-    * intersection and difference with &/^/-
-    * union with |
-    * DELETE_SUBSCR
-    * STORE_SUBSCR
+    * DELETE_SUBSCR (done)
+    * STORE_SUBSCR (done)
 * Set
-    * SET_ADD
-    * calling constructor set()
-    * set.add
-    * set.update
-    * set.discard
-    * set.remove
-    * set.pop
-    * set.clear
-    * difference (-)
-    * intersection (&) 
-    * symmetric difference (^)
-    * union (|)
-    * -=
-    * &=
-    * ^=
-    * set.difference_update
-    * set.intersection_update
-    * set.symmetric_difference_update
-    * add elements from another set with |=
-* Problem: what if a data structure/object is modified outside of my
-supervision? Such as from a native C module?
+    * SET_ADD (done)
+    * calling constructor set() (done)
+    * set.add (done)
+    * set.update (done)
+    * set.discard (done)
+    * set.remove (done)
+    * set.clear (done)
+    * difference (-) (done)
+    * intersection (&) (done)
+    * symmetric difference (^) (done)
+    * union (|) (done)
+    * -= (done)
+    * &= (done)
+    * ^= (done)
+    * add elements from another set with |= (done)

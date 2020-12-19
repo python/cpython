@@ -1981,6 +1981,7 @@ main_loop:
             PyObject *v = POP();
             PyObject *set = PEEK(oparg);
             int err;
+            Rewind_SetAdd(set, v);
             err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err != 0)
@@ -2672,6 +2673,7 @@ main_loop:
             int err;
             STACK_SHRINK(2);
             err = PyObject_SetAttr(owner, name, v);
+            Rewind_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
             if (err != 0)
@@ -3935,6 +3937,9 @@ main_loop:
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
             sp = stack_pointer;
+
+            Rewind_CallFunction(sp, oparg);
+            
             res = call_function(tstate, &sp, oparg, NULL);
             stack_pointer = sp;
             PUSH(res);

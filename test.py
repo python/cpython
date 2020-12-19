@@ -5,9 +5,12 @@ def fib(n):
     b = fib(n - 2)
     return a + b
 
-class MyClass(object):
+class Person(object):
+    def __init__(self, name):
+        self.name = name
+
     def hello(self):
-        print("Hello")
+        print("Hello, my name is " + self.name + "!")
 
 my_list = [1, 2, 3, [321, 123]]
 my_list.append(4)
@@ -36,8 +39,45 @@ print(c)
 my_dict = { 'a': 1 }
 my_dict['b'] = 2
 del my_dict['a']
+my_dict.update({ 'd': 3, 'e': 5 })
 
+print('my_dict', my_dict)
+
+my_dict.pop('d')
+print('my_dict', my_dict)
+
+removed = my_dict.popitem()
+print('removed', removed)
+print('my_dict', my_dict)
+
+my_dict.clear()
 print('my_dict', my_dict)
 
 fib(3)
 
+s1 = "Hello"
+s2 = "World"
+s3 = s1 + s2
+print(s3)
+
+bob = Person("Robert")
+bob.hello()
+
+a_set = set([1, 2])
+a_set.add(3)
+a_set.update(set([4, 5]))
+a_set.discard(3)
+a_set.remove(2)
+
+print(a_set)
+
+a_set.clear()
+print(a_set)
+
+b_set = set([9, 8, 1, 2, 3])
+c_set = a_set & b_set
+print('c_set', c_set)
+
+c_set = set([1])
+c_set |= set([3])
+print('c_set', c_set)
