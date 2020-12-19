@@ -316,7 +316,7 @@ when leaving an exception handler::
    ...     except:
    ...         print(sys.exc_info())
    ...     print(sys.exc_info())
-   ... 
+   ...
    (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
    (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
    (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
