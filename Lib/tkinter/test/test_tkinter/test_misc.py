@@ -266,6 +266,40 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
+    def test_default_root(self):
+        self.assertIs(tkinter._support_default_root, True)
+        self.assertIsNone(tkinter._default_root)
+        root = tkinter.Tk()
+        root2 = tkinter.Tk()
+        root3 = tkinter.Tk()
+        self.assertIs(tkinter._default_root, root)
+        root2.destroy()
+        self.assertIs(tkinter._default_root, root)
+        root.destroy()
+        self.assertIsNone(tkinter._default_root)
+        root3.destroy()
+        self.assertIsNone(tkinter._default_root)
+
+    def test_no_default_root(self):
+        self.assertIs(tkinter._support_default_root, True)
+        self.assertIsNone(tkinter._default_root)
+        root = tkinter.Tk()
+        self.assertIs(tkinter._default_root, root)
+        tkinter.NoDefaultRoot()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        # repeated call is no-op
+        tkinter.NoDefaultRoot()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        root.destroy()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        root = tkinter.Tk()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        root.destroy()
+
     def test_getboolean(self):
         self.assertRaises(RuntimeError, tkinter.getboolean, '1')
         root = tkinter.Tk()
