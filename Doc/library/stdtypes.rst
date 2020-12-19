@@ -5353,8 +5353,8 @@ types, where they are relevant.  Some of these are not reported by the
 .. method:: class.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.
-   Example::
+   method returns a list of all those references still alive.  The list is in
+   definition order.  Example::
 
       >>> int.__subclasses__()
       [<class 'bool'>]

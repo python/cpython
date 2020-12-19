@@ -179,6 +179,21 @@ codecs
 Add a :func:`codecs.unregister` function to unregister a codec search function.
 (Contributed by Hai Shi in :issue:`41842`.)
 
+collections.abc
+---------------
+
+The ``__args__`` of the :ref:`parameterized generic <types-genericalias>` for
+:class:`collections.abc.Callable` are now consistent with :data:`typing.Callable`.
+:class:`collections.abc.Callable` generic now flattens type parameters, similar
+to what :data:`typing.Callable` currently does.  This means that
+``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+``(int, str, str)``; previously this was ``([int, str], str)``.  To allow this
+change, :class:`types.GenericAlias` can now be subclassed, and a subclass will
+be returned when subscripting the :class:`collections.abc.Callable` type.  Note
+that a :exc:`TypeError` may be raised for invalid forms of parameterizing
+:class:`collections.abc.Callable` which may have passed silently in Python 3.9.
+(Contributed by Ken Jin in :issue:`42195`.)
+
 contextlib
 ----------
 
@@ -507,6 +522,15 @@ Changes in the Python API
   ignored.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
+* :class:`collections.abc.Callable` generic now flattens type parameters, similar
+  to what :data:`typing.Callable` currently does.  This means that
+  ``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+  ``(int, str, str)``; previously this was ``([int, str], str)``.  Code which
+  accesses the arguments via :func:`typing.get_args` or ``__args__`` need to account
+  for this change.  Furthermore, :exc:`TypeError` may be raised for invalid forms
+  of parameterizing :class:`collections.abc.Callable` which may have passed
+  silently in Python 3.9.
+  (Contributed by Ken Jin in :issue:`42195`.)
 
 CPython bytecode changes
 ========================
