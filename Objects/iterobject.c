@@ -406,7 +406,8 @@ asynccallawaitable_iternext(callasynciterawaitableobject *obj)
     int ok;
 
     if (obj->it->it_sentinel == NULL) {
-        return PyErr_Format(PyExc_TypeError, "'%.200s' object is already exhausted", obj->it);
+        PyErr_SetNone(PyExc_StopAsyncIteration);
+        return NULL;
     }
 
     result = (*Py_TYPE(obj->wrapped_iter)->tp_iternext)(obj->wrapped_iter);
