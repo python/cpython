@@ -27,7 +27,7 @@ CAPI_FUNC = textwrap.dedent(rf'''
         [(]
         {_ind(_MAYBE_NESTED_PARENS, 2)}
         [)] \s*
-        (\w+)  # <func_name>
+        (\w+)  # <func>
         \s* [(]
     )
 ''')
@@ -39,19 +39,30 @@ CAPI_DATA = textwrap.dedent(rf'''
         [(]
         {_ind(_MAYBE_NESTED_PARENS, 2)}
         [)] \s*
-        (\w+)  # <data_name>
+        (\w+)  # <data>
         \b [^(]
+    )
+''')
+CAPI_INLINE = textwrap.dedent(r'''
+    (?:
+        ^
+        \s*
+        static \s+ inline \s+
+        .*?
+        \s+
+        ( \w+ )  # <inline>
+        \s* [(]
     )
 ''')
 CAPI_MACRO = textwrap.dedent(r'''
     (?:
-        (\w+)  # <macro_name>
+        (\w+)  # <macro>
         \s* [(]
     )
 ''')
 CAPI_CONSTANT = textwrap.dedent(r'''
     (?:
-        (\w+)  # <constant_name>
+        (\w+)  # <constant>
         \s+ [^(]
     )
 ''')
@@ -79,6 +90,8 @@ CAPI_RE = re.compile(textwrap.dedent(rf'''
         |
         {_ind(CAPI_DATA, 2)}
         |
+        {_ind(CAPI_INLINE, 2)}
+        |
         {_ind(CAPI_DEFINE, 2)}
     )
 '''), re.VERBOSE)
@@ -86,14 +99,19 @@ CAPI_RE = re.compile(textwrap.dedent(rf'''
 KINDS = [
     'func',
     'data',
+    'inline',
     'macro',
     'constant',
 ]
 
 
-def _parse_line(line):
+def _parse_line(line, prev=None):
+    if prev:
+        line = prev + ' ' + line
     m = CAPI_RE.match(line)
     if not m:
+        if not prev and line.startswith('static inline '):
+            return line  # the new "prev"
         #if 'PyAPI_' in line or '#define ' in line or ' define ' in line:
         #    print(line)
         return None
@@ -132,13 +150,15 @@ def _get_level(filename, name, *,
 class CAPIItem(namedtuple('CAPIItem', 'file lno name kind level')):
 
     @classmethod
-    def from_line(cls, line, filename, lno):
-        parsed = _parse_line(line)
+    def from_line(cls, line, filename, lno, prev=None):
+        parsed = _parse_line(line, prev)
         if not parsed:
-            return None
+            return None, None
+        if isinstance(parsed, str):
+            return None, parsed
         name, kind = parsed
         level = _get_level(filename, name)
-        return cls(filename, lno, name, kind, level)
+        return cls(filename, lno, name, kind, level), None
 
     @property
     def relfile(self):
@@ -148,16 +168,18 @@ class CAPIItem(namedtuple('CAPIItem', 'file lno name kind level')):
 def _parse_capi(lines, filename):
     if isinstance(lines, str):
         lines = lines.splitlines()
+    prev = None
     for lno, line in enumerate(lines, 1):
-        yield CAPIItem.from_line(line, filename, lno)
+        parsed, prev = CAPIItem.from_line(line, filename, lno, prev)
+        if parsed:
+            yield parsed
 
 
 def iter_capi(filenames=None):
     for filename in iter_header_files(filenames):
         with open(filename) as infile:
             for item in _parse_capi(infile, filename):
-                if item is not None:
-                    yield item
+                yield item
 
 
 def _collate_by_kind(items):
@@ -225,6 +247,7 @@ def render_table(items, *, verbose=False):
 def render_summary(items, *, bykind=True):
     total = 0
     summary = summarize(items, bykind=bykind)
+    # XXX Stablize the sorting to match KINDS/LEVELS.
     for outer, counts in summary.items():
         subtotal = sum(c for _, c in counts.items())
         yield f'{outer + ":":20} ({subtotal})'
@@ -236,13 +259,21 @@ def render_summary(items, *, bykind=True):
 
 def summarize(items, *, bykind=True):
     if bykind:
-        summary = {kind: {l: 0 for l in LEVELS}
-                   for kind in KINDS}
+        outers = KINDS
+        inners = LEVELS
+    else:
+        outers = LEVELS
+        inners = KINDS
+    summary = {}
+    for outer in outers:
+        summary[outer] = _outer = {}
+        for inner in inners:
+            _outer[inner] = 0
+
+    if bykind:
         for item in items:
             summary[item.kind][item.level] += 1
     else:
-        summary = {level: {k: 0 for k in KINDS}
-                   for level in LEVELS}
         for item in items:
             summary[item.level][item.kind] += 1
     return summary
