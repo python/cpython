@@ -20,9 +20,22 @@ work. One should use importlib as the public-facing version of this module.
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
 
+def _object_name(obj):
+    try:
+        return obj.__qualname__
+    except AttributeError:
+        return type(obj).__qualname__
+
 # Bootstrap-related code ######################################################
 
+# Modules injected manually by _setup()
+_thread = None
+_warnings = None
+_weakref = None
+
+# Import done by _install_external_importers()
 _bootstrap_external = None
+
 
 def _wrap(new, old):
     """Simple substitute for functools.update_wrapper."""
@@ -265,6 +278,9 @@ def _load_module_shim(self, fullname):
     This method is deprecated.  Use loader.exec_module instead.
 
     """
+    msg = ("the load_module() method is deprecated and slated for removal in "
+          "Python 3.12; use exec_module() instead")
+    _warnings.warn(msg, DeprecationWarning)
     spec = spec_from_loader(fullname, self)
     if fullname in sys.modules:
         module = sys.modules[fullname]
@@ -605,9 +621,9 @@ def _exec(spec, module):
             else:
                 _init_module_attrs(spec, module, override=True)
                 if not hasattr(spec.loader, 'exec_module'):
-                    # (issue19713) Once BuiltinImporter and ExtensionFileLoader
-                    # have exec_module() implemented, we can add a deprecation
-                    # warning here.
+                    msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
+                           "falling back to load_module()")
+                    _warnings.warn(msg, ImportWarning)
                     spec.loader.load_module(name)
                 else:
                     spec.loader.exec_module(module)
@@ -620,9 +636,8 @@ def _exec(spec, module):
 
 
 def _load_backward_compatible(spec):
-    # (issue19713) Once BuiltinImporter and ExtensionFileLoader
-    # have exec_module() implemented, we can add a deprecation
-    # warning here.
+    # It is assumed that all callers have been warned about using load_module()
+    # appropriately before calling this function.
     try:
         spec.loader.load_module(spec.name)
     except:
@@ -661,6 +676,9 @@ def _load_unlocked(spec):
     if spec.loader is not None:
         # Not a namespace package.
         if not hasattr(spec.loader, 'exec_module'):
+            msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
+                    "falling back to load_module()")
+            _warnings.warn(msg, ImportWarning)
             return _load_backward_compatible(spec)
 
     module = module_from_spec(spec)
@@ -754,16 +772,16 @@ class BuiltinImporter:
         spec = cls.find_spec(fullname, path)
         return spec.loader if spec is not None else None
 
-    @classmethod
-    def create_module(self, spec):
+    @staticmethod
+    def create_module(spec):
         """Create a built-in module"""
         if spec.name not in sys.builtin_module_names:
             raise ImportError('{!r} is not a built-in module'.format(spec.name),
                               name=spec.name)
         return _call_with_frames_removed(_imp.create_builtin, spec)
 
-    @classmethod
-    def exec_module(self, module):
+    @staticmethod
+    def exec_module(module):
         """Exec a built-in module"""
         _call_with_frames_removed(_imp.exec_builtin, module)
 
@@ -824,8 +842,8 @@ class FrozenImporter:
         """
         return cls if _imp.is_frozen(fullname) else None
 
-    @classmethod
-    def create_module(cls, spec):
+    @staticmethod
+    def create_module(spec):
         """Use default semantics for module creation."""
 
     @staticmethod
@@ -844,6 +862,7 @@ class FrozenImporter:
         This method is deprecated.  Use exec_module() instead.
 
         """
+        # Warning about deprecation implemented in _load_module_shim().
         return _load_module_shim(cls, fullname)
 
     @classmethod

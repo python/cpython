@@ -268,13 +268,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
 
-PySendResult
-PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **result)
+static PySendResult
+PyGen_am_send(PyGenObject *gen, PyObject *arg, PyObject **result)
 {
-    assert(PyGen_CheckExact(gen) || PyCoro_CheckExact(gen));
-    assert(result != NULL);
-    assert(arg != NULL);
-
     return gen_send_ex2(gen, arg, result, 0, 0);
 }
 
@@ -772,6 +768,14 @@ static PyMethodDef gen_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyAsyncMethods gen_as_async = {
+    0,                                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
+};
+
+
 PyTypeObject PyGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "generator",                                /* tp_name */
@@ -782,7 +786,7 @@ PyTypeObject PyGen_Type = {
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
+    &gen_as_async,                              /* tp_as_async */
     (reprfunc)gen_repr,                         /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -793,7 +797,8 @@ PyTypeObject PyGen_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)gen_traverse,                 /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1015,7 +1020,8 @@ static PyMethodDef coro_methods[] = {
 static PyAsyncMethods coro_as_async = {
     (unaryfunc)coro_await,                      /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
 };
 
 PyTypeObject PyCoro_Type = {
@@ -1039,7 +1045,8 @@ PyTypeObject PyCoro_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)gen_traverse,                 /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1397,7 +1404,8 @@ static PyMethodDef async_gen_methods[] = {
 static PyAsyncMethods async_gen_as_async = {
     0,                                          /* am_await */
     PyObject_SelfIter,                          /* am_aiter */
-    (unaryfunc)async_gen_anext                  /* am_anext */
+    (unaryfunc)async_gen_anext,                 /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
 };
 
 
@@ -1422,7 +1430,8 @@ PyTypeObject PyAsyncGen_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)async_gen_traverse,           /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1660,7 +1669,8 @@ static PyMethodDef async_gen_asend_methods[] = {
 static PyAsyncMethods async_gen_asend_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 
@@ -2068,7 +2078,8 @@ static PyMethodDef async_gen_athrow_methods[] = {
 static PyAsyncMethods async_gen_athrow_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 

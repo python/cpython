@@ -37,7 +37,7 @@ Some facts and figures:
    Added support for :mod:`lzma` compression.
 
 
-.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
+.. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 
    Return a :class:`TarFile` object for the pathname *name*. For detailed
    information on :class:`TarFile` objects and the keyword arguments that are
@@ -445,10 +445,11 @@ be finalized; only the internally used file object will be closed. See the
 
 .. method:: TarFile.extractfile(member)
 
-   Extract a member from the archive as a file object. *member* may be a filename
-   or a :class:`TarInfo` object. If *member* is a regular file or a link, an
-   :class:`io.BufferedReader` object is returned. Otherwise, :const:`None` is
-   returned.
+   Extract a member from the archive as a file object. *member* may be
+   a filename or a :class:`TarInfo` object. If *member* is a regular file or
+   a link, an :class:`io.BufferedReader` object is returned. For all other
+   existing members, :const:`None` is returned. If *member* does not appear
+   in the archive, :exc:`KeyError` is raised.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.

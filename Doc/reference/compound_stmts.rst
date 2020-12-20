@@ -768,10 +768,8 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
-``async`` identifiers become reserved keywords; :keyword:`await` expressions,
-:keyword:`async for` and :keyword:`async with` can only be used in
-coroutine function bodies.
+(see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
+:keyword:`async with` can only be used in the body of a coroutine function.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
@@ -785,6 +783,9 @@ An example of a coroutine function::
         do_stuff()
         await some_coroutine()
 
+.. versionchanged:: 3.7
+   ``await`` and ``async`` are now keywords; previously they were only
+   treated as such inside the body of a coroutine function.
 
 .. index:: statement: async for
 .. _`async for`:
@@ -795,12 +796,12 @@ The :keyword:`!async for` statement
 .. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
-An :term:`asynchronous iterable` is able to call asynchronous code in its
-*iter* implementation, and :term:`asynchronous iterator` can call asynchronous
-code in its *next* method.
+An :term:`asynchronous iterable` provides an ``__aiter__`` method that directly
+returns an :term:`asynchronous iterator`, which can call asynchronous code in
+its ``__anext__`` method.
 
 The ``async for`` statement allows convenient iteration over asynchronous
-iterators.
+iterables.
 
 The following code::
 

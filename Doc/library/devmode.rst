@@ -93,6 +93,9 @@ The Python Development Mode does not prevent the :option:`-O` command line
 option from removing :keyword:`assert` statements nor from setting
 :const:`__debug__` to ``False``.
 
+The Python Development Mode can only be enabled at the Python startup. Its
+value can be read from :data:`sys.flags.dev_mode <sys.flags>`.
+
 .. versionchanged:: 3.8
    The :class:`io.IOBase` destructor now logs ``close()`` exceptions.
 

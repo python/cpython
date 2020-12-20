@@ -273,9 +273,6 @@
     <ClInclude Include="..\Include\tupleobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\ucnhash.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\unicodeobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -462,6 +459,9 @@
     <ClInclude Include="..\Include\cpython\interpreteridobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pythonrun.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\sysmodule.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -513,6 +513,9 @@
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_format.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_gc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -538,6 +541,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_long.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
@@ -571,6 +577,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_ucnhash.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">

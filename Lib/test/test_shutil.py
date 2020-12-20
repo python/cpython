@@ -683,6 +683,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @os_helper.skip_unless_symlink
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copytree_named_pipe(self):
         os.mkdir(TESTFN)
         try:
@@ -1206,6 +1208,8 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copyfile_named_pipe(self):
         try:
             os.mkfifo(TESTFN)
@@ -1846,6 +1850,23 @@ class TestWhich(BaseTest, unittest.TestCase):
 
         with os_helper.EnvironmentVarGuard() as env:
             env['PATHEXT'] = ext
+            rv = shutil.which(program, path=self.temp_dir)
+            self.assertEqual(rv, temp_filexyz.name)
+
+    # Issue 40592: See https://bugs.python.org/issue40592
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext_with_empty_str(self):
+        ext = ".xyz"
+        temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
+                                                   prefix="Tmp2", suffix=ext)
+        self.addCleanup(temp_filexyz.close)
+
+        # strip path and extension
+        program = os.path.basename(temp_filexyz.name)
+        program = os.path.splitext(program)[0]
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = f"{ext};"  # note the ;
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
 

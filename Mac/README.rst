@@ -120,6 +120,8 @@ support ppc (Xcode 4 on 10.6 and later systems).  The flavor can be specified
 using the configure option ``--with-universal-archs=VALUE``. The following
 values are available:
 
+  * ``universal2``: ``arm64``, ``x86_64``
+
   * ``intel``:	  ``i386``, ``x86_64``
 
   * ``intel-32``: ``i386``
@@ -154,6 +156,8 @@ following combinations of SDKs and universal-archs flavors are available:
   * 10.7 through 10.14 SDKs support ``intel``, ``intel-32``, and ``intel-64``
 
   * 10.15 and later SDKs support ``intel-64`` only
+
+  * 11.0 and later SDKs support ``universal2``
 
 The makefile for a framework build will also install ``python3.x-32``
 binaries when the universal architecture includes at least one 32-bit
@@ -351,6 +355,39 @@ A framework install also installs some applications in ``/Applications/Python X.
 
 And lastly a framework installation installs files in ``/usr/local/bin``, all of
 them symbolic links to files in ``/Library/Frameworks/Python.framework/Versions/X.Y/bin``.
+
+Weak linking support
+====================
+
+The CPython sources support building with the latest SDK while targetting deployment
+to macOS 10.9. This is done through weak linking of symbols introduced in macOS
+10.10 or later and checking for their availability at runtime.
+
+This requires the use of Apple's compiler toolchain on macOS 10.13 or later.
+
+The basic implementation pattern is:
+
+* ``HAVE_<FUNCTION>`` is a macro defined (or not) by the configure script
+
+* ``HAVE_<FUNCTION>_RUNTIME`` is a macro defined in the relevant source
+  files. This expands to a call to ``__builtin_available`` when using
+  a new enough Apple compiler, and to a true value otherwise.
+
+* Use ``HAVE_<FUNCTION>_RUNTIME`` before calling ``<function>``. This macro
+  *must* be used a the sole expression in an if statement::
+
+   if (HAVE_<FUNCTION>_RUNTIME) {
+     /* <function> is available */
+   }
+
+  Or:
+
+   if (HAVE_<FUNCTION>_RUNTIME) {} else {
+     /* <function> is not available */
+   }
+
+  Using other patterns (such as ``!HAVE_<FUNCTION>_RUNTIME``) is not supported
+  by Apple's compilers.
 
 
 Resources

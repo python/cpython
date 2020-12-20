@@ -69,6 +69,9 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         return NULL;
     }
     p = buf = PyBytes_AsString(u);
+    if (p == NULL) {
+        return NULL;
+    }
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
@@ -381,7 +384,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     int lines, cols;
     if (!fstring_find_expr_location(t, str, &lines, &cols)) {
-        PyMem_FREE(str);
+        PyMem_Free(str);
         return NULL;
     }
 

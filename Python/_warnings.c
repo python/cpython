@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"          // PyFrame_GetBack()
@@ -22,9 +23,6 @@ _Py_IDENTIFIER(ignore);
 /*************************************************************************/
 
 typedef struct _warnings_runtime_state WarningsState;
-
-/* Forward declaration of the _warnings module definition. */
-static struct PyModuleDef warningsmodule;
 
 _Py_IDENTIFIER(__name__);
 
@@ -68,12 +66,14 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
             return NULL;
         }
     } else {
-        modname_obj = Py_None;
+        modname_obj = Py_NewRef(Py_None);
     }
 
     /* This assumes the line number is zero for now. */
-    return PyTuple_Pack(5, action_str, Py_None,
-                        category, modname_obj, _PyLong_Zero);
+    PyObject *filter = PyTuple_Pack(5, action_str, Py_None,
+                                    category, modname_obj, _PyLong_GetZero());
+    Py_DECREF(modname_obj);
+    return filter;
 }
 #endif
 
@@ -113,37 +113,34 @@ init_filters(void)
 }
 
 /* Initialize the given warnings module state. */
-static int
-warnings_init_state(WarningsState *st)
+int
+_PyWarnings_InitState(PyThreadState *tstate)
 {
+    WarningsState *st = &tstate->interp->warnings;
+
     if (st->filters == NULL) {
         st->filters = init_filters();
         if (st->filters == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     if (st->once_registry == NULL) {
         st->once_registry = PyDict_New();
         if (st->once_registry == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     if (st->default_action == NULL) {
         st->default_action = PyUnicode_FromString("default");
         if (st->default_action == NULL) {
-            goto error;
+            return -1;
         }
     }
 
     st->filters_version = 0;
-
     return 0;
-
-error:
-    warnings_clear_state(st);
-    return -1;
 }
 
 
@@ -472,7 +469,7 @@ update_registry(PyObject *registry, PyObject *text, PyObject *category,
     int rc;
 
     if (add_zero)
-        altkey = PyTuple_Pack(3, text, category, _PyLong_Zero);
+        altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
         altkey = PyTuple_Pack(2, text, category);
 
@@ -851,7 +848,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET()->sysdict;
+        globals = tstate->interp->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
@@ -1353,70 +1350,45 @@ static PyMethodDef warnings_functions[] = {
 };
 
 
-static struct PyModuleDef warningsmodule = {
-        PyModuleDef_HEAD_INIT,
-        MODULE_NAME,            /* m_name */
-        warnings__doc__,        /* m_doc */
-        0,                      /* m_size */
-        warnings_functions,     /* m_methods */
-        NULL,                   /* m_reload */
-        NULL,                   /* m_traverse */
-        NULL,                   /* m_clear */
-        NULL                    /* m_free */
+static int
+warnings_module_exec(PyObject *module)
+{
+    WarningsState *st = warnings_get_state();
+    if (st == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "filters", st->filters) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_onceregistry", st->once_registry) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_defaultaction", st->default_action) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyModuleDef_Slot warnings_slots[] = {
+    {Py_mod_exec, warnings_module_exec},
+    {0, NULL}
 };
 
-
-PyStatus
-_PyWarnings_InitState(PyThreadState *tstate)
-{
-    if (warnings_init_state(&tstate->interp->warnings) < 0) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-    return _PyStatus_OK();
-}
+static struct PyModuleDef warnings_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = MODULE_NAME,
+    .m_doc = warnings__doc__,
+    .m_size = 0,
+    .m_methods = warnings_functions,
+    .m_slots = warnings_slots,
+};
 
 
 PyMODINIT_FUNC
 _PyWarnings_Init(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&warningsmodule);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    WarningsState *st = warnings_get_state();
-    if (st == NULL) {
-        goto error;
-    }
-    if (warnings_init_state(st) < 0) {
-        goto error;
-    }
-
-    Py_INCREF(st->filters);
-    if (PyModule_AddObject(m, "filters", st->filters) < 0) {
-        goto error;
-    }
-
-    Py_INCREF(st->once_registry);
-    if (PyModule_AddObject(m, "_onceregistry", st->once_registry) < 0) {
-        goto error;
-    }
-
-    Py_INCREF(st->default_action);
-    if (PyModule_AddObject(m, "_defaultaction", st->default_action) < 0) {
-        goto error;
-    }
-
-    return m;
-
-error:
-    if (st != NULL) {
-        warnings_clear_state(st);
-    }
-    Py_DECREF(m);
-    return NULL;
+    return PyModuleDef_Init(&warnings_module);
 }
 
 // We need this to ensure that warnings still work until late in finalization.

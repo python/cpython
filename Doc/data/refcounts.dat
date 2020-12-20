@@ -959,11 +959,6 @@ PyGen_NewWithQualName:PyFrameObject*:frame:0:
 PyGen_NewWithQualName:PyObject*:name:0:
 PyGen_NewWithQualName:PyObject*:qualname:0:
 
-PyGen_Send:int:::
-PyGen_Send:PyGenObject*:gen:0:
-PyGen_Send:PyObject*:arg:0:
-PyGen_Send:PyObject**:presult:+1:
-
 PyCoro_CheckExact:int:::
 PyCoro_CheckExact:PyObject*:ob:0:
 
@@ -3012,6 +3007,9 @@ Py_GetVersion:const char*:::
 Py_INCREF:void:::
 Py_INCREF:PyObject*:o:+1:
 
+Py_NewRef:void:::
+Py_NewRef:PyObject*:o:+1:
+
 Py_Initialize:void:::
 
 Py_IsInitialized:int:::
@@ -3032,6 +3030,9 @@ Py_XDECREF:PyObject*:o:-1:if o is not NULL
 
 Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
+
+Py_XNewRef:void:::
+Py_XNewRef:PyObject*:o:+1:if o is not NULL
 
 _PyImport_Fini:void:::
 

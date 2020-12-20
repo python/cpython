@@ -630,7 +630,10 @@ class _PathParents(Sequence):
             return len(self._parts)
 
     def __getitem__(self, idx):
-        if idx < 0 or idx >= len(self):
+        if isinstance(idx, slice):
+            return tuple(self[i] for i in range(*idx.indices(len(self))))
+
+        if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
@@ -1264,14 +1267,14 @@ class Path(PurePath):
         with self.open(mode='wb') as f:
             return f.write(view)
 
-    def write_text(self, data, encoding=None, errors=None):
+    def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors) as f:
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
     def readlink(self):

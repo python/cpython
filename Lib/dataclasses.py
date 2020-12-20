@@ -8,7 +8,7 @@ import builtins
 import functools
 import abc
 import _thread
-from types import GenericAlias
+from types import FunctionType, GenericAlias
 
 
 __all__ = ['dataclass',
@@ -757,12 +757,19 @@ def _get_field(cls, a_name, a_type):
 
     return f
 
+def _set_qualname(cls, value):
+    # Ensure that the functions returned from _create_fn uses the proper
+    # __qualname__ (the class they belong to).
+    if isinstance(value, FunctionType):
+        value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
+    return value
 
 def _set_new_attribute(cls, name, value):
     # Never overwrites an existing attribute.  Returns True if the
     # attribute already exists.
     if name in cls.__dict__:
         return True
+    _set_qualname(cls, value)
     setattr(cls, name, value)
     return False
 
@@ -777,7 +784,7 @@ def _hash_set_none(cls, fields, globals):
 
 def _hash_add(cls, fields, globals):
     flds = [f for f in fields if (f.compare if f.hash is None else f.hash)]
-    return _hash_fn(flds, globals)
+    return _set_qualname(cls, _hash_fn(flds, globals))
 
 def _hash_exception(cls, fields, globals):
     # Raise an exception.

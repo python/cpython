@@ -308,6 +308,9 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define if you have the 'eventfd' function. */
+#undef HAVE_EVENTFD
+
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
@@ -784,6 +787,9 @@
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
 
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
 
@@ -1012,6 +1018,9 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -1115,6 +1124,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H
@@ -1300,6 +1312,9 @@
 
 /* Define to 1 if you have the <uuid/uuid.h> header file. */
 #undef HAVE_UUID_UUID_H
+
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
 
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3

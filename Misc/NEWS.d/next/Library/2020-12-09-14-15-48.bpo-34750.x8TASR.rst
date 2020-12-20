@@ -1,0 +1,1 @@
+[Enum] `_EnumDict.update()` is now supported

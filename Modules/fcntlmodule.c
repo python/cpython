@@ -565,6 +565,14 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SHLCK)) return -1;
 #endif
 
+/* Linux specifics */
+#ifdef F_SETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_SETPIPE_SZ)) return -1;
+#endif
+#ifdef F_GETPIPE_SZ
+    if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
+#endif
+
 /* OS X specifics */
 #ifdef F_FULLFSYNC
     if (PyModule_AddIntMacro(m, F_FULLFSYNC)) return -1;

@@ -218,7 +218,7 @@ AC_ARG_WITH(universal-archs,
     AS_HELP_STRING([--with-universal-archs=ARCH],
                    [specify the kind of universal binary that should be created. this option is
                     only valid when --enable-universalsdk is set; options are:
-                    ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
+                    ("universal2", "32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
                     see Mac/README.rst]),
 [
 	UNIVERSAL_ARCHS="$withval"
@@ -512,16 +512,6 @@ case $ac_sys_system/$ac_sys_release in
     define_xopen_source=no;;
   Darwin/@<:@[12]@:>@@<:@0-9@:>@.*)
     define_xopen_source=no;;
-  # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
-  # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
-  # or has another value. By not (re)defining it, the defaults come in place.
-  AIX/4)
-    define_xopen_source=no;;
-  AIX/5)
-    if test `uname -r` -eq 1; then
-      define_xopen_source=no
-    fi
-    ;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
@@ -1048,10 +1038,7 @@ AC_MSG_CHECKING(EXPORTSYMS)
 case $ac_sys_system in
 AIX*)
 	EXPORTSYMS="Modules/python.exp"
-	if test $ac_sys_release -ge 5 -o \
-		$ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
-	    EXPORTSFROM=. # the main executable
-	fi
+	EXPORTSFROM=. # the main executable
 	;;
 esac
 AC_MSG_RESULT($EXPORTSYMS)
@@ -1146,7 +1133,7 @@ if test $enable_shared = "yes"; then
 	      PY3LIBRARY=libpython3.so
 	  fi
           ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
@@ -1318,6 +1305,16 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
+  case $CC in
+    *gcc*)
+      AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
+      ])
+      ;;
+  esac
+
+
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -1587,7 +1584,7 @@ AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NODIST)
 
-# The -arch flags for universal builds on OSX
+# The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
 AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 
@@ -1888,6 +1885,11 @@ yes)
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+		;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -1909,7 +1911,7 @@ yes)
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
             *)
-               AC_MSG_ERROR([proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way])
+               AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
                ;;
             esac
 
@@ -1975,6 +1977,13 @@ yes)
         export MACOSX_DEPLOYMENT_TARGET
         EXPORT_MACOSX_DEPLOYMENT_TARGET=''
         AC_MSG_RESULT($MACOSX_DEPLOYMENT_TARGET)
+
+        AC_MSG_CHECKING(if specified universal architectures work)
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[printf("%d", 42);]])],
+            [AC_MSG_RESULT(yes)],
+            [AC_MSG_RESULT(no)
+             AC_MSG_ERROR(check config.log and use the '--with-universal-archs' option)
+        ])
 
         # end of Darwin* tests
         ;;
@@ -2195,7 +2204,8 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h)
+sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
+sys/mman.h sys/eventfd.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2479,7 +2489,7 @@ case $ac_sys_system/$ac_sys_release in
     		MACOSX_DEFAULT_ARCH="ppc"
     		;;
     	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
+    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
     		;;
     	esac
     else
@@ -2489,9 +2499,12 @@ case $ac_sys_system/$ac_sys_release in
     		;;
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
+		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
     		;;
     	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
+    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
     		;;
     	esac
 
@@ -2785,7 +2798,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;
+		LINKFORSHARED='-Wl,-export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -3298,10 +3311,10 @@ if test "$posix_threads" = "yes"; then
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],
       [ac_cv_pthread_system_supported=no],
@@ -3612,7 +3625,7 @@ AC_SUBST(DLINCLDIR)
 DLINCLDIR=.
 
 # the dlopen() function means we might want to use dynload_shlib.o. some
-# platforms, such as AIX, have dlopen(), but don't want to use it.
+# platforms have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS(dlopen)
 
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
@@ -3622,12 +3635,6 @@ AC_MSG_CHECKING(DYNLOADFILE)
 if test -z "$DYNLOADFILE"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) # Use dynload_shlib.c and dlopen() if we have it; otherwise dynload_aix.c
-	if test "$ac_cv_func_dlopen" = yes
-	then DYNLOADFILE="dynload_shlib.o"
-	else DYNLOADFILE="dynload_aix.o"
-	fi
-	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
@@ -3684,9 +3691,9 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
+ sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
+ truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
@@ -3770,6 +3777,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
+AC_MSG_CHECKING(for _dyld_shared_cache_contains_path)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <mach-o/dyld.h>]], [[void *x=_dyld_shared_cache_contains_path]])],
+  [AC_DEFINE(HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH, 1, Define if you have the '_dyld_shared_cache_contains_path' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
 
 AC_MSG_CHECKING(for memfd_create)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -3781,6 +3794,17 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #endif
 ]], [[void *x=memfd_create]])],
   [AC_DEFINE(HAVE_MEMFD_CREATE, 1, Define if you have the 'memfd_create' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for eventfd)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_EVENTFD_H
+#include <sys/eventfd.h>
+#endif
+]], [[int x = eventfd(0, EFD_CLOEXEC)]])],
+  [AC_DEFINE(HAVE_EVENTFD, 1, Define if you have the 'eventfd' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
@@ -4704,7 +4728,7 @@ then
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
   ]])],
   [ac_cv_wchar_t_signed=yes],
@@ -4762,12 +4786,7 @@ if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
 fi
 
 AC_SUBST(EXT_SUFFIX)
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
@@ -4826,7 +4845,7 @@ AC_CACHE_VAL(ac_cv_rshift_extends_sign, [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 ]])],
 [ac_cv_rshift_extends_sign=yes],
@@ -4973,6 +4992,7 @@ AC_MSG_CHECKING(for broken poll())
 AC_CACHE_VAL(ac_cv_broken_poll,
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {

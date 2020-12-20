@@ -648,19 +648,28 @@ class PyCodeObjectPtr(PyObjectPtr):
         Analogous to PyCode_Addr2Line; translated from pseudocode in
         Objects/lnotab_notes.txt
         '''
-        co_lnotab = self.pyop_field('co_lnotab').proxyval(set())
+        co_linetable = self.pyop_field('co_linetable').proxyval(set())
 
         # Initialize lineno to co_firstlineno as per PyCode_Addr2Line
         # not 0, as lnotab_notes.txt has it:
         lineno = int_from_int(self.field('co_firstlineno'))
 
+        if addrq < 0:
+            return lineno
         addr = 0
-        for addr_incr, line_incr in zip(co_lnotab[::2], co_lnotab[1::2]):
+        for addr_incr, line_incr in zip(co_linetable[::2], co_linetable[1::2]):
+            if addr_incr == 255:
+                break
             addr += ord(addr_incr)
+            line_delta = ord(line_incr)
+            if line_delta == 128:
+                line_delta = 0
+            elif line_delta > 128:
+                line_delta -= 256
+            lineno += line_delta
             if addr > addrq:
                 return lineno
-            lineno += ord(line_incr)
-        return lineno
+        assert False, "Unreachable"
 
 
 class PyDictObjectPtr(PyObjectPtr):
@@ -1605,8 +1614,8 @@ class Frame(object):
             return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame "collect" within the garbage-collector?'''
-        return self._gdbframe.name() == 'collect'
+        '''Is this frame gc_collect_main() within the garbage-collector?'''
+        return self._gdbframe.name() in ('collect', 'gc_collect_main')
 
     def get_pyop(self):
         try:
