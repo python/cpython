@@ -108,6 +108,11 @@ class BrokenThreadPool(_base.BrokenExecutor):
     Raised when a worker thread in a ThreadPoolExecutor failed initializing.
     """
 
+class RejectedExecutionException(Exception):
+    """
+    Raised when the work queue is full.
+    """
+
 
 class ThreadPoolExecutor(_base.Executor):
 
@@ -121,6 +126,7 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
+            queue_size: The size limit for work queue.
             initializer: A callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
         """
@@ -165,7 +171,10 @@ class ThreadPoolExecutor(_base.Executor):
             f = _base.Future()
             w = _WorkItem(f, fn, args, kwargs)
 
-            self._work_queue.put(w)
+            try:
+                self._work_queue.put(w)
+            except queue.Full:
+                raise RejectedExecutionException()
             self._adjust_thread_count()
             return f
     submit.__doc__ = _base.Executor.submit.__doc__
