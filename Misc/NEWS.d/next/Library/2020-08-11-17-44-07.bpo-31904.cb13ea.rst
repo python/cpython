@@ -1,0 +1,1 @@
+Fix site and sysconfig modules for VxWorks RTOS which has no home directories.
