@@ -1,1 +1,0 @@
-Explain that :keyword:`except` no longer accepts nested tuples.  (This was changed in Python 3.0, but not previously documented.)
