@@ -114,10 +114,9 @@ class ThreadPoolExecutor(_base.Executor):
     # Used to assign unique thread names when thread_name_prefix is not supplied.
     _counter = itertools.count().__next__
 
-    def __init__(self, max_workers=None, thread_name_prefix='',
+    def __init__(self, max_workers=None, thread_name_prefix='',queue_size=0,
                  initializer=None, initargs=()):
         """Initializes a new ThreadPoolExecutor instance.
-
         Args:
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
@@ -141,7 +140,7 @@ class ThreadPoolExecutor(_base.Executor):
             raise TypeError("initializer must be a callable")
 
         self._max_workers = max_workers
-        self._work_queue = queue.SimpleQueue()
+        self._work_queue = queue.Queue(queue_size)
         self._idle_semaphore = threading.Semaphore(0)
         self._threads = set()
         self._broken = False
