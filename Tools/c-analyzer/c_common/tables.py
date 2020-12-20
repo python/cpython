@@ -212,3 +212,117 @@ def _normalize_table_file_props(header, sep):
         else:
             sep = None
     return header, sep
+
+
+##################################
+# stdout tables
+
+WIDTH = 20
+
+
+def build_table(columns, *, sep=' '):
+    if isinstance(columns, str):
+        columns = columns.replace(',', ' ').strip().split()
+    columns = _parse_columns(columns)
+    return _build_table(columns, sep=sep)
+
+
+def _parse_colspec(raw):
+    width = align = fmt = None
+    if raw.isdigit():
+        width = int(raw)
+        align = 'left'
+    elif raw == '<':
+        align = 'left'
+    elif raw == '^':
+        align = 'middle'
+    elif raw == '>':
+        align = 'right'
+    else:
+        # XXX Handle combined specs.
+        fmt = raw
+    return width, align, fmt
+
+
+def _render_colspec(spec):
+    if not spec:
+        return ''
+    width, align, colfmt = spec
+
+    parts = []
+    if align:
+        if align == 'left':
+            align = '<'
+        elif align == 'middle':
+            align = '^'
+        elif align == 'right':
+            align = '>'
+        else:
+            raise NotImplementedError
+        parts.append(align)
+    if width:
+        parts.append(str(width))
+    if colfmt:
+        raise NotImplementedError
+    return ''.join(parts)
+
+
+def _parse_column(raw):
+    if isinstance(raw, str):
+        colname, _, rawspec = raw.partition(':')
+        spec = _parse_colspec(rawspec)
+        return (colname, spec)
+    else:
+        raise NotImplementedError
+
+
+def _render_column(colname, spec):
+    spec = _render_colspec(spec)
+    if spec:
+        return f'{colname}:{spec}'
+    else:
+        return colname
+
+
+def _parse_columns(columns):
+    parsed = []
+    for raw in columns:
+        column = _parse_column(raw)
+        parsed.append(column)
+    return parsed
+
+
+def _resolve_width(width, colname, defaultwidth):
+    if width:
+        if not isinstance(width, int):
+            raise NotImplementedError
+        return width
+
+    if not defaultwidth:
+        return WIDTH
+    elif not hasattr(defaultwidth, 'get'):
+        return defaultwidth or WIDTH
+
+    defaultwidths = defaultwidth
+    defaultwidth = defaultwidths.get(None) or WIDTH
+    return defaultwidths.get(colname) or defaultwidth
+
+
+def _build_table(columns, *, sep=' ', defaultwidth=None):
+    header = []
+    div = []
+    rowfmt = []
+    for colname, spec in columns:
+        width, align, colfmt = spec
+        width = _resolve_width(width, colname, defaultwidth)
+        if width != spec[0]:
+            spec = width, align, colfmt
+
+        header.append(f' {{:^{width}}} '.format(colname))
+        div.append('-' * (width + 2))
+        rowfmt.append(' {' + _render_column(colname, spec) + '} ')
+    return (
+        sep.join(header),
+        sep.join(div),
+        sep.join(rowfmt),
+    )
