@@ -42,12 +42,12 @@ include the originating exception(s) and the final exception.
 
 When raising a new exception (rather than using a bare ``raise`` to re-raise
 the exception currently being handled), the implicit exception context can be
-supplemented with an explicit cause by using :keyword:`from` with
+supplemented with an explicit cause by using :keyword:`from<raise>` with
 :keyword:`raise`::
 
    raise new_exc from original_exc
 
-The expression following :keyword:`from` must be an exception or ``None``. It
+The expression following :keyword:`from<raise>` must be an exception or ``None``. It
 will be set as :attr:`__cause__` on the raised exception. Setting
 :attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
 attribute to ``True``, so that using ``raise new_exc from None``
