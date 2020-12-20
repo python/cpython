@@ -1292,6 +1292,11 @@ always available.
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
 
+   .. versionchanged:: 3.10
+      `PyFrame_FastToLocalsWithError` and `PyFrame_LocalsToFast` are no longer
+      called before and after the profile function (they must now be explicitly
+      called when manipulating `PyFrameObject.f_locals`).
+
 .. function:: setrecursionlimit(limit)
 
    Set the maximum depth of the Python interpreter stack to *limit*.  This limit
@@ -1416,6 +1421,12 @@ always available.
 
       ``'opcode'`` event type added; :attr:`f_trace_lines` and
       :attr:`f_trace_opcodes` attributes added to frames
+
+   .. versionchanged:: 3.10
+      `PyFrame_FastToLocalsWithError` and `PyFrame_LocalsToFast` are no longer
+      called before and after the trace function (they must now be
+      explicitly called when manipulating `PyFrameObject.f_locals`).
+
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 

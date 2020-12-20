@@ -1,0 +1,4 @@
+`PyFrame_FastToLocalsWithError` and `PyFrame_LocalsToFast` are no longer
+called during profile nor tracing. To inspect the `PyFrameObject.f_locals` member,
+debuggers and profilers implemented in C must now call `PyFrame_FastToLocalsWithError`
+to update locals and `PyFrame_LocalsToFast` after `PyFrameObject.f_locals` are updated.

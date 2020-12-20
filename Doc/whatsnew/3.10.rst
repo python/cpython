@@ -417,6 +417,9 @@ Optimizations
   bytecode level.  It is now around 100% faster to create a function with parameter
   annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
+* `PyFrame_FastToLocalsWithError` and `PyFrame_LocalsToFast` are no longer called during profile and tracing.
+  (Contributed by Fabio Zadrozny in :issue:`issue42197`)
+
 Deprecated
 ==========
 
@@ -655,6 +658,12 @@ Porting to Python 3.10
   ``PyList_SET_ITEM(a, b, c) = x`` now fail with a compiler error. It prevents
   bugs like ``if (PyList_SET_ITEM (a, b, c) < 0) ...`` test.
   (Contributed by Zackery Spytz and Victor Stinner in :issue:`30459`.)
+
+* `PyFrame_FastToLocalsWithError` and `PyFrame_LocalsToFast` are no longer
+  called before and after the trace or profile function, so, they must now
+  be explicitly called when manipulating `PyFrameObject.f_locals`.
+  (Contributed by Fabio Zadrozny in :issue:`issue42197`)
+
 
 Deprecated
 ----------
