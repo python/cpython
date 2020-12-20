@@ -254,7 +254,8 @@ present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if it is the class or a base class of the exception
-object or a tuple containing an item compatible with the exception.
+object, or a tuple containing an item that is the class or a base class of
+the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
