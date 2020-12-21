@@ -302,9 +302,27 @@ Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  :func:`sys.exc_info`
-values are restored to their previous values (before the call) when returning
-from a function that handled an exception.
+the point in the program where the exception occurred.  The details about the
+exception accessed via :func:`sys.exc_info` are restored to their previous values
+when leaving an exception handler::
+
+   >>> print(sys.exc_info())
+   (None, None, None)
+   >>> try:
+   ...     raise TypeError
+   ... except:
+   ...     print(sys.exc_info())
+   ...     try:
+   ...          raise ValueError
+   ...     except:
+   ...         print(sys.exc_info())
+   ...     print(sys.exc_info())
+   ...
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   >>> print(sys.exc_info())
+   (None, None, None)
 
 .. index::
    keyword: else
