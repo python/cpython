@@ -791,6 +791,25 @@ class TraceTestCase(unittest.TestCase):
              (4, 'line'),
              (4, 'return')])
 
+    def test_try_except_with_wrong_type(self):
+
+        def func():
+            try:
+                2/0
+            except IndexError:
+                4
+            finally:
+                return 6
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'exception'),
+             (3, 'line'),
+             (6, 'line'),
+             (6, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
