@@ -1549,7 +1549,7 @@ static PyObject *
 builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
 /*[clinic end generated code: output=ea120e90169d9f32 input=586f672fb18a94a5]*/
 {
-    if (sentinel == NULL) {
+    if (sentinel == Py_None) {
         return PyObject_GetAiter(aiterable);
     }
 
@@ -1589,7 +1589,7 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
-    if (default_value == NULL) {
+    if (default_value == Py_None) {
         return awaitable;
     }
 
