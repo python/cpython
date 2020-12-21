@@ -467,8 +467,8 @@ class InstanceProxy(object):
 
     def __repr__(self):
         if isinstance(self.attrdict, dict):
-            kwargs = ', '.join(["%s=%r" % (arg, val)
-                                for arg, val in self.attrdict.iteritems()])
+            kwargs = ', '.join("%s=%r" % (arg, val)
+                               for arg, val in self.attrdict.iteritems())
             return '<%s(%s) at remote 0x%x>' % (self.cl_name,
                                                 kwargs, self.address)
         else:
@@ -1083,7 +1083,7 @@ class PyBytesObjectPtr(PyObjectPtr):
         field_ob_size = self.field('ob_size')
         field_ob_sval = self.field('ob_sval')
         char_ptr = field_ob_sval.address.cast(_type_unsigned_char_ptr())
-        return ''.join([chr(char_ptr[i]) for i in safe_range(field_ob_size)])
+        return ''.join(chr(char_ptr[i]) for i in safe_range(field_ob_size))
 
     def proxyval(self, visited):
         return str(self)
@@ -1253,9 +1253,9 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
         # This splits surrogate pairs if sizeof(Py_UNICODE) is 2 here (in gdb).
-        result = u''.join([
+        result = u''.join(
             (_unichr(ucs) if ucs <= 0x10ffff else '\ufffd')
-            for ucs in Py_UNICODEs])
+            for ucs in Py_UNICODEs)
         return result
 
     def write_repr(self, out, visited):

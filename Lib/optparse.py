@@ -979,7 +979,7 @@ class OptionContainer:
             if handler == "error":
                 raise OptionConflictError(
                     "conflicting option string(s): %s"
-                    % ", ".join([co[0] for co in conflict_opts]),
+                    % ", ".join(co[0] for co in conflict_opts),
                     option)
             elif handler == "resolve":
                 for (opt, c_option) in conflict_opts:

@@ -129,8 +129,8 @@ def hexrepr(t, precision=4):
     except TypeError:
         return '0x%0*X' % (precision, t)
     try:
-        return '(' + ', '.join(['0x%0*X' % (precision, item)
-                                for item in t]) + ')'
+        return '(' + ', '.join('0x%0*X' % (precision, item)
+                               for item in t) + ')'
     except TypeError as why:
         print('* failed to convert %r: %s' % (t, why))
         raise

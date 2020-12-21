@@ -1446,8 +1446,8 @@ class PyBuildExt(build_ext):
             sqlite_inc_paths = []
         # We need to find >= sqlite version 3.7.3, for sqlite3_create_function_v2()
         MIN_SQLITE_VERSION_NUMBER = (3, 7, 3)
-        MIN_SQLITE_VERSION = ".".join([str(x)
-                                    for x in MIN_SQLITE_VERSION_NUMBER])
+        MIN_SQLITE_VERSION = ".".join(str(x)
+                                    for x in MIN_SQLITE_VERSION_NUMBER)
 
         # Scan the default include directories before the SQLite specific
         # ones. This allows one to override the copy of sqlite on OSX,

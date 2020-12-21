@@ -1497,7 +1497,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             # so we can do some very readable comparisons.
             while len(lines) < 4:
                 lines.append(next(diff_lines_iterator, 'X'))
-            s = ''.join([line[0] for line in lines])
+            s = ''.join(line[0] for line in lines)
             if s.startswith('X'):
                 # When no more lines, pump out any remaining blank lines so the
                 # corresponding add/delete lines get a matching blank line so

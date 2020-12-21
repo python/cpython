@@ -808,7 +808,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             name = 'typing.' + self._name
         else:
             name = _type_repr(self.__origin__)
-        args = ", ".join([_type_repr(a) for a in self.__args__])
+        args = ", ".join(_type_repr(a) for a in self.__args__)
         return f'{name}[{args}]'
 
     def __reduce__(self):
@@ -887,7 +887,7 @@ class _CallableGenericAlias(_GenericAlias, _root=True):
         if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
             return super().__repr__()
         return (f'typing.Callable'
-                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'[[{", ".join(_type_repr(a) for a in self.__args__[:-1])}], '
                 f'{_type_repr(self.__args__[-1])}]')
 
     def __reduce__(self):

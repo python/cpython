@@ -821,7 +821,7 @@ class TestArrayWrites(unittest.TestCase):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
-            expected = ",".join([str(i) for i in a])+"\r\n"
+            expected = ",".join(str(i) for i in a)+"\r\n"
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
 
@@ -832,7 +832,7 @@ class TestArrayWrites(unittest.TestCase):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
-            expected = ",".join([str(i) for i in a])+"\r\n"
+            expected = ",".join(str(i) for i in a)+"\r\n"
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
 
@@ -843,7 +843,7 @@ class TestArrayWrites(unittest.TestCase):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
-            expected = ",".join([str(i) for i in a])+"\r\n"
+            expected = ",".join(str(i) for i in a)+"\r\n"
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), expected)
 

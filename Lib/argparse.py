@@ -287,9 +287,9 @@ class HelpFormatter(object):
         return help
 
     def _join_parts(self, part_strings):
-        return ''.join([part
-                        for part in part_strings
-                        if part and part is not SUPPRESS])
+        return ''.join(part
+                       for part in part_strings
+                       if part and part is not SUPPRESS)
 
     def _format_usage(self, usage, actions, groups, prefix):
         if prefix is None:
@@ -319,7 +319,7 @@ class HelpFormatter(object):
             # build full usage string
             format = self._format_actions_usage
             action_usage = format(optionals + positionals, groups)
-            usage = ' '.join([s for s in [prog, action_usage] if s])
+            usage = ' '.join(s for s in [prog, action_usage] if s)
 
             # wrap the usage parts if it's too long
             text_width = self._width - self._current_indent
@@ -476,7 +476,7 @@ class HelpFormatter(object):
             parts[i:i] = [inserts[i]]
 
         # join all the action items with spaces
-        text = ' '.join([item for item in parts if item is not None])
+        text = ' '.join(item for item in parts if item is not None)
 
         # clean up separators for mutually exclusive groups
         open = r'[\[(]'
@@ -621,7 +621,7 @@ class HelpFormatter(object):
             if hasattr(params[name], '__name__'):
                 params[name] = params[name].__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
+            choices_str = ', '.join(str(c) for c in params['choices'])
             params['choices'] = choices_str
         return self._get_help_string(action) % params
 
@@ -1588,9 +1588,9 @@ class _ActionsContainer(object):
         message = ngettext('conflicting option string: %s',
                            'conflicting option strings: %s',
                            len(conflicting_actions))
-        conflict_string = ', '.join([option_string
-                                     for option_string, action
-                                     in conflicting_actions])
+        conflict_string = ', '.join(option_string
+                                    for option_string, action
+                                    in conflicting_actions)
         raise ArgumentError(action, message % conflict_string)
 
     def _handle_conflict_resolve(self, action, conflicting_actions):
@@ -2163,8 +2163,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         result = []
         for i in range(len(actions), 0, -1):
             actions_slice = actions[:i]
-            pattern = ''.join([self._get_nargs_pattern(action)
-                               for action in actions_slice])
+            pattern = ''.join(self._get_nargs_pattern(action)
+                              for action in actions_slice)
             match = _re.match(pattern, arg_strings_pattern)
             if match is not None:
                 result.extend([len(string) for string in match.groups()])
@@ -2204,8 +2204,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # if multiple actions match, the option string was ambiguous
         if len(option_tuples) > 1:
-            options = ', '.join([option_string
-                for action, option_string, explicit_arg in option_tuples])
+            options = ', '.join(option_string
+                for action, option_string, explicit_arg in option_tuples)
             args = {'option': arg_string, 'matches': options}
             msg = _('ambiguous option: %(option)s could match %(matches)s')
             self.error(msg % args)

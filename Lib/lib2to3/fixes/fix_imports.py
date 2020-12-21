@@ -63,7 +63,7 @@ def alternates(members):
 
 
 def build_pattern(mapping=MAPPING):
-    mod_list = ' | '.join(["module_name='%s'" % key for key in mapping])
+    mod_list = ' | '.join("module_name='%s'" % key for key in mapping)
     bare_names = alternates(mapping.keys())
 
     yield """name_import=import_name< 'import' ((%s) |

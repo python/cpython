@@ -86,8 +86,8 @@ def write_test_file(path, size):
             yield total
 
     bufsize = min(size, 8192)
-    chunk = b"".join([random.choice(string.ascii_letters).encode()
-                      for i in range(bufsize)])
+    chunk = b"".join(random.choice(string.ascii_letters).encode()
+                     for i in range(bufsize))
     with open(path, 'wb') as f:
         for csize in chunks(size, bufsize):
             f.write(chunk)

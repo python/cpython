@@ -351,7 +351,7 @@ def _tuple_str(obj_name, fields):
     if not fields:
         return '()'
     # Note the trailing comma, needed if this turns out to be a 1-tuple.
-    return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
+    return f'({",".join(f"{obj_name}.{f.name}" for f in fields)},)'
 
 
 # This function's logic is copied from "recursive_repr" function in
@@ -543,8 +543,8 @@ def _repr_fn(fields, globals):
     fn = _create_fn('__repr__',
                     ('self',),
                     ['return self.__class__.__qualname__ + f"(' +
-                     ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                for f in fields]) +
+                     ', '.join(f"{f.name}={{self.{f.name}!r}}"
+                               for f in fields) +
                      ')"'],
                      globals=globals)
     return _recursive_repr(fn)

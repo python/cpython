@@ -139,7 +139,7 @@ default_html = '''\
 def build_html_page(classified_text, title='python',
                     css=default_css, html=default_html):
     'Create a complete HTML page with colorized source code'
-    css_str = '\n'.join(['%s %s' % item for item in css.items()])
+    css_str = '\n'.join('%s %s' % item for item in css.items())
     result = html_highlight(classified_text)
     title = html_module.escape(title)
     return html.format(title=title, css=css_str, body=result)

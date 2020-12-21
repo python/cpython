@@ -65,7 +65,7 @@ class FixerTestCase(support.TestCase):
             # We're the last in pre and post is empty
             return
         self.fail("Fixer run order (%s) is incorrect; %s should be last."\
-               %(", ".join([x.__class__.__module__ for x in (pre+post)]), n))
+               %(", ".join(x.__class__.__module__ for x in (pre+post)), n))
 
 class Test_ne(FixerTestCase):
     fixer = "ne"
@@ -1863,8 +1863,8 @@ class Test_urllib(FixerTestCase):
 
             # test the breaking of a module into multiple replacements
             b = "from %s import %s" % (old, ", ".join(all_members))
-            a = "\n".join(["from %s import %s" % (new, ", ".join(members))
-                            for (new, members) in changes])
+            a = "\n".join("from %s import %s" % (new, ", ".join(members))
+                          for (new, members) in changes)
             self.check(b, a)
 
     def test_import_module_as(self):
@@ -1923,8 +1923,8 @@ def foo():
         for old, changes in self.modules.items():
             for new, members in changes:
                 for member in members:
-                    new_import = ", ".join([n for (n, mems)
-                                            in self.modules[old]])
+                    new_import = ", ".join(n for (n, mems)
+                                           in self.modules[old])
                     b = """
                         import %s
                         foo(%s.%s)

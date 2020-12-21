@@ -1830,7 +1830,7 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zipf.comment, comment)
 
         # check a comment of max length
-        comment2 = ''.join(['%d' % (i**3 % 10) for i in range((1 << 16)-1)])
+        comment2 = ''.join('%d' % (i**3 % 10) for i in range((1 << 16)-1))
         comment2 = comment2.encode("ascii")
         with zipfile.ZipFile(TESTFN, mode="w") as zipf:
             zipf.comment = comment2

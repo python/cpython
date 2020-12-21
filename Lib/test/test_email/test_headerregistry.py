@@ -1284,18 +1284,18 @@ class TestAddressHeader(TestHeaderBase):
     def test_complex_address_list(self):
         examples = list(self.example_params.values())
         source = ('dummy list:;, another: (empty);,' +
-                 ', '.join([x[0] for x in examples[:4]]) + ', ' +
+                 ', '.join(x[0] for x in examples[:4]) + ', ' +
                  r'"A \"list\"": ' +
-                    ', '.join([x[0] for x in examples[4:6]]) + ';,' +
-                 ', '.join([x[0] for x in examples[6:]])
+                    ', '.join(x[0] for x in examples[4:6]) + ';,' +
+                 ', '.join(x[0] for x in examples[6:])
             )
         # XXX: the fact that (empty) disappears here is a potential API design
         # bug.  We don't currently have a way to preserve comments.
         expected = ('dummy list:;, another:;, ' +
-                 ', '.join([x[2] for x in examples[:4]]) + ', ' +
+                 ', '.join(x[2] for x in examples[:4]) + ', ' +
                  r'"A \"list\"": ' +
-                    ', '.join([x[2] for x in examples[4:6]]) + ';, ' +
-                 ', '.join([x[2] for x in examples[6:]])
+                    ', '.join(x[2] for x in examples[4:6]) + ';, ' +
+                 ', '.join(x[2] for x in examples[6:])
             )
 
         h = self.make_header('to', source)

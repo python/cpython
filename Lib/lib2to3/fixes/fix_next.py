@@ -66,7 +66,7 @@ class FixNext(fixer_base.BaseFix):
             #  so it's being done here.
             if is_assign_target(node):
                 head = results["head"]
-                if "".join([str(n) for n in head]).strip() == '__builtin__':
+                if "".join(str(n) for n in head).strip() == '__builtin__':
                     self.warning(node, bind_warning)
                 return
             attr.replace(Name("__next__"))

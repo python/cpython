@@ -97,7 +97,7 @@ def text_accumulator():
 
 
 def warn_or_fail(fail=False, *args, filename=None, line_number=None):
-    joined = " ".join([str(a) for a in args])
+    joined = " ".join(str(a) for a in args)
     add, output = text_accumulator()
     if fail:
         add("Error")

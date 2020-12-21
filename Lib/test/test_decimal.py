@@ -1096,7 +1096,7 @@ class FormatTest(unittest.TestCase):
             self.skipTest('locale.CHAR_MAX not available')
 
         def make_grouping(lst):
-            return ''.join([chr(x) for x in lst]) if self.decimal == C else lst
+            return ''.join(chr(x) for x in lst) if self.decimal == C else lst
 
         def get_fmt(x, override=None, fmt='n'):
             if self.decimal == C:
@@ -5519,7 +5519,7 @@ class CWhitebox(unittest.TestCase):
             self.skipTest('locale.CHAR_MAX not available')
 
         def make_grouping(lst):
-            return ''.join([chr(x) for x in lst])
+            return ''.join(chr(x) for x in lst)
 
         def get_fmt(x, override=None, fmt='n'):
             return Decimal(x).__format__(fmt, override)

@@ -927,7 +927,7 @@ class Flag(Enum):
         members, uncovered = _decompose(cls, self._value_)
         return '<%s.%s: %r>' % (
                 cls.__name__,
-                '|'.join([str(m._name_ or m._value_) for m in members]),
+                '|'.join(str(m._name_ or m._value_) for m in members),
                 self._value_,
                 )
 
@@ -941,7 +941,7 @@ class Flag(Enum):
         else:
             return '%s.%s' % (
                     cls.__name__,
-                    '|'.join([str(m._name_ or m._value_) for m in members]),
+                    '|'.join(str(m._name_ or m._value_) for m in members),
                     )
 
     def __bool__(self):

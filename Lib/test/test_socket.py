@@ -5963,8 +5963,8 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
             if total:
                 yield total
 
-        chunk = b"".join([random.choice(string.ascii_letters).encode()
-                          for i in range(cls.BUFSIZE)])
+        chunk = b"".join(random.choice(string.ascii_letters).encode()
+                         for i in range(cls.BUFSIZE))
         with open(os_helper.TESTFN, 'wb') as f:
             for csize in chunks(cls.FILESIZE, cls.BUFSIZE):
                 f.write(chunk)

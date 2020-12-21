@@ -1985,7 +1985,7 @@ class C14NWriterTarget:
         write = self._write
         write('<' + parsed_qnames[tag][0])
         if attr_list:
-            write(''.join([f' {k}="{_escape_attrib_c14n(v)}"' for k, v in attr_list]))
+            write(''.join(f' {k}="{_escape_attrib_c14n(v)}"' for k, v in attr_list))
         write('>')
 
         # Write the resolved qname text content.

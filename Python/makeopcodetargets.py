@@ -35,7 +35,7 @@ def write_contents(f):
     for opname, op in opcode.opmap.items():
         targets[op] = "TARGET_%s" % opname
     f.write("static void *opcode_targets[256] = {\n")
-    f.write(",\n".join(["    &&%s" % s for s in targets]))
+    f.write(",\n".join("    &&%s" % s for s in targets))
     f.write("\n};\n")
 
 

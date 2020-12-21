@@ -447,7 +447,7 @@ class _CallableGenericAlias(GenericAlias):
         if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
             return super().__repr__()
         return (f'collections.abc.Callable'
-                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'[[{", ".join(_type_repr(a) for a in self.__args__[:-1])}], '
                 f'{_type_repr(self.__args__[-1])}]')
 
     def __reduce__(self):

@@ -29,10 +29,10 @@ class FixUnicode(fixer_base.BaseFix):
         elif node.type == token.STRING:
             val = node.value
             if not self.unicode_literals and val[0] in '\'"' and '\\' in val:
-                val = r'\\'.join([
+                val = r'\\'.join(
                     v.replace('\\u', r'\\u').replace('\\U', r'\\U')
                     for v in val.split(r'\\')
-                ])
+                )
             if val[0] in 'uU':
                 val = val[1:]
             if val == node.value:

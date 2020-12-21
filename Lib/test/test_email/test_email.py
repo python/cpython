@@ -3523,7 +3523,7 @@ Do you like this message?
                 n1 += 1
             self.assertEqual(n, n1)
         self.assertEqual(len(om), nt)
-        self.assertEqual(''.join([il for il, n in imt]), ''.join(om))
+        self.assertEqual(''.join(il for il, n in imt), ''.join(om))
 
     def test_push_random(self):
         from email.feedparser import BufferedSubFile, NeedMoreData
@@ -3899,7 +3899,7 @@ class Test8BitBytesHandling(TestEmailBase):
                 ' =?unknown-8bit?q?_Jean_de_Baddie?=')),
         ('From: göst', ('From', '=?unknown-8bit?b?Z8O2c3Q=?=')),
         )
-    headertest_msg = ('\n'.join([src for (src, _) in headertest_headers]) +
+    headertest_msg = ('\n'.join(src for (src, _) in headertest_headers) +
         '\nYes, they are flying.\n').encode('utf-8')
 
     def test_get_8bit_header(self):

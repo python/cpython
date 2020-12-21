@@ -408,8 +408,8 @@ class bdist_rpm(Command):
         # Generate a potential replacement value for __os_install_post (whilst
         # normalizing the whitespace to simplify the test for whether the
         # invocation of brp-python-bytecompile passes in __python):
-        vendor_hook = '\n'.join(['  %s \\' % line.strip()
-                                 for line in vendor_hook.splitlines()])
+        vendor_hook = '\n'.join('  %s \\' % line.strip()
+                                for line in vendor_hook.splitlines())
         problem = "brp-python-bytecompile \\\n"
         fixed = "brp-python-bytecompile %{__python} \\\n"
         fixed_hook = vendor_hook.replace(problem, fixed)

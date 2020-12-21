@@ -821,7 +821,7 @@ class CodecCallbackTest(unittest.TestCase):
         # and inline implementations
         v = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000,
              500000, 1000000)
-        s = "".join([chr(x) for x in v])
+        s = "".join(chr(x) for x in v)
         codecs.register_error("test.xmlcharrefreplace", codecs.xmlcharrefreplace_errors)
         for enc in ("ascii", "iso-8859-15"):
             for err in ("xmlcharrefreplace", "test.xmlcharrefreplace"):

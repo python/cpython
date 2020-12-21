@@ -62,7 +62,7 @@ class UnicodeNamesTest(unittest.TestCase):
         string = "The rEd fOx ate the sheep."
 
         self.assertEqual(
-            "".join([self.checkletter(*args) for args in zip(chars, string)]),
+            "".join(self.checkletter(*args) for args in zip(chars, string)),
             string
         )
 

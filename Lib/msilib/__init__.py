@@ -175,7 +175,7 @@ def add_tables(db, module):
 
 def make_id(str):
     identifier_chars = string.ascii_letters + string.digits + "._"
-    str = "".join([c if c in identifier_chars else "_" for c in str])
+    str = "".join(c if c in identifier_chars else "_" for c in str)
     if str[0] in (string.digits + "."):
         str = "_" + str
     assert re.match("^[A-Za-z_][A-Za-z0-9_.]*$", str), "FILE"+str

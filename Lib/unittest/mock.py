@@ -2381,10 +2381,10 @@ ANY = _ANY()
 def _format_call_signature(name, args, kwargs):
     message = '%s(%%s)' % name
     formatted_args = ''
-    args_string = ', '.join([repr(arg) for arg in args])
-    kwargs_string = ', '.join([
+    args_string = ', '.join(repr(arg) for arg in args)
+    kwargs_string = ', '.join(
         '%s=%r' % (key, value) for key, value in kwargs.items()
-    ])
+    )
     if args_string:
         formatted_args = args_string
     if kwargs_string:

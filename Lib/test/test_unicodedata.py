@@ -318,7 +318,7 @@ class NormalizationTest(unittest.TestCase):
     @staticmethod
     def unistr(data):
         data = [int(x, 16) for x in data.split(" ")]
-        return "".join([chr(x) for x in data])
+        return "".join(chr(x) for x in data)
 
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"

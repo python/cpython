@@ -362,7 +362,7 @@ class AddressHeader:
             defects = []
         kwds['groups'] = groups
         kwds['defects'] = defects
-        kwds['decoded'] = ', '.join([str(item) for item in groups])
+        kwds['decoded'] = ', '.join(str(item) for item in groups)
         if 'parse_tree' not in kwds:
             kwds['parse_tree'] = cls.value_parser(kwds['decoded'])
 

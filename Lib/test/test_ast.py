@@ -1510,7 +1510,7 @@ class ConstantTests(unittest.TestCase):
                   b'bytes',
                   (1, 2, 3)]
 
-        code = '\n'.join(['x={!r}'.format(const) for const in consts])
+        code = '\n'.join('x={!r}'.format(const) for const in consts)
         code += '\nx = ...'
         consts.extend((Ellipsis, None))
 

@@ -232,7 +232,7 @@ class RefactoringTool(object):
             if fix_name.startswith(self.FILE_PREFIX):
                 fix_name = fix_name[len(self.FILE_PREFIX):]
             parts = fix_name.split("_")
-            class_name = self.CLASS_PREFIX + "".join([p.title() for p in parts])
+            class_name = self.CLASS_PREFIX + "".join(p.title() for p in parts)
             try:
                 fix_class = getattr(mod, class_name)
             except AttributeError:

@@ -63,7 +63,7 @@ class NS(object):
 
     def __repr__(self):
         sorted_items = sorted(self.__dict__.items())
-        kwarg_str = ', '.join(['%s=%r' % tup for tup in sorted_items])
+        kwarg_str = ', '.join('%s=%r' % tup for tup in sorted_items)
         return '%s(%s)' % (type(self).__name__, kwarg_str)
 
     def __eq__(self, other):

@@ -317,8 +317,8 @@ class PrototypeVisitor(EmitVisitor):
     def emit_function(self, name, ctype, args, attrs, union=True):
         args = args + attrs
         if args:
-            argstr = ", ".join(["%s %s" % (atype, aname)
-                                for atype, aname, opt in args])
+            argstr = ", ".join("%s %s" % (atype, aname)
+                               for atype, aname, opt in args)
             argstr += ", PyArena *arena"
         else:
             argstr = "PyArena *arena"
@@ -342,8 +342,8 @@ class FunctionVisitor(PrototypeVisitor):
     def emit_function(self, name, ctype, args, attrs, union=True):
         def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
-        argstr = ", ".join(["%s %s" % (atype, aname)
-                            for atype, aname, opt in args + attrs])
+        argstr = ", ".join("%s %s" % (atype, aname)
+                           for atype, aname, opt in args + attrs)
         if argstr:
             argstr += ", PyArena *arena"
         else:

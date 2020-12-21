@@ -245,7 +245,7 @@ class TestBasicOps:
         counts = [10, 9, 8, 7, 6, 5, 4, 3, 2]
         seed(8675309)
         s1 = ''.join(sample(pop, counts=counts, k=30))
-        expanded = ''.join([letter for (letter, count) in zip(pop, counts) for i in range(count)])
+        expanded = ''.join(letter for (letter, count) in zip(pop, counts) for i in range(count))
         seed(8675309)
         s2 = ''.join(sample(expanded, k=30))
         self.assertEqual(s1, s2)

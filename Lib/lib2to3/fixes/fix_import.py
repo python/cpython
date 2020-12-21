@@ -26,7 +26,7 @@ def traverse_imports(names):
         if node.type == token.NAME:
             yield node.value
         elif node.type == syms.dotted_name:
-            yield "".join([ch.value for ch in node.children])
+            yield "".join(ch.value for ch in node.children)
         elif node.type == syms.dotted_as_name:
             pending.append(node.children[0])
         elif node.type == syms.dotted_as_names:
