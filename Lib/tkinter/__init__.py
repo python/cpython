@@ -292,7 +292,7 @@ def _get_default_root(what=None):
     if not _support_default_root:
         raise RuntimeError("No master specified and tkinter is "
                            "configured to not support default root")
-    if not _default_root:
+    if _default_root is None:
         if what:
             raise RuntimeError(f"Too early to {what}: no default root window")
         root = Tk()
@@ -342,7 +342,7 @@ class Variable:
         if name is not None and not isinstance(name, str):
             raise TypeError("name must be a string")
         global _varnum
-        if not master:
+        if master is None:
             master = _get_default_root('create variable')
         self._root = master._root()
         self._tk = master.tk
@@ -808,7 +808,7 @@ class Misc:
         function which shall be called. Additional parameters
         are given as parameters to the function call.  Return
         identifier to cancel scheduling with after_cancel."""
-        if not func:
+        if func is None:
             # I'd rather use time.sleep(ms*0.001)
             self.tk.call('after', ms)
             return None
@@ -1542,7 +1542,7 @@ class Misc:
     def _root(self):
         """Internal function."""
         w = self
-        while w.master: w = w.master
+        while w.master is not None: w = w.master
         return w
     _subst_format = ('%#', '%b', '%f', '%h', '%k',
              '%s', '%t', '%w', '%x', '%y',
@@ -2306,7 +2306,7 @@ class Tk(Misc, Wm):
         self.tk.createcommand('exit', _exit)
         self._tclCommands.append('tkerror')
         self._tclCommands.append('exit')
-        if _support_default_root and not _default_root:
+        if _support_default_root and _default_root is None:
             _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
@@ -2534,7 +2534,7 @@ class BaseWidget(Misc):
 
     def _setup(self, master, cnf):
         """Internal function. Sets up information about children."""
-        if not master:
+        if master is None:
             master = _get_default_root()
         self.master = master
         self.tk = master.tk
@@ -3949,7 +3949,7 @@ class _setit:
 
     def __call__(self, *args):
         self.__var.set(self.__value)
-        if self.__callback:
+        if self.__callback is not None:
             self.__callback(self.__value, *args)
 
 
@@ -3998,7 +3998,7 @@ class Image:
 
     def __init__(self, imgtype, name=None, cnf={}, master=None, **kw):
         self.name = None
-        if not master:
+        if master is None:
             master = _get_default_root('create image')
         self.tk = getattr(master, 'tk', master)
         if not name:

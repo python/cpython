@@ -18,7 +18,7 @@ class Dialog:
     command = None
 
     def __init__(self, master=None, **options):
-        if not master:
+        if master is None:
             master = options.get('parent')
         self.master = master
         self.options = options

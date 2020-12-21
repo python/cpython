@@ -127,7 +127,7 @@ class Dialog(Toplevel):
             title -- the dialog title
         '''
         master = parent
-        if not master:
+        if master is None:
             master = _get_default_root('create dialog window')
 
         Toplevel.__init__(self, master)
@@ -152,7 +152,7 @@ class Dialog(Toplevel):
 
         self.buttonbox()
 
-        if not self.initial_focus:
+        if self.initial_focus is None:
             self.initial_focus = self
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)

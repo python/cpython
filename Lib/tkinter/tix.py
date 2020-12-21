@@ -386,7 +386,7 @@ class TixWidget(tkinter.Widget):
             self.tk.call(name, 'configure', '-' + option, value)
     # These are missing from Tkinter
     def image_create(self, imgtype, cnf={}, master=None, **kw):
-        if not master:
+        if master is None:
             master = self
         if kw and cnf: cnf = _cnfmerge((cnf, kw))
         elif kw: cnf = kw
@@ -467,7 +467,7 @@ class DisplayStyle:
     (multiple) Display Items"""
 
     def __init__(self, itemtype, cnf={}, *, master=None, **kw):
-        if not master:
+        if master is None:
             if 'refwindow' in kw:
                 master = kw['refwindow']
             elif 'refwindow' in cnf:
@@ -862,7 +862,7 @@ class HList(TixWidget, XView, YView):
         return self.tk.call(self._w, 'add', entry, *self._options(cnf, kw))
 
     def add_child(self, parent=None, cnf={}, **kw):
-        if not parent:
+        if parent is None:
             parent = ''
         return self.tk.call(
                      self._w, 'addchild', parent, *self._options(cnf, kw))
