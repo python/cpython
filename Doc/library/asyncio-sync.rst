@@ -51,37 +51,29 @@ Lock
    resets the state to unlocked; first coroutine which is blocked in acquire()
    is being processed.
 
-   :meth:`acquire` is a coroutine and should be called with ``yield from``.
-
-   Locks also support the context management protocol.  ``(yield from lock)``
-   should be used as the context manager expression.
-
    This class is :ref:`not thread safe <asyncio-multithreading>`.
+
+   The preferred way to use a Lock is an :keyword:`async with`
+   statement.
 
    Usage::
 
-       lock = Lock()
-       ...
-       yield from lock
+       lock = asyncio.Lock()
+
+       # ... later
+       async with lock:
+           # access shared state
+
+   which is equivalent to::
+
+       lock = asyncio.Lock()
+
+       # ... later
+       await lock.acquire()
        try:
-           ...
+           # access shared state
        finally:
            lock.release()
-
-   Context manager usage::
-
-       lock = Lock()
-       ...
-       with (yield from lock):
-           ...
-
-   Lock objects can be tested for locking state::
-
-       if not lock.locked():
-           yield from lock
-       else:
-           # lock is acquired
-           ...
 
    .. method:: locked()
 
