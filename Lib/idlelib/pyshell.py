@@ -16,7 +16,7 @@ except ImportError:
 if sys.platform == 'win32':
     try:
         import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1
+        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
         ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
     except (ImportError, AttributeError, OSError):
         pass
@@ -463,7 +463,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.listening_sock.settimeout(10)
         try:
             self.rpcclt.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.display_no_subprocess_error()
             return None
         self.rpcclt.register("console", self.tkconsole)
@@ -498,7 +498,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.spawn_subprocess()
         try:
             self.rpcclt.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.display_no_subprocess_error()
             return None
         self.transfer_path(with_cwd=with_cwd)
@@ -676,7 +676,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runsource(self, source):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
-        self.more = 0
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         # InteractiveInterpreter.runsource() calls its runcode() method,
@@ -758,7 +757,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            self.interp.restart_subprocess()
+            self.restart_subprocess()
         self.checklinecache()
         debugger = self.debugger
         try:
@@ -834,7 +833,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 class PyShell(OutputWindow):
 
-    shell_title = "Python " + python_version() + " Shell"
+    shell_title = "IDLE Shell " + python_version()
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
@@ -993,12 +992,12 @@ class PyShell(OutputWindow):
     def beginexecuting(self):
         "Helper for ModifiedInterpreter"
         self.resetoutput()
-        self.executing = 1
+        self.executing = True
 
     def endexecuting(self):
         "Helper for ModifiedInterpreter"
-        self.executing = 0
-        self.canceled = 0
+        self.executing = False
+        self.canceled = False
         self.showprompt()
 
     def close(self):
@@ -1062,8 +1061,10 @@ class PyShell(OutputWindow):
                    (sys.version, sys.platform, self.COPYRIGHT, nosub))
         self.text.focus_force()
         self.showprompt()
+        # User code should use separate default Tk root window
         import tkinter
-        tkinter._default_root = None # 03Jan04 KBK What's this?
+        tkinter._support_default_root = True
+        tkinter._default_root = None
         return True
 
     def stop_readline(self):
@@ -1075,7 +1076,7 @@ class PyShell(OutputWindow):
     def readline(self):
         save = self.reading
         try:
-            self.reading = 1
+            self.reading = True
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
@@ -1087,11 +1088,11 @@ class PyShell(OutputWindow):
             line = "\n"
         self.resetoutput()
         if self.canceled:
-            self.canceled = 0
+            self.canceled = False
             if not use_subprocess:
                 raise KeyboardInterrupt
         if self.endoffile:
-            self.endoffile = 0
+            self.endoffile = False
             line = ""
         return line
 
@@ -1109,8 +1110,8 @@ class PyShell(OutputWindow):
             self.interp.write("KeyboardInterrupt\n")
             self.showprompt()
             return "break"
-        self.endoffile = 0
-        self.canceled = 1
+        self.endoffile = False
+        self.canceled = True
         if (self.executing and self.interp.rpcclt):
             if self.interp.getdebugger():
                 self.interp.restart_subprocess()
@@ -1130,8 +1131,8 @@ class PyShell(OutputWindow):
             self.resetoutput()
             self.close()
         else:
-            self.canceled = 0
-            self.endoffile = 1
+            self.canceled = False
+            self.endoffile = True
             self.top.quit()
         return "break"
 
@@ -1303,7 +1304,7 @@ class PyShell(OutputWindow):
             raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
                            # let's find out what they are and be specific.
         if self.canceled:
-            self.canceled = 0
+            self.canceled = False
             if not use_subprocess:
                 raise KeyboardInterrupt
         return count
@@ -1486,9 +1487,14 @@ def main():
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
     elif not macosx.isAquaTk():
-        ext = '.png' if TkVersion >= 8.6 else '.gif'
+        if TkVersion >= 8.6:
+            ext = '.png'
+            sizes = (16, 32, 48, 256)
+        else:
+            ext = '.gif'
+            sizes = (16, 32, 48)
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
-                     for size in (16, 32, 48)]
+                     for size in sizes]
         icons = [PhotoImage(master=root, file=iconfile)
                  for iconfile in iconfiles]
         root.wm_iconphoto(True, *icons)

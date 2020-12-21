@@ -21,7 +21,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
-#define PyFloat_CheckExact(op) (Py_TYPE(op) == &PyFloat_Type)
+#define PyFloat_CheckExact(op) Py_IS_TYPE(op, &PyFloat_Type)
 
 #ifdef Py_NAN
 #define Py_RETURN_NAN return PyFloat_FromDouble(Py_NAN)
@@ -99,9 +99,6 @@ PyAPI_FUNC(int) _PyFloat_Pack8(double x, unsigned char *p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack2(const unsigned char *p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack4(const unsigned char *p, int le);
 PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char *p, int le);
-
-/* free list api */
-PyAPI_FUNC(int) PyFloat_ClearFreeList(void);
 
 PyAPI_FUNC(void) _PyFloat_DebugMallocStats(FILE* out);
 

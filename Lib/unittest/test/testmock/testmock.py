@@ -38,6 +38,12 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+class Typos():
+    autospect = None
+    auto_spec = None
+    set_spec = None
+
+
 def something(a): pass
 
 
@@ -716,12 +722,16 @@ class MockTest(unittest.TestCase):
 
 
     def test_magic_method_wraps_dict(self):
+        # bpo-25597: MagicMock with wrap doesn't call wrapped object's
+        # method for magic methods with default values.
         data = {'foo': 'bar'}
 
         wrapped_dict = MagicMock(wraps=data)
         self.assertEqual(wrapped_dict.get('foo'), 'bar')
-        self.assertEqual(wrapped_dict['foo'], 'bar')
-        self.assertTrue('foo' in wrapped_dict)
+        # Accessing key gives a MagicMock
+        self.assertIsInstance(wrapped_dict['foo'], MagicMock)
+        # __contains__ method has a default value of False
+        self.assertFalse('foo' in wrapped_dict)
 
         # return_value is non-sentinel and takes precedence over wrapped value.
         wrapped_dict.get.return_value = 'return_value'
@@ -732,14 +742,13 @@ class MockTest(unittest.TestCase):
         self.assertEqual(wrapped_dict.get('foo'), 'bar')
 
         self.assertEqual(wrapped_dict.get('baz'), None)
-        with self.assertRaises(KeyError):
-            wrapped_dict['baz']
+        self.assertIsInstance(wrapped_dict['baz'], MagicMock)
         self.assertFalse('bar' in wrapped_dict)
 
         data['baz'] = 'spam'
         self.assertEqual(wrapped_dict.get('baz'), 'spam')
-        self.assertEqual(wrapped_dict['baz'], 'spam')
-        self.assertTrue('baz' in wrapped_dict)
+        self.assertIsInstance(wrapped_dict['baz'], MagicMock)
+        self.assertFalse('bar' in wrapped_dict)
 
         del data['baz']
         self.assertEqual(wrapped_dict.get('baz'), None)
@@ -759,6 +768,7 @@ class MockTest(unittest.TestCase):
         klass = MagicMock(wraps=Foo)
         obj = klass()
         self.assertEqual(obj.__getitem__(2), 2)
+        self.assertEqual(obj[2], 2)
         self.assertEqual(obj.__custom_method__(), "foo")
 
 
@@ -1594,14 +1604,23 @@ class MockTest(unittest.TestCase):
     #Issue21238
     def test_mock_unsafe(self):
         m = Mock()
-        msg = "Attributes cannot start with 'assert' or 'assret'"
+        msg = "is not a valid assertion. Use a spec for the mock"
         with self.assertRaisesRegex(AttributeError, msg):
             m.assert_foo_call()
         with self.assertRaisesRegex(AttributeError, msg):
             m.assret_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.asert_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.aseert_foo_call()
+        with self.assertRaisesRegex(AttributeError, msg):
+            m.assrt_foo_call()
         m = Mock(unsafe=True)
         m.assert_foo_call()
         m.assret_foo_call()
+        m.asert_foo_call()
+        m.aseert_foo_call()
+        m.assrt_foo_call()
 
     #Issue21262
     def test_assert_not_called(self):
@@ -2151,6 +2170,62 @@ class MockTest(unittest.TestCase):
             for mock in mocks:
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
+
+    def test_bool_not_called_when_passing_spec_arg(self):
+        class Something:
+            def __init__(self):
+                self.obj_with_bool_func = unittest.mock.MagicMock()
+
+        obj = Something()
+        with unittest.mock.patch.object(obj, 'obj_with_bool_func', autospec=True): pass
+
+        self.assertEqual(obj.obj_with_bool_func.__bool__.call_count, 0)
+
+    def test_misspelled_arguments(self):
+        class Foo():
+            one = 'one'
+        # patch, patch.object and create_autospec need to check for misspelled
+        # arguments explicitly and throw a RuntimError if found.
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', autospect=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', autospect=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', auto_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', auto_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch(f'{__name__}.Something.meth', set_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            with patch.object(Foo, 'one', set_spec=True): pass
+        with self.assertRaises(RuntimeError):
+            m = create_autospec(Foo, set_spec=True)
+        # patch.multiple, on the other hand, should flag misspelled arguments
+        # through an AttributeError, when trying to find the keys from kwargs
+        # as attributes on the target.
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, autospect=True): pass
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, auto_spec=True): pass
+        with self.assertRaises(AttributeError):
+            with patch.multiple(
+                f'{__name__}.Something', meth=DEFAULT, set_spec=True): pass
+
+        with patch(f'{__name__}.Something.meth', unsafe=True, autospect=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, autospect=True): pass
+        with patch(f'{__name__}.Something.meth', unsafe=True, auto_spec=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, auto_spec=True): pass
+        with patch(f'{__name__}.Something.meth', unsafe=True, set_spec=True):
+            pass
+        with patch.object(Foo, 'one', unsafe=True, set_spec=True): pass
+        m = create_autospec(Foo, set_spec=True, unsafe=True)
+        with patch.multiple(
+            f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
+            pass
 
 
 if __name__ == '__main__':

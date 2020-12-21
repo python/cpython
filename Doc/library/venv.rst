@@ -27,7 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments
@@ -249,7 +249,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False, prompt=None)
+                     symlinks=False, with_pip=False, prompt=None, \
+                     upgrade_deps=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -261,6 +262,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.6
        Added the ``prompt`` parameter
+
+    .. versionchanged:: 3.9
+       Added the ``upgrade_deps`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------

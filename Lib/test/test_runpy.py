@@ -1,16 +1,20 @@
 # Test the runpy module
-import unittest
-import os
+import contextlib
+import importlib.machinery, importlib.util
 import os.path
-import sys
-import re
-import tempfile
-import importlib, importlib.machinery, importlib.util
+import pathlib
 import py_compile
+import re
+import signal
+import subprocess
+import sys
+import tempfile
+import textwrap
+import unittest
 import warnings
-from test.support import (
-    forget, make_legacy_pyc, unload, verbose, no_tracing,
-    create_empty_file, temp_dir)
+from test.support import no_tracing, verbose
+from test.support.import_helper import forget, make_legacy_pyc, unload
+from test.support.os_helper import create_empty_file, temp_dir
 from test.support.script_helper import make_script, make_zip_script
 
 
@@ -652,6 +656,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
+    def test_basic_script_with_path_object(self):
+        with temp_dir() as script_dir:
+            mod_name = 'script'
+            script_name = pathlib.Path(self._make_test_script(script_dir,
+                                                              mod_name))
+            self._check_script(script_name, "<run_path>", script_name,
+                               script_name, expect_spec=False)
+
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -741,6 +753,83 @@ s = "non-ASCII: h\xe9"
 """)
             result = run_path(filename)
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
+
+
+class TestExit(unittest.TestCase):
+    STATUS_CONTROL_C_EXIT = 0xC000013A
+    EXPECTED_CODE = (
+        STATUS_CONTROL_C_EXIT
+        if sys.platform == "win32"
+        else -signal.SIGINT
+    )
+    @staticmethod
+    @contextlib.contextmanager
+    def tmp_path(*args, **kwargs):
+        with temp_dir() as tmp_fn:
+            yield pathlib.Path(tmp_fn)
+
+
+    def run(self, *args, **kwargs):
+        with self.tmp_path() as tmp:
+            self.ham = ham = tmp / "ham.py"
+            ham.write_text(
+                textwrap.dedent(
+                    """\
+                    raise KeyboardInterrupt
+                    """
+                )
+            )
+            super().run(*args, **kwargs)
+
+    def assertSigInt(self, *args, **kwargs):
+        proc = subprocess.run(*args, **kwargs, text=True, stderr=subprocess.PIPE)
+        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
+        self.assertEqual(proc.returncode, self.EXPECTED_CODE)
+
+    def test_pymain_run_file(self):
+        self.assertSigInt([sys.executable, self.ham])
+
+    def test_pymain_run_file_runpy_run_module(self):
+        tmp = self.ham.parent
+        run_module = tmp / "run_module.py"
+        run_module.write_text(
+            textwrap.dedent(
+                """\
+                import runpy
+                runpy.run_module("ham")
+                """
+            )
+        )
+        self.assertSigInt([sys.executable, run_module], cwd=tmp)
+
+    def test_pymain_run_file_runpy_run_module_as_main(self):
+        tmp = self.ham.parent
+        run_module_as_main = tmp / "run_module_as_main.py"
+        run_module_as_main.write_text(
+            textwrap.dedent(
+                """\
+                import runpy
+                runpy._run_module_as_main("ham")
+                """
+            )
+        )
+        self.assertSigInt([sys.executable, run_module_as_main], cwd=tmp)
+
+    def test_pymain_run_command_run_module(self):
+        self.assertSigInt(
+            [sys.executable, "-c", "import runpy; runpy.run_module('ham')"],
+            cwd=self.ham.parent,
+        )
+
+    def test_pymain_run_command(self):
+        self.assertSigInt([sys.executable, "-c", "import ham"], cwd=self.ham.parent)
+
+    def test_pymain_run_stdin(self):
+        self.assertSigInt([sys.executable], input="import ham", cwd=self.ham.parent)
+
+    def test_pymain_run_module(self):
+        ham = self.ham
+        self.assertSigInt([sys.executable, "-m", ham.stem], cwd=ham.parent)
 
 
 if __name__ == "__main__":

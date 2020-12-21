@@ -1,2 +1,0 @@
-Skip test_zipfile.test_add_file_after_2107() if :func:`time.localtime` fails
-with :exc:`OverflowError`. It is the case on AIX 6.1 for example.

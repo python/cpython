@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all

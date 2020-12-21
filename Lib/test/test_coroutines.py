@@ -7,6 +7,8 @@ import types
 import unittest
 import warnings
 from test import support
+from test.support import import_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -86,10 +88,6 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             """,
 
             """async def foo(a=await something()):
-                pass
-            """,
-
-            """async def foo(a:await something()):
                 pass
             """,
 
@@ -294,10 +292,6 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             """await a()""",
 
             """async def foo(a=await b):
-                   pass
-            """,
-
-            """async def foo(a:await b):
                    pass
             """,
 
@@ -2117,7 +2111,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
     def test_asyncio_1(self):
         # asyncio cannot be imported when Python is compiled without thread
         # support
-        asyncio = support.import_module('asyncio')
+        asyncio = import_helper.import_module('asyncio')
 
         class MyException(Exception):
             pass
@@ -2258,8 +2252,9 @@ class OriginTrackingTest(unittest.TestCase):
         try:
             warnings._warn_unawaited_coroutine = lambda coro: 1/0
             with support.catch_unraisable_exception() as cm, \
-                 support.check_warnings((r'coroutine .* was never awaited',
-                                         RuntimeWarning)):
+                 warnings_helper.check_warnings(
+                         (r'coroutine .* was never awaited',
+                          RuntimeWarning)):
                 # only store repr() to avoid keeping the coroutine alive
                 coro = corofn()
                 coro_repr = repr(coro)
@@ -2272,8 +2267,8 @@ class OriginTrackingTest(unittest.TestCase):
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
 
             del warnings._warn_unawaited_coroutine
-            with support.check_warnings((r'coroutine .* was never awaited',
-                                         RuntimeWarning)):
+            with warnings_helper.check_warnings(
+                    (r'coroutine .* was never awaited', RuntimeWarning)):
                 corofn()
                 support.gc_collect()
 

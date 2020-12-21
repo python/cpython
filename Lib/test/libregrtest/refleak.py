@@ -4,6 +4,8 @@ import sys
 import warnings
 from inspect import isabstract
 from test import support
+from test.support import os_helper
+
 try:
     from _abc import _get_dump
 except ImportError:
@@ -61,7 +63,7 @@ def dash_R(ns, test_name, test_func):
         return int_pool.setdefault(value, value)
 
     nwarmup, ntracked, fname = ns.huntrleaks
-    fname = os.path.join(support.SAVEDCWD, fname)
+    fname = os.path.join(os_helper.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
 
     # Pre-allocate to ensure that the loop doesn't allocate anything new
@@ -71,7 +73,7 @@ def dash_R(ns, test_name, test_func):
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
-    fd_count = support.fd_count
+    fd_count = os_helper.fd_count
 
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = 0

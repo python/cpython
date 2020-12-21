@@ -6,7 +6,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
 
@@ -92,7 +92,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
     if (cb == NULL)
         return NULL;
 
-    r = _PyObject_CallOneArg(cb, exc);
+    r = PyObject_CallOneArg(cb, exc);
     Py_DECREF(cb);
     return r;
 }
@@ -228,7 +228,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
         Py_ssize_t r;
         Py_ssize_t inpos;
         int kind;
-        void *data;
+        const void *data;
 
         replchar = PyUnicode_FromOrdinal('?');
         if (replchar == NULL)
@@ -457,7 +457,7 @@ multibytecodec_encode(MultibyteCodec *codec,
     Py_ssize_t finalsize, r = 0;
     Py_ssize_t datalen;
     int kind;
-    void *data;
+    const void *data;
 
     if (PyUnicode_READY(text) < 0)
         return NULL;
@@ -691,7 +691,7 @@ static struct PyMethodDef multibytecodec_methods[] = {
 static void
 multibytecodec_dealloc(MultibyteCodecObject *self)
 {
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyTypeObject MultibyteCodec_Type = {
@@ -1191,13 +1191,13 @@ _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDeco
         goto errorexit;
 
     if (wdata != data)
-        PyMem_Del(wdata);
+        PyMem_Free(wdata);
     Py_XDECREF(buf.excobj);
     return res;
 
 errorexit:
     if (wdata != NULL && wdata != data)
-        PyMem_Del(wdata);
+        PyMem_Free(wdata);
     Py_XDECREF(buf.excobj);
     _PyUnicodeWriter_Dealloc(&buf.writer);
     return NULL;
@@ -1246,7 +1246,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     PyObject *buffer;
     PyLongObject *statelong;
     Py_ssize_t buffersize;
-    char *bufferstr;
+    const char *bufferstr;
     unsigned char statebytes[8];
 
     if (!PyArg_ParseTuple(state, "SO!;setstate(): illegal state argument",
@@ -2059,14 +2059,12 @@ static struct PyModuleDef _multibytecodecmodule = {
 PyMODINIT_FUNC
 PyInit__multibytecodec(void)
 {
-    int i;
     PyObject *m;
     PyTypeObject *typelist[] = {
         &MultibyteIncrementalEncoder_Type,
         &MultibyteIncrementalDecoder_Type,
         &MultibyteStreamReader_Type,
-        &MultibyteStreamWriter_Type,
-        NULL
+        &MultibyteStreamWriter_Type
     };
 
     if (PyType_Ready(&MultibyteCodec_Type) < 0)
@@ -2076,12 +2074,10 @@ PyInit__multibytecodec(void)
     if (m == NULL)
         return NULL;
 
-    for (i = 0; typelist[i] != NULL; i++) {
-        if (PyType_Ready(typelist[i]) < 0)
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
             return NULL;
-        Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, typelist[i]->tp_name,
-                           (PyObject *)typelist[i]);
+        }
     }
 
     if (PyErr_Occurred()) {

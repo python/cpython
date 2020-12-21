@@ -913,8 +913,8 @@ Color control
       Set pencolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the outline of that polygon is drawn with the
-    newly set pencolor.
+   If turtleshape is a polygon, the outline of that polygon is drawn with the
+   newly set pencolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -962,8 +962,8 @@ Color control
       Set fillcolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the interior of that polygon is drawn
-    with the newly set fillcolor.
+   If turtleshape is a polygon, the interior of that polygon is drawn
+   with the newly set fillcolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1001,8 +1001,8 @@ Color control
       Equivalent to ``pencolor(colorstring1)`` and ``fillcolor(colorstring2)``
       and analogously if the other input format is used.
 
-    If turtleshape is a polygon, outline and interior of that polygon is drawn
-    with the newly set colors.
+   If turtleshape is a polygon, outline and interior of that polygon is drawn
+   with the newly set colors.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1069,6 +1069,7 @@ More drawing control
 ~~~~~~~~~~~~~~~~~~~~
 
 .. function:: reset()
+   :noindex:
 
    Delete the turtle's drawings from the screen, re-center the turtle and set
    variables to the default values.
@@ -1090,6 +1091,7 @@ More drawing control
 
 
 .. function:: clear()
+   :noindex:
 
    Delete the turtle's drawings from the screen.  Do not move turtle.  State and
    position of the turtle as well as drawings of other turtles are not affected.
@@ -1362,6 +1364,7 @@ Using events
 ------------
 
 .. function:: onclick(fun, btn=1, add=None)
+   :noindex:
 
    :param fun: a function with two arguments which will be called with the
                coordinates of the clicked point on the canvas

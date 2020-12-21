@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_bitutils.h"      // _Py_bswap32()
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -124,13 +125,11 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-#ifdef CTYPES_UNICODE
             if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-#endif
         }
     }
 
@@ -353,14 +352,7 @@ PyTypeObject PyCField_Type = {
 static int
 get_long(PyObject *v, long *p)
 {
-    long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    long x = PyLong_AsUnsignedLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -372,14 +364,7 @@ get_long(PyObject *v, long *p)
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
-    unsigned long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    unsigned long x = PyLong_AsUnsignedLongMask(v);
     if (x == (unsigned long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -391,13 +376,7 @@ get_ulong(PyObject *v, unsigned long *p)
 static int
 get_longlong(PyObject *v, long long *p)
 {
-    long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -409,13 +388,7 @@ get_longlong(PyObject *v, long long *p)
 static int
 get_ulonglong(PyObject *v, unsigned long long *p)
 {
-    unsigned long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    unsigned long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -448,46 +421,32 @@ get_ulonglong(PyObject *v, unsigned long long *p)
      ( ( (type)x & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)v & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
      : (type)v)
 
-/* byte swapping macros */
-#define SWAP_2(v)                               \
-    ( ( (v >> 8) & 0x00FF) |                    \
-      ( (v << 8) & 0xFF00) )
-
-#define SWAP_4(v)                       \
-    ( ( (v & 0x000000FF) << 24 ) |  \
-      ( (v & 0x0000FF00) <<  8 ) |  \
-      ( (v & 0x00FF0000) >>  8 ) |  \
-      ( ((v >> 24) & 0xFF)) )
-
-#ifdef _MSC_VER
-#define SWAP_8(v)                               \
-    ( ( (v & 0x00000000000000FFL) << 56 ) |  \
-      ( (v & 0x000000000000FF00L) << 40 ) |  \
-      ( (v & 0x0000000000FF0000L) << 24 ) |  \
-      ( (v & 0x00000000FF000000L) <<  8 ) |  \
-      ( (v & 0x000000FF00000000L) >>  8 ) |  \
-      ( (v & 0x0000FF0000000000L) >> 24 ) |  \
-      ( (v & 0x00FF000000000000L) >> 40 ) |  \
-      ( ((v >> 56) & 0xFF)) )
+#if SIZEOF_SHORT == 2
+#  define SWAP_SHORT _Py_bswap16
 #else
-#define SWAP_8(v)                               \
-    ( ( (v & 0x00000000000000FFLL) << 56 ) |  \
-      ( (v & 0x000000000000FF00LL) << 40 ) |  \
-      ( (v & 0x0000000000FF0000LL) << 24 ) |  \
-      ( (v & 0x00000000FF000000LL) <<  8 ) |  \
-      ( (v & 0x000000FF00000000LL) >>  8 ) |  \
-      ( (v & 0x0000FF0000000000LL) >> 24 ) |  \
-      ( (v & 0x00FF000000000000LL) >> 40 ) |  \
-      ( ((v >> 56) & 0xFF)) )
+#  error "unsupported short size"
 #endif
 
-#define SWAP_INT SWAP_4
+#if SIZEOF_INT == 4
+#  define SWAP_INT _Py_bswap32
+#else
+#  error "unsupported int size"
+#endif
 
 #if SIZEOF_LONG == 4
-# define SWAP_LONG SWAP_4
+#  define SWAP_LONG _Py_bswap32
 #elif SIZEOF_LONG == 8
-# define SWAP_LONG SWAP_8
+#  define SWAP_LONG _Py_bswap64
+#else
+#  error "unsupported long size"
 #endif
+
+#if SIZEOF_LONG_LONG == 8
+#  define SWAP_LONG_LONG _Py_bswap64
+#else
+#  error "unsupported long long size"
+#endif
+
 /*****************************************************************
  * The setter methods return an object which must be kept alive, to keep the
  * data valid which has been stored in the memory block.  The ctypes object
@@ -569,12 +528,13 @@ h_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long val;
     short field;
-    if (get_long(value, &val) < 0)
+    if (get_long(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     field = SET(short, field, val, size);
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -593,7 +553,7 @@ h_get_sw(void *ptr, Py_ssize_t size)
 {
     short val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_2(val);
+    val = SWAP_SHORT(val);
     GET_BITFIELD(val, size);
     return PyLong_FromLong(val);
 }
@@ -616,12 +576,13 @@ H_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long val;
     unsigned short field;
-    if (get_ulong(value, &val) < 0)
+    if (get_ulong(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     field = SET(unsigned short, field, val, size);
-    field = SWAP_2(field);
+    field = SWAP_SHORT(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -641,7 +602,7 @@ H_get_sw(void *ptr, Py_ssize_t size)
 {
     unsigned short val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_2(val);
+    val = SWAP_SHORT(val);
     GET_BITFIELD(val, size);
     return PyLong_FromLong(val);
 }
@@ -664,8 +625,9 @@ i_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long val;
     int field;
-    if (get_long(value, &val) < 0)
+    if (get_long(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_INT(field);
     field = SET(int, field, val, size);
@@ -694,7 +656,11 @@ i_get_sw(void *ptr, Py_ssize_t size)
     return PyLong_FromLong(val);
 }
 
-#ifdef MS_WIN32
+#ifndef MS_WIN32
+/* http://msdn.microsoft.com/en-us/library/cc237864.aspx */
+#define VARIANT_FALSE 0x0000
+#define VARIANT_TRUE 0xFFFF
+#endif
 /* short BOOL - VARIANT_BOOL */
 static PyObject *
 vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -716,7 +682,6 @@ vBOOL_get(void *ptr, Py_ssize_t size)
 {
     return PyBool_FromLong((long)*(short int *)ptr);
 }
-#endif
 
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -757,8 +722,9 @@ I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long val;
     unsigned int field;
-    if (get_ulong(value, &val) < 0)
+    if (get_ulong(value, &val) < 0) {
         return  NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_INT(field);
     field = SET(unsigned int, field, (unsigned int)val, size);
@@ -805,8 +771,9 @@ l_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long val;
     long field;
-    if (get_long(value, &val) < 0)
+    if (get_long(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_LONG(field);
     field = SET(long, field, val, size);
@@ -853,8 +820,9 @@ L_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long val;
     unsigned long field;
-    if (get_ulong(value, &val) < 0)
+    if (get_ulong(value, &val) < 0) {
         return  NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
     field = SWAP_LONG(field);
     field = SET(unsigned long, field, val, size);
@@ -901,12 +869,13 @@ q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     long long val;
     long long field;
-    if (get_longlong(value, &val) < 0)
+    if (get_longlong(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     field = SET(long long, field, val, size);
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -925,7 +894,7 @@ q_get_sw(void *ptr, Py_ssize_t size)
 {
     long long val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_8(val);
+    val = SWAP_LONG_LONG(val);
     GET_BITFIELD(val, size);
     return PyLong_FromLongLong(val);
 }
@@ -948,12 +917,13 @@ Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
     unsigned long long val;
     unsigned long long field;
-    if (get_ulonglong(value, &val) < 0)
+    if (get_ulonglong(value, &val) < 0) {
         return NULL;
+    }
     memcpy(&field, ptr, sizeof(field));
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     field = SET(unsigned long long, field, val, size);
-    field = SWAP_8(field);
+    field = SWAP_LONG_LONG(field);
     memcpy(ptr, &field, sizeof(field));
     _RET(value);
 }
@@ -972,7 +942,7 @@ Q_get_sw(void *ptr, Py_ssize_t size)
 {
     unsigned long long val;
     memcpy(&val, ptr, sizeof(val));
-    val = SWAP_8(val);
+    val = SWAP_LONG_LONG(val);
     GET_BITFIELD(val, size);
     return PyLong_FromUnsignedLongLong(val);
 }
@@ -1165,7 +1135,6 @@ c_get(void *ptr, Py_ssize_t size)
     return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
-#ifdef CTYPES_UNICODE
 /* u - a single wchar_t character */
 static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -1251,11 +1220,8 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
                      "string too long (%zd, maximum length %zd)",
                      size, length);
         return NULL;
-    } else if (size < length-1)
-        /* copy terminating NUL character if there is space */
-        size += 1;
-
-    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, size) == -1) {
+    }
+    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, length) == -1) {
         return NULL;
     }
 
@@ -1263,7 +1229,6 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     return value;
 }
 
-#endif
 
 static PyObject *
 s_get(void *ptr, Py_ssize_t size)
@@ -1283,7 +1248,7 @@ s_get(void *ptr, Py_ssize_t size)
 static PyObject *
 s_set(void *ptr, PyObject *value, Py_ssize_t length)
 {
-    char *data;
+    const char *data;
     Py_ssize_t size;
 
     if(!PyBytes_Check(value)) {
@@ -1294,7 +1259,9 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    size = strlen(data); /* XXX Why not Py_SIZE(value)? */
+    // bpo-39593: Use strlen() to truncate the string at the first null character.
+    size = strlen(data);
+
     if (size < length) {
         /* This will copy the terminating NUL character
          * if there is space for it.
@@ -1321,7 +1288,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
         return value;
     }
     if (PyBytes_Check(value)) {
-        *(char **)ptr = PyBytes_AsString(value);
+        *(const char **)ptr = PyBytes_AsString(value);
         Py_INCREF(value);
         return value;
     } else if (PyLong_Check(value)) {
@@ -1350,7 +1317,6 @@ z_get(void *ptr, Py_ssize_t size)
     }
 }
 
-#ifdef CTYPES_UNICODE
 static PyObject *
 Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1402,7 +1368,7 @@ Z_get(void *ptr, Py_ssize_t size)
         Py_RETURN_NONE;
     }
 }
-#endif
+
 
 #ifdef MS_WIN32
 static PyObject *
@@ -1536,15 +1502,13 @@ static struct fielddesc formattable[] = {
 #endif
     { 'P', P_set, P_get, &ffi_type_pointer},
     { 'z', z_set, z_get, &ffi_type_pointer},
-#ifdef CTYPES_UNICODE
     { 'u', u_set, u_get, NULL}, /* ffi_type set later */
     { 'U', U_set, U_get, &ffi_type_pointer},
     { 'Z', Z_set, Z_get, &ffi_type_pointer},
-#endif
 #ifdef MS_WIN32
     { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
-    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #endif
+    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #if SIZEOF__BOOL == 1
     { '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
 #elif SIZEOF__BOOL == SIZEOF_SHORT
@@ -1573,14 +1537,12 @@ _ctypes_get_fielddesc(const char *fmt)
 
     if (!initialized) {
         initialized = 1;
-#ifdef CTYPES_UNICODE
         if (sizeof(wchar_t) == sizeof(short))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sshort;
         else if (sizeof(wchar_t) == sizeof(int))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sint;
         else if (sizeof(wchar_t) == sizeof(long))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_slong;
-#endif
     }
 
     for (; table->code; ++table) {

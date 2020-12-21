@@ -38,6 +38,9 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
+/* Better isolate subinterpreters, experimental build mode. */
+#undef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+
 /* Define to 1 if your system stores words within floats with the most
    significant word first */
 #undef FLOAT_WORDS_BIGENDIAN
@@ -135,6 +138,9 @@
 
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
+
+/* Define to 1 if you have the `close_range' function. */
+#undef HAVE_CLOSE_RANGE
 
 /* Define if the C compiler supports computed gotos. */
 #undef HAVE_COMPUTED_GOTOS
@@ -301,6 +307,9 @@
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
+
+/* Define if you have the 'eventfd' function. */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
@@ -622,11 +631,17 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define to 1 if you have the <linux/can/j1939.h> header file. */
+#undef HAVE_LINUX_CAN_J1939_H
+
 /* Define if compiling using Linux 3.6 or later. */
 #undef HAVE_LINUX_CAN_RAW_FD_FRAMES
 
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
+
+/* Define if compiling using Linux 4.1 or later. */
+#undef HAVE_LINUX_CAN_RAW_JOIN_FILTERS
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
@@ -771,6 +786,9 @@
 
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
+
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
 
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
@@ -1000,6 +1018,9 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -1024,9 +1045,6 @@
 
 /* Has stdatomic.h with atomic_int and atomic_uintptr_t */
 #undef HAVE_STD_ATOMIC
-
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
 
 /* Define to 1 if you have the `strftime' function. */
 #undef HAVE_STRFTIME
@@ -1106,6 +1124,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H
@@ -1292,6 +1313,9 @@
 /* Define to 1 if you have the <uuid/uuid.h> header file. */
 #undef HAVE_UUID_UUID_H
 
+/* Define to 1 if you have the `vfork' function. */
+#undef HAVE_VFORK
+
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
 
@@ -1375,6 +1399,9 @@
 
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
+
+/* enabled builtin hash modules */
+#undef PY_BUILTIN_HASHLIB_HASHES
 
 /* Define if you want to coerce the C locale to a UTF-8 based locale */
 #undef PY_COERCE_C_LOCALE
@@ -1511,6 +1538,10 @@
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
+
+/* Define if you want build the _decimal module using a coroutine-local rather
+   than a thread-local context */
+#undef WITH_DECIMAL_CONTEXTVAR
 
 /* Define if you want documentation strings in extension modules */
 #undef WITH_DOC_STRINGS

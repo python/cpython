@@ -254,9 +254,10 @@ class TextFactoryTests(unittest.TestCase):
         self.assertTrue(row[0].endswith("reich"), "column must contain original data")
 
     def CheckOptimizedUnicode(self):
-        # In py3k, str objects are always returned when text_factory
-        # is OptimizedUnicode
-        self.con.text_factory = sqlite.OptimizedUnicode
+        # OptimizedUnicode is deprecated as of Python 3.10
+        with self.assertWarns(DeprecationWarning) as cm:
+            self.con.text_factory = sqlite.OptimizedUnicode
+        self.assertIn("factory.py", cm.filename)
         austria = "Österreich"
         germany = "Deutchland"
         a_row = self.con.execute("select ?", (austria,)).fetchone()

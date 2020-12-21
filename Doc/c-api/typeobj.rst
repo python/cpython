@@ -199,6 +199,8 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyAsyncMethods.am_anext`                    | :c:type:`unaryfunc`               | __anext__    |
    +---------------------------------------------------------+-----------------------------------+--------------+
+   | :c:member:`~PyAsyncMethods.am_send`                     | :c:type:`sendfunc`                |              |
+   +---------------------------------------------------------+-----------------------------------+--------------+
    |                                                                                                            |
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_add`                     | :c:type:`binaryfunc`              | __add__      |
@@ -1168,6 +1170,14 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. versionadded:: 3.9
 
 
+   .. data:: Py_TPFLAGS_HAVE_AM_SEND
+
+      This bit is set when the :c:member:`~PyAsyncMethods.am_send` entry is present in the
+      :c:member:`~PyTypeObject.tp_as_async` slot of type structure.
+
+      .. versionadded:: 3.10
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
@@ -1192,7 +1202,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    The :c:member:`~PyTypeObject.tp_traverse` pointer is used by the garbage collector to detect
    reference cycles. A typical implementation of a :c:member:`~PyTypeObject.tp_traverse` function
    simply calls :c:func:`Py_VISIT` on each of the instance's members that are Python
-   objects.  For example, this is function :c:func:`local_traverse` from the
+   objects that the instance owns. For example, this is function :c:func:`local_traverse` from the
    :mod:`_thread` extension module::
 
       static int
@@ -1212,9 +1222,36 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
    :func:`~gc.get_referents` function will include it.
 
+   .. warning::
+       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
+       members that the instance *owns* (by having :term:`strong references
+       <strong reference>` to them) must be
+       visited. For instance, if an object supports weak references via the
+       :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
+       the linked list (what *tp_weaklist* points to) must **not** be
+       visited as the instance does not directly own the weak references to itself
+       (the weakreference list is there to support the weak reference machinery,
+       but the instance has no strong reference to the elements inside it, as they
+       are allowed to be removed even if the instance is still alive).
+
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`local_traverse` to have these specific names; don't name them just
    anything.
+
+   Heap-allocated types (:const:`Py_TPFLAGS_HEAPTYPE`, such as those created
+   with :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their
+   type. Their traversal function must therefore either visit
+   :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
+   calling ``tp_traverse`` of another heap-allocated type (such as a
+   heap-allocated superclass).
+   If they do not, the type object may not be garbage-collected.
+
+   .. versionchanged:: 3.9
+
+      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
+      ``tp_traverse``.  In earlier versions of Python, due to
+      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
+      may lead to crashes in subclasses.
 
    **Inheritance:**
 
@@ -1322,7 +1359,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    The following macro is defined to ease writing rich comparison functions:
 
-   .. c:function:: PyObject \*Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
+   .. c:macro:: Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, op)
 
       Return ``Py_True`` or ``Py_False`` from the function, depending on the
       result of a comparison.
@@ -1360,7 +1397,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
    :c:func:`PyObject_ClearWeakRefs` and the :c:func:`PyWeakref_\*` functions.  The
-   instance structure needs to include a field of type :c:type:`PyObject\*` which is
+   instance structure needs to include a field of type :c:type:`PyObject*` which is
    initialized to ``NULL``.
 
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for
@@ -2277,6 +2314,7 @@ Async Object Structures
             unaryfunc am_await;
             unaryfunc am_aiter;
             unaryfunc am_anext;
+            sendfunc am_send;
         } PyAsyncMethods;
 
 .. c:member:: unaryfunc PyAsyncMethods.am_await
@@ -2308,6 +2346,15 @@ Async Object Structures
       PyObject *am_anext(PyObject *self);
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   This slot may be set to ``NULL``.
+
+.. c:member:: sendfunc PyAsyncMethods.am_send
+
+   The signature of this function is::
+
+      PySendResult am_send(PyObject *self, PyObject *arg, PyObject **result);
+
+   See :c:func:`PyIter_Send` for details.
    This slot may be set to ``NULL``.
 
 
@@ -2404,6 +2451,10 @@ Slot Type typedefs
 .. c:type:: PyObject *(*unaryfunc)(PyObject *)
 
 .. c:type:: PyObject *(*binaryfunc)(PyObject *, PyObject *)
+
+.. c:type:: PySendResult (*sendfunc)(PyObject *, PyObject *, PyObject **)
+
+   See :c:member:`~PyAsyncMethods.am_send`.
 
 .. c:type:: PyObject *(*ternaryfunc)(PyObject *, PyObject *, PyObject *)
 

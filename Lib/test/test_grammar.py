@@ -1,7 +1,8 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, check_syntax_warning
+from test.support import check_syntax_error
+from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -276,7 +277,8 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
-    from test.support import check_syntax_error, check_syntax_warning
+    from test.support import check_syntax_error
+    from test.support.warnings_helper import check_syntax_warning
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -360,7 +362,7 @@ class GrammarTests(unittest.TestCase):
             z = 2
             def __init__(self, x):
                 self.x: int = x
-        self.assertEqual(C.__annotations__, {'_C__foo': int, 's': str})
+        self.assertEqual(C.__annotations__, {'_C__foo': 'int', 's': 'str'})
         with self.assertRaises(NameError):
             class CBad:
                 no_such_name_defined.attr: int = 0
@@ -376,15 +378,15 @@ class GrammarTests(unittest.TestCase):
                 return {'__annotations__': CNS()}
         class CC(metaclass=CMeta):
             XX: 'ANNOT'
-        self.assertEqual(CC.__annotations__['xx'], 'ANNOT')
+        self.assertEqual(CC.__annotations__['xx'], repr('ANNOT'))
 
     def test_var_annot_module_semantics(self):
         with self.assertRaises(AttributeError):
             print(test.__annotations__)
         self.assertEqual(ann_module.__annotations__,
-                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int]})
+                     {1: 2, 'x': 'int', 'y': 'str', 'f': 'Tuple[int, int]'})
         self.assertEqual(ann_module.M.__annotations__,
-                              {'123': 123, 'o': type})
+                              {'123': 123, 'o': 'type'})
         self.assertEqual(ann_module2.__annotations__, {})
 
     def test_var_annot_in_module(self):
@@ -403,7 +405,7 @@ class GrammarTests(unittest.TestCase):
         exec("'docstring'\n"
              "__annotations__[1] = 2\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotations__"], {1: 2, 'x': int})
+        self.assertEqual(lns["__annotations__"], {1: 2, 'x': 'int'})
         with self.assertRaises(KeyError):
             gns['__annotations__']
 
@@ -411,8 +413,8 @@ class GrammarTests(unittest.TestCase):
         # tests with custom locals() and __annotations__
         ns = {'__annotations__': CNS()}
         exec('X: int; Z: str = "Z"; (w): complex = 1j', ns)
-        self.assertEqual(ns['__annotations__']['x'], int)
-        self.assertEqual(ns['__annotations__']['z'], str)
+        self.assertEqual(ns['__annotations__']['x'], 'int')
+        self.assertEqual(ns['__annotations__']['z'], 'str')
         with self.assertRaises(KeyError):
             ns['__annotations__']['w']
         nonloc_ns = {}
@@ -426,7 +428,7 @@ class GrammarTests(unittest.TestCase):
             def __getitem__(self, item):
                 return self._dct[item]
         exec('x: int = 1', {}, CNS2())
-        self.assertEqual(nonloc_ns['__annotations__']['x'], int)
+        self.assertEqual(nonloc_ns['__annotations__']['x'], 'int')
 
     def test_var_annot_refleak(self):
         # complex case: custom locals plus custom __annotations__
@@ -443,7 +445,7 @@ class GrammarTests(unittest.TestCase):
             def __getitem__(self, item):
                 return self._dct[item]
         exec('X: str', {}, CNS2())
-        self.assertEqual(nonloc_ns['__annotations__']['x'], str)
+        self.assertEqual(nonloc_ns['__annotations__']['x'], 'str')
 
     def test_var_annot_rhs(self):
         ns = {}
@@ -460,7 +462,7 @@ class GrammarTests(unittest.TestCase):
 
     def test_funcdef(self):
         ### [decorators] 'def' NAME parameters ['->' test] ':' suite
-        ### decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+        ### decorator: '@' namedexpr_test NEWLINE
         ### decorators: decorator+
         ### parameters: '(' [typedargslist] ')'
         ### typedargslist: ((tfpdef ['=' test] ',')*
@@ -582,12 +584,14 @@ class GrammarTests(unittest.TestCase):
         d22v(1, *(2, 3), **{'d': 4})
 
         # keyword argument type tests
-        try:
-            str('x', **{b'foo':1 })
-        except TypeError:
-            pass
-        else:
-            self.fail('Bytes should not work as keyword argument names')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            try:
+                str('x', **{b'foo':1 })
+            except TypeError:
+                pass
+            else:
+                self.fail('Bytes should not work as keyword argument names')
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)
@@ -621,50 +625,60 @@ class GrammarTests(unittest.TestCase):
 
         # argument annotation tests
         def f(x) -> list: pass
-        self.assertEqual(f.__annotations__, {'return': list})
+        self.assertEqual(f.__annotations__, {'return': 'list'})
         def f(x: int): pass
-        self.assertEqual(f.__annotations__, {'x': int})
+        self.assertEqual(f.__annotations__, {'x': 'int'})
         def f(x: int, /): pass
-        self.assertEqual(f.__annotations__, {'x': int})
+        self.assertEqual(f.__annotations__, {'x': 'int'})
         def f(x: int = 34, /): pass
-        self.assertEqual(f.__annotations__, {'x': int})
+        self.assertEqual(f.__annotations__, {'x': 'int'})
         def f(*x: str): pass
-        self.assertEqual(f.__annotations__, {'x': str})
+        self.assertEqual(f.__annotations__, {'x': 'str'})
         def f(**x: float): pass
-        self.assertEqual(f.__annotations__, {'x': float})
-        def f(x, y: 1+2): pass
-        self.assertEqual(f.__annotations__, {'y': 3})
-        def f(x, y: 1+2, /): pass
-        self.assertEqual(f.__annotations__, {'y': 3})
+        self.assertEqual(f.__annotations__, {'x': 'float'})
         def f(a, b: 1, c: 2, d): pass
-        self.assertEqual(f.__annotations__, {'b': 1, 'c': 2})
+        self.assertEqual(f.__annotations__, {'b': '1', 'c': '2'})
         def f(a, b: 1, /, c: 2, d): pass
-        self.assertEqual(f.__annotations__, {'b': 1, 'c': 2})
+        self.assertEqual(f.__annotations__, {'b': '1', 'c': '2'})
         def f(a, b: 1, c: 2, d, e: 3 = 4, f=5, *g: 6): pass
         self.assertEqual(f.__annotations__,
-                         {'b': 1, 'c': 2, 'e': 3, 'g': 6})
+                         {'b': '1', 'c': '2', 'e': '3', 'g': '6'})
         def f(a, b: 1, c: 2, d, e: 3 = 4, f=5, *g: 6, h: 7, i=8, j: 9 = 10,
               **k: 11) -> 12: pass
         self.assertEqual(f.__annotations__,
-                         {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
-                          'k': 11, 'return': 12})
+                         {'b': '1', 'c': '2', 'e': '3', 'g': '6', 'h': '7', 'j': '9',
+                          'k': '11', 'return': '12'})
         def f(a, b: 1, c: 2, d, e: 3 = 4, f: int = 5, /, *g: 6, h: 7, i=8, j: 9 = 10,
               **k: 11) -> 12: pass
         self.assertEqual(f.__annotations__,
-                          {'b': 1, 'c': 2, 'e': 3, 'f': int, 'g': 6, 'h': 7, 'j': 9,
-                           'k': 11, 'return': 12})
+                          {'b': '1', 'c': '2', 'e': '3', 'f': 'int', 'g': '6', 'h': '7', 'j': '9',
+                           'k': '11', 'return': '12'})
         # Check for issue #20625 -- annotations mangling
         class Spam:
             def f(self, *, __kw: 1):
                 pass
         class Ham(Spam): pass
-        self.assertEqual(Spam.f.__annotations__, {'_Spam__kw': 1})
-        self.assertEqual(Ham.f.__annotations__, {'_Spam__kw': 1})
+        self.assertEqual(Spam.f.__annotations__, {'_Spam__kw': '1'})
+        self.assertEqual(Ham.f.__annotations__, {'_Spam__kw': '1'})
         # Check for SF Bug #1697248 - mixing decorators and a return annotation
         def null(x): return x
         @null
         def f(x) -> list: pass
-        self.assertEqual(f.__annotations__, {'return': list})
+        self.assertEqual(f.__annotations__, {'return': 'list'})
+
+        # Test expressions as decorators (PEP 614):
+        @False or null
+        def f(x): pass
+        @d := null
+        def f(x): pass
+        @lambda f: null(f)
+        def f(x): pass
+        @[..., null, ...][1]
+        def f(x): pass
+        @null(null)(null)
+        def f(x): pass
+        @[null][0].__call__.__call__
+        def f(x): pass
 
         # test closures with a variety of opargs
         closure = 1
@@ -786,6 +800,23 @@ class GrammarTests(unittest.TestCase):
 
         del abc
         del x, y, (z, xyz)
+
+        x, y, z = "xyz"
+        del x
+        del y,
+        del (z)
+        del ()
+
+        a, b, c, d, e, f, g = "abcdefg"
+        del a, (b, c), (d, (e, f))
+
+        a, b, c, d, e, f, g = "abcdefg"
+        del a, [b, c], (d, [e, f])
+
+        abcd = list("abcd")
+        del abcd[1:2]
+
+        compile("del a, (b[0].c, (d.e, f.g[1:2])), [h.i.j], ()", "<testcase>", "exec")
 
     def test_pass_stmt(self):
         # 'pass'
@@ -1081,8 +1112,6 @@ class GrammarTests(unittest.TestCase):
         # Not allowed at class scope
         check_syntax_error(self, "class foo:yield 1")
         check_syntax_error(self, "class foo:yield from ()")
-        # Check annotation refleak on SyntaxError
-        check_syntax_error(self, "def g(a:(yield)): pass")
 
     def test_yield_in_comprehensions(self):
         # Check yield in comprehensions
@@ -1248,7 +1277,7 @@ class GrammarTests(unittest.TestCase):
     def test_try(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
-        ### except_clause: 'except' [expr ['as' expr]]
+        ### except_clause: 'except' [expr ['as' NAME]]
         try:
             1/0
         except ZeroDivisionError:
@@ -1266,6 +1295,9 @@ class GrammarTests(unittest.TestCase):
         except (EOFError, TypeError, ZeroDivisionError) as msg: pass
         try: pass
         finally: pass
+        with self.assertRaises(SyntaxError):
+            compile("try:\n    pass\nexcept Exception as a.b:\n    pass", "?", "exec")
+            compile("try:\n    pass\nexcept Exception as a[b]:\n    pass", "?", "exec")
 
     def test_suite(self):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
@@ -1515,12 +1547,26 @@ class GrammarTests(unittest.TestCase):
             def meth2(self, arg): pass
             def meth3(self, a1, a2): pass
 
-        # decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+        # decorator: '@' namedexpr_test NEWLINE
         # decorators: decorator+
         # decorated: decorators (classdef | funcdef)
         def class_decorator(x): return x
         @class_decorator
         class G: pass
+
+        # Test expressions as decorators (PEP 614):
+        @False or class_decorator
+        class H: pass
+        @d := class_decorator
+        class I: pass
+        @lambda c: class_decorator(c)
+        class J: pass
+        @[..., class_decorator, ...][1]
+        class K: pass
+        @class_decorator(class_decorator)(class_decorator)
+        class L: pass
+        @[class_decorator][0].__call__.__call__
+        class M: pass
 
     def test_dictcomps(self):
         # dictorsetmaker: ( (test ':' test (comp_for |
@@ -1664,6 +1710,54 @@ class GrammarTests(unittest.TestCase):
         with manager() as x, manager() as y:
             pass
         with manager() as x, manager():
+            pass
+
+        with (
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x
+        ):
+            pass
+
+        with (
+            manager() as (x, y),
+            manager() as z,
+        ):
+            pass
+
+        with (
+            manager(),
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y,
+            manager() as z,
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y,
+            manager(),
+        ):
             pass
 
     def test_if_else_expr(self):

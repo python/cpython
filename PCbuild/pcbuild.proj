@@ -51,7 +51,7 @@
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_asyncio;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
+    <ExtensionModules Include="_asyncio;_zoneinfo;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound;_uuid" />
     <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />
@@ -66,6 +66,7 @@
     <!-- Test modules -->
     <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testinternalcapi;_testembed;_testimportmultiple;_testmultiphase;_testconsole" />
     <TestModules Include="xxlimited" Condition="'$(Configuration)' == 'Release'" />
+    <TestModules Include="xxlimited_35" Condition="'$(Configuration)' == 'Release'" />
     <Projects Include="@(TestModules->'%(Identity).vcxproj')" Condition="$(IncludeTests)">
       <!-- Disable parallel build for test modules -->
       <BuildInParallel>false</BuildInParallel>

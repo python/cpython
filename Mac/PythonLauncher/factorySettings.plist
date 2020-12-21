@@ -10,9 +10,9 @@
                 <false/>
                 <key>interpreter_list</key>
                 <array>
-                    <string>/usr/local/bin/pythonw</string>
-                    <string>/usr/bin/pythonw</string>
-                    <string>/sw/bin/pythonw</string>
+                    <string>/usr/local/bin/python3</string>
+                    <string>/opt/local/bin/python3</string>
+                    <string>/sw/bin/python3</string>
                 </array>
                 <key>honourhashbang</key>
                 <false/>
@@ -35,12 +35,9 @@
                 <false/>
                 <key>interpreter_list</key>
                 <array>
-                    <string>/usr/local/bin/pythonw</string>
-                    <string>/usr/local/bin/python</string>
-                    <string>/usr/bin/pythonw</string>
-                    <string>/usr/bin/python</string>
-                    <string>/sw/bin/pythonw</string>
-                    <string>/sw/bin/python</string>
+                    <string>/usr/local/bin/python3</string>
+                    <string>/opt/local/bin/python3</string>
+                    <string>/sw/bin/python3</string>
                 </array>
                 <key>honourhashbang</key>
                 <false/>
@@ -63,12 +60,9 @@
                 <false/>
                 <key>interpreter_list</key>
                 <array>
-                    <string>/usr/local/bin/pythonw</string>
-                    <string>/usr/local/bin/python</string>
-                    <string>/usr/bin/pythonw</string>
-                    <string>/usr/bin/python</string>
-                    <string>/sw/bin/pythonw</string>
-                    <string>/sw/bin/python</string>
+                    <string>/usr/local/bin/python3</string>
+                    <string>/opt/local/bin/python3</string>
+                    <string>/sw/bin/python3</string>
                 </array>
                 <key>honourhashbang</key>
                 <false/>

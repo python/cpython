@@ -132,7 +132,7 @@ faulthandler faulthandler.c
 #
 # bpo-35053: The module must be builtin since _Py_NewReference()
 # can call _PyTraceMalloc_NewReference().
-_tracemalloc _tracemalloc.c hashtable.c
+_tracemalloc _tracemalloc.c
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
@@ -167,24 +167,25 @@ _symtable symtablemodule.c
 # Modules that should always be present (non UNIX dependent):
 
 #array arraymodule.c	# array objects
-#cmath cmathmodule.c _math.c # -lm # complex math library functions
-#math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+#cmath cmathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # complex math library functions
+#math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
 #_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
-#_random _randommodule.c	# Random number generator
+#_random _randommodule.c -DPy_BUILD_CORE_MODULE	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #_datetime _datetimemodule.c	# datetime accelerator
+#_zoneinfo _zoneinfo.c -DPy_BUILD_CORE_MODULE	# zoneinfo accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
-#_heapq _heapqmodule.c	# Heap queue algorithm
+#_heapq _heapqmodule.c -DPy_BUILD_CORE_MODULE	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 #_statistics _statisticsmodule.c # statistics accelerator
 
-#unicodedata unicodedata.c    # static Unicode character database
+#unicodedata unicodedata.c -DPy_BUILD_CORE_BUILTIN   # static Unicode character database
 
 
 # Modules with some UNIX dependencies -- on by default:
@@ -225,7 +226,7 @@ _symtable symtablemodule.c
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
-#_posixsubprocess _posixsubprocess.c  # POSIX subprocess module helper
+#_posixsubprocess  -DPy_BUILD_CORE_BUILTIN _posixsubprocess.c  # POSIX subprocess module helper
 
 # Multimedia modules -- off by default.
 # These don't work for 64-bit platforms!!!
@@ -247,8 +248,8 @@ _symtable symtablemodule.c
 # The _sha module implements the SHA checksum algorithms.
 # (NIST's Secure Hash Algorithms.)
 #_sha1 sha1module.c
-#_sha256 sha256module.c
-#_sha512 sha512module.c
+#_sha256 sha256module.c -DPy_BUILD_CORE_BUILTIN
+#_sha512 sha512module.c -DPy_BUILD_CORE_BUILTIN
 #_sha3 _sha3/sha3module.c
 
 # _blake module
@@ -305,7 +306,7 @@ _symtable symtablemodule.c
 # provided by the ncurses library.  e.g. on Linux, link with -lncurses
 # instead of -lcurses).
 
-#_curses _cursesmodule.c -lcurses -ltermcap
+#_curses _cursesmodule.c -lcurses -ltermcap -DPy_BUILD_CORE_MODULE
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
 #_curses_panel _curses_panel.c -lpanel -lncurses
 
@@ -326,10 +327,6 @@ _symtable symtablemodule.c
 
 # Helper module for various ascii-encoders
 #binascii binascii.c
-
-# Fred Drake's interface to the Python parser
-#parser parsermodule.c
-
 
 # Andrew Kuchling's zlib module.
 # This require zlib 1.1.3 (or later).

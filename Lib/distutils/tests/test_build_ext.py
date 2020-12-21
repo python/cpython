@@ -15,6 +15,7 @@ from distutils.errors import (
 
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 # http://bugs.python.org/issue4373
@@ -38,7 +39,7 @@ class BuildExtTestCase(TempdirManager,
         # bpo-30132: On Windows, a .pdb file may be created in the current
         # working directory. Create a temporary working directory to cleanup
         # everything at the end of the test.
-        change_cwd = support.change_cwd(self.tmp_dir)
+        change_cwd = os_helper.change_cwd(self.tmp_dir)
         change_cwd.__enter__()
         self.addCleanup(change_cwd.__exit__, None, None, None)
 
@@ -455,7 +456,7 @@ class BuildExtTestCase(TempdirManager,
         deptarget = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
         if deptarget:
             # increment the minor version number (i.e. 10.6 -> 10.7)
-            deptarget = [int(x) for x in deptarget.split('.')]
+            deptarget = [int(x) for x in str(deptarget).split('.')]
             deptarget[-1] += 1
             deptarget = '.'.join(str(i) for i in deptarget)
             self._try_compile_deployment_target('<', deptarget)
@@ -488,16 +489,20 @@ class BuildExtTestCase(TempdirManager,
 
         # get the deployment target that the interpreter was built with
         target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-        target = tuple(map(int, target.split('.')[0:2]))
+        target = tuple(map(int, str(target).split('.')[0:2]))
         # format the target value as defined in the Apple
         # Availability Macros.  We can't use the macro names since
         # at least one value we test with will not exist yet.
-        if target[1] < 10:
+        if target[:2] < (10, 10):
             # for 10.1 through 10.9.x -> "10n0"
             target = '%02d%01d0' % target
         else:
             # for 10.10 and beyond -> "10nn00"
-            target = '%02d%02d00' % target
+            if len(target) >= 2:
+                target = '%02d%02d00' % target
+            else:
+                # 11 and later can have no minor version (11 instead of 11.0)
+                target = '%02d0000' % target
         deptarget_ext = Extension(
             'deptarget',
             [deptarget_c],

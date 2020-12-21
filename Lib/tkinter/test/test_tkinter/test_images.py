@@ -1,7 +1,8 @@
 import unittest
 import tkinter
 from test import support
-from tkinter.test.support import AbstractTkTest, requires_tcl
+from test.support import os_helper
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
 
 support.requires('gui')
 
@@ -17,6 +18,47 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_image_names(self):
         image_names = self.root.image_names()
         self.assertIsInstance(image_names, tuple)
+
+
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_image_types(self):
+        self.assertRaises(RuntimeError, tkinter.image_types)
+        root = tkinter.Tk()
+        image_types = tkinter.image_types()
+        self.assertIsInstance(image_types, tuple)
+        self.assertIn('photo', image_types)
+        self.assertIn('bitmap', image_types)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, tkinter.image_types)
+
+    def test_image_names(self):
+        self.assertRaises(RuntimeError, tkinter.image_names)
+        root = tkinter.Tk()
+        image_names = tkinter.image_names()
+        self.assertIsInstance(image_names, tuple)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, tkinter.image_names)
+
+    def test_image_create_bitmap(self):
+        self.assertRaises(RuntimeError, tkinter.BitmapImage)
+        root = tkinter.Tk()
+        image = tkinter.BitmapImage()
+        self.assertIn(image.name, tkinter.image_names())
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, tkinter.BitmapImage)
+
+    def test_image_create_photo(self):
+        self.assertRaises(RuntimeError, tkinter.PhotoImage)
+        root = tkinter.Tk()
+        image = tkinter.PhotoImage()
+        self.assertIn(image.name, tkinter.image_names())
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, tkinter.PhotoImage)
 
 
 class BitmapImageTest(AbstractTkTest, unittest.TestCase):
@@ -296,12 +338,12 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
     def test_write(self):
         image = self.create()
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        image.write(support.TESTFN)
+        image.write(os_helper.TESTFN)
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
                                     format='ppm',
-                                    file=support.TESTFN)
+                                    file=os_helper.TESTFN)
         self.assertEqual(str(image2), '::img::test2')
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 16)
@@ -309,10 +351,10 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
         self.assertEqual(image2.get(15, 8), image.get(15, 8))
 
-        image.write(support.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
+        image.write(os_helper.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
                                     format='gif',
-                                    file=support.TESTFN)
+                                    file=os_helper.TESTFN)
         self.assertEqual(str(image3), '::img::test3')
         self.assertEqual(image3.type(), 'photo')
         self.assertEqual(image3.width(), 2)
@@ -330,7 +372,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image.transparency_get(4, 6), False)
 
 
-tests_gui = (MiscTest, BitmapImageTest, PhotoImageTest,)
+tests_gui = (MiscTest, DefaultRootTest, BitmapImageTest, PhotoImageTest,)
 
 if __name__ == "__main__":
     support.run_unittest(*tests_gui)

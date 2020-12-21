@@ -409,21 +409,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertLessEqual(len(returns), 6)
         self.check_lnotab(f)
 
-    def test_elim_jump_after_return2(self):
-        # Eliminate dead code: jumps immediately after returns can't be reached
-        def f(cond1, cond2):
-            while 1:
-                if cond1: return 4
-        self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        # There should be one jump for the while loop.
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'JUMP_ABSOLUTE']
-        self.assertEqual(len(returns), 1)
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
-        self.assertLessEqual(len(returns), 2)
-        self.check_lnotab(f)
-
     def test_make_function_doesnt_bail(self):
         def f():
             def g()->1+1:
@@ -495,6 +480,20 @@ class TestTranforms(BytecodeTestCase):
             return 6
         self.check_lnotab(f)
 
+    def test_assignment_idiom_in_comprehensions(self):
+        def listcomp():
+            return [y for x in a for y in [f(x)]]
+        self.assertEqual(count_instr_recursively(listcomp, 'FOR_ITER'), 1)
+        def setcomp():
+            return {y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(setcomp, 'FOR_ITER'), 1)
+        def dictcomp():
+            return {y: y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(dictcomp, 'FOR_ITER'), 1)
+        def genexpr():
+            return (y for x in a for y in [f(x)])
+        self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
+
 
 class TestBuglets(unittest.TestCase):
 
@@ -508,6 +507,12 @@ class TestBuglets(unittest.TestCase):
         with self.assertRaises(ValueError):
             f()
 
+    def test_bpo_42057(self):
+        for i in range(10):
+            try:
+                raise Exception
+            except Exception or Exception:
+                pass
 
 if __name__ == "__main__":
     unittest.main()

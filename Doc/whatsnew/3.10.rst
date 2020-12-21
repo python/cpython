@@ -1,0 +1,711 @@
+****************************
+  What's New In Python 3.10
+****************************
+
+:Release: |release|
+:Date: |today|
+
+.. Rules for maintenance:
+
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+
+   * It's helpful to add the bug/patch number as a comment:
+
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer in :issue:`12345`.)
+
+   This saves the maintainer the effort of going through the Mercurial log
+   when researching a change.
+
+This article explains the new features in Python 3.10, compared to 3.9.
+
+For full details, see the :ref:`changelog <changelog>`.
+
+.. note::
+
+   Prerelease users should be aware that this document is currently in draft
+   form. It will be updated substantially as Python 3.10 moves towards release,
+   so it's worth checking back even after reading earlier versions.
+
+
+Summary -- Release highlights
+=============================
+
+.. This section singles out the most important changes in Python 3.10.
+   Brevity is key.
+
+
+.. PEP-sized items next.
+
+
+
+New Features
+============
+
+.. _whatsnew310-pep563:
+
+PEP 563: Postponed Evaluation of Annotations Becomes Default
+------------------------------------------------------------
+
+In Python 3.7, postponed evaluation of annotations was added,
+to be enabled with a ``from __future__ import annotations``
+directive.  In 3.10 this became the default behavior, even
+without that future directive.  With this being default, all
+annotations stored in :attr:`__annotations__` will be strings.
+If needed, annotations can be resolved at runtime using
+:func:`typing.get_type_hints`.  See :pep:`563` for a full
+description.  Also, the :func:`inspect.signature` will try to
+resolve types from now on, and when it fails it will fall back to
+showing the string annotations.  (Contributed by Batuhan Taskaya
+in :issue:`38605`.)
+
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
+
+* The views returned by :meth:`dict.keys`, :meth:`dict.values` and
+  :meth:`dict.items` now all have a ``mapping`` attribute that gives a
+  :class:`types.MappingProxyType` object wrapping the original
+  dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
+
+* :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
+  to require that all the iterables have an equal length.
+
+PEP 613: TypeAlias Annotation
+-----------------------------
+
+:pep:`484` introduced the concept of type aliases, only requiring them to be
+top-level unannotated assignments. This simplicity sometimes made it difficult
+for type checkers to distinguish between type aliases and ordinary assignments,
+especially when forward references or invalid types were involved. Compare::
+
+   StrCache = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
+declare type aliases more explicitly::
+
+   StrCache: TypeAlias = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+See :pep:`613` for more details.
+
+(Contributed by Mikhail Golubev in :issue:`41923`.)
+
+PEP 604: New Type Union Operator
+--------------------------------
+
+A new type union operator was introduced which enables the syntax ``X | Y``.
+This provides a cleaner way of expressing 'either type X or type Y' instead of
+using :data:`typing.Union`, especially in type hints (annotations).
+
+In previous versions of Python, to apply a type hint for functions accepting
+arguments of multiple types, :data:`typing.Union` was used::
+
+   def square(number: Union[int, float]) -> Union[int, float]:
+       return number ** 2
+
+
+Type hints can now be written in a more succinct manner::
+
+   def square(number: int | float) -> int | float:
+       return number ** 2
+
+
+See :pep:`604` for more details.
+
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
+
+Other Language Changes
+======================
+
+* Builtin and extension functions that take integer arguments no longer accept
+  :class:`~decimal.Decimal`\ s, :class:`~fractions.Fraction`\ s and other
+  objects that can be converted to integers only with a loss (e.g. that have
+  the :meth:`~object.__int__` method but do not have the
+  :meth:`~object.__index__` method).
+  (Contributed by Serhiy Storchaka in :issue:`37999`.)
+
+* Assignment expressions can now be used unparenthesized within set literals
+  and set comprehensions, as well as in sequence indexes (but not slices).
+
+
+New Modules
+===========
+
+* None yet.
+
+
+Improved Modules
+================
+
+base64
+------
+
+Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
+Base32 Encoding with Extended Hex Alphabet.
+
+codecs
+------
+
+Add a :func:`codecs.unregister` function to unregister a codec search function.
+(Contributed by Hai Shi in :issue:`41842`.)
+
+collections.abc
+---------------
+
+The ``__args__`` of the :ref:`parameterized generic <types-genericalias>` for
+:class:`collections.abc.Callable` are now consistent with :data:`typing.Callable`.
+:class:`collections.abc.Callable` generic now flattens type parameters, similar
+to what :data:`typing.Callable` currently does.  This means that
+``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+``(int, str, str)``; previously this was ``([int, str], str)``.  To allow this
+change, :class:`types.GenericAlias` can now be subclassed, and a subclass will
+be returned when subscripting the :class:`collections.abc.Callable` type.  Note
+that a :exc:`TypeError` may be raised for invalid forms of parameterizing
+:class:`collections.abc.Callable` which may have passed silently in Python 3.9.
+(Contributed by Ken Jin in :issue:`42195`.)
+
+contextlib
+----------
+
+Add a :func:`contextlib.aclosing` context manager to safely close async generators
+and objects representing asynchronously released resources.
+(Contributed by Joongi Kim and John Belmonte in :issue:`41229`.)
+
+Add asynchronous context manager support to :func:`contextlib.nullcontext`.
+(Contributed by Tom Gringauz in :issue:`41543`.)
+
+curses
+------
+
+The extended color functions added in ncurses 6.1 will be used transparently
+by :func:`curses.color_content`, :func:`curses.init_color`,
+:func:`curses.init_pair`, and :func:`curses.pair_content`. A new function,
+:func:`curses.has_extended_color_support`, indicates whether extended color
+support is provided by the underlying ncurses library.
+(Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
+
+doctest
+-------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
+encodings
+---------
+:func:`encodings.normalize_encoding` now ignores non-ASCII characters.
+(Contributed by Hai Shi in :issue:`39337`.)
+
+glob
+----
+
+Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
+:func:`~glob.iglob` which allow to specify the root directory for searching.
+(Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+inspect
+-------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
+linecache
+---------
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
+os
+--
+
+Added :func:`os.cpu_count()` support for VxWorks RTOS.
+(Contributed by Peixing Xin in :issue:`41440`.)
+
+Added a new function :func:`os.eventfd` and related helpers to wrap the
+``eventfd2`` syscall on Linux.
+(Contributed by Christian Heimes in :issue:`41001`.)
+
+Added :func:`os.splice()` that allows to move data between two file
+descriptors without copying between kernel address space and user
+address space, where one of the file descriptors must refer to a
+pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
+
+pathlib
+-------
+
+Added slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
+(Contributed by Joshua Cannon in :issue:`35498`)
+
+Added negative indexing support to :attr:`PurePath.parents
+<pathlib.PurePath.parents>`.
+(Contributed by Yaroslav Pankovych in :issue:`21041`)
+
+platform
+--------
+
+Added :func:`platform.freedesktop_os_release()` to retrieve operation system
+identification from `freedesktop.org os-release
+<https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
+(Contributed by Christian Heimes in :issue:`28468`)
+
+py_compile
+----------
+
+Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
+(Contributed by Gregory Schevchenko in :issue:`38731`.)
+
+shelve
+------
+
+The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+instead of :mod:`pickle` protocol ``3`` when creating shelves.
+(Contributed by Zackery Spytz in :issue:`34204`.)
+
+site
+----
+
+When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
+(Contributed by Brett Cannon in :issue:`42133`.)
+
+socket
+------
+
+The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
+(Contributed by Christian Heimes in :issue:`42413`.)
+
+sys
+---
+
+Add :data:`sys.orig_argv` attribute: the list of the original command line
+arguments passed to the Python executable.
+(Contributed by Victor Stinner in :issue:`23427`.)
+
+threading
+---------
+
+Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+retrieve the functions set by :func:`threading.settrace` and
+:func:`threading.setprofile` respectively.
+(Contributed by Mario Corchero in :issue:`42251`.)
+
+Add :data:`threading.__excepthook__` to allow retrieving the original value
+of :func:`threading.excepthook` in case it is set to a broken or a different
+value.
+(Contributed by Mario Corchero in :issue:`42308`.)
+
+traceback
+---------
+
+The :func:`~traceback.format_exception`,
+:func:`~traceback.format_exception_only`, and
+:func:`~traceback.print_exception` functions can now take an exception object
+as a positional-only argument.
+(Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
+
+types
+-----
+
+Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
+and :data:`types.NotImplementedType` classes, providing a new set
+of types readily interpretable by type checkers.
+(Contributed by Bas van Beek in :issue:`41810`.)
+
+typing
+------
+
+The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
+and to match the behavior of static type checkers specified in the PEP.
+
+1. ``Literal`` now de-duplicates parameters.
+2. Equality comparisons between ``Literal`` objects are now order independent.
+3. ``Literal`` comparisons now respects types.  For example,
+   ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
+   now ``False``.  To support this change, the internally used type cache now
+   supports differentiating types.
+4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
+   equality comparisons if one of their parameters are not :term:`immutable`.
+   Note that declaring ``Literal`` with mutable parameters will not throw
+   an error::
+
+      >>> from typing import Literal
+      >>> Literal[{0}]
+      >>> Literal[{0}] == Literal[{False}]
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: unhashable type: 'set'
+
+(Contributed by Yurii Karabas in :issue:`42345`.)
+
+unittest
+--------
+
+Add new method :meth:`~unittest.TestCase.assertNoLogs` to complement the
+existing :meth:`~unittest.TestCase.assertLogs`. (Contributed by Kit Yan Choi
+in :issue:`39385`.)
+
+xml
+---
+
+Add a :class:`~xml.sax.handler.LexicalHandler` class to the
+:mod:`xml.sax.handler` module.
+(Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
+
+zipimport
+---------
+Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
+:meth:`zipimport.zipimporter.create_module`, and
+:meth:`zipimport.zipimporter.exec_module`.
+(Contributed by Brett Cannon in :issue:`42131`.
+
+
+Optimizations
+=============
+
+* Constructors :func:`str`, :func:`bytes` and :func:`bytearray` are now faster
+  (around 30--40% for small objects).
+  (Contributed by Serhiy Storchaka in :issue:`41334`.)
+
+* The :mod:`runpy` module now imports fewer modules.
+  The ``python3 -m module-name`` command startup time is 1.3x faster in
+  average.
+  (Contributed by Victor Stinner in :issue:`41006`.)
+
+* The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
+  It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
+  in :issue:`42093`, based on ideas implemented originally in PyPy and MicroPython.)
+
+* When building Python with ``--enable-optimizations`` now
+  ``-fno-semantic-interposition`` is added to both the compile and link line.
+  This speeds builds of the Python interpreter created with ``--enable-shared``
+  with ``gcc`` by up to 30%. See `this article
+  <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
+  for more details. (Contributed by Victor Stinner and Pablo Galindo in
+  :issue:`38980`.)
+
+
+* Function parameters and their annotations are no longer computed at runtime,
+  but rather at compilation time.  They are stored as a tuple of strings at the
+  bytecode level.  It is now around 100% faster to create a function with parameter
+  annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+
+Deprecated
+==========
+
+* Starting in this release, there will be a concerted effort to begin
+  cleaning up old import semantics that were kept for Python 2.7
+  compatibility. Specifically,
+  :meth:`~importlib.abc.PathEntryFinder.find_loader`/:meth:`~importlib.abc.Finder.find_module`
+  (superseded by :meth:`~importlib.abc.Finder.find_spec`),
+  :meth:`~importlib.abc.Loader.load_module`
+  (superseded by :meth:`~importlib.abc.Loader.exec_module`),
+  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  takes care of for you), the ``__package__`` attribute
+  (superseded by ``__spec__.parent``), the ``__loader__`` attribute
+  (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
+  (superseded by ``__spec__.cached``) will slowly be removed (as well
+  as other classes and methods in :mod:`importlib`).
+  :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
+  as appropriate to help identify code which needs updating during
+  this transition.
+
+* The various ``load_module()`` methods of :mod:`importlib` have been
+  documented as deprecated since Python 3.6, but will now also trigger
+  a :exc:`DeprecationWarning`. Use
+  :meth:`~importlib.abc.Loader.exec_module` instead.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
+* :meth:`zimport.zipimporter.load_module` has been deprecated in
+  preference for :meth:`~zipimport.zipimporter.exec_module`.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
+* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+  system now triggers an :exc:`ImportWarning` as
+  :meth:`~importlib.abc.Loader.exec_module` is preferred.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
+* ``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python
+  3.3, when it was made an alias to :class:`str`.  It is now deprecated,
+  scheduled for removal in Python 3.12.
+  (Contributed by Erlend E. Aasland in :issue:`42264`.)
+
+
+Removed
+=======
+
+* Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
+  ``__mod__``, ``__divmod__``, ``__rfloordiv__``, ``__rmod__`` and
+  ``__rdivmod__`` of the :class:`complex` class.  They always raised
+  a :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :issue:`41974`.)
+
+* The ``ParserBase.error()`` method from the private and undocumented ``_markupbase``
+  module has been removed.  :class:`html.parser.HTMLParser` is the only subclass of
+  ``ParserBase`` and its ``error()`` implementation has already been removed in
+  Python 3.5.
+  (Contributed by Berker Peksag in :issue:`31844`.)
+
+* Removed the ``unicodedata.ucnhash_CAPI`` attribute which was an internal
+  PyCapsule object. The related private ``_PyUnicode_Name_CAPI`` structure was
+  moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
+
+* Removed the ``parser`` module, which was deprecated in 3.9 due to the
+  switch to the new PEG parser, as well as all the C source and header files
+  that were only being used by the old parser, including ``node.h``, ``parser.h``,
+  ``graminit.h`` and ``grammar.h``.
+
+* Removed the Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  that were deprecated in 3.9 due to the switch to the new PEG parser.
+
+* Removed the ``formatter`` module, which was deprecated in Python 3.4.
+  It is somewhat obsolete, little used, and not tested. It was originally
+  scheduled to be removed in Python 3.6, but such removals were delayed until
+  after Python 2.7 EOL. Existing users should copy whatever classes they use
+  into their code.
+  (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
+
+* Removed the :c:func:`PyModule_GetWarningsModule` function that was useless
+  now due to the _warnings module was converted to a builtin module in 2.6.
+  (Contributed by Hai Shi in :issue:`42599`.)
+
+
+Porting to Python 3.10
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+Changes in the Python API
+-------------------------
+
+* The *etype* parameters of the :func:`~traceback.format_exception`,
+  :func:`~traceback.format_exception_only`, and
+  :func:`~traceback.print_exception` functions in the :mod:`traceback` module
+  have been renamed to *exc*.
+  (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
+
+* :mod:`atexit`: At Python exit, if a callback registered with
+  :func:`atexit.register` fails, its exception is now logged. Previously, only
+  some exceptions were logged, and the last exception was always silently
+  ignored.
+  (Contributed by Victor Stinner in :issue:`42639`.)
+
+* :class:`collections.abc.Callable` generic now flattens type parameters, similar
+  to what :data:`typing.Callable` currently does.  This means that
+  ``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+  ``(int, str, str)``; previously this was ``([int, str], str)``.  Code which
+  accesses the arguments via :func:`typing.get_args` or ``__args__`` need to account
+  for this change.  Furthermore, :exc:`TypeError` may be raised for invalid forms
+  of parameterizing :class:`collections.abc.Callable` which may have passed
+  silently in Python 3.9.
+  (Contributed by Ken Jin in :issue:`42195`.)
+
+CPython bytecode changes
+========================
+
+* The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
+  instead of dictionary.
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+
+Build Changes
+=============
+
+
+* The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
+  to build Python.
+  (Contributed by Victor Stinner in :issue:`36020`.)
+
+* :mod:`sqlite3` requires SQLite 3.7.3 or higher.
+  (Contributed by Sergey Fedoseev and Erlend E. Aasland :issue:`40744`.)
+
+* The :mod:`atexit` module must now always be built as a built-in module.
+  (Contributed by Victor Stinner in :issue:`42639`.)
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+* The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
+  Previously, the result could have been an instance of a subclass of ``int``.
+  (Contributed by Serhiy Storchaka in :issue:`40792`.)
+
+* Add a new :c:member:`~PyConfig.orig_argv` member to the :c:type:`PyConfig`
+  structure: the list of the original command line arguments passed to the
+  Python executable.
+  (Contributed by Victor Stinner in :issue:`23427`.)
+
+* The :c:func:`PyDateTime_DATE_GET_TZINFO` and
+  :c:func:`PyDateTime_TIME_GET_TZINFO` macros have been added for accessing
+  the ``tzinfo`` attributes of :class:`datetime.datetime` and
+  :class:`datetime.time` objects.
+  (Contributed by Zackery Spytz in :issue:`30155`.)
+
+* Add a :c:func:`PyCodec_Unregister` function to unregister a codec
+  search function.
+  (Contributed by Hai Shi in :issue:`41842`.)
+
+* The :c:func:`PyIter_Send` function was added to allow
+  sending value into iterator without raising ``StopIteration`` exception.
+  (Contributed by Vladimir Matveev in :issue:`41756`.)
+
+* Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
+  (Contributed by Alex Gaynor in :issue:`41784`.)
+
+* Added :c:func:`PyModule_AddObjectRef` function: similar to
+  :c:func:`PyModule_AddObject` but don't steal a reference to the value on
+  success.
+  (Contributed by Victor Stinner in :issue:`1635741`.)
+
+* Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
+  reference count of an object and return the object.
+  (Contributed by Victor Stinner in :issue:`42262`.)
+
+* The :c:func:`PyType_FromSpecWithBases` and :c:func:`PyType_FromModuleAndSpec`
+  functions now accept a single class as the *bases* argument.
+  (Contributed by Serhiy Storchaka in :issue:`42423`.)
+
+* The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
+  slot.
+  (Contributed by Hai Shi in :issue:`41832`.)
+
+* The :c:func:`PyType_GetSlot` function can accept static types.
+  (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
+
+
+Porting to Python 3.10
+----------------------
+
+* The ``PY_SSIZE_T_CLEAN`` macro must now be defined to use
+  :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` formats which use
+  ``#``: ``es#``, ``et#``, ``s#``, ``u#``, ``y#``, ``z#``, ``U#`` and ``Z#``.
+  See :ref:`Parsing arguments and building values
+  <arg-parsing>` and the :pep:`353`.
+  (Contributed by Victor Stinner in :issue:`40943`.)
+
+* Since :c:func:`Py_REFCNT()` is changed to the inline static function,
+  ``Py_REFCNT(obj) = new_refcnt`` must be replaced with ``Py_SET_REFCNT(obj, new_refcnt)``:
+  see :c:func:`Py_SET_REFCNT()` (available since Python 3.9). For backward
+  compatibility, this macro can be used::
+
+      #if PY_VERSION_HEX < 0x030900A4
+      #  define Py_SET_REFCNT(obj, refcnt) ((Py_REFCNT(obj) = (refcnt)), (void)0)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Calling :c:func:`PyDict_GetItem` without :term:`GIL` held had been allowed
+  for historical reason. It is no longer allowed.
+  (Contributed by Victor Stinner in :issue:`40839`.)
+
+* ``PyUnicode_FromUnicode(NULL, size)`` and ``PyUnicode_FromStringAndSize(NULL, size)``
+  raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
+  Unicode object without initial data.
+  (Contributed by Inada Naoki in :issue:`36346`.)
+
+* The private ``_PyUnicode_Name_CAPI`` structure of the PyCapsule API
+  ``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
+
+* :c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
+  :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
+  :c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
+  :c:func:`Py_Initialize` (before Python is initialized). Use the new
+  :ref:`Python Initialization Configuration API <init-config>` to get the
+  :ref:`Python Path Configuration.  <init-path-config>`.
+  (Contributed by Victor Stinner in :issue:`42260`.)
+
+* :c:func:`PyList_SET_ITEM`, :c:func:`PyTuple_SET_ITEM` and
+  :c:func:`PyCell_SET` macros can no longer be used as l-value or r-value.
+  For example, ``x = PyList_SET_ITEM(a, b, c)`` and
+  ``PyList_SET_ITEM(a, b, c) = x`` now fail with a compiler error. It prevents
+  bugs like ``if (PyList_SET_ITEM (a, b, c) < 0) ...`` test.
+  (Contributed by Zackery Spytz and Victor Stinner in :issue:`30459`.)
+
+Deprecated
+----------
+
+* The ``PyUnicode_InternImmortal()`` function is now deprecated
+  and will be removed in Python 3.12: use :c:func:`PyUnicode_InternInPlace`
+  instead.
+  (Contributed by Victor Stinner in :issue:`41692`.)
+
+Removed
+-------
+
+* ``PyObject_AsCharBuffer()``, ``PyObject_AsReadBuffer()``, ``PyObject_CheckReadBuffer()``,
+  and ``PyObject_AsWriteBuffer()`` are removed. Please migrate to new buffer protocol;
+  :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.
+  (Contributed by Inada Naoki in :issue:`41123`.)
+
+   * ``Py_UNICODE_strlen``: use :c:func:`PyUnicode_GetLength` or
+     :c:macro:`PyUnicode_GET_LENGTH`
+   * ``Py_UNICODE_strcat``: use :c:func:`PyUnicode_CopyCharacters` or
+     :c:func:`PyUnicode_FromFormat`
+   * ``Py_UNICODE_strcpy``, ``Py_UNICODE_strncpy``: use
+     :c:func:`PyUnicode_CopyCharacters` or :c:func:`PyUnicode_Substring`
+   * ``Py_UNICODE_strcmp``: use :c:func:`PyUnicode_Compare`
+   * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
+   * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
+     :c:func:`PyUnicode_FindChar`
+
+* Removed ``PyUnicode_GetMax()``. Please migrate to new (:pep:`393`) APIs.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyLong_FromUnicode()``. Please migrate to :c:func:`PyLong_FromUnicodeObject`.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
+  :c:func:`PyUnicode_AsWideCharString`
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
+  ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
+  (Contributed by Victor Stinner in :issue:`41834`.)
+
+* Removed undocumented macros ``Py_ALLOW_RECURSION`` and
+  ``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
+  :c:type:`PyInterpreterState` structure.
+  (Contributed by Serhiy Storchaka in :issue:`41936`.)
+
+* Removed the undocumented ``PyOS_InitInterrupts()`` function. Initializing
+  Python already implicitly installs signal handlers: see
+  :c:member:`PyConfig.install_signal_handlers`.
+  (Contributed by Victor Stinner in :issue:`41713`.)

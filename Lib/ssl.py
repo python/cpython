@@ -252,7 +252,7 @@ class _TLSMessageType(_IntEnum):
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
-from socket import socket, AF_INET, SOCK_STREAM, create_connection
+from socket import socket, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE
 import socket as _socket
 import base64        # for DER-to-PEM translation

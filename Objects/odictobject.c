@@ -459,15 +459,14 @@ later:
 - implement a fuller MutableMapping API in C?
 - move the MutableMapping implementation to abstract.c?
 - optimize mutablemapping_update
-- use PyObject_MALLOC (small object allocator) for odict nodes?
+- use PyObject_Malloc (small object allocator) for odict nodes?
 - support subclasses better (e.g. in odict_richcompare)
 
 */
 
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 #include "dict-common.h"
 #include <stddef.h>
 
@@ -568,14 +567,14 @@ _odict_resize(PyODictObject *od)
         i = _odict_get_index_raw(od, _odictnode_KEY(node),
                                  _odictnode_HASH(node));
         if (i < 0) {
-            PyMem_FREE(fast_nodes);
+            PyMem_Free(fast_nodes);
             return -1;
         }
         fast_nodes[i] = node;
     }
 
     /* Replace the old fast nodes table. */
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = fast_nodes;
     od->od_fast_nodes_size = size;
     od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
@@ -684,7 +683,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
     }
 
     /* must not be added yet */
-    node = (_ODictNode *)PyMem_MALLOC(sizeof(_ODictNode));
+    node = (_ODictNode *)PyMem_Malloc(sizeof(_ODictNode));
     if (node == NULL) {
         Py_DECREF(key);
         PyErr_NoMemory();
@@ -702,7 +701,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 #define _odictnode_DEALLOC(node) \
     do { \
         Py_DECREF(_odictnode_KEY(node)); \
-        PyMem_FREE((void *)node); \
+        PyMem_Free((void *)node); \
     } while (0)
 
 /* Repeated calls on the same node are no-ops. */
@@ -777,7 +776,7 @@ _odict_clear_nodes(PyODictObject *od)
 {
     _ODictNode *node, *next;
 
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = NULL;
     od->od_fast_nodes_size = 0;
     od->od_resize_sentinel = NULL;
@@ -848,6 +847,57 @@ static PyMappingMethods odict_as_mapping = {
     0,                                  /*mp_length*/
     0,                                  /*mp_subscript*/
     (objobjargproc)odict_mp_ass_sub,    /*mp_ass_subscript*/
+};
+
+
+/* ----------------------------------------------
+ * OrderedDict number methods
+ */
+
+static int mutablemapping_update_arg(PyObject*, PyObject*);
+
+static PyObject *
+odict_or(PyObject *left, PyObject *right)
+{
+    PyTypeObject *type;
+    PyObject *other;
+    if (PyODict_Check(left)) {
+        type = Py_TYPE(left);
+        other = right;
+    }
+    else {
+        type = Py_TYPE(right);
+        other = left;
+    }
+    if (!PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    PyObject *new = PyObject_CallOneArg((PyObject*)type, left);
+    if (!new) {
+        return NULL;
+    }
+    if (mutablemapping_update_arg(new, right) < 0) {
+        Py_DECREF(new);
+        return NULL;
+    }
+    return new;
+}
+
+static PyObject *
+odict_inplace_or(PyObject *self, PyObject *other)
+{
+    if (mutablemapping_update_arg(self, other) < 0) {
+        return NULL;
+    }
+    Py_INCREF(self);
+    return self;
+}
+
+/* tp_as_number */
+
+static PyNumberMethods odict_as_number = {
+    .nb_or = odict_or,
+    .nb_inplace_or = odict_inplace_or,
 };
 
 
@@ -995,30 +1045,28 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
 
 /* pop() */
 
-PyDoc_STRVAR(odict_pop__doc__,
-"od.pop(k[,d]) -> v, remove specified key and return the corresponding\n\
-        value.  If key is not found, d is returned if given, otherwise KeyError\n\
-        is raised.\n\
-\n\
-        ");
-
 /* forward */
 static PyObject * _odict_popkey(PyObject *, PyObject *, PyObject *);
 
 /* Skips __missing__() calls. */
+/*[clinic input]
+OrderedDict.pop
+
+    key: object
+    default: object = NULL
+
+od.pop(key[,default]) -> v, remove specified key and return the corresponding value.
+
+If the key is not found, return the default if given; otherwise,
+raise a KeyError.
+[clinic start generated code]*/
+
 static PyObject *
-odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
+OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
+                     PyObject *default_value)
+/*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
 {
-    static char *kwlist[] = {"key", "default", 0};
-    PyObject *key, *failobj = NULL;
-
-    /* borrowed */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
-                                     &key, &failobj)) {
-        return NULL;
-    }
-
-    return _odict_popkey(od, key, failobj);
+    return _odict_popkey((PyObject *)self, key, default_value);
 }
 
 static PyObject *
@@ -1312,8 +1360,7 @@ static PyMethodDef odict_methods[] = {
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      odict_reduce__doc__},
     ORDEREDDICT_SETDEFAULT_METHODDEF
-    {"pop",             (PyCFunction)(void(*)(void))odict_pop,
-     METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
+    ORDEREDDICT_POP_METHODDEF
     ORDEREDDICT_POPITEM_METHODDEF
     {"keys",            odictkeys_new,                  METH_NOARGS,
      odict_keys__doc__},
@@ -1454,7 +1501,6 @@ odict_traverse(PyODictObject *od, visitproc visit, void *arg)
     _ODictNode *node;
 
     Py_VISIT(od->od_inst_dict);
-    Py_VISIT(od->od_weakreflist);
     _odict_FOREACH(od, node) {
         Py_VISIT(_odictnode_KEY(node));
     }
@@ -1467,7 +1513,6 @@ static int
 odict_tp_clear(PyODictObject *od)
 {
     Py_CLEAR(od->od_inst_dict);
-    Py_CLEAR(od->od_weakreflist);
     PyDict_Clear((PyObject *)od);
     _odict_clear_nodes(od);
     return 0;
@@ -1557,7 +1602,7 @@ PyTypeObject PyODict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)odict_repr,                       /* tp_repr */
-    0,                                          /* tp_as_number */
+    &odict_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
     &odict_as_mapping,                          /* tp_as_mapping */
     0,                                          /* tp_hash */
@@ -1769,6 +1814,11 @@ odictiter_iternext(odictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
         Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     }
     else {
         result = PyTuple_New(2);
@@ -2191,16 +2241,77 @@ Done:
         return 0;
 }
 
+static int
+mutablemapping_update_arg(PyObject *self, PyObject *arg)
+{
+    int res = 0;
+    if (PyDict_CheckExact(arg)) {
+        PyObject *items = PyDict_Items(arg);
+        if (items == NULL) {
+            return -1;
+        }
+        res = mutablemapping_add_pairs(self, items);
+        Py_DECREF(items);
+        return res;
+    }
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        PyObject *keys = _PyObject_CallNoArg(func);
+        Py_DECREF(func);
+        if (keys == NULL) {
+            return -1;
+        }
+        PyObject *iterator = PyObject_GetIter(keys);
+        Py_DECREF(keys);
+        if (iterator == NULL) {
+            return -1;
+        }
+        PyObject *key;
+        while (res == 0 && (key = PyIter_Next(iterator))) {
+            PyObject *value = PyObject_GetItem(arg, key);
+            if (value != NULL) {
+                res = PyObject_SetItem(self, key, value);
+                Py_DECREF(value);
+            }
+            else {
+                res = -1;
+            }
+            Py_DECREF(key);
+        }
+        Py_DECREF(iterator);
+        if (res != 0 || PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    if (_PyObject_LookupAttrId(arg, &PyId_items, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        PyObject *items = _PyObject_CallNoArg(func);
+        Py_DECREF(func);
+        if (items == NULL) {
+            return -1;
+        }
+        res = mutablemapping_add_pairs(self, items);
+        Py_DECREF(items);
+        return res;
+    }
+    res = mutablemapping_add_pairs(self, arg);
+    return res;
+}
+
 static PyObject *
 mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    int res = 0;
-    Py_ssize_t len;
-    _Py_IDENTIFIER(keys);
-
+    int res;
     /* first handle args, if any */
     assert(args == NULL || PyTuple_Check(args));
-    len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
+    Py_ssize_t len = (args != NULL) ? PyTuple_GET_SIZE(args) : 0;
     if (len > 1) {
         const char *msg = "update() takes at most 1 positional argument (%zd given)";
         PyErr_Format(PyExc_TypeError, msg, len);
@@ -2208,83 +2319,16 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     if (len) {
-        PyObject *func;
         PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
         assert(other != NULL);
         Py_INCREF(other);
-        if (PyDict_CheckExact(other)) {
-            PyObject *items = PyDict_Items(other);
-            Py_DECREF(other);
-            if (items == NULL)
-                return NULL;
-            res = mutablemapping_add_pairs(self, items);
-            Py_DECREF(items);
-            if (res == -1)
-                return NULL;
-            goto handle_kwargs;
-        }
-
-        if (_PyObject_LookupAttrId(other, &PyId_keys, &func) < 0) {
-            Py_DECREF(other);
-            return NULL;
-        }
-        if (func != NULL) {
-            PyObject *keys, *iterator, *key;
-            keys = _PyObject_CallNoArg(func);
-            Py_DECREF(func);
-            if (keys == NULL) {
-                Py_DECREF(other);
-                return NULL;
-            }
-            iterator = PyObject_GetIter(keys);
-            Py_DECREF(keys);
-            if (iterator == NULL) {
-                Py_DECREF(other);
-                return NULL;
-            }
-            while (res == 0 && (key = PyIter_Next(iterator))) {
-                PyObject *value = PyObject_GetItem(other, key);
-                if (value != NULL) {
-                    res = PyObject_SetItem(self, key, value);
-                    Py_DECREF(value);
-                }
-                else {
-                    res = -1;
-                }
-                Py_DECREF(key);
-            }
-            Py_DECREF(other);
-            Py_DECREF(iterator);
-            if (res != 0 || PyErr_Occurred())
-                return NULL;
-            goto handle_kwargs;
-        }
-
-        if (_PyObject_LookupAttrId(other, &PyId_items, &func) < 0) {
-            Py_DECREF(other);
-            return NULL;
-        }
-        if (func != NULL) {
-            PyObject *items;
-            Py_DECREF(other);
-            items = _PyObject_CallNoArg(func);
-            Py_DECREF(func);
-            if (items == NULL)
-                return NULL;
-            res = mutablemapping_add_pairs(self, items);
-            Py_DECREF(items);
-            if (res == -1)
-                return NULL;
-            goto handle_kwargs;
-        }
-
-        res = mutablemapping_add_pairs(self, other);
+        res = mutablemapping_update_arg(self, other);
         Py_DECREF(other);
-        if (res != 0)
+        if (res < 0) {
             return NULL;
+        }
     }
 
-  handle_kwargs:
     /* now handle kwargs */
     assert(kwargs == NULL || PyDict_Check(kwargs));
     if (kwargs != NULL && PyDict_GET_SIZE(kwargs)) {

@@ -109,8 +109,8 @@ source.
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
 
-       python -mtimeit -s 'setup here' 'benchmarked code here'
-       python -mtimeit -h # for details
+       python -m timeit -s 'setup here' 'benchmarked code here'
+       python -m timeit -h # for details
 
    .. audit-event:: cpython.run_module module-name cmdoption-m
 
@@ -369,6 +369,11 @@ Miscellaneous options
    (filename or built-in module) from which it is loaded.  When given twice
    (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
+
+   .. versionchanged:: 3.10
+      The :mod:`site` module reports the site-specific paths
+      and :file:`.pth` files being processed.
+
    See also :envvar:`PYTHONVERBOSE`.
 
 
@@ -442,10 +447,9 @@ Miscellaneous options
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
      default.
-   * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
-     the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
-     mode (even when it would otherwise activate automatically).
-     See :envvar:`PYTHONUTF8` for more details.
+   * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
+     ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
+     (even when it would otherwise activate automatically).
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
@@ -477,6 +481,9 @@ Miscellaneous options
       string encoding and decoding operations.
 
       The ``-X showalloccount`` option has been removed.
+
+   .. deprecated-removed:: 3.9 3.10
+      The ``-X oldparser`` option.
 
 
 Options you shouldn't use
@@ -533,6 +540,14 @@ conflict.
    within a Python program as the variable :data:`sys.path`.
 
 
+.. envvar:: PYTHONPLATLIBDIR
+
+   If this is set to a non-empty string, it overrides the :data:`sys.platlibdir`
+   value.
+
+   .. versionadded:: 3.9
+
+
 .. envvar:: PYTHONSTARTUP
 
    If this is the name of a readable file, the Python commands in that file are
@@ -542,7 +557,7 @@ conflict.
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
-   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+   .. audit-event:: cpython.run_startup filename envvar-PYTHONSTARTUP
 
       Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
       the filename as the argument when called on startup.
@@ -794,9 +809,10 @@ conflict.
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
 
-   If set to a non-empty string, the default filesystem encoding and errors mode
-   will revert to their pre-3.6 values of 'mbcs' and 'replace', respectively.
-   Otherwise, the new defaults 'utf-8' and 'surrogatepass' are used.
+   If set to a non-empty string, the default :term:`filesystem encoding and
+   error handler` mode will revert to their pre-3.6 values of 'mbcs' and
+   'replace', respectively.  Otherwise, the new defaults 'utf-8' and
+   'surrogatepass' are used.
 
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
@@ -882,54 +898,14 @@ conflict.
 
 .. envvar:: PYTHONUTF8
 
-   If set to ``1``, enables the interpreter's UTF-8 mode, where ``UTF-8`` is
-   used as the text encoding for system interfaces, regardless of the
-   current locale setting.
+   If set to ``1``, enable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
-   This means that:
-
-    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'`` (the locale
-      encoding is ignored).
-    * :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the locale
-      encoding is ignored, and the function's ``do_setlocale`` parameter has no
-      effect).
-    * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
-      UTF-8 as their text encoding, with the ``surrogateescape``
-      :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
-      and :data:`sys.stdout` (:data:`sys.stderr` continues to use
-      ``backslashreplace`` as it does in the default locale-aware mode)
-
-   As a consequence of the changes in those lower level APIs, other higher
-   level APIs also exhibit different default behaviours:
-
-    * Command line arguments, environment variables and filenames are decoded
-      to text using the UTF-8 encoding.
-    * :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
-    * :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
-      encoding by default. However, they still use the strict error handler by
-      default so that attempting to open a binary file in text mode is likely
-      to raise an exception rather than producing nonsense data.
-
-   Note that the standard stream settings in UTF-8 mode can be overridden by
-   :envvar:`PYTHONIOENCODING` (just as they can be in the default locale-aware
-   mode).
-
-   If set to ``0``, the interpreter runs in its default locale-aware mode.
+   If set to ``0``, disable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    Setting any other non-empty string causes an error during interpreter
    initialisation.
 
-   If this environment variable is not set at all, then the interpreter defaults
-   to using the current locale settings, *unless* the current locale is
-   identified as a legacy ASCII-based locale
-   (as described for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
-   either disabled or fails. In such legacy locales, the interpreter will
-   default to enabling UTF-8 mode unless explicitly instructed not to do so.
-
-   Also available as the :option:`-X` ``utf8`` option.
-
    .. versionadded:: 3.7
-      See :pep:`540` for more details.
 
 
 Debug-mode variables

@@ -56,11 +56,6 @@ skip_optional_posonly:
         goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
-        if (PyFloat_Check(fastargs[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         digest_size = _PyLong_AsInt(fastargs[1]);
         if (digest_size == -1 && PyErr_Occurred()) {
             goto exit;
@@ -106,11 +101,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[5]) {
-        if (PyFloat_Check(fastargs[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         fanout = _PyLong_AsInt(fastargs[5]);
         if (fanout == -1 && PyErr_Occurred()) {
             goto exit;
@@ -120,11 +110,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[6]) {
-        if (PyFloat_Check(fastargs[6])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         depth = _PyLong_AsInt(fastargs[6]);
         if (depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -150,11 +135,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[9]) {
-        if (PyFloat_Check(fastargs[9])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         node_depth = _PyLong_AsInt(fastargs[9]);
         if (node_depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -164,11 +144,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[10]) {
-        if (PyFloat_Check(fastargs[10])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         inner_size = _PyLong_AsInt(fastargs[10]);
         if (inner_size == -1 && PyErr_Occurred()) {
             goto exit;
@@ -272,4 +247,4 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=2d6d0fe9aa42a42a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10eb47aba77f192d input=a9049054013a1b77]*/

@@ -2,28 +2,29 @@
 #define Py_COMPILE_H
 
 #ifndef Py_LIMITED_API
-#include "code.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Public interface */
-struct _node; /* Declare the existence of this type */
-PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
-/* XXX (ncoghlan): Unprefixed type name in a public API! */
-
 #define PyCF_MASK (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | \
                    CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | \
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \
                    CO_FUTURE_GENERATOR_STOP | CO_FUTURE_ANNOTATIONS)
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
+
+/* bpo-39562: CO_FUTURE_ and PyCF_ constants must be kept unique.
+   PyCF_ constants can use bits from 0x0100 to 0x10000.
+   CO_FUTURE_ constants use bits starting at 0x20000. */
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
 #define PyCF_ONLY_AST 0x0400
 #define PyCF_IGNORE_COOKIE 0x0800
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
+#define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
+                           PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT)
 
 #ifndef Py_LIMITED_API
 typedef struct {
@@ -83,7 +84,12 @@ PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
 
-PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
+typedef struct {
+    int optimize;
+    int ff_features;
+} _PyASTOptimizeState;
+
+PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeState *state);
 
 #ifdef __cplusplus
 }
@@ -96,5 +102,8 @@ PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, int optimize);
 #define Py_file_input 257
 #define Py_eval_input 258
 #define Py_func_type_input 345
+
+/* This doesn't need to match anything */
+#define Py_fstring_input 800
 
 #endif /* !Py_COMPILE_H */

@@ -26,8 +26,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include "Python.h"
 #include <ctype.h>
 
-#include "pythread.h"
-
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
@@ -56,7 +54,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 #if TK_HEX_VERSION >= 0x08050208 && TK_HEX_VERSION < 0x08060000 || \
     TK_HEX_VERSION >= 0x08060200
-#define HAVE_LIBTOMMAMTH
+#define HAVE_LIBTOMMATH
 #include <tclTomMath.h>
 #endif
 
@@ -397,7 +395,8 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
 
     char *buf = NULL;
     PyErr_Clear();
-    /* Tcl encodes null character as \xc0\x80 */
+    /* Tcl encodes null character as \xc0\x80.
+       https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8 */
     if (memchr(s, '\xc0', size)) {
         char *q;
         const char *e = s + size;
@@ -421,6 +420,57 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
     if (buf != NULL) {
         PyMem_Free(buf);
     }
+    if (r == NULL || PyUnicode_KIND(r) == PyUnicode_1BYTE_KIND) {
+        return r;
+    }
+
+    /* In CESU-8 non-BMP characters are represented as a surrogate pair,
+       like in UTF-16, and then each surrogate code point is encoded in UTF-8.
+       https://en.wikipedia.org/wiki/CESU-8 */
+    Py_ssize_t len = PyUnicode_GET_LENGTH(r);
+    Py_ssize_t i, j;
+    /* All encoded surrogate characters start with \xED. */
+    i = PyUnicode_FindChar(r, 0xdcED, 0, len, 1);
+    if (i == -2) {
+        Py_DECREF(r);
+        return NULL;
+    }
+    if (i == -1) {
+        return r;
+    }
+    Py_UCS4 *u = PyUnicode_AsUCS4Copy(r);
+    Py_DECREF(r);
+    if (u == NULL) {
+        return NULL;
+    }
+    Py_UCS4 ch;
+    for (j = i; i < len; i++, u[j++] = ch) {
+        Py_UCS4 ch1, ch2, ch3, high, low;
+        /* Low surrogates U+D800 - U+DBFF are encoded as
+           \xED\xA0\x80 - \xED\xAF\xBF. */
+        ch1 = ch = u[i];
+        if (ch1 != 0xdcED) continue;
+        ch2 = u[i + 1];
+        if (!(0xdcA0 <= ch2 && ch2 <= 0xdcAF)) continue;
+        ch3 = u[i + 2];
+        if (!(0xdc80 <= ch3 && ch3 <= 0xdcBF)) continue;
+        high = 0xD000 | ((ch2 & 0x3F) << 6) | (ch3 & 0x3F);
+        assert(Py_UNICODE_IS_HIGH_SURROGATE(high));
+        /* High surrogates U+DC00 - U+DFFF are encoded as
+           \xED\xB0\x80 - \xED\xBF\xBF. */
+        ch1 = u[i + 3];
+        if (ch1 != 0xdcED) continue;
+        ch2 = u[i + 4];
+        if (!(0xdcB0 <= ch2 && ch2 <= 0xdcBF)) continue;
+        ch3 = u[i + 5];
+        if (!(0xdc80 <= ch3 && ch3 <= 0xdcBF)) continue;
+        low = 0xD000 | ((ch2 & 0x3F) << 6) | (ch3 & 0x3F);
+        assert(Py_UNICODE_IS_HIGH_SURROGATE(high));
+        ch = Py_UNICODE_JOIN_SURROGATES(high, low);
+        i += 5;
+    }
+    r = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, u, j);
+    PyMem_Free(u);
     return r;
 }
 
@@ -574,9 +624,9 @@ SplitObj(PyObject *arg)
     else if (PyBytes_Check(arg)) {
         int argc;
         const char **argv;
-        char *list = PyBytes_AS_STRING(arg);
+        const char *list = PyBytes_AS_STRING(arg);
 
-        if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
+        if (Tcl_SplitList((Tcl_Interp *)NULL, (char *)list, &argc, &argv) != TCL_OK) {
             Py_INCREF(arg);
             return arg;
         }
@@ -833,7 +883,7 @@ typedef struct {
 } PyTclObject;
 
 static PyObject *PyTclObject_Type;
-#define PyTclObject_Check(v) (Py_TYPE(v) == (PyTypeObject *) PyTclObject_Type)
+#define PyTclObject_Check(v) Py_IS_TYPE(v, (PyTypeObject *) PyTclObject_Type)
 
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
@@ -854,7 +904,7 @@ PyTclObject_dealloc(PyTclObject *self)
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -967,7 +1017,7 @@ static PyType_Spec PyTclObject_Type_spec = {
 #define CHECK_STRING_LENGTH(s)
 #endif
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
 static Tcl_Obj*
 asBignumObj(PyObject *value)
 {
@@ -1047,7 +1097,7 @@ AsObj(PyObject *value)
 #endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
         return asBignumObj(value);
 #endif
         /* If there is no wideInt or bignum support,
@@ -1169,7 +1219,7 @@ fromWideIntObj(TkappObject *tkapp, Tcl_Obj *value)
         return NULL;
 }
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
 static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
@@ -1249,7 +1299,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
            fall through to bignum handling. */
     }
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType ||
         value->typePtr == tkapp->BignumType) {
@@ -1302,7 +1352,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 #endif
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     if (tkapp->BignumType == NULL &&
         strcmp(value->typePtr->name, "bignum") == 0) {
         /* bignum type is not registered in Tcl */
@@ -2003,7 +2053,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
        Prefer bignum because Tcl_GetWideIntFromObj returns ambiguous result for
        value in ranges -2**64..-2**63-1 and 2**63..2**64-1 (on 32-bit platform).
      */
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     result = fromBignumObj(self, value);
 #else
     result = fromWideIntObj(self, value);
@@ -2422,7 +2472,7 @@ PythonCmdDelete(ClientData clientData)
     ENTER_PYTHON
     Py_XDECREF(data->self);
     Py_XDECREF(data->func);
-    PyMem_DEL(data);
+    PyMem_Free(data);
     LEAVE_PYTHON
 }
 
@@ -2495,7 +2545,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         CommandEvent *ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
         if (ev == NULL) {
             PyErr_NoMemory();
-            PyMem_DEL(data);
+            PyMem_Free(data);
             return NULL;
         }
         ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
@@ -2518,7 +2568,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
     if (err) {
         PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
-        PyMem_DEL(data);
+        PyMem_Free(data);
         return NULL;
     }
 
@@ -2616,7 +2666,7 @@ DeleteFHCD(int id)
             *pp = p->next;
             Py_XDECREF(p->func);
             Py_XDECREF(p->file);
-            PyMem_DEL(p);
+            PyMem_Free(p);
         }
         else
             pp = &p->next;
@@ -2773,7 +2823,7 @@ Tktt_Dealloc(PyObject *self)
 
     Py_XDECREF(func);
 
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -3046,7 +3096,7 @@ Tkapp_Dealloc(PyObject *self)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
     DisableEventHook();
 }

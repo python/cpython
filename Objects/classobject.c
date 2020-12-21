@@ -3,9 +3,8 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "structmember.h"         // PyMemberDef
 
 #define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
@@ -37,7 +36,7 @@ static PyObject *
 method_vectorcall(PyObject *method, PyObject *const *args,
                   size_t nargsf, PyObject *kwnames)
 {
-    assert(Py_TYPE(method) == &PyMethod_Type);
+    assert(Py_IS_TYPE(method, &PyMethod_Type));
 
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *self = PyMethod_GET_SELF(method);
@@ -145,9 +144,9 @@ static PyMethodDef method_methods[] = {
 #define MO_OFF(x) offsetof(PyMethodObject, x)
 
 static PyMemberDef method_memberlist[] = {
-    {"__func__", T_OBJECT, MO_OFF(im_func), READONLY|RESTRICTED,
+    {"__func__", T_OBJECT, MO_OFF(im_func), READONLY,
      "the function (or other callable) implementing a method"},
-    {"__self__", T_OBJECT, MO_OFF(im_self), READONLY|RESTRICTED,
+    {"__self__", T_OBJECT, MO_OFF(im_self), READONLY,
      "the instance to which a method is bound"},
     {NULL}      /* Sentinel */
 };
@@ -350,7 +349,7 @@ PyTypeObject PyMethod_Type = {
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    _Py_TPFLAGS_HAVE_VECTORCALL,                /* tp_flags */
+    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
     method_doc,                                 /* tp_doc */
     (traverseproc)method_traverse,              /* tp_traverse */
     0,                                          /* tp_clear */
@@ -400,7 +399,7 @@ PyInstanceMethod_Function(PyObject *im)
 #define IMO_OFF(x) offsetof(PyInstanceMethodObject, x)
 
 static PyMemberDef instancemethod_memberlist[] = {
-    {"__func__", T_OBJECT, IMO_OFF(func), READONLY|RESTRICTED,
+    {"__func__", T_OBJECT, IMO_OFF(func), READONLY,
      "the function (or other callable) implementing a method"},
     {NULL}      /* Sentinel */
 };
