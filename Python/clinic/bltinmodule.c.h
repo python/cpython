@@ -531,7 +531,7 @@ PyDoc_STRVAR(builtin_hex__doc__,
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
 PyDoc_STRVAR(builtin_aiter__doc__,
-"aiter($module, aiterable, sentinel=None, /)\n"
+"aiter($module, aiterable, sentinel=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return an async iterator for an async iterable object.");
@@ -547,7 +547,7 @@ builtin_aiter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *aiterable;
-    PyObject *sentinel = Py_None;
+    PyObject *sentinel = NULL;
 
     if (!_PyArg_CheckPositional("aiter", nargs, 1, 2)) {
         goto exit;
@@ -565,7 +565,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_anext__doc__,
-"anext($module, aiterator, default=None, /)\n"
+"anext($module, aiterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return the next item from the async iterator.");
@@ -582,7 +582,7 @@ builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *aiterator;
-    PyObject *default_value = Py_None;
+    PyObject *default_value = NULL;
 
     if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
         goto exit;
@@ -899,4 +899,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=02b80d529a5c972b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5248d88ee495198 input=a9049054013a1b77]*/

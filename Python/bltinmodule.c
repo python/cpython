@@ -1539,7 +1539,7 @@ In the second form, the callable is called until it returns the sentinel.");
 aiter as builtin_aiter
 
     aiterable: object
-    sentinel: object = None
+    sentinel: object = NULL
     /
 
 Return an async iterator for an async iterable object.
@@ -1547,9 +1547,9 @@ Return an async iterator for an async iterable object.
 
 static PyObject *
 builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
-/*[clinic end generated code: output=ea120e90169d9f32 input=586f672fb18a94a5]*/
+/*[clinic end generated code: output=ea120e90169d9f32 input=a12efceda1863b3c]*/
 {
-    if (sentinel == Py_None) {
+    if (sentinel == NULL) {
         return PyObject_GetAiter(aiterable);
     }
 
@@ -1566,7 +1566,7 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
 anext as builtin_anext
 
     aiterator: object
-    default: object = None
+    default: object = NULL
     /
 
 Return the next item from the async iterator.
@@ -1575,7 +1575,7 @@ Return the next item from the async iterator.
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=6051f80000c06306]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -1589,7 +1589,7 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
-    if (default_value == Py_None) {
+    if (default_value == NULL) {
         return awaitable;
     }
 

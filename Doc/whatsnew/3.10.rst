@@ -157,6 +157,11 @@ Other Language Changes
 * Assignment expressions can now be used unparenthesized within set literals
   and set comprehensions, as well as in sequence indexes (but not slices).
 
+* Two new builtin functions -- :func:`aiter` and :func:`anext` have been added
+  to provide asynchronous counterparts to :func:`iter` and :func:`next`,
+  respectively.
+  (Contributed by Joshua Bronson, Justin Wang and Daniel Pope in :issue:`31861`)
+
 
 New Modules
 ===========
