@@ -414,6 +414,15 @@ class TestBasicOps:
             r = _random.Random()
             self.assertRaises(TypeError, pickle.dumps, r, proto)
 
+    @test.support.cpython_only
+    def test_bug_42008(self):
+        # _random.Random should call seed with first element of arg tuple
+        import _random
+        r1 = _random.Random()
+        r1.seed(8675309)
+        r2 = _random.Random(8675309)
+        self.assertEqual(r1.random(), r2.random())
+
     def test_bug_1727780(self):
         # verify that version-2-pickles can be loaded
         # fine, whether they are created on 32-bit or 64-bit
