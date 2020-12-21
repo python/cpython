@@ -1539,7 +1539,7 @@ In the second form, the callable is called until it returns the sentinel.");
 aiter as builtin_aiter
 
     aiterable: object
-    sentinel: object = NULL
+    sentinel: object = None
     /
 
 Return an async iterator for an async iterable object.
@@ -1547,7 +1547,7 @@ Return an async iterator for an async iterable object.
 
 static PyObject *
 builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
-/*[clinic end generated code: output=ea120e90169d9f32 input=a12efceda1863b3c]*/
+/*[clinic end generated code: output=ea120e90169d9f32 input=586f672fb18a94a5]*/
 {
     if (sentinel == NULL) {
         return PyObject_GetAiter(aiterable);
@@ -1561,20 +1561,12 @@ builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
     return PyCallAsyncIter_New(aiterable, sentinel);
 }
 
-PyDoc_STRVAR(aiter_doc,
-"aiter(async_iterable) -> async_iterator\n\
-aiter(async_callable, sentinel) -> async_iterator\n\
-\n\
-Get an async iterator from an object. In the first form, the\n\
-argument must supply its own async iterator.\n\
-In the second form, the async callable is called and awaited\n\
-until it returns the sentinel.");
 
 /*[clinic input]
 anext as builtin_anext
 
     aiterator: object
-    default: object = NULL
+    default: object = None
     /
 
 Return the next item from the async iterator.
@@ -1583,7 +1575,7 @@ Return the next item from the async iterator.
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=6051f80000c06306]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -1603,13 +1595,6 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
 
     return PyAnextAwaitable_New(awaitable, default_value);
 }
-
-PyDoc_STRVAR(anext_doc,
-"anext(async_iterator[, default])\n\
-\n\
-When awaited, return the next item from the given async iterator.\n\
-If the iterator is exhausted and *default* is given, return *default*.\n\
-Otherwise, raise StopAsyncIteration.");
 
 
 /*[clinic input]
@@ -2887,13 +2872,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
-    {"aiter",           (PyCFunction)(void(*)(void))builtin_aiter,      METH_FASTCALL, aiter_doc},
+    BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
-    {"anext",           (PyCFunction)(void(*)(void))builtin_anext,      METH_FASTCALL, anext_doc},
+    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
