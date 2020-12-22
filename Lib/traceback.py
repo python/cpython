@@ -586,10 +586,10 @@ class TracebackException:
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
-        filename = self.filename or "<string>"
         filename_suffix = ''
         if self.lineno is not None:
-            yield '  File "{}", line {}\n'.format(filename, self.lineno)
+            yield '  File "{}", line {}\n'.format(
+                self.filename or "<string>", self.lineno)
         elif self.filename is not None:
             filename_suffix = ' ({})'.format(self.filename)
 
