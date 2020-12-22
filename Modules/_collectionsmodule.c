@@ -1128,37 +1128,6 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(insert_doc,
 "D.insert(index, object) -- insert object before index");
 
-static int deque_del_item(dequeobject *deque, Py_ssize_t i);
-static int valid_index(Py_ssize_t i, Py_ssize_t limit);
-
-static PyObject *
-deque_remove(dequeobject *deque, PyObject *value)
-{
-    PyObject * args[1] = {value};
-    PyObject *index_object;
-    Py_ssize_t i;
-    int rv;
-
-    index_object = deque_index(deque, args, 1);
-    if (index_object == NULL) {
-        return NULL;
-    }
-    i = PyLong_AsSsize_t(index_object);
-    Py_DECREF(index_object);
-    if (i == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (!valid_index(i, Py_SIZE(deque))) {
-        PyErr_SetString(PyExc_IndexError, "deque index out of range");
-        return NULL;
-    }
-    rv = deque_del_item(deque, i);
-    if (rv == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
@@ -1224,6 +1193,34 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
     assert (item != NULL);
     Py_DECREF(item);
     return rv;
+}
+
+static PyObject *
+deque_remove(dequeobject *deque, PyObject *value)
+{
+    PyObject * args[1] = {value};
+    PyObject *index_object;
+    Py_ssize_t i;
+    int rv;
+
+    index_object = deque_index(deque, args, 1);
+    if (index_object == NULL) {
+        return NULL;
+    }
+    i = PyLong_AsSsize_t(index_object);
+    Py_DECREF(index_object);
+    if (i == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (!valid_index(i, Py_SIZE(deque))) {
+        PyErr_SetString(PyExc_IndexError, "deque mutated during remove().");
+        return NULL;
+    }
+    rv = deque_del_item(deque, i);
+    if (rv == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
