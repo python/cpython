@@ -130,14 +130,14 @@ class PrettyPrinter:
         width = int(width)
         if indent < 0:
             raise ValueError('indent must be >= 0')
-        if depth is not None and depth <= 0:
+        if depth and depth <= 0:
             raise ValueError('depth must be > 0')
         if not width:
             raise ValueError('width must be != 0')
         self._depth = depth
         self._indent_per_level = indent
         self._width = width
-        if stream is not None:
+        if stream:
             self._stream = stream
         else:
             self._stream = _sys.stdout
@@ -171,7 +171,7 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
-            if p is not None:
+            if p:
                 context[objid] = 1
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]

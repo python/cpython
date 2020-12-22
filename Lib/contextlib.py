@@ -419,7 +419,7 @@ class suppress(AbstractContextManager):
         # exactly reproduce the limitations of the CPython interpreter.
         #
         # See http://bugs.python.org/issue12029 for more details
-        return exctype is not None and issubclass(exctype, self._exceptions)
+        return bool(exctype) and issubclass(exctype, self._exceptions)
 
 
 class _BaseExitStack:
@@ -517,7 +517,7 @@ class ExitStack(_BaseExitStack, AbstractContextManager):
         return self
 
     def __exit__(self, *exc_details):
-        received_exc = exc_details[0] is not None
+        received_exc = bool(exc_details[0]) #isnot None
 
         # We manipulate the exception state so it behaves as though
         # we were actually nesting multiple with statements
@@ -651,7 +651,7 @@ class AsyncExitStack(_BaseExitStack, AbstractAsyncContextManager):
         return self
 
     async def __aexit__(self, *exc_details):
-        received_exc = exc_details[0] is not None
+        received_exc = bool(exc_details[0]) #isnot None
 
         # We manipulate the exception state so it behaves as though
         # we were actually nesting multiple with statements

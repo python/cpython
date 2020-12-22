@@ -80,7 +80,7 @@ def dyld_override_search(name, env=None):
 
     framework = framework_info(name)
 
-    if framework is not None:
+    if framework:
         for path in dyld_framework_path(env):
             yield os.path.join(path, framework['name'])
 
@@ -93,7 +93,7 @@ def dyld_executable_path_search(name, executable_path=None):
     # If we haven't done any searching and found a library and the
     # dylib_name starts with "@executable_path/" then construct the
     # library name.
-    if name.startswith('@executable_path/') and executable_path is not None:
+    if name.startswith('@executable_path/') and executable_path:
         yield os.path.join(executable_path, name[len('@executable_path/'):])
 
 def dyld_default_search(name, env=None):
@@ -101,7 +101,7 @@ def dyld_default_search(name, env=None):
 
     framework = framework_info(name)
 
-    if framework is not None:
+    if framework:
         fallback_framework_path = dyld_fallback_framework_path(env)
         for path in fallback_framework_path:
             yield os.path.join(path, framework['name'])
@@ -110,7 +110,7 @@ def dyld_default_search(name, env=None):
     for path in fallback_library_path:
         yield os.path.join(path, os.path.basename(name))
 
-    if framework is not None and not fallback_framework_path:
+    if framework and not fallback_framework_path:
         for path in DEFAULT_FRAMEWORK_FALLBACK:
             yield os.path.join(path, framework['name'])
 

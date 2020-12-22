@@ -87,7 +87,7 @@ def _get_headnode_dict(fixer_list):
                 for node_type in heads:
                     head_nodes[node_type].append(fixer)
         else:
-            if fixer._accept_type is not None:
+            if fixer._accept_type:
                 head_nodes[fixer._accept_type].append(fixer)
             else:
                 every.append(fixer)
@@ -172,7 +172,7 @@ class RefactoringTool(object):
         self.fixers = fixer_names
         self.explicit = explicit or []
         self.options = self._default_options.copy()
-        if options is not None:
+        if options:
             self.options.update(options)
         self.grammar = pygram.python_grammar.copy()
 
@@ -443,7 +443,7 @@ class RefactoringTool(object):
 
                         if results:
                             new = fixer.transform(node, results)
-                            if new is not None:
+                            if new:
                                 node.replace(new)
                                 #new.fixers_applied.append(fixer)
                                 for node in new.post_order():
@@ -485,7 +485,7 @@ class RefactoringTool(object):
                 results = fixer.match(node)
                 if results:
                     new = fixer.transform(node, results)
-                    if new is not None:
+                    if new:
                         node.replace(new)
                         node = new
 
@@ -554,25 +554,25 @@ class RefactoringTool(object):
         for line in input.splitlines(keepends=True):
             lineno += 1
             if line.lstrip().startswith(self.PS1):
-                if block is not None:
+                if block:
                     result.extend(self.refactor_doctest(block, block_lineno,
                                                         indent, filename))
                 block_lineno = lineno
                 block = [line]
                 i = line.find(self.PS1)
                 indent = line[:i]
-            elif (indent is not None and
+            elif (indent and
                   (line.startswith(indent + self.PS2) or
                    line == indent + self.PS2.rstrip() + "\n")):
                 block.append(line)
             else:
-                if block is not None:
+                if block:
                     result.extend(self.refactor_doctest(block, block_lineno,
                                                         indent, filename))
                 block = None
                 indent = None
                 result.append(line)
-        if block is not None:
+        if block:
             result.extend(self.refactor_doctest(block, block_lineno,
                                                 indent, filename))
         return "".join(result)
@@ -693,7 +693,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
             import multiprocessing
         except ImportError:
             raise MultiprocessingUnsupported
-        if self.queue is not None:
+        if self.queue:
             raise RuntimeError("already doing multiple processes")
         self.queue = multiprocessing.JoinableQueue()
         self.output_lock = multiprocessing.Lock()
@@ -715,7 +715,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
 
     def _child(self):
         task = self.queue.get()
-        while task is not None:
+        while bool(task): #is not None:
             args, kwargs = task
             try:
                 super(MultiprocessRefactoringTool, self).refactor_file(
@@ -725,7 +725,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
             task = self.queue.get()
 
     def refactor_file(self, *args, **kwargs):
-        if self.queue is not None:
+        if self.queue:
             self.queue.put((args, kwargs))
         else:
             return super(MultiprocessRefactoringTool, self).refactor_file(

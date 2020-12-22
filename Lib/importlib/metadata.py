@@ -190,7 +190,7 @@ class Distribution:
         for resolver in cls._discover_resolvers():
             dists = resolver(DistributionFinder.Context(name=name))
             dist = next(iter(dists), None)
-            if dist is not None:
+            if dist:
                 return dist
         else:
             raise PackageNotFoundError(name)

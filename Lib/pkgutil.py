@@ -91,10 +91,10 @@ def walk_packages(path=None, prefix='', onerror=None):
             try:
                 __import__(info.name)
             except ImportError:
-                if onerror is not None:
+                if onerror:
                     onerror(info.name)
             except Exception:
-                if onerror is not None:
+                if onerror:
                     onerror(info.name)
                 else:
                     raise
@@ -469,7 +469,7 @@ def get_loader(module_or_name):
     if isinstance(module_or_name, ModuleType):
         module = module_or_name
         loader = getattr(module, '__loader__', None)
-        if loader is not None:
+        if loader:
             return loader
         if getattr(module, '__spec__', None) is None:
             return None
@@ -497,7 +497,7 @@ def find_loader(fullname):
         # pkgutil previously raised ImportError
         msg = "Error while finding loader for {!r} ({}: {})"
         raise ImportError(msg.format(fullname, type(ex), ex)) from ex
-    return spec.loader if spec is not None else None
+    return spec.loader if spec else None
 
 
 def extend_path(path, name):
@@ -558,11 +558,11 @@ def extend_path(path, name):
             continue
 
         finder = get_importer(dir)
-        if finder is not None:
+        if finder:
             portions = []
             if hasattr(finder, 'find_spec'):
                 spec = finder.find_spec(final_name)
-                if spec is not None:
+                if spec:
                     portions = spec.submodule_search_locations or []
             # Is this finder PEP 420 compliant?
             elif hasattr(finder, 'find_loader'):

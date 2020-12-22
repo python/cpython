@@ -47,7 +47,7 @@ class HyperParser:
                 parser.set_code(text.get(startatindex, stopatindex)+' \n')
                 bod = parser.find_good_parse_start(
                           editwin._build_char_in_string_func(startatindex))
-                if bod is not None or startat == 1:
+                if bod or startat == 1:
                     break
             parser.set_lo(bod or 0)
         else:

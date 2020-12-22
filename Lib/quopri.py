@@ -50,7 +50,7 @@ def encode(input, output, quotetabs, header=False):
     The 'header' flag indicates whether we are encoding spaces as _ as per RFC
     1522."""
 
-    if b2a_qp is not None:
+    if b2a_qp:
         data = input.read()
         odata = b2a_qp(data, quotetabs=quotetabs, header=header)
         output.write(odata)
@@ -87,7 +87,7 @@ def encode(input, output, quotetabs, header=False):
             else:
                 outline.append(c)
         # First, write out the previous line
-        if prevline is not None:
+        if prevline:
             write(prevline)
         # Now see if we need any soft line breaks because of RFC-imposed
         # length limitations.  Then do the thisline->prevline dance.
@@ -100,11 +100,11 @@ def encode(input, output, quotetabs, header=False):
         # Write out the current line
         prevline = thisline
     # Write out the last line, without a trailing newline
-    if prevline is not None:
+    if prevline:
         write(prevline, lineEnd=stripped)
 
 def encodestring(s, quotetabs=False, header=False):
-    if b2a_qp is not None:
+    if b2a_qp:
         return b2a_qp(s, quotetabs=quotetabs, header=header)
     from io import BytesIO
     infp = BytesIO(s)
@@ -119,7 +119,7 @@ def decode(input, output, header=False):
     'input' and 'output' are binary file objects.
     If 'header' is true, decode underscore as space (per RFC 1522)."""
 
-    if a2b_qp is not None:
+    if a2b_qp:
         data = input.read()
         odata = a2b_qp(data, header=header)
         output.write(odata)
@@ -158,7 +158,7 @@ def decode(input, output, header=False):
         output.write(new)
 
 def decodestring(s, header=False):
-    if a2b_qp is not None:
+    if a2b_qp:
         return a2b_qp(s, header=header)
     from io import BytesIO
     infp = BytesIO(s)

@@ -64,7 +64,7 @@ class ZoneInfo(tzinfo):
         obj._key = key
         obj._file_path = obj._find_tzfile(key)
 
-        if obj._file_path is not None:
+        if obj._file_path:
             file_obj = open(obj._file_path, "rb")
         else:
             file_obj = _common.load_tzdata(key)
@@ -89,7 +89,7 @@ class ZoneInfo(tzinfo):
 
     @classmethod
     def clear_cache(cls, *, only_keys=None):
-        if only_keys is not None:
+        if only_keys:
             for key in only_keys:
                 cls._weak_cache.pop(key, None)
                 cls._strong_cache.pop(key, None)
@@ -191,13 +191,13 @@ class ZoneInfo(tzinfo):
         )
 
     def __str__(self):
-        if self._key is not None:
+        if self._key:
             return f"{self._key}"
         else:
             return repr(self)
 
     def __repr__(self):
-        if self._key is not None:
+        if self._key:
             return f"{self.__class__.__name__}(key={self._key!r})"
         else:
             return f"{self.__class__.__name__}.from_file({self._file_repr})"
@@ -258,7 +258,7 @@ class ZoneInfo(tzinfo):
                 self._tti_before = None
 
         # Set the "fallback" time zone
-        if tz_str is not None and tz_str != b"":
+        if tz_str:
             self._tz_after = _parse_tz_str(tz_str.decode())
         else:
             if not self._ttinfos and not _ttinfo_list:
@@ -447,8 +447,8 @@ class _TZStr:
 
         # These are assertions because the constructor should only be called
         # by functions that would fail before passing start or end
-        assert start is not None, "No transition start specified"
-        assert end is not None, "No transition end specified"
+        assert bool(start), "No transition start specified"
+        assert bool(end), "No transition end specified"
 
         self.get_trans_info = self._get_trans_info
         self.get_trans_info_fromutc = self._get_trans_info_fromutc
@@ -667,7 +667,7 @@ def _parse_tz_str(tz_str):
     else:
         std_offset = 0
 
-    if dst_abbr is not None:
+    if dst_abbr:
         if dst_offset := m.group("dstoff"):
             try:
                 dst_offset = _parse_tz_delta(dst_offset)
@@ -731,10 +731,10 @@ def _parse_tz_delta(tz_delta):
     )
     # Anything passed to this function should already have hit an equivalent
     # regular expression to find the section to parse.
-    assert match is not None, tz_delta
+    assert bool(match), tz_delta
 
     h, m, s = (
-        int(v) if v is not None else 0
+        int(v) if v else 0
         for v in map(match.group, ("h", "m", "s"))
     )
 

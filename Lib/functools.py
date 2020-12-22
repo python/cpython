@@ -321,8 +321,8 @@ class partial:
             raise TypeError(f"expected 4 items in state, got {len(state)}")
         func, args, kwds, namespace = state
         if (not callable(func) or not isinstance(args, tuple) or
-           (kwds is not None and not isinstance(kwds, dict)) or
-           (namespace is not None and not isinstance(namespace, dict))):
+           (kwds and not isinstance(kwds, dict)) or
+           (namespace and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
         args = tuple(args) # just in case it's a subclass
@@ -393,7 +393,7 @@ class partialmethod(object):
     def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
-        if get is not None:
+        if get:
             new_func = get(obj, cls)
             if new_func is not self.func:
                 # Assume __get__ returning something new indicates the
@@ -511,7 +511,7 @@ def lru_cache(maxsize=128, typed=False):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
-    elif maxsize is not None:
+    elif maxsize:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
 
@@ -569,7 +569,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             key = make_key(args, kwds, typed)
             with lock:
                 link = cache_get(key)
-                if link is not None:
+                if link:
                     # Move the link to the front of the circular queue
                     link_prev, link_next, _key, result = link
                     link_prev[NEXT] = link_next
@@ -783,7 +783,7 @@ def _find_impl(cls, registry):
     mro = _compose_mro(cls, registry.keys())
     match = None
     for t in mro:
-        if match is not None:
+        if match:
             # If *match* is an implicit ABC but there is another unrelated,
             # equally matching implicit ABC, refuse the temptation to guess.
             if (t in registry and t not in cls.__mro__
@@ -822,7 +822,7 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
-        if cache_token is not None:
+        if cache_token:
             current_token = get_cache_token()
             if cache_token != current_token:
                 dispatch_cache.clear()

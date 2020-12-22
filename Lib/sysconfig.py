@@ -265,7 +265,7 @@ def _parse_makefile(filename, vars=None):
                 m = m1 if m1.start() < m2.start() else m2
             else:
                 m = m1 if m1 else m2
-            if m is not None:
+            if m:
                 n = m.group(1)
                 found = True
                 if n in done:
@@ -556,7 +556,7 @@ def get_config_vars(*args):
             _init_posix(_CONFIG_VARS)
         # For backward compatibility, see issue19555
         SO = _CONFIG_VARS.get('EXT_SUFFIX')
-        if SO is not None:
+        if SO:
             _CONFIG_VARS['SO'] = SO
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in

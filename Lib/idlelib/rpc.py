@@ -131,7 +131,7 @@ class SocketIO(object):
 
     def __init__(self, sock, objtable=None, debugging=None):
         self.sockthread = threading.current_thread()
-        if debugging is not None:
+        if debugging:
             self.debugging = debugging
         self.sock = sock
         if objtable is None:
@@ -143,7 +143,7 @@ class SocketIO(object):
     def close(self):
         sock = self.sock
         self.sock = None
-        if sock is not None:
+        if sock:
             sock.close()
 
     def exithook(self):
@@ -289,7 +289,7 @@ class SocketIO(object):
 
     def getresponse(self, myseq, wait):
         response = self._getresponse(myseq, wait)
-        if response is not None:
+        if response:
             how, what = response
             if how == "OK":
                 response = how, self._proxify(what)
@@ -309,7 +309,7 @@ class SocketIO(object):
             # this thread does all reading of requests or responses
             while 1:
                 response = self.pollresponse(myseq, wait)
-                if response is not None:
+                if response:
                     return response
         else:
             # wait for notification from socket handling thread
@@ -460,7 +460,7 @@ class SocketIO(object):
                 cv = self.cvars.get(seq, None)
                 # response involving unknown sequence number is discarded,
                 # probably intended for prior incarnation of server
-                if cv is not None:
+                if cv:
                     cv.acquire()
                     self.responses[seq] = resq
                     cv.notify()

@@ -91,9 +91,9 @@ class Generator:
         # has already been converted (to bytes in the BytesGenerator) and
         # inserted into a temporary buffer.
         policy = msg.policy if self.policy is None else self.policy
-        if linesep is not None:
+        if linesep:
             policy = policy.clone(linesep=linesep)
-        if self.maxheaderlen is not None:
+        if self.maxheaderlen:
             policy = policy.clone(max_line_length=self.maxheaderlen)
         self._NL = policy.linesep
         self._encoded_NL = self._encode(self._NL)
@@ -239,7 +239,7 @@ class Generator:
             raise TypeError('string payload expected: %s' % type(payload))
         if _has_surrogates(msg._payload):
             charset = msg.get_param('charset')
-            if charset is not None:
+            if charset:
                 # XXX: This copy stuff is an ugly hack to avoid modifying the
                 # existing message.
                 msg = deepcopy(msg)
@@ -284,7 +284,7 @@ class Generator:
             boundary = self._make_boundary(alltext)
             msg.set_boundary(boundary)
         # If there's a preamble, write it out, with a trailing CRLF
-        if msg.preamble is not None:
+        if msg.preamble:
             if self._mangle_from_:
                 preamble = fcre.sub('>From ', msg.preamble)
             else:
@@ -306,7 +306,7 @@ class Generator:
             self._fp.write(body_part)
         # close-delimiter transport-padding
         self.write(self._NL + '--' + boundary + '--' + self._NL)
-        if msg.epilogue is not None:
+        if msg.epilogue:
             if self._mangle_from_:
                 epilogue = fcre.sub('>From ', msg.epilogue)
             else:

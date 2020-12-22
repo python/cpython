@@ -80,7 +80,7 @@ class CodeContext:
 
     def __del__(self):
         "Cancel scheduled events."
-        if self.t1 is not None:
+        if self.t1:
             try:
                 self.text.after_cancel(self.t1)
             except tkinter.TclError:  # pragma: no cover
@@ -236,22 +236,22 @@ class CodeContext:
 
     def timer_event(self):
         "Event on editor text widget triggered every UPDATEINTERVAL ms."
-        if self.context is not None:
+        if self.context:
             self.update_code_context()
             self.t1 = self.text.after(self.UPDATEINTERVAL, self.timer_event)
 
     def update_font(self):
-        if self.context is not None:
+        if self.context:
             font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
             self.context['font'] = font
 
     def update_highlight_colors(self):
-        if self.context is not None:
+        if self.context:
             colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'context')
             self.context['background'] = colors['background']
             self.context['foreground'] = colors['foreground']
 
-        if self.cell00 is not None:
+        if self.cell00:
             line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
                                                        'linenumber')
             self.cell00.config(bg=line_number_colors['background'])

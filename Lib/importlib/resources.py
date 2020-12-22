@@ -39,7 +39,7 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
     resource = _common.normalize_path(resource)
     package = _common.get_package(package)
     reader = _common.get_resource_reader(package)
-    if reader is not None:
+    if reader:
         return reader.open_resource(resource)
     absolute_package_path = os.path.abspath(
         package.__spec__.origin or 'non-existent file')
@@ -135,7 +135,7 @@ def is_resource(package: Package, name: str) -> bool:
     package = _common.get_package(package)
     _common.normalize_path(name)
     reader = _common.get_resource_reader(package)
-    if reader is not None:
+    if reader:
         return reader.is_resource(name)
     package_contents = set(contents(package))
     if name not in package_contents:
@@ -152,7 +152,7 @@ def contents(package: Package) -> Iterable[str]:
     """
     package = _common.get_package(package)
     reader = _common.get_resource_reader(package)
-    if reader is not None:
+    if reader:
         return _ensure_sequence(reader.contents())
     # Is the package a namespace package?  By definition, namespace packages
     # cannot have resources.

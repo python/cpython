@@ -179,7 +179,7 @@ def validator(application):
         environ['wsgi.errors'] = ErrorWrapper(environ['wsgi.errors'])
 
         iterator = application(environ, start_response_wrapper)
-        assert_(iterator is not None and iterator != False,
+        assert_(bool(iterator) and iterator != False,
             "The application must return an iterator, if only an empty list")
 
         check_iterator(iterator)
@@ -277,7 +277,7 @@ class IteratorWrapper:
         v = next(self.iterator)
         if type(v) is not bytes:
             assert_(False, "Iterator yielded non-bytestring (%r)" % (v,))
-        if self.check_start_response is not None:
+        if self.check_start_response:
             assert_(self.check_start_response,
                 "The application returns and we started iterating over its body, but start_response has not yet been called")
             self.check_start_response = None

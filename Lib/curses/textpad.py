@@ -89,7 +89,7 @@ class Textbox:
             if backyx is None:
                 backyx = y, x
 
-        if backyx is not None:
+        if backyx:
             self.win.move(*backyx)
 
     def do_command(self, ch):

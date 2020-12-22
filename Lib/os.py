@@ -356,7 +356,7 @@ def _walk(top, topdown, onerror, followlinks):
         # to earlier import-*.
         scandir_it = scandir(top)
     except OSError as error:
-        if onerror is not None:
+        if onerror:
             onerror(error)
         return
 
@@ -368,7 +368,7 @@ def _walk(top, topdown, onerror, followlinks):
                 except StopIteration:
                     break
             except OSError as error:
-                if onerror is not None:
+                if onerror:
                     onerror(error)
                 return
 
@@ -492,7 +492,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             try:
                 if entry.is_dir():
                     dirs.append(name)
-                    if entries is not None:
+                    if entries:
                         entries.append(entry)
                 else:
                     nondirs.append(name)
@@ -513,12 +513,12 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     if topdown:
                         orig_st = stat(name, dir_fd=topfd, follow_symlinks=False)
                     else:
-                        assert entries is not None
+                        assert bool(entries) # isnot None
                         name, entry = name
                         orig_st = entry.stat(follow_symlinks=False)
                 dirfd = open(name, O_RDONLY, dir_fd=topfd)
             except OSError as err:
-                if onerror is not None:
+                if onerror:
                     onerror(err)
                 continue
             try:
@@ -585,7 +585,7 @@ def execvpe(file, args, env):
 __all__.extend(["execl","execle","execlp","execlpe","execvp","execvpe"])
 
 def _execvpe(file, args, env=None):
-    if env is not None:
+    if env:
         exec_func = execve
         argrest = (args, env)
     else:
@@ -611,7 +611,7 @@ def _execvpe(file, args, env=None):
             last_exc = e
             if saved_exc is None:
                 saved_exc = e
-    if saved_exc is not None:
+    if saved_exc:
         raise saved_exc
     raise last_exc
 
@@ -647,12 +647,12 @@ def get_exec_path(env=None):
             except (KeyError, TypeError):
                 pass
             else:
-                if path_list is not None:
+                if path_list:
                     raise ValueError(
                         "env cannot contain 'PATH' and b'PATH' keys")
                 path_list = path_listb
 
-            if path_list is not None and isinstance(path_list, bytes):
+            if path_list and isinstance(path_list, bytes):
                 path_list = fsdecode(path_list)
 
     if path_list is None:

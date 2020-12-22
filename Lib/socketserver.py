@@ -280,9 +280,9 @@ class BaseServer:
         timeout = self.socket.gettimeout()
         if timeout is None:
             timeout = self.timeout
-        elif self.timeout is not None:
+        elif self.timeout:
             timeout = min(timeout, self.timeout)
-        if timeout is not None:
+        if timeout:
             deadline = time() + timeout
 
         # Wait until a request arrives or the timeout expires - the loop is
@@ -295,7 +295,7 @@ class BaseServer:
                 if ready:
                     return self._handle_request_noblock()
                 else:
-                    if timeout is not None:
+                    if timeout:
                         timeout = deadline - time()
                         if timeout < 0:
                             return self.handle_timeout()
@@ -762,7 +762,7 @@ class StreamRequestHandler(BaseRequestHandler):
 
     def setup(self):
         self.connection = self.request
-        if self.timeout is not None:
+        if self.timeout:
             self.connection.settimeout(self.timeout)
         if self.disable_nagle_algorithm:
             self.connection.setsockopt(socket.IPPROTO_TCP,

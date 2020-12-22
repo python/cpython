@@ -40,7 +40,7 @@ def get(using=None):
         with _lock:
             if _tryorder is None:
                 register_standard_browsers()
-    if using is not None:
+    if using:
         alternatives = [using]
     else:
         alternatives = _tryorder
@@ -58,9 +58,9 @@ def get(using=None):
                 command = _browsers[browser.lower()]
             except KeyError:
                 command = _synthesize(browser)
-            if command[1] is not None:
+            if command[1]:
                 return command[1]
-            elif command[0] is not None:
+            elif command[0]:
                 return command[0]()
     raise Error("could not locate runnable browser")
 

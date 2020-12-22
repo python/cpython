@@ -559,7 +559,7 @@ class Decimal(object):
             else:
                 self._sign = 0
             intpart = m.group('int')
-            if intpart is not None:
+            if intpart:
                 # finite number
                 fracpart = m.group('frac') or ''
                 exp = int(m.group('exp') or '0')
@@ -568,7 +568,7 @@ class Decimal(object):
                 self._is_special = False
             else:
                 diag = m.group('diag')
-                if diag is not None:
+                if diag:
                     # NaN
                     self._int = str(int(diag or '0')).lstrip('0')
                     if m.group('signal'):
@@ -1874,7 +1874,7 @@ class Decimal(object):
         Decimal('NaN123')
 
         """
-        if n is not None:
+        if n:
             # two-argument form: use the equivalent quantize call
             if not isinstance(n, int):
                 raise TypeError('Second argument to round should be integral')
@@ -2309,7 +2309,7 @@ class Decimal(object):
         efficiently.  It is always exact.
         """
 
-        if modulo is not None:
+        if modulo:
             return self._power_modulo(other, modulo, context)
 
         other = _convert_other(other)
@@ -2424,7 +2424,7 @@ class Decimal(object):
         # try for an exact result with precision +1
         if ans is None:
             ans = self._power_exact(other, context.prec + 1)
-            if ans is not None:
+            if ans:
                 if result_sign == 1:
                     ans = _dec_from_triple(1, ans._int, ans._exp)
                 exact = True
@@ -3784,7 +3784,7 @@ class Decimal(object):
         # round if necessary, taking rounding mode from the context
         rounding = context.rounding
         precision = spec['precision']
-        if precision is not None:
+        if precision:
             if spec['type'] in 'eE':
                 self = self._round(precision+1, rounding)
             elif spec['type'] in 'fF%':
@@ -3799,7 +3799,7 @@ class Decimal(object):
         # figure out placement of the decimal point
         leftdigits = self._exp + len(self._int)
         if spec['type'] in 'eE':
-            if not self and precision is not None:
+            if not self and precision:
                 dotplace = 1 - precision
             else:
                 dotplace = 1
@@ -3895,12 +3895,12 @@ class Context(object):
         except NameError:
             pass
 
-        self.prec = prec if prec is not None else dc.prec
-        self.rounding = rounding if rounding is not None else dc.rounding
-        self.Emin = Emin if Emin is not None else dc.Emin
-        self.Emax = Emax if Emax is not None else dc.Emax
-        self.capitals = capitals if capitals is not None else dc.capitals
-        self.clamp = clamp if clamp is not None else dc.clamp
+        self.prec = prec if prec else dc.prec
+        self.rounding = rounding if rounding else dc.rounding
+        self.Emin = Emin if Emin else dc.Emin
+        self.Emax = Emax if Emax else dc.Emax
+        self.capitals = capitals if capitals else dc.capitals
+        self.clamp = clamp if clamp else dc.clamp
 
         if _ignored_flags is None:
             self._ignored_flags = []
@@ -6200,12 +6200,12 @@ def _parse_format_specifier(format_spec, _localeconv=None):
     # is requested, the fill and align fields should be absent.
     fill = format_dict['fill']
     align = format_dict['align']
-    format_dict['zeropad'] = (format_dict['zeropad'] is not None)
+    format_dict['zeropad'] = (bool(format_dict['zeropad']))
     if format_dict['zeropad']:
-        if fill is not None:
+        if fill:
             raise ValueError("Fill character conflicts with '0'"
                              " in format specifier: " + format_spec)
-        if align is not None:
+        if align:
             raise ValueError("Alignment conflicts with '0' in "
                              "format specifier: " + format_spec)
     format_dict['fill'] = fill or ' '
@@ -6220,7 +6220,7 @@ def _parse_format_specifier(format_spec, _localeconv=None):
 
     # minimumwidth defaults to 0; precision remains None if not given
     format_dict['minimumwidth'] = int(format_dict['minimumwidth'] or '0')
-    if format_dict['precision'] is not None:
+    if format_dict['precision']:
         format_dict['precision'] = int(format_dict['precision'])
 
     # if format type is 'g' or 'G' then a precision of 0 makes little
@@ -6236,7 +6236,7 @@ def _parse_format_specifier(format_spec, _localeconv=None):
         format_dict['type'] = 'g'
         if _localeconv is None:
             _localeconv = _locale.localeconv()
-        if format_dict['thousands_sep'] is not None:
+        if format_dict['thousands_sep']:
             raise ValueError("Explicit thousands separator conflicts with "
                              "'n' type in format specifier: " + format_spec)
         format_dict['thousands_sep'] = _localeconv['thousands_sep']

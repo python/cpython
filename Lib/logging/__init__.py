@@ -132,10 +132,10 @@ def getLevelName(level):
     """
     # See Issues #22386, #27937 and #29220 for why it's this way
     result = _levelToName.get(level)
-    if result is not None:
+    if result:
         return result
     result = _nameToLevel.get(level)
-    if result is not None:
+    if result:
         return result
     return "Level %s" % level
 
@@ -334,7 +334,7 @@ class LogRecord(object):
         else:
             self.processName = 'MainProcess'
             mp = sys.modules.get('multiprocessing')
-            if mp is not None:
+            if mp:
                 # Errors may occur if multiprocessing has not finished loading
                 # yet - e.g. if a custom import hook causes third-party code
                 # to run when multiprocessing calls import. See issue 8200
@@ -1531,7 +1531,7 @@ class Logger(Filterer):
         f = currentframe()
         #On some versions of IronPython, currentframe() returns None if
         #IronPython isn't run with -X:Frames.
-        if f is not None:
+        if f:
             f = f.f_back
         orig_f = f
         while f and stacklevel > 1:
@@ -1567,7 +1567,7 @@ class Logger(Filterer):
         """
         rv = _logRecordFactory(name, level, fn, lno, msg, args, exc_info, func,
                              sinfo)
-        if extra is not None:
+        if extra:
             for key in extra:
                 if (key in ["message", "asctime"]) or (key in rv.__dict__):
                     raise KeyError("Attempt to overwrite %r in LogRecord" % key)
@@ -2030,7 +2030,7 @@ def basicConfig(**kwargs):
                     h.setFormatter(fmt)
                 root.addHandler(h)
             level = kwargs.pop("level", None)
-            if level is not None:
+            if level:
                 root.setLevel(level)
             if kwargs:
                 keys = ', '.join(kwargs.keys())
@@ -2209,8 +2209,8 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
     it will call warnings.formatwarning and will log the resulting string to a
     warnings logger named "py.warnings" with level logging.WARNING.
     """
-    if file is not None:
-        if _warnings_showwarning is not None:
+    if file:
+        if _warnings_showwarning:
             _warnings_showwarning(message, category, filename, lineno, file, line)
     else:
         s = warnings.formatwarning(message, category, filename, lineno, line)
@@ -2231,6 +2231,6 @@ def captureWarnings(capture):
             _warnings_showwarning = warnings.showwarning
             warnings.showwarning = _showwarning
     else:
-        if _warnings_showwarning is not None:
+        if _warnings_showwarning:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None

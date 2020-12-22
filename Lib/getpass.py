@@ -64,7 +64,7 @@ def unix_getpass(prompt='Password: ', stream=None):
             if not stream:
                 stream = sys.stderr
 
-        if fd is not None:
+        if fd:
             try:
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
@@ -79,7 +79,7 @@ def unix_getpass(prompt='Password: ', stream=None):
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
             except termios.error:
-                if passwd is not None:
+                if passwd:
                     # _raw_input succeeded.  The final tcsetattr failed.  Reraise
                     # instead of leaving the terminal in an unknown state.
                     raise

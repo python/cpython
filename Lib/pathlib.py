@@ -195,7 +195,7 @@ class _WindowsFlavour(_Flavour):
         if not s:
             return os.getcwd()
         previous_s = None
-        if _getfinalpathname is not None:
+        if _getfinalpathname:
             if strict:
                 return self._ext_to_normal(_getfinalpathname(s))
             else:
@@ -336,7 +336,7 @@ class _PosixFlavour(_Flavour):
                 if newpath in seen:
                     # Already seen this path
                     path = seen[newpath]
-                    if path is not None:
+                    if path:
                         # use cached value
                         continue
                     # The symlink is not resolved, so we must have a symlink loop.
@@ -1082,7 +1082,7 @@ class Path(PurePath):
               # Private non-constructor arguments
               template=None,
               ):
-        if template is not None:
+        if template:
             self._accessor = template._accessor
         else:
             self._accessor = _normal_accessor

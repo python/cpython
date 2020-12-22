@@ -129,7 +129,7 @@ class tixCommand:
         of file selection dialog widget is desired. Possible options are
         tix FileSelectDialog or tixExFileSelectDialog.
         """
-        if dlgclass is not None:
+        if dlgclass:
             return self.tk.call('tix', 'filedialog', dlgclass)
         else:
             return self.tk.call('tix', 'filedialog')
@@ -191,7 +191,7 @@ class tixCommand:
         schemes and font sets using the tix config command.  Instead, the
         tix_resetoptions command must be used.
         """
-        if newScmPrio is not None:
+        if newScmPrio:
             return self.tk.call('tix', 'resetoptions', newScheme, newFontSet, newScmPrio)
         else:
             return self.tk.call('tix', 'resetoptions', newScheme, newFontSet)
@@ -203,7 +203,7 @@ class Tk(tkinter.Tk, tixCommand):
         tkinter.Tk.__init__(self, screenName, baseName, className)
         tixlib = os.environ.get('TIX_LIBRARY')
         self.tk.eval('global auto_path; lappend auto_path [file dir [info nameof]]')
-        if tixlib is not None:
+        if tixlib:
             self.tk.eval('global auto_path; lappend auto_path {%s}' % tixlib)
             self.tk.eval('global tcl_pkgPath; lappend tcl_pkgPath {%s}' % tixlib)
         # Load Tix - this should work dynamically or statically
@@ -1876,7 +1876,7 @@ class Grid(TixWidget, XView, YView):
 
     def set(self, x, y, itemtype=None, **kw):
         args= self._options(self.cnf, kw)
-        if itemtype is not None:
+        if itemtype:
             args= ('-itemtype', itemtype) + args
         self.tk.call(self, 'set', x, y, *args)
 

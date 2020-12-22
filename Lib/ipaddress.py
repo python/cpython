@@ -294,7 +294,7 @@ def _collapse_addresses_internal(addresses):
     # Then iterate over resulting networks, skipping subsumed subnets
     last = None
     for net in sorted(subnets.values()):
-        if last is not None:
+        if last:
             # Since they are sorted, last.network_address <= net.network_address
             # is a given.
             if last.broadcast_address >= net.broadcast_address:
@@ -958,7 +958,7 @@ class _BaseNetwork(_IPAddressBase):
             yield self
             return
 
-        if new_prefix is not None:
+        if new_prefix:
             if new_prefix < self._prefixlen:
                 raise ValueError('new prefix must be longer')
             if prefixlen_diff != 1:
@@ -1005,7 +1005,7 @@ class _BaseNetwork(_IPAddressBase):
         if self._prefixlen == 0:
             return self
 
-        if new_prefix is not None:
+        if new_prefix:
             if new_prefix > self._prefixlen:
                 raise ValueError('new prefix must be shorter')
             if prefixlen_diff != 1:
@@ -1647,7 +1647,7 @@ class _BaseV6:
         skip_index = None
         for i in range(1, len(parts) - 1):
             if not parts[i]:
-                if skip_index is not None:
+                if skip_index:
                     # Can't have more than one '::'
                     msg = "At most one '::' permitted in %r" % ip_str
                     raise AddressValueError(msg)
@@ -1655,7 +1655,7 @@ class _BaseV6:
 
         # parts_hi is the number of parts to copy from above/before the '::'
         # parts_lo is the number of parts to copy from below/after the '::'
-        if skip_index is not None:
+        if skip_index:
             # If we found a '::', then check if it also covers the endpoints.
             parts_hi = skip_index
             parts_lo = len(parts) - skip_index - 1

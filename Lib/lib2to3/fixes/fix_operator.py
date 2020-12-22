@@ -42,7 +42,7 @@ class FixOperator(fixer_base.BaseFix):
 
     def transform(self, node, results):
         method = self._check_method(node, results)
-        if method is not None:
+        if method:
             return method(node, results)
 
     @invocation("operator.contains(%s)")

@@ -513,11 +513,11 @@ class TurtleScreenBase(object):
             cl.append(x * self.xscale)
             cl.append(-y * self.yscale)
         self.cv.coords(polyitem, *cl)
-        if fill is not None:
+        if fill:
             self.cv.itemconfigure(polyitem, fill=fill)
-        if outline is not None:
+        if outline:
             self.cv.itemconfigure(polyitem, outline=outline)
-        if width is not None:
+        if width:
             self.cv.itemconfigure(polyitem, width=width)
         if top:
             self.cv.tag_raise(polyitem)
@@ -538,15 +538,15 @@ class TurtleScreenBase(object):
         will be put on top of the canvas' displaylist so it
         will not be covered by other items.
         """
-        if coordlist is not None:
+        if coordlist:
             cl = []
             for x, y in coordlist:
                 cl.append(x * self.xscale)
                 cl.append(-y * self.yscale)
             self.cv.coords(lineitem, *cl)
-        if fill is not None:
+        if fill:
             self.cv.itemconfigure(lineitem, fill=fill)
-        if width is not None:
+        if width:
             self.cv.itemconfigure(lineitem, width=width)
         if top:
             self.cv.tag_raise(lineitem)
@@ -579,7 +579,7 @@ class TurtleScreenBase(object):
     def _bgcolor(self, color=None):
         """Set canvas' backgroundcolor if color is not None,
         else return backgroundcolor."""
-        if color is not None:
+        if color:
             self.cv.config(bg = color)
             self._update()
         else:
@@ -781,9 +781,9 @@ class TurtleScreenBase(object):
             return self.canvwidth, self.canvheight
         if canvwidth is canvheight is bg is None:
             return self.cv.canvwidth, self.cv.canvheight
-        if canvwidth is not None:
+        if canvwidth:
             self.canvwidth = canvwidth
-        if canvheight is not None:
+        if canvheight:
             self.canvheight = canvheight
         self.cv.reset(canvwidth, canvheight, bg)
 
@@ -1239,7 +1239,7 @@ class TurtleScreen(TurtleScreenBase):
         else:
             color = None
         color = self._bgcolor(color)
-        if color is not None:
+        if color:
             color = self._color(color)
         return color
 
@@ -1266,7 +1266,7 @@ class TurtleScreen(TurtleScreenBase):
             return self._tracing
         self._tracing = int(n)
         self._updatecounter = 0
-        if delay is not None:
+        if delay:
             self._delayvalue = int(delay)
         if self._tracing:
             self.update()
@@ -1422,7 +1422,7 @@ class TurtleScreen(TurtleScreenBase):
         if fun is None:
             if key in self._keys:
                 self._keys.remove(key)
-        elif key is not None and key not in self._keys:
+        elif key and key not in self._keys:
             self._keys.append(key)
         self._onkeypress(fun, key)
 
@@ -1848,7 +1848,7 @@ class TNavigator(object):
         >>> turtle.distance(pen)
         77.0
         """
-        if y is not None:
+        if y:
             pos = Vec2D(x, y)
         if isinstance(x, Vec2D):
             pos = x
@@ -1880,7 +1880,7 @@ class TNavigator(object):
         >>> turtle.towards(0,0)
         225.0
         """
-        if y is not None:
+        if y:
             pos = Vec2D(x, y)
         if isinstance(x, Vec2D):
             pos = x
@@ -2804,12 +2804,12 @@ class RawTurtle(TPen, TNavigator):
             return stretch_wid, stretch_len, self._outlinewidth
         if stretch_wid == 0 or stretch_len == 0:
             raise TurtleGraphicsError("stretch_wid/stretch_len must not be zero")
-        if stretch_wid is not None:
+        if stretch_wid:
             if stretch_len is None:
                 stretchfactor = stretch_wid, stretch_wid
             else:
                 stretchfactor = stretch_wid, stretch_len
-        elif stretch_len is not None:
+        elif stretch_len:
             stretchfactor = self._stretchfactor[0], stretch_len
         else:
             stretchfactor = self._stretchfactor
@@ -2933,10 +2933,10 @@ class RawTurtle(TPen, TNavigator):
         if t11 is t12 is t21 is t22 is None:
             return self._shapetrafo
         m11, m12, m21, m22 = self._shapetrafo
-        if t11 is not None: m11 = t11
-        if t12 is not None: m12 = t12
-        if t21 is not None: m21 = t21
-        if t22 is not None: m22 = t22
+        if t11: m11 = t11
+        if t12: m12 = t12
+        if t21: m21 = t21
+        if t22: m22 = t22
         if t11 * t22 - t12 * t21 == 0:
             raise TurtleGraphicsError("Bad shape transform matrix: must not be singular")
         self._shapetrafo = (m11, m12, m21, m22)
@@ -3256,7 +3256,7 @@ class RawTurtle(TPen, TNavigator):
             if self._fillpath == []:
                 self._fillpath = None
                 print("Unwahrscheinlich in _undogoto!")
-            elif self._fillpath is not None:
+            elif self._fillpath:
                 self._fillpath.pop()
         self._update() #count=True)
 
@@ -3473,7 +3473,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.register_shape("myFavouriteShape", p)
         """
         ## check if there is any poly?
-        if self._poly is not None:
+        if self._poly:
             return tuple(self._poly)
 
     def getscreen(self):
@@ -3744,7 +3744,7 @@ class _Screen(TurtleScreen):
         Example (for a Screen instance named screen):
         >>> screen.title("Welcome to the turtle-zoo!")
         """
-        if _Screen._root is not None:
+        if _Screen._root:
             _Screen._root.title(titlestring)
         _Screen._title = titlestring
 
@@ -3900,10 +3900,10 @@ def getmethparlist(ob):
     defaults = ["=%r" % (value,) for value in defaults]
     defaults = [""] * (len(realArgs)-len(defaults)) + defaults
     items1 = [arg + dflt for arg, dflt in zip(realArgs, defaults)]
-    if varargs is not None:
+    if varargs:
         items1.append("*" + varargs)
         items2.append("*" + varargs)
-    if varkw is not None:
+    if varkw:
         items1.append("**" + varkw)
         items2.append("**" + varkw)
     defText = ", ".join(items1)

@@ -192,7 +192,7 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
     # convert UTC time tuple to seconds since epoch (not timezone-adjusted)
     t = _timegm((yr, mon, day, hr, min, sec, tz))
 
-    if t is not None:
+    if t:
         # adjust time using timezone string, to get absolute time since epoch
         if tz is None:
             tz = "UTC"
@@ -279,7 +279,7 @@ def http2time(text):
 
     # loose regexp parse
     m = LOOSE_HTTP_DATE_RE.search(text)
-    if m is not None:
+    if m:
         day, mon, yr, hr, min, sec, tz = m.groups()
     else:
         return None  # bad format
@@ -324,7 +324,7 @@ def iso2time(text):
 
     # loose regexp parse
     m = ISO_DATE_RE.search(text)
-    if m is not None:
+    if m:
         # XXX there's an extra bit of the timezone I'm ignoring here: is
         #   this the right thing to do?
         yr, mon, day, hr, min, sec, tz, _ = m.groups()
@@ -448,7 +448,7 @@ def join_header_words(lists):
     for pairs in lists:
         attr = []
         for k, v in pairs:
-            if v is not None:
+            if v:
                 if not re.search(r"^\w+$", v):
                     v = HEADER_JOIN_ESCAPE_RE.sub(r"\\\1", v)  # escape " and \
                     v = '"%s"' % v
@@ -515,12 +515,12 @@ def parse_ns_headers(ns_headers):
 
                 if key == "version":
                     # This is an RFC 2109 cookie.
-                    if val is not None:
+                    if val:
                         val = strip_quotes(val)
                     version_set = True
                 elif key == "expires":
                     # convert expires date to seconds since epoch
-                    if val is not None:
+                    if val:
                         val = http2time(strip_quotes(val))  # None if invalid
             pairs.append((key, val))
 
@@ -772,8 +772,8 @@ class Cookie:
                  rfc2109=False,
                  ):
 
-        if version is not None: version = int(version)
-        if expires is not None: expires = int(float(expires))
+        if version: version = int(version)
+        if expires: expires = int(float(expires))
         if port is None and port_specified is True:
             raise ValueError("if port is None, port_specified must be false")
 
@@ -810,7 +810,7 @@ class Cookie:
 
     def is_expired(self, now=None):
         if now is None: now = time.time()
-        if (self.expires is not None) and (self.expires <= now):
+        if (self.expires) and (self.expires <= now):
             return True
         return False
 
@@ -818,7 +818,7 @@ class Cookie:
         if self.port is None: p = ""
         else: p = ":"+self.port
         limit = self.domain + p + self.path
-        if self.value is not None:
+        if self.value:
             namevalue = "%s=%s" % (self.name, self.value)
         else:
             namevalue = self.name
@@ -908,12 +908,12 @@ class DefaultCookiePolicy(CookiePolicy):
         self.strict_ns_set_path = strict_ns_set_path
         self.secure_protocols = secure_protocols
 
-        if blocked_domains is not None:
+        if blocked_domains:
             self._blocked_domains = tuple(blocked_domains)
         else:
             self._blocked_domains = ()
 
-        if allowed_domains is not None:
+        if allowed_domains:
             allowed_domains = tuple(allowed_domains)
         self._allowed_domains = allowed_domains
 
@@ -935,7 +935,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return self._allowed_domains
     def set_allowed_domains(self, allowed_domains):
         """Set the sequence of allowed domains, or None."""
-        if allowed_domains is not None:
+        if allowed_domains:
             allowed_domains = tuple(allowed_domains)
         self._allowed_domains = allowed_domains
 
@@ -956,7 +956,7 @@ class DefaultCookiePolicy(CookiePolicy):
         """
         _debug(" - checking cookie %s=%s", cookie.name, cookie.value)
 
-        assert cookie.name is not None
+        assert bool(cookie.name) #isnot None
 
         for n in "version", "verifiability", "name", "path", "domain", "port":
             fn_name = "set_ok_"+n
@@ -1330,8 +1330,7 @@ class CookieJar:
             # quote cookie value if necessary
             # (not for Netscape protocol, which already has any quotes
             #  intact, due to the poorly-specified Netscape Cookie: syntax)
-            if ((cookie.value is not None) and
-                self.non_word_re.search(cookie.value) and version > 0):
+            if (cookie.value and self.non_word_re.search(cookie.value) and version > 0):
                 value = self.quote_re.sub(r"\\\1", cookie.value)
             else:
                 value = cookie.value
@@ -1350,7 +1349,7 @@ class CookieJar:
                         domain.startswith(".")):
                         domain = domain[1:]
                     attrs.append('$Domain="%s"' % domain)
-                if cookie.port is not None:
+                if cookie.port:
                     p = "$Port"
                     if cookie.port_specified:
                         p = p + ('="%s"' % cookie.port)
@@ -1500,7 +1499,7 @@ class CookieJar:
 
         # set the easy defaults
         version = standard.get("version", None)
-        if version is not None:
+        if version:
             try:
                 version = int(version)
             except ValueError:
@@ -1706,17 +1705,17 @@ class CookieJar:
         Raises KeyError if no matching cookie exists.
 
         """
-        if name is not None:
+        if name:
             if (domain is None) or (path is None):
                 raise ValueError(
                     "domain and path must be given to remove a cookie by name")
             del self._cookies[domain][path][name]
-        elif path is not None:
+        elif path:
             if domain is None:
                 raise ValueError(
                     "domain must be given to remove cookies by path")
             del self._cookies[domain][path]
-        elif domain is not None:
+        elif domain:
             del self._cookies[domain]
         else:
             self._cookies = {}
@@ -1788,7 +1787,7 @@ class FileCookieJar(CookieJar):
 
         """
         CookieJar.__init__(self, policy)
-        if filename is not None:
+        if filename:
             filename = os.fspath(filename)
         self.filename = filename
         self.delayload = bool(delayload)
@@ -1800,7 +1799,7 @@ class FileCookieJar(CookieJar):
     def load(self, filename=None, ignore_discard=False, ignore_expires=False):
         """Load cookies from a file."""
         if filename is None:
-            if self.filename is not None: filename = self.filename
+            if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
         with open(filename) as f:
@@ -1815,7 +1814,7 @@ class FileCookieJar(CookieJar):
 
         """
         if filename is None:
-            if self.filename is not None: filename = self.filename
+            if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
         self._cookies_lock.acquire()
@@ -1842,7 +1841,7 @@ def lwp_cookie_str(cookie):
     h = [(cookie.name, cookie.value),
          ("path", cookie.path),
          ("domain", cookie.domain)]
-    if cookie.port is not None: h.append(("port", cookie.port))
+    if cookie.port: h.append(("port", cookie.port))
     if cookie.path_specified: h.append(("path_spec", None))
     if cookie.port_specified: h.append(("port_spec", None))
     if cookie.domain_initial_dot: h.append(("domain_dot", None))
@@ -1892,7 +1891,7 @@ class LWPCookieJar(FileCookieJar):
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
         if filename is None:
-            if self.filename is not None: filename = self.filename
+            if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
         with open(filename, "w") as f:
@@ -1934,7 +1933,7 @@ class LWPCookieJar(FileCookieJar):
                     for k in boolean_attrs:
                         standard[k] = False
                     for k, v in data[1:]:
-                        if k is not None:
+                        if k:
                             lc = k.lower()
                         else:
                             lc = None
@@ -1952,7 +1951,7 @@ class LWPCookieJar(FileCookieJar):
                     h = standard.get
                     expires = h("expires")
                     discard = h("discard")
-                    if expires is not None:
+                    if expires:
                         expires = iso2time(expires)
                     if expires is None:
                         discard = True
@@ -2088,7 +2087,7 @@ class MozillaCookieJar(FileCookieJar):
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
         if filename is None:
-            if self.filename is not None: filename = self.filename
+            if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
         with open(filename, "w") as f:
@@ -2104,7 +2103,7 @@ class MozillaCookieJar(FileCookieJar):
                 else: secure = "FALSE"
                 if domain.startswith("."): initial_dot = "TRUE"
                 else: initial_dot = "FALSE"
-                if cookie.expires is not None:
+                if cookie.expires:
                     expires = str(cookie.expires)
                 else:
                     expires = ""

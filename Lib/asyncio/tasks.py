@@ -62,7 +62,7 @@ def all_tasks(loop=None):
 
 
 def _set_task_name(task, name):
-    if name is not None:
+    if name:
         try:
             set_name = task.set_name
         except AttributeError:
@@ -201,7 +201,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._log_traceback = False
         if self.done():
             return False
-        if self._fut_waiter is not None:
+        if self._fut_waiter:
             if self._fut_waiter.cancel(msg=msg):
                 # Leave self._fut_waiter; it may be a Task that
                 # catches and ignores the cancellation so we may have
@@ -250,7 +250,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             super().set_exception(exc)
         else:
             blocking = getattr(result, '_asyncio_future_blocking', None)
-            if blocking is not None:
+            if blocking:
                 # Yielded Future must come from Future.__iter__().
                 if futures._get_loop(result) is not self._loop:
                     new_exc = RuntimeError(
@@ -469,7 +469,7 @@ async def _wait(fs, timeout, return_when, loop):
     assert fs, 'Set of Futures is empty.'
     waiter = loop.create_future()
     timeout_handle = None
-    if timeout is not None:
+    if timeout:
         timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
     counter = len(fs)
 
@@ -478,9 +478,8 @@ async def _wait(fs, timeout, return_when, loop):
         counter -= 1
         if (counter <= 0 or
             return_when == FIRST_COMPLETED or
-            return_when == FIRST_EXCEPTION and (not f.cancelled() and
-                                                f.exception() is not None)):
-            if timeout_handle is not None:
+            return_when == FIRST_EXCEPTION and (not f.cancelled() and bool(f.exception()))):
+            if timeout_handle:
                 timeout_handle.cancel()
             if not waiter.done():
                 waiter.set_result(None)
@@ -491,7 +490,7 @@ async def _wait(fs, timeout, return_when, loop):
     try:
         await waiter
     finally:
-        if timeout_handle is not None:
+        if timeout_handle:
             timeout_handle.cancel()
         for f in fs:
             f.remove_done_callback(_on_completion)
@@ -561,7 +560,7 @@ def as_completed(fs, *, timeout=None):
             return  # _on_timeout() was here first.
         todo.remove(f)
         done.put_nowait(f)
-        if not todo and timeout_handle is not None:
+        if not todo and timeout_handle:
             timeout_handle.cancel()
 
     async def _wait_for_one():
@@ -573,7 +572,7 @@ def as_completed(fs, *, timeout=None):
 
     for f in todo:
         f.add_done_callback(_on_completion)
-    if todo and timeout is not None:
+    if todo and timeout:
         timeout_handle = loop.call_later(timeout, _on_timeout)
     for _ in range(len(todo)):
         yield _wait_for_one()
@@ -621,7 +620,7 @@ def ensure_future(coro_or_future, *, loop=None):
             del task._source_traceback[-1]
         return task
     elif futures.isfuture(coro_or_future):
-        if loop is not None and loop is not futures._get_loop(coro_or_future):
+        if loop and loop is not futures._get_loop(coro_or_future):
             raise ValueError('The future belongs to a different loop than '
                              'the one specified as the loop argument')
         return coro_or_future
@@ -728,7 +727,7 @@ def gather(*coros_or_futures, return_exceptions=False):
                 return
             else:
                 exc = fut.exception()
-                if exc is not None:
+                if exc:
                     outer.set_exception(exc)
                     return
 
@@ -838,7 +837,7 @@ def shield(arg):
             outer.cancel()
         else:
             exc = inner.exception()
-            if exc is not None:
+            if exc:
                 outer.set_exception(exc)
             else:
                 outer.set_result(inner.result())
@@ -891,7 +890,7 @@ def _register_task(task):
 
 def _enter_task(loop, task):
     current_task = _current_tasks.get(loop)
-    if current_task is not None:
+    if current_task:
         raise RuntimeError(f"Cannot enter into task {task!r} while another "
                            f"task {current_task!r} is being executed.")
     _current_tasks[loop] = task

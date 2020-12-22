@@ -453,7 +453,7 @@ def classify_class_attrs(cls):
                             continue
                         if srch_obj is get_obj:
                             last_cls = srch_cls
-                    if last_cls is not None:
+                    if last_cls:
                         homecls = last_cls
         for base in all_bases:
             if name in base.__dict__:
@@ -465,7 +465,7 @@ def classify_class_attrs(cls):
             # unable to locate the attribute anywhere, most likely due to
             # buggy custom __dir__; discard and move on
             continue
-        obj = get_obj if get_obj is not None else dict_obj
+        obj = get_obj if get_obj else dict_obj
         # Classify the object or its descriptor.
         if isinstance(dict_obj, (staticmethod, types.BuiltinMethodType)):
             kind = "static method"
@@ -551,7 +551,7 @@ def _finddoc(obj):
                     doc = base.__doc__
                 except AttributeError:
                     continue
-                if doc is not None:
+                if doc:
                     return doc
         return None
 
@@ -601,7 +601,7 @@ def _finddoc(obj):
             doc = getattr(base, name).__doc__
         except AttributeError:
             continue
-        if doc is not None:
+        if doc:
             return doc
     return None
 
@@ -708,9 +708,9 @@ def getsourcefile(object):
         return filename
     # only return a non-existent filename if the module has a PEP 302 loader
     module = getmodule(object, filename)
-    if getattr(module, '__loader__', None) is not None:
+    if getattr(module, '__loader__', None):
         return filename
-    elif getattr(getattr(module, "__spec__", None), "loader", None) is not None:
+    elif getattr(getattr(module, "__spec__", None), "loader", None):
         return filename
     # or it is in the linecache
     elif filename in linecache.cache:
@@ -735,7 +735,7 @@ def getmodule(object, _filename=None):
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
     # Try the filename to modulename cache
-    if _filename is not None and _filename in modulesbyfile:
+    if _filename and _filename in modulesbyfile:
         return sys.modules.get(modulesbyfile[_filename])
     # Try the cache again with the absolute file name
     try:
@@ -979,7 +979,7 @@ class BlockFinder:
             if self.indent <= 0:
                 raise EndOfBlock
         elif type == tokenize.COMMENT:
-            if self.body_col0 is not None and srowcol[1] >= self.body_col0:
+            if self.body_col0 and srowcol[1] >= self.body_col0:
                 # Include comments if indented at least as much as the block
                 self.last = srowcol[0]
         elif self.indent == 0 and type not in (tokenize.COMMENT, tokenize.NL):
@@ -1289,7 +1289,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
-    if varargs is not None:
+    if varargs:
         specs.append(formatvarargs(formatargandannotation(varargs)))
     else:
         if kwonlyargs:
@@ -1300,7 +1300,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
             if kwonlydefaults and kwonlyarg in kwonlydefaults:
                 spec += formatvalue(kwonlydefaults[kwonlyarg])
             specs.append(spec)
-    if varkw is not None:
+    if varkw:
         specs.append(formatvarkw(formatargandannotation(varkw)))
     result = '(' + ', '.join(specs) + ')'
     if 'return' in annotations:
@@ -1379,7 +1379,7 @@ def getcallargs(func, /, *positional, **named):
     arg2value = {}
 
 
-    if ismethod(func) and func.__self__ is not None:
+    if ismethod(func) and func.__self__:
         # implicit 'self' (or 'cls' for classmethods) argument
         positional = (func.__self__,) + positional
     num_pos = len(positional)
@@ -1688,7 +1688,7 @@ def getgeneratorlocals(generator):
         raise TypeError("{!r} is not a Python generator".format(generator))
 
     frame = getattr(generator, "gi_frame", None)
-    if frame is not None:
+    if frame:
         return generator.gi_frame.f_locals
     else:
         return {}
@@ -1726,7 +1726,7 @@ def getcoroutinelocals(coroutine):
     A dict is returned, with the keys the local variable names and values the
     bound values."""
     frame = getattr(coroutine, "cr_frame", None)
-    if frame is not None:
+    if frame:
         return frame.f_locals
     else:
         return {}
@@ -2040,7 +2040,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     def parse_name(node):
         assert isinstance(node, ast.arg)
-        if node.annotation is not None:
+        if node.annotation:
             raise ValueError("Annotations are not currently supported")
         return node.arg
 
@@ -2094,7 +2094,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     args = reversed(f.args.args)
     defaults = reversed(f.args.defaults)
     iter = itertools.zip_longest(args, defaults, fillvalue=None)
-    if last_positional_only is not None:
+    if last_positional_only:
         kind = Parameter.POSITIONAL_ONLY
     else:
         kind = Parameter.POSITIONAL_OR_KEYWORD
@@ -2118,7 +2118,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         kind = Parameter.VAR_KEYWORD
         p(f.args.kwarg, empty)
 
-    if self_parameter is not None:
+    if self_parameter:
         # Possibly strip the bound argument:
         #    - We *always* strip first bound argument if
         #      it is a module.
@@ -2126,7 +2126,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         #      skip_bound_arg is False.
         assert parameters
         _self = getattr(obj, '__self__', None)
-        self_isbound = _self is not None
+        self_isbound = bool(_self) #isnot None
         self_ismodule = ismodule(_self)
         if self_isbound and (self_ismodule or skip_bound_arg):
             parameters.pop(0)
@@ -2234,7 +2234,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
     # Keyword-only parameters.
     for name in keyword_only:
         default = _empty
-        if kwdefaults is not None:
+        if kwdefaults:
             default = kwdefaults.get(name, _empty)
 
         annotation = annotations.get(name, _empty)
@@ -2303,7 +2303,7 @@ def _signature_from_callable(obj, *,
     except AttributeError:
         pass
     else:
-        if sig is not None:
+        if sig:
             if not isinstance(sig, Signature):
                 raise TypeError(
                     'unexpected object {!r} in __signature__ '
@@ -2367,7 +2367,7 @@ def _signature_from_callable(obj, *,
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
         call = _signature_get_user_defined_method(type(obj), '__call__')
-        if call is not None:
+        if call:
             sig = _signature_from_callable(
                 call,
                 follow_wrapper_chains=follow_wrapper_chains,
@@ -2376,7 +2376,7 @@ def _signature_from_callable(obj, *,
         else:
             # Now we check if the 'obj' class has a '__new__' method
             new = _signature_get_user_defined_method(obj, '__new__')
-            if new is not None:
+            if new:
                 sig = _signature_from_callable(
                     new,
                     follow_wrapper_chains=follow_wrapper_chains,
@@ -2385,7 +2385,7 @@ def _signature_from_callable(obj, *,
             else:
                 # Finally, we should have at least __init__ implemented
                 init = _signature_get_user_defined_method(obj, '__init__')
-                if init is not None:
+                if init:
                     sig = _signature_from_callable(
                         init,
                         follow_wrapper_chains=follow_wrapper_chains,
@@ -2434,7 +2434,7 @@ def _signature_from_callable(obj, *,
         # _WrapperDescriptor or _MethodWrapper to avoid
         # infinite recursion (and even potential segfault)
         call = _signature_get_user_defined_method(type(obj), '__call__')
-        if call is not None:
+        if call:
             try:
                 sig = _signature_from_callable(
                     call,
@@ -2445,7 +2445,7 @@ def _signature_from_callable(obj, *,
                 msg = 'no signature found for {!r}'.format(obj)
                 raise ValueError(msg) from ex
 
-    if sig is not None:
+    if sig:
         # For classes and objects we skip the first parameter of their
         # __call__, __new__, or __init__ methods
         if skip_bound_arg:
@@ -3062,7 +3062,7 @@ class Signature:
                 arguments[param_name] = arg_val
 
         if kwargs:
-            if kwargs_param is not None:
+            if kwargs_param:
                 # Process our '**kwargs'-like parameter
                 arguments[kwargs_param.name] = kwargs
             else:

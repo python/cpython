@@ -110,11 +110,11 @@ class Template:
         def convert(mo):
             # Check the most common path first.
             named = mo.group('named') or mo.group('braced')
-            if named is not None:
+            if named:
                 return str(mapping[named])
-            if mo.group('escaped') is not None:
+            if mo.group('escaped'):
                 return self.delimiter
-            if mo.group('invalid') is not None:
+            if mo.group('invalid'):
                 self._invalid(mo)
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern)
@@ -128,14 +128,14 @@ class Template:
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
-            if named is not None:
+            if named:
                 try:
                     return str(mapping[named])
                 except KeyError:
                     return mo.group()
-            if mo.group('escaped') is not None:
+            if mo.group('escaped'):
                 return self.delimiter
-            if mo.group('invalid') is not None:
+            if mo.group('invalid'):
                 return mo.group()
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern)
@@ -179,7 +179,7 @@ class Formatter:
                 result.append(literal_text)
 
             # if there's a field, output it
-            if field_name is not None:
+            if field_name:
                 # this is some markup, find the object and do
                 #  the formatting
 

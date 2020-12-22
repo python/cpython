@@ -411,7 +411,7 @@ class Element:
 
         """
         tag = self.tag
-        if not isinstance(tag, str) and tag is not None:
+        if not isinstance(tag, str) and tag:
             return
         t = self.text
         if t:
@@ -854,7 +854,7 @@ def _namespaces(elem, default_namespace=None):
         elif isinstance(tag, str):
             if tag not in qnames:
                 add_qname(tag)
-        elif tag is not None and tag is not Comment and tag is not PI:
+        elif tag and tag is not Comment and tag is not PI:
             _raise_serialization_error(tag)
         for key, value in elem.items():
             if isinstance(key, QName):
@@ -1438,7 +1438,7 @@ class TreeBuilder:
 
     def _flush(self):
         if self._data:
-            if self._last is not None:
+            if self._last:
                 text = "".join(self._data)
                 if self._tail:
                     assert self._last.tail is None, "internal error (tail)"
@@ -1683,7 +1683,7 @@ class XMLParser:
                 raise err
         elif prefix == "<" and text[:9] == "<!DOCTYPE":
             self._doctype = [] # inside a doctype declaration
-        elif self._doctype is not None:
+        elif self._doctype:
             # parse doctype contents
             if prefix == ">":
                 self._doctype = None
@@ -1763,13 +1763,13 @@ def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
 
     parser = XMLParser(target=C14NWriterTarget(out.write, **options))
 
-    if xml_data is not None:
+    if xml_data:
         parser.feed(xml_data)
         parser.close()
-    elif from_file is not None:
+    elif from_file:
         parse(from_file, parser=parser)
 
-    return sio.getvalue() if sio is not None else None
+    return sio.getvalue() if sio else None
 
 
 _looks_like_prefix_name = re.compile(r'^\w+:\w+$', re.UNICODE).match
@@ -1892,11 +1892,11 @@ class C14NWriterTarget:
         del self._data[:]
         if self._strip_text and not self._preserve_space[-1]:
             data = data.strip()
-        if self._pending_start is not None:
+        if self._pending_start:
             args, self._pending_start = self._pending_start, None
             qname_text = data if data and _looks_like_prefix_name(data) else None
             self._start(*args, qname_text)
-            if qname_text is not None:
+            if qname_text:
                 return
         if data and self._root_seen:
             self._write(_escape_cdata_c14n(data))
@@ -1910,7 +1910,7 @@ class C14NWriterTarget:
         self._ns_stack[-1].append((uri, prefix))
 
     def start(self, tag, attrs):
-        if self._exclude_tags is not None and (
+        if self._exclude_tags and (
                 self._ignored_depth or tag in self._exclude_tags):
             self._ignored_depth += 1
             return
@@ -1920,24 +1920,24 @@ class C14NWriterTarget:
         new_namespaces = []
         self._declared_ns_stack.append(new_namespaces)
 
-        if self._qname_aware_tags is not None and tag in self._qname_aware_tags:
+        if self._qname_aware_tags and tag in self._qname_aware_tags:
             # Need to parse text first to see if it requires a prefix declaration.
             self._pending_start = (tag, attrs, new_namespaces)
             return
         self._start(tag, attrs, new_namespaces)
 
     def _start(self, tag, attrs, new_namespaces, qname_text=None):
-        if self._exclude_attrs is not None and attrs:
+        if self._exclude_attrs and attrs:
             attrs = {k: v for k, v in attrs.items() if k not in self._exclude_attrs}
 
         qnames = {tag, *attrs}
         resolved_names = {}
 
         # Resolve prefixes in attribute and tag text.
-        if qname_text is not None:
+        if qname_text:
             qname = resolved_names[qname_text] = self._resolve_prefix_name(qname_text)
             qnames.add(qname)
-        if self._find_qname_aware_attrs is not None and attrs:
+        if self._find_qname_aware_attrs and attrs:
             qattrs = self._find_qname_aware_attrs(attrs)
             if qattrs:
                 for attr_name in qattrs:
@@ -1969,7 +1969,7 @@ class C14NWriterTarget:
         # ... followed by attributes in URI+name order
         if attrs:
             for k, v in sorted(attrs.items()):
-                if qattrs is not None and k in qattrs and v in resolved_names:
+                if qattrs and k in qattrs and v in resolved_names:
                     v = parsed_qnames[resolved_names[v]][0]
                 attr_qname, attr_name, uri = parsed_qnames[k]
                 # No prefix for attributes in default ('') namespace.
@@ -1989,7 +1989,7 @@ class C14NWriterTarget:
         write('>')
 
         # Write the resolved qname text content.
-        if qname_text is not None:
+        if qname_text:
             write(_escape_cdata_c14n(parsed_qnames[resolved_names[qname_text]][0]))
 
         self._root_seen = True

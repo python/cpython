@@ -20,13 +20,13 @@ class _IterationGuard:
 
     def __enter__(self):
         w = self.weakcontainer()
-        if w is not None:
+        if w:
             w._iterating.add(self)
         return self
 
     def __exit__(self, e, t, b):
         w = self.weakcontainer()
-        if w is not None:
+        if w:
             s = w._iterating
             s.remove(self)
             if not s:
@@ -38,7 +38,7 @@ class WeakSet:
         self.data = set()
         def _remove(item, selfref=ref(self)):
             self = selfref()
-            if self is not None:
+            if self:
                 if self._iterating:
                     self._pending_removals.append(item)
                 else:
@@ -47,7 +47,7 @@ class WeakSet:
         # A list of keys to be removed
         self._pending_removals = []
         self._iterating = set()
-        if data is not None:
+        if data:
             self.update(data)
 
     def _commit_removals(self):
@@ -60,7 +60,7 @@ class WeakSet:
         with _IterationGuard(self):
             for itemref in self.data:
                 item = itemref()
-                if item is not None:
+                if item:
                     # Caveat: the iterator will keep a strong reference to
                     # `item` until it is resumed or closed.
                     yield item
@@ -101,7 +101,7 @@ class WeakSet:
             except KeyError:
                 raise KeyError('pop from empty WeakSet') from None
             item = itemref()
-            if item is not None:
+            if item:
                 return item
 
     def remove(self, item):

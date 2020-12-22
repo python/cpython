@@ -66,7 +66,7 @@ class _Utils:
             self._show(prof, filename, sort)
 
     def _show(self, prof, filename, sort):
-        if filename is not None:
+        if filename:
             prof.dump_stats(filename)
         else:
             prof.print_stats(sort)
@@ -573,7 +573,7 @@ def main():
 
     # The script that we're profiling may chdir, so capture the absolute path
     # to the output file at startup.
-    if options.outfile is not None:
+    if options.outfile:
         options.outfile = os.path.abspath(options.outfile)
 
     if len(args) > 0:

@@ -94,7 +94,7 @@ def capture_warnings(capture):
             _warnings_showwarning = warnings.showwarning
             warnings.showwarning = idle_showwarning
     else:
-        if _warnings_showwarning is not None:
+        if _warnings_showwarning:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
 
@@ -528,7 +528,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         threading.Thread(target=self.__request_interrupt).start()
 
     def kill_subprocess(self):
-        if self._afterid is not None:
+        if self._afterid:
             self.tkconsole.text.after_cancel(self._afterid)
         try:
             self.rpcclt.listening_sock.close()
@@ -589,7 +589,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             how, what = response
             console = self.tkconsole.console
             if how == "OK":
-                if what is not None:
+                if what:
                     print(repr(what), file=console)
             elif how == "EXCEPTION":
                 if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
@@ -762,7 +762,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
-            if not debugger and self.rpcclt is not None:
+            if not debugger and self.rpcclt:
                 self.active_seq = self.rpcclt.asyncqueue("exec", "runcode",
                                                         (code,), {})
             elif debugger:

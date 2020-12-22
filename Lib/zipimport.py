@@ -120,7 +120,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         Deprecated since Python 3.10. Use find_spec() instead.
         """
         mi = _get_module_info(self, fullname)
-        if mi is not None:
+        if mi:
             # This is a module or package.
             return self, []
 
@@ -160,7 +160,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         Returns None if the module cannot be found.
         """
         module_info = _get_module_info(self, fullname)
-        if module_info is not None:
+        if module_info:
             return _bootstrap.spec_from_loader(fullname, self, is_package=module_info)
         else:
             # Not a module or regular package. See if this is a directory, and
@@ -634,7 +634,7 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
         if (_imp.check_hash_based_pycs != 'never' and
                 (check_source or _imp.check_hash_based_pycs == 'always')):
             source_bytes = _get_pyc_source(self, fullpath)
-            if source_bytes is not None:
+            if source_bytes:
                 source_hash = _imp.source_hash(
                     _bootstrap_external._RAW_MAGIC_NUMBER,
                     source_bytes,

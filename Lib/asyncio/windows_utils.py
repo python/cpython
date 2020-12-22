@@ -68,9 +68,9 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
         ov.GetOverlappedResult(True)
         return h1, h2
     except:
-        if h1 is not None:
+        if h1:
             _winapi.CloseHandle(h1)
-        if h2 is not None:
+        if h2:
             _winapi.CloseHandle(h2)
         raise
 
@@ -87,7 +87,7 @@ class PipeHandle:
         self._handle = handle
 
     def __repr__(self):
-        if self._handle is not None:
+        if self._handle:
             handle = f'handle={self._handle!r}'
         else:
             handle = 'closed'
@@ -103,12 +103,12 @@ class PipeHandle:
         return self._handle
 
     def close(self, *, CloseHandle=_winapi.CloseHandle):
-        if self._handle is not None:
+        if self._handle:
             CloseHandle(self._handle)
             self._handle = None
 
     def __del__(self, _warn=warnings.warn):
-        if self._handle is not None:
+        if self._handle:
             _warn(f"unclosed {self!r}", ResourceWarning, source=self)
             self.close()
 
@@ -154,15 +154,15 @@ class Popen(subprocess.Popen):
                              stderr=stderr_wfd, **kwds)
         except:
             for h in (stdin_wh, stdout_rh, stderr_rh):
-                if h is not None:
+                if h:
                     _winapi.CloseHandle(h)
             raise
         else:
-            if stdin_wh is not None:
+            if stdin_wh:
                 self.stdin = PipeHandle(stdin_wh)
-            if stdout_rh is not None:
+            if stdout_rh:
                 self.stdout = PipeHandle(stdout_rh)
-            if stderr_rh is not None:
+            if stderr_rh:
                 self.stderr = PipeHandle(stderr_rh)
         finally:
             if stdin == PIPE:

@@ -98,7 +98,7 @@ class LZMAFile(_compression.BaseStream):
             if check != -1:
                 raise ValueError("Cannot specify an integrity check "
                                  "when opening a file for reading")
-            if preset is not None:
+            if preset:
                 raise ValueError("Cannot specify a preset compression "
                                  "level when opening a file for reading")
             if format is None:
@@ -290,11 +290,11 @@ def open(filename, mode="rb", *,
         if "b" in mode:
             raise ValueError("Invalid mode: %r" % (mode,))
     else:
-        if encoding is not None:
+        if encoding:
             raise ValueError("Argument 'encoding' not supported in binary mode")
-        if errors is not None:
+        if errors:
             raise ValueError("Argument 'errors' not supported in binary mode")
-        if newline is not None:
+        if newline:
             raise ValueError("Argument 'newline' not supported in binary mode")
 
     lz_mode = mode.replace("t", "")

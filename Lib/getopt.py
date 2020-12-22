@@ -160,7 +160,7 @@ def do_longs(opts, opt, longopts, args):
             if not args:
                 raise GetoptError(_('option --%s requires argument') % opt, opt)
             optarg, args = args[0], args[1:]
-    elif optarg is not None:
+    elif optarg:
         raise GetoptError(_('option --%s must not have an argument') % opt, opt)
     opts.append(('--' + opt, optarg or ''))
     return opts, args

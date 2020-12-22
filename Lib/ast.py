@@ -118,7 +118,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     level. None (the default) selects the single line representation.
     """
     def _format(node, level=0):
-        if indent is not None:
+        if indent:
             level += 1
             prefix = '\n' + indent * level
             sep = ',\n' + indent * level
@@ -167,7 +167,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
 
     if not isinstance(node, AST):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
-    if indent is not None and not isinstance(indent, str):
+    if indent and not isinstance(indent, str):
         indent = ' ' * indent
     return _format(node)[0]
 
@@ -182,9 +182,7 @@ def copy_location(new_node, old_node):
             value = getattr(old_node, attr, None)
             # end_lineno and end_col_offset are optional attributes, and they
             # should be copied whether the value is None or not.
-            if value is not None or (
-                hasattr(old_node, attr) and attr.startswith("end_")
-            ):
+            if value or (hasattr(old_node, attr) and attr.startswith("end_")):
                 setattr(new_node, attr, value)
     return new_node
 
@@ -235,7 +233,7 @@ def increment_lineno(node, n=1):
             child.lineno = getattr(child, 'lineno', 0) + n
         if (
             "end_lineno" in child._attributes
-            and (end_lineno := getattr(child, "end_lineno", 0)) is not None
+            and bool((end_lineno := getattr(child, "end_lineno", 0))) #isnot None
         ):
             child.end_lineno = end_lineno + n
     return node
@@ -424,7 +422,7 @@ class NodeVisitor(object):
                 if isinstance(value, cls):
                     type_name = name
                     break
-        if type_name is not None:
+        if type_name:
             method = 'visit_' + type_name
             try:
                 visitor = getattr(self, method)
@@ -784,7 +782,7 @@ class _Unparser(NodeVisitor):
 
     def get_type_comment(self, node):
         comment = self._type_ignores.get(node.lineno) or node.type_comment
-        if comment is not None:
+        if comment:
             return f" # type: {comment}"
 
     def traverse(self, node):

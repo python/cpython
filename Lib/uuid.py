@@ -170,23 +170,23 @@ class UUID:
         if [hex, bytes, bytes_le, fields, int].count(None) != 4:
             raise TypeError('one of the hex, bytes, bytes_le, fields, '
                             'or int arguments must be given')
-        if hex is not None:
+        if hex:
             hex = hex.replace('urn:', '').replace('uuid:', '')
             hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
-        if bytes_le is not None:
+        if bytes_le:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
-        if bytes is not None:
+        if bytes:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes, byteorder='big')
-        if fields is not None:
+        if fields:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
@@ -206,10 +206,10 @@ class UUID:
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
                    (time_hi_version << 64) | (clock_seq << 48) | node)
-        if int is not None:
+        if int:
             if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
-        if version is not None:
+        if version:
             if not 1 <= version <= 5:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
@@ -648,7 +648,7 @@ def getnode():
     in RFC 4122.
     """
     global _node
-    if _node is not None:
+    if _node:
         return _node
 
     for getter in _GETTERS + [_random_getnode]:
@@ -656,7 +656,7 @@ def getnode():
             _node = getter()
         except:
             continue
-        if (_node is not None) and (0 <= _node < (1 << 48)):
+        if (_node) and (0 <= _node < (1 << 48)):
             return _node
     assert False, '_random_getnode() returned invalid value: {}'.format(_node)
 
@@ -671,7 +671,7 @@ def uuid1(node=None, clock_seq=None):
 
     # When the system provides a version-1 UUID generator, use it (but don't
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
-    if _generate_time_safe is not None and node is clock_seq is None:
+    if _generate_time_safe and node is clock_seq is None:
         uuid_time, safely_generated = _generate_time_safe()
         try:
             is_safe = SafeUUID(safely_generated)
@@ -685,7 +685,7 @@ def uuid1(node=None, clock_seq=None):
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = nanoseconds // 100 + 0x01b21dd213814000
-    if _last_timestamp is not None and timestamp <= _last_timestamp:
+    if _last_timestamp and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
     if clock_seq is None:

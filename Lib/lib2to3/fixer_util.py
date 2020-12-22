@@ -59,7 +59,7 @@ def ArgList(args, lparen=LParen(), rparen=RParen()):
 def Call(func_name, args=None, prefix=None):
     """A function call"""
     node = Node(syms.power, [func_name, ArgList(args)])
-    if prefix is not None:
+    if prefix:
         node.prefix = prefix
     return node
 
@@ -250,7 +250,7 @@ def is_probably_builtin(node):
     Check that something isn't an attribute or function name etc.
     """
     prev = node.prev_sibling
-    if prev is not None and prev.type == token.DOT:
+    if prev and prev.type == token.DOT:
         # Attribute lookup.
         return False
     parent = node.parent
@@ -261,7 +261,7 @@ def is_probably_builtin(node):
         return False
     if parent.type == syms.parameters or \
             (parent.type == syms.typedargslist and (
-            (prev is not None and prev.type == token.COMMA) or
+            (prev and prev.type == token.COMMA) or
             parent.children[0] is node
             )):
         # The name of an argument.
@@ -270,7 +270,7 @@ def is_probably_builtin(node):
 
 def find_indentation(node):
     """Find the indentation of *node*."""
-    while node is not None:
+    while bool(node):
         if node.type == syms.suite and len(node.children) > 2:
             indent = node.children[1]
             if indent.type == token.INDENT:

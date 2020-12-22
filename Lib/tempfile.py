@@ -425,7 +425,7 @@ class _TemporaryFileCloser:
         # __del__ is called.
 
         def close(self, unlink=_os.unlink):
-            if not self.close_called and self.file is not None:
+            if not self.close_called and self.file:
                 self.close_called = True
                 try:
                     self.file.close()

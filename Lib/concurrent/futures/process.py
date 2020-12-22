@@ -174,7 +174,7 @@ class _SafeQueue(Queue):
             # work_item can be None if another process terminated. In this
             # case, the executor_manager_thread fails all work_items
             # with BrokenProcessPool
-            if work_item is not None:
+            if work_item:
                 work_item.future.set_exception(e)
         else:
             super()._on_queue_feeder_error(e, obj)
@@ -225,7 +225,7 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
         initializer: A callable initializer, or None
         initargs: A tuple of args for the initializer
     """
-    if initializer is not None:
+    if initializer:
         try:
             initializer(*initargs)
         except BaseException:
@@ -319,7 +319,7 @@ class _ExecutorManagerThread(threading.Thread):
             if is_broken:
                 self.terminate_broken(cause)
                 return
-            if result_item is not None:
+            if result_item:
                 self.process_result_item(result_item)
                 # Delete reference to result_item to avoid keeping references
                 # while waiting on new results.
@@ -327,7 +327,7 @@ class _ExecutorManagerThread(threading.Thread):
 
                 # attempt to increment idle process count
                 executor = self.executor_reference()
-                if executor is not None:
+                if executor:
                     executor._idle_worker_semaphore.release()
                 del executor
 
@@ -411,7 +411,7 @@ class _ExecutorManagerThread(threading.Thread):
             # Received a _ResultItem so mark the future as completed.
             work_item = self.pending_work_items.pop(result_item.work_id, None)
             # work_item can be None if another process terminated (see above)
-            if work_item is not None:
+            if work_item:
                 if result_item.exception:
                     work_item.future.set_exception(result_item.exception)
                 else:
@@ -434,7 +434,7 @@ class _ExecutorManagerThread(threading.Thread):
 
         # Mark the process pool broken so that submits fail right now.
         executor = self.executor_reference()
-        if executor is not None:
+        if executor:
             executor._broken = ('A child process terminated '
                                 'abruptly, the process pool is not '
                                 'usable anymore')
@@ -446,7 +446,7 @@ class _ExecutorManagerThread(threading.Thread):
         bpe = BrokenProcessPool("A process in the process pool was "
                                 "terminated abruptly while the future was "
                                 "running or pending.")
-        if cause is not None:
+        if cause:
             bpe.__cause__ = _RemoteTraceback(
                 f"\n'''\n{''.join(cause)}'''")
 
@@ -469,7 +469,7 @@ class _ExecutorManagerThread(threading.Thread):
         # Flag the executor as shutting down and cancel remaining tasks if
         # requested as early as possible if it is not gc-ed yet.
         executor = self.executor_reference()
-        if executor is not None:
+        if executor:
             executor._shutdown_thread = True
             # Cancel pending work items if requested.
             if executor._cancel_pending_futures:
@@ -604,7 +604,7 @@ class ProcessPoolExecutor(_base.Executor):
             mp_context = mp.get_context()
         self._mp_context = mp_context
 
-        if initializer is not None and not callable(initializer):
+        if initializer and not callable(initializer):
             raise TypeError("initializer must be a callable")
         self._initializer = initializer
         self._initargs = initargs
@@ -732,17 +732,17 @@ class ProcessPoolExecutor(_base.Executor):
         with self._shutdown_lock:
             self._cancel_pending_futures = cancel_futures
             self._shutdown_thread = True
-            if self._executor_manager_thread_wakeup is not None:
+            if self._executor_manager_thread_wakeup:
                 # Wake up queue management thread
                 self._executor_manager_thread_wakeup.wakeup()
 
-        if self._executor_manager_thread is not None and wait:
+        if self._executor_manager_thread and wait:
             self._executor_manager_thread.join()
         # To reduce the risk of opening too many files, remove references to
         # objects that use file descriptors.
         self._executor_manager_thread = None
         self._call_queue = None
-        if self._result_queue is not None and wait:
+        if self._result_queue and wait:
             self._result_queue.close()
         self._result_queue = None
         self._processes = None

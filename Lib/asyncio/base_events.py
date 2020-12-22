@@ -177,7 +177,7 @@ def _interleave_addrinfos(addrinfos, first_address_family_count=1):
     reordered.extend(
         a for a in itertools.chain.from_iterable(
             itertools.zip_longest(*addrinfos_lists)
-        ) if a is not None)
+        ) if a)
     return reordered
 
 
@@ -230,7 +230,7 @@ class _SendfileFallbackProtocol(protocols.Protocol):
                            "connection should have been established already.")
 
     def connection_lost(self, exc):
-        if self._write_ready_fut is not None:
+        if self._write_ready_fut:
             # Never happens if peer disconnects after sending the whole content
             # Thus disconnection is always an exception from user perspective
             if exc is None:
@@ -241,7 +241,7 @@ class _SendfileFallbackProtocol(protocols.Protocol):
         self._proto.connection_lost(exc)
 
     def pause_writing(self):
-        if self._write_ready_fut is not None:
+        if self._write_ready_fut:
             return
         self._write_ready_fut = self._transport._loop.create_future()
 
@@ -261,7 +261,7 @@ class _SendfileFallbackProtocol(protocols.Protocol):
         self._transport.set_protocol(self._proto)
         if self._should_resume_reading:
             self._transport.resume_reading()
-        if self._write_ready_fut is not None:
+        if self._write_ready_fut:
             # Cancel the future.
             # Basically it has no effect because protocol is switched back,
             # no code should wait for it anymore.
@@ -289,7 +289,7 @@ class Server(events.AbstractServer):
         return f'<{self.__class__.__name__} sockets={self.sockets!r}>'
 
     def _attach(self):
-        assert self._sockets is not None
+        assert bool(self._sockets) #isnot None
         self._active_count += 1
 
     def _detach(self):
@@ -338,8 +338,7 @@ class Server(events.AbstractServer):
 
         self._serving = False
 
-        if (self._serving_forever_fut is not None and
-                not self._serving_forever_fut.done()):
+        if (self._serving_forever_fut and not self._serving_forever_fut.done()):
             self._serving_forever_fut.cancel()
             self._serving_forever_fut = None
 
@@ -353,7 +352,7 @@ class Server(events.AbstractServer):
         await tasks.sleep(0)
 
     async def serve_forever(self):
-        if self._serving_forever_fut is not None:
+        if self._serving_forever_fut:
             raise RuntimeError(
                 f'server {self!r} is already being awaited on serve_forever()')
         if self._sockets is None:
@@ -449,7 +448,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         event loop, 'coro' will be a coroutine object.  The callable
         must return a Future.
         """
-        if factory is not None and not callable(factory):
+        if factory and not callable(factory):
             raise TypeError('task factory must be a callable or None')
         self._task_factory = factory
 
@@ -575,7 +574,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _check_running(self):
         if self.is_running():
             raise RuntimeError('This event loop is already running')
-        if events._get_running_loop() is not None:
+        if events._get_running_loop():
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
 
@@ -667,7 +666,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._scheduled.clear()
         self._executor_shutdown_called = True
         executor = self._default_executor
-        if executor is not None:
+        if executor:
             self._default_executor = None
             executor.shutdown(wait=False)
 
@@ -683,7 +682,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def is_running(self):
         """Returns True if the event loop is running."""
-        return (self._thread_id is not None)
+        return (bool(self._thread_id)) #isnot None)
 
     def time(self):
         """Return the time according to the event loop's clock.
@@ -911,7 +910,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("file should be opened in binary mode")
         if not sock.type == socket.SOCK_STREAM:
             raise ValueError("only SOCK_STREAM type sockets are supported")
-        if count is not None:
+        if count:
             if not isinstance(count, int):
                 raise TypeError(
                     "count must be a positive integer (got {!r})".format(count))
@@ -936,7 +935,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             sock = socket.socket(family=family, type=type_, proto=proto)
             sock.setblocking(False)
-            if local_addr_infos is not None:
+            if local_addr_infos:
                 for _, _, _, _, laddr in local_addr_infos:
                     try:
                         sock.bind(laddr)
@@ -955,11 +954,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             return sock
         except OSError as exc:
             my_exceptions.append(exc)
-            if sock is not None:
+            if sock:
                 sock.close()
             raise
         except:
-            if sock is not None:
+            if sock:
                 sock.close()
             raise
 
@@ -981,7 +980,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         in the background.  When successful, the coroutine returns a
         (transport, protocol) pair.
         """
-        if server_hostname is not None and not ssl:
+        if server_hostname and not ssl:
             raise ValueError('server_hostname is only meaningful with ssl')
 
         if server_hostname is None and ssl:
@@ -1000,16 +999,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                                  'when using ssl without a host')
             server_hostname = host
 
-        if ssl_handshake_timeout is not None and not ssl:
+        if ssl_handshake_timeout and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
-        if happy_eyeballs_delay is not None and interleave is None:
+        if happy_eyeballs_delay and interleave is None:
             # If using happy eyeballs, default to interleave addresses by family
             interleave = 1
 
-        if host is not None or port is not None:
-            if sock is not None:
+        if host or port:
+            if sock:
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
@@ -1019,7 +1018,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if not infos:
                 raise OSError('getaddrinfo() returned empty list')
 
-            if local_addr is not None:
+            if local_addr:
                 laddr_infos = await self._ensure_resolved(
                     local_addr, family=family,
                     type=socket.SOCK_STREAM, proto=proto,
@@ -1242,7 +1241,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        reuse_address=_unset, reuse_port=None,
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
-        if sock is not None:
+        if sock:
             if sock.type != socket.SOCK_DGRAM:
                 raise ValueError(
                     f'A UDP Socket was expected, got {sock!r}')
@@ -1267,7 +1266,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 addr_pairs_info = (((family, proto), (None, None)),)
             elif hasattr(socket, 'AF_UNIX') and family == socket.AF_UNIX:
                 for addr in (local_addr, remote_addr):
-                    if addr is not None and not isinstance(addr, str):
+                    if addr and not isinstance(addr, str):
                         raise TypeError('string is expected')
 
                 if local_addr and local_addr[0] not in (0, '\x00'):
@@ -1288,7 +1287,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # join address by (family, protocol)
                 addr_infos = {}  # Using order preserving dict
                 for idx, addr in ((0, local_addr), (1, remote_addr)):
-                    if addr is not None:
+                    if addr:
                         assert isinstance(addr, tuple) and len(addr) == 2, (
                             '2-tuple is expected')
 
@@ -1349,11 +1348,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                             await self.sock_connect(sock, remote_address)
                         r_addr = remote_address
                 except OSError as exc:
-                    if sock is not None:
+                    if sock:
                         sock.close()
                     exceptions.append(exc)
                 except:
-                    if sock is not None:
+                    if sock:
                         sock.close()
                     raise
                 else:
@@ -1388,7 +1387,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                proto=0, flags=0, loop):
         host, port = address[:2]
         info = _ipaddr_info(host, port, family, type, proto, *address[2:])
-        if info is not None:
+        if info:
             # "host" is already a resolved IP.
             return [info]
         else:
@@ -1433,12 +1432,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
-        if ssl_handshake_timeout is not None and ssl is None:
+        if ssl_handshake_timeout and ssl is None:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
-        if host is not None or port is not None:
-            if sock is not None:
+        if host or port:
+            if sock:
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
@@ -1527,7 +1526,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if sock.type != socket.SOCK_STREAM:
             raise ValueError(f'A Stream Socket was expected, got {sock!r}')
 
-        if ssl_handshake_timeout is not None and not ssl:
+        if ssl_handshake_timeout and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
@@ -1575,14 +1574,14 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _log_subprocess(self, msg, stdin, stdout, stderr):
         info = [msg]
-        if stdin is not None:
+        if stdin:
             info.append(f'stdin={_format_pipe(stdin)}')
-        if stdout is not None and stderr == subprocess.STDOUT:
+        if stdout and stderr == subprocess.STDOUT:
             info.append(f'stdout=stderr={_format_pipe(stdout)}')
         else:
-            if stdout is not None:
+            if stdout:
                 info.append(f'stdout={_format_pipe(stdout)}')
-            if stderr is not None:
+            if stderr:
                 info.append(f'stderr={_format_pipe(stderr)}')
         logger.debug(' '.join(info))
 
@@ -1604,9 +1603,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("bufsize must be 0")
         if text:
             raise ValueError("text must be False")
-        if encoding is not None:
+        if encoding:
             raise ValueError("encoding must be None")
-        if errors is not None:
+        if errors:
             raise ValueError("errors must be None")
 
         protocol = protocol_factory()
@@ -1618,7 +1617,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             self._log_subprocess(debug_log, stdin, stdout, stderr)
         transport = await self._make_subprocess_transport(
             protocol, cmd, True, stdin, stdout, stderr, bufsize, **kwargs)
-        if self._debug and debug_log is not None:
+        if self._debug and debug_log:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
@@ -1636,9 +1635,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("bufsize must be 0")
         if text:
             raise ValueError("text must be False")
-        if encoding is not None:
+        if encoding:
             raise ValueError("encoding must be None")
-        if errors is not None:
+        if errors:
             raise ValueError("errors must be None")
 
         popen_args = (program,) + args
@@ -1652,7 +1651,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         transport = await self._make_subprocess_transport(
             protocol, popen_args, False, stdin, stdout, stderr,
             bufsize, **kwargs)
-        if self._debug and debug_log is not None:
+        if self._debug and debug_log:
             logger.info('%s: %r', debug_log, transport)
         return transport, protocol
 
@@ -1673,7 +1672,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         will be a dict object (see `call_exception_handler()`
         documentation for details about context).
         """
-        if handler is not None and not callable(handler):
+        if handler and not callable(handler):
             raise TypeError(f'A callable object or None is expected, '
                             f'got {handler!r}')
         self._exception_handler = handler
@@ -1698,13 +1697,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             message = 'Unhandled exception in event loop'
 
         exception = context.get('exception')
-        if exception is not None:
+        if exception:
             exc_info = (type(exception), exception, exception.__traceback__)
         else:
             exc_info = False
 
         if ('source_traceback' not in context and
-                self._current_handle is not None and
+                self._current_handle and
                 self._current_handle._source_traceback):
             context['handle_traceback'] = \
                 self._current_handle._source_traceback

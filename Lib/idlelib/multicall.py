@@ -338,11 +338,11 @@ def MultiCallCreator(widget):
                sequence[:2] == "<<" and sequence[-2:] == ">>":
                 if sequence in self.__eventinfo:
                     ei = self.__eventinfo[sequence]
-                    if ei[0] is not None:
+                    if ei[0]:
                         for triplet in ei[1]:
                             self.__binders[triplet[1]].unbind(triplet, ei[0])
                     ei[0] = func
-                    if ei[0] is not None:
+                    if ei[0]:
                         for triplet in ei[1]:
                             self.__binders[triplet[1]].bind(triplet, func)
                 else:
@@ -354,7 +354,7 @@ def MultiCallCreator(widget):
                sequence[:2] == "<<" and sequence[-2:] == ">>" and \
                sequence in self.__eventinfo:
                 func, triplets = self.__eventinfo[sequence]
-                if func is not None:
+                if func:
                     for triplet in triplets:
                         self.__binders[triplet[1]].unbind(triplet, func)
                     self.__eventinfo[sequence][0] = None
@@ -373,7 +373,7 @@ def MultiCallCreator(widget):
                     #print("Tkinter event_add(%s)" % seq, file=sys.__stderr__)
                     widget.event_add(self, virtual, seq)
                 else:
-                    if func is not None:
+                    if func:
                         self.__binders[triplet[1]].bind(triplet, func)
                     triplets.append(triplet)
 
@@ -387,7 +387,7 @@ def MultiCallCreator(widget):
                     #print("Tkinter event_delete: %s" % seq, file=sys.__stderr__)
                     widget.event_delete(self, virtual, seq)
                 else:
-                    if func is not None:
+                    if func:
                         self.__binders[triplet[1]].unbind(triplet, func)
                     triplets.remove(triplet)
 

@@ -117,7 +117,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             raise
 
     def prepareParser(self, source):
-        if source.getSystemId() is not None:
+        if source.getSystemId():
             self._parser.SetBase(source.getSystemId())
 
     # Redefined setContentHandler to allow changing handlers during parsing
@@ -224,11 +224,11 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         source = self._source
         try:
             file = source.getCharacterStream()
-            if file is not None:
+            if file:
                 file.close()
         finally:
             file = source.getByteStream()
-            if file is not None:
+            if file:
                 file.close()
 
     def close(self):
@@ -244,7 +244,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             self._parser = None
         finally:
             self._parsing = False
-            if self._parser is not None:
+            if self._parser:
                 # Keep ErrorColumnNumber and ErrorLineNumber after closing.
                 parser = _ClosedParser()
                 parser.ErrorColumnNumber = self._parser.ErrorColumnNumber

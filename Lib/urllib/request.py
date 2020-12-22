@@ -192,7 +192,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
         import warnings
         warnings.warn("cafile, capath and cadefault are deprecated, use a "
                       "custom context instead.", DeprecationWarning, 2)
-        if context is not None:
+        if context:
             raise ValueError(
                 "You can't pass both context and any of cafile, capath, and "
                 "cadefault"
@@ -381,7 +381,7 @@ class Request:
 
     def get_method(self):
         """Return a string indicating the HTTP request method."""
-        default_method = "POST" if self.data is not None else "GET"
+        default_method = "POST" if self.data else "GET"
         return getattr(self, 'method', default_method)
 
     def get_full_url(self):
@@ -494,7 +494,7 @@ class OpenerDirector:
         for handler in handlers:
             func = getattr(handler, meth_name)
             result = func(*args)
-            if result is not None:
+            if result:
                 return result
 
     def open(self, fullurl, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
@@ -503,7 +503,7 @@ class OpenerDirector:
             req = Request(fullurl, data)
         else:
             req = fullurl
-            if data is not None:
+            if data:
                 req.data = data
 
         req.timeout = timeout
@@ -778,7 +778,7 @@ def _parse_proxy(proxy):
             end = None
         authority = r_scheme[2:end]
     userinfo, hostport = _splituser(authority)
-    if userinfo is not None:
+    if userinfo:
         user, password = _splitpasswd(userinfo)
     else:
         user = password = None
@@ -868,11 +868,11 @@ class HTTPPasswordMgr:
             authority = uri
             path = '/'
         host, port = _splitport(authority)
-        if default_port and port is None and scheme is not None:
+        if default_port and port is None and scheme:
             dport = {"http": 80,
                      "https": 443,
                      }.get(scheme)
-            if dport is not None:
+            if dport:
                 authority = "%s:%d" % (host, dport)
         return authority, path
 
@@ -896,7 +896,7 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
     def find_user_password(self, realm, authuri):
         user, password = HTTPPasswordMgr.find_user_password(self, realm,
                                                             authuri)
-        if user is not None:
+        if user:
             return user, password
         return HTTPPasswordMgr.find_user_password(self, None, authuri)
 
@@ -910,7 +910,7 @@ class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
     def add_password(self, realm, uri, user, passwd, is_authenticated=False):
         self.update_authenticated(uri, is_authenticated)
         # Add a default for prior auth requests
-        if realm is not None:
+        if realm:
             super().add_password(None, uri, user, passwd)
         super().add_password(realm, uri, user, passwd)
 
@@ -994,20 +994,20 @@ class AbstractBasicAuthHandler:
                     unsupported = scheme
                     continue
 
-                if realm is not None:
+                if realm:
                     # Use the first matching Basic challenge.
                     # Ignore following challenges even if they use the Basic
                     # scheme.
                     return self.retry_http_basic_auth(host, req, realm)
 
-        if unsupported is not None:
+        if unsupported:
             raise ValueError("AbstractBasicAuthHandler does not "
                              "support the following scheme: %r"
                              % (scheme,))
 
     def retry_http_basic_auth(self, host, req, realm):
         user, pw = self.passwd.find_user_password(realm, host)
-        if pw is not None:
+        if pw:
             raw = "%s:%s" % (user, pw)
             auth = "Basic " + base64.b64encode(raw.encode()).decode("ascii")
             if req.get_header(self.auth_header, None) == auth:
@@ -1160,7 +1160,7 @@ class AbstractDigestAuthHandler:
             return None
 
         # XXX not implemented yet
-        if req.data is not None:
+        if req.data:
             entdig = self.get_entity_digest(req.data, chal)
         else:
             entdig = None
@@ -1267,7 +1267,7 @@ class AbstractHTTPHandler(BaseHandler):
         if not host:
             raise URLError('no host given')
 
-        if request.data is not None:  # POST
+        if request.data:  # POST
             data = request.data
             if isinstance(data, str):
                 msg = "POST data should be bytes, an iterable of bytes, " \
@@ -1280,7 +1280,7 @@ class AbstractHTTPHandler(BaseHandler):
             if (not request.has_header('Content-length')
                     and not request.has_header('Transfer-encoding')):
                 content_length = self._get_content_length(request)
-                if content_length is not None:
+                if content_length:
                     request.add_unredirected_header(
                             'Content-length', str(content_length))
                 else:
@@ -1570,7 +1570,7 @@ class FTPHandler(BaseHandler):
             mtype = mimetypes.guess_type(req.full_url)[0]
             if mtype:
                 headers += "Content-type: %s\n" % mtype
-            if retrlen is not None and retrlen >= 0:
+            if retrlen and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
@@ -1831,7 +1831,7 @@ class URLopener:
                 tfp = os.fdopen(fd, 'wb')
             try:
                 result = filename, headers
-                if self.tempcache is not None:
+                if self.tempcache:
                     self.tempcache[url] = result
                 bs = 1024*8
                 size = -1
@@ -1935,7 +1935,7 @@ class URLopener:
         for header, value in self.addheaders:
             headers[header] = value
 
-        if data is not None:
+        if data:
             headers["Content-Type"] = "application/x-www-form-urlencoded"
             http_conn.request("POST", selector, data, headers)
         else:
@@ -2084,7 +2084,7 @@ class URLopener:
             headers = ""
             if mtype:
                 headers += "Content-Type: %s\n" % mtype
-            if retrlen is not None and retrlen >= 0:
+            if retrlen and retrlen >= 0:
                 headers += "Content-Length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, "ftp:" + url)
@@ -2584,7 +2584,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
         if not value: continue
 
         m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
-        if m is not None:
+        if m:
             if hostIP is None:
                 try:
                     hostIP = socket.gethostbyname(hostonly)

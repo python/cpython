@@ -34,7 +34,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
     zero or more directories and subdirectories.
     """
     sys.audit("glob.glob", pathname, recursive)
-    if root_dir is not None:
+    if root_dir:
         root_dir = os.fspath(root_dir)
     else:
         root_dir = pathname[:0]
@@ -127,7 +127,7 @@ def _iterdir(dirname, dir_fd, dironly):
     try:
         fd = None
         fsencode = None
-        if dir_fd is not None:
+        if dir_fd:
             if dirname:
                 fd = arg = os.open(dirname, _dir_open_flags, dir_fd=dir_fd)
             else:
@@ -145,14 +145,14 @@ def _iterdir(dirname, dir_fd, dironly):
                 for entry in it:
                     try:
                         if not dironly or entry.is_dir():
-                            if fsencode is not None:
+                            if fsencode:
                                 yield fsencode(entry.name)
                             else:
                                 yield entry.name
                     except OSError:
                         pass
         finally:
-            if fd is not None:
+            if fd:
                 os.close(fd)
     except OSError:
         return
@@ -204,7 +204,7 @@ def has_magic(s):
         match = magic_check_bytes.search(s)
     else:
         match = magic_check.search(s)
-    return match is not None
+    return bool(match) #isnot None
 
 def _ishidden(path):
     return path[0] in ('.', b'.'[0])

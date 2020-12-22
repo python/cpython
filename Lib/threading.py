@@ -345,7 +345,7 @@ class Condition:
         waittime = timeout
         result = predicate()
         while not result:
-            if waittime is not None:
+            if waittime:
                 if endtime is None:
                     endtime = _time() + waittime
                 else:
@@ -433,7 +433,7 @@ class Semaphore:
         that interval, return false.  Return true otherwise.
 
         """
-        if not blocking and timeout is not None:
+        if not blocking and timeout:
             raise ValueError("can't specify timeout for non-blocking acquire")
         rc = False
         endtime = None
@@ -441,7 +441,7 @@ class Semaphore:
             while self._value == 0:
                 if not blocking:
                     break
-                if timeout is not None:
+                if timeout:
                     if endtime is None:
                         endtime = _time() + timeout
                     else:
@@ -811,7 +811,7 @@ class Thread:
             name = str(name)
         else:
             name = _newname("Thread-%d")
-            if target is not None:
+            if target:
                 try:
                     target_name = target.__name__
                     name += f" ({target_name})"
@@ -822,7 +822,7 @@ class Thread:
         self._name = name
         self._args = args
         self._kwargs = kwargs
-        if daemon is not None:
+        if daemon:
             self._daemonic = daemon
         else:
             self._daemonic = current_thread().daemon
@@ -847,7 +847,7 @@ class Thread:
             # bpo-42350: If the fork happens when the thread is already stopped
             # (ex: after threading._shutdown() has been called), _tstate_lock
             # is None. Do nothing in this case.
-            if self._tstate_lock is not None:
+            if self._tstate_lock:
                 self._tstate_lock._at_fork_reinit()
                 self._tstate_lock.acquire()
         else:
@@ -866,7 +866,7 @@ class Thread:
             status = "stopped"
         if self._daemonic:
             status += " daemon"
-        if self._ident is not None:
+        if self._ident:
             status += " %s" % self._ident
         return "<%s(%s, %s)>" % (self.__class__.__name__, self._name, status)
 
@@ -999,7 +999,7 @@ class Thread:
         # Special case:  _main_thread releases ._tstate_lock via this
         # module's _shutdown() function.
         lock = self._tstate_lock
-        if lock is not None:
+        if lock:
             assert not lock.locked()
         self._is_stopped = True
         self._tstate_lock = None
@@ -1181,9 +1181,9 @@ except ImportError:
             # silently ignore SystemExit
             return
 
-        if _sys is not None and _sys.stderr is not None:
+        if _sys and _sys.stderr:
             stderr = _sys.stderr
-        elif args.thread is not None:
+        elif args.thread:
             stderr = args.thread._stderr
             if stderr is None:
                 # do nothing if sys.stderr is None and sys.stderr was None
@@ -1193,7 +1193,7 @@ except ImportError:
             # do nothing if sys.stderr is None and args.thread is None
             return
 
-        if args.thread is not None:
+        if args.thread:
             name = args.thread.name
         else:
             name = get_ident()
@@ -1238,7 +1238,7 @@ def _make_invoke_excepthook():
             exc.__suppress_context__ = True
             del exc
 
-            if local_sys is not None and local_sys.stderr is not None:
+            if local_sys and local_sys.stderr:
                 stderr = local_sys.stderr
             else:
                 stderr = thread._stderr
@@ -1246,7 +1246,7 @@ def _make_invoke_excepthook():
             local_print("Exception in threading.excepthook:",
                         file=stderr, flush=True)
 
-            if local_sys is not None and local_sys.excepthook is not None:
+            if local_sys and local_sys.excepthook:
                 sys_excepthook = local_sys.excepthook
             else:
                 sys_excepthook = old_sys_excepthook
@@ -1274,8 +1274,8 @@ class Timer(Thread):
         Thread.__init__(self)
         self.interval = interval
         self.function = function
-        self.args = args if args is not None else []
-        self.kwargs = kwargs if kwargs is not None else {}
+        self.args = args if args else []
+        self.kwargs = kwargs if kwargs else {}
         self.finished = Event()
 
     def cancel(self):

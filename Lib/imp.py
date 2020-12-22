@@ -234,7 +234,7 @@ def load_module(name, file, filename, details):
         return load_source(name, filename, file)
     elif type_ == PY_COMPILED:
         return load_compiled(name, filename, file)
-    elif type_ == C_EXTENSION and load_dynamic is not None:
+    elif type_ == C_EXTENSION and load_dynamic:
         if file is None:
             with open(filename, 'rb') as opened_file:
                 return load_dynamic(name, filename, opened_file)

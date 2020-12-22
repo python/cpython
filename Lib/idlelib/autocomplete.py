@@ -33,7 +33,7 @@ class AutoComplete:
 
     def __init__(self, editwin=None):
         self.editwin = editwin
-        if editwin is not None:   # not in subprocess or no-gui test
+        if editwin:   # not in subprocess or no-gui test
             self.text = editwin.text
         self.autocompletewindow = None
         # id of delayed call, and the index of the text insert when
@@ -80,7 +80,7 @@ class AutoComplete:
         if lastchar in TRIGGERS:
             args = TRY_A if lastchar == "." else TRY_F
             self._delayed_completion_index = self.text.index("insert")
-            if self._delayed_completion_id is not None:
+            if self._delayed_completion_id:
                 self.text.after_cancel(self._delayed_completion_id)
             self._delayed_completion_id = self.text.after(
                 self.popupwait, self._delayed_open_completions, args)
@@ -100,7 +100,7 @@ class AutoComplete:
         """
         evalfuncs, complete, wantwin, mode = args
         # Cancel another delayed call, if it exists.
-        if self._delayed_completion_id is not None:
+        if self._delayed_completion_id:
             self.text.after_cancel(self._delayed_completion_id)
             self._delayed_completion_id = None
 

@@ -74,7 +74,7 @@ def fnmatchcase(name, pat):
     its arguments.
     """
     match = _compile_pattern(pat)
-    return match(name) is not None
+    return bool(match(name))
 
 
 def translate(pat):

@@ -230,7 +230,7 @@ class Instruction(_Instruction):
         fields = []
         # Column: Source code line number
         if lineno_width:
-            if self.starts_line is not None:
+            if self.starts_line:
                 lineno_fmt = "%%%dd" % lineno_width
                 fields.append(lineno_fmt % self.starts_line)
             else:
@@ -250,7 +250,7 @@ class Instruction(_Instruction):
         # Column: Opcode name
         fields.append(self.opname.ljust(_OPNAME_WIDTH))
         # Column: Opcode argument
-        if self.arg is not None:
+        if self.arg:
             fields.append(repr(self.arg).rjust(_OPARG_WIDTH))
             # Column: Opcode argument details
             if self.argrepr:
@@ -272,7 +272,7 @@ def get_instructions(x, *, first_line=None):
     co = _get_code_object(x)
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
-    if first_line is not None:
+    if first_line:
         line_offset = first_line - co.co_firstlineno
     else:
         line_offset = 0
@@ -288,7 +288,7 @@ def _get_const_info(const_index, const_list):
        Otherwise returns the constant index and its repr().
     """
     argval = const_index
-    if const_list is not None:
+    if const_list:
         argval = const_list[const_index]
     return argval, repr(argval)
 
@@ -300,7 +300,7 @@ def _get_name_info(name_index, name_list):
        Otherwise returns the name index and its repr().
     """
     argval = name_index
-    if name_list is not None:
+    if name_list:
         argval = name_list[name_index]
         argrepr = argval
     else:
@@ -321,14 +321,14 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
     labels = findlabels(code)
     starts_line = None
     for offset, op, arg in _unpack_opargs(code):
-        if linestarts is not None:
+        if linestarts:
             starts_line = linestarts.get(offset, None)
-            if starts_line is not None:
+            if starts_line:
                 starts_line += line_offset
         is_jump_target = offset in labels
         argval = None
         argrepr = ''
-        if arg is not None:
+        if arg:
             #  Set argval to the dereferenced value of the argument when
             #  available, and argrepr to the string representation of argval.
             #    _disassemble_bytes needs the string repr of the
@@ -372,7 +372,7 @@ def disassemble(co, lasti=-1, *, file=None):
 def _disassemble_recursive(co, *, file=None, depth=None):
     disassemble(co, file=file)
     if depth is None or depth > 0:
-        if depth is not None:
+        if depth:
             depth = depth - 1
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
@@ -401,9 +401,7 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
     for instr in _get_instructions_bytes(code, varnames, names,
                                          constants, cells, linestarts,
                                          line_offset=line_offset):
-        new_source_line = (show_lineno and
-                           instr.starts_line is not None and
-                           instr.offset > 0)
+        new_source_line = (show_lineno and instr.starts_line and instr.offset > 0)
         if new_source_line:
             print(file=file)
         is_current_instr = instr.offset == lasti
@@ -435,7 +433,7 @@ def findlabels(code):
     """
     labels = []
     for offset, op, arg in _unpack_opargs(code):
-        if arg is not None:
+        if arg:
             if op in hasjrel:
                 label = offset + 2 + arg
             elif op in hasjabs:
@@ -453,7 +451,7 @@ def findlinestarts(code):
     """
     lastline = None
     for start, end, line in code.co_lines():
-        if line is not None and line != lastline:
+        if line and line != lastline:
             lastline = line
             yield start, line
     return
@@ -505,7 +503,7 @@ class Bytecode:
     def dis(self):
         """Return a formatted view of the bytecode operations."""
         co = self.codeobj
-        if self.current_offset is not None:
+        if self.current_offset:
             offset = self.current_offset
         else:
             offset = -1

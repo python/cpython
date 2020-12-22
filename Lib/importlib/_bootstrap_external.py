@@ -355,10 +355,10 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     If sys.implementation.cache_tag is None then NotImplementedError is raised.
 
     """
-    if debug_override is not None:
+    if debug_override:
         _warnings.warn('the debug_override parameter is deprecated; use '
                        "'optimization' instead", DeprecationWarning)
-        if optimization is not None:
+        if optimization:
             message = 'debug_override or optimization must be set to None'
             raise TypeError(message)
         optimization = '' if debug_override else 1
@@ -380,7 +380,7 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
             raise ValueError('{!r} is not alphanumeric'.format(optimization))
         almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
     filename = almost_filename + BYTECODE_SUFFIXES[0]
-    if sys.pycache_prefix is not None:
+    if sys.pycache_prefix:
         # We need an absolute path to the py file to avoid the possibility of
         # collisions within sys.pycache_prefix, if someone has two different
         # `foo/bar.py` on their system and they import both of them using the
@@ -422,7 +422,7 @@ def source_from_cache(path):
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
     found_in_pycache_prefix = False
-    if sys.pycache_prefix is not None:
+    if sys.pycache_prefix:
         stripped_path = sys.pycache_prefix.rstrip(path_separators)
         if head.startswith(stripped_path + path_sep):
             head = head[len(stripped_path):]
@@ -509,7 +509,7 @@ def _check_name(method):
 
     # FIXME: @_check_name is used to define class methods before the
     # _bootstrap module is set by _set_bootstrap_module().
-    if _bootstrap is not None:
+    if _bootstrap:
         _wrap = _bootstrap._wrap
     else:
         def _wrap(new, old):
@@ -595,7 +595,7 @@ def _validate_timestamp_pyc(data, source_mtime, source_size, name,
         message = f'bytecode is stale for {name!r}'
         _bootstrap._verbose_message('{}', message)
         raise ImportError(message, **exc_details)
-    if (source_size is not None and
+    if (source_size and
         _unpack_uint32(data[12:16]) != (source_size & 0xFFFFFFFF)):
         raise ImportError(f'bytecode is stale for {name!r}', **exc_details)
 
@@ -629,7 +629,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
     code = marshal.loads(data)
     if isinstance(code, _code_type):
         _bootstrap._verbose_message('code object from {!r}', bytecode_path)
-        if source_path is not None:
+        if source_path:
             _imp._fix_co_filename(code, source_path)
         return code
     else:
@@ -801,7 +801,7 @@ class WindowsRegistryFinder:
 
         """
         spec = cls.find_spec(fullname, path)
-        if spec is not None:
+        if spec:
             return spec.loader
         else:
             return None
@@ -965,8 +965,7 @@ class SourceLoader(_LoaderBasics):
             source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
         _bootstrap._verbose_message('code object from {}', source_path)
-        if (not sys.dont_write_bytecode and bytecode_path is not None and
-                source_mtime is not None):
+        if (not sys.dont_write_bytecode and bytecode_path and source_mtime):
             if hash_based:
                 if source_hash is None:
                     source_hash = _imp.source_hash(source_bytes)
@@ -1188,7 +1187,7 @@ class _NamespacePath:
             spec = self._path_finder(self._name, parent_path)
             # Note that no changes are made if a loader is returned, but we
             #  do remember the new parent path
-            if spec is not None and spec.loader is None:
+            if spec and spec.loader is None:
                 if spec.submodule_search_locations:
                     self._path = spec.submodule_search_locations
             self._last_parent_path = parent_path     # Save the copy
@@ -1318,7 +1317,7 @@ class PathFinder:
         else:
             loader = finder.find_module(fullname)
             portions = []
-        if loader is not None:
+        if loader:
             return _bootstrap.spec_from_loader(fullname, loader)
         spec = _bootstrap.ModuleSpec(fullname, None)
         spec.submodule_search_locations = portions
@@ -1334,14 +1333,14 @@ class PathFinder:
             if not isinstance(entry, (str, bytes)):
                 continue
             finder = cls._path_importer_cache(entry)
-            if finder is not None:
+            if finder:
                 if hasattr(finder, 'find_spec'):
                     spec = finder.find_spec(fullname, target)
                 else:
                     spec = cls._legacy_get_spec(fullname, finder)
                 if spec is None:
                     continue
-                if spec.loader is not None:
+                if spec.loader:
                     return spec
                 portions = spec.submodule_search_locations
                 if portions is None:

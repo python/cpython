@@ -211,7 +211,7 @@ class Debugger:
                 m1 = type.__name__
             except AttributeError:
                 m1 = "%s" % str(type)
-            if value is not None:
+            if value:
                 try:
                     m1 = "%s: %s" % (m1, str(value))
                 except:
@@ -409,7 +409,7 @@ class StackViewer(ScrolledList):
             if i == index:
                 item = "> " + item
             self.append(item)
-        if index is not None:
+        if index:
             self.select(index)
 
     def popup_event(self, event):

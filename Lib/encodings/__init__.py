@@ -85,7 +85,7 @@ def search_function(encoding):
     norm_encoding = normalize_encoding(encoding)
     aliased_encoding = _aliases.get(norm_encoding) or \
                        _aliases.get(norm_encoding.replace('.', '_'))
-    if aliased_encoding is not None:
+    if aliased_encoding:
         modnames = [aliased_encoding,
                     norm_encoding]
     else:
@@ -125,10 +125,10 @@ def search_function(encoding):
             raise CodecRegistryError('module "%s" (%s) failed to register'
                                      % (mod.__name__, mod.__file__))
         if not callable(entry[0]) or not callable(entry[1]) or \
-           (entry[2] is not None and not callable(entry[2])) or \
-           (entry[3] is not None and not callable(entry[3])) or \
-           (len(entry) > 4 and entry[4] is not None and not callable(entry[4])) or \
-           (len(entry) > 5 and entry[5] is not None and not callable(entry[5])):
+           (entry[2] and not callable(entry[2])) or \
+           (entry[3] and not callable(entry[3])) or \
+           (len(entry) > 4 and entry[4] and not callable(entry[4])) or \
+           (len(entry) > 5 and entry[5] and not callable(entry[5])):
             raise CodecRegistryError('incompatible codecs in module "%s" (%s)'
                                      % (mod.__name__, mod.__file__))
         if len(entry)<7 or entry[6] is None:

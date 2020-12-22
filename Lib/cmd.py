@@ -84,11 +84,11 @@ class Cmd:
         sys.stdin and sys.stdout are used.
 
         """
-        if stdin is not None:
+        if stdin:
             self.stdin = stdin
         else:
             self.stdin = sys.stdin
-        if stdout is not None:
+        if stdout:
             self.stdout = stdout
         else:
             self.stdout = sys.stdout
@@ -112,7 +112,7 @@ class Cmd:
             except ImportError:
                 pass
         try:
-            if intro is not None:
+            if intro:
                 self.intro = intro
             if self.intro:
                 self.stdout.write(str(self.intro)+"\n")

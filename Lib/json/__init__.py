@@ -346,14 +346,14 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
         return _default_decoder.decode(s)
     if cls is None:
         cls = JSONDecoder
-    if object_hook is not None:
+    if object_hook:
         kw['object_hook'] = object_hook
-    if object_pairs_hook is not None:
+    if object_pairs_hook:
         kw['object_pairs_hook'] = object_pairs_hook
-    if parse_float is not None:
+    if parse_float:
         kw['parse_float'] = parse_float
-    if parse_int is not None:
+    if parse_int:
         kw['parse_int'] = parse_int
-    if parse_constant is not None:
+    if parse_constant:
         kw['parse_constant'] = parse_constant
     return cls(**kw).decode(s)

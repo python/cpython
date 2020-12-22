@@ -111,7 +111,7 @@ class ForkServer(object):
         '''
         with self._lock:
             resource_tracker.ensure_running()
-            if self._forkserver_pid is not None:
+            if self._forkserver_pid:
                 # forkserver was launched before, is it still running?
                 pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
                 if not pid:
@@ -167,7 +167,7 @@ class ForkServer(object):
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
     '''Run forkserver.'''
     if preload:
-        if '__main__' in preload and main_path is not None:
+        if '__main__' in preload and main_path:
             process.current_process()._inheriting = True
             try:
                 spawn.import_main_path(main_path)
@@ -236,7 +236,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
                         if pid == 0:
                             break
                         child_w = pid_to_fd.pop(pid, None)
-                        if child_w is not None:
+                        if child_w:
                             returncode = os.waitstatus_to_exitcode(sts)
 
                             # Send exit code to client process

@@ -1305,9 +1305,7 @@ class Transport:
 
     def send_content(self, connection, request_body):
         #optionally encode the request
-        if (self.encode_threshold is not None and
-            self.encode_threshold < len(request_body) and
-            gzip):
+        if (self.encode_threshold and self.encode_threshold < len(request_body) and gzip):
             connection.putheader("Content-Encoding", "gzip")
             request_body = gzip_encode(request_body)
 

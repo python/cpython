@@ -43,7 +43,7 @@ class FileList:
 
     def gotofileline(self, filename, lineno=None):
         edit = self.open(filename)
-        if edit is not None and lineno is not None:
+        if edit and lineno:
             edit.gotoline(lineno)
 
     def new(self, filename=None):

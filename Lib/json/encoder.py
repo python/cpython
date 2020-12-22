@@ -150,11 +150,11 @@ class JSONEncoder(object):
         self.allow_nan = allow_nan
         self.sort_keys = sort_keys
         self.indent = indent
-        if separators is not None:
+        if separators:
             self.item_separator, self.key_separator = separators
-        elif indent is not None:
+        elif indent:
             self.item_separator = ','
-        if default is not None:
+        if default:
             self.default = default
 
     def default(self, o):
@@ -243,8 +243,7 @@ class JSONEncoder(object):
             return text
 
 
-        if (_one_shot and c_make_encoder is not None
-                and self.indent is None):
+        if (_one_shot and c_make_encoder and self.indent is None):
             _iterencode = c_make_encoder(
                 markers, self.default, _encoder, self.indent,
                 self.key_separator, self.item_separator, self.sort_keys,
@@ -271,20 +270,20 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _intstr=int.__repr__,
     ):
 
-    if _indent is not None and not isinstance(_indent, str):
+    if _indent and not isinstance(_indent, str):
         _indent = ' ' * _indent
 
     def _iterencode_list(lst, _current_indent_level):
         if not lst:
             yield '[]'
             return
-        if markers is not None:
+        if markers:
             markerid = id(lst)
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = lst
         buf = '['
-        if _indent is not None:
+        if _indent:
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
             separator = _item_separator + newline_indent
@@ -323,24 +322,24 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 else:
                     chunks = _iterencode(value, _current_indent_level)
                 yield from chunks
-        if newline_indent is not None:
+        if newline_indent:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
         yield ']'
-        if markers is not None:
+        if markers:
             del markers[markerid]
 
     def _iterencode_dict(dct, _current_indent_level):
         if not dct:
             yield '{}'
             return
-        if markers is not None:
+        if markers:
             markerid = id(dct)
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = dct
         yield '{'
-        if _indent is not None:
+        if _indent:
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
             item_separator = _item_separator + newline_indent
@@ -403,11 +402,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 else:
                     chunks = _iterencode(value, _current_indent_level)
                 yield from chunks
-        if newline_indent is not None:
+        if newline_indent:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
         yield '}'
-        if markers is not None:
+        if markers:
             del markers[markerid]
 
     def _iterencode(o, _current_indent_level):
@@ -430,13 +429,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, dict):
             yield from _iterencode_dict(o, _current_indent_level)
         else:
-            if markers is not None:
+            if markers:
                 markerid = id(o)
                 if markerid in markers:
                     raise ValueError("Circular reference detected")
                 markers[markerid] = o
             o = _default(o)
             yield from _iterencode(o, _current_indent_level)
-            if markers is not None:
+            if markers:
                 del markers[markerid]
     return _iterencode

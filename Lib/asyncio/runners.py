@@ -29,7 +29,7 @@ def run(main, *, debug=None):
 
         asyncio.run(main())
     """
-    if events._get_running_loop() is not None:
+    if events._get_running_loop():
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
@@ -39,7 +39,7 @@ def run(main, *, debug=None):
     loop = events.new_event_loop()
     try:
         events.set_event_loop(loop)
-        if debug is not None:
+        if debug:
             loop.set_debug(debug)
         return loop.run_until_complete(main)
     finally:
@@ -65,7 +65,7 @@ def _cancel_all_tasks(loop):
     for task in to_cancel:
         if task.cancelled():
             continue
-        if task.exception() is not None:
+        if task.exception():
             loop.call_exception_handler({
                 'message': 'unhandled exception during asyncio.run() shutdown',
                 'exception': task.exception(),

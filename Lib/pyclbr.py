@@ -59,7 +59,7 @@ class _Object:
         self.lineno = lineno
         self.parent = parent
         self.children = {}
-        if parent is not None:
+        if parent:
             parent.children[name] = self
 
 class Function(_Object):
@@ -117,7 +117,7 @@ def _readmodule(module, path, inpackage=None):
     module, and path is combined with sys.path.
     """
     # Compute the full module name (prepending inpackage if set).
-    if inpackage is not None:
+    if inpackage:
         fullmodule = "%s.%s" % (inpackage, module)
     else:
         fullmodule = module
@@ -140,7 +140,7 @@ def _readmodule(module, path, inpackage=None):
         package = module[:i]
         submodule = module[i+1:]
         parent = _readmodule(package, path, inpackage)
-        if inpackage is not None:
+        if inpackage:
             package = "%s.%s" % (inpackage, package)
         if not '__path__' in parent:
             raise ImportError('No package named {}'.format(package))
@@ -148,7 +148,7 @@ def _readmodule(module, path, inpackage=None):
 
     # Search the path for the module.
     f = None
-    if inpackage is not None:
+    if inpackage:
         search_path = path
     else:
         search_path = path + sys.path
@@ -157,7 +157,7 @@ def _readmodule(module, path, inpackage=None):
         raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree
     # Is module a package?
-    if spec.submodule_search_locations is not None:
+    if spec.submodule_search_locations:
         tree['__path__'] = spec.submodule_search_locations
     try:
         source = spec.loader.get_source(fullmodule)

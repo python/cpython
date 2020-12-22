@@ -263,7 +263,7 @@ class _FlowControlMixin(Transport):
 
     def __init__(self, extra=None, loop=None):
         super().__init__(extra)
-        assert loop is not None
+        assert bool(loop) #isnot None
         self._loop = loop
         self._protocol_paused = False
         self._set_write_buffer_limits()

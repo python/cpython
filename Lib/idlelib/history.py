@@ -49,7 +49,7 @@ class History:
         nhist = len(self.history)
         pointer = self.pointer
         prefix = self.prefix
-        if pointer is not None and prefix is not None:
+        if pointer and prefix:
             if self.text.compare("insert", "!=", "end-1c") or \
                     self.text.get("iomark", "end-1c") != self.history[pointer]:
                 pointer = prefix = None

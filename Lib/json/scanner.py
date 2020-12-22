@@ -46,7 +46,7 @@ def py_make_scanner(context):
             return False, idx + 5
 
         m = match_number(string, idx)
-        if m is not None:
+        if m:
             integer, frac, exp = m.groups()
             if frac or exp:
                 res = parse_float(integer + (frac or '') + (exp or ''))

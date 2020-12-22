@@ -254,7 +254,7 @@ class SMTP:
             if code != 220:
                 self.close()
                 raise SMTPConnectError(code, msg)
-        if local_hostname is not None:
+        if local_hostname:
             self.local_hostname = local_hostname
         else:
             # RFC 2821 says we should use the fqdn in the EHLO/HELO verb, and
@@ -303,7 +303,7 @@ class SMTP:
     def _get_socket(self, host, port, timeout):
         # This makes it simpler for SMTP_SSL to use the SMTP connect code
         # and just alter the socket connection bit.
-        if timeout is not None and not timeout:
+        if timeout and not timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')
         if self.debuglevel > 0:
             self._print_debug('connect: to', (host, port), self.source_address)
@@ -630,7 +630,7 @@ class SMTP:
         # than None when challenge is None, then they do.  See issue #15014.
         mechanism = mechanism.upper()
         initial_response = (authobject() if initial_response_ok else None)
-        if initial_response is not None:
+        if initial_response:
             response = encode_base64(initial_response.encode('ascii'), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
         else:
@@ -758,13 +758,13 @@ class SMTP:
         if resp == 220:
             if not _have_ssl:
                 raise RuntimeError("No SSL support included in this Python")
-            if context is not None and keyfile is not None:
+            if context and keyfile:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
-            if context is not None and certfile is not None:
+            if context and certfile:
                 raise ValueError("context and certfile arguments are mutually "
                                  "exclusive")
-            if keyfile is not None or certfile is not None:
+            if keyfile or certfile:
                 import warnings
                 warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
@@ -942,7 +942,7 @@ class SMTP:
             addr_fields = [f for f in (msg[header_prefix + 'To'],
                                        msg[header_prefix + 'Bcc'],
                                        msg[header_prefix + 'Cc'])
-                           if f is not None]
+                           if f]
             to_addrs = [a[1] for a in email.utils.getaddresses(addr_fields)]
         # Make a local copy so we can delete the bcc headers.
         msg_copy = copy.copy(msg)
@@ -1015,13 +1015,13 @@ if _have_ssl:
                      keyfile=None, certfile=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, context=None):
-            if context is not None and keyfile is not None:
+            if context and keyfile:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
-            if context is not None and certfile is not None:
+            if context and certfile:
                 raise ValueError("context and certfile arguments are mutually "
                                  "exclusive")
-            if keyfile is not None or certfile is not None:
+            if keyfile or certfile:
                 import warnings
                 warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
@@ -1076,7 +1076,7 @@ class LMTP(SMTP):
         if host[0] != '/':
             return super().connect(host, port, source_address=source_address)
 
-        if self.timeout is not None and not self.timeout:
+        if self.timeout and not self.timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')
 
         # Handle Unix-domain sockets.

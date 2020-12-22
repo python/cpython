@@ -169,7 +169,7 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
                continuation_ws=continuation_ws)
     for s, charset in decoded_seq:
         # None means us-ascii but we can simply pass it on to h.append()
-        if charset is not None and not isinstance(charset, Charset):
+        if charset and not isinstance(charset, Charset):
             charset = Charset(charset)
         h.append(s, charset)
     return h
@@ -213,7 +213,7 @@ class Header:
         self._charset = charset
         self._continuation_ws = continuation_ws
         self._chunks = []
-        if s is not None:
+        if s:
             self.append(s, charset, errors)
         if maxlinelen is None:
             maxlinelen = MAXLINELEN
@@ -356,7 +356,7 @@ class Header:
         lastcs = None
         hasspace = lastspace = None
         for string, charset in self._chunks:
-            if hasspace is not None:
+            if hasspace:
                 hasspace = string and self._nonctext(string[0])
                 if lastcs not in (None, 'us-ascii'):
                     if not hasspace or charset not in (None, 'us-ascii'):
@@ -373,7 +373,7 @@ class Header:
                 formatter.feed('', '', charset)
             for line in lines[1:]:
                 formatter.newline()
-                if charset.header_encoding is not None:
+                if charset.header_encoding:
                     formatter.feed(self._continuation_ws, ' ' + line.lstrip(),
                                    charset)
                 else:
@@ -400,7 +400,7 @@ class Header:
             if charset == last_charset:
                 last_chunk.append(string)
             else:
-                if last_charset is not None:
+                if last_charset:
                     chunks.append((SPACE.join(last_chunk), last_charset))
                 last_chunk = [string]
                 last_charset = charset
@@ -464,7 +464,7 @@ class _ValueFormatter:
         except IndexError:
             # There are no encoded lines, so we're done.
             return
-        if first_line is not None:
+        if first_line:
             self._append_chunk(fws, first_line)
         try:
             last_line = encoded_lines.pop()

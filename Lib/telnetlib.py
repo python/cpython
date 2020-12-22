@@ -214,7 +214,7 @@ class Telnet:
         self.sb = 0 # flag for SB and SE sequence.
         self.sbdataq = b''
         self.option_callback = None
-        if host is not None:
+        if host:
             self.open(host, port, timeout)
 
     def open(self, host, port=0, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
@@ -307,7 +307,7 @@ class Telnet:
             buf = self.cookedq[:i]
             self.cookedq = self.cookedq[i:]
             return buf
-        if timeout is not None:
+        if timeout:
             deadline = _time() + timeout
         with _TelnetSelector() as selector:
             selector.register(self, selectors.EVENT_READ)
@@ -322,7 +322,7 @@ class Telnet:
                         buf = self.cookedq[:i]
                         self.cookedq = self.cookedq[i:]
                         return buf
-                if timeout is not None:
+                if timeout:
                     timeout = deadline - _time()
                     if timeout < 0:
                         break
@@ -612,7 +612,7 @@ class Telnet:
             if not hasattr(list[i], "search"):
                 if not re: import re
                 list[i] = re.compile(list[i])
-        if timeout is not None:
+        if timeout:
             deadline = _time() + timeout
         with _TelnetSelector() as selector:
             selector.register(self, selectors.EVENT_READ)
@@ -625,7 +625,7 @@ class Telnet:
                         text = self.cookedq[:e]
                         self.cookedq = self.cookedq[e:]
                         return (i, m, text)
-                if timeout is not None:
+                if timeout:
                     ready = selector.select(timeout)
                     timeout = deadline - _time()
                     if not ready:

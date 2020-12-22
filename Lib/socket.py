@@ -453,7 +453,7 @@ class socket(_socket.socket):
             raise ValueError("file should be opened in binary mode")
         if not self.type & SOCK_STREAM:
             raise ValueError("only SOCK_STREAM type sockets are supported")
-        if count is not None:
+        if count:
             if not isinstance(count, int):
                 raise TypeError(
                     "count must be a positive integer (got {!r})".format(count))
@@ -835,10 +835,10 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
 
         except error as _:
             err = _
-            if sock is not None:
+            if sock:
                 sock.close()
 
-    if err is not None:
+    if err:
         try:
             raise err
         finally:

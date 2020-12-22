@@ -335,7 +335,7 @@ def _getattribute(obj, name):
 def whichmodule(obj, name):
     """Find the module an object belong to."""
     module_name = getattr(obj, '__module__', None)
-    if module_name is not None:
+    if module_name:
         return module_name
     # Protect the iteration by using a list copy of sys.modules against dynamic
     # modules that trigger imports of other modules upon calls to getattr.
@@ -447,7 +447,7 @@ class _Pickler:
             protocol = HIGHEST_PROTOCOL
         elif not 0 <= protocol <= HIGHEST_PROTOCOL:
             raise ValueError("pickle protocol must be <= %d" % HIGHEST_PROTOCOL)
-        if buffer_callback is not None and protocol < 5:
+        if buffer_callback and protocol < 5:
             raise ValueError("buffer_callback needs protocol >= 5")
         self._buffer_callback = buffer_callback
         try:
@@ -537,33 +537,33 @@ class _Pickler:
 
         # Check for persistent id (defined by a subclass)
         pid = self.persistent_id(obj)
-        if pid is not None and save_persistent_id:
+        if pid and save_persistent_id:
             self.save_pers(pid)
             return
 
         # Check the memo
         x = self.memo.get(id(obj))
-        if x is not None:
+        if x:
             self.write(self.get(x[0]))
             return
 
         rv = NotImplemented
         reduce = getattr(self, "reducer_override", None)
-        if reduce is not None:
+        if reduce:
             rv = reduce(obj)
 
         if rv is NotImplemented:
             # Check the type dispatch table
             t = type(obj)
             f = self.dispatch.get(t)
-            if f is not None:
+            if f:
                 f(self, obj)  # Call unbound method with explicit self
                 return
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
             reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
-            if reduce is not None:
+            if reduce:
                 rv = reduce(obj)
             else:
                 # Check for a class with a custom metaclass; treat as regular
@@ -574,11 +574,11 @@ class _Pickler:
 
                 # Check for a __reduce_ex__ method, fall back to __reduce__
                 reduce = getattr(obj, "__reduce_ex__", None)
-                if reduce is not None:
+                if reduce:
                     rv = reduce(self.proto)
                 else:
                     reduce = getattr(obj, "__reduce__", None)
-                    if reduce is not None:
+                    if reduce:
                         rv = reduce()
                     else:
                         raise PicklingError("Can't pickle %r object: %r" %
@@ -636,7 +636,7 @@ class _Pickler:
             if not hasattr(cls, "__new__"):
                 raise PicklingError("args[0] from {} args has no __new__"
                                     .format(func_name))
-            if obj is not None and cls is not obj.__class__:
+            if obj and cls is not obj.__class__:
                 raise PicklingError("args[0] from {} args has the wrong class"
                                     .format(func_name))
             if self.proto >= 4:
@@ -680,7 +680,7 @@ class _Pickler:
             if not hasattr(cls, "__new__"):
                 raise PicklingError(
                     "args[0] from __newobj__ args has no __new__")
-            if obj is not None and cls is not obj.__class__:
+            if obj and cls is not obj.__class__:
                 raise PicklingError(
                     "args[0] from __newobj__ args has the wrong class")
             args = args[1:]
@@ -692,7 +692,7 @@ class _Pickler:
             save(args)
             write(REDUCE)
 
-        if obj is not None:
+        if obj:
             # If the object is already in the memo, this means it is
             # recursive. In this case, throw away everything we put on the
             # stack, and fetch the object back from the memo.
@@ -706,13 +706,13 @@ class _Pickler:
         # the 4th and 5th item should be iterators that provide list
         # items and dict items (as (key, value) tuples), or None.
 
-        if listitems is not None:
+        if listitems:
             self._batch_appends(listitems)
 
-        if dictitems is not None:
+        if dictitems:
             self._batch_setitems(dictitems)
 
-        if state is not None:
+        if state:
             if state_setter is None:
                 save(state)
                 write(BUILD)
@@ -830,7 +830,7 @@ class _Pickler:
                     raise PicklingError("PickleBuffer can not be pickled when "
                                         "pointing to a non-contiguous buffer")
                 in_band = True
-                if self._buffer_callback is not None:
+                if self._buffer_callback:
                     in_band = bool(self._buffer_callback(obj))
                 if in_band:
                     # Write data in-band
@@ -971,7 +971,7 @@ class _Pickler:
         self._batch_setitems(obj.items())
 
     dispatch[dict] = save_dict
-    if PyStringMap is not None:
+    if PyStringMap:
         dispatch[PyStringMap] = save_dict
 
     def _batch_setitems(self, items):
@@ -1174,7 +1174,7 @@ class _Unpickler:
         default to 'ASCII' and 'strict', respectively. *encoding* can be
         'bytes' to read theses 8-bit string instances as bytes objects.
         """
-        self._buffers = iter(buffers) if buffers is not None else None
+        self._buffers = iter(buffers) if buffers else None
         self._file_readline = file.readline
         self._file_read = file.read
         self.memo = {}
@@ -1713,7 +1713,7 @@ class _Unpickler:
         state = stack.pop()
         inst = stack[-1]
         setstate = getattr(inst, "__setstate__", None)
-        if setstate is not None:
+        if setstate:
             setstate(state)
             return
         slotstate = None

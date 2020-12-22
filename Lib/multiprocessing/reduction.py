@@ -191,7 +191,7 @@ else:
     def DupFd(fd):
         '''Return a wrapper for an fd.'''
         popen_obj = context.get_spawning_popen()
-        if popen_obj is not None:
+        if popen_obj:
             return popen_obj.DupFd(popen_obj.duplicate_for_child(fd))
         elif HAVE_SEND_HANDLE:
             from . import resource_sharer

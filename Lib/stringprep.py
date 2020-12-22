@@ -188,7 +188,7 @@ b3_exceptions = {
 
 def map_table_b3(code):
     r = b3_exceptions.get(ord(code))
-    if r is not None: return r
+    if r: return r
     return code.lower()
 
 

@@ -47,7 +47,7 @@ class Handle:
         info = [self.__class__.__name__]
         if self._cancelled:
             info.append('cancelled')
-        if self._callback is not None:
+        if self._callback:
             info.append(format_helpers._format_callback_source(
                 self._callback, self._args))
         if self._source_traceback:
@@ -56,7 +56,7 @@ class Handle:
         return info
 
     def __repr__(self):
-        if self._repr is not None:
+        if self._repr:
             return self._repr
         info = self._repr_info()
         return '<{}>'.format(' '.join(info))
@@ -101,7 +101,7 @@ class TimerHandle(Handle):
     __slots__ = ['_scheduled', '_when']
 
     def __init__(self, when, callback, args, loop, context=None):
-        assert when is not None
+        assert bool(when) #isnot None
         super().__init__(callback, args, loop, context)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -711,7 +711,7 @@ def _get_running_loop():
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
     running_loop, pid = _running_loop.loop_pid
-    if running_loop is not None and pid == os.getpid():
+    if running_loop and pid == os.getpid():
         return running_loop
 
 
@@ -760,7 +760,7 @@ def get_event_loop():
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
     current_loop = _get_running_loop()
-    if current_loop is not None:
+    if current_loop:
         return current_loop
     return get_event_loop_policy().get_event_loop()
 

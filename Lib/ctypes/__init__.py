@@ -301,7 +301,7 @@ def create_unicode_buffer(init, size=None):
 
 # XXX Deprecated
 def SetPointerType(pointer, cls):
-    if _pointer_type_cache.get(cls, None) is not None:
+    if _pointer_type_cache.get(cls, None):
         raise RuntimeError("This type already exists in the cache")
     if id(pointer) not in _pointer_type_cache:
         raise RuntimeError("What's this???")
@@ -356,7 +356,7 @@ class CDLL(object):
             if name and name.endswith(")") and ".a(" in name:
                 mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
         if _os.name == "nt":
-            if winmode is not None:
+            if winmode:
                 mode = winmode
             else:
                 import nt

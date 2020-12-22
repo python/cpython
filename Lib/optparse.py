@@ -638,7 +638,7 @@ class Option:
     def _check_type(self):
         if self.type is None:
             if self.action in self.ALWAYS_TYPED_ACTIONS:
-                if self.choices is not None:
+                if self.choices:
                     # The "choices" attribute implies "choice" type.
                     self.type = "choice"
                 else:
@@ -668,15 +668,14 @@ class Option:
                 raise OptionError(
                     "choices must be a list of strings ('%s' supplied)"
                     % str(type(self.choices)).split("'")[1], self)
-        elif self.choices is not None:
+        elif self.choices:
             raise OptionError(
                 "must not supply choices for type %r" % self.type, self)
 
     def _check_dest(self):
         # No destination given, and we need one for this action.  The
         # self.type check is for callbacks that take a value.
-        takes_value = (self.action in self.STORE_ACTIONS or
-                       self.type is not None)
+        takes_value = (self.action in self.STORE_ACTIONS or self.type)
         if self.dest is None and takes_value:
 
             # Glean a destination from the first long option string,
@@ -688,7 +687,7 @@ class Option:
                 self.dest = self._short_opts[0][1]
 
     def _check_const(self):
-        if self.action not in self.CONST_ACTIONS and self.const is not None:
+        if self.action not in self.CONST_ACTIONS and self.const:
             raise OptionError(
                 "'const' must not be supplied for action %r" % self.action,
                 self)
@@ -697,7 +696,7 @@ class Option:
         if self.action in self.TYPED_ACTIONS:
             if self.nargs is None:
                 self.nargs = 1
-        elif self.nargs is not None:
+        elif self.nargs:
             raise OptionError(
                 "'nargs' must not be supplied for action %r" % self.action,
                 self)
@@ -707,25 +706,25 @@ class Option:
             if not callable(self.callback):
                 raise OptionError(
                     "callback not callable: %r" % self.callback, self)
-            if (self.callback_args is not None and
+            if (self.callback_args and
                 not isinstance(self.callback_args, tuple)):
                 raise OptionError(
                     "callback_args, if supplied, must be a tuple: not %r"
                     % self.callback_args, self)
-            if (self.callback_kwargs is not None and
+            if (self.callback_kwargs and
                 not isinstance(self.callback_kwargs, dict)):
                 raise OptionError(
                     "callback_kwargs, if supplied, must be a dict: not %r"
                     % self.callback_kwargs, self)
         else:
-            if self.callback is not None:
+            if self.callback:
                 raise OptionError(
                     "callback supplied (%r) for non-callback option"
                     % self.callback, self)
-            if self.callback_args is not None:
+            if self.callback_args:
                 raise OptionError(
                     "callback_args supplied for non-callback option", self)
-            if self.callback_kwargs is not None:
+            if self.callback_kwargs:
                 raise OptionError(
                     "callback_kwargs supplied for non-callback option", self)
 
@@ -747,7 +746,7 @@ class Option:
     __repr__ = _repr
 
     def takes_value(self):
-        return self.type is not None
+        return bool(self.type) #isnot None
 
     def get_opt_string(self):
         if self._long_opts:
@@ -766,7 +765,7 @@ class Option:
             return checker(self, opt, value)
 
     def convert_value(self, opt, value):
-        if value is not None:
+        if value:
             if self.nargs == 1:
                 return self.check_value(opt, value)
             else:
@@ -850,7 +849,7 @@ class Values:
         for attr in dir(self):
             if attr in dict:
                 dval = dict[attr]
-                if dval is not None:
+                if dval:
                     setattr(self, attr, dval)
 
     def _update_loose(self, dict):
@@ -1014,7 +1013,7 @@ class OptionContainer:
         for opt in option._long_opts:
             self._long_opt[opt] = option
 
-        if option.dest is not None:     # option has a dest, we need a default
+        if option.dest:     # option has a dest, we need a default
             if option.default is not NO_DEFAULT:
                 self.defaults[option.dest] = option.default
             elif option.dest not in self.defaults:

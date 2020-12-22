@@ -107,7 +107,7 @@ def _get_system_version():
                               r'<string>(.*?)</string>', f.read())
             finally:
                 f.close()
-            if m is not None:
+            if m:
                 _SYSTEM_VERSION = '.'.join(m.group(1).split('.')[:2])
             # else: fall back to the default behaviour
 
@@ -154,7 +154,7 @@ def _default_sysroot(cc):
     """ Returns the root of the default SDK for this system, or '/' """
     global _cache_default_sysroot
 
-    if _cache_default_sysroot is not None:
+    if _cache_default_sysroot:
         return _cache_default_sysroot
    
     contents = _read_output('%s -c -E -v - </dev/null' % (cc,), True)
@@ -286,7 +286,7 @@ def _remove_unsupported_archs(_config_vars):
     if 'CC' in os.environ:
         return _config_vars
 
-    if re.search(r'-arch\s+ppc', _config_vars['CFLAGS']) is not None:
+    if re.search(r'-arch\s+ppc', _config_vars['CFLAGS']):
         # NOTE: Cannot use subprocess here because of bootstrap
         # issues when building Python itself
         status = os.system(
@@ -342,7 +342,7 @@ def _check_for_unavailable_sdk(_config_vars):
     # package or the CLT component within Xcode.
     cflags = _config_vars.get('CFLAGS', '')
     m = re.search(r'-isysroot\s*(\S+)', cflags)
-    if m is not None:
+    if m:
         sdk = m.group(1)
         if not os.path.exists(sdk):
             for cv in _UNIVERSAL_CONFIG_VARS:

@@ -210,7 +210,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 if not m:
                     break
             libcinit, glibc, glibcversion, so, threads, soversion = [
-                s.decode('latin1') if s is not None else s
+                s.decode('latin1') if s else s
                 for s in m.groups()]
             if libcinit and not lib:
                 lib = 'libc'
@@ -296,7 +296,7 @@ def _syscmd_ver(system='', release='', version='',
     # Parse the output
     info = info.strip()
     m = _ver_output.match(info)
-    if m is not None:
+    if m:
         system, release, version = m.groups()
         # Strip trailing dots from version and release
         if release[-1] == '.':
@@ -441,7 +441,7 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     # First try reading the information from an XML file which should
     # always be present
     info = _mac_ver_xml()
-    if info is not None:
+    if info:
         return info
 
     # If that also doesn't work return the default values
@@ -808,7 +808,7 @@ def uname():
     """
     global _uname_cache
 
-    if _uname_cache is not None:
+    if _uname_cache:
         return _uname_cache
 
     # Get some infos from the builtin os.uname API...
@@ -997,7 +997,7 @@ def _sys_version(sys_version=None):
 
     # Try the cache first
     result = _sys_version_cache.get(sys_version, None)
-    if result is not None:
+    if result:
         return result
 
     # Parse it
@@ -1176,7 +1176,7 @@ def platform(aliased=0, terse=0):
 
     """
     result = _platform_cache.get((aliased, terse), None)
-    if result is not None:
+    if result:
         return result
 
     # Get uname information and then apply platform specific cosmetics
@@ -1256,7 +1256,7 @@ def _parse_os_release(lines):
 
     for line in lines:
         mo = _os_release_line.match(line)
-        if mo is not None:
+        if mo:
             info[mo.group('name')] = _os_release_unescape.sub(
                 r"\1", mo.group('value')
             )

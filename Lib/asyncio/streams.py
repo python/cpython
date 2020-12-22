@@ -145,7 +145,7 @@ class FlowControlMixin(protocols.Protocol):
             logger.debug("%r resumes writing", self)
 
         waiter = self._drain_waiter
-        if waiter is not None:
+        if waiter:
             self._drain_waiter = None
             if not waiter.done():
                 waiter.set_result(None)
@@ -194,12 +194,12 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def __init__(self, stream_reader, client_connected_cb=None, loop=None):
         super().__init__(loop=loop)
-        if stream_reader is not None:
+        if stream_reader:
             self._stream_reader_wr = weakref.ref(stream_reader)
             self._source_traceback = stream_reader._source_traceback
         else:
             self._stream_reader_wr = None
-        if client_connected_cb is not None:
+        if client_connected_cb:
             # This is a stream created by the `create_server()` function.
             # Keep a strong reference to the reader until a connection
             # is established.
@@ -231,10 +231,10 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             return
         self._transport = transport
         reader = self._stream_reader
-        if reader is not None:
+        if reader:
             reader.set_transport(transport)
-        self._over_ssl = transport.get_extra_info('sslcontext') is not None
-        if self._client_connected_cb is not None:
+        self._over_ssl = bool(transport.get_extra_info('sslcontext')) #isnot None
+        if self._client_connected_cb:
             self._stream_writer = StreamWriter(transport, self,
                                                reader,
                                                self._loop)
@@ -246,7 +246,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def connection_lost(self, exc):
         reader = self._stream_reader
-        if reader is not None:
+        if reader:
             if exc is None:
                 reader.feed_eof()
             else:
@@ -263,12 +263,12 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def data_received(self, data):
         reader = self._stream_reader
-        if reader is not None:
+        if reader:
             reader.feed_data(data)
 
     def eof_received(self):
         reader = self._stream_reader
-        if reader is not None:
+        if reader:
             reader.feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
@@ -310,7 +310,7 @@ class StreamWriter:
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
-        if self._reader is not None:
+        if self._reader:
             info.append(f'reader={self._reader!r}')
         return '<{}>'.format(' '.join(info))
 
@@ -350,9 +350,9 @@ class StreamWriter:
           w.write(data)
           await w.drain()
         """
-        if self._reader is not None:
+        if self._reader:
             exc = self._reader.exception()
-            if exc is not None:
+            if exc:
                 raise exc
         if self._transport.is_closing():
             # Wait for protocol.connection_lost() call
@@ -419,7 +419,7 @@ class StreamReader:
         self._exception = exc
 
         waiter = self._waiter
-        if waiter is not None:
+        if waiter:
             self._waiter = None
             if not waiter.cancelled():
                 waiter.set_exception(exc)
@@ -427,7 +427,7 @@ class StreamReader:
     def _wakeup_waiter(self):
         """Wakeup read*() functions waiting for data or EOF."""
         waiter = self._waiter
-        if waiter is not None:
+        if waiter:
             self._waiter = None
             if not waiter.cancelled():
                 waiter.set_result(None)
@@ -458,9 +458,7 @@ class StreamReader:
         self._buffer.extend(data)
         self._wakeup_waiter()
 
-        if (self._transport is not None and
-                not self._paused and
-                len(self._buffer) > 2 * self._limit):
+        if (self._transport and not self._paused and len(self._buffer) > 2 * self._limit):
             try:
                 self._transport.pause_reading()
             except NotImplementedError:
@@ -480,7 +478,7 @@ class StreamReader:
         # to a read coroutine. Running two read coroutines at the same time
         # would have an unexpected behaviour. It would not possible to know
         # which coroutine would get the next data.
-        if self._waiter is not None:
+        if self._waiter:
             raise RuntimeError(
                 f'{func_name}() called while another coroutine is '
                 f'already waiting for incoming data')
@@ -554,7 +552,7 @@ class StreamReader:
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
 
-        if self._exception is not None:
+        if self._exception:
             raise self._exception
 
         # Consume whole buffer except last bytes, which length is
@@ -642,7 +640,7 @@ class StreamReader:
         needed.
         """
 
-        if self._exception is not None:
+        if self._exception:
             raise self._exception
 
         if n == 0:
@@ -689,7 +687,7 @@ class StreamReader:
         if n < 0:
             raise ValueError('readexactly size can not be less than zero')
 
-        if self._exception is not None:
+        if self._exception:
             raise self._exception
 
         if n == 0:

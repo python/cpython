@@ -165,7 +165,7 @@ def poll2(timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
     if map is None:
         map = socket_map
-    if timeout is not None:
+    if timeout:
         # timeout is in milliseconds
         timeout = int(timeout*1000)
     pollster = select.poll()
@@ -255,7 +255,7 @@ class dispatcher:
             status.append('listening')
         elif self.connected:
             status.append('connected')
-        if self.addr is not None:
+        if self.addr:
             try:
                 status.append('%s:%d' % self.addr)
             except TypeError:
@@ -389,7 +389,7 @@ class dispatcher:
         self.accepting = False
         self.connecting = False
         self.del_channel()
-        if self.socket is not None:
+        if self.socket:
             try:
                 self.socket.close()
             except OSError as why:
@@ -487,7 +487,7 @@ class dispatcher:
 
     def handle_accept(self):
         pair = self.accept()
-        if pair is not None:
+        if pair:
             self.handle_accepted(*pair)
 
     def handle_accepted(self, sock, addr):

@@ -257,7 +257,7 @@ else:
             return
         for inst in _active[:]:
             res = inst._internal_poll(_deadstate=sys.maxsize)
-            if res is not None:
+            if res:
                 try:
                     _active.remove(inst)
                 except ValueError:
@@ -446,9 +446,9 @@ class CompletedProcess(object):
     def __repr__(self):
         args = ['args={!r}'.format(self.args),
                 'returncode={!r}'.format(self.returncode)]
-        if self.stdout is not None:
+        if self.stdout:
             args.append('stdout={!r}'.format(self.stdout))
-        if self.stderr is not None:
+        if self.stderr:
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
 
@@ -491,13 +491,13 @@ def run(*popenargs,
 
     The other arguments are the same as for the Popen constructor.
     """
-    if input is not None:
-        if kwargs.get('stdin') is not None:
+    if input:
+        if kwargs.get('stdin'):
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
 
     if capture_output:
-        if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+        if kwargs.get('stdout') or kwargs.get('stderr'):
             raise ValueError('stdout and stderr arguments may not be used '
                              'with capture_output.')
         kwargs['stdout'] = PIPE
@@ -784,7 +784,7 @@ class Popen(object):
             raise TypeError("pipesize must be an integer")
 
         if _mswindows:
-            if preexec_fn is not None:
+            if preexec_fn:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
         else:
@@ -792,7 +792,7 @@ class Popen(object):
             if pass_fds and not close_fds:
                 warnings.warn("pass_fds overriding close_fds.", RuntimeWarning)
                 close_fds = True
-            if startupinfo is not None:
+            if startupinfo:
                 raise ValueError("startupinfo is only supported on Windows "
                                  "platforms")
             if creationflags != 0:
@@ -810,8 +810,7 @@ class Popen(object):
         self.pipesize = pipesize
 
         # Validate the combinations of text and universal_newlines
-        if (text is not None and universal_newlines is not None
-            and bool(universal_newlines) != bool(text)):
+        if (text and universal_newlines and bool(universal_newlines) != bool(text)):
             raise SubprocessError('Cannot disambiguate when both text '
                                   'and universal_newlines are supplied but '
                                   'different. Pass one or the other.')
@@ -866,7 +865,7 @@ class Popen(object):
                 line_buffering = False
 
         gid = None
-        if group is not None:
+        if group:
             if not hasattr(os, 'setregid'):
                 raise ValueError("The 'group' parameter is not supported on the "
                                  "current platform")
@@ -887,7 +886,7 @@ class Popen(object):
                 raise ValueError(f"Group ID cannot be negative, got {gid}")
 
         gids = None
-        if extra_groups is not None:
+        if extra_groups:
             if not hasattr(os, 'setgroups'):
                 raise ValueError("The 'extra_groups' parameter is not "
                                  "supported on the current platform")
@@ -918,7 +917,7 @@ class Popen(object):
                     raise ValueError(f"Group ID cannot be negative, got {gid_check}")
 
         uid = None
-        if user is not None:
+        if user:
             if not hasattr(os, 'setreuid'):
                 raise ValueError("The 'user' parameter is not supported on "
                                  "the current platform")
@@ -1060,7 +1059,7 @@ class Popen(object):
                   ResourceWarning, source=self)
         # In case the child hasn't been waited on, check if it's done.
         self._internal_poll(_deadstate=_maxsize)
-        if self.returncode is None and _active is not None:
+        if self.returncode is None and _active:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
 
@@ -1132,7 +1131,7 @@ class Popen(object):
                 self.stderr.close()
             self.wait()
         else:
-            if timeout is not None:
+            if timeout:
                 endtime = _time() + timeout
             else:
                 endtime = None
@@ -1142,7 +1141,7 @@ class Popen(object):
             except KeyboardInterrupt:
                 # https://bugs.python.org/issue25942
                 # See the detailed comment in .wait().
-                if timeout is not None:
+                if timeout:
                     sigint_timeout = min(self._sigint_wait_secs,
                                          self._remaining_time(endtime))
                 else:
@@ -1190,7 +1189,7 @@ class Popen(object):
 
     def wait(self, timeout=None):
         """Wait for child process to terminate; returns self.returncode."""
-        if timeout is not None:
+        if timeout:
             endtime = _time() + timeout
         try:
             return self._wait(timeout=timeout)
@@ -1199,7 +1198,7 @@ class Popen(object):
             # The first keyboard interrupt waits briefly for the child to
             # exit under the common assumption that it also received the ^C
             # generated SIGINT and will exit rapidly.
-            if timeout is not None:
+            if timeout:
                 sigint_timeout = min(self._sigint_wait_secs,
                                      self._remaining_time(endtime))
             else:
@@ -1234,7 +1233,7 @@ class Popen(object):
                 if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
                     stack.callback(os.close, errwrite)
 
-            if devnull_fd is not None:
+            if devnull_fd:
                 stack.callback(os.close, devnull_fd)
 
         # Prevent a double close of these handles/fds from __init__ on error.
@@ -1366,7 +1365,7 @@ class Popen(object):
             else:
                 args = list2cmdline(args)
 
-            if executable is not None:
+            if executable:
                 executable = os.fsdecode(executable)
 
             # Process startup details
@@ -1417,7 +1416,7 @@ class Popen(object):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
-            if cwd is not None:
+            if cwd:
                 cwd = os.fsdecode(cwd)
 
             sys.audit("subprocess.Popen", executable, args, cwd, env)
@@ -1511,11 +1510,11 @@ class Popen(object):
             # Wait for the reader threads, or time out.  If we time out, the
             # threads remain reading and the fds left open in case the user
             # calls communicate again.
-            if self.stdout is not None:
+            if self.stdout:
                 self.stdout_thread.join(self._remaining_time(endtime))
                 if self.stdout_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
-            if self.stderr is not None:
+            if self.stderr:
                 self.stderr_thread.join(self._remaining_time(endtime))
                 if self.stderr_thread.is_alive():
                     raise TimeoutExpired(self.args, orig_timeout)
@@ -1532,9 +1531,9 @@ class Popen(object):
                 self.stderr.close()
 
             # All data exchanged.  Translate lists into strings.
-            if stdout is not None:
+            if stdout:
                 stdout = stdout[0]
-            if stderr is not None:
+            if stderr:
                 stderr = stderr[0]
 
             return (stdout, stderr)
@@ -1542,7 +1541,7 @@ class Popen(object):
         def send_signal(self, sig):
             """Send a signal to the process."""
             # Don't signal a process that we know has already died.
-            if self.returncode is not None:
+            if self.returncode:
                 return
             if sig == signal.SIGTERM:
                 self.terminate()
@@ -1556,7 +1555,7 @@ class Popen(object):
         def terminate(self):
             """Terminates the process."""
             # Don't terminate a process that we know has already died.
-            if self.returncode is not None:
+            if self.returncode:
                 return
             try:
                 _winapi.TerminateProcess(self._handle, 1)
@@ -1648,7 +1647,7 @@ class Popen(object):
                 sigset = []
                 for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
                     signum = getattr(signal, signame, None)
-                    if signum is not None:
+                    if signum:
                         sigset.append(signum)
                 kwargs['setsigdef'] = sigset
 
@@ -1747,7 +1746,7 @@ class Popen(object):
                     # potential deadlocks, thus we do all this here.
                     # and pass it to fork_exec()
 
-                    if env is not None:
+                    if env:
                         env_list = []
                         for k, v in env.items():
                             k = os.fsencode(k)
@@ -1864,13 +1863,13 @@ class Popen(object):
                     # at once.  We know nothing yet.
                     return None
                 try:
-                    if self.returncode is not None:
+                    if self.returncode:
                         return self.returncode  # Another thread waited.
                     pid, sts = _waitpid(self.pid, _WNOHANG)
                     if pid == self.pid:
                         self._handle_exitstatus(sts)
                 except OSError as e:
-                    if _deadstate is not None:
+                    if _deadstate:
                         self.returncode = _deadstate
                     elif e.errno == _ECHILD:
                         # This happens if SIGCLD is set to be ignored or
@@ -1899,10 +1898,10 @@ class Popen(object):
 
         def _wait(self, timeout):
             """Internal implementation of wait() on POSIX."""
-            if self.returncode is not None:
+            if self.returncode:
                 return self.returncode
 
-            if timeout is not None:
+            if timeout:
                 endtime = _time() + timeout
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
@@ -1910,7 +1909,7 @@ class Popen(object):
                 while True:
                     if self._waitpid_lock.acquire(False):
                         try:
-                            if self.returncode is not None:
+                            if self.returncode:
                                 break  # Another thread waited.
                             (pid, sts) = self._try_wait(os.WNOHANG)
                             assert pid == self.pid or pid == 0
@@ -1927,7 +1926,7 @@ class Popen(object):
             else:
                 while self.returncode is None:
                     with self._waitpid_lock:
-                        if self.returncode is not None:
+                        if self.returncode:
                             break  # Another thread waited.
                         (pid, sts) = self._try_wait(0)
                         # Check the pid and loop as waitpid has been known to
@@ -1983,7 +1982,7 @@ class Popen(object):
 
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
-                    if timeout is not None and timeout < 0:
+                    if timeout and timeout < 0:
                         self._check_timeout(endtime, orig_timeout,
                                             stdout, stderr,
                                             skip_check_and_raise=True)
@@ -2020,19 +2019,19 @@ class Popen(object):
             self.wait(timeout=self._remaining_time(endtime))
 
             # All data exchanged.  Translate lists into strings.
-            if stdout is not None:
+            if stdout:
                 stdout = b''.join(stdout)
-            if stderr is not None:
+            if stderr:
                 stderr = b''.join(stderr)
 
             # Translate newlines, if requested.
             # This also turns bytes into strings.
             if self.text_mode:
-                if stdout is not None:
+                if stdout:
                     stdout = self._translate_newlines(stdout,
                                                       self.stdout.encoding,
                                                       self.stdout.errors)
-                if stderr is not None:
+                if stderr:
                     stderr = self._translate_newlines(stderr,
                                                       self.stderr.encoding,
                                                       self.stderr.errors)
@@ -2047,7 +2046,7 @@ class Popen(object):
             if self.stdin and self._input is None:
                 self._input_offset = 0
                 self._input = input
-                if input is not None and self.text_mode:
+                if input and self.text_mode:
                     self._input = self._input.encode(self.stdin.encoding,
                                                      self.stdin.errors)
 
@@ -2071,7 +2070,7 @@ class Popen(object):
             # Calling Popen.poll() will set returncode to a default value,
             # since waitpid() fails with ProcessLookupError.
             self.poll()
-            if self.returncode is not None:
+            if self.returncode:
                 # Skip signalling a process that we know has already died.
                 return
 

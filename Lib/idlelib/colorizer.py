@@ -93,10 +93,10 @@ class ColorDelegator(Delegator):
 
         If there is a delegate, also start the colorizing process.
         """
-        if self.delegate is not None:
+        if self.delegate:
             self.unbind("<<toggle-auto-coloring>>")
         Delegator.setdelegate(self, delegate)
-        if delegate is not None:
+        if delegate:
             self.config_colors()
             self.bind("<<toggle-auto-coloring>>", self.toggle_colorize_event)
             self.notify_range("1.0", "end")

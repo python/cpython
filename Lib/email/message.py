@@ -45,7 +45,7 @@ def _formatparam(param, value=None, quote=True):
     be encoded according to RFC2231 rules, using the utf-8 charset and
     a null language.
     """
-    if value is not None and len(value) > 0:
+    if value:
         # A tuple is used for RFC 2231 encoded parameter values where items
         # are (charset, language, value).  charset is a string, not a Charset
         # instance.  RFC 2231 encoded values are never quoted, per RFC.
@@ -253,7 +253,7 @@ class Message:
                 return self._payload[i]
         # For backward compatibility, Use isinstance and this error message
         # instead of the more logical is_multipart test.
-        if i is not None and not isinstance(self._payload, list):
+        if i and not isinstance(self._payload, list):
             raise TypeError('Expected list, got %s' % type(self._payload))
         payload = self._payload
         # cte might be a Header, so for now stringify it.
@@ -317,7 +317,7 @@ class Message:
             self._payload = payload.decode('ascii', 'surrogateescape')
         else:
             self._payload = payload
-        if charset is not None:
+        if charset:
             self.set_charset(charset)
 
     def set_charset(self, charset):
@@ -538,7 +538,7 @@ class Message:
                 parts.append(k.replace('_', '-'))
             else:
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        if _value is not None:
+        if _value:
             parts.insert(0, _value)
         self[_name] = SEMISPACE.join(parts)
 
@@ -1000,7 +1000,7 @@ class MIMEPart(Message):
         if candidate is None:
             subparts = part.get_payload()
             candidate = subparts[0] if subparts else None
-        if candidate is not None:
+        if candidate:
             yield from self._find_body(candidate, preferencelist)
 
     def get_body(self, preferencelist=('related', 'html', 'plain')):
@@ -1124,7 +1124,7 @@ class MIMEPart(Message):
             self._payload = []
         self._headers = keep_headers
         self['Content-Type'] = 'multipart/' + subtype
-        if boundary is not None:
+        if boundary:
             self.set_param('boundary', boundary)
 
     def make_related(self, boundary=None):

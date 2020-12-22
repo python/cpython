@@ -73,7 +73,7 @@ class ResourceTracker(object):
         This can be run from any process.  Usually a child process will use
         the resource created by its parent.'''
         with self._lock:
-            if self._fd is not None:
+            if self._fd:
                 # resource tracker was launched before, is it still running?
                 if self._check_alive():
                     # => still alive
@@ -85,7 +85,7 @@ class ResourceTracker(object):
                 try:
                     # _pid can be None if this process is a child from another
                     # python process, which has started the resource_tracker.
-                    if self._pid is not None:
+                    if self._pid:
                         os.waitpid(self._pid, 0)
                 except ChildProcessError:
                     # The resource_tracker has already been terminated.

@@ -197,7 +197,7 @@ class Future:
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
-        if self._exception is not None:
+        if self._exception:
             raise self._exception
         return self._result
 
@@ -332,7 +332,7 @@ def _set_concurrent_future_state(concurrent, source):
     if not concurrent.set_running_or_notify_cancel():
         return
     exception = source.exception()
-    if exception is not None:
+    if exception:
         concurrent.set_exception(_convert_future_exc(exception))
     else:
         result = source.result()
@@ -352,7 +352,7 @@ def _copy_future_state(source, dest):
         dest.cancel()
     else:
         exception = source.exception()
-        if exception is not None:
+        if exception:
             dest.set_exception(_convert_future_exc(exception))
         else:
             result = source.result()
@@ -389,8 +389,7 @@ def _chain_future(source, destination):
                 source_loop.call_soon_threadsafe(source.cancel)
 
     def _call_set_state(source):
-        if (destination.cancelled() and
-                dest_loop is not None and dest_loop.is_closed()):
+        if (destination.cancelled() and dest_loop and dest_loop.is_closed()):
             return
         if dest_loop is None or dest_loop is source_loop:
             _set_state(destination, source)

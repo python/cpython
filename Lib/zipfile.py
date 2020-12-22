@@ -681,11 +681,11 @@ def _check_compression(compression):
 
 def _get_compressor(compress_type, compresslevel=None):
     if compress_type == ZIP_DEFLATED:
-        if compresslevel is not None:
+        if compresslevel:
             return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
         return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
     elif compress_type == ZIP_BZIP2:
-        if compresslevel is not None:
+        if compresslevel:
             return bz2.BZ2Compressor(compresslevel)
         return bz2.BZ2Compressor()
     # compresslevel is ignored for ZIP_LZMA
@@ -745,7 +745,7 @@ class _SharedFile:
             return data
 
     def close(self):
-        if self._file is not None:
+        if self._file:
             fileobj = self._file
             self._file = None
             self._close(fileobj)
@@ -1025,7 +1025,7 @@ class ZipExtFile(io.BufferedIOBase):
         if not data:
             raise EOFError
 
-        if self._decrypter is not None:
+        if self._decrypter:
             data = self._decrypter(data)
         return data
 
@@ -1081,7 +1081,7 @@ class ZipExtFile(io.BufferedIOBase):
             self._decompressor = _get_decompressor(self._compress_type)
             self._eof = False
             read_offset = new_pos
-            if self._decrypter is not None:
+            if self._decrypter:
                 self._init_decrypter()
 
         while read_offset > 0:
@@ -1303,10 +1303,10 @@ class ZipFile:
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
                               self.__class__.__qualname__)]
-        if self.fp is not None:
+        if self.fp:
             if self._filePassed:
                 result.append(' file=%r' % self.fp)
-            elif self.filename is not None:
+            elif self.filename:
                 result.append(' filename=%r' % self.filename)
             result.append(' mode=%r' % self.mode)
         else:
@@ -1732,12 +1732,12 @@ class ZipFile:
             zinfo.compress_size = 0
             zinfo.CRC = 0
         else:
-            if compress_type is not None:
+            if compress_type:
                 zinfo.compress_type = compress_type
             else:
                 zinfo.compress_type = self.compression
 
-            if compresslevel is not None:
+            if compresslevel:
                 zinfo._compresslevel = compresslevel
             else:
                 zinfo._compresslevel = self.compresslevel
@@ -1792,10 +1792,10 @@ class ZipFile:
                 "Can't write to ZIP archive while an open writing handle exists."
             )
 
-        if compress_type is not None:
+        if compress_type:
             zinfo.compress_type = compress_type
 
-        if compresslevel is not None:
+        if compresslevel:
             zinfo._compresslevel = compresslevel
 
         zinfo.file_size = len(data)            # Uncompressed size
@@ -2413,7 +2413,7 @@ def main(args=None):
                        help='Test if a zipfile is valid')
     args = parser.parse_args(args)
 
-    if args.test is not None:
+    if args.test:
         src = args.test
         with ZipFile(src, 'r') as zf:
             badfile = zf.testzip()
@@ -2421,17 +2421,17 @@ def main(args=None):
             print("The following enclosed file is corrupted: {!r}".format(badfile))
         print("Done testing")
 
-    elif args.list is not None:
+    elif args.list:
         src = args.list
         with ZipFile(src, 'r') as zf:
             zf.printdir()
 
-    elif args.extract is not None:
+    elif args.extract:
         src, curdir = args.extract
         with ZipFile(src, 'r') as zf:
             zf.extractall(curdir)
 
-    elif args.create is not None:
+    elif args.create:
         zip_name = args.create.pop(0)
         files = args.create
 

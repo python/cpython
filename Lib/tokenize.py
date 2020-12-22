@@ -276,7 +276,7 @@ def untokenize(iterable):
     """
     ut = Untokenizer()
     out = ut.untokenize(iterable)
-    if ut.encoding is not None:
+    if ut.encoding:
         out = out.encode(ut.encoding)
     return out
 
@@ -330,7 +330,7 @@ def detect_encoding(readline):
             line_string = line.decode('utf-8')
         except UnicodeDecodeError:
             msg = "invalid or missing encoding declaration"
-            if filename is not None:
+            if filename:
                 msg = '{} for {!r}'.format(msg, filename)
             raise SyntaxError(msg)
 
@@ -433,7 +433,7 @@ def _tokenize(readline, encoding):
     contline = None
     indents = [0]
 
-    if encoding is not None:
+    if encoding:
         if encoding == "utf-8-sig":
             # BOM will already have been stripped.
             encoding = "utf-8"
@@ -451,7 +451,7 @@ def _tokenize(readline, encoding):
         except StopIteration:
             line = b''
 
-        if encoding is not None:
+        if encoding:
             line = line.decode(encoding)
         lnum += 1
         pos, max = 0, len(line)

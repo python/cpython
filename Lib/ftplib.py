@@ -125,13 +125,13 @@ class FTP:
 
     # Context management protocol: try to quit() if active
     def __exit__(self, *args):
-        if self.sock is not None:
+        if self.sock:
             try:
                 self.quit()
             except (OSError, EOFError):
                 pass
             finally:
-                if self.sock is not None:
+                if self.sock:
                     self.close()
 
     def connect(self, host='', port=0, timeout=-999, source_address=None):
@@ -148,9 +148,9 @@ class FTP:
             self.port = port
         if timeout != -999:
             self.timeout = timeout
-        if self.timeout is not None and not self.timeout:
+        if self.timeout and not self.timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')
-        if source_address is not None:
+        if source_address:
             self.source_address = source_address
         sys.audit("ftplib.connect", self, self.host, self.port)
         self.sock = socket.create_connection((self.host, self.port), self.timeout,
@@ -347,7 +347,7 @@ class FTP:
             conn = socket.create_connection((host, port), self.timeout,
                                             source_address=self.source_address)
             try:
-                if rest is not None:
+                if rest:
                     self.sendcmd("REST %s" % rest)
                 resp = self.sendcmd(cmd)
                 # Some servers apparently send a 200 reply to
@@ -365,7 +365,7 @@ class FTP:
                 raise
         else:
             with self.makeport() as sock:
-                if rest is not None:
+                if rest:
                     self.sendcmd("REST %s" % rest)
                 resp = self.sendcmd(cmd)
                 # See above.
@@ -433,7 +433,7 @@ class FTP:
                     break
                 callback(data)
             # shutdown ssl layer
-            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
+            if _SSLSocket and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -468,7 +468,7 @@ class FTP:
                     line = line[:-1]
                 callback(line)
             # shutdown ssl layer
-            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
+            if _SSLSocket and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -497,7 +497,7 @@ class FTP:
                 if callback:
                     callback(buf)
             # shutdown ssl layer
-            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
+            if _SSLSocket and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -528,7 +528,7 @@ class FTP:
                 if callback:
                     callback(buf)
             # shutdown ssl layer
-            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
+            if _SSLSocket and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -658,12 +658,12 @@ class FTP:
         try:
             file = self.file
             self.file = None
-            if file is not None:
+            if file:
                 file.close()
         finally:
             sock = self.sock
             self.sock = None
-            if sock is not None:
+            if sock:
                 sock.close()
 
 try:
@@ -712,13 +712,13 @@ else:
                      keyfile=None, certfile=None, context=None,
                      timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
                      encoding='utf-8'):
-            if context is not None and keyfile is not None:
+            if context and keyfile:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
-            if context is not None and certfile is not None:
+            if context and certfile:
                 raise ValueError("context and certfile arguments are mutually "
                                  "exclusive")
-            if keyfile is not None or certfile is not None:
+            if keyfile or certfile:
                 import warnings
                 warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
@@ -944,7 +944,7 @@ def test():
     try:
         netrcobj = netrc.netrc(rcfile)
     except OSError:
-        if rcfile is not None:
+        if rcfile:
             sys.stderr.write("Could not open account file"
                              " -- using anonymous login.")
     else:

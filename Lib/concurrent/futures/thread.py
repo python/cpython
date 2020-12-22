@@ -61,26 +61,26 @@ class _WorkItem(object):
 
 
 def _worker(executor_reference, work_queue, initializer, initargs):
-    if initializer is not None:
+    if initializer:
         try:
             initializer(*initargs)
         except BaseException:
             _base.LOGGER.critical('Exception in initializer:', exc_info=True)
             executor = executor_reference()
-            if executor is not None:
+            if executor:
                 executor._initializer_failed()
             return
     try:
         while True:
             work_item = work_queue.get(block=True)
-            if work_item is not None:
+            if work_item:
                 work_item.run()
                 # Delete references to object. See issue16284
                 del work_item
 
                 # attempt to increment idle count
                 executor = executor_reference()
-                if executor is not None:
+                if executor:
                     executor._idle_semaphore.release()
                 del executor
                 continue
@@ -93,7 +93,7 @@ def _worker(executor_reference, work_queue, initializer, initargs):
             if _shutdown or executor is None or executor._shutdown:
                 # Flag the executor as shutting down as early as possible if it
                 # is not gc-ed yet.
-                if executor is not None:
+                if executor:
                     executor._shutdown = True
                 # Notice other workers
                 work_queue.put(None)
@@ -137,7 +137,7 @@ class ThreadPoolExecutor(_base.Executor):
         if max_workers <= 0:
             raise ValueError("max_workers must be greater than 0")
 
-        if initializer is not None and not callable(initializer):
+        if initializer and not callable(initializer):
             raise TypeError("initializer must be a callable")
 
         self._max_workers = max_workers
@@ -204,7 +204,7 @@ class ThreadPoolExecutor(_base.Executor):
                     work_item = self._work_queue.get_nowait()
                 except queue.Empty:
                     break
-                if work_item is not None:
+                if work_item:
                     work_item.future.set_exception(BrokenThreadPool(self._broken))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
@@ -218,7 +218,7 @@ class ThreadPoolExecutor(_base.Executor):
                         work_item = self._work_queue.get_nowait()
                     except queue.Empty:
                         break
-                    if work_item is not None:
+                    if work_item:
                         work_item.future.cancel()
 
             # Send a wake-up to prevent threads calling

@@ -2446,7 +2446,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     errormsg = None
     annocol = annotate  # column hint for annotations
     for opcode, arg, pos in genops(pickle):
-        if pos is not None:
+        if pos:
             print("%5d:" % pos, end=' ', file=out)
 
         line = "%-4s %s%s" % (repr(opcode.code)[1:-1],
@@ -2492,7 +2492,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
                 memo_idx = len(memo)
                 markmsg = "(as %d)" % memo_idx
             else:
-                assert arg is not None
+                assert bool(arg) #isnot None
                 memo_idx = arg
             if memo_idx in memo:
                 errormsg = "memo key %r already defined" % arg
@@ -2509,10 +2509,10 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             else:
                 errormsg = "memo key %r has never been stored into" % arg
 
-        if arg is not None or markmsg:
+        if arg or markmsg:
             # make a mild effort to align arguments
             line += ' ' * (10 - len(opcode.name))
-            if arg is not None:
+            if arg:
                 line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg

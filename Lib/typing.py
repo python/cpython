@@ -264,7 +264,7 @@ def _tp_cache(func=None, /, *, typed=False):
             return func(*args, **kwds)
         return inner
 
-    if func is not None:
+    if func:
         return decorator(func)
 
     return decorator
@@ -633,7 +633,7 @@ class TypeVar(_Final, _Immutable, _root=True):
             raise ValueError("Bivariant types are not supported.")
         self.__covariant__ = bool(covariant)
         self.__contravariant__ = bool(contravariant)
-        if constraints and bound is not None:
+        if constraints and bound:
             raise TypeError("Constraints cannot be combined with bound=...")
         if constraints and len(constraints) == 1:
             raise TypeError("A single constraint is not allowed")
@@ -1049,11 +1049,11 @@ class Generic:
             for base in cls.__orig_bases__:
                 if (isinstance(base, _GenericAlias) and
                         base.__origin__ is Generic):
-                    if gvars is not None:
+                    if gvars:
                         raise TypeError(
                             "Cannot inherit from Generic[...] multiple types.")
                     gvars = base.__parameters__
-            if gvars is not None:
+            if gvars:
                 tvarset = set(tvars)
                 gvarset = set(gvars)
                 if not tvarset <= gvarset:

@@ -154,7 +154,7 @@ def main():
 
     # The script that we're profiling may chdir, so capture the absolute path
     # to the output file at startup.
-    if options.outfile is not None:
+    if options.outfile:
         options.outfile = os.path.abspath(options.outfile)
 
     if len(args) > 0:

@@ -292,12 +292,12 @@ class IMAP4:
         # Default value of IMAP4.host is '', but socket.getaddrinfo()
         # (which is used by socket.create_connection()) expects None
         # as a default value for host.
-        if timeout is not None and not timeout:
+        if timeout and not timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')
         host = None if not self.host else self.host
         sys.audit("imaplib.open", self, self.host, self.port)
         address = (host, self.port)
-        if timeout is not None:
+        if timeout:
             return socket.create_connection(address, timeout)
         return socket.create_connection(address)
 
@@ -988,7 +988,7 @@ class IMAP4:
             data = data + b' ' + arg
 
         literal = self.literal
-        if literal is not None:
+        if literal:
             self.literal = None
             if type(literal) is type(self._command):
                 literator = literal
@@ -1149,14 +1149,14 @@ class IMAP4:
 
         while 1:
             result = self.tagged_commands[tag]
-            if result is not None:
+            if result:
                 del self.tagged_commands[tag]
                 return result
 
             if expect_bye:
                 typ = 'BYE'
                 bye = self.untagged_responses.pop(typ, None)
-                if bye is not None:
+                if bye:
                     # Server replies to the "LOGOUT" command with "BYE"
                     return (typ, bye)
 
@@ -1204,9 +1204,9 @@ class IMAP4:
 
         self.mo = cre.match(s)
         if __debug__:
-            if self.mo is not None and self.debug >= 5:
+            if self.mo and self.debug >= 5:
                 self._mesg("\tmatched %r => %r" % (cre.pattern, self.mo.groups()))
-        return self.mo is not None
+        return bool(self.mo) #isnot None
 
 
     def _new_tag(self):
@@ -1304,13 +1304,13 @@ if HAVE_SSL:
 
         def __init__(self, host='', port=IMAP4_SSL_PORT, keyfile=None,
                      certfile=None, ssl_context=None, timeout=None):
-            if ssl_context is not None and keyfile is not None:
+            if ssl_context and keyfile:
                 raise ValueError("ssl_context and keyfile arguments are mutually "
                                  "exclusive")
-            if ssl_context is not None and certfile is not None:
+            if ssl_context and certfile:
                 raise ValueError("ssl_context and certfile arguments are mutually "
                                  "exclusive")
-            if keyfile is not None or certfile is not None:
+            if keyfile or certfile:
                 import warnings
                 warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom ssl_context instead", DeprecationWarning, 2)

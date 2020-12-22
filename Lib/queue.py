@@ -289,7 +289,7 @@ class _PySimpleQueue:
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
         '''
-        if timeout is not None and timeout < 0:
+        if timeout and timeout < 0:
             raise ValueError("'timeout' must be a non-negative number")
         if not self._count.acquire(block, timeout):
             raise Empty

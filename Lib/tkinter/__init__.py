@@ -89,7 +89,7 @@ def _flatten(seq):
     for item in seq:
         if isinstance(item, (tuple, list)):
             res = res + _flatten(item)
-        elif item is not None:
+        elif item:
             res = res + (item,)
     return res
 
@@ -326,7 +326,7 @@ class Variable:
         # check for type of NAME parameter to override weird error message
         # raised from Modules/_tkinter.c:SetVar like:
         # TypeError: setvar() takes exactly 3 arguments (2 given)
-        if name is not None and not isinstance(name, str):
+        if name and not isinstance(name, str):
             raise TypeError("name must be a string")
         global _varnum
         if not master:
@@ -338,7 +338,7 @@ class Variable:
         else:
             self._name = 'PY_VAR' + repr(_varnum)
             _varnum += 1
-        if value is not None:
+        if value:
             self.initialize(value)
         elif not self._tk.getboolean(self._tk.call("info", "exists", self._name)):
             self.initialize(self._default)
@@ -349,7 +349,7 @@ class Variable:
             return
         if self._tk.getboolean(self._tk.call("info", "exists", self._name)):
             self._tk.globalunsetvar(self._name)
-        if self._tclCommands is not None:
+        if self._tclCommands:
             for name in self._tclCommands:
                 #print '- Tkinter: deleted command', name
                 self._tk.deletecommand(name)
@@ -625,7 +625,7 @@ class Misc:
 
         Delete all Tcl commands created for
         this widget in the Tcl interpreter."""
-        if self._tclCommands is not None:
+        if self._tclCommands:
             for name in self._tclCommands:
                 #print '- Tkinter: deleted command', name
                 self.tk.deletecommand(name)
@@ -1465,7 +1465,7 @@ class Misc:
             cnf = _cnfmerge(cnf)
         res = ()
         for k, v in cnf.items():
-            if v is not None:
+            if v:
                 if k[-1] == '_': k = k[:-1]
                 if callable(v):
                     v = self._register(v)
@@ -1722,9 +1722,9 @@ class Misc:
         corner in the master widget and the width and height.
         """
         args = ('grid', 'bbox', self._w)
-        if column is not None and row is not None:
+        if column and row:
             args = args + (column, row)
-        if col2 is not None and row2 is not None:
+        if col2 and row2:
             args = args + (col2, row2)
         return self._getints(self.tk.call(*args)) or None
 
@@ -1817,9 +1817,9 @@ class Misc:
         """Return a list of all slaves of this widget
         in its packing order."""
         args = ()
-        if row is not None:
+        if row:
             args = args + ('-row', row)
-        if column is not None:
+        if column:
             args = args + ('-column', column)
         return [self._nametowidget(x) for x in
                 self.tk.splitlist(self.tk.call(
@@ -3176,7 +3176,7 @@ class Listbox(Widget, XView, YView):
 
     def get(self, first, last=None):
         """Get list of items from FIRST to LAST (included)."""
-        if last is not None:
+        if last:
             return self.tk.splitlist(self.tk.call(
                 self._w, 'get', first, last))
         else:
@@ -3581,7 +3581,7 @@ class Text(Widget, XView, YView):
         args = ['-%s' % arg for arg in args if not arg.startswith('-')]
         args += [index1, index2]
         res = self.tk.call(self._w, 'count', *args) or None
-        if res is not None and len(args) <= 3:
+        if res and len(args) <= 3:
             return (res, )
         else:
             return res
@@ -4027,7 +4027,7 @@ class Image:
         """Configure the image."""
         res = ()
         for k, v in _cnfmerge(kw).items():
-            if v is not None:
+            if v:
                 if k[-1] == '_': k = k[:-1]
                 if callable(v):
                     v = self._register(v)

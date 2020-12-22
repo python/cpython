@@ -72,7 +72,7 @@ class SemLock(object):
                 obj._semlock._after_fork()
             util.register_after_fork(self, _after_fork)
 
-        if self._semlock.name is not None:
+        if self._semlock.name:
             # We only get here if we are on Unix with forking
             # disabled.  When the object is garbage collected or the
             # process shuts down we unlink the semaphore name
@@ -300,13 +300,13 @@ class Condition(object):
         result = predicate()
         if result:
             return result
-        if timeout is not None:
+        if timeout:
             endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
-            if endtime is not None:
+            if endtime:
                 waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break

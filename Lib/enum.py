@@ -176,7 +176,7 @@ class EnumMeta(type):
         enum_dict._cls_name = cls
         # inherit previous flags and _generate_next_value_ function
         member_type, first_enum = metacls._get_mixins_(cls, bases)
-        if first_enum is not None:
+        if first_enum:
             enum_dict['_generate_next_value_'] = getattr(
                     first_enum, '_generate_next_value_', None,
                     )
@@ -231,7 +231,7 @@ class EnumMeta(type):
             enum_class = type.__new__(metacls, cls, bases, classdict)
         old_init_subclass = getattr(enum_class, '__init_subclass__', None)
         # and restore the new one (if there was one)
-        if new_init_subclass is not None:
+        if new_init_subclass:
             enum_class.__init_subclass__ = classmethod(new_init_subclass)
         enum_class._member_names_ = []               # names in definition order
         enum_class._member_map_ = {}                 # name->value map
@@ -325,12 +325,12 @@ class EnumMeta(type):
             class_method = getattr(enum_class, name)
             obj_method = getattr(member_type, name, None)
             enum_method = getattr(first_enum, name, None)
-            if obj_method is not None and obj_method is class_method:
+            if obj_method and obj_method is class_method:
                 setattr(enum_class, name, enum_method)
 
         # replace any other __new__ with our own (as long as Enum is not None,
         # anyway) -- again, this is to support pickle
-        if Enum is not None:
+        if Enum:
             # if the user defined their own __new__, save it before it gets
             # clobbered in case they subclass later
             if save_new:
@@ -338,14 +338,14 @@ class EnumMeta(type):
             enum_class.__new__ = Enum.__new__
 
         # py3 support for definition order (helps keep py2/py3 code in sync)
-        if _order_ is not None:
+        if _order_:
             if isinstance(_order_, str):
                 _order_ = _order_.replace(',', ' ').split()
             if _order_ != enum_class._member_names_:
                 raise TypeError('member order does not match _order_')
 
         # finally, call parents' __init_subclass__
-        if Enum is not None and old_init_subclass is not None:
+        if Enum and old_init_subclass:
             old_init_subclass(**kwds)
         return enum_class
 
@@ -520,7 +520,7 @@ class EnumMeta(type):
             _make_class_unpicklable(enum_class)
         else:
             enum_class.__module__ = module
-        if qualname is not None:
+        if qualname:
             enum_class.__qualname__ = qualname
 
         return enum_class
@@ -630,7 +630,7 @@ class EnumMeta(type):
         __new__ = classdict.get('__new__', None)
 
         # should __new__ be saved as __new_member__ later?
-        save_new = __new__ is not None
+        save_new = bool(__new__) #isnot None
 
         if __new__ is None:
             # check all possibles for __new_member__ before falling back to
@@ -646,7 +646,7 @@ class EnumMeta(type):
                             }:
                         __new__ = target
                         break
-                if __new__ is not None:
+                if __new__:
                     break
             else:
                 __new__ = object.__new__
@@ -845,7 +845,7 @@ class Flag(Enum):
         last_value: the last value assigned or None
         """
         if not count:
-            return start if start is not None else 1
+            return start if start else 1
         for last_value in reversed(last_values):
             try:
                 high_bit = _high_bit(last_value)
@@ -906,7 +906,7 @@ class Flag(Enum):
 
     def __repr__(self):
         cls = self.__class__
-        if self._name_ is not None:
+        if self._name_:
             return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
         members, uncovered = _decompose(cls, self._value_)
         return '<%s.%s: %r>' % (
@@ -917,7 +917,7 @@ class Flag(Enum):
 
     def __str__(self):
         cls = self.__class__
-        if self._name_ is not None:
+        if self._name_:
             return '%s.%s' % (cls.__name__, self._name_)
         members, uncovered = _decompose(cls, self._value_)
         if len(members) == 1 and members[0]._name_ is None:

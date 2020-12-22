@@ -133,7 +133,7 @@ def reduce_ctype(obj):
         return rebuild_ctype, (type(obj), obj._wrapper, None)
 
 def rebuild_ctype(type_, wrapper, length):
-    if length is not None:
+    if length:
         type_ = type_ * length
     _ForkingPickler.register(type_, reduce_ctype)
     buf = wrapper.create_memoryview()

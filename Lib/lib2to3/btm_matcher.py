@@ -121,8 +121,7 @@ class BottomMatcher(object):
                 else:
                     #matching failed, reset automaton
                     current_ac_node = self.root
-                    if (current_ast_node.parent is not None
-                        and current_ast_node.parent.was_checked):
+                    if (current_ast_node.parent and current_ast_node.parent.was_checked):
                         #the rest of the tree upwards has been checked, next leaf
                         break
 

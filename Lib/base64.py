@@ -56,7 +56,7 @@ def b64encode(s, altchars=None):
     application to e.g. generate url or filesystem safe Base64 strings.
     """
     encoded = binascii.b2a_base64(s, newline=False)
-    if altchars is not None:
+    if altchars:
         assert len(altchars) == 2, repr(altchars)
         return encoded.translate(bytes.maketrans(b'+/', altchars))
     return encoded
@@ -78,7 +78,7 @@ def b64decode(s, altchars=None, validate=False):
     in the input result in a binascii.Error.
     """
     s = _bytes_from_decode_data(s)
-    if altchars is not None:
+    if altchars:
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
@@ -210,7 +210,7 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
     # Handle section 2.4 zero and one mapping.  The flag map01 will be either
     # False, or the character to map the digit 1 (one) to.  It should be
     # either L (el) or I (eye).
-    if map01 is not None:
+    if map01:
         map01 = _bytes_from_decode_data(map01)
         assert len(map01) == 1, repr(map01)
         s = s.translate(bytes.maketrans(b'01', b'O' + map01))

@@ -133,7 +133,7 @@ class _ConnectionBase:
     # XXX should we use util.Finalize instead of a __del__?
 
     def __del__(self):
-        if self._handle is not None:
+        if self._handle:
             self._close()
 
     def _check_closed(self):
@@ -177,7 +177,7 @@ class _ConnectionBase:
 
     def close(self):
         """Close the connection"""
-        if self._handle is not None:
+        if self._handle:
             try:
                 self._close()
             finally:
@@ -216,7 +216,7 @@ class _ConnectionBase:
         """
         self._check_closed()
         self._check_readable()
-        if maxlength is not None and maxlength < 0:
+        if maxlength and maxlength < 0:
             raise ValueError("negative maxlength")
         buf = self._recv_bytes(maxlength)
         if buf is None:
@@ -340,7 +340,7 @@ if _winapi:
             f.write(buf)
             left = _winapi.PeekNamedPipe(self._handle)[1]
             assert left > 0
-            if maxsize is not None and len(buf) + left > maxsize:
+            if maxsize and len(buf) + left > maxsize:
                 self._bad_message_length()
             ov, err = _winapi.ReadFile(self._handle, left, overlapped=True)
             rbytes, err = ov.GetOverlappedResult(True)
@@ -421,7 +421,7 @@ class Connection(_ConnectionBase):
         if size == -1:
             buf = self._recv(8)
             size, = struct.unpack("!Q", buf.getvalue())
-        if maxsize is not None and size > maxsize:
+        if maxsize and size > maxsize:
             return None
         return self._recv(size)
 
@@ -452,7 +452,7 @@ class Listener(object):
         else:
             self._listener = SocketListener(address, family, backlog)
 
-        if authkey is not None and not isinstance(authkey, bytes):
+        if authkey and not isinstance(authkey, bytes):
             raise TypeError('authkey should be a byte string')
 
         self._authkey = authkey
@@ -476,7 +476,7 @@ class Listener(object):
         Close the bound socket or named pipe of `self`.
         '''
         listener = self._listener
-        if listener is not None:
+        if listener:
             self._listener = None
             listener.close()
 
@@ -506,10 +506,10 @@ def Client(address, family=None, authkey=None):
     else:
         c = SocketClient(address)
 
-    if authkey is not None and not isinstance(authkey, bytes):
+    if authkey and not isinstance(authkey, bytes):
         raise TypeError('authkey should be a byte string')
 
-    if authkey is not None:
+    if authkey:
         answer_challenge(c, authkey)
         deliver_challenge(c, authkey)
 
@@ -620,7 +620,7 @@ class SocketListener(object):
             self._socket.close()
         finally:
             unlink = self._unlink
-            if unlink is not None:
+            if unlink:
                 self._unlink = None
                 unlink()
 
@@ -929,7 +929,7 @@ else:
             for obj in object_list:
                 selector.register(obj, selectors.EVENT_READ)
 
-            if timeout is not None:
+            if timeout:
                 deadline = time.monotonic() + timeout
 
             while True:
@@ -937,7 +937,7 @@ else:
                 if ready:
                     return [key.fileobj for (key, events) in ready]
                 else:
-                    if timeout is not None:
+                    if timeout:
                         timeout = deadline - time.monotonic()
                         if timeout < 0:
                             return ready

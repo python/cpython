@@ -62,7 +62,7 @@ class BaseFix(object):
         Subclass may override if it doesn't want to use
         self.{pattern,PATTERN} in .match().
         """
-        if self.PATTERN is not None:
+        if self.PATTERN:
             PC = PatternCompiler()
             self.pattern, self.pattern_tree = PC.compile_pattern(self.PATTERN,
                                                                  with_tree=True)
@@ -177,7 +177,7 @@ class ConditionalFix(BaseFix):
         self._should_skip = None
 
     def should_skip(self, node):
-        if self._should_skip is not None:
+        if self._should_skip:
             return self._should_skip
         pkg = self.skip_on.split(".")
         name = pkg[-1]

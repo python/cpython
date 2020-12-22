@@ -121,7 +121,7 @@ def _compare_grouped_stats(old_group, new_group):
     statistics = []
     for traceback, stat in new_group.items():
         previous = old_group.pop(traceback, None)
-        if previous is not None:
+        if previous:
             stat = StatisticDiff(traceback,
                                  stat.size, stat.size - previous.size,
                                  stat.count, stat.count - previous.count)
@@ -235,7 +235,7 @@ class Traceback(Sequence):
 
     def format(self, limit=None, most_recent_first=False):
         lines = []
-        if limit is not None:
+        if limit:
             if limit > 0:
                 frame_slice = self[-limit:]
             else:
@@ -263,7 +263,7 @@ def get_object_traceback(obj):
     did not trace the allocation of the object.
     """
     frames = _get_object_traceback(obj)
-    if frames is not None:
+    if frames:
         return Traceback(frames)
     else:
         return None
@@ -390,7 +390,7 @@ class Filter(BaseFilter):
     def _match(self, trace):
         domain, size, traceback, total_nframe = trace
         res = self._match_traceback(traceback)
-        if self.domain is not None:
+        if self.domain:
             if self.inclusive:
                 return res and (domain == self.domain)
             else:

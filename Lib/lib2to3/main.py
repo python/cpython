@@ -113,7 +113,7 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
             if self.show_diffs:
                 diff_lines = diff_texts(old, new, filename)
                 try:
-                    if self.output_lock is not None:
+                    if self.output_lock:
                         with self.output_lock:
                             for line in diff_lines:
                                 print(line)

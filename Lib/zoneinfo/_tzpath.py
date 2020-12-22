@@ -6,7 +6,7 @@ def reset_tzpath(to=None):
     global TZPATH
 
     tzpaths = to
-    if tzpaths is not None:
+    if tzpaths:
         if isinstance(tzpaths, (str, bytes)):
             raise TypeError(
                 f"tzpaths must be a list or tuple, "
@@ -18,7 +18,7 @@ def reset_tzpath(to=None):
         base_tzpath = tzpaths
     else:
         env_var = os.environ.get("PYTHONTZPATH", None)
-        if env_var is not None:
+        if env_var:
             base_tzpath = _parse_python_tzpath(env_var)
         else:
             base_tzpath = _parse_python_tzpath(

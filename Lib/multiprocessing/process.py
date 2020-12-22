@@ -61,7 +61,7 @@ def parent_process():
 def _cleanup():
     # check for processes which have finished
     for p in list(_children):
-        if p._popen.poll() is not None:
+        if p._popen.poll():
             _children.discard(p)
 
 #
@@ -92,7 +92,7 @@ class BaseProcess(object):
         self._kwargs = dict(kwargs)
         self._name = name or type(self).__name__ + '-' + \
                      ':'.join(str(i) for i in self._identity)
-        if daemon is not None:
+        if daemon:
             self.daemon = daemon
         _dangling.add(self)
 
@@ -145,9 +145,9 @@ class BaseProcess(object):
         '''
         self._check_closed()
         assert self._parent_pid == os.getpid(), 'can only join a child process'
-        assert self._popen is not None, 'can only join a started process'
+        assert bool(self._popen), 'can only join a started process'
         res = self._popen.wait(timeout)
-        if res is not None:
+        if res:
             _children.discard(self)
 
     def is_alive(self):
@@ -176,7 +176,7 @@ class BaseProcess(object):
         This method releases resources held by the Process object.  It is
         an error to call this method if the child process is still running.
         '''
-        if self._popen is not None:
+        if self._popen:
             if self._popen.poll() is None:
                 raise ValueError("Cannot close a process while it is still running. "
                                  "You should first call join() or terminate().")
@@ -268,17 +268,17 @@ class BaseProcess(object):
             status = 'initial'
         else:
             exitcode = self._popen.poll()
-            if exitcode is not None:
+            if exitcode:
                 status = 'stopped'
             else:
                 status = 'started'
 
         info = [type(self).__name__, 'name=%r' % self._name]
-        if self._popen is not None:
+        if self._popen:
             info.append('pid=%s' % self._popen.pid)
         info.append('parent=%s' % self._parent_pid)
         info.append(status)
-        if exitcode is not None:
+        if exitcode:
             exitcode = _exitcode_to_name.get(exitcode, exitcode)
             info.append('exitcode=%s' % exitcode)
         if self.daemon:
@@ -292,7 +292,7 @@ class BaseProcess(object):
         global _current_process, _parent_process, _process_counter, _children
 
         try:
-            if self._start_method is not None:
+            if self._start_method:
                 context._force_start_method(self._start_method)
             _process_counter = itertools.count(1)
             _children = set()

@@ -61,10 +61,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._conn_lost = 0
         self._closing = False  # Set when close() called.
         self._eof_written = False
-        if self._server is not None:
+        if self._server:
             self._server._attach()
         self._loop.call_soon(self._protocol.connection_made, self)
-        if waiter is not None:
+        if waiter:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
@@ -75,11 +75,11 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             info.append('closed')
         elif self._closing:
             info.append('closing')
-        if self._sock is not None:
+        if self._sock:
             info.append(f'fd={self._sock.fileno()}')
-        if self._read_fut is not None:
+        if self._read_fut:
             info.append(f'read={self._read_fut!r}')
-        if self._write_fut is not None:
+        if self._write_fut:
             info.append(f'write={self._write_fut!r}')
         if self._buffer:
             info.append(f'write_bufsize={len(self._buffer)}')
@@ -106,12 +106,12 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._conn_lost += 1
         if not self._buffer and self._write_fut is None:
             self._loop.call_soon(self._call_connection_lost, None)
-        if self._read_fut is not None:
+        if self._read_fut:
             self._read_fut.cancel()
             self._read_fut = None
 
     def __del__(self, _warn=warnings.warn):
-        if self._sock is not None:
+        if self._sock:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
@@ -131,7 +131,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._force_close(exc)
 
     def _force_close(self, exc):
-        if self._empty_waiter is not None and not self._empty_waiter.done():
+        if self._empty_waiter and not self._empty_waiter.done():
             if exc is None:
                 self._empty_waiter.set_result(None)
             else:
@@ -163,13 +163,13 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._sock.close()
             self._sock = None
             server = self._server
-            if server is not None:
+            if server:
                 server._detach()
                 self._server = None
 
     def get_write_buffer_size(self):
         size = self._pending_write
-        if self._buffer is not None:
+        if self._buffer:
             size += len(self._buffer)
         return size
 
@@ -273,7 +273,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         length = -1
         data = None
         try:
-            if fut is not None:
+            if fut:
                 assert self._read_fut is fut or (self._read_fut is None and
                                                  self._closing)
                 self._read_fut = None
@@ -337,7 +337,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                 f"not {type(data).__name__}")
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
-        if self._empty_waiter is not None:
+        if self._empty_waiter:
             raise RuntimeError('unable to write; sendfile is in progress')
 
         if not data:
@@ -370,7 +370,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
 
     def _loop_writing(self, f=None, data=None):
         try:
-            if f is not None and self._write_fut is None and self._closing:
+            if f and self._write_fut is None and self._closing:
                 # XXX most likely self._force_close() has been called, and
                 # it has set self._write_fut to None.
                 return
@@ -402,7 +402,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
                     self._maybe_pause_protocol()
                 else:
                     self._write_fut.add_done_callback(self._loop_writing)
-            if self._empty_waiter is not None and self._write_fut is None:
+            if self._empty_waiter and self._write_fut is None:
                 self._empty_waiter.set_result(None)
         except ConnectionResetError as exc:
             self._force_close(exc)
@@ -419,7 +419,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
         self._force_close(None)
 
     def _make_empty_waiter(self):
-        if self._empty_waiter is not None:
+        if self._empty_waiter:
             raise RuntimeError("Empty waiter is already set")
         self._empty_waiter = self._loop.create_future()
         if self._write_fut is None:
@@ -446,7 +446,7 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
             return
         assert fut is self._read_fut, (fut, self._read_fut)
         self._read_fut = None
-        if self._write_fut is not None:
+        if self._write_fut:
             self._force_close(BrokenPipeError())
         else:
             self.close()
@@ -483,7 +483,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
         if not data:
             return
 
-        if self._address is not None and addr not in (None, self._address):
+        if self._address and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
 
@@ -521,7 +521,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                 return
 
             data, addr = self._buffer.popleft()
-            if self._address is not None:
+            if self._address:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)
             else:
@@ -546,7 +546,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                                              self._closing)
 
             self._read_fut = None
-            if fut is not None:
+            if fut:
                 res = fut.result()
 
                 if self._closing:
@@ -554,14 +554,14 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
                     data = None
                     return
 
-                if self._address is not None:
+                if self._address:
                     data, addr = res, self._address
                 else:
                     data, addr = res
 
             if self._conn_lost:
                 return
-            if self._address is not None:
+            if self._address:
                 self._read_fut = self._loop._proactor.recv(self._sock,
                                                            self.max_size)
             else:
@@ -573,7 +573,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
             if not self._closing:
                 raise
         else:
-            if self._read_fut is not None:
+            if self._read_fut:
                 self._read_fut.add_done_callback(self._loop_reading)
         finally:
             if data:
@@ -748,7 +748,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 transp.resume_reading()
 
     def _close_self_pipe(self):
-        if self._self_reading_future is not None:
+        if self._self_reading_future:
             self._self_reading_future.cancel()
             self._self_reading_future = None
         self._ssock.close()
@@ -766,7 +766,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def _loop_self_reading(self, f=None):
         try:
-            if f is not None:
+            if f:
                 f.result()  # may raise
             if self._self_reading_future is not f:
                 # When we scheduled this Future, we assigned it to
@@ -816,13 +816,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
         def loop(f=None):
             try:
-                if f is not None:
+                if f:
                     conn, addr = f.result()
                     if self._debug:
                         logger.debug("%r got a new connection from %r: %r",
                                      server, addr, conn)
                     protocol = protocol_factory()
-                    if sslcontext is not None:
+                    if sslcontext:
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
                             extra={'peername': addr}, server=server,

@@ -67,7 +67,7 @@ def _format_optdict(optdict, script=False, ignore=None):
     for opt, value in optdict.items():
         if not ignore or opt not in ignore:
             opts.append("-%s" % opt)
-            if value is not None:
+            if value:
                 opts.append(_format_optvalue(value, script))
 
     return _flatten(opts)
@@ -89,7 +89,7 @@ def _mapdict_values(items):
             # group multiple states
             state = ' '.join(state) # raise TypeError if not str
         opt_val.append(state)
-        if val is not None:
+        if val:
             opt_val.append(val)
     return opt_val
 
@@ -380,7 +380,7 @@ class Style(object):
 
         Each key in kw is an option and each value is either a string or
         a sequence identifying the value for that option."""
-        if query_opt is not None:
+        if query_opt:
             kw[query_opt] = None
         result = _val_or_dict(self.tk, kw, self._name, "configure", style)
         if result or query_opt:
@@ -395,7 +395,7 @@ class Style(object):
         tuple (usually) containing statespecs grouped in tuples, or list,
         or something else of your preference. A statespec is compound of
         one or more states and then a value."""
-        if query_opt is not None:
+        if query_opt:
             result = self.tk.call(self._name, "map", style, '-%s' % query_opt)
             return _list_from_statespec(self.tk.splitlist(result))
 
@@ -451,7 +451,7 @@ class Style(object):
         lspec = None
         if layoutspec:
             lspec = _format_layoutlist(layoutspec)[0]
-        elif layoutspec is not None: # will disable the layout ({}, '', etc)
+        elif layoutspec: # will disable the layout ({}, '', etc)
             lspec = "null" # could be any other word, but this may make sense
                            # when calling layout(style) later
 
@@ -587,7 +587,7 @@ class Widget(tkinter.Widget):
         set according to the statespec flags and then a new state spec
         is returned indicating which flags were changed. statespec is
         expected to be a sequence."""
-        if statespec is not None:
+        if statespec:
             statespec = ' '.join(statespec)
 
         return self.tk.splitlist(str(self.tk.call(self._w, "state", statespec)))
@@ -896,7 +896,7 @@ class Notebook(Widget):
         If kw is not given, returns a dict of the tab option values. If option
         is specified, returns the value of that option. Otherwise, sets the
         options to the corresponding values."""
-        if option is not None:
+        if option:
             kw[option] = None
         return _val_or_dict(self.tk, kw, self._w, "tab", tab_id)
 
@@ -973,7 +973,7 @@ class Panedwindow(Widget, tkinter.PanedWindow):
         If kw is not given, returns a dict of the pane option values. If
         option is specified then the value for that option is returned.
         Otherwise, sets the options to the corresponding values."""
-        if option is not None:
+        if option:
             kw[option] = None
         return _val_or_dict(self.tk, kw, self._w, "pane", pane)
 
@@ -1240,7 +1240,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         If kw is not given, returns a dict of the column option values. If
         option is specified then the value for that option is returned.
         Otherwise, sets the options to the corresponding values."""
-        if option is not None:
+        if option:
             kw[option] = None
         return _val_or_dict(self.tk, kw, self._w, "column", column)
 
@@ -1298,7 +1298,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
             # callback not registered yet, do it now
             kw['command'] = self.master.register(cmd, self._substitute)
 
-        if option is not None:
+        if option:
             kw[option] = None
 
         return _val_or_dict(self.tk, kw, self._w, 'heading', column)
@@ -1362,7 +1362,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         already exist in the tree. Otherwise, a new unique identifier
         is generated."""
         opts = _format_optdict(kw)
-        if iid is not None:
+        if iid:
             res = self.tk.call(self._w, "insert", parent, index,
                 "-id", iid, *opts)
         else:
@@ -1378,7 +1378,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         is returned. If option is specified then the value for that option
         is returned. Otherwise, sets the options to the corresponding
         values as given by kw."""
-        if option is not None:
+        if option:
             kw[option] = None
         return _val_or_dict(self.tk, kw, self._w, "item", item)
 
@@ -1483,7 +1483,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         If option is specified, returns the value for that option for the
         specified tagname. Otherwise, sets the options to the corresponding
         values for the given tagname."""
-        if option is not None:
+        if option:
             kw[option] = None
         return _val_or_dict(self.tk, kw, self._w, "tag", "configure",
             tagname)

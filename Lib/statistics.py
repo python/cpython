@@ -680,7 +680,7 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is not None:
+    if c:
         T, total, count = _sum((x-c)**2 for x in data)
         return (T, total)
     c = mean(data)

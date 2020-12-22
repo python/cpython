@@ -503,7 +503,7 @@ class FieldStorage:
             self.file.seek(0)
             value = self.file.read()
             self.file.seek(0)
-        elif self.list is not None:
+        elif self.list:
             value = self.list
         else:
             value = None
@@ -623,7 +623,7 @@ class FieldStorage:
 
         # Propagate max_num_fields into the sub class appropriately
         max_num_fields = self.max_num_fields
-        if max_num_fields is not None:
+        if max_num_fields:
             max_num_fields -= len(self.list)
 
         while True:
@@ -651,7 +651,7 @@ class FieldStorage:
                          strict_parsing, limit,
                          self.encoding, self.errors, max_num_fields)
 
-            if max_num_fields is not None:
+            if max_num_fields:
                 max_num_fields -= 1
                 if part.list:
                     max_num_fields -= len(part.list)
@@ -705,7 +705,7 @@ class FieldStorage:
 
     def __write(self, line):
         """line is always bytes, not string"""
-        if self.__file is not None:
+        if self.__file:
             if self.__file.tell() + len(line) > 1000:
                 self.file = self.make_file()
                 data = self.__file.getvalue()
@@ -740,7 +740,7 @@ class FieldStorage:
         _read = 0
         while 1:
 
-            if self.limit is not None and 0 <= self.limit <= _read:
+            if self.limit and 0 <= self.limit <= _read:
                 break
             line = self.fp.readline(1<<16) # bytes
             self.bytes_read += len(line)

@@ -51,7 +51,7 @@ def _formatwarnmsg_impl(msg):
         line = line.strip()
         s += "  %s\n" % line
 
-    if msg.source is not None:
+    if msg.source:
         try:
             import tracemalloc
         # Logging a warning should not raise a new exception:
@@ -69,14 +69,14 @@ def _formatwarnmsg_impl(msg):
                 # and the import machinery don't work anymore
                 tb = None
 
-        if tb is not None:
+        if tb:
             s += 'Object allocated at (most recent call last):\n'
             for frame in tb:
                 s += ('  File "%s", lineno %s\n'
                       % (frame.filename, frame.lineno))
 
                 try:
-                    if linecache is not None:
+                    if linecache:
                         line = linecache.getline(frame.filename, frame.lineno)
                     else:
                         line = None
@@ -278,7 +278,7 @@ def _is_internal_frame(frame):
 def _next_external_frame(frame):
     """Find the next frame that doesn't involve CPython internals."""
     frame = frame.f_back
-    while frame is not None and _is_internal_frame(frame):
+    while bool(frame) and _is_internal_frame(frame):
         frame = frame.f_back
     return frame
 
@@ -488,7 +488,7 @@ def _warn_unawaited_coroutine(coro):
     msg_lines = [
         f"coroutine '{coro.__qualname__}' was never awaited\n"
     ]
-    if coro.cr_origin is not None:
+    if coro.cr_origin:
         import linecache, traceback
         def extract():
             for filename, lineno, funcname in reversed(coro.cr_origin):

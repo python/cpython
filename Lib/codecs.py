@@ -102,7 +102,7 @@ class CodecInfo(tuple):
         self.incrementaldecoder = incrementaldecoder
         self.streamwriter = streamwriter
         self.streamreader = streamreader
-        if _is_text_encoding is not None:
+        if _is_text_encoding:
             self._is_text_encoding = _is_text_encoding
         return self
 
@@ -595,7 +595,7 @@ class StreamReader(Codec):
                         line = line0withoutend
                     break
             # we didn't get anything or this was our only try
-            if not data or size is not None:
+            if not data or size:
                 if line and not keepends:
                     line = line.splitlines(keepends=False)[0]
                 break
@@ -898,8 +898,7 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         parameter.
 
     """
-    if encoding is not None and \
-       'b' not in mode:
+    if encoding and 'b' not in mode:
         # Force opening of the file in binary mode
         mode = mode + 'b'
     file = builtins.open(filename, mode, buffering)

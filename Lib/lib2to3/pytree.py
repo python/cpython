@@ -100,8 +100,8 @@ class Base(object):
 
     def replace(self, new):
         """Replace this node with a new one in the parent."""
-        assert self.parent is not None, str(self)
-        assert new is not None
+        assert bool(self.parent), str(self)
+        assert bool(new)
         if not isinstance(new, list):
             new = [new]
         l_children = []
@@ -109,7 +109,7 @@ class Base(object):
         for ch in self.parent.children:
             if ch is self:
                 assert not found, (self.parent.children, self, new)
-                if new is not None:
+                if new:
                     l_children.extend(new)
                 found = True
             else:
@@ -226,7 +226,7 @@ class Node(Base):
         for ch in self.children:
             assert ch.parent is None, repr(ch)
             ch.parent = self
-        if prefix is not None:
+        if prefix:
             self.prefix = prefix
         if fixers_applied:
             self.fixers_applied = fixers_applied[:]
@@ -334,11 +334,11 @@ class Leaf(Base):
         optional context keyword argument.
         """
         assert 0 <= type < 256, type
-        if context is not None:
+        if context:
             self._prefix, (self.lineno, self.column) = context
         self.type = type
         self.value = value
-        if prefix is not None:
+        if prefix:
             self._prefix = prefix
         self.fixers_applied = fixers_applied[:]
 
@@ -462,17 +462,17 @@ class BasePattern(object):
 
         Default implementation for non-wildcard patterns.
         """
-        if self.type is not None and node.type != self.type:
+        if self.type and node.type != self.type:
             return False
-        if self.content is not None:
+        if self.content:
             r = None
-            if results is not None:
+            if results:
                 r = {}
             if not self._submatch(node, r):
                 return False
             if r:
                 results.update(r)
-        if results is not None and self.name:
+        if results and self.name:
             results[self.name] = node
         return True
 
@@ -511,9 +511,9 @@ class LeafPattern(BasePattern):
         If a name is given, the matching node is stored in the results
         dict under that key.
         """
-        if type is not None:
+        if type:
             assert 0 <= type < 256, type
-        if content is not None:
+        if content:
             assert isinstance(content, str), repr(content)
         self.type = type
         self.content = content
@@ -561,9 +561,9 @@ class NodePattern(BasePattern):
         If a name is given, the matching node is stored in the results
         dict under that key.
         """
-        if type is not None:
+        if type:
             assert type >= 256, type
-        if content is not None:
+        if content:
             assert not isinstance(content, str), repr(content)
             content = list(content)
             for i, item in enumerate(content):
@@ -590,7 +590,7 @@ class NodePattern(BasePattern):
         if self.wildcards:
             for c, r in generate_matches(self.content, node.children):
                 if c == len(node.children):
-                    if results is not None:
+                    if results:
                         results.update(r)
                     return True
             return False
@@ -640,7 +640,7 @@ class WildcardPattern(BasePattern):
             list of alternatives, e.g. (a b c | d e | f g h)*
         """
         assert 0 <= min <= max <= HUGE, (min, max)
-        if content is not None:
+        if content:
             content = tuple(map(tuple, content))  # Protect against alterations
             # Check sanity of alternatives
             assert len(content), repr(content)  # Can't have zero alternatives
@@ -654,13 +654,12 @@ class WildcardPattern(BasePattern):
     def optimize(self):
         """Optimize certain stacked wildcard patterns."""
         subpattern = None
-        if (self.content is not None and
-            len(self.content) == 1 and len(self.content[0]) == 1):
+        if (self.content and len(self.content) == 1 and len(self.content[0]) == 1):
             subpattern = self.content[0][0]
         if self.min == 1 and self.max == 1:
             if self.content is None:
                 return NodePattern(name=self.name)
-            if subpattern is not None and  self.name == subpattern.name:
+            if subpattern and self.name == subpattern.name:
                 return subpattern.optimize()
         if (self.min <= 1 and isinstance(subpattern, WildcardPattern) and
             subpattern.min <= 1 and self.name == subpattern.name):
@@ -678,7 +677,7 @@ class WildcardPattern(BasePattern):
         """Does this pattern exactly match a sequence of nodes?"""
         for c, r in self.generate_matches(nodes):
             if c == len(nodes):
-                if results is not None:
+                if results:
                     results.update(r)
                     if self.name:
                         results[self.name] = list(nodes)
@@ -801,7 +800,7 @@ class NegatedPattern(BasePattern):
         lingo).  If it is not None, this matches whenever the argument
         pattern doesn't have any matches.
         """
-        if content is not None:
+        if content:
             assert isinstance(content, BasePattern), repr(content)
         self.content = content
 

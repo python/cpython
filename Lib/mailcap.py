@@ -94,7 +94,7 @@ def _readmailcapfile(fp, lineno):
         key, fields = parseline(line)
         if not (key and fields):
             continue
-        if lineno is not None:
+        if lineno:
             fields['lineno'] = lineno
             lineno += 1
         # Normalize the key
@@ -184,7 +184,7 @@ def lookup(caps, MIMEtype, key=None):
     MIMEtype = MIMEtypes[0] + '/*'
     if MIMEtype in caps:
         entries = entries + caps[MIMEtype]
-    if key is not None:
+    if key:
         entries = [e for e in entries if key in e]
     entries = sorted(entries, key=lineno_sort_key)
     return entries

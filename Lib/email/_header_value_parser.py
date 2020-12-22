@@ -542,7 +542,7 @@ class AddrSpec(TokenList):
             lp = quote_string(self.local_part)
         else:
             lp = self.local_part
-        if self.domain is not None:
+        if self.domain:
             return lp + '@' + self.domain
         return lp
 
@@ -1399,7 +1399,7 @@ def get_word(value):
                                       "but found '{}'".format(value))
     else:
         token, value = get_atom(value)
-    if leader is not None:
+    if leader:
         token[:0] = [leader]
     return token, value
 
@@ -1461,7 +1461,7 @@ def get_local_part(value):
             if value[0] != '\\' and value[0] in PHRASE_ENDS:
                 raise
             token = TokenList()
-    if leader is not None:
+    if leader:
         token[:0] = [leader]
     local_part.append(token)
     if value and (value[0]=='\\' or value[0] not in PHRASE_ENDS):
@@ -1608,7 +1608,7 @@ def get_domain(value):
             "expected domain but found '{}'".format(value))
     if value[0] == '[':
         token, value = get_domain_literal(value)
-        if leader is not None:
+        if leader:
             token[:0] = [leader]
         domain.append(token)
         return domain, value
@@ -1618,7 +1618,7 @@ def get_domain(value):
         token, value = get_atom(value)
     if value and value[0] == '@':
         raise errors.HeaderParseError('Invalid Domain')
-    if leader is not None:
+    if leader:
         token[:0] = [leader]
     domain.append(token)
     if value and value[0] == '.':
@@ -1770,12 +1770,12 @@ def get_name_addr(value):
         if not value:
             raise errors.HeaderParseError(
                 "expected name-addr but found '{}'".format(token))
-        if leader is not None:
+        if leader:
             token[0][:0] = [leader]
             leader = None
         name_addr.append(token)
     token, value = get_angle_addr(value)
-    if leader is not None:
+    if leader:
         token[:0] = [leader]
     name_addr.append(token)
     return name_addr, value
@@ -1846,7 +1846,7 @@ def get_mailbox_list(value):
                         "empty element in mailbox-list"))
                 else:
                     token, value = get_invalid_mailbox(value, ',;')
-                    if leader is not None:
+                    if leader:
                         token[:0] = [leader]
                     mailbox_list.append(token)
                     mailbox_list.defects.append(errors.InvalidHeaderDefect(
@@ -1856,7 +1856,7 @@ def get_mailbox_list(value):
                     "empty element in mailbox-list"))
             else:
                 token, value = get_invalid_mailbox(value, ',;')
-                if leader is not None:
+                if leader:
                     token[:0] = [leader]
                 mailbox_list.append(token)
                 mailbox_list.defects.append(errors.InvalidHeaderDefect(
@@ -1902,13 +1902,13 @@ def get_group_list(value):
             return group_list, value
     token, value = get_mailbox_list(value)
     if len(token.all_mailboxes)==0:
-        if leader is not None:
+        if leader:
             group_list.append(leader)
         group_list.extend(token)
         group_list.defects.append(errors.ObsoleteHeaderDefect(
             "group-list with empty entries"))
         return group_list, value
-    if leader is not None:
+    if leader:
         token[:0] = [leader]
     group_list.append(token)
     return group_list, value
@@ -1997,7 +1997,7 @@ def get_address_list(value):
                         "address-list entry with no content"))
                 else:
                     token, value = get_invalid_mailbox(value, ',')
-                    if leader is not None:
+                    if leader:
                         token[:0] = [leader]
                     address_list.append(Address([token]))
                     address_list.defects.append(errors.InvalidHeaderDefect(
@@ -2007,7 +2007,7 @@ def get_address_list(value):
                     "empty element in address-list"))
             else:
                 token, value = get_invalid_mailbox(value, ',')
-                if leader is not None:
+                if leader:
                     token[:0] = [leader]
                 address_list.append(Address([token]))
                 address_list.defects.append(errors.InvalidHeaderDefect(
@@ -2178,7 +2178,7 @@ def parse_mime_version(value):
         token, value = get_cfws(value)
         mime_version.append(token)
     if not value or value[0] != '.':
-        if mime_version.major is not None:
+        if mime_version.major:
             mime_version.defects.append(errors.InvalidHeaderDefect(
                 "Incomplete MIME version; found only major number"))
         if value:
@@ -2190,7 +2190,7 @@ def parse_mime_version(value):
         token, value = get_cfws(value)
         mime_version.append(token)
     if not value:
-        if mime_version.major is not None:
+        if mime_version.major:
             mime_version.defects.append(errors.InvalidHeaderDefect(
                 "Incomplete MIME version; found only major number"))
         return mime_version
@@ -2403,7 +2403,7 @@ def get_value(value):
         token, value = get_quoted_string(value)
     else:
         token, value = get_extended_attribute(value)
-    if leader is not None:
+    if leader:
         token[:0] = [leader]
     v.append(token)
     return v, value
@@ -2493,7 +2493,7 @@ def get_parameter(value):
     if not param.extended or param.section_number > 0:
         if not value or value[0] != "'":
             appendto.append(token)
-            if remainder is not None:
+            if remainder:
                 assert not value, value
                 value = remainder
             return param, value
@@ -2508,7 +2508,7 @@ def get_parameter(value):
         if remainder is None:
             return param, value
     else:
-        if token is not None:
+        if token:
             for t in token:
                 if t.token_type == 'extended-attrtext':
                     break
@@ -2529,7 +2529,7 @@ def get_parameter(value):
                                   "delimiter, but found {}".format(value))
         appendto.append(ValueTerminal("'", 'RFC2231-delimiter'))
         value = value[1:]
-    if remainder is not None:
+    if remainder:
         # Treat the rest of value as bare quoted string content.
         v = Value()
         while value:
@@ -2545,7 +2545,7 @@ def get_parameter(value):
     else:
         token, value = get_value(value)
     appendto.append(token)
-    if remainder is not None:
+    if remainder:
         assert not value, value
         value = remainder
     return param, value
@@ -2576,7 +2576,7 @@ def parse_mime_parameters(value):
                 mime_parameters.append(leader)
                 return mime_parameters
             if value[0] == ';':
-                if leader is not None:
+                if leader:
                     mime_parameters.append(leader)
                 mime_parameters.defects.append(errors.InvalidHeaderDefect(
                     "parameter entry with no content"))
@@ -2873,7 +2873,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
     encoded segments fit within maxlen.
 
     """
-    if last_ew is not None and ew_combine_allowed:
+    if last_ew and ew_combine_allowed:
         to_encode = str(
             get_unstructured(lines[-1][last_ew:] + to_encode))
         lines[-1] = lines[-1][:last_ew]

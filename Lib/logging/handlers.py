@@ -472,7 +472,7 @@ class WatchedFileHandler(logging.FileHandler):
             sres = None
         # compare file system stat with that of our stream file handle
         if not sres or sres[ST_DEV] != self.dev or sres[ST_INO] != self.ino:
-            if self.stream is not None:
+            if self.stream:
                 # we have an open file handle, clean it up
                 self.stream.flush()
                 self.stream.close()
@@ -535,7 +535,7 @@ class SocketHandler(logging.Handler):
         A factory method which allows subclasses to define the precise
         type of socket they want.
         """
-        if self.port is not None:
+        if self.port:
             result = socket.create_connection(self.address, timeout=timeout)
         else:
             result = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -858,9 +858,9 @@ class SysLogHandler(logging.Handler):
                     break
                 except OSError as exc:
                     err = exc
-                    if sock is not None:
+                    if sock:
                         sock.close()
-            if err is not None:
+            if err:
                 raise err
             self.socket = sock
             self.socktype = socktype
@@ -876,7 +876,7 @@ class SysLogHandler(logging.Handler):
             self.socktype = use_socktype
         except OSError:
             self.socket.close()
-            if self.socktype is not None:
+            if self.socktype:
                 # user didn't specify falling back, so fail
                 raise
             use_socktype = socket.SOCK_STREAM
@@ -1032,7 +1032,7 @@ class SMTPHandler(logging.Handler):
             msg['Date'] = email.utils.localtime()
             msg.set_content(self.format(record))
             if self.username:
-                if self.secure is not None:
+                if self.secure:
                     smtp.ehlo()
                     smtp.starttls(*self.secure)
                     smtp.ehlo()
@@ -1155,7 +1155,7 @@ class HTTPHandler(logging.Handler):
         method = method.upper()
         if method not in ["GET", "POST"]:
             raise ValueError("method must be GET or POST")
-        if not secure and context is not None:
+        if not secure and context:
             raise ValueError("context parameter only makes sense "
                              "with secure=True")
         self.host = host

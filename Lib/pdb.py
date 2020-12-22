@@ -362,7 +362,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assignment of the _ variable in the builtins.
         """
         # reproduce the behavior of the standard displayhook, not printing None
-        if obj is not None:
+        if obj:
             self.message(repr(obj))
 
     def default(self, line):
@@ -487,7 +487,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # display additional info along with the completions, such as file/line
         # of the breakpoint.)
         return [str(i) for i, bp in enumerate(bdb.Breakpoint.bpbynumber)
-                if bp is not None and str(i).startswith(text)]
+                if bp and str(i).startswith(text)]
 
     def _complete_expression(self, text, line, begidx, endidx):
         # Complete an arbitrary expression.
@@ -1574,7 +1574,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 # Collect all command help into docstring, if not run with -OO
 
-if __doc__ is not None:
+if __doc__:
     # unfortunately we can't guess this order from the class definition
     _help_order = [
         'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
@@ -1608,7 +1608,7 @@ def runcall(*args, **kwds):
 
 def set_trace(*, header=None):
     pdb = Pdb()
-    if header is not None:
+    if header:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back)
 

@@ -257,7 +257,7 @@ class SimpleXMLRPCDispatcher:
             params, method = loads(data, use_builtin_types=self.use_builtin_types)
 
             # generate response
-            if dispatch_method is not None:
+            if dispatch_method:
                 response = dispatch_method(method, params)
             else:
                 response = self._dispatch(method, params)
@@ -288,7 +288,7 @@ class SimpleXMLRPCDispatcher:
         Returns a list of the methods supported by the server."""
 
         methods = set(self.funcs.keys())
-        if self.instance is not None:
+        if self.instance:
             # Instance can implement _listMethod to return a list of
             # methods
             if hasattr(self.instance, '_listMethods'):
@@ -321,7 +321,7 @@ class SimpleXMLRPCDispatcher:
         method = None
         if method_name in self.funcs:
             method = self.funcs[method_name]
-        elif self.instance is not None:
+        elif self.instance:
             # Instance can implement _methodHelp to return help for a method
             if hasattr(self.instance, '_methodHelp'):
                 return self.instance._methodHelp(method_name)
@@ -407,11 +407,11 @@ class SimpleXMLRPCDispatcher:
         except KeyError:
             pass
         else:
-            if func is not None:
+            if func:
                 return func(*params)
             raise Exception('method "%s" is not supported' % method)
 
-        if self.instance is not None:
+        if self.instance:
             if hasattr(self.instance, '_dispatch'):
                 # call the `_dispatch` method on the instance
                 return self.instance._dispatch(method, params)
@@ -426,7 +426,7 @@ class SimpleXMLRPCDispatcher:
             except AttributeError:
                 pass
             else:
-                if func is not None:
+                if func:
                     return func(*params)
 
         raise Exception('method "%s" is not supported' % method)
@@ -532,7 +532,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
         else:
             self.send_response(200)
             self.send_header("Content-type", "text/xml")
-            if self.encode_threshold is not None:
+            if self.encode_threshold:
                 if len(response) > self.encode_threshold:
                     q = self.accept_encodings().get("gzip", 0)
                     if q:
@@ -862,7 +862,7 @@ class XMLRPCDocGenerator:
         for method_name in self.system_listMethods():
             if method_name in self.funcs:
                 method = self.funcs[method_name]
-            elif self.instance is not None:
+            elif self.instance:
                 method_info = [None, None] # argspec, documentation
                 if hasattr(self.instance, '_get_method_argstring'):
                     method_info[0] = self.instance._get_method_argstring(method_name)

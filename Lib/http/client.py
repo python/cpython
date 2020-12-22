@@ -298,7 +298,7 @@ class HTTPResponse(io.BufferedIOBase):
         return version, status, reason
 
     def begin(self):
-        if self.headers is not None:
+        if self.headers:
             # we've already started reading the response
             return
 
@@ -455,8 +455,8 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             return self._read_chunked(amt)
 
-        if amt is not None:
-            if self.length is not None and amt > self.length:
+        if amt:
+            if self.length and amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
             s = self.fp.read(amt)
@@ -464,7 +464,7 @@ class HTTPResponse(io.BufferedIOBase):
                 # Ideally, we would raise IncompleteRead if the content-length
                 # wasn't satisfied, but it might break compatibility.
                 self._close_conn()
-            elif self.length is not None:
+            elif self.length:
                 self.length -= len(s)
                 if not self.length:
                     self._close_conn()
@@ -498,7 +498,7 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             return self._readinto_chunked(b)
 
-        if self.length is not None:
+        if self.length:
             if len(b) > self.length:
                 # clip the read to the "end of response"
                 b = memoryview(b)[0:self.length]
@@ -511,7 +511,7 @@ class HTTPResponse(io.BufferedIOBase):
             # Ideally, we would raise IncompleteRead if the content-length
             # wasn't satisfied, but it might break compatibility.
             self._close_conn()
-        elif self.length is not None:
+        elif self.length:
             self.length -= n
             if not self.length:
                 self._close_conn()
@@ -555,7 +555,7 @@ class HTTPResponse(io.BufferedIOBase):
         # been read.
         chunk_left = self.chunk_left
         if not chunk_left: # Can be 0 or None
-            if chunk_left is not None:
+            if chunk_left:
                 # We are at the end of chunk, discard chunk end
                 self._safe_read(2)  # toss the CRLF at the end of the chunk
             try:
@@ -580,13 +580,13 @@ class HTTPResponse(io.BufferedIOBase):
                 if chunk_left is None:
                     break
 
-                if amt is not None and amt <= chunk_left:
+                if amt and amt <= chunk_left:
                     value.append(self._safe_read(amt))
                     self.chunk_left = chunk_left - amt
                     break
 
                 value.append(self._safe_read(chunk_left))
-                if amt is not None:
+                if amt:
                     amt -= chunk_left
                 self.chunk_left = 0
             return b''.join(value)
@@ -645,12 +645,12 @@ class HTTPResponse(io.BufferedIOBase):
             return b""
         if self.chunked:
             return self._read1_chunked(n)
-        if self.length is not None and (n < 0 or n > self.length):
+        if self.length and (n < 0 or n > self.length):
             n = self.length
         result = self.fp.read1(n)
         if not result and n:
             self._close_conn()
-        elif self.length is not None:
+        elif self.length:
             self.length -= len(result)
         return result
 
@@ -669,12 +669,12 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             # Fallback to IOBase readline which uses peek() and read()
             return super().readline(limit)
-        if self.length is not None and (limit < 0 or limit > self.length):
+        if self.length and (limit < 0 or limit > self.length):
             limit = self.length
         result = self.fp.readline(limit)
         if not result and limit:
             self._close_conn()
-        elif self.length is not None:
+        elif self.length:
             self.length -= len(result)
         return result
 
@@ -1024,7 +1024,7 @@ class HTTPConnection:
         del self._buffer[:]
         self.send(msg)
 
-        if message_body is not None:
+        if message_body:
 
             # create a consistent interface to message_body
             if hasattr(message_body, 'read'):
@@ -1297,7 +1297,7 @@ class HTTPConnection:
                 encode_chunked = False
                 content_length = self._get_content_length(body, method)
                 if content_length is None:
-                    if body is not None:
+                    if body:
                         if self.debuglevel > 0:
                             print('Unable to determine size of %r' % body)
                         encode_chunked = True
@@ -1397,8 +1397,7 @@ else:
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
                                                   blocksize=blocksize)
-            if (key_file is not None or cert_file is not None or
-                        check_hostname is not None):
+            if (key_file or cert_file or check_hostname):
                 import warnings
                 warnings.warn("key_file, cert_file and check_hostname are "
                               "deprecated, use a custom context instead.",
@@ -1411,7 +1410,7 @@ else:
                 if self._http_vsn == 11:
                     context.set_alpn_protocols(['http/1.1'])
                 # enable PHA for TLS 1.3 connections if available
-                if context.post_handshake_auth is not None:
+                if context.post_handshake_auth:
                     context.post_handshake_auth = True
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
@@ -1423,10 +1422,10 @@ else:
                 context.load_cert_chain(cert_file, key_file)
                 # cert and key file means the user wants to authenticate.
                 # enable TLS 1.3 PHA implicitly even for custom contexts.
-                if context.post_handshake_auth is not None:
+                if context.post_handshake_auth:
                     context.post_handshake_auth = True
             self._context = context
-            if check_hostname is not None:
+            if check_hostname:
                 self._context.check_hostname = check_hostname
 
         def connect(self):
@@ -1472,7 +1471,7 @@ class IncompleteRead(HTTPException):
         self.partial = partial
         self.expected = expected
     def __repr__(self):
-        if self.expected is not None:
+        if self.expected:
             e = ', %i more expected' % self.expected
         else:
             e = ''

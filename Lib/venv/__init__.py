@@ -111,7 +111,7 @@ class EnvBuilder:
         context = types.SimpleNamespace()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
-        prompt = self.prompt if self.prompt is not None else context.env_name
+        prompt = self.prompt if self.prompt else context.env_name
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
         executable = sys._base_executable
@@ -162,7 +162,7 @@ class EnvBuilder:
                 incl = 'false'
             f.write('include-system-site-packages = %s\n' % incl)
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
-            if self.prompt is not None:
+            if self.prompt:
                 f.write(f'prompt = {self.prompt!r}\n')
 
     if os.name != 'nt':
@@ -385,7 +385,7 @@ class EnvBuilder:
                         data = None
                         logger.warning('unable to copy script %r, '
                                        'may be binary: %s', srcfile, e)
-                if data is not None:
+                if data:
                     with open(dstfile, 'wb') as f:
                         f.write(data)
                     shutil.copymode(srcfile, dstfile)

@@ -197,7 +197,7 @@ class Queue(object):
     def _finalize_join(twr):
         debug('joining queue thread')
         thread = twr()
-        if thread is not None:
+        if thread:
             thread.join()
             debug('... queue thread joined')
         else:

@@ -155,7 +155,7 @@ class RegexFlag(enum.IntFlag):
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
 
     def __repr__(self):
-        if self._name_ is not None:
+        if self._name_:
             return f're.{self._name_}'
         value = self._value_
         members = []
@@ -378,7 +378,7 @@ class Scanner:
             if callable(action):
                 self.match = m
                 action = action(self, m.group())
-            if action is not None:
+            if action:
                 append(action)
             i = j
         return result, string[i:]

@@ -127,7 +127,7 @@ def reduce_tree(node, parent=None):
                 if node.children.index(child)%2:
                     continue
                 reduced = reduce_tree(child, new_node)
-                if reduced is not None:
+                if reduced:
                     new_node.children.append(reduced)
     elif node.type == syms.Alternative:
         if len(node.children) > 1:
@@ -223,11 +223,11 @@ def reduce_tree(node, parent=None):
                 pass
 
         #add children
-        if details_node and new_node is not None:
+        if details_node and new_node:
             for child in details_node.children[1:-1]:
                 #skip '<', '>' markers
                 reduced = reduce_tree(child, new_node)
-                if reduced is not None:
+                if reduced:
                     new_node.children.append(reduced)
     if new_node:
         new_node.parent = parent

@@ -197,9 +197,9 @@ class DuplicateSectionError(Error):
 
     def __init__(self, section, source=None, lineno=None):
         msg = [repr(section), " already exists"]
-        if source is not None:
+        if source:
             message = ["While reading from ", repr(source)]
-            if lineno is not None:
+            if lineno:
                 message.append(" [line {0:2d}]".format(lineno))
             message.append(": section ")
             message.extend(msg)
@@ -223,9 +223,9 @@ class DuplicateOptionError(Error):
     def __init__(self, section, option, source=None, lineno=None):
         msg = [repr(option), " in section ", repr(section),
                " already exists"]
-        if source is not None:
+        if source:
             message = ["While reading from ", repr(source)]
-            if lineno is not None:
+            if lineno:
                 message.append(" [line {0:2d}]".format(lineno))
             message.append(": option ")
             message.extend(msg)
@@ -746,7 +746,7 @@ class RawConfigParser(MutableMapping):
             elements_added.add(section)
             for key, value in keys.items():
                 key = self.optionxform(str(key))
-                if value is not None:
+                if value:
                     value = str(value)
                 if self._strict and (section, key) in elements_added:
                     raise DuplicateOptionError(section, key, source)
@@ -925,7 +925,7 @@ class RawConfigParser(MutableMapping):
         for key, value in section_items:
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
-            if value is not None or not self._allow_no_value:
+            if value or not self._allow_no_value:
                 value = delimiter + str(value).replace('\n', '\n\t')
             else:
                 value = ""
@@ -1040,10 +1040,7 @@ class RawConfigParser(MutableMapping):
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
                     # comment on the line
-                    if (comment_start is None and
-                        cursect is not None and
-                        optname and
-                        cursect[optname] is not None):
+                    if (comment_start is None and cursect and optname and cursect[optname]):
                         cursect[optname].append('') # newlines added at join
                 else:
                     # empty line marks end of value
@@ -1052,7 +1049,7 @@ class RawConfigParser(MutableMapping):
             # continuation line?
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
-            if (cursect is not None and optname and
+            if (cursect and optname and
                 cur_indent_level > indent_level):
                 cursect[optname].append(value)
             # a section header or option header?
@@ -1095,7 +1092,7 @@ class RawConfigParser(MutableMapping):
                         elements_added.add((sectname, optname))
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
-                        if optval is not None:
+                        if optval:
                             optval = optval.strip()
                             cursect[optname] = [optval]
                         else:
@@ -1151,7 +1148,7 @@ class RawConfigParser(MutableMapping):
         vardict = {}
         if vars:
             for key, value in vars.items():
-                if value is not None:
+                if value:
                     value = str(value)
                 vardict[self.optionxform(key)] = value
         return _ChainMap(vardict, sectiondict, self._defaults)

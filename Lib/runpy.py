@@ -65,7 +65,7 @@ def _run_code(code, run_globals, init_globals=None,
               mod_name=None, mod_spec=None,
               pkg_name=None, script_name=None):
     """Helper to run code in nominated namespace"""
-    if init_globals is not None:
+    if init_globals:
         run_globals.update(init_globals)
     if mod_spec is None:
         loader = None
@@ -118,7 +118,7 @@ def _get_module_details(mod_name, error=ImportError):
                 raise
         # Warn if the module has already been imported under its normal name
         existing = sys.modules.get(mod_name)
-        if existing is not None and not hasattr(existing, "__path__"):
+        if existing and not hasattr(existing, "__path__"):
             from warnings import warn
             msg = "{mod_name!r} found in sys.modules after import of " \
                 "package {pkg_name!r}, but prior to execution of " \
@@ -139,7 +139,7 @@ def _get_module_details(mod_name, error=ImportError):
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
         raise error("No module named %s" % mod_name)
-    if spec.submodule_search_locations is not None:
+    if spec.submodule_search_locations:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
             raise error("Cannot use package as __main__ module")
         try:

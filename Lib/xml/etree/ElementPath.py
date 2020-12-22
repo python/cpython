@@ -251,7 +251,7 @@ def prepare_predicate(next, token):
         key = predicate[1]
         def select(context, result):
             for elem in result:
-                if elem.get(key) is not None:
+                if elem.get(key):
                     yield elem
         return select
     if signature == "@-='" or signature == "@-!='":
@@ -264,7 +264,7 @@ def prepare_predicate(next, token):
                     yield elem
         def select_negated(context, result):
             for elem in result:
-                if (attr_value := elem.get(key)) is not None and attr_value != value:
+                if (attr_value := elem.get(key)) and attr_value != value:
                     yield elem
         return select_negated if '!=' in signature else select
     if signature == "-" and not re.match(r"\-?\d+$", predicate[0]):
@@ -272,7 +272,7 @@ def prepare_predicate(next, token):
         tag = predicate[0]
         def select(context, result):
             for elem in result:
-                if elem.find(tag) is not None:
+                if elem.find(tag):
                     yield elem
         return select
     if signature == ".='" or signature == ".!='" or (

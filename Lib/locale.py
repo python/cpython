@@ -424,14 +424,14 @@ def normalize(localename):
     if modifier:
         lookup_name += '@' + modifier
     code = locale_alias.get(lookup_name, None)
-    if code is not None:
+    if code:
         return code
     #print('first lookup failed')
 
     if modifier:
         # Second try: fullname without modifier (possibly with encoding)
         code = locale_alias.get(lang_enc, None)
-        if code is not None:
+        if code:
             #print('lookup without modifier succeeded')
             if '@' not in code:
                 return _append_modifier(code, modifier)
@@ -445,7 +445,7 @@ def normalize(localename):
         if modifier:
             lookup_name += '@' + modifier
         code = locale_alias.get(lookup_name, None)
-        if code is not None:
+        if code:
             #print('lookup without encoding succeeded')
             if '@' not in code:
                 return _replace_encoding(code, encoding)
@@ -455,7 +455,7 @@ def normalize(localename):
         if modifier:
             # Fourth try: langname (without encoding and modifier)
             code = locale_alias.get(langname, None)
-            if code is not None:
+            if code:
                 #print('lookup without modifier and encoding succeeded')
                 if '@' not in code:
                     code = _replace_encoding(code, encoding)

@@ -88,7 +88,7 @@ class Node(xml.dom.Node):
         if newChild.nodeType not in self._child_node_types:
             raise xml.dom.HierarchyRequestErr(
                 "%s cannot be child of %s" % (repr(newChild), repr(self)))
-        if newChild.parentNode is not None:
+        if newChild.parentNode:
             newChild.parentNode.removeChild(newChild)
         if refChild is None:
             self.appendChild(newChild)
@@ -122,7 +122,7 @@ class Node(xml.dom.Node):
                 "%s cannot be child of %s" % (repr(node), repr(self)))
         elif node.nodeType in _nodeTypes_with_children:
             _clear_id_cache(self)
-        if node.parentNode is not None:
+        if node.parentNode:
             node.parentNode.removeChild(node)
         _append_child(self, node)
         node.nextSibling = None
@@ -138,7 +138,7 @@ class Node(xml.dom.Node):
                 "%s cannot be child of %s" % (repr(newChild), repr(self)))
         if newChild is oldChild:
             return
-        if newChild.parentNode is not None:
+        if newChild.parentNode:
             newChild.parentNode.removeChild(newChild)
         try:
             index = self.childNodes.index(oldChild)
@@ -165,9 +165,9 @@ class Node(xml.dom.Node):
             self.childNodes.remove(oldChild)
         except ValueError:
             raise xml.dom.NotFoundErr()
-        if oldChild.nextSibling is not None:
+        if oldChild.nextSibling:
             oldChild.nextSibling.previousSibling = oldChild.previousSibling
-        if oldChild.previousSibling is not None:
+        if oldChild.previousSibling:
             oldChild.previousSibling.nextSibling = oldChild.nextSibling
         oldChild.nextSibling = oldChild.previousSibling = None
         if oldChild.nodeType in _nodeTypes_with_children:
@@ -246,7 +246,7 @@ class Node(xml.dom.Node):
         if data is None:
             # ignore handlers passed for None
             handler = None
-            if old is not None:
+            if old:
                 del d[key]
         else:
             d[key] = (data, handler)
@@ -255,7 +255,7 @@ class Node(xml.dom.Node):
     def _call_user_data_handler(self, operation, src, dst):
         if hasattr(self, "_user_data"):
             for key, (data, handler) in list(self._user_data.items()):
-                if handler is not None:
+                if handler:
                     handler.handle(operation, key, data, src, dst)
 
     # minidom-specific API:
@@ -294,7 +294,7 @@ def _append_child(self, node):
 
 def _in_document(node):
     # return True iff node is part of a document tree
-    while node is not None:
+    while node != None:
         if node.nodeType == Node.DOCUMENT_NODE:
             return True
         node = node.parentNode
@@ -379,7 +379,7 @@ class Attr(Node):
 
     def _set_name(self, value):
         self._name = value
-        if self.ownerElement is not None:
+        if self.ownerElement:
             _clear_id_cache(self.ownerElement)
 
     nodeName = name = property(_get_name, _set_name)
@@ -390,7 +390,7 @@ class Attr(Node):
     def _set_value(self, value):
         self._value = value
         self.childNodes[0].data = value
-        if self.ownerElement is not None:
+        if self.ownerElement:
             _clear_id_cache(self.ownerElement)
         self.childNodes[0].data = value
 
@@ -422,7 +422,7 @@ class Attr(Node):
         # method call is not warranted.  We duplicate the removal of
         # children, but that's all we needed from the base class.
         elem = self.ownerElement
-        if elem is not None:
+        if elem:
             del elem._attrs[self.nodeName]
             del elem._attrsNS[(self.namespaceURI, self.localName)]
             if self._is_id:
@@ -582,7 +582,7 @@ class NamedNodeMap(object):
 
     def removeNamedItem(self, name):
         n = self.getNamedItem(name)
-        if n is not None:
+        if n:
             _clear_id_cache(self._ownerElement)
             del self._attrs[n.nodeName]
             del self._attrsNS[(n.namespaceURI, n.localName)]
@@ -594,7 +594,7 @@ class NamedNodeMap(object):
 
     def removeNamedItemNS(self, namespaceURI, localName):
         n = self.getNamedItemNS(namespaceURI, localName)
-        if n is not None:
+        if n:
             _clear_id_cache(self._ownerElement)
             del self._attrsNS[(n.namespaceURI, n.localName)]
             del self._attrs[n.nodeName]
@@ -711,7 +711,7 @@ class Element(Node):
         return self.tagName
 
     def unlink(self):
-        if self._attrs is not None:
+        if self._attrs:
             for attr in list(self._attrs.values()):
                 attr.unlink()
         self._attrs = None
@@ -786,10 +786,10 @@ class Element(Node):
             raise xml.dom.InuseAttributeErr("attribute node already owned")
         self._ensure_attributes()
         old1 = self._attrs.get(attr.name, None)
-        if old1 is not None:
+        if old1:
             self.removeAttributeNode(old1)
         old2 = self._attrsNS.get((attr.namespaceURI, attr.localName), None)
-        if old2 is not None and old2 is not old1:
+        if old2 and old2 is not old1:
             self.removeAttributeNode(old2)
         _set_attribute_node(self, attr)
 
@@ -921,7 +921,7 @@ class Element(Node):
     def setIdAttributeNode(self, idAttr):
         if idAttr is None or not self.isSameNode(idAttr.ownerElement):
             raise xml.dom.NotFoundErr()
-        if _get_containing_entref(self) is not None:
+        if _get_containing_entref(self):
             raise xml.dom.NoModificationAllowedErr()
         if not idAttr._is_id:
             idAttr._is_id = True
@@ -1117,14 +1117,14 @@ class Text(CharacterData):
     def _get_wholeText(self):
         L = [self.data]
         n = self.previousSibling
-        while n is not None:
+        while n:
             if n.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE):
                 L.insert(0, n.data)
                 n = n.previousSibling
             else:
                 break
         n = self.nextSibling
-        while n is not None:
+        while n:
             if n.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE):
                 L.append(n.data)
                 n = n.nextSibling
@@ -1137,7 +1137,7 @@ class Text(CharacterData):
         # supports EntityReference nodes.
         parent = self.parentNode
         n = self.previousSibling
-        while n is not None:
+        while n:
             if n.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE):
                 next = n.previousSibling
                 parent.removeChild(n)
@@ -1147,7 +1147,7 @@ class Text(CharacterData):
         n = self.nextSibling
         if not content:
             parent.removeChild(self)
-        while n is not None:
+        while n:
             if n.nodeType in (Node.TEXT_NODE, Node.CDATA_SECTION_NODE):
                 next = n.nextSibling
                 parent.removeChild(n)
@@ -1181,7 +1181,7 @@ defproperty(Text, "wholeText",
 
 def _get_containing_element(node):
     c = node.parentNode
-    while c is not None:
+    while c:
         if c.nodeType == Node.ELEMENT_NODE:
             return c
         c = c.parentNode
@@ -1189,7 +1189,7 @@ def _get_containing_element(node):
 
 def _get_containing_entref(node):
     c = node.parentNode
-    while c is not None:
+    while c:
         if c.nodeType == Node.ENTITY_REFERENCE_NODE:
             return c
         c = c.parentNode
@@ -1357,7 +1357,7 @@ class DocumentType(Identified, Childless, Node):
                          % (newl, self.publicId, newl, self.systemId))
         elif self.systemId:
             writer.write("%s  SYSTEM '%s'" % (newl, self.systemId))
-        if self.internalSubset is not None:
+        if self.internalSubset:
             writer.write(" [")
             writer.write(self.internalSubset)
             writer.write("]")
@@ -1429,7 +1429,7 @@ class DOMImplementation(DOMImplementationLS):
         return (feature.lower(), version) in self._features
 
     def createDocument(self, namespaceURI, qualifiedName, doctype):
-        if doctype and doctype.parentNode is not None:
+        if doctype and doctype.parentNode:
             raise xml.dom.WrongDocumentErr(
                 "doctype object owned by another DOM tree")
         doc = self._create_document()
@@ -1612,7 +1612,7 @@ class Document(Node, DocumentLS):
         if node.nodeType not in self._child_node_types:
             raise xml.dom.HierarchyRequestErr(
                 "%s cannot be child of %s" % (repr(node), repr(self)))
-        if node.parentNode is not None:
+        if node.parentNode:
             # This needs to be done before the next test since this
             # may *be* the document element, in which case it should
             # end up re-ordered to the end.
@@ -1642,7 +1642,7 @@ class Document(Node, DocumentLS):
                 return node
 
     def unlink(self):
-        if self.doctype is not None:
+        if self.doctype:
             self.doctype.unlink()
             self.doctype = None
         Node.unlink(self)
@@ -1790,7 +1790,7 @@ class Document(Node, DocumentLS):
                         self._id_cache[attr.value] = node
                         if attr.value == id:
                             result = node
-            if result is not None:
+            if result:
                 break
         return result
 
@@ -1817,7 +1817,7 @@ class Document(Node, DocumentLS):
 
         if encoding:
             declarations.append(f'encoding="{encoding}"')
-        if standalone is not None:
+        if standalone:
             declarations.append(f'standalone="{"yes" if standalone else "no"}"')
 
         writer.write(f'<?xml version="1.0" {" ".join(declarations)}?>{newl}')
@@ -1855,7 +1855,7 @@ class Document(Node, DocumentLS):
             localName = None
         if n.nodeType == Node.ATTRIBUTE_NODE:
             element = n.ownerElement
-            if element is not None:
+            if element:
                 is_id = n._is_id
                 element.removeAttributeNode(n)
         else:
@@ -1869,7 +1869,7 @@ class Document(Node, DocumentLS):
         else:
             # attribute node
             n.name = name
-            if element is not None:
+            if element:
                 element.setAttributeNode(n)
                 if is_id:
                     element.setIdAttributeNode(n)

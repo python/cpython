@@ -482,7 +482,7 @@ class Wave_write:
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
             self._sampwidth * 8, b'data'))
-        if self._form_length_pos is not None:
+        if self._form_length_pos:
             self._data_length_pos = self._file.tell()
         self._file.write(struct.pack('<L', self._datalength))
         self._headerwritten = True

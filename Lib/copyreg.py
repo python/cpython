@@ -16,7 +16,7 @@ def pickle(ob_type, pickle_function, constructor_ob=None):
 
     # The constructor_ob function is a vestige of safe for unpickling.
     # There is no reason for the caller to pass it anymore.
-    if constructor_ob is not None:
+    if constructor_ob:
         constructor(constructor_ob)
 
 def constructor(object):
@@ -113,7 +113,7 @@ def _slotnames(cls):
 
     # Get the value from a cache in the class if possible
     names = cls.__dict__.get("__slotnames__")
-    if names is not None:
+    if names:
         return names
 
     # Not cached -- calculate the value

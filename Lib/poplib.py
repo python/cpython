@@ -107,7 +107,7 @@ class POP3:
         self.welcome = self._getresp()
 
     def _create_socket(self, timeout):
-        if timeout is not None and not timeout:
+        if timeout and not timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')
         return socket.create_connection((self.host, self.port), timeout)
 
@@ -240,7 +240,7 @@ class POP3:
         Result when a message number argument is given is a
         single response: the "scan listing" for that message.
         """
-        if which is not None:
+        if which:
             return self._shortcmd('LIST %s' % which)
         return self._longcmd('LIST')
 
@@ -285,12 +285,12 @@ class POP3:
         try:
             file = self.file
             self.file = None
-            if file is not None:
+            if file:
                 file.close()
         finally:
             sock = self.sock
             self.sock = None
-            if sock is not None:
+            if sock:
                 try:
                     sock.shutdown(socket.SHUT_RDWR)
                 except OSError as exc:
@@ -352,7 +352,7 @@ class POP3:
         in the form 'response mesgnum uid', otherwise result is
         the list ['response', ['mesgnum uid', ...], octets]
         """
-        if which is not None:
+        if which:
             return self._shortcmd('UIDL %s' % which)
         return self._longcmd('UIDL')
 
@@ -433,13 +433,13 @@ if HAVE_SSL:
 
         def __init__(self, host, port=POP3_SSL_PORT, keyfile=None, certfile=None,
                      timeout=socket._GLOBAL_DEFAULT_TIMEOUT, context=None):
-            if context is not None and keyfile is not None:
+            if context and keyfile:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
-            if context is not None and certfile is not None:
+            if context and certfile:
                 raise ValueError("context and certfile arguments are mutually "
                                  "exclusive")
-            if keyfile is not None or certfile is not None:
+            if keyfile or certfile:
                 import warnings
                 warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)

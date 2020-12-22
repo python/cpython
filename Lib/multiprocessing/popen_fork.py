@@ -35,7 +35,7 @@ class Popen(object):
 
     def wait(self, timeout=None):
         if self.returncode is None:
-            if timeout is not None:
+            if timeout:
                 from multiprocessing.connection import wait
                 if not wait([self.sentinel], timeout):
                     return None
@@ -79,5 +79,5 @@ class Popen(object):
             self.sentinel = parent_r
 
     def close(self):
-        if self.finalizer is not None:
+        if self.finalizer:
             self.finalizer()

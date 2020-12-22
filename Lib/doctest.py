@@ -479,7 +479,7 @@ class Example:
             source += '\n'
         if want and not want.endswith('\n'):
             want += '\n'
-        if exc_msg is not None and not exc_msg.endswith('\n'):
+        if exc_msg and not exc_msg.endswith('\n'):
             exc_msg += '\n'
         # Store properties.
         self.source = source
@@ -913,7 +913,7 @@ class DocTestFinder:
             if file is None:
                 source_lines = None
             else:
-                if module is not None:
+                if module:
                     # Supply the module globals in case the module was
                     # originally loaded via a PEP 302 loader and
                     # file is not a valid filesystem path
@@ -933,7 +933,7 @@ class DocTestFinder:
                 globs = module.__dict__.copy()
         else:
             globs = globs.copy()
-        if extraglobs is not None:
+        if extraglobs:
             globs.update(extraglobs)
         if '__name__' not in globs:
             globs['__name__'] = '__main__'  # provide a default module name
@@ -955,7 +955,7 @@ class DocTestFinder:
         """
         if module is None:
             return True
-        elif inspect.getmodule(object) is not None:
+        elif inspect.getmodule(object):
             return module is inspect.getmodule(object)
         elif inspect.isfunction(object):
             return module.__dict__ is object.__globals__
@@ -991,7 +991,7 @@ class DocTestFinder:
 
         # Find a test for this object, and add it to the list of tests.
         test = self._get_test(obj, name, module, globs, source_lines)
-        if test is not None:
+        if test:
             tests.append(test)
 
         # Look for tests in a module's contained objects.
@@ -1114,7 +1114,7 @@ class DocTestFinder:
         # Note: this could be fooled by a multiline function
         # signature, where a continuation line begins with a quote
         # mark.
-        if lineno is not None:
+        if lineno:
             if source_lines is None:
                 return lineno+1
             pat = re.compile(r'(^|.*:)\s*\w*("|\')')
@@ -1263,7 +1263,7 @@ class DocTestRunner:
     def _failure_header(self, test, example):
         out = [self.DIVIDER]
         if test.filename:
-            if test.lineno is not None and example.lineno is not None:
+            if test.lineno and example.lineno:
                 lineno = test.lineno + example.lineno + 1
             else:
                 lineno = '?'
@@ -2068,7 +2068,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
         globs = {}
     else:
         globs = globs.copy()
-    if extraglobs is not None:
+    if extraglobs:
         globs.update(extraglobs)
     if '__name__' not in globs:
         globs['__name__'] = '__main__'
@@ -2172,13 +2172,13 @@ class DocTestCase(unittest.TestCase):
     def setUp(self):
         test = self._dt_test
 
-        if self._dt_setUp is not None:
+        if self._dt_setUp:
             self._dt_setUp(test)
 
     def tearDown(self):
         test = self._dt_test
 
-        if self._dt_tearDown is not None:
+        if self._dt_tearDown:
             self._dt_tearDown(test)
 
         test.globs.clear()

@@ -369,7 +369,7 @@ class DOMImplementationLS:
     MODE_ASYNCHRONOUS = 2
 
     def createDOMBuilder(self, mode, schemaType):
-        if schemaType is not None:
+        if schemaType:
             raise xml.dom.NotSupportedErr(
                 "schemaType not yet supported")
         if mode == self.MODE_SYNCHRONOUS:

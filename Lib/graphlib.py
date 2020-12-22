@@ -45,7 +45,7 @@ class TopologicalSorter:
         self._npassedout = 0
         self._nfinished = 0
 
-        if graph is not None:
+        if graph:
             for node, predecessors in graph.items():
                 self.add(node, *predecessors)
 
@@ -69,7 +69,7 @@ class TopologicalSorter:
 
         Raises ValueError if called after "prepare".
         """
-        if self._ready_nodes is not None:
+        if self._ready_nodes:
             raise ValueError("Nodes cannot be added after a call to prepare()")
 
         # Create the node -> predecessor edges
@@ -89,7 +89,7 @@ class TopologicalSorter:
         progress. After a call to this function, the graph cannot be modified and
         therefore no more nodes can be added using "add".
         """
-        if self._ready_nodes is not None:
+        if self._ready_nodes:
             raise ValueError("cannot prepare() more than once")
 
         self._ready_nodes = [

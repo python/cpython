@@ -25,7 +25,7 @@ class URLError(OSError):
     def __init__(self, reason, filename=None):
         self.args = reason,
         self.reason = reason
-        if filename is not None:
+        if filename:
             self.filename = filename
 
     def __str__(self):
@@ -46,7 +46,7 @@ class HTTPError(URLError, urllib.response.addinfourl):
         # object.  In some cases, the HTTPError may not have a valid
         # file object.  If this happens, the simplest workaround is to
         # not initialize the base classes.
-        if fp is not None:
+        if fp:
             self.__super_init(fp, hdrs, url, code)
 
     def __str__(self):

@@ -82,7 +82,7 @@ async def staggered_race(
     async def run_one_coro(
             previous_failed: typing.Optional[locks.Event]) -> None:
         # Wait for the previous task to finish, or for delay seconds
-        if previous_failed is not None:
+        if previous_failed:
             with contextlib.suppress(exceptions_mod.TimeoutError):
                 # Use asyncio.wait_for() instead of asyncio.wait() here, so
                 # that if we get cancelled at this point, Event.wait() is also

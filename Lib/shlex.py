@@ -22,7 +22,7 @@ class shlex:
                  punctuation_chars=False):
         if isinstance(instream, str):
             instream = StringIO(instream)
-        if instream is not None:
+        if instream:
             self.instream = instream
             self.infile = infile
         else:
@@ -84,7 +84,7 @@ class shlex:
         self.instream = newstream
         self.lineno = 1
         if self.debug:
-            if newfile is not None:
+            if newfile:
                 print('shlex: pushing to file %s' % (self.infile,))
             else:
                 print('shlex: pushing to stream %s' % (self.instream,))
@@ -108,7 +108,7 @@ class shlex:
         # No pushback.  Get a token.
         raw = self.read_token()
         # Handle inclusions
-        if self.source is not None:
+        if self.source:
             while raw == self.source:
                 spec = self.sourcehook(self.read_token())
                 if spec:

@@ -135,7 +135,7 @@ def _remove_temp_dir(rmtree, tempdir):
     current_process = process.current_process()
     # current_process() can be None if the finalizer is called
     # late during Python finalization
-    if current_process is not None:
+    if current_process:
         current_process._config['tempdir'] = None
 
 def get_temp_dir():
@@ -184,12 +184,12 @@ class Finalize(object):
     Class which supports object finalization using weakrefs
     '''
     def __init__(self, obj, callback, args=(), kwargs=None, exitpriority=None):
-        if (exitpriority is not None) and not isinstance(exitpriority,int):
+        if (exitpriority) and not isinstance(exitpriority,int):
             raise TypeError(
                 "Exitpriority ({0!r}) must be None or int, not {1!s}".format(
                     exitpriority, type(exitpriority)))
 
-        if obj is not None:
+        if obj:
             self._weakref = weakref.ref(obj, self)
         elif exitpriority is None:
             raise ValueError("Without object, exitpriority cannot be None")
@@ -260,7 +260,7 @@ class Finalize(object):
             x += ', args=' + str(self._args)
         if self._kwargs:
             x += ', kwargs=' + str(self._kwargs)
-        if self._key[0] is not None:
+        if self._key[0]:
             x += ', exitpriority=' + str(self._key[0])
         return x + '>'
 
@@ -294,7 +294,7 @@ def _run_finalizers(minpriority=None):
     for key in keys:
         finalizer = _finalizer_registry.get(key)
         # key may have been removed from the registry
-        if finalizer is not None:
+        if finalizer:
             sub_debug('calling %s', finalizer)
             try:
                 finalizer()
@@ -333,7 +333,7 @@ def _exit_function(info=info, debug=debug, _run_finalizers=_run_finalizers,
         debug('running all "atexit" finalizers with priority >= 0')
         _run_finalizers(0)
 
-        if current_process() is not None:
+        if current_process():
             # We check if the current process is None here because if
             # it's None, any call to ``active_children()`` will raise
             # an AttributeError (active_children winds up trying to

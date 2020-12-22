@@ -345,7 +345,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
             runs.append((p, len(charmap)))
             break
         runs.append((p, q))
-    if runs is not None:
+    if runs:
         # use literal/range
         for p, q in runs:
             if q - p == 1:
@@ -476,9 +476,9 @@ def _get_literal_prefix(pattern, flags):
                 break
             prefix1, prefix_skip1, got_all = _get_literal_prefix(p, flags1)
             if prefix_skip is None:
-                if group is not None:
+                if group:
                     prefix_skip = len(prefix)
-                elif prefix_skip1 is not None:
+                elif prefix_skip1:
                     prefix_skip = len(prefix) + prefix_skip1
             prefix.extend(prefix1)
             if not got_all:
@@ -622,7 +622,7 @@ def dis(code):
 
     def dis_(start, end):
         def print_(*args, to=None):
-            if to is not None:
+            if to:
                 labels.add(to)
                 args += ('(to %d)' % (to,),)
             print('%*d%s ' % (offset_width, start, ':' if start in labels else '.'),

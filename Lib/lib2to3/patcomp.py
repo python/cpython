@@ -109,7 +109,7 @@ class PatternCompiler(object):
         # Now we've reduced it to: STRING | NAME [Details] | (...) | [...]
         pattern = self.compile_basic(nodes, repeat)
 
-        if repeat is not None:
+        if repeat:
             assert repeat.type == self.syms.Repeater
             children = repeat.children
             child = children[0]
@@ -131,7 +131,7 @@ class PatternCompiler(object):
                 pattern = pattern.optimize()
                 pattern = pytree.WildcardPattern([[pattern]], min=min, max=max)
 
-        if name is not None:
+        if name:
             pattern.name = name
         return pattern.optimize()
 

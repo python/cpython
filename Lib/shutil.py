@@ -450,7 +450,7 @@ def ignore_patterns(*patterns):
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
               ignore_dangling_symlinks, dirs_exist_ok=False):
-    if ignore is not None:
+    if ignore:
         ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
         ignored_names = set()
@@ -838,7 +838,7 @@ def _get_gid(name):
         result = getgrnam(name)
     except KeyError:
         result = None
-    if result is not None:
+    if result:
         return result[2]
     return None
 
@@ -850,7 +850,7 @@ def _get_uid(name):
         result = getpwnam(name)
     except KeyError:
         result = None
-    if result is not None:
+    if result:
         return result[2]
     return None
 
@@ -889,23 +889,23 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     archive_dir = os.path.dirname(archive_name)
 
     if archive_dir and not os.path.exists(archive_dir):
-        if logger is not None:
+        if logger:
             logger.info("creating %s", archive_dir)
         if not dry_run:
             os.makedirs(archive_dir)
 
     # creating the tarball
-    if logger is not None:
+    if logger:
         logger.info('Creating tar archive')
 
     uid = _get_uid(owner)
     gid = _get_gid(group)
 
     def _set_uid_gid(tarinfo):
-        if gid is not None:
+        if gid:
             tarinfo.gid = gid
             tarinfo.gname = group
-        if uid is not None:
+        if uid:
             tarinfo.uid = uid
             tarinfo.uname = owner
         return tarinfo
@@ -931,12 +931,12 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     archive_dir = os.path.dirname(base_name)
 
     if archive_dir and not os.path.exists(archive_dir):
-        if logger is not None:
+        if logger:
             logger.info("creating %s", archive_dir)
         if not dry_run:
             os.makedirs(archive_dir)
 
-    if logger is not None:
+    if logger:
         logger.info("creating '%s' and adding '%s' to it",
                     zip_filename, base_dir)
 
@@ -946,19 +946,19 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
             path = os.path.normpath(base_dir)
             if path != os.curdir:
                 zf.write(path, path)
-                if logger is not None:
+                if logger:
                     logger.info("adding '%s'", path)
             for dirpath, dirnames, filenames in os.walk(base_dir):
                 for name in sorted(dirnames):
                     path = os.path.normpath(os.path.join(dirpath, name))
                     zf.write(path, path)
-                    if logger is not None:
+                    if logger:
                         logger.info("adding '%s'", path)
                 for name in filenames:
                     path = os.path.normpath(os.path.join(dirpath, name))
                     if os.path.isfile(path):
                         zf.write(path, path)
-                        if logger is not None:
+                        if logger:
                             logger.info("adding '%s'", path)
 
     return zip_filename
@@ -1034,8 +1034,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     """
     sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
     save_cwd = os.getcwd()
-    if root_dir is not None:
-        if logger is not None:
+    if root_dir:
+        if logger:
             logger.debug("changing into '%s'", root_dir)
         base_name = os.path.abspath(base_name)
         if not dry_run:
@@ -1062,8 +1062,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     try:
         filename = func(base_name, base_dir, **kwargs)
     finally:
-        if root_dir is not None:
-            if logger is not None:
+        if root_dir:
+            if logger:
                 logger.debug("changing back to '%s'", save_cwd)
             os.chdir(save_cwd)
 
@@ -1226,7 +1226,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
     extract_dir = os.fspath(extract_dir)
     filename = os.fspath(filename)
 
-    if format is not None:
+    if format:
         try:
             format_info = _UNPACK_FORMATS[format]
         except KeyError:

@@ -577,7 +577,7 @@ class BaseCookie(dict):
                         return
                 else:
                     parsed_items.append((TYPE_ATTRIBUTE, key, _unquote(value)))
-            elif value is not None:
+            elif value:
                 parsed_items.append((TYPE_KEYVALUE, key, self.value_decode(value)))
                 morsel_seen = True
             else:
@@ -588,7 +588,7 @@ class BaseCookie(dict):
         M = None         # current morsel
         for tp, key, value in parsed_items:
             if tp == TYPE_ATTRIBUTE:
-                assert M is not None
+                assert bool(M)
                 M[key] = value
             else:
                 assert tp == TYPE_KEYVALUE

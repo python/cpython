@@ -469,7 +469,7 @@ class SequenceMatcher:
         [Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
         """
 
-        if self.matching_blocks is not None:
+        if self.matching_blocks:
             return self.matching_blocks
         la, lb = len(self.a), len(self.b)
 
@@ -550,7 +550,7 @@ class SequenceMatcher:
          insert a[6:6] () b[5:6] (f)
         """
 
-        if self.opcodes is not None:
+        if self.opcodes:
             return self.opcodes
         i = j = 0
         self.opcodes = answer = []
@@ -1096,7 +1096,7 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     False
     """
 
-    return pat(line) is not None
+    return bool(pat(line)) #isnot None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
@@ -1585,9 +1585,9 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                     from_line, to_line, found_diff = next(line_iterator)
                 except StopIteration:
                     return
-                if from_line is not None:
+                if from_line:
                     fromlines.append((from_line,found_diff))
-                if to_line is not None:
+                if to_line:
                     tolines.append((to_line,found_diff))
             # Once we have a pair, remove them from the collection and yield it
             from_line, fromDiff = fromlines.pop(0)

@@ -542,7 +542,7 @@ class EditorWindow(object):
         rmenu = Menu(self.text, tearoff=0)
         for item in self.rmenu_specs:
             label, eventname = item[0], item[1]
-            if label is not None:
+            if label:
                 def command(text=self.text, eventname=eventname):
                     text.event_generate(eventname)
                 rmenu.add_command(label=label, command=command)
@@ -684,7 +684,7 @@ class EditorWindow(object):
                 "Enter a positive integer\n"
                 "('big' = end of file):"
                 ).result
-        if lineno is not None:
+        if lineno:
             text.tag_remove("sel", "1.0", "end")
             text.mark_set("insert", f'{lineno}.0')
             text.see("insert")
@@ -708,7 +708,7 @@ class EditorWindow(object):
                 "Enter the name of a Python module\n"
                 "to search on sys.path and open:",
                 name).result
-        if file_path is not None:
+        if file_path:
             if self.flist:
                 self.flist.open(file_path)
             else:
@@ -745,7 +745,7 @@ class EditorWindow(object):
         return "break"
 
     def gotoline(self, lineno):
-        if lineno is not None and lineno > 0:
+        if lineno and lineno > 0:
             self.text.mark_set("insert", "%d.0" % lineno)
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_add("sel", "insert", "insert +1l")
@@ -800,10 +800,10 @@ class EditorWindow(object):
         self._addcolorizer()
         EditorWindow.color_config(self.text)
 
-        if self.code_context is not None:
+        if self.code_context:
             self.code_context.update_highlight_colors()
 
-        if self.line_numbers is not None:
+        if self.line_numbers:
             self.line_numbers.update_colors()
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
@@ -835,11 +835,11 @@ class EditorWindow(object):
 
         # Update the code context widget first, since its height affects
         # the height of the text widget.  This avoids double re-rendering.
-        if self.code_context is not None:
+        if self.code_context:
             self.code_context.update_font()
         # Next, update the line numbers widget, since its width affects
         # the width of the text widget.
-        if self.line_numbers is not None:
+        if self.line_numbers:
             self.line_numbers.update_font()
         # Finally, update the main text widget.
         new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
@@ -1406,7 +1406,7 @@ class EditorWindow(object):
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
                             self._build_char_in_string_func(startatindex))
-                    if bod is not None or startat == 1:
+                    if bod or startat == 1:
                         break
                 y.set_lo(bod or 0)
             else:

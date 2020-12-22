@@ -27,12 +27,12 @@ class UndoDelegator(Delegator):
         self.reset_undo()
 
     def setdelegate(self, delegate):
-        if self.delegate is not None:
+        if self.delegate:
             self.unbind("<<undo>>")
             self.unbind("<<redo>>")
             self.unbind("<<dump-undo-state>>")
         Delegator.setdelegate(self, delegate)
-        if delegate is not None:
+        if delegate:
             self.bind("<<undo>>", self.undo_event)
             self.bind("<<redo>>", self.redo_event)
             self.bind("<<dump-undo-state>>", self.dump_event)

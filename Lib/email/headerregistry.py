@@ -40,7 +40,7 @@ class Address:
         # application program creates an Address object using an addr_spec
         # keyword.  The email library code itself must always supply username
         # and domain.
-        if addr_spec is not None:
+        if addr_spec:
             if username or domain:
                 raise TypeError("addrspec specified when username and/or "
                                 "domain also specified")
@@ -142,7 +142,7 @@ class Group:
         if self.display_name is None and len(self.addresses)==1:
             return str(self.addresses[0])
         disp = self.display_name
-        if disp is not None and not parser.SPECIALS.isdisjoint(disp):
+        if disp and not parser.SPECIALS.isdisjoint(disp):
             disp = parser.quote_string(disp)
         adrstr = ", ".join(str(x) for x in self.addresses)
         adrstr = ' ' + adrstr if adrstr else adrstr
@@ -416,7 +416,7 @@ class MIMEVersionHeader:
         kwds['defects'].extend(parse_tree.all_defects)
         kwds['major'] = None if parse_tree.minor is None else parse_tree.major
         kwds['minor'] = parse_tree.minor
-        if parse_tree.minor is not None:
+        if parse_tree.minor:
             kwds['version'] = '{}.{}'.format(kwds['major'], kwds['minor'])
         else:
             kwds['version'] = None

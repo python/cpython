@@ -662,7 +662,7 @@ class _singlefileMailbox(Mailbox):
         # In order to be writing anything out at all, self._toc must
         # already have been generated (and presumably has been modified
         # by adding or deleting an item).
-        assert self._toc is not None
+        assert bool(self._toc)
 
         # Check length of self._file; if it's changed, some other process
         # has modified the mailbox since we scanned it.
@@ -740,7 +740,7 @@ class _singlefileMailbox(Mailbox):
         """Return (start, stop) or raise KeyError."""
         if self._toc is None:
             self._generate_toc()
-        if key is not None:
+        if key:
             try:
                 return self._toc[key]
             except KeyError:
@@ -824,7 +824,7 @@ class _mboxMMDF(_singlefileMailbox):
             from_line = b'From ' + author
         elif isinstance(message, email.message.Message):
             from_line = message.get_unixfrom()  # May be None.
-            if from_line is not None:
+            if from_line:
                 from_line = from_line.encode('ascii')
         if from_line is None:
             from_line = b'From MAILER-DAEMON ' + time.asctime(time.gmtime()).encode()
@@ -1642,7 +1642,7 @@ class _mboxMMDFMessage(Message):
         self.set_from('MAILER-DAEMON', True)
         if isinstance(message, email.message.Message):
             unixfrom = message.get_unixfrom()
-            if unixfrom is not None and unixfrom.startswith('From '):
+            if unixfrom and unixfrom.startswith('From '):
                 self.set_from(unixfrom[5:])
         Message.__init__(self, message)
 
@@ -1652,7 +1652,7 @@ class _mboxMMDFMessage(Message):
 
     def set_from(self, from_, time_=None):
         """Set "From " line, formatting and appending time_ if specified."""
-        if time_ is not None:
+        if time_:
             if time_ is True:
                 time_ = time.gmtime()
             from_ += ' ' + time.asctime(time_)
@@ -1948,7 +1948,7 @@ class _ProxyFile:
         result = []
         for line in self:
             result.append(line)
-            if sizehint is not None:
+            if sizehint:
                 sizehint -= len(line)
                 if sizehint <= 0:
                     break

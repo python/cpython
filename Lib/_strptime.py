@@ -485,16 +485,16 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                         break
     # Deal with the cases where ambiguities arize
     # don't assume default values for ISO week/year
-    if year is None and iso_year is not None:
+    if year is None and iso_year:
         if iso_week is None or weekday is None:
             raise ValueError("ISO year directive '%G' must be used with "
                              "the ISO week directive '%V' and a weekday "
                              "directive ('%A', '%a', '%w', or '%u').")
-        if julian is not None:
+        if julian:
             raise ValueError("Day of the year directive '%j' is not "
                              "compatible with ISO year directive '%G'. "
                              "Use '%Y' instead.")
-    elif week_of_year is None and iso_week is not None:
+    elif week_of_year is None and iso_week:
         if weekday is None:
             raise ValueError("ISO week directive '%V' must be used with "
                              "the ISO year directive '%G' and a weekday "
@@ -514,14 +514,14 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
 
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
-    if julian is None and weekday is not None:
-        if week_of_year is not None:
+    if julian is None and weekday:
+        if week_of_year:
             week_starts_Mon = True if week_of_year_start == 0 else False
             julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
                                                 week_starts_Mon)
-        elif iso_year is not None and iso_week is not None:
+        elif iso_year and iso_week:
             year, julian = _calc_julian_from_V(iso_year, iso_week, weekday + 1)
-        if julian is not None and julian <= 0:
+        if julian and julian <= 0:
             year -= 1
             yday = 366 if calendar.isleap(year) else 365
             julian += yday
@@ -568,7 +568,7 @@ def _strptime_datetime(cls, data_string, format="%a %b %d %H:%M:%S %Y"):
     tt, fraction, gmtoff_fraction = _strptime(data_string, format)
     tzname, gmtoff = tt[-2:]
     args = tt[:6] + (fraction,)
-    if gmtoff is not None:
+    if gmtoff:
         tzdelta = datetime_timedelta(seconds=gmtoff, microseconds=gmtoff_fraction)
         if tzname:
             tz = datetime_timezone(tzdelta, tzname)

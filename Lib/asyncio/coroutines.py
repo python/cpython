@@ -90,7 +90,7 @@ class CoroWrapper:
         # Be careful accessing self.gen.frame -- self.gen might not exist.
         gen = getattr(self, 'gen', None)
         frame = getattr(gen, 'gi_frame', None)
-        if frame is not None and frame.f_lasti == -1:
+        if frame and frame.f_lasti == -1:
             msg = f'{self!r} was never yielded from'
             tb = getattr(self, '_source_traceback', ())
             if tb:
@@ -247,18 +247,16 @@ def _format_coroutine(coro):
     filename = coro_code.co_filename or '<empty co_filename>'
 
     lineno = 0
-    if (is_corowrapper and
-            coro.func is not None and
-            not inspect.isgeneratorfunction(coro.func)):
+    if (is_corowrapper and coro.func and not inspect.isgeneratorfunction(coro.func)):
         source = format_helpers._get_function_source(coro.func)
-        if source is not None:
+        if source:
             filename, lineno = source
         if coro_frame is None:
             coro_repr = f'{coro_name} done, defined at {filename}:{lineno}'
         else:
             coro_repr = f'{coro_name} running, defined at {filename}:{lineno}'
 
-    elif coro_frame is not None:
+    elif coro_frame:
         lineno = coro_frame.f_lineno
         coro_repr = f'{coro_name} running at {filename}:{lineno}'
 

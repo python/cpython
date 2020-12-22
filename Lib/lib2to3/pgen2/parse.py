@@ -168,7 +168,7 @@ class Parser(object):
             self.used_names.add(value)
             # Check for reserved words
             ilabel = self.grammar.keywords.get(value)
-            if ilabel is not None:
+            if ilabel:
                 return ilabel
         ilabel = self.grammar.tokens.get(type)
         if ilabel is None:
@@ -180,7 +180,7 @@ class Parser(object):
         dfa, state, node = self.stack[-1]
         newnode = (type, value, context, None)
         newnode = self.convert(self.grammar, newnode)
-        if newnode is not None:
+        if newnode:
             node[-1].append(newnode)
         self.stack[-1] = (dfa, newstate, node)
 
@@ -195,7 +195,7 @@ class Parser(object):
         """Pop a nonterminal.  (Internal)"""
         popdfa, popstate, popnode = self.stack.pop()
         newnode = self.convert(self.grammar, popnode)
-        if newnode is not None:
+        if newnode:
             if self.stack:
                 dfa, state, node = self.stack[-1]
                 node[-1].append(newnode)

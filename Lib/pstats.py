@@ -622,7 +622,7 @@ if __name__ == '__main__':
             self.prompt = "% "
             self.stats = None
             self.stream = sys.stdout
-            if profile is not None:
+            if profile:
                 self.do_read(profile)
 
         def generic(self, fn, line):

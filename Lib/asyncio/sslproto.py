@@ -462,7 +462,7 @@ class SSLProtocol(protocols.Protocol):
         if self._waiter is None:
             return
         if not self._waiter.cancelled():
-            if exc is not None:
+            if exc:
                 self._waiter.set_exception(exc)
             else:
                 self._waiter.set_result(None)
@@ -493,7 +493,7 @@ class SSLProtocol(protocols.Protocol):
             # Most likely an exception occurred while in SSL handshake.
             # Just mark the app transport as closed so that its __del__
             # doesn't complain.
-            if self._app_transport is not None:
+            if self._app_transport:
                 self._app_transport._closed = True
         self._transport = None
         self._app_transport = None
@@ -578,7 +578,7 @@ class SSLProtocol(protocols.Protocol):
     def _get_extra_info(self, name, default=None):
         if name in self._extra:
             return self._extra[name]
-        elif self._transport is not None:
+        elif self._transport:
             return self._transport.get_extra_info(name, default)
         else:
             return default
@@ -627,7 +627,7 @@ class SSLProtocol(protocols.Protocol):
 
         sslobj = self._sslpipe.ssl_object
         try:
-            if handshake_exc is not None:
+            if handshake_exc:
                 raise handshake_exc
 
             peercert = sslobj.getpeercert()
@@ -722,12 +722,12 @@ class SSLProtocol(protocols.Protocol):
     def _finalize(self):
         self._sslpipe = None
 
-        if self._transport is not None:
+        if self._transport:
             self._transport.close()
 
     def _abort(self):
         try:
-            if self._transport is not None:
+            if self._transport:
                 self._transport.abort()
         finally:
             self._finalize()

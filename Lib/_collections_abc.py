@@ -135,7 +135,7 @@ class Coroutine(Awaitable):
             if tb is None:
                 raise typ
             val = typ()
-        if tb is not None:
+        if tb:
             val = val.with_traceback(tb)
         raise val
 
@@ -221,7 +221,7 @@ class AsyncGenerator(AsyncIterator):
             if tb is None:
                 raise typ
             val = typ()
-        if tb is not None:
+        if tb:
             val = val.with_traceback(tb)
         raise val
 
@@ -341,7 +341,7 @@ class Generator(Iterator):
             if tb is None:
                 raise typ
             val = typ()
-        if tb is not None:
+        if tb:
             val = val.with_traceback(tb)
         raise val
 
@@ -913,9 +913,9 @@ class Sequence(Reversible, Collection):
            Supporting start and stop arguments is optional, but
            recommended.
         '''
-        if start is not None and start < 0:
+        if start and start < 0:
             start = max(len(self) + start, 0)
-        if stop is not None and stop < 0:
+        if stop and stop < 0:
             stop += len(self)
 
         i = start

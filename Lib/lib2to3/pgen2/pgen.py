@@ -19,7 +19,7 @@ class ParserGenerator(object):
         self.generator = tokenize.generate_tokens(stream.readline)
         self.gettoken() # Initialize lookahead
         self.dfas, self.startsymbol = self.parse()
-        if close_stream is not None:
+        if close_stream:
             close_stream()
         self.first = {} # map from symbol name to set of tokens
         self.addfirstsets()
@@ -190,7 +190,7 @@ class ParserGenerator(object):
             arcs = {}
             for nfastate in state.nfaset:
                 for label, next in nfastate.arcs:
-                    if label is not None:
+                    if label:
                         addclosure(next, arcs.setdefault(label, {}))
             for label, nfaset in sorted(arcs.items()):
                 for st in states:
@@ -311,7 +311,7 @@ class ParserGenerator(object):
                              self.type, self.value)
 
     def expect(self, type, value=None):
-        if self.type != type or (value is not None and self.value != value):
+        if self.type != type or (value and self.value != value):
             self.raise_error("expected %s/%s, got %s/%s",
                              type, value, self.type, self.value)
         value = self.value

@@ -754,7 +754,7 @@ class DictConfigurator(BaseConfigurator):
             result = factory(**kwargs)
         if formatter:
             result.setFormatter(formatter)
-        if level is not None:
+        if level:
             result.setLevel(logging._checkLevel(level))
         if filters:
             self.add_filters(result, filters)
@@ -776,7 +776,7 @@ class DictConfigurator(BaseConfigurator):
         Perform configuration which is common to root and non-root loggers.
         """
         level = config.get('level', None)
-        if level is not None:
+        if level:
             logger.setLevel(logging._checkLevel(level))
         if not incremental:
             #Remove any existing handlers
@@ -794,7 +794,7 @@ class DictConfigurator(BaseConfigurator):
         logger = logging.getLogger(name)
         self.common_logger_config(logger, config, incremental)
         propagate = config.get('propagate', None)
-        if propagate is not None:
+        if propagate:
             logger.propagate = propagate
 
     def configure_root(self, config, incremental=False):
@@ -852,9 +852,9 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                     chunk = self.connection.recv(slen)
                     while len(chunk) < slen:
                         chunk = chunk + conn.recv(slen - len(chunk))
-                    if self.server.verify is not None:
+                    if self.server.verify:
                         chunk = self.server.verify(chunk)
-                    if chunk is not None:   # verified, can process
+                    if chunk:   # verified, can process
                         chunk = chunk.decode("utf-8")
                         try:
                             import json

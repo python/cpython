@@ -429,7 +429,7 @@ def _joinrealpath(path, rest, seen):
         if newpath in seen:
             # Already seen this path
             path = seen[newpath]
-            if path is not None:
+            if path:
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.

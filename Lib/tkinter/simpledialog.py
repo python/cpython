@@ -155,7 +155,7 @@ class Dialog(Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
 
-        if self.parent is not None:
+        if self.parent:
             self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                       parent.winfo_rooty()+50))
 
@@ -223,7 +223,7 @@ class Dialog(Toplevel):
     def cancel(self, event=None):
 
         # put focus back to the parent window
-        if self.parent is not None:
+        if self.parent:
             self.parent.focus_set()
         self.destroy()
 
@@ -282,7 +282,7 @@ class _QueryDialog(Dialog):
         self.entry = Entry(master, name="entry")
         self.entry.grid(row=1, padx=5, sticky=W+E)
 
-        if self.initialvalue is not None:
+        if self.initialvalue:
             self.entry.insert(0, self.initialvalue)
             self.entry.select_range(0, END)
 
@@ -299,7 +299,7 @@ class _QueryDialog(Dialog):
             )
             return 0
 
-        if self.minvalue is not None and result < self.minvalue:
+        if self.minvalue and result < self.minvalue:
             messagebox.showwarning(
                 "Too small",
                 "The allowed minimum value is %s. "
@@ -308,7 +308,7 @@ class _QueryDialog(Dialog):
             )
             return 0
 
-        if self.maxvalue is not None and result > self.maxvalue:
+        if self.maxvalue and result > self.maxvalue:
             messagebox.showwarning(
                 "Too large",
                 "The allowed maximum value is %s. "
@@ -377,7 +377,7 @@ class _QueryString(_QueryDialog):
 
     def body(self, master):
         entry = _QueryDialog.body(self, master)
-        if self.__show is not None:
+        if self.__show:
             entry.configure(show=self.__show)
         return entry
 

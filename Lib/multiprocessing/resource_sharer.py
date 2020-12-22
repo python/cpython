@@ -91,7 +91,7 @@ class _ResourceSharer(object):
         '''Stop the background thread and clear registered resources.'''
         from .connection import Client
         with self._lock:
-            if self._address is not None:
+            if self._address:
                 c = Client(self._address,
                            authkey=process.current_process().authkey)
                 c.send(None)
@@ -113,7 +113,7 @@ class _ResourceSharer(object):
             close()
         self._cache.clear()
         self._lock._at_fork_reinit()
-        if self._listener is not None:
+        if self._listener:
             self._listener.close()
         self._listener = None
         self._address = None

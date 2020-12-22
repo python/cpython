@@ -98,7 +98,7 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
         import msvcrt
         import _winapi
 
-        if parent_pid is not None:
+        if parent_pid:
             source_process = _winapi.OpenProcess(
                 _winapi.SYNCHRONIZE | _winapi.PROCESS_DUP_HANDLE,
                 False, parent_pid)
@@ -157,7 +157,7 @@ def get_preparation_data(name):
         authkey=process.current_process().authkey,
         )
 
-    if util._logger is not None:
+    if util._logger:
         d['log_level'] = util._logger.getEffectiveLevel()
 
     sys_path=sys.path.copy()
@@ -181,13 +181,12 @@ def get_preparation_data(name):
     # or through direct execution (or to leave it alone entirely)
     main_module = sys.modules['__main__']
     main_mod_name = getattr(main_module.__spec__, "name", None)
-    if main_mod_name is not None:
+    if main_mod_name:
         d['init_main_from_name'] = main_mod_name
     elif sys.platform != 'win32' or (not WINEXE and not WINSERVICE):
         main_path = getattr(main_module, '__file__', None)
-        if main_path is not None:
-            if (not os.path.isabs(main_path) and
-                        process.ORIGINAL_DIR is not None):
+        if main_path:
+            if (not os.path.isabs(main_path) and process.ORIGINAL_DIR):
                 main_path = os.path.join(process.ORIGINAL_DIR, main_path)
             d['init_main_from_path'] = os.path.normpath(main_path)
 

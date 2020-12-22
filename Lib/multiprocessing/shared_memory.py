@@ -139,7 +139,7 @@ class SharedMemory:
                     try:
                         last_error_code = _winapi.GetLastError()
                         if last_error_code == _winapi.ERROR_ALREADY_EXISTS:
-                            if name is not None:
+                            if name:
                                 raise FileExistsError(
                                     errno.EEXIST,
                                     os.strerror(errno.EEXIST),
@@ -220,10 +220,10 @@ class SharedMemory:
     def close(self):
         """Closes access to the shared memory from this instance but does
         not destroy the shared memory block."""
-        if self._buf is not None:
+        if self._buf:
             self._buf.release()
             self._buf = None
-        if self._mmap is not None:
+        if self._mmap:
             self._mmap.close()
             self._mmap = None
         if _USE_POSIX and self._fd >= 0:
@@ -294,7 +294,7 @@ class ShareableList:
             return 3  # NoneType
 
     def __init__(self, sequence=None, *, name=None):
-        if name is None or sequence is not None:
+        if name is None or sequence:
             sequence = sequence or ()
             _formats = [
                 self._types_mapping[type(item)]
@@ -328,7 +328,7 @@ class ShareableList:
         else:
             self.shm = SharedMemory(name)
 
-        if sequence is not None:
+        if sequence:
             _enc = _encoding
             struct.pack_into(
                 "q" + self._format_size_metainfo,

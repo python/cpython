@@ -291,7 +291,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None):
 
     """
     console = InteractiveConsole(local)
-    if readfunc is not None:
+    if readfunc:
         console.raw_input = readfunc
     else:
         try:

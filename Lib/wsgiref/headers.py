@@ -15,7 +15,7 @@ def _formatparam(param, value=None, quote=1):
 
     This will quote the value if needed or if quote is true.
     """
-    if value is not None and len(value) > 0:
+    if value:
         if quote or tspecials.search(value):
             value = value.replace('\\', '\\\\').replace('"', r'\"')
             return '%s="%s"' % (param, value)
@@ -29,7 +29,7 @@ class Headers:
     """Manage a collection of HTTP response headers"""
 
     def __init__(self, headers=None):
-        headers = headers if headers is not None else []
+        headers = headers if headers else []
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
         self._headers = headers
@@ -76,7 +76,7 @@ class Headers:
 
     def __contains__(self, name):
         """Return true if the message contains the header."""
-        return self.get(name) is not None
+        return bool(self.get(name))
 
 
     def get_all(self, name):
@@ -171,7 +171,7 @@ class Headers:
         strings or None.
         """
         parts = []
-        if _value is not None:
+        if _value:
             _value = self._convert_string_type(_value)
             parts.append(_value)
         for k, v in _params.items():

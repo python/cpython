@@ -226,14 +226,14 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     'you have to pass server_hostname when using ssl')
         else:
-            if server_hostname is not None:
+            if server_hostname:
                 raise ValueError('server_hostname is only meaningful with ssl')
-            if ssl_handshake_timeout is not None:
+            if ssl_handshake_timeout:
                 raise ValueError(
                     'ssl_handshake_timeout is only meaningful with ssl')
 
-        if path is not None:
-            if sock is not None:
+        if path:
+            if sock:
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
@@ -268,12 +268,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
-        if ssl_handshake_timeout is not None and not ssl:
+        if ssl_handshake_timeout and not ssl:
             raise ValueError(
                 'ssl_handshake_timeout is only meaningful with ssl')
 
-        if path is not None:
-            if sock is not None:
+        if path:
+            if sock:
                 raise ValueError(
                     'path and sock can not be specified at the same time')
 
@@ -353,7 +353,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _sock_sendfile_native_impl(self, fut, registered_fd, sock, fileno,
                                    offset, count, blocksize, total_sent):
         fd = sock.fileno()
-        if registered_fd is not None:
+        if registered_fd:
             # Remove the callback early.  It should be rare that the
             # selector says the fd is ready but the call still returns
             # EAGAIN, and I am willing to take a hit in that case in
@@ -378,7 +378,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                             fd, sock, fileno,
                             offset, count, blocksize, total_sent)
         except OSError as exc:
-            if (registered_fd is not None and
+            if (registered_fd and
                     exc.errno == errno.ENOTCONN and
                     type(exc) is not ConnectionError):
                 # If we have an ENOTCONN and this isn't a first call to
@@ -462,7 +462,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         # only start reading when connection_made() has been called
         self._loop.call_soon(self._loop._add_reader,
                              self._fileno, self._read_ready)
-        if waiter is not None:
+        if waiter:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
@@ -475,14 +475,14 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             info.append('closing')
         info.append(f'fd={self._fileno}')
         selector = getattr(self._loop, '_selector', None)
-        if self._pipe is not None and selector is not None:
+        if self._pipe and selector:
             polling = selector_events._test_selector_event(
                 selector, self._fileno, selectors.EVENT_READ)
             if polling:
                 info.append('polling')
             else:
                 info.append('idle')
-        elif self._pipe is not None:
+        elif self._pipe:
             info.append('open')
         else:
             info.append('closed')
@@ -536,7 +536,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             self._close(None)
 
     def __del__(self, _warn=warnings.warn):
-        if self._pipe is not None:
+        if self._pipe:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._pipe.close()
 
@@ -604,7 +604,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             self._loop.call_soon(self._loop._add_reader,
                                  self._fileno, self._read_ready)
 
-        if waiter is not None:
+        if waiter:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
@@ -617,7 +617,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
             info.append('closing')
         info.append(f'fd={self._fileno}')
         selector = getattr(self._loop, '_selector', None)
-        if self._pipe is not None and selector is not None:
+        if self._pipe and selector:
             polling = selector_events._test_selector_event(
                 selector, self._fileno, selectors.EVENT_WRITE)
             if polling:
@@ -627,7 +627,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
             bufsize = self.get_write_buffer_size()
             info.append(f'bufsize={bufsize}')
-        elif self._pipe is not None:
+        elif self._pipe:
             info.append('open')
         else:
             info.append('closed')
@@ -730,12 +730,12 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         return self._closing
 
     def close(self):
-        if self._pipe is not None and not self._closing:
+        if self._pipe and not self._closing:
             # write_eof is all what we needed to close the write pipe
             self.write_eof()
 
     def __del__(self, _warn=warnings.warn):
-        if self._pipe is not None:
+        if self._pipe:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._pipe.close()
 
@@ -789,12 +789,12 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             self._proc = subprocess.Popen(
                 args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
                 universal_newlines=False, bufsize=bufsize, **kwargs)
-            if stdin_w is not None:
+            if stdin_w:
                 stdin.close()
                 self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)
                 stdin_w = None
         finally:
-            if stdin_w is not None:
+            if stdin_w:
                 stdin.close()
                 stdin_w.close()
 
@@ -901,13 +901,13 @@ class PidfdChildWatcher(AbstractChildWatcher):
         pass
 
     def is_active(self):
-        return self._loop is not None and self._loop.is_running()
+        return bool(self._loop) and self._loop.is_running()
 
     def close(self):
         self.attach_loop(None)
 
     def attach_loop(self, loop):
-        if self._loop is not None and loop is None and self._callbacks:
+        if self._loop and loop is None and self._callbacks:
             warnings.warn(
                 'A loop is being detached '
                 'from a child watcher with pending handlers',
@@ -920,7 +920,7 @@ class PidfdChildWatcher(AbstractChildWatcher):
 
     def add_child_handler(self, pid, callback, *args):
         existing = self._callbacks.get(pid)
-        if existing is not None:
+        if existing:
             self._callbacks[pid] = existing[0], callback, args
         else:
             pidfd = os.pidfd_open(pid)
@@ -980,7 +980,7 @@ class BaseChildWatcher(AbstractChildWatcher):
         self.attach_loop(None)
 
     def is_active(self):
-        return self._loop is not None and self._loop.is_running()
+        return bool(self._loop) and self._loop.is_running()
 
     def _do_waitpid(self, expected_pid):
         raise NotImplementedError()
@@ -991,17 +991,17 @@ class BaseChildWatcher(AbstractChildWatcher):
     def attach_loop(self, loop):
         assert loop is None or isinstance(loop, events.AbstractEventLoop)
 
-        if self._loop is not None and loop is None and self._callbacks:
+        if self._loop and loop is None and self._callbacks:
             warnings.warn(
                 'A loop is being detached '
                 'from a child watcher with pending handlers',
                 RuntimeWarning)
 
-        if self._loop is not None:
+        if self._loop:
             self._loop.remove_signal_handler(signal.SIGCHLD)
 
         self._loop = loop
-        if loop is not None:
+        if loop:
             loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
 
             # Prevent a race condition in case a child terminated
@@ -1226,11 +1226,11 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         self._saved_sighandler = None
 
     def is_active(self):
-        return self._saved_sighandler is not None
+        return bool(self._saved_sighandler) # isnot None
 
     def close(self):
         self._callbacks.clear()
-        if self._saved_sighandler is not None:
+        if self._saved_sighandler:
             handler = signal.getsignal(signal.SIGCHLD)
             if handler != self._sig_chld:
                 logger.warning("SIGCHLD handler was changed by outside code")
@@ -1437,8 +1437,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
         super().set_event_loop(loop)
 
-        if (self._watcher is not None and
-                threading.current_thread() is threading.main_thread()):
+        if (self._watcher and threading.current_thread() is threading.main_thread()):
             self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):
@@ -1456,7 +1455,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
         assert watcher is None or isinstance(watcher, AbstractChildWatcher)
 
-        if self._watcher is not None:
+        if self._watcher:
             self._watcher.close()
 
         self._watcher = watcher

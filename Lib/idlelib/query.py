@@ -147,7 +147,7 @@ class Query(Toplevel):
         '''
         self.entry_error['text'] = ''
         entry = self.entry_ok()
-        if entry is not None:
+        if entry:
             self.result = entry
             self.destroy()
         else:

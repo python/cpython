@@ -29,11 +29,11 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        if self.stdin is not None:
+        if self.stdin:
             info.append(f'stdin={self.stdin!r}')
-        if self.stdout is not None:
+        if self.stdout:
             info.append(f'stdout={self.stdout!r}')
-        if self.stderr is not None:
+        if self.stderr:
             info.append(f'stderr={self.stderr!r}')
         return '<{}>'.format(' '.join(info))
 
@@ -41,21 +41,21 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         self._transport = transport
 
         stdout_transport = transport.get_pipe_transport(1)
-        if stdout_transport is not None:
+        if stdout_transport:
             self.stdout = streams.StreamReader(limit=self._limit,
                                                loop=self._loop)
             self.stdout.set_transport(stdout_transport)
             self._pipe_fds.append(1)
 
         stderr_transport = transport.get_pipe_transport(2)
-        if stderr_transport is not None:
+        if stderr_transport:
             self.stderr = streams.StreamReader(limit=self._limit,
                                                loop=self._loop)
             self.stderr.set_transport(stderr_transport)
             self._pipe_fds.append(2)
 
         stdin_transport = transport.get_pipe_transport(0)
-        if stdin_transport is not None:
+        if stdin_transport:
             self.stdin = streams.StreamWriter(stdin_transport,
                                               protocol=self,
                                               reader=None,
@@ -68,13 +68,13 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             reader = self.stderr
         else:
             reader = None
-        if reader is not None:
+        if reader:
             reader.feed_data(data)
 
     def pipe_connection_lost(self, fd, exc):
         if fd == 0:
             pipe = self.stdin
-            if pipe is not None:
+            if pipe:
                 pipe.close()
             self.connection_lost(exc)
             if exc is None:
@@ -88,7 +88,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             reader = self.stderr
         else:
             reader = None
-        if reader is not None:
+        if reader:
             if exc is None:
                 reader.feed_eof()
             else:
@@ -180,15 +180,15 @@ class Process:
         return output
 
     async def communicate(self, input=None):
-        if input is not None:
+        if input:
             stdin = self._feed_stdin(input)
         else:
             stdin = self._noop()
-        if self.stdout is not None:
+        if self.stdout:
             stdout = self._read_stream(1)
         else:
             stdout = self._noop()
-        if self.stderr is not None:
+        if self.stderr:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()

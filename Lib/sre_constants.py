@@ -38,7 +38,7 @@ class error(Exception):
         self.msg = msg
         self.pattern = pattern
         self.pos = pos
-        if pattern is not None and pos is not None:
+        if pattern and pos:
             msg = '%s at position %d' % (msg, pos)
             if isinstance(pattern, str):
                 newline = '\n'

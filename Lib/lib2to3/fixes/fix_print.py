@@ -63,12 +63,12 @@ class FixPrint(fixer_base.BaseFix):
         l_args = [arg.clone() for arg in args]
         if l_args:
             l_args[0].prefix = ""
-        if sep is not None or end is not None or file is not None:
-            if sep is not None:
+        if sep or end or file:
+            if sep:
                 self.add_kwarg(l_args, "sep", String(repr(sep)))
-            if end is not None:
+            if end:
                 self.add_kwarg(l_args, "end", String(repr(end)))
-            if file is not None:
+            if file:
                 self.add_kwarg(l_args, "file", file)
         n_stmt = Call(Name("print"), l_args)
         n_stmt.prefix = node.prefix

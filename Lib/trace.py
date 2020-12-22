@@ -475,7 +475,7 @@ class Trace:
         funcname = code.co_name
         clsname = None
         if code in self._caller_cache:
-            if self._caller_cache[code] is not None:
+            if self._caller_cache[code]:
                 clsname = self._caller_cache[code]
         else:
             self._caller_cache[code] = None
@@ -500,7 +500,7 @@ class Trace:
                         # _caller_cache could be flushed if functions in
                         # the new module get called.
                         self._caller_cache[code] = clsname
-        if clsname is not None:
+        if clsname:
             funcname = "%s.%s" % (clsname, funcname)
 
         return filename, modulename, funcname
@@ -538,7 +538,7 @@ class Trace:
                 # XXX _modname() doesn't work right for packages, so
                 # the ignore support won't work right for packages
                 modulename = _modname(filename)
-                if modulename is not None:
+                if modulename:
                     ignore_it = self.ignore.names(filename, modulename)
                     if not ignore_it:
                         if self.trace:

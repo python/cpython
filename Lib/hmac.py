@@ -89,7 +89,7 @@ class HMAC:
         key = key.ljust(blocksize, b'\0')
         self._outer.update(key.translate(trans_5C))
         self._inner.update(key.translate(trans_36))
-        if msg is not None:
+        if msg:
             self.update(msg)
 
     @property
@@ -179,8 +179,7 @@ def digest(key, msg, digest):
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
     """
-    if (_hashopenssl is not None and
-            isinstance(digest, str) and digest in _openssl_md_meths):
+    if (_hashopenssl and isinstance(digest, str) and digest in _openssl_md_meths):
         return _hashopenssl.hmac_digest(key, msg, digest)
 
     if callable(digest):

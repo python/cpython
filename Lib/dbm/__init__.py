@@ -124,7 +124,7 @@ def whichdb(filename):
             # guarantee we can actually open the file using dbm
             # kind of overkill, but since we are dealing with emulations
             # it seems like a prudent step
-            if ndbm is not None:
+            if ndbm:
                 d = ndbm.open(filename)
                 d.close()
                 return "dbm.ndbm"

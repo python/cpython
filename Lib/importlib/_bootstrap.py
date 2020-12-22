@@ -307,7 +307,7 @@ def _module_repr(module):
     except AttributeError:
         pass
     else:
-        if spec is not None:
+        if spec:
             return _module_repr_from_spec(spec)
 
     # We could use module.__class__.__name__ instead of 'module' in the
@@ -379,9 +379,9 @@ class ModuleSpec:
     def __repr__(self):
         args = ['name={!r}'.format(self.name),
                 'loader={!r}'.format(self.loader)]
-        if self.origin is not None:
+        if self.origin:
             args.append('origin={!r}'.format(self.origin))
-        if self.submodule_search_locations is not None:
+        if self.submodule_search_locations:
             args.append('submodule_search_locations={}'
                         .format(self.submodule_search_locations))
         return '{}({})'.format(self.__class__.__name__, ', '.join(args))
@@ -401,7 +401,7 @@ class ModuleSpec:
     @property
     def cached(self):
         if self._cached is None:
-            if self.origin is not None and self._set_fileattr:
+            if self.origin and self._set_fileattr:
                 if _bootstrap_external is None:
                     raise NotImplementedError
                 self._cached = _bootstrap_external._get_cached(self.origin)
@@ -461,7 +461,7 @@ def _spec_from_module(module, loader=None, origin=None):
     except AttributeError:
         pass
     else:
-        if spec is not None:
+        if spec:
             return spec
 
     name = module.__name__
@@ -513,7 +513,7 @@ def _init_module_attrs(spec, module, *, override=False):
         loader = spec.loader
         if loader is None:
             # A backward compatibility hack.
-            if spec.submodule_search_locations is not None:
+            if spec.submodule_search_locations:
                 if _bootstrap_external is None:
                     raise NotImplementedError
                 _NamespaceLoader = _bootstrap_external._NamespaceLoader
@@ -549,7 +549,7 @@ def _init_module_attrs(spec, module, *, override=False):
         pass
     # __path__
     if override or getattr(module, '__path__', None) is None:
-        if spec.submodule_search_locations is not None:
+        if spec.submodule_search_locations:
             try:
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
@@ -563,7 +563,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 pass
 
         if override or getattr(module, '__cached__', None) is None:
-            if spec.cached is not None:
+            if spec.cached:
                 try:
                     module.__cached__ = spec.cached
                 except AttributeError:
@@ -673,7 +673,7 @@ def _load_backward_compatible(spec):
 
 def _load_unlocked(spec):
     # A helper for direct use by the import system.
-    if spec.loader is not None:
+    if spec.loader:
         # Not a namespace package.
         if not hasattr(spec.loader, 'exec_module'):
             msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
@@ -753,7 +753,7 @@ class BuiltinImporter:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        if path is not None:
+        if path:
             return None
         if _imp.is_builtin(fullname):
             return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
@@ -770,7 +770,7 @@ class BuiltinImporter:
 
         """
         spec = cls.find_spec(fullname, path)
-        return spec.loader if spec is not None else None
+        return spec.loader if spec else None
 
     @staticmethod
     def create_module(spec):
@@ -942,7 +942,7 @@ def _find_spec(name, path, target=None):
                     continue
             else:
                 spec = find_spec(name, path, target)
-        if spec is not None:
+        if spec:
             # The parent import may have already imported this module.
             if not is_reload and name in sys.modules:
                 module = sys.modules[name]
@@ -1079,8 +1079,7 @@ def _handle_fromlist(module, fromlist, import_, *, recursive=False):
                 # Backwards-compatibility dictates we ignore failed
                 # imports triggered by fromlist for modules that don't
                 # exist.
-                if (exc.name == from_name and
-                    sys.modules.get(from_name, _NEEDS_LOADING) is not None):
+                if (exc.name == from_name and sys.modules.get(from_name, _NEEDS_LOADING)):
                     continue
                 raise
     return module
@@ -1095,13 +1094,13 @@ def _calc___package__(globals):
     """
     package = globals.get('__package__')
     spec = globals.get('__spec__')
-    if package is not None:
-        if spec is not None and package != spec.parent:
+    if package:
+        if spec and package != spec.parent:
             _warnings.warn("__package__ != __spec__.parent "
                            f"({package!r} != {spec.parent!r})",
                            ImportWarning, stacklevel=3)
         return package
-    elif spec is not None:
+    elif spec:
         return spec.parent
     else:
         _warnings.warn("can't resolve package from __spec__ or __package__, "
@@ -1127,7 +1126,7 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     if level == 0:
         module = _gcd_import(name)
     else:
-        globals_ = globals if globals is not None else {}
+        globals_ = globals if globals else {}
         package = _calc___package__(globals_)
         module = _gcd_import(name, package, level)
     if not fromlist:

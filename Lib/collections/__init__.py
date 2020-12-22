@@ -402,7 +402,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         seen.add(name)
 
     field_defaults = {}
-    if defaults is not None:
+    if defaults:
         defaults = tuple(defaults)
         if len(defaults) > len(field_names):
             raise TypeError('Got more default values than field names')
@@ -430,7 +430,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     __new__ = eval(code, namespace)
     __new__.__name__ = '__new__'
     __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
-    if defaults is not None:
+    if defaults:
         __new__.__defaults__ = defaults
 
     @classmethod
@@ -505,7 +505,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
             module = _sys._getframe(1).f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):
             pass
-    if module is not None:
+    if module:
         result.__module__ = module
 
     return result
@@ -668,7 +668,7 @@ class Counter(dict):
         # contexts.  Instead, we implement straight-addition.  Both the inputs
         # and outputs are allowed to contain zero and negative counts.
 
-        if iterable is not None:
+        if iterable:
             if isinstance(iterable, _collections_abc.Mapping):
                 if self:
                     self_get = self.get
@@ -698,7 +698,7 @@ class Counter(dict):
         -1
 
         '''
-        if iterable is not None:
+        if iterable:
             self_get = self.get
             if isinstance(iterable, _collections_abc.Mapping):
                 for elem, count in iterable.items():
@@ -1094,7 +1094,7 @@ class UserDict(_collections_abc.MutableMapping):
     # Start by filling-out the abstract methods
     def __init__(self, dict=None, /, **kwargs):
         self.data = {}
-        if dict is not None:
+        if dict:
             self.update(dict)
         if kwargs:
             self.update(kwargs)
@@ -1184,7 +1184,7 @@ class UserList(_collections_abc.MutableSequence):
 
     def __init__(self, initlist=None):
         self.data = []
-        if initlist is not None:
+        if initlist:
             # XXX should this accept an arbitrary sequence?
             if type(initlist) == type(self.data):
                 self.data[:] = initlist

@@ -432,7 +432,7 @@ class Random(_random.Random):
         if not isinstance(population, _Sequence):
             raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
         n = len(population)
-        if counts is not None:
+        if counts:
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
                 raise ValueError('The number of counts does not match the population')
@@ -485,7 +485,7 @@ class Random(_random.Random):
                 n += 0.0    # convert to float for a small speed improvement
                 return [population[floor(random() * n)] for i in _repeat(None, k)]
             cum_weights = list(_accumulate(weights))
-        elif weights is not None:
+        elif weights:
             raise TypeError('Cannot specify both weights and cumulative weights')
         if len(cum_weights) != n:
             raise ValueError('The number of weights does not match the population')

@@ -20,7 +20,7 @@ from typing import Protocol, runtime_checkable
 def _register(abstract_cls, *classes):
     for cls in classes:
         abstract_cls.register(cls)
-        if _frozen_importlib is not None:
+        if _frozen_importlib:
             try:
                 frozen_cls = getattr(_frozen_importlib, cls.__name__)
             except AttributeError:
@@ -74,7 +74,7 @@ class MetaPathFinder(Finder):
         if not hasattr(self, 'find_spec'):
             return None
         found = self.find_spec(fullname, path)
-        return found.loader if found is not None else None
+        return found.loader if found else None
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
@@ -115,7 +115,7 @@ class PathEntryFinder(Finder):
         if not hasattr(self, 'find_spec'):
             return None, []
         found = self.find_spec(fullname)
-        if found is not None:
+        if found:
             if not found.submodule_search_locations:
                 portions = []
             else:

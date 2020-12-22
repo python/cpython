@@ -273,7 +273,7 @@ def decode_params(params):
         mo = rfc2231_continuation.match(name)
         if mo:
             name, num = mo.group('name', 'num')
-            if num is not None:
+            if num:
                 num = int(num)
             rfc2231_params.setdefault(name, []).append((num, value, encoded))
         else:
@@ -347,7 +347,7 @@ def localtime(dt=None, isdst=-1):
     """
     if dt is None:
         return datetime.datetime.now(datetime.timezone.utc).astimezone()
-    if dt.tzinfo is not None:
+    if dt.tzinfo:
         return dt.astimezone()
     # We have a naive datetime.  Convert to a (localtime) timetuple and pass to
     # system mktime together with the isdst hint.  System mktime will return

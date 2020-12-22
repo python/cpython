@@ -207,7 +207,7 @@ class RobotFileParser:
 
     def __str__(self):
         entries = self.entries
-        if self.default_entry is not None:
+        if self.default_entry:
             entries = entries + [self.default_entry]
         return '\n\n'.join(map(str, entries))
 
@@ -242,9 +242,9 @@ class Entry:
         ret = []
         for agent in self.useragents:
             ret.append(f"User-agent: {agent}")
-        if self.delay is not None:
+        if self.delay:
             ret.append(f"Crawl-delay: {self.delay}")
-        if self.req_rate is not None:
+        if self.req_rate:
             rate = self.req_rate
             ret.append(f"Request-rate: {rate.requests}/{rate.seconds}")
         ret.extend(map(str, self.rulelines))

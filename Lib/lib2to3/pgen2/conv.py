@@ -251,7 +251,7 @@ class Converter(grammar.Grammar):
         self.keywords = {} # map from keyword strings to arc labels
         self.tokens = {}   # map from numeric token values to arc labels
         for ilabel, (type, value) in enumerate(self.labels):
-            if type == token.NAME and value is not None:
+            if type == token.NAME and value:
                 self.keywords[value] = ilabel
             elif value is None:
                 self.tokens[type] = ilabel

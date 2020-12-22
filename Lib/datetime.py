@@ -181,7 +181,7 @@ def _format_time(hh, mm, ss, us, timespec='auto'):
 
 def _format_offset(off):
     s = ''
-    if off is not None:
+    if off:
         if off.days < 0:
             sign = "-"
             off = -off
@@ -225,7 +225,7 @@ def _wrap_strftime(object, format, timetuple):
                         zreplace = ""
                         if hasattr(object, "utcoffset"):
                             offset = object.utcoffset()
-                            if offset is not None:
+                            if offset:
                                 sign = '+'
                                 if offset.days < 0:
                                     offset = -offset
@@ -247,7 +247,7 @@ def _wrap_strftime(object, format, timetuple):
                         Zreplace = ""
                         if hasattr(object, "tzname"):
                             s = object.tzname()
-                            if s is not None:
+                            if s:
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
@@ -359,7 +359,7 @@ def _parse_isoformat_time(tstr):
 
 # Just raise TypeError if the arg isn't None or a string.
 def _check_tzname(name):
-    if name is not None and not isinstance(name, str):
+    if name and not isinstance(name, str):
         raise TypeError("tzinfo.tzname() must return None or string, "
                         "not '%s'" % type(name))
 
@@ -412,7 +412,7 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
     return hour, minute, second, microsecond, fold
 
 def _check_tzinfo_arg(tz):
-    if tz is not None and not isinstance(tz, tzinfo):
+    if tz and not isinstance(tz, tzinfo):
         raise TypeError("tzinfo argument must be None or of a tzinfo subclass")
 
 def _cmperror(x, y):
@@ -1406,7 +1406,7 @@ class time:
         s= "%s.%s(%d, %d%s)" % (self.__class__.__module__,
                                 self.__class__.__qualname__,
                                 self._hour, self._minute, s)
-        if self._tzinfo is not None:
+        if self._tzinfo:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
         if self._fold:
@@ -1535,7 +1535,7 @@ class time:
             return (basestate, self._tzinfo)
 
     def __setstate(self, string, tzinfo):
-        if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
+        if tzinfo and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
         h, self._minute, self._second, us1, us2, us3 = string
         if h > 127:
@@ -1932,7 +1932,7 @@ class datetime(date):
         s = "%s.%s(%s)" % (self.__class__.__module__,
                            self.__class__.__qualname__,
                            ", ".join(map(str, L)))
-        if self._tzinfo is not None:
+        if self._tzinfo:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
         if self._fold:
@@ -2144,7 +2144,7 @@ class datetime(date):
             return (basestate, self._tzinfo)
 
     def __setstate(self, string, tzinfo):
-        if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
+        if tzinfo and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
         (yhi, ylo, m, self._day, self._hour,
          self._minute, self._second, us1, us2, us3) = string

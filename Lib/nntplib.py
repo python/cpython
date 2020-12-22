@@ -393,7 +393,7 @@ class NNTP:
                     self._close()
 
     def _create_socket(self, timeout):
-        if timeout is not None and not timeout:
+        if timeout and not timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')
         sys.audit("nntplib.connect", self, self.host, self.port)
         return socket.create_connection((self.host, self.port), timeout)
@@ -507,7 +507,7 @@ class NNTP:
                 raise NNTPReplyError(resp)
 
             lines = []
-            if file is not None:
+            if file:
                 # XXX lines = None instead?
                 terminators = (b'.' + _CRLF, b'.\n')
                 while 1:
@@ -630,7 +630,7 @@ class NNTP:
         - resp: server response if successful
         - list: list of (group, last, first, flag) (strings)
         """
-        if group_pattern is not None:
+        if group_pattern:
             command = 'LIST ACTIVE ' + group_pattern
         else:
             command = 'LIST'
@@ -764,7 +764,7 @@ class NNTP:
         - resp: server response if successful
         - ArticleInfo: (article number, message id, list of header lines)
         """
-        if message_spec is not None:
+        if message_spec:
             cmd = 'HEAD {0}'.format(message_spec)
         else:
             cmd = 'HEAD'
@@ -778,7 +778,7 @@ class NNTP:
         - resp: server response if successful
         - ArticleInfo: (article number, message id, list of body lines)
         """
-        if message_spec is not None:
+        if message_spec:
             cmd = 'BODY {0}'.format(message_spec)
         else:
             cmd = 'BODY'
@@ -792,7 +792,7 @@ class NNTP:
         - resp: server response if successful
         - ArticleInfo: (article number, message id, list of article lines)
         """
-        if message_spec is not None:
+        if message_spec:
             cmd = 'ARTICLE {0}'.format(message_spec)
         else:
             cmd = 'ARTICLE'
@@ -855,7 +855,7 @@ class NNTP:
         if isinstance(message_spec, (tuple, list)):
             start, end = message_spec
             cmd += ' {0}-{1}'.format(start, end or '')
-        elif message_spec is not None:
+        elif message_spec:
             cmd = cmd + ' ' + message_spec
         resp, lines = self._longcmdstring(cmd, file)
         fmt = self._getoverviewfmt()

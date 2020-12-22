@@ -300,11 +300,11 @@ def open(filename, mode="rb", compresslevel=9,
         if "b" in mode:
             raise ValueError("Invalid mode: %r" % (mode,))
     else:
-        if encoding is not None:
+        if encoding:
             raise ValueError("Argument 'encoding' not supported in binary mode")
-        if errors is not None:
+        if errors:
             raise ValueError("Argument 'errors' not supported in binary mode")
-        if newline is not None:
+        if newline:
             raise ValueError("Argument 'newline' not supported in binary mode")
 
     bz_mode = mode.replace("t", "")

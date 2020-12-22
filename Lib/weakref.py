@@ -57,7 +57,7 @@ class WeakMethod(ref):
             self = self_wr()
             if self._alive:
                 self._alive = False
-                if callback is not None:
+                if callback:
                     callback(self)
         self = ref.__new__(cls, obj, _cb)
         self._func_ref = ref(func, _cb)
@@ -105,7 +105,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
     def __init__(self, other=(), /, **kw):
         def remove(wr, selfref=ref(self), _atomic_removal=_remove_dead_weakref):
             self = selfref()
-            if self is not None:
+            if self:
                 if self._iterating:
                     self._pending_removals.append(wr.key)
                 else:
@@ -154,7 +154,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             o = self.data[key]()
         except KeyError:
             return False
-        return o is not None
+        return bool(o) #isnot None
 
     def __repr__(self):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
@@ -171,7 +171,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for key, wr in self.data.items():
                 o = wr()
-                if o is not None:
+                if o:
                     new[key] = o
         return new
 
@@ -185,7 +185,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for key, wr in self.data.items():
                 o = wr()
-                if o is not None:
+                if o:
                     new[deepcopy(key, memo)] = o
         return new
 
@@ -210,7 +210,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for k, wr in self.data.items():
                 v = wr()
-                if v is not None:
+                if v:
                     yield k, v
 
     def keys(self):
@@ -218,7 +218,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             self._commit_removals()
         with _IterationGuard(self):
             for k, wr in self.data.items():
-                if wr() is not None:
+                if wr():
                     yield k
 
     __iter__ = keys
@@ -244,7 +244,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for wr in self.data.values():
                 obj = wr()
-                if obj is not None:
+                if obj:
                     yield obj
 
     def popitem(self):
@@ -253,7 +253,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         while True:
             key, wr = self.data.popitem()
             o = wr()
-            if o is not None:
+            if o:
                 return key, o
 
     def pop(self, key, *args):
@@ -288,7 +288,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         if self._pending_removals:
             self._commit_removals()
         d = self.data
-        if other is not None:
+        if other:
             if not hasattr(other, "items"):
                 other = dict(other)
             for key, o in other.items():
@@ -366,7 +366,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         self.data = {}
         def remove(k, selfref=ref(self)):
             self = selfref()
-            if self is not None:
+            if self:
                 if self._iterating:
                     self._pending_removals.append(k)
                 else:
@@ -376,7 +376,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         self._pending_removals = []
         self._iterating = set()
         self._dirty_len = False
-        if dict is not None:
+        if dict:
             self.update(dict)
 
     def _commit_removals(self):
@@ -422,7 +422,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for key, value in self.data.items():
                 o = key()
-                if o is not None:
+                if o:
                     new[o] = value
         return new
 
@@ -434,7 +434,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for key, value in self.data.items():
                 o = key()
-                if o is not None:
+                if o:
                     new[o] = deepcopy(value, memo)
         return new
 
@@ -452,14 +452,14 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         with _IterationGuard(self):
             for wr, value in self.data.items():
                 key = wr()
-                if key is not None:
+                if key:
                     yield key, value
 
     def keys(self):
         with _IterationGuard(self):
             for wr in self.data:
                 obj = wr()
-                if obj is not None:
+                if obj:
                     yield obj
 
     __iter__ = keys
@@ -467,7 +467,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     def values(self):
         with _IterationGuard(self):
             for wr, value in self.data.items():
-                if wr() is not None:
+                if wr():
                     yield value
 
     def keyrefs(self):
@@ -487,7 +487,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         while True:
             key, value = self.data.popitem()
             o = key()
-            if o is not None:
+            if o:
                 return o, value
 
     def pop(self, key, *args):
@@ -499,7 +499,7 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
 
     def update(self, dict=None, /, **kwargs):
         d = self.data
-        if dict is not None:
+        if dict:
             if not hasattr(dict, "items"):
                 dict = type({})(dict)
             for key, value in dict.items():
@@ -584,7 +584,7 @@ class finalize:
         otherwise return None"""
         info = self._registry.get(self)
         obj = info and info.weakref()
-        if obj is not None and self._registry.pop(self, None):
+        if obj and self._registry.pop(self, None):
             return (obj, info.func, info.args, info.kwargs or {})
 
     def peek(self):
@@ -592,7 +592,7 @@ class finalize:
         otherwise return None"""
         info = self._registry.get(self)
         obj = info and info.weakref()
-        if obj is not None:
+        if obj:
             return (obj, info.func, info.args, info.kwargs or {})
 
     @property

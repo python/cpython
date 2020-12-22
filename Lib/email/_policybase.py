@@ -360,11 +360,11 @@ class Compat32(Policy):
         else:
             # Assume it is a Header-like object.
             h = value
-        if h is not None:
+        if h:
             # The Header class interprets a value of None for maxlinelen as the
             # default value of 78, as recommended by RFC 2822.
             maxlinelen = 0
-            if self.max_line_length is not None:
+            if self.max_line_length:
                 maxlinelen = self.max_line_length
             parts.append(h.encode(linesep=self.linesep, maxlinelen=maxlinelen))
         parts.append(self.linesep)

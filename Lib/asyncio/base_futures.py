@@ -18,8 +18,7 @@ def isfuture(obj):
     itself as duck-type compatible by setting _asyncio_future_blocking.
     See comment in Future for more details.
     """
-    return (hasattr(obj.__class__, '_asyncio_future_blocking') and
-            obj._asyncio_future_blocking is not None)
+    return (hasattr(obj.__class__, '_asyncio_future_blocking') and bool(obj._asyncio_future_blocking)) #isnot None)
 
 
 def _format_callbacks(cb):
@@ -57,7 +56,7 @@ def _future_repr_info(future):
     """helper function for Future.__repr__"""
     info = [future._state.lower()]
     if future._state == _FINISHED:
-        if future._exception is not None:
+        if future._exception:
             info.append(f'exception={future._exception!r}')
         else:
             key = id(future), get_ident()

@@ -64,7 +64,7 @@ class FixXrange(fixer_base.BaseFix):
         if node.parent is None:
             return False
         results = {}
-        if (node.parent.parent is not None and
+        if (node.parent.parent and
                self.p1.match(node.parent.parent, results) and
                results["node"] is node):
             # list(d.keys()) -> list(d.keys()), etc.

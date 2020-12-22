@@ -158,7 +158,7 @@ class IOBinding:
         if not isinstance(eol_convention, str):
             # If the file does not contain line separators, it is None.
             # If the file contains mixed line separators, it is a tuple.
-            if eol_convention is not None:
+            if eol_convention:
                 tkMessageBox.showwarning("Mixed Newlines",
                                          "Mixed newlines detected.\n"
                                          "The file will be changed on save.",

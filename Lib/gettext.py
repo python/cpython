@@ -257,7 +257,7 @@ class NullTranslations:
         self._charset = None
         self._output_charset = None
         self._fallback = None
-        if fp is not None:
+        if fp:
             self._parse(fp)
 
     def _parse(self, fp):
@@ -348,7 +348,7 @@ class NullTranslations:
     def install(self, names=None):
         import builtins
         builtins.__dict__['_'] = self.gettext
-        if names is not None:
+        if names:
             allowed = {'gettext', 'lgettext', 'lngettext',
                        'ngettext', 'npgettext', 'pgettext'}
             for name in allowed & set(names):
@@ -639,14 +639,14 @@ _current_domain = 'messages'
 
 def textdomain(domain=None):
     global _current_domain
-    if domain is not None:
+    if domain:
         _current_domain = domain
     return _current_domain
 
 
 def bindtextdomain(domain, localedir=None):
     global _localedirs
-    if localedir is not None:
+    if localedir:
         _localedirs[domain] = localedir
     return _localedirs.get(domain, _default_localedir)
 
@@ -656,7 +656,7 @@ def bind_textdomain_codeset(domain, codeset=None):
     warnings.warn('bind_textdomain_codeset() is deprecated',
                   DeprecationWarning, 2)
     global _localecodesets
-    if codeset is not None:
+    if codeset:
         _localecodesets[domain] = codeset
     return _localecodesets.get(domain)
 

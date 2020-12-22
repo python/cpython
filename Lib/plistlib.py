@@ -151,7 +151,7 @@ def _date_to_string(d):
 
 def _escape(text):
     m = _controlCharPat.search(text)
-    if m is not None:
+    if m:
         raise ValueError("strings can't contains control characters; "
                          "use bytes instead")
     text = text.replace("\r\n", "\n")       # convert DOS line endings
@@ -186,19 +186,19 @@ class _PlistParser:
     def handle_begin_element(self, element, attrs):
         self.data = []
         handler = getattr(self, "begin_" + element, None)
-        if handler is not None:
+        if handler:
             handler(attrs)
 
     def handle_end_element(self, element):
         handler = getattr(self, "end_" + element, None)
-        if handler is not None:
+        if handler:
             handler()
 
     def handle_data(self, data):
         self.data.append(data)
 
     def add_object(self, value):
-        if self.current_key is not None:
+        if self.current_key:
             if not isinstance(self.stack[-1], type({})):
                 raise ValueError("unexpected element at line %d" %
                                  self.parser.CurrentLineNumber)
@@ -290,7 +290,7 @@ class _DumbXMLWriter:
         self.writeln("</%s>" % element)
 
     def simple_element(self, element, value=None):
-        if value is not None:
+        if value:
             value = _escape(value)
             self.writeln("<%s>%s</%s>" % (element, value, element))
 

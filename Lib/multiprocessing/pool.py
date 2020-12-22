@@ -96,7 +96,7 @@ class MaybeEncodingError(Exception):
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
            wrap_exception=False):
-    if (maxtasks is not None) and not (isinstance(maxtasks, int)
+    if (maxtasks) and not (isinstance(maxtasks, int)
                                        and maxtasks >= 1):
         raise AssertionError("Maxtasks {!r} is not valid".format(maxtasks))
     put = outqueue.put
@@ -105,7 +105,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
         inqueue._writer.close()
         outqueue._reader.close()
 
-    if initializer is not None:
+    if initializer:
         initializer(*initargs)
 
     completed = 0
@@ -204,7 +204,7 @@ class Pool(object):
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
 
-        if initializer is not None and not callable(initializer):
+        if initializer and not callable(initializer):
             raise TypeError('initializer must be a callable')
 
         self._processes = processes
@@ -264,7 +264,7 @@ class Pool(object):
         if self._state == RUN:
             _warn(f"unclosed running multiprocessing pool {self!r}",
                   ResourceWarning, source=self)
-            if getattr(self, '_change_notifier', None) is not None:
+            if getattr(self, '_change_notifier', None):
                 self._change_notifier.put(None)
 
     def __repr__(self):
@@ -291,7 +291,7 @@ class Pool(object):
         cleaned = False
         for i in reversed(range(len(pool))):
             worker = pool[i]
-            if worker.exitcode is not None:
+            if worker.exitcode:
                 # worker exited
                 util.debug('cleaning up worker %d' % i)
                 worker.join()

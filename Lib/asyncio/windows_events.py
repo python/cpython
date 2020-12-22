@@ -54,7 +54,7 @@ class _OverlappedFuture(futures.Future):
 
     def _repr_info(self):
         info = super()._repr_info()
-        if self._ov is not None:
+        if self._ov:
             state = 'pending' if self._ov.pending else 'completed'
             info.insert(1, f'overlapped=<{state}, {self._ov.address:#x}>')
         return info
@@ -113,10 +113,10 @@ class _BaseWaitHandleFuture(futures.Future):
     def _repr_info(self):
         info = super()._repr_info()
         info.append(f'handle={self._handle:#x}')
-        if self._handle is not None:
+        if self._handle:
             state = 'signaled' if self._poll() else 'waiting'
             info.append(state)
-        if self._wait_handle is not None:
+        if self._wait_handle:
             info.append(f'wait_handle={self._wait_handle:#x}')
         return info
 
@@ -177,12 +177,12 @@ class _WaitCancelFuture(_BaseWaitHandleFuture):
 
     def set_result(self, result):
         super().set_result(result)
-        if self._done_callback is not None:
+        if self._done_callback:
             self._done_callback(self)
 
     def set_exception(self, exception):
         super().set_exception(exception)
-        if self._done_callback is not None:
+        if self._done_callback:
             self._done_callback(self)
 
 
@@ -195,7 +195,7 @@ class _WaitHandleFuture(_BaseWaitHandleFuture):
         self._event_fut = None
 
     def _unregister_wait_cb(self, fut):
-        if self._event is not None:
+        if self._event:
             _winapi.CloseHandle(self._event)
             self._event = None
             self._event_fut = None
@@ -283,11 +283,11 @@ class PipeServer(object):
         return (self._address is None)
 
     def close(self):
-        if self._accept_pipe_future is not None:
+        if self._accept_pipe_future:
             self._accept_pipe_future.cancel()
             self._accept_pipe_future = None
         # Close all instances which have not been connected to by a client.
-        if self._address is not None:
+        if self._address:
             for pipe in self._free_instances:
                 pipe.close()
             self._pipe = None
@@ -315,7 +315,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             self.call_soon(self._loop_self_reading)
             super().run_forever()
         finally:
-            if self._self_reading_future is not None:
+            if self._self_reading_future:
                 ov = self._self_reading_future._ov
                 self._self_reading_future.cancel()
                 # self_reading_future was just cancelled so if it hasn't been
@@ -324,7 +324,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                 # where it could still happen if the event loop is restarted).
                 # Unregister it otherwise IocpProactor.close will wait for it
                 # forever
-                if ov is not None:
+                if ov:
                     self._proactor._unregister(ov)
                 self._self_reading_future = None
 
@@ -845,7 +845,7 @@ class IocpProactor:
                 try:
                     fut.cancel()
                 except OSError as exc:
-                    if self._loop is not None:
+                    if self._loop:
                         context = {
                             'message': 'Cancelling a future failed',
                             'exception': exc,

@@ -86,9 +86,9 @@ class State:
         self.groupwidths.append(None)
         if self.groups > MAXGROUPS:
             raise error("too many groups")
-        if name is not None:
+        if name:
             ogid = self.groupdict.get(name, None)
-            if ogid is not None:
+            if ogid:
                 raise error("redefinition of group name %r as group %d; "
                             "was group %d" % (name, gid,  ogid))
             self.groupdict[name] = gid
@@ -96,10 +96,10 @@ class State:
     def closegroup(self, gid, p):
         self.groupwidths[gid] = p.getwidth()
     def checkgroup(self, gid):
-        return gid < self.groups and self.groupwidths[gid] is not None
+        return gid < self.groups and bool(self.groupwidths[gid]) #isnot None
 
     def checklookbehindgroup(self, gid, source):
-        if self.lookbehindgroups is not None:
+        if self.lookbehindgroups:
             if not self.checkgroup(gid):
                 raise source.error('cannot refer to an open group')
             if gid >= self.lookbehindgroups:
@@ -173,7 +173,7 @@ class SubPattern:
         self.data.append(code)
     def getwidth(self):
         # determine the width (min, max) for this subpattern
-        if self.width is not None:
+        if self.width:
             return self.width
         lo = hi = 0
         for op, av in self.data:
@@ -207,7 +207,7 @@ class SubPattern:
                 hi = hi + j
             elif op is GROUPREF_EXISTS:
                 i, j = av[1].getwidth()
-                if av[2] is not None:
+                if av[2]:
                     l, h = av[2].getwidth()
                     i = min(i, l)
                     j = max(j, h)
@@ -824,7 +824,7 @@ def _parse(source, state, verbose, nested, first=False):
                                        len(char) + 1)
 
             # parse group contents
-            if group is not None:
+            if group:
                 try:
                     group = state.opengroup(name)
                 except error as err:
@@ -835,7 +835,7 @@ def _parse(source, state, verbose, nested, first=False):
             if not source.match(")"):
                 raise source.error("missing ), unterminated subpattern",
                                    source.tell() - start)
-            if group is not None:
+            if group:
                 state.closegroup(group, p)
             subpatternappend((SUBPATTERN, (group, add_flags, del_flags, p)))
 
@@ -957,7 +957,7 @@ def parse(str, flags=0, state=None):
 
     p.state.flags = fix_flags(str, p.state.flags)
 
-    if source.next is not None:
+    if source.next:
         assert source.next == ")"
         raise source.error("unbalanced parenthesis")
 

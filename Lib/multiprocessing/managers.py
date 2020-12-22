@@ -379,7 +379,7 @@ class Server(object):
 
             if exposed is None:
                 exposed = public_methods(obj)
-            if method_to_typeid is not None:
+            if method_to_typeid:
                 if not isinstance(method_to_typeid, dict):
                     raise TypeError(
                         "Method_to_typeid {0!r}: type {1!s}, not dict".format(
@@ -536,7 +536,7 @@ class BaseManager(object):
                 raise ProcessError(
                     "Unknown state {!r}".format(self._state.value))
 
-        if initializer is not None and not callable(initializer):
+        if initializer and not callable(initializer):
             raise TypeError('initializer must be a callable')
 
         # pipe over which we will retrieve address of server
@@ -575,7 +575,7 @@ class BaseManager(object):
         # bpo-36368: protect server process from KeyboardInterrupt signals
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-        if initializer is not None:
+        if initializer:
             initializer(*initargs)
 
         # create server
@@ -605,7 +605,7 @@ class BaseManager(object):
         '''
         Join the manager process (if it has been spawned)
         '''
-        if self._process is not None:
+        if self._process:
             self._process.join(timeout)
             if not self._process.is_alive():
                 self._process = None
@@ -772,9 +772,9 @@ class BaseProxy(object):
         # and sets this value appropriately.
         self._owned_by_manager = manager_owned
 
-        if authkey is not None:
+        if authkey:
             self._authkey = process.AuthenticationString(authkey)
-        elif self._manager is not None:
+        elif self._manager:
             self._authkey = self._manager._authkey
         else:
             self._authkey = process.current_process().authkey
@@ -884,7 +884,7 @@ class BaseProxy(object):
 
     def __reduce__(self):
         kwds = {}
-        if get_spawning_popen() is not None:
+        if get_spawning_popen():
             kwds['authkey'] = self._authkey
 
         if getattr(self, '_isauto', False):
@@ -972,7 +972,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
         finally:
             conn.close()
 
-    if authkey is None and manager is not None:
+    if authkey is None and manager:
         authkey = manager._authkey
     if authkey is None:
         authkey = process.current_process().authkey
@@ -1057,13 +1057,13 @@ class ConditionProxy(AcquirerProxy):
         result = predicate()
         if result:
             return result
-        if timeout is not None:
+        if timeout:
             endtime = time.monotonic() + timeout
         else:
             endtime = None
             waittime = None
         while not result:
-            if endtime is not None:
+            if endtime:
                 waittime = endtime - time.monotonic()
                 if waittime <= 0:
                     break

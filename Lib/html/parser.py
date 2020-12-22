@@ -391,7 +391,7 @@ class HTMLParser(_markupbase.ParserBase):
         gtpos = match.end()
         match = endtagfind.match(rawdata, i) # </ + tag + >
         if not match:
-            if self.cdata_elem is not None:
+            if self.cdata_elem:
                 self.handle_data(rawdata[i:gtpos])
                 return gtpos
             # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
@@ -412,7 +412,7 @@ class HTMLParser(_markupbase.ParserBase):
             return gtpos+1
 
         elem = match.group(1).lower() # script or style
-        if self.cdata_elem is not None:
+        if self.cdata_elem:
             if elem != self.cdata_elem:
                 self.handle_data(rawdata[i:gtpos])
                 return gtpos

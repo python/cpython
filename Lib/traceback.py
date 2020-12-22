@@ -225,7 +225,7 @@ def extract_stack(f=None, limit=None):
 
 def clear_frames(tb):
     "Clear all references to local variables in the frames of a traceback."
-    while tb is not None:
+    while tb != None:
         try:
             tb.tb_frame.clear()
         except RuntimeError:
@@ -307,7 +307,7 @@ def walk_stack(f):
     """
     if f is None:
         f = sys._getframe().f_back.f_back
-    while f is not None:
+    while f != None:
         yield f, f.f_lineno
         f = f.f_back
 
@@ -318,7 +318,7 @@ def walk_tb(tb):
     This will follow tb.tb_next (and thus is in the opposite order to
     walk_stack). Usually used with StackSummary.extract.
     """
-    while tb is not None:
+    while tb != None:
         yield tb.tb_frame, tb.tb_lineno
         tb = tb.tb_next
 
@@ -344,9 +344,9 @@ class StackSummary(list):
         """
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', None)
-            if limit is not None and limit < 0:
+            if limit and limit < 0:
                 limit = 0
-        if limit is not None:
+        if limit:
             if limit >= 0:
                 frame_gen = itertools.islice(frame_gen, limit)
             else:
@@ -486,7 +486,7 @@ class TracebackException:
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
+        if (exc_value and exc_value.__cause__
             and id(exc_value.__cause__) not in _seen):
             cause = TracebackException(
                 type(exc_value.__cause__),
@@ -498,7 +498,7 @@ class TracebackException:
                 _seen=_seen)
         else:
             cause = None
-        if (exc_value and exc_value.__context__ is not None
+        if (exc_value and exc_value.__context__
             and id(exc_value.__context__) not in _seen):
             context = TracebackException(
                 type(exc_value.__context__),
@@ -589,7 +589,7 @@ class TracebackException:
         yield '  File "{}", line {}\n'.format(filename, lineno)
 
         text = self.text
-        if text is not None:
+        if text:
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
@@ -619,11 +619,10 @@ class TracebackException:
         string in the output.
         """
         if chain:
-            if self.__cause__ is not None:
+            if self.__cause__:
                 yield from self.__cause__.format(chain=chain)
                 yield _cause_message
-            elif (self.__context__ is not None and
-                not self.__suppress_context__):
+            elif (self.__context__ and not self.__suppress_context__):
                 yield from self.__context__.format(chain=chain)
                 yield _context_message
         if self.stack:

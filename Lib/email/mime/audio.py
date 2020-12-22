@@ -33,7 +33,7 @@ def _whatsnd(data):
     fakefile = BytesIO(hdr)
     for testfn in sndhdr.tests:
         res = testfn(hdr, fakefile)
-        if res is not None:
+        if res:
             return _sndhdr_MIMEmap.get(res[0])
     return None
 

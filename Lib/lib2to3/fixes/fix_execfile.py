@@ -46,8 +46,8 @@ class FixExecfile(fixer_base.BaseFix):
         compile_call = Call(Name("compile"), compile_args, "")
         # Finally, replace the execfile call with an exec call.
         args = [compile_call]
-        if globals is not None:
+        if globals:
             args.extend([Comma(), globals.clone()])
-        if locals is not None:
+        if locals:
             args.extend([Comma(), locals.clone()])
         return Call(Name("exec"), args, prefix=node.prefix)

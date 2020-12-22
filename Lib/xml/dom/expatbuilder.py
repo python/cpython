@@ -138,7 +138,7 @@ class ExpatBuilder:
         if options is None:
             options = xmlbuilder.Options()
         self._options = options
-        if self._options.filter is not None:
+        if self._options.filter:
             self._filter = FilterVisibilityController(self._options.filter)
         else:
             self._filter = None
@@ -251,7 +251,7 @@ class ExpatBuilder:
             self._parser.EntityDeclHandler = None
             self._parser.NotationDeclHandler = None
         if has_internal_subset:
-            if doctype is not None:
+            if doctype:
                 doctype.entities._seq = []
                 doctype.notations._seq = []
             self._parser.CommentHandler = None
@@ -311,7 +311,7 @@ class ExpatBuilder:
             return
         node = self.document._create_entity(entityName, publicId,
                                             systemId, notationName)
-        if value is not None:
+        if value:
             # internal entity
             # node *should* be readonly, but we'll cheat
             child = self.document.createTextNode(value)

@@ -163,7 +163,7 @@ class BaseHandler:
         env['wsgi.multithread']  = self.wsgi_multithread
         env['wsgi.multiprocess'] = self.wsgi_multiprocess
 
-        if self.wsgi_file_wrapper is not None:
+        if self.wsgi_file_wrapper:
             env['wsgi.file_wrapper'] = self.wsgi_file_wrapper
 
         if self.origin_server and self.server_software:
@@ -232,7 +232,7 @@ class BaseHandler:
                     raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
             finally:
                 exc_info = None        # avoid dangling circular ref
-        elif self.headers is not None:
+        elif self.headers:
             raise AssertionError("Headers already set!")
 
         self.status = status
@@ -350,7 +350,7 @@ class BaseHandler:
     def result_is_file(self):
         """True if 'self.result' is an instance of 'self.wsgi_file_wrapper'"""
         wrapper = self.wsgi_file_wrapper
-        return wrapper is not None and isinstance(self.result,wrapper)
+        return wrapper and isinstance(self.result,wrapper)
 
 
     def client_is_modern(self):

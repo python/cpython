@@ -138,7 +138,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
         rows = ['<tr><td bgcolor="#d8bbff">%s%s %s</td></tr>' %
                 ('<big>&nbsp;</big>', link, call)]
-        if index is not None:
+        if index:
             i = lnum - index
             for line in lines:
                 num = small('&nbsp;' * (5-len(str(i))) + str(i)) + '&nbsp;'
@@ -221,7 +221,7 @@ function calls leading up to the error, in the order they occurred.
         vars = scanvars(reader, frame, locals)
 
         rows = [' %s %s' % (file, call)]
-        if index is not None:
+        if index:
             i = lnum - index
             for line in lines:
                 num = '%5d ' % i
@@ -291,7 +291,7 @@ class Hook:
         else:
             self.file.write('<p>A problem occurred in a Python script.\n')
 
-        if self.logdir is not None:
+        if self.logdir:
             suffix = ['.txt', '.html'][self.format=="html"]
             (fd, path) = tempfile.mkstemp(suffix=suffix, dir=self.logdir)
 

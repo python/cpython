@@ -110,18 +110,18 @@ def _prepare_set(msg, maintype, subtype, headers):
 
 
 def _finalize_set(msg, disposition, filename, cid, params):
-    if disposition is None and filename is not None:
+    if disposition is None and filename:
         disposition = 'attachment'
-    if disposition is not None:
+    if disposition:
         msg['Content-Disposition'] = disposition
-    if filename is not None:
+    if filename:
         msg.set_param('filename',
                       filename,
                       header='Content-Disposition',
                       replace=True)
-    if cid is not None:
+    if cid:
         msg['Content-ID'] = cid
-    if params is not None:
+    if params:
         for key, value in params.items():
             msg.set_param(key, value)
 

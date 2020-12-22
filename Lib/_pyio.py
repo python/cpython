@@ -171,9 +171,9 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise TypeError("invalid mode: %r" % mode)
     if not isinstance(buffering, int):
         raise TypeError("invalid buffering: %r" % buffering)
-    if encoding is not None and not isinstance(encoding, str):
+    if encoding and not isinstance(encoding, str):
         raise TypeError("invalid encoding: %r" % encoding)
-    if errors is not None and not isinstance(errors, str):
+    if errors and not isinstance(errors, str):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
     if modes - set("axrwb+tU") or len(mode) > len(modes):
@@ -198,11 +198,11 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("can't have read/write/append mode at once")
     if not (creating or reading or writing or appending):
         raise ValueError("must have exactly one of read/write/append mode")
-    if binary and encoding is not None:
+    if binary and encoding:
         raise ValueError("binary mode doesn't take an encoding argument")
-    if binary and errors is not None:
+    if binary and errors:
         raise ValueError("binary mode doesn't take an errors argument")
-    if binary and newline is not None:
+    if binary and newline:
         raise ValueError("binary mode doesn't take a newline argument")
     if binary and buffering == 1:
         import warnings
@@ -826,7 +826,7 @@ class _BufferedIOMixin(BufferedIOBase):
         self.raw.flush()
 
     def close(self):
-        if self.raw is not None and not self.closed:
+        if self.raw and not self.closed:
             try:
                 # may raise BlockingIOError or BrokenPipeError etc
                 self.flush()
@@ -894,7 +894,7 @@ class BytesIO(BufferedIOBase):
 
     def __init__(self, initial_bytes=None):
         buf = bytearray()
-        if initial_bytes is not None:
+        if initial_bytes:
             buf += initial_bytes
         self._buffer = buf
         self._pos = 0
@@ -919,7 +919,7 @@ class BytesIO(BufferedIOBase):
         return memoryview(self._buffer)
 
     def close(self):
-        if self._buffer is not None:
+        if self._buffer:
             self._buffer.clear()
         super().close()
 
@@ -1066,7 +1066,7 @@ class BufferedReader(_BufferedIOMixin):
         mode. If size is negative, read until EOF or until read() would
         block.
         """
-        if size is not None and size < -1:
+        if size and size < -1:
             raise ValueError("invalid number of bytes to read")
         with self._read_lock:
             return self._read_unlocked(size)
@@ -1598,7 +1598,7 @@ class FileIO(RawIOBase):
                     if e.errno != errno.ESPIPE:
                         raise
         except:
-            if owned_fd is not None:
+            if owned_fd:
                 os.close(owned_fd)
             raise
         self._fd = fd
@@ -1942,13 +1942,13 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
     def setstate(self, state):
         buf, flag = state
         self.pendingcr = bool(flag & 1)
-        if self.decoder is not None:
+        if self.decoder:
             self.decoder.setstate((buf, flag >> 1))
 
     def reset(self):
         self.seennl = 0
         self.pendingcr = False
-        if self.decoder is not None:
+        if self.decoder:
             self.decoder.reset()
 
     _LF = 1
@@ -2044,7 +2044,7 @@ class TextIOWrapper(TextIOBase):
                         line_buffering, write_through)
 
     def _check_newline(self, newline):
-        if newline is not None and not isinstance(newline, str):
+        if newline and not isinstance(newline, str):
             raise TypeError("illegal newline type: %r" % (type(newline),))
         if newline not in (None, "", "\n", "\r", "\r\n"):
             raise ValueError("illegal newline value: %r" % (newline,))
@@ -2129,9 +2129,7 @@ class TextIOWrapper(TextIOBase):
 
         This also flushes the stream.
         """
-        if (self._decoder is not None
-                and (encoding is not None or errors is not None
-                     or newline is not Ellipsis)):
+        if (self._decoder and (encoding or errors or newline is not Ellipsis)):
             raise UnsupportedOperation(
                 "It is not possible to set the encoding or newline of stream "
                 "after the first read")
@@ -2179,7 +2177,7 @@ class TextIOWrapper(TextIOBase):
         self._telling = self._seekable
 
     def close(self):
-        if self.buffer is not None and not self.closed:
+        if self.buffer and not self.closed:
             try:
                 self.flush()
             finally:
@@ -2657,7 +2655,7 @@ class StringIO(TextIOWrapper):
         # C version, even under Windows.
         if newline is None:
             self._writetranslate = False
-        if initial_value is not None:
+        if initial_value:
             if not isinstance(initial_value, str):
                 raise TypeError("initial_value must be str or None, not {0}"
                                 .format(type(initial_value).__name__))

@@ -20,7 +20,7 @@ def escape(m):
     all, tail = m.group(0, 1)
     assert all.startswith("\\")
     esc = simple_escapes.get(tail)
-    if esc is not None:
+    if esc:
         return esc
     if tail.startswith("x"):
         hexes = tail[1:]

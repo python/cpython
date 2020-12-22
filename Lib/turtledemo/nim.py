@@ -134,7 +134,7 @@ class NimView(object):
     def display(self, msg1, msg2=None):
         self.screen.tracer(False)
         self.writer.clear()
-        if msg2 is not None:
+        if msg2:
             self.writer.goto(0, - SCREENHEIGHT // 2 + 48)
             self.writer.pencolor("red")
             self.writer.write(msg2, align="center", font=("Courier",18,"bold"))

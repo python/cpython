@@ -395,7 +395,7 @@ class FeedParser:
                         epilogue = self._last.epilogue
                         if epilogue == '':
                             self._last.epilogue = None
-                        elif epilogue is not None:
+                        elif epilogue:
                             mo = NLCRE_eol.search(epilogue)
                             if mo:
                                 end = len(mo.group(0))

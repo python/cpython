@@ -31,7 +31,7 @@ class StackTreeItem(TreeItem):
         stack = []
         if tb and tb.tb_frame is None:
             tb = tb.tb_next
-        while tb is not None:
+        while tb != None:
             stack.append((tb.tb_frame, tb.tb_lineno))
             tb = tb.tb_next
         return stack
@@ -42,7 +42,7 @@ class StackTreeItem(TreeItem):
         if hasattr(type, "__name__"):
             type = type.__name__
         s = str(type)
-        if value is not None:
+        if value:
             s = s + ": " + str(value)
         return s
 

@@ -178,7 +178,7 @@ def reformat_comment(data, limit, comment_header):
 def is_all_white(line):
     """Return True if line is empty or all whitespace."""
 
-    return re.match(r"^\s*$", line) is not None
+    return bool(re.match(r"^\s*$", line)) #isnot None
 
 def get_indent(line):
     """Return the initial space or tab indent of line."""

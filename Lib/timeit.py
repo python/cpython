@@ -152,7 +152,7 @@ class Timer:
         sent; it defaults to sys.stderr.
         """
         import linecache, traceback
-        if self.src is not None:
+        if self.src:
             linecache.cache[dummy_src_name] = (len(self.src),
                                                None,
                                                self.src.split("\n"),
@@ -309,7 +309,7 @@ def main(args=None, *, _wrap_timer=None):
     # directory)
     import os
     sys.path.insert(0, os.curdir)
-    if _wrap_timer is not None:
+    if _wrap_timer:
         timer = _wrap_timer(timer)
 
     t = Timer(stmt, setup, timer)
@@ -340,7 +340,7 @@ def main(args=None, *, _wrap_timer=None):
     def format_time(dt):
         unit = time_unit
 
-        if unit is not None:
+        if unit:
             scale = units[unit]
         else:
             scales = [(scale, unit) for unit, scale in units.items()]

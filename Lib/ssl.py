@@ -398,7 +398,7 @@ def match_hostname(cert, hostname):
                 return
             dnsnames.append(value)
         elif key == 'IP Address':
-            if host_ip is not None and _ipaddress_match(value, host_ip):
+            if host_ip and _ipaddress_match(value, host_ip):
                 return
             dnsnames.append(value)
     if not dnsnames:
@@ -652,7 +652,7 @@ class SSLContext(_SSLContext):
             Raw, decrypted message content as bytes
         """
         inner = super()._msg_callback
-        if inner is not None:
+        if inner:
             return inner.user_function
         else:
             return None
@@ -776,7 +776,7 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
 
     if not check_hostname:
         context.check_hostname = False
-    if cert_reqs is not None:
+    if cert_reqs:
         context.verify_mode = cert_reqs
     if check_hostname:
         context.check_hostname = True
@@ -882,7 +882,7 @@ class SSLObject:
         If 'buffer' is provided, read into this buffer and return the number of
         bytes read.
         """
-        if buffer is not None:
+        if buffer:
             v = self._sslobj.read(len, buffer)
         else:
             v = self._sslobj.read(len)
@@ -990,7 +990,7 @@ class SSLSocket(socket):
             if server_hostname:
                 raise ValueError("server_hostname can only be specified "
                                  "in client mode")
-            if session is not None:
+            if session:
                 raise ValueError("session can only be specified in "
                                  "client mode")
         if context.check_hostname and not server_hostname:
@@ -1056,19 +1056,19 @@ class SSLSocket(socket):
     @property
     @_sslcopydoc
     def session(self):
-        if self._sslobj is not None:
+        if self._sslobj:
             return self._sslobj.session
 
     @session.setter
     def session(self, session):
         self._session = session
-        if self._sslobj is not None:
+        if self._sslobj:
             self._sslobj.session = session
 
     @property
     @_sslcopydoc
     def session_reused(self):
-        if self._sslobj is not None:
+        if self._sslobj:
             return self._sslobj.session_reused
 
     def dup(self):
@@ -1095,13 +1095,13 @@ class SSLSocket(socket):
         if self._sslobj is None:
             raise ValueError("Read on closed or unwrapped SSL socket.")
         try:
-            if buffer is not None:
+            if buffer:
                 return self._sslobj.read(len, buffer)
             else:
                 return self._sslobj.read(len)
         except SSLError as x:
             if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
-                if buffer is not None:
+                if buffer:
                     return 0
                 else:
                     return b''
@@ -1165,7 +1165,7 @@ class SSLSocket(socket):
 
     def send(self, data, flags=0):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to send() on %s" %
@@ -1176,7 +1176,7 @@ class SSLSocket(socket):
 
     def sendto(self, data, flags_or_addr, addr=None):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             raise ValueError("sendto not allowed on instances of %s" %
                              self.__class__)
         elif addr is None:
@@ -1192,7 +1192,7 @@ class SSLSocket(socket):
 
     def sendall(self, data, flags=0):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to sendall() on %s" %
@@ -1210,7 +1210,7 @@ class SSLSocket(socket):
         """Send a file, possibly by using os.sendfile() if this is a
         clear-text socket.  Return the total number of bytes sent.
         """
-        if self._sslobj is not None:
+        if self._sslobj:
             return self._sendfile_use_send(file, offset, count)
         else:
             # os.sendfile() works with plain sockets only
@@ -1218,7 +1218,7 @@ class SSLSocket(socket):
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to recv() on %s" %
@@ -1233,7 +1233,7 @@ class SSLSocket(socket):
             nbytes = len(buffer)
         elif nbytes is None:
             nbytes = 1024
-        if self._sslobj is not None:
+        if self._sslobj:
             if flags != 0:
                 raise ValueError(
                   "non-zero flags not allowed in calls to recv_into() on %s" %
@@ -1244,7 +1244,7 @@ class SSLSocket(socket):
 
     def recvfrom(self, buflen=1024, flags=0):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             raise ValueError("recvfrom not allowed on instances of %s" %
                              self.__class__)
         else:
@@ -1252,7 +1252,7 @@ class SSLSocket(socket):
 
     def recvfrom_into(self, buffer, nbytes=None, flags=0):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             raise ValueError("recvfrom_into not allowed on instances of %s" %
                              self.__class__)
         else:
@@ -1269,7 +1269,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def pending(self):
         self._checkClosed()
-        if self._sslobj is not None:
+        if self._sslobj:
             return self._sslobj.pending()
         else:
             return 0
@@ -1315,7 +1315,7 @@ class SSLSocket(socket):
             raise ValueError("can't connect in server-side mode")
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
-        if self._connected or self._sslobj is not None:
+        if self._connected or self._sslobj:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         self._sslobj = self.context._wrap_socket(
             self, False, self.server_hostname,
@@ -1360,7 +1360,7 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_channel_binding(self, cb_type="tls-unique"):
-        if self._sslobj is not None:
+        if self._sslobj:
             return self._sslobj.get_channel_binding(cb_type)
         else:
             if cb_type not in CHANNEL_BINDING_TYPES:
@@ -1371,7 +1371,7 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def version(self):
-        if self._sslobj is not None:
+        if self._sslobj:
             return self._sslobj.version()
         else:
             return None
@@ -1473,7 +1473,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
     If 'ssl_version' is specified, use it in the connection attempt."""
 
     host, port = addr
-    if ca_certs is not None:
+    if ca_certs:
         cert_reqs = CERT_REQUIRED
     else:
         cert_reqs = CERT_NONE

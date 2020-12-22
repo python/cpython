@@ -208,11 +208,11 @@ class HelpFormatter(object):
 
         def format_help(self):
             # format the indented section
-            if self.parent is not None:
+            if self.parent:
                 self.formatter._indent()
             join = self.formatter._join_parts
             item_help = join([func(*args) for func, args in self.items])
-            if self.parent is not None:
+            if self.parent:
                 self.formatter._dedent()
 
             # return nothing if the section was empty
@@ -220,7 +220,7 @@ class HelpFormatter(object):
                 return ''
 
             # add the heading if the section was non-empty
-            if self.heading is not SUPPRESS and self.heading is not None:
+            if self.heading is not SUPPRESS and self.heading:
                 current_indent = self.formatter._current_indent
                 heading = '%*s%s:\n' % (current_indent, '', self.heading)
             else:
@@ -246,7 +246,7 @@ class HelpFormatter(object):
         self._dedent()
 
     def add_text(self, text):
-        if text is not SUPPRESS and text is not None:
+        if text is not SUPPRESS and text:
             self._add_item(self._format_text, [text])
 
     def add_usage(self, usage, actions, groups, prefix=None):
@@ -296,7 +296,7 @@ class HelpFormatter(object):
             prefix = _('usage: ')
 
         # if usage is specified, use that
-        if usage is not None:
+        if usage:
             usage = usage % dict(prog=self._prog)
 
         # if no optionals or positionals are available, usage is just prog
@@ -342,7 +342,7 @@ class HelpFormatter(object):
                 def get_lines(parts, indent, prefix=None):
                     lines = []
                     line = []
-                    if prefix is not None:
+                    if prefix:
                         line_len = len(prefix) - 1
                     else:
                         line_len = len(indent) - 1
@@ -355,7 +355,7 @@ class HelpFormatter(object):
                         line_len += len(part) + 1
                     if line:
                         lines.append(indent + ' '.join(line))
-                    if prefix is not None:
+                    if prefix:
                         lines[0] = lines[0][len(indent):]
                     return lines
 
@@ -476,7 +476,7 @@ class HelpFormatter(object):
             parts[i:i] = [inserts[i]]
 
         # join all the action items with spaces
-        text = ' '.join([item for item in parts if item is not None])
+        text = ' '.join([item for item in parts if item])
 
         # clean up separators for mutually exclusive groups
         open = r'[\[(]'
@@ -569,9 +569,9 @@ class HelpFormatter(object):
             return ', '.join(parts)
 
     def _metavar_formatter(self, action, default_metavar):
-        if action.metavar is not None:
+        if action.metavar:
             result = action.metavar
-        elif action.choices is not None:
+        elif action.choices:
             choice_strs = [str(choice) for choice in action.choices]
             result = '{%s}' % ','.join(choice_strs)
         else:
@@ -620,7 +620,7 @@ class HelpFormatter(object):
         for name in list(params):
             if hasattr(params[name], '__name__'):
                 params[name] = params[name].__name__
-        if params.get('choices') is not None:
+        if params.get('choices'):
             choices_str = ', '.join([str(c) for c in params['choices']])
             params['choices'] = choices_str
         return self._get_help_string(action) % params
@@ -872,7 +872,7 @@ class BooleanOptionalAction(Action):
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
-        if help is not None and default is not None:
+        if help and default:
             help += f" (default: {default})"
 
         super().__init__(
@@ -911,7 +911,7 @@ class _StoreAction(Action):
             raise ValueError('nargs for store actions must be != 0; if you '
                              'have nothing to store, actions such as store '
                              'true or store const may be more appropriate')
-        if const is not None and nargs != OPTIONAL:
+        if const and nargs != OPTIONAL:
             raise ValueError('nargs must be %r to supply const' % OPTIONAL)
         super(_StoreAction, self).__init__(
             option_strings=option_strings,
@@ -1003,7 +1003,7 @@ class _AppendAction(Action):
             raise ValueError('nargs for append actions must be != 0; if arg '
                              'strings are not supplying the value to append, '
                              'the append const action may be more appropriate')
-        if const is not None and nargs != OPTIONAL:
+        if const and nargs != OPTIONAL:
             raise ValueError('nargs must be %r to supply const' % OPTIONAL)
         super(_AppendAction, self).__init__(
             option_strings=option_strings,
@@ -1271,7 +1271,7 @@ class FileType(object):
         kwargs = [('encoding', self._encoding), ('errors', self._errors)]
         args_str = ', '.join([repr(arg) for arg in args if arg != -1] +
                              ['%s=%r' % (kw, arg) for kw, arg in kwargs
-                              if arg is not None])
+                              if arg])
         return '%s(%s)' % (type(self).__name__, args_str)
 
 # ===========================
@@ -1374,7 +1374,7 @@ class _ActionsContainer(object):
 
     def get_default(self, dest):
         for action in self._actions:
-            if action.dest == dest and action.default is not None:
+            if action.dest == dest and action.default:
                 return action.default
         return self._defaults.get(dest, None)
 
@@ -1406,7 +1406,7 @@ class _ActionsContainer(object):
             dest = kwargs['dest']
             if dest in self._defaults:
                 kwargs['default'] = self._defaults[dest]
-            elif self.argument_default is not None:
+            elif self.argument_default:
                 kwargs['default'] = self.argument_default
 
         # create the action object, and add it to the parser
@@ -1764,7 +1764,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Optional/Positional adding methods
     # ==================================
     def add_subparsers(self, **kwargs):
-        if self._subparsers is not None:
+        if self._subparsers:
             self.error(_('cannot have multiple subparser arguments'))
 
         # add the parser class to the arguments if it's not present
@@ -1862,7 +1862,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _parse_known_args(self, arg_strings, namespace):
         # replace arg strings that are file references
-        if self.fromfile_prefix_chars is not None:
+        if self.fromfile_prefix_chars:
             arg_strings = self._read_args_from_files(arg_strings)
 
         # map all mutually exclusive arguments to the other arguments
@@ -1947,7 +1947,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
                 # if there is an explicit argument, try to match the
                 # optional's string arguments to only this
-                if explicit_arg is not None:
+                if explicit_arg:
                     arg_count = match_argument(action, 'A')
 
                     # if the action is a single-dash option and takes no
@@ -2077,7 +2077,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     # parsing arguments to avoid calling convert functions
                     # twice (which may fail) if the argument was given, but
                     # only if it was defined already in the namespace
-                    if (action.default is not None and
+                    if (action.default and
                         isinstance(action.default, str) and
                         hasattr(namespace, action.dest) and
                         action.default is getattr(namespace, action.dest)):
@@ -2166,7 +2166,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             pattern = ''.join([self._get_nargs_pattern(action)
                                for action in actions_slice])
             match = _re.match(pattern, arg_strings_pattern)
-            if match is not None:
+            if match:
                 result.extend([len(string) for string in match.groups()])
                 break
 
@@ -2431,7 +2431,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # args, use the default if it is anything other than None
         elif (not arg_strings and action.nargs == ZERO_OR_MORE and
               not action.option_strings):
-            if action.default is not None:
+            if action.default:
                 value = action.default
             else:
                 value = arg_strings
@@ -2493,7 +2493,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _check_value(self, action, value):
         # converted value must be one of the choices (if specified)
-        if action.choices is not None and value not in action.choices:
+        if action.choices and value not in action.choices:
             args = {'value': value,
                     'choices': ', '.join(map(repr, action.choices))}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')

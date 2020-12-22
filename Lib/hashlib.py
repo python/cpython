@@ -82,7 +82,7 @@ __block_openssl_constructor = {
 def __get_builtin_constructor(name):
     cache = __builtin_constructor_cache
     constructor = cache.get(name)
-    if constructor is not None:
+    if constructor:
         return constructor
     try:
         if name in {'SHA1', 'sha1'}:
@@ -117,7 +117,7 @@ def __get_builtin_constructor(name):
         pass  # no extension module, this hash is unsupported.
 
     constructor = cache.get(name)
-    if constructor is not None:
+    if constructor:
         return constructor
 
     raise ValueError('unsupported hash type ' + name)

@@ -167,7 +167,7 @@ class _NetlocResultMixinBase(object):
     @property
     def port(self):
         port = self._hostinfo[1]
-        if port is not None:
+        if port:
             try:
                 port = int(port, 10)
             except ValueError:
@@ -731,7 +731,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     # If max_num_fields is defined then check that the number of fields
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
-    if max_num_fields is not None:
+    if max_num_fields:
         num_fields = 1 + qs.count('&') + qs.count(';')
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
@@ -846,9 +846,9 @@ def quote(string, safe='/', encoding=None, errors=None):
             errors = 'strict'
         string = string.encode(encoding, errors)
     else:
-        if encoding is not None:
+        if encoding:
             raise TypeError("quote() doesn't support 'encoding' for bytes")
-        if errors is not None:
+        if errors:
             raise TypeError("quote() doesn't support 'errors' for bytes")
     return quote_from_bytes(string, safe)
 

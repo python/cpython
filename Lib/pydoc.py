@@ -147,7 +147,7 @@ def _finddoc(obj):
             doc = _getowndoc(getattr(base, name))
         except AttributeError:
             continue
-        if doc is not None:
+        if doc:
             return doc
     return None
 
@@ -284,7 +284,7 @@ def visiblename(name, all=None, obj=None):
     # Namedtuples have public fields and methods with a single leading underscore
     if name.startswith('_') and hasattr(obj, '_fields'):
         return True
-    if all is not None:
+    if all:
         # only document that which the programmer exported in __all__
         return name in all
     else:
@@ -764,7 +764,7 @@ class HTMLDoc(Doc):
         if info:
             head = head + ' (%s)' % ', '.join(info)
         docloc = self.getdocloc(object)
-        if docloc is not None:
+        if docloc:
             docloc = '<br><a href="%(docloc)s">Module Reference</a>' % locals()
         else:
             docloc = ''
@@ -777,7 +777,7 @@ class HTMLDoc(Doc):
         classes, cdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isclass):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
+            if (all or
                 (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     classes.append((key, value))
@@ -793,7 +793,7 @@ class HTMLDoc(Doc):
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
+            if (all or
                 inspect.isbuiltin(value) or inspect.getmodule(value) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
@@ -1033,7 +1033,7 @@ class HTMLDoc(Doc):
                 if imclass is not cl:
                     note = ' from ' + self.classlink(imclass, mod)
             else:
-                if object.__self__ is not None:
+                if object.__self__:
                     note = ' method of %s instance' % self.classlink(
                         object.__self__.__class__, mod)
                 else:
@@ -1203,7 +1203,7 @@ class TextDoc(Doc):
         result = self.section('NAME', name + (synop and ' - ' + synop))
         all = getattr(object, '__all__', None)
         docloc = self.getdocloc(object)
-        if docloc is not None:
+        if docloc:
             result = result + self.section('MODULE REFERENCE', docloc + """
 
 The following documentation is automatically generated from the Python
@@ -1219,14 +1219,14 @@ location listed above.
         classes = []
         for key, value in inspect.getmembers(object, inspect.isclass):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None
+            if (all
                 or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
+            if (all or
                 inspect.isbuiltin(value) or inspect.getmodule(value) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
@@ -1467,7 +1467,7 @@ location listed above.
                 if imclass is not cl:
                     note = ' from ' + classname(imclass, mod)
             else:
-                if object.__self__ is not None:
+                if object.__self__:
                     note = ' method of %s instance' % classname(
                         object.__self__.__class__, mod)
                 else:
@@ -2761,7 +2761,7 @@ def _adjust_cli_sys_path():
     Exception: __main__ dir is left alone if it's also pydoc's directory.
     """
     revised_path = _get_revised_path(sys.path, sys.argv[0])
-    if revised_path is not None:
+    if revised_path:
         sys.path[:] = revised_path
 
 

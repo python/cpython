@@ -53,11 +53,11 @@ class FixApply(fixer_base.BaseFix):
         func.prefix = ""
         args = args.clone()
         args.prefix = ""
-        if kwds is not None:
+        if kwds:
             kwds = kwds.clone()
             kwds.prefix = ""
         l_newargs = [pytree.Leaf(token.STAR, "*"), args]
-        if kwds is not None:
+        if kwds:
             l_newargs.extend([Comma(),
                               pytree.Leaf(token.DOUBLESTAR, "**"),
                               kwds])

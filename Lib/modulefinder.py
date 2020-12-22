@@ -112,9 +112,9 @@ class Module:
 
     def __repr__(self):
         s = "Module(%r" % (self.__name__,)
-        if self.__file__ is not None:
+        if self.__file__:
             s = s + ", %r" % (self.__file__,)
-        if self.__path__ is not None:
+        if self.__path__:
             s = s + ", %r" % (self.__path__,)
         s = s + ")"
         return s
@@ -129,8 +129,8 @@ class ModuleFinder:
         self.badmodules = {}
         self.debug = debug
         self.indent = 0
-        self.excludes = excludes if excludes is not None else []
-        self.replace_paths = replace_paths if replace_paths is not None else []
+        self.excludes = excludes if excludes else []
+        self.replace_paths = replace_paths if replace_paths else []
         self.processed_paths = []   # Used in debugging only
 
     def msg(self, level, str, *args):
@@ -423,7 +423,7 @@ class ModuleFinder:
             elif what == "absolute_import":
                 fromlist, name = args
                 have_star = 0
-                if fromlist is not None:
+                if fromlist:
                     if "*" in fromlist:
                         have_star = 1
                     fromlist = [f for f in fromlist if f != "*"]
@@ -440,7 +440,7 @@ class ModuleFinder:
                         mm = self.modules.get(m.__name__ + "." + name)
                     if mm is None:
                         mm = self.modules.get(name)
-                    if mm is not None:
+                    if mm:
                         m.globalnames.update(mm.globalnames)
                         m.starimports.update(mm.starimports)
                         if mm.__code__ is None:
@@ -490,8 +490,8 @@ class ModuleFinder:
         return m
 
     def find_module(self, name, path, parent=None):
-        if parent is not None:
-            # assert path is not None
+        if parent:
+            # assert bool(path) #isnot None
             fullname = parent.__name__+'.'+name
         else:
             fullname = name
@@ -570,7 +570,7 @@ class ModuleFinder:
             subname = name[i+1:]
             pkgname = name[:i]
             pkg = self.modules.get(pkgname)
-            if pkg is not None:
+            if pkg:
                 if pkgname in self.badmodules[name]:
                     # The package tried to import this module itself and
                     # failed. It's definitely missing.

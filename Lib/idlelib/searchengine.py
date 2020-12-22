@@ -94,7 +94,7 @@ class SearchEngine:
         msg = "Error: " + str(msg)
         if pat:
             msg = msg + "\nPattern: " + str(pat)
-        if col is not None:
+        if col:
             msg = msg + "\nOffset: " + str(col)
         tkMessageBox.showerror("Regular expression error",
                                msg, master=self.root)

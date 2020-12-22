@@ -77,7 +77,7 @@ def capture_warnings(capture):
             _warnings_showwarning = warnings.showwarning
             warnings.showwarning = idle_showwarning_subproc
     else:
-        if _warnings_showwarning is not None:
+        if _warnings_showwarning:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
 
@@ -223,11 +223,11 @@ def print_exception():
         seen.add(id(exc))
         context = exc.__context__
         cause = exc.__cause__
-        if cause is not None and id(cause) not in seen:
+        if cause and id(cause) not in seen:
             print_exc(type(cause), cause, cause.__traceback__)
             print("\nThe above exception was the direct cause "
                   "of the following exception:\n", file=efile)
-        elif (context is not None and
+        elif (context and
               not exc.__suppress_context__ and
               id(context) not in seen):
             print_exc(type(context), context, context.__traceback__)
@@ -308,7 +308,7 @@ def fix_scaling(root):
 
 
 def fixdoc(fun, text):
-    tem = (fun.__doc__ + '\n\n') if fun.__doc__ is not None else ''
+    tem = (fun.__doc__ + '\n\n') if fun.__doc__ else ''
     fun.__doc__ = tem + textwrap.fill(textwrap.dedent(text))
 
 RECURSIONLIMIT_DELTA = 30
@@ -595,7 +595,7 @@ class Executive(object):
         else:
             return None
         flist = None
-        if flist_oid is not None:
+        if flist_oid:
             flist = self.rpchandler.get_remote_proxy(flist_oid)
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next

@@ -106,7 +106,7 @@ class CalltipWindow(TooltipBase):
 
         self.position_window()
         # Re-schedule this function to be called again in a short while.
-        if self.checkhide_after_id is not None:
+        if self.checkhide_after_id:
             self.anchor_widget.after_cancel(self.checkhide_after_id)
         self.checkhide_after_id = \
             self.anchor_widget.after(CHECKHIDE_TIME, self.checkhide_event)

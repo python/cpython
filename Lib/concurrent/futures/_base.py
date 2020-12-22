@@ -216,7 +216,7 @@ def as_completed(fs, timeout=None):
         TimeoutError: If the entire result iterator could not be generated
             before the given timeout.
     """
-    if timeout is not None:
+    if timeout:
         end_time = timeout + time.monotonic()
 
     fs = set(fs)
@@ -294,8 +294,7 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
         if (return_when == FIRST_COMPLETED) and done:
             return DoneAndNotDoneFutures(done, not_done)
         elif (return_when == FIRST_EXCEPTION) and done:
-            if any(f for f in done
-                   if not f.cancelled() and f.exception() is not None):
+            if any(f for f in done if not f.cancelled() and f.exception()):
                 return DoneAndNotDoneFutures(done, not_done)
 
         if len(done) == len(fs):
@@ -583,7 +582,7 @@ class Executor(object):
                 before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
-        if timeout is not None:
+        if timeout:
             end_time = timeout + time.monotonic()
 
         fs = [self.submit(fn, *args) for args in zip(*iterables)]
