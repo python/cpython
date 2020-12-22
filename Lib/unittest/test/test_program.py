@@ -136,6 +136,7 @@ class InitialisableProgram(unittest.TestProgram):
     verbosity = 1
     defaultTest = None
     tb_locals = False
+    debug = False
     testRunner = None
     testLoader = unittest.defaultTestLoader
     module = '__main__'
