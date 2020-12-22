@@ -1128,36 +1128,30 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(insert_doc,
 "D.insert(index, object) -- insert object before index");
 
+static int deque_del_item(dequeobject *deque, Py_ssize_t i);
+
 static PyObject *
 deque_remove(dequeobject *deque, PyObject *value)
 {
-    Py_ssize_t i, n=Py_SIZE(deque);
+    PyObject * args[1] = {value};
+    PyObject *index_object;
+    Py_ssize_t i;
+    int rv;
 
-    for (i=0 ; i<n ; i++) {
-        PyObject *item = deque->leftblock->data[deque->leftindex];
-        int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
-
-        if (Py_SIZE(deque) != n) {
-            PyErr_SetString(PyExc_IndexError,
-                "deque mutated during remove().");
-            return NULL;
-        }
-        if (cmp > 0) {
-            PyObject *tgt = deque_popleft(deque, NULL);
-            assert (tgt != NULL);
-            if (_deque_rotate(deque, i))
-                return NULL;
-            Py_DECREF(tgt);
-            Py_RETURN_NONE;
-        }
-        else if (cmp < 0) {
-            _deque_rotate(deque, i);
-            return NULL;
-        }
-        _deque_rotate(deque, -1);
+    index_object = deque_index(deque, args, 1);
+    if (index_object == NULL) {
+        return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
-    return NULL;
+    i = PyLong_AsSsize_t(index_object);
+    Py_DECREF(index_object);
+    if (i == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    rv = deque_del_item(deque, i);
+    if (rv == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(remove_doc,
