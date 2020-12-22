@@ -687,6 +687,31 @@ class BaseExceptionReportingTests:
         msg = self.get_report(e).splitlines()
         self.assertEqual(msg[-2], '               ^')
 
+    def test_syntax_error_no_lineno(self):
+        # See #34463.
+
+        # Without filename
+        e = SyntaxError('bad syntax')
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['SyntaxError: bad syntax'])
+        e.lineno = 100
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['  File "<string>", line 100', 'SyntaxError: bad syntax'])
+
+        # With filename
+        e = SyntaxError('bad syntax')
+        e.filename = 'myfile.py'
+
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['SyntaxError: bad syntax (myfile.py)'])
+        e.lineno = 100
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['  File "myfile.py", line 100', 'SyntaxError: bad syntax'])
+
     def test_message_none(self):
         # A message that looks like "None" should not be treated specially
         err = self.get_report(Exception(None))
