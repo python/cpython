@@ -515,7 +515,8 @@ class TracebackException:
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
-            self.lineno = str(exc_value.lineno)
+            lno = exc_value.lineno
+            self.lineno = str(lno) if lno is not None else None
             self.text = exc_value.text
             self.offset = exc_value.offset
             self.msg = exc_value.msg
@@ -569,9 +570,12 @@ class TracebackException:
             return
 
         # It was a syntax error; show exactly where the problem was found.
-        filename = self.filename or "<string>"
-        lineno = str(self.lineno) or '?'
-        yield '  File "{}", line {}\n'.format(filename, lineno)
+        filename_suffix = ''
+        if self.lineno is not None:
+            yield '  File "{}", line {}\n'.format(
+                self.filename or "<string>", self.lineno)
+        elif self.filename is not None:
+            filename_suffix = ' ({})'.format(self.filename)
 
         badline = self.text
         offset = self.offset
@@ -585,7 +589,7 @@ class TracebackException:
                 caretspace = ((c.isspace() and c or ' ') for c in caretspace)
                 yield '    {}^\n'.format(''.join(caretspace))
         msg = self.msg or "<no detail available>"
-        yield "{}: {}\n".format(stype, msg)
+        yield "{}: {}{}\n".format(stype, msg, filename_suffix)
 
     def format(self, *, chain=True):
         """Format the exception.
