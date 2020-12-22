@@ -1198,22 +1198,35 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
 static PyObject *
 deque_remove(dequeobject *deque, PyObject *value)
 {
-    PyObject * args[1] = {value};
-    PyObject *index_object;
-    Py_ssize_t i;
-    int rv;
+    PyObject *item;
+    block *b = deque->leftblock;
+    Py_ssize_t i, n = Py_SIZE(deque), index = deque->leftindex;
+    size_t start_state = deque->state;
+    int cmp, rv;
 
-    index_object = deque_index(deque, args, 1);
-    if (index_object == NULL) {
-        return NULL;
+    for (i = 0 ; i < n; i++) {
+        CHECK_NOT_END(b);
+        item = b->data[index];
+        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+        if (cmp < 0) {
+            return NULL;
+        }
+        if (start_state != deque->state) {
+            PyErr_SetString(PyExc_IndexError,
+                            "deque mutated during iteration");
+            return NULL;
+        }
+        if (cmp > 0) {
+            break;
+        }
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
     }
-    i = PyLong_AsSsize_t(index_object);
-    Py_DECREF(index_object);
-    if (i == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (!valid_index(i, Py_SIZE(deque))) {
-        PyErr_SetString(PyExc_IndexError, "deque mutated during remove().");
+    if (i == n) {
+        PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
         return NULL;
     }
     rv = deque_del_item(deque, i);
