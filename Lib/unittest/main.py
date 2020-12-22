@@ -273,11 +273,9 @@ class TestProgram(object):
             testRunner = self.testRunner
         if self.debug:
             testRunner.debug(self.test)
-            success = True
         else:
             self.result = testRunner.run(self.test)
-            success = self.result.wasSuccessful()
         if self.exit:
-            sys.exit(not success)
+            sys.exit(not (self.debug or self.result.wasSuccessful()))
 
 main = TestProgram
