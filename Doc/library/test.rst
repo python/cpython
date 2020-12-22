@@ -484,7 +484,7 @@ The :mod:`test.support` module defines the following functions:
    Define match test with regular expression *patterns*.
 
 
-.. function:: run_unittest(\*classes)
+.. function:: run_unittest(*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
    function scans the classes for methods starting with the prefix ``test_``
@@ -528,7 +528,7 @@ The :mod:`test.support` module defines the following functions:
       check_impl_detail(cpython=False)  # Everywhere except CPython.
 
 
-.. function:: check_warnings(\*filters, quiet=True)
+.. function:: check_warnings(*filters, quiet=True)
 
    A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
    easier to test that a warning was correctly raised.  It is approximately

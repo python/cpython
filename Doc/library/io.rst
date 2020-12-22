@@ -959,7 +959,7 @@ Text I/O
       .. versionadded:: 3.7
 
 
-.. class:: StringIO(initial_value='', newline='\\n')
+.. class:: StringIO(initial_value='', newline='\n')
 
    An in-memory stream for text I/O.  The text buffer is discarded when the
    :meth:`~IOBase.close` method is called.
