@@ -703,6 +703,7 @@ class BaseExceptionReportingTests:
             msg = self.get_report(e).splitlines()
             self.assertEqual(msg,
                 ['  File "myfile.py", line 100', 'SyntaxError: bad syntax'])
+
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks reporting through the 'traceback' module, with both
