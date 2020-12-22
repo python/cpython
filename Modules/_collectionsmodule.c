@@ -1205,7 +1205,6 @@ deque_remove(dequeobject *deque, PyObject *value)
     int cmp, rv;
 
     for (i = 0 ; i < n; i++) {
-        CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, value, Py_EQ);
         if (cmp < 0) {
