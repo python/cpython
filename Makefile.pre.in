@@ -1365,8 +1365,29 @@ maninstall:	altmaninstall
 
 # Install the library
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
-LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
-		tkinter/test/test_ttk site-packages test \
+LIBSUBDIRS=	tkinter \
+		site-packages \
+		importlib \
+		importlib/metadata \
+		asyncio \
+		collections concurrent concurrent/futures encodings \
+		email email/mime \
+		ensurepip ensurepip/_bundled \
+		html json http dbm xmlrpc \
+		sqlite3 \
+		logging csv wsgiref urllib \
+		lib2to3 lib2to3/fixes lib2to3/pgen2 \
+		ctypes ctypes/macholib \
+		idlelib idlelib/Icons \
+		distutils distutils/command $(XMLLIBSUBDIRS) \
+		turtledemo \
+		multiprocessing multiprocessing/dummy \
+		unittest \
+		venv venv/scripts venv/scripts/common venv/scripts/posix \
+		curses pydoc_data \
+		zoneinfo
+TESTSUBDIRS=	tkinter/test tkinter/test/test_tkinter \
+		tkinter/test/test_ttk test \
 		test/audiodata \
 		test/capath test/data \
 		test/cjkencodings test/decimaltestdata \
@@ -1384,8 +1405,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
 		test/test_import/data/unwritable \
-		importlib \
-		importlib/metadata \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/data \
@@ -1426,28 +1445,25 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/zipdata02 \
 		test/test_zoneinfo test/test_zoneinfo/data \
 		test/ziptestdata \
-		asyncio \
 		test/test_asyncio \
-		collections concurrent concurrent/futures encodings \
-		email email/mime test/test_email test/test_email/data \
-		ensurepip ensurepip/_bundled \
-		html json test/test_json http dbm xmlrpc \
-		sqlite3 sqlite3/test \
-		logging csv wsgiref urllib \
-		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
+		test/test_email test/test_email/data \
+		test/test_json \
+		sqlite3/test \
+		lib2to3/tests \
 		lib2to3/tests/data lib2to3/tests/data/fixers \
 		lib2to3/tests/data/fixers/myfixes \
-		ctypes ctypes/test ctypes/macholib \
-		idlelib idlelib/Icons idlelib/idle_test \
-		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		ctypes/test \
+		idlelib/idle_test \
+		distutils/tests \
 		test/test_peg_generator \
 		test/test_tools test/test_warnings test/test_warnings/data \
-		turtledemo \
-		multiprocessing multiprocessing/dummy \
-		unittest unittest/test unittest/test/testmock \
-		venv venv/scripts venv/scripts/common venv/scripts/posix \
-		curses pydoc_data \
-		zoneinfo
+		unittest/test unittest/test/testmock
+
+TEST_MODULES=@TEST_MODULES@
+ifeq ($(TEST_MODULES),yes)
+LIBSUBDIRS += $(TESTSUBDIRS)
+endif
+
 libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \

@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -852,6 +853,7 @@ with_openssl
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
+enable_test_modules
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1503,6 +1505,7 @@ Optional Features:
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
                           (default is system-dependent)]
+  --enable-test-modules   enable test modules (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -17722,6 +17725,20 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+# check whether to disable test modules
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-test-modules" >&5
+$as_echo_n "checking for --enable-test-modules... " >&6; }
+# Check whether --enable-test-modules was given.
+if test "${enable_test_modules+set}" = set; then :
+  enableval=$enable_test_modules;  TEST_MODULES="${enableval}"
+else
+   TEST_MODULES=yes
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_test_modules" >&5
+$as_echo "$enable_test_modules" >&6; }
 
 
 # generate output files

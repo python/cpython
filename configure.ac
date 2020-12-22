@@ -5833,6 +5833,14 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# check whether to disable test modules
+AC_MSG_CHECKING(for --enable-test-modules)
+AC_ARG_ENABLE(test-modules,
+              AS_HELP_STRING([--enable-test-modules], [enable test modules (default is yes)]),
+              [ TEST_MODULES="${enableval}" ], [ TEST_MODULES=yes ])
+AC_SUBST(TEST_MODULES)
+AC_MSG_RESULT($enable_test_modules)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
