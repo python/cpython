@@ -632,7 +632,6 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     alias->args = args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
-
     return 1;
 }
 
