@@ -1152,6 +1152,11 @@ Any container can be passed as the *choices* value, so :class:`list` objects,
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
 
+Formatted choices overrides the default *metavar* which is normally derived
+from *dest*.  This is usually what you want because the user never sees the
+*dest* parameter.  If this display isn't desirable (perhaps because there are
+many choices), just specify an explicit metavar_.
+
 
 required
 ^^^^^^^^
