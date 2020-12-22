@@ -202,6 +202,7 @@ dist:
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
+	$(PYTHON) tools/rstlint.py ../Misc/NEWS.d/next/
 
 serve:
 	$(PYTHON) ../Tools/scripts/serve.py build/html

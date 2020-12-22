@@ -83,7 +83,6 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
-def_op('RERAISE', 48)
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
@@ -161,6 +160,7 @@ name_op('LOAD_GLOBAL', 116)     # Index in name list
 
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
+def_op('RERAISE', 119)
 
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 jrel_op('SETUP_FINALLY', 122)   # Distance to target address

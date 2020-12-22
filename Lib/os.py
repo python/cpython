@@ -36,7 +36,7 @@ _names = sys.builtin_module_names
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
            "defpath", "name", "path", "devnull", "SEEK_SET", "SEEK_CUR",
            "SEEK_END", "fsencode", "fsdecode", "get_exec_path", "fdopen",
-           "popen", "extsep"]
+           "extsep"]
 
 def _exists(name):
     return name in globals()
@@ -969,51 +969,55 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 
     __all__.extend(["spawnlp", "spawnlpe"])
 
-
-# Supply os.popen()
-def popen(cmd, mode="r", buffering=-1):
-    if not isinstance(cmd, str):
-        raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
-    if mode not in ("r", "w"):
-        raise ValueError("invalid mode %r" % mode)
-    if buffering == 0 or buffering is None:
-        raise ValueError("popen() does not support unbuffered streams")
-    import subprocess, io
-    if mode == "r":
-        proc = subprocess.Popen(cmd,
-                                shell=True,
-                                stdout=subprocess.PIPE,
-                                bufsize=buffering)
-        return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
-    else:
-        proc = subprocess.Popen(cmd,
-                                shell=True,
-                                stdin=subprocess.PIPE,
-                                bufsize=buffering)
-        return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
-
-# Helper for popen() -- a proxy for a file whose close waits for the process
-class _wrap_close:
-    def __init__(self, stream, proc):
-        self._stream = stream
-        self._proc = proc
-    def close(self):
-        self._stream.close()
-        returncode = self._proc.wait()
-        if returncode == 0:
-            return None
-        if name == 'nt':
-            return returncode
+# VxWorks has no user space shell provided. As a result, running
+# command in a shell can't be supported.
+if sys.platform != 'vxworks':
+    # Supply os.popen()
+    def popen(cmd, mode="r", buffering=-1):
+        if not isinstance(cmd, str):
+            raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
+        if mode not in ("r", "w"):
+            raise ValueError("invalid mode %r" % mode)
+        if buffering == 0 or buffering is None:
+            raise ValueError("popen() does not support unbuffered streams")
+        import subprocess, io
+        if mode == "r":
+            proc = subprocess.Popen(cmd,
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    bufsize=buffering)
+            return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
         else:
-            return returncode << 8  # Shift left to match old behavior
-    def __enter__(self):
-        return self
-    def __exit__(self, *args):
-        self.close()
-    def __getattr__(self, name):
-        return getattr(self._stream, name)
-    def __iter__(self):
-        return iter(self._stream)
+            proc = subprocess.Popen(cmd,
+                                    shell=True,
+                                    stdin=subprocess.PIPE,
+                                    bufsize=buffering)
+            return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
+
+    # Helper for popen() -- a proxy for a file whose close waits for the process
+    class _wrap_close:
+        def __init__(self, stream, proc):
+            self._stream = stream
+            self._proc = proc
+        def close(self):
+            self._stream.close()
+            returncode = self._proc.wait()
+            if returncode == 0:
+                return None
+            if name == 'nt':
+                return returncode
+            else:
+                return returncode << 8  # Shift left to match old behavior
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            self.close()
+        def __getattr__(self, name):
+            return getattr(self._stream, name)
+        def __iter__(self):
+            return iter(self._stream)
+
+    __all__.append("popen")
 
 # Supply os.fdopen()
 def fdopen(fd, *args, **kwargs):

@@ -1745,6 +1745,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyDatagramProto, allow_broadcast=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                    "SO_BROADCAST is enabled by default on VxWorks")
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
         # SO_REUSEPORT is not available on all platforms.

@@ -2,8 +2,8 @@ import sys
 import unittest
 import tkinter
 from tkinter import ttk
-from test.support import requires, run_unittest, swap_attr
-from tkinter.test.support import AbstractTkTest, destroy_default_root
+from test.support import requires, run_unittest
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
 
@@ -45,20 +45,6 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         ttk.LabeledScale(self.root, variable=myvar)
         if hasattr(sys, 'last_type'):
             self.assertNotEqual(sys.last_type, tkinter.TclError)
-
-
-    def test_initialization_no_master(self):
-        # no master passing
-        with swap_attr(tkinter, '_default_root', None), \
-             swap_attr(tkinter, '_support_default_root', True):
-            try:
-                x = ttk.LabeledScale()
-                self.assertIsNotNone(tkinter._default_root)
-                self.assertEqual(x.master, tkinter._default_root)
-                self.assertEqual(x.tk, tkinter._default_root.tk)
-                x.destroy()
-            finally:
-                destroy_default_root()
 
     def test_initialization(self):
         # master passing
@@ -311,7 +297,13 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         optmenu2.destroy()
 
 
-tests_gui = (LabeledScaleTest, OptionMenuTest)
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_labeledscale(self):
+        self._test_widget(ttk.LabeledScale)
+
+
+tests_gui = (LabeledScaleTest, OptionMenuTest, DefaultRootTest)
 
 if __name__ == "__main__":
     run_unittest(*tests_gui)

@@ -487,7 +487,6 @@ class ThreadTests(BaseTestCase):
                 if not pid:
                     print("child process ok", file=sys.stderr, flush=True)
                     # child process
-                    sys.exit()
                 else:
                     wait_process(pid, exitcode=0)
 

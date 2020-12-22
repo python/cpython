@@ -32,7 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
-* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
+* On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -1323,12 +1323,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_APPEND
 
-    Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
-    flag. This flag is meaningful only for :func:`os.pwritev`, and its
-    effect applies only to the data range written by the system call. The
-    *offset* argument does not affect the write operation; the data is always
-    appended to the end of the file. However, if the *offset* argument is
-    ``-1``, the current file *offset* is updated.
+   Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
+   flag. This flag is meaningful only for :func:`os.pwritev`, and its
+   effect applies only to the data range written by the system call. The
+   *offset* argument does not affect the write operation; the data is always
+   appended to the end of the file. However, if the *offset* argument is
+   ``-1``, the current file *offset* is updated.
 
    .. availability:: Linux 4.16 and newer.
 
@@ -1991,7 +1991,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: lstat(path, \*, dir_fd=None)
+.. function:: lstat(path, *, dir_fd=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
@@ -2498,7 +2498,7 @@ features:
       On the first, uncached call, a system call is required on Windows but
       not on Unix.
 
-   .. method:: is_dir(\*, follow_symlinks=True)
+   .. method:: is_dir(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a directory or a symbolic link pointing
       to a directory; return ``False`` if the entry is or points to any other
@@ -2522,7 +2522,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: is_file(\*, follow_symlinks=True)
+   .. method:: is_file(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a file or a symbolic link pointing to a
       file; return ``False`` if the entry is or points to a directory or other
@@ -2552,7 +2552,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: stat(\*, follow_symlinks=True)
+   .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
       follows symbolic links by default; to stat a symbolic link add the
@@ -2584,7 +2584,7 @@ features:
       for :class:`bytes` paths on Windows.
 
 
-.. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
+.. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
