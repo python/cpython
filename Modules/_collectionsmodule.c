@@ -1129,6 +1129,7 @@ PyDoc_STRVAR(insert_doc,
 "D.insert(index, object) -- insert object before index");
 
 static int deque_del_item(dequeobject *deque, Py_ssize_t i);
+static int valid_index(Py_ssize_t i, Py_ssize_t limit);
 
 static PyObject *
 deque_remove(dequeobject *deque, PyObject *value)
@@ -1145,6 +1146,10 @@ deque_remove(dequeobject *deque, PyObject *value)
     i = PyLong_AsSsize_t(index_object);
     Py_DECREF(index_object);
     if (i == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (!valid_index(i, Py_SIZE(deque))) {
+        PyErr_SetString(PyExc_IndexError, "deque index out of range");
         return NULL;
     }
     rv = deque_del_item(deque, i);
