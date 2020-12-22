@@ -156,7 +156,7 @@ def do_longs(opts, opt, longopts, args):
 
     has_arg, opt = long_has_args(opt, longopts)
     if has_arg:
-        if optarg is None:
+        if not optarg:
             if not args:
                 raise GetoptError(_('option --%s requires argument') % opt, opt)
             optarg, args = args[0], args[1:]

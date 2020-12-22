@@ -83,7 +83,7 @@ def find_loader(name, path=None):
                   DeprecationWarning, stacklevel=2)
     try:
         loader = sys.modules[name].__loader__
-        if loader is None:
+        if not loader:
             raise ValueError('{}.__loader__ is None'.format(name))
         else:
             return loader
@@ -94,10 +94,10 @@ def find_loader(name, path=None):
 
     spec = _bootstrap._find_spec(name, path)
     # We won't worry about malformed specs (missing attributes).
-    if spec is None:
+    if not spec:
         return None
-    if spec.loader is None:
-        if spec.submodule_search_locations is None:
+    if not spec.loader:
+        if not spec.submodule_search_locations:
             raise ImportError('spec for {} missing loader'.format(name),
                               name=name)
         raise ImportError('namespace packages do not have loaders',
@@ -164,7 +164,7 @@ def reload(module):
             pkgpath = None
         target = module
         spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
-        if spec is None:
+        if not spec:
             raise ModuleNotFoundError(f"spec not found for the module {name!r}", name=name)
         _bootstrap._exec(spec, module)
         # The module may have replaced itself in sys.modules!

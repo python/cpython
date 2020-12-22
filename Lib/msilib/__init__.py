@@ -108,7 +108,7 @@ def add_data(db, table, values):
                 r.SetInteger(i+1,field)
             elif isinstance(field, str):
                 r.SetString(i+1,field)
-            elif field is None:
+            elif not field:
                 pass
             elif isinstance(field, Binary):
                 r.SetStream(i+1, field.name)
@@ -261,13 +261,13 @@ class Directory:
         is given, the current feature is used. If no flags are given, the directory's default
         flags are used. If no keyfile is given, the KeyPath is left null in the Component
         table."""
-        if flags is None:
+        if not flags:
             flags = self.componentflags
-        if uuid is None:
+        if not uuid:
             uuid = gen_uuid()
         else:
             uuid = uuid.upper()
-        if component is None:
+        if not component:
             component = self.logical
         self.component = component
         if AMD64:
@@ -279,7 +279,7 @@ class Directory:
             keyid = None
         add_data(self.db, "Component",
                         [(component, uuid, self.logical, flags, None, keyid)])
-        if feature is None:
+        if not feature:
             feature = current_feature
         add_data(self.db, "FeatureComponents",
                         [(feature.id, component)])
@@ -439,7 +439,7 @@ class RadioButtonGroup(Control):
         self.index = 1
 
     def add(self, name, x, y, w, h, text, value = None):
-        if value is None:
+        if not value:
             value = name
         add_data(self.dlg.db, "RadioButton",
                  [(self.property, self.index, value,

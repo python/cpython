@@ -619,7 +619,7 @@ def unquote_to_bytes(string):
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     global _hextobyte
-    if _hextobyte is None:
+    if not _hextobyte:
         _hextobyte = {(a + b).encode(): bytes.fromhex(a + b)
                       for a in _hexdig for b in _hexdig}
     for item in bits[1:]:
@@ -648,9 +648,9 @@ def unquote(string, encoding='utf-8', errors='replace'):
     if '%' not in string:
         string.split
         return string
-    if encoding is None:
+    if not encoding:
         encoding = 'utf-8'
-    if errors is None:
+    if not errors:
         errors = 'replace'
     bits = _asciire.split(string)
     res = [bits[0]]
@@ -840,9 +840,9 @@ def quote(string, safe='/', encoding=None, errors=None):
     if isinstance(string, str):
         if not string:
             return string
-        if encoding is None:
+        if not encoding:
             encoding = 'utf-8'
-        if errors is None:
+        if not errors:
             errors = 'strict'
         string = string.encode(encoding, errors)
     else:
@@ -1016,7 +1016,7 @@ _typeprog = None
 def _splittype(url):
     """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
     global _typeprog
-    if _typeprog is None:
+    if not _typeprog:
         _typeprog = re.compile('([^/:]+):(.*)', re.DOTALL)
 
     match = _typeprog.match(url)
@@ -1037,7 +1037,7 @@ _hostprog = None
 def _splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
-    if _hostprog is None:
+    if not _hostprog:
         _hostprog = re.compile('//([^/#?]*)(.*)', re.DOTALL)
 
     match = _hostprog.match(url)
@@ -1087,7 +1087,7 @@ _portprog = None
 def _splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
-    if _portprog is None:
+    if not _portprog:
         _portprog = re.compile('(.*):([0-9]*)', re.DOTALL)
 
     match = _portprog.fullmatch(host)

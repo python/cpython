@@ -274,7 +274,7 @@ class Server(object):
                         msg = ('#RETURN', res)
 
             except AttributeError:
-                if methodname is None:
+                if not methodname:
                     msg = ('#TRACEBACK', format_exc())
                 else:
                     try:
@@ -369,7 +369,7 @@ class Server(object):
             callable, exposed, method_to_typeid, proxytype = \
                       self.registry[typeid]
 
-            if callable is None:
+            if not callable:
                 if kwds or (len(args) != 1):
                     raise ValueError(
                         "Without callable, must have one non-keyword argument")
@@ -377,7 +377,7 @@ class Server(object):
             else:
                 obj = callable(*args, **kwds)
 
-            if exposed is None:
+            if not exposed:
                 exposed = public_methods(obj)
             if method_to_typeid:
                 if not isinstance(method_to_typeid, dict):
@@ -489,7 +489,7 @@ class BaseManager(object):
 
     def __init__(self, address=None, authkey=None, serializer='pickle',
                  ctx=None):
-        if authkey is None:
+        if not authkey:
             authkey = process.current_process().authkey
         self._address = address     # XXX not final address if eg ('', 0)
         self._authkey = process.AuthenticationString(authkey)
@@ -691,7 +691,7 @@ class BaseManager(object):
         if '_registry' not in cls.__dict__:
             cls._registry = cls._registry.copy()
 
-        if proxytype is None:
+        if not proxytype:
             proxytype = AutoProxy
 
         exposed = exposed or getattr(proxytype, '_exposed_', None)
@@ -747,7 +747,7 @@ class BaseProxy(object):
                  authkey=None, exposed=None, incref=True, manager_owned=False):
         with BaseProxy._mutex:
             tls_idset = BaseProxy._address_to_local.get(token.address, None)
-            if tls_idset is None:
+            if not tls_idset:
                 tls_idset = util.ForkAwareLocal(), ProcessLocalSet()
                 BaseProxy._address_to_local[token.address] = tls_idset
 
@@ -965,7 +965,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
     '''
     _Client = listener_client[serializer][1]
 
-    if exposed is None:
+    if not exposed:
         conn = _Client(token.address, authkey=authkey)
         try:
             exposed = dispatch(conn, None, 'get_methods', (token,))
@@ -974,7 +974,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
 
     if authkey is None and manager:
         authkey = manager._authkey
-    if authkey is None:
+    if not authkey:
         authkey = process.current_process().authkey
 
     ProxyType = MakeProxyType('AutoProxy[%s]' % token.typeid, exposed)

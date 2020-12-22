@@ -185,7 +185,7 @@ class BaseSelector(metaclass=ABCMeta):
         SelectorKey for this file object
         """
         mapping = self.get_map()
-        if mapping is None:
+        if not mapping:
             raise RuntimeError('Selector is closed')
         try:
             return mapping[fileobj]
@@ -403,7 +403,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
     def select(self, timeout=None):
         # This is shared between poll() and epoll().
         # epoll() has a different signature and handling of timeout parameter.
-        if timeout is None:
+        if not timeout:
             timeout = None
         elif timeout <= 0:
             timeout = 0
@@ -450,7 +450,7 @@ if hasattr(select, 'epoll'):
             return self._selector.fileno()
 
         def select(self, timeout=None):
-            if timeout is None:
+            if not timeout:
                 timeout = -1
             elif timeout <= 0:
                 timeout = 0
@@ -586,7 +586,7 @@ def _can_use(method):
     operating system. """
     # Implementation based upon https://github.com/sethmlarson/selectors2/blob/master/selectors2.py
     selector = getattr(select, method, None)
-    if selector is None:
+    if not selector:
         # select module does not implement method
         return False
     # check if the OS and Kernel actually support the method. Call may fail with

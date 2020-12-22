@@ -445,7 +445,7 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp is None
 
     def read(self, amt=None):
-        if self.fp is None:
+        if not self.fp:
             return b""
 
         if self._method == "HEAD":
@@ -471,7 +471,7 @@ class HTTPResponse(io.BufferedIOBase):
             return s
         else:
             # Amount is not given (unbounded read) so we must check self.length
-            if self.length is None:
+            if not self.length:
                 s = self.fp.read()
             else:
                 try:
@@ -488,7 +488,7 @@ class HTTPResponse(io.BufferedIOBase):
         of bytes read.
         """
 
-        if self.fp is None:
+        if not self.fp:
             return 0
 
         if self._method == "HEAD":
@@ -577,7 +577,7 @@ class HTTPResponse(io.BufferedIOBase):
         try:
             while True:
                 chunk_left = self._get_chunk_left()
-                if chunk_left is None:
+                if not chunk_left:
                     break
 
                 if amt and amt <= chunk_left:
@@ -600,7 +600,7 @@ class HTTPResponse(io.BufferedIOBase):
         try:
             while True:
                 chunk_left = self._get_chunk_left()
-                if chunk_left is None:
+                if not chunk_left:
                     return total_bytes
 
                 if len(mvb) <= chunk_left:
@@ -699,7 +699,7 @@ class HTTPResponse(io.BufferedIOBase):
             chunk_left = self._get_chunk_left()
         except IncompleteRead:
             return b'' # peek doesn't worry about protocol
-        if chunk_left is None:
+        if not chunk_left:
             return b'' # eof
         # peek is allowed to return more than requested.  Just request the
         # entire chunk, and truncate what we get.
@@ -720,7 +720,7 @@ class HTTPResponse(io.BufferedIOBase):
         If the headers are unknown, raises http.client.ResponseNotReady.
 
         '''
-        if self.headers is None:
+        if not self.headers:
             raise ResponseNotReady()
         headers = self.headers.get_all(name) or default
         if isinstance(headers, str) or not hasattr(headers, '__iter__'):
@@ -730,7 +730,7 @@ class HTTPResponse(io.BufferedIOBase):
 
     def getheaders(self):
         """Return list of (header, value) tuples."""
-        if self.headers is None:
+        if not self.headers:
             raise ResponseNotReady()
         return list(self.headers.items())
 
@@ -807,7 +807,7 @@ class HTTPConnection:
         a body (RFC 7230, Section 3.3.2). We also set the Content-Length for
         any method if the body is a str or bytes-like object and not a file.
         """
-        if body is None:
+        if not body:
             # do an explicit check for not None here to distinguish
             # between unset and set but empty
             if method.upper() in _METHODS_EXPECTING_BODY:
@@ -878,7 +878,7 @@ class HTTPConnection:
             self._tunnel_headers.clear()
 
     def _get_hostport(self, host, port):
-        if port is None:
+        if not port:
             i = host.rfind(':')
             j = host.rfind(']')         # ipv6 addresses have [...]
             if i > j:
@@ -960,7 +960,7 @@ class HTTPConnection:
         file-like object that supports a .read() method, or an iterable object.
         """
 
-        if self.sock is None:
+        if not self.sock:
             if self.auto_open:
                 self.connect()
             else:
@@ -1296,7 +1296,7 @@ class HTTPConnection:
                 # back to chunked encoding
                 encode_chunked = False
                 content_length = self._get_content_length(body, method)
-                if content_length is None:
+                if not content_length:
                     if body:
                         if self.debuglevel > 0:
                             print('Unable to determine size of %r' % body)
@@ -1404,7 +1404,7 @@ else:
                               DeprecationWarning, 2)
             self.key_file = key_file
             self.cert_file = cert_file
-            if context is None:
+            if not context:
                 context = ssl._create_default_https_context()
                 # send ALPN extension to indicate HTTP/1.1 protocol
                 if self._http_vsn == 11:
@@ -1413,7 +1413,7 @@ else:
                 if context.post_handshake_auth:
                     context.post_handshake_auth = True
             will_verify = context.verify_mode != ssl.CERT_NONE
-            if check_hostname is None:
+            if not check_hostname:
                 check_hostname = context.check_hostname
             if check_hostname and not will_verify:
                 raise ValueError("check_hostname needs a SSL context with "

@@ -213,10 +213,10 @@ class SimpleXMLRPCDispatcher:
         for the function.
         """
         # decorator factory
-        if function is None:
+        if not function:
             return partial(self.register_function, name=name)
 
-        if name is None:
+        if not name:
             name = function.__name__
         self.funcs[name] = function
 
@@ -339,7 +339,7 @@ class SimpleXMLRPCDispatcher:
 
         # Note that we aren't checking that the method actually
         # be a callable object of some kind
-        if method is None:
+        if not method:
             return ""
         else:
             return pydoc.getdoc(method)
@@ -504,7 +504,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
             data = b''.join(L)
 
             data = self.decode_request_content(data)
-            if data is None:
+            if not data:
                 return #response has been sent
 
             # In previous versions of SimpleXMLRPCServer, _dispatch
@@ -709,7 +709,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
                 length = int(os.environ.get('CONTENT_LENGTH', None))
             except (ValueError, TypeError):
                 length = -1
-            if request_text is None:
+            if not request_text:
                 request_text = sys.stdin.read(length)
 
             self.handle_xmlrpc(request_text)

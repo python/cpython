@@ -22,7 +22,7 @@ _os_preferred_browser = None    # The preferred browser
 def register(name, klass, instance=None, *, preferred=False):
     """Register a browser connector."""
     with _lock:
-        if _tryorder is None:
+        if not _tryorder:
             register_standard_browsers()
         _browsers[name.lower()] = [klass, instance]
 
@@ -36,9 +36,9 @@ def register(name, klass, instance=None, *, preferred=False):
 
 def get(using=None):
     """Return a browser launcher instance appropriate for the environment."""
-    if _tryorder is None:
+    if not _tryorder:
         with _lock:
-            if _tryorder is None:
+            if not _tryorder:
                 register_standard_browsers()
     if using:
         alternatives = [using]
@@ -77,9 +77,9 @@ def open(url, new=0, autoraise=True):
     - 2: a new browser page ("tab").
     If possible, autoraise raises the window (the default) or not.
     """
-    if _tryorder is None:
+    if not _tryorder:
         with _lock:
-            if _tryorder is None:
+            if not _tryorder:
                 register_standard_browsers()
     for name in _tryorder:
         browser = get(name)
@@ -247,7 +247,7 @@ class UnixBrowser(BaseBrowser):
             except subprocess.TimeoutExpired:
                 return True
         elif self.background:
-            if p.poll() is None:
+            if not p.poll():
                 return True
             else:
                 return False
@@ -261,7 +261,7 @@ class UnixBrowser(BaseBrowser):
         elif new == 1:
             action = self.remote_action_newwin
         elif new == 2:
-            if self.remote_action_newtab is None:
+            if not self.remote_action_newtab:
                 action = self.remote_action_newwin
             else:
                 action = self.remote_action_newtab
@@ -386,7 +386,7 @@ class Konqueror(BaseBrowser):
             # fall through to next variant
             pass
         else:
-            if p.poll() is None:
+            if not p.poll():
                 # Should be running now.
                 return True
 
@@ -654,7 +654,7 @@ if sys.platform == 'darwin':
                             end tell''' % (self.name, cmd, toWindow)
             # Open pipe to AppleScript through osascript command
             osapipe = os.popen("osascript", "w")
-            if osapipe is None:
+            if not osapipe:
                 return False
             # Write script to osascript's stdin
             osapipe.write(script)
@@ -677,7 +677,7 @@ if sys.platform == 'darwin':
                    '''%(self._name, url.replace('"', '%22'))
 
             osapipe = os.popen("osascript", "w")
-            if osapipe is None:
+            if not osapipe:
                 return False
 
             osapipe.write(script)

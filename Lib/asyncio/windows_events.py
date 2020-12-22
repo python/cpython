@@ -60,7 +60,7 @@ class _OverlappedFuture(futures.Future):
         return info
 
     def _cancel_overlapped(self):
-        if self._ov is None:
+        if not self._ov:
             return
         try:
             self._ov.cancel()
@@ -305,7 +305,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     """Windows version of proactor event loop using IOCP."""
 
     def __init__(self, proactor=None):
-        if proactor is None:
+        if not proactor:
             proactor = IocpProactor()
         super().__init__(proactor)
 
@@ -357,7 +357,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                         pipe, protocol, extra={'addr': address})
 
                 pipe = server._get_unconnected_pipe()
-                if pipe is None:
+                if not pipe:
                     return
 
                 f = self._proactor.accept_pipe(pipe)
@@ -416,13 +416,13 @@ class IocpProactor:
         self._stopped_serving = weakref.WeakSet()
 
     def _check_closed(self):
-        if self._iocp is None:
+        if not self._iocp:
             raise RuntimeError('IocpProactor is closed')
 
     def __repr__(self):
         info = ['overlapped#=%s' % len(self._cache),
                 'result#=%s' % len(self._results)]
-        if self._iocp is None:
+        if not self._iocp:
             info.append('closed')
         return '<%s %s>' % (self.__class__.__name__, " ".join(info))
 
@@ -679,7 +679,7 @@ class IocpProactor:
     def _wait_for_handle(self, handle, timeout, _is_cancel):
         self._check_closed()
 
-        if timeout is None:
+        if not timeout:
             ms = _winapi.INFINITE
         else:
             # RegisterWaitForSingleObject() has a resolution of 1 millisecond,
@@ -768,7 +768,7 @@ class IocpProactor:
         return s
 
     def _poll(self, timeout=None):
-        if timeout is None:
+        if not timeout:
             ms = INFINITE
         elif timeout < 0:
             raise ValueError("negative timeout")
@@ -781,7 +781,7 @@ class IocpProactor:
 
         while True:
             status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
-            if status is None:
+            if not status:
                 break
             ms = 0
 
@@ -829,7 +829,7 @@ class IocpProactor:
         self._stopped_serving.add(obj)
 
     def close(self):
-        if self._iocp is None:
+        if not self._iocp:
             # already closed
             return
 

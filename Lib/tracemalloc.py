@@ -227,7 +227,7 @@ class Traceback(Sequence):
 
     def __repr__(self):
         s = "<Traceback %r" % tuple(self)
-        if self._total_nframe is None:
+        if not self._total_nframe:
             s += ">"
         else:
             s += f" total_nframe={self.total_nframe}>"
@@ -368,7 +368,7 @@ class Filter(BaseFilter):
         filename = _normalize_filename(filename)
         if not fnmatch.fnmatch(filename, self._filename_pattern):
             return False
-        if self.lineno is None:
+        if not self.lineno:
             return True
         else:
             return (lineno == self.lineno)

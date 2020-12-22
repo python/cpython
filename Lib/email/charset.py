@@ -291,7 +291,7 @@ class Charset:
         header_bytes = _encode(string, codec)
         # 7bit/8bit encodings return the string unchanged (modulo conversions)
         encoder_module = self._get_encoder(header_bytes)
-        if encoder_module is None:
+        if not encoder_module:
             return string
         return encoder_module.header_encode(header_bytes, codec)
 

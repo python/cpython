@@ -278,7 +278,7 @@ class BaseServer:
         # Support people who used socket.settimeout() to escape
         # handle_request before self.timeout was available.
         timeout = self.socket.gettimeout()
-        if timeout is None:
+        if not timeout:
             timeout = self.timeout
         elif self.timeout:
             timeout = min(timeout, self.timeout)
@@ -551,7 +551,7 @@ if hasattr(os, "fork"):
 
         def collect_children(self, *, blocking=False):
             """Internal routine to wait for children that have exited."""
-            if self.active_children is None:
+            if not self.active_children:
                 return
 
             # If we're above the max number of children, wait and reap them until
@@ -603,7 +603,7 @@ if hasattr(os, "fork"):
             pid = os.fork()
             if pid:
                 # Parent process
-                if self.active_children is None:
+                if not self.active_children:
                     self.active_children = set()
                 self.active_children.add(pid)
                 self.close_request(request)
@@ -659,7 +659,7 @@ class ThreadingMixIn:
                              args = (request, client_address))
         t.daemon = self.daemon_threads
         if not t.daemon and self.block_on_close:
-            if self._threads is None:
+            if not self._threads:
                 self._threads = []
             self._threads.append(t)
         t.start()

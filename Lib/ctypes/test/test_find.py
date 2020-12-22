@@ -52,17 +52,17 @@ class Test_OpenGL_libs(unittest.TestCase):
         cls.gl = cls.glu = cls.gle = None
 
     def test_gl(self):
-        if self.gl is None:
+        if not self.gl:
             self.skipTest('lib_gl not available')
         self.gl.glClearIndex
 
     def test_glu(self):
-        if self.glu is None:
+        if not self.glu:
             self.skipTest('lib_glu not available')
         self.glu.gluBeginCurve
 
     def test_gle(self):
-        if self.gle is None:
+        if not self.gle:
             self.skipTest('lib_gle not available')
         self.gle.gleGetJoinStyle
 

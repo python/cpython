@@ -66,7 +66,7 @@ class NodeList(list):
 
     # For backward compatibility
     def __setstate__(self, state):
-        if state is None:
+        if not state:
             state = []
         self[:] = state
 

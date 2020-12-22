@@ -131,8 +131,8 @@ class Coroutine(Awaitable):
         """Raise an exception in the coroutine.
         Return next yielded value or raise StopIteration.
         """
-        if val is None:
-            if tb is None:
+        if not val:
+            if not tb:
                 raise typ
             val = typ()
         if tb:
@@ -217,8 +217,8 @@ class AsyncGenerator(AsyncIterator):
         """Raise an exception in the asynchronous generator.
         Return next yielded value or raise StopAsyncIteration.
         """
-        if val is None:
-            if tb is None:
+        if not val:
+            if not tb:
                 raise typ
             val = typ()
         if tb:
@@ -337,8 +337,8 @@ class Generator(Iterator):
         """Raise an exception in the generator.
         Return next yielded value or raise StopIteration.
         """
-        if val is None:
-            if tb is None:
+        if not val:
+            if not tb:
                 raise typ
             val = typ()
         if tb:

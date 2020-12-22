@@ -67,7 +67,7 @@ def _run_code(code, run_globals, init_globals=None,
     """Helper to run code in nominated namespace"""
     if init_globals:
         run_globals.update(init_globals)
-    if mod_spec is None:
+    if not mod_spec:
         loader = None
         fname = script_name
         cached = None
@@ -75,7 +75,7 @@ def _run_code(code, run_globals, init_globals=None,
         loader = mod_spec.loader
         fname = mod_spec.origin
         cached = mod_spec.cached
-        if pkg_name is None:
+        if not pkg_name:
             pkg_name = mod_spec.parent
     run_globals.update(__name__ = mod_name,
                        __file__ = fname,
@@ -137,7 +137,7 @@ def _get_module_details(mod_name, error=ImportError):
             msg += (f". Try using '{mod_name[:-3]}' instead of "
                     f"'{mod_name}' as the module name.")
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
-    if spec is None:
+    if not spec:
         raise error("No module named %s" % mod_name)
     if spec.submodule_search_locations:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
@@ -151,14 +151,14 @@ def _get_module_details(mod_name, error=ImportError):
             raise error(("%s; %r is a package and cannot " +
                                "be directly executed") %(e, mod_name))
     loader = spec.loader
-    if loader is None:
+    if not loader:
         raise error("%r is a namespace package and cannot be executed"
                                                                  % mod_name)
     try:
         code = loader.get_code(mod_name)
     except ImportError as e:
         raise error(format(e)) from e
-    if code is None:
+    if not code:
         raise error("No code object available for %s" % mod_name)
     return mod_name, spec, code
 
@@ -204,7 +204,7 @@ def run_module(mod_name, init_globals=None,
        Returns the resulting top level namespace dictionary
     """
     mod_name, mod_spec, code = _get_module_details(mod_name)
-    if run_name is None:
+    if not run_name:
         run_name = mod_name
     if alter_sys:
         return _run_module_code(code, init_globals, run_name, mod_spec)
@@ -236,7 +236,7 @@ def _get_code_from_file(run_name, fname):
     decoded_path = os.path.abspath(os.fsdecode(fname))
     with io.open_code(decoded_path) as f:
         code = read_code(f)
-    if code is None:
+    if not code:
         # That didn't work, so try it as normal source code
         with io.open_code(decoded_path) as f:
             code = compile(f.read(), fname, 'exec')
@@ -252,7 +252,7 @@ def run_path(path_name, init_globals=None, run_name=None):
        it may refer to a zipfile or directory containing a top
        level __main__.py script.
     """
-    if run_name is None:
+    if not run_name:
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
     importer = get_importer(path_name)

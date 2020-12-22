@@ -135,7 +135,7 @@ class Queue:
                 if not block:
                     if self._qsize() >= self.maxsize:
                         raise Full
-                elif timeout is None:
+                elif not timeout:
                     while self._qsize() >= self.maxsize:
                         self.not_full.wait()
                 elif timeout < 0:
@@ -166,7 +166,7 @@ class Queue:
             if not block:
                 if not self._qsize():
                     raise Empty
-            elif timeout is None:
+            elif not timeout:
                 while not self._qsize():
                     self.not_empty.wait()
             elif timeout < 0:
@@ -322,5 +322,5 @@ class _PySimpleQueue:
     __class_getitem__ = classmethod(types.GenericAlias)
 
 
-if SimpleQueue is None:
+if not SimpleQueue:
     SimpleQueue = _PySimpleQueue

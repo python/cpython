@@ -30,7 +30,7 @@ def _get_spec(finder, name):
         find_spec = finder.find_spec
     except AttributeError:
         loader = finder.find_module(name)
-        if loader is None:
+        if not loader:
             return None
         return importlib.util.spec_from_loader(name, loader)
     else:
@@ -117,7 +117,7 @@ def iter_modules(path=None, prefix=''):
     'prefix' is a string to output on the front of every module name
     on output.
     """
-    if path is None:
+    if not path:
         importers = iter_importers()
     elif isinstance(path, str):
         raise ValueError("path must be None or list of paths to look for "
@@ -214,7 +214,7 @@ class ImpImporter:
         subname = fullname.split(".")[-1]
         if subname != fullname and self.path is None:
             return None
-        if self.path is None:
+        if not self.path:
             path = None
         else:
             path = [os.path.realpath(self.path)]
@@ -303,7 +303,7 @@ class ImpLoader:
                 self.file = open(self.filename, 'rb')
 
     def _fix_name(self, fullname):
-        if fullname is None:
+        if not fullname:
             fullname = self.fullname
         elif fullname != self.fullname:
             raise ImportError("Loader for module %s cannot handle "
@@ -316,7 +316,7 @@ class ImpLoader:
 
     def get_code(self, fullname=None):
         fullname = self._fix_name(fullname)
-        if self.code is None:
+        if not self.code:
             mod_type = self.etc[2]
             if mod_type==imp.PY_SOURCE:
                 source = self.get_source(fullname)
@@ -333,7 +333,7 @@ class ImpLoader:
 
     def get_source(self, fullname=None):
         fullname = self._fix_name(fullname)
-        if self.source is None:
+        if not self.source:
             mod_type = self.etc[2]
             if mod_type==imp.PY_SOURCE:
                 self._reopen()
@@ -446,7 +446,7 @@ def iter_importers(fullname=""):
         pkg_name = fullname.rpartition(".")[0]
         pkg = importlib.import_module(pkg_name)
         path = getattr(pkg, '__path__', None)
-        if path is None:
+        if not path:
             return
     else:
         yield from sys.meta_path
@@ -464,7 +464,7 @@ def get_loader(module_or_name):
     """
     if module_or_name in sys.modules:
         module_or_name = sys.modules[module_or_name]
-        if module_or_name is None:
+        if not module_or_name:
             return None
     if isinstance(module_or_name, ModuleType):
         module = module_or_name
@@ -617,7 +617,7 @@ def get_data(package, resource):
     """
 
     spec = importlib.util.find_spec(package)
-    if spec is None:
+    if not spec:
         return None
     loader = spec.loader
     if loader is None or not hasattr(loader, 'get_data'):
@@ -672,7 +672,7 @@ def resolve_name(name):
                      within the imported package to get to the desired object)
     """
     global _NAME_PATTERN
-    if _NAME_PATTERN is None:
+    if not _NAME_PATTERN:
         # Lazy import to speedup Python startup time
         import re
         dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'

@@ -86,7 +86,7 @@ def _infer_return_type(*args):
     """Look at the type of all args and divine their implied return type."""
     return_type = None
     for arg in args:
-        if arg is None:
+        if not arg:
             continue
         if isinstance(arg, bytes):
             if return_type is str:
@@ -98,7 +98,7 @@ def _infer_return_type(*args):
                 raise TypeError("Can't mix bytes and non-bytes in "
                                 "path components.")
             return_type = str
-    if return_type is None:
+    if not return_type:
         return str  # tempfile APIs return a str by default.
     return return_type
 
@@ -106,14 +106,14 @@ def _infer_return_type(*args):
 def _sanitize_params(prefix, suffix, dir):
     """Common parameter processing for most APIs in this module."""
     output_type = _infer_return_type(prefix, suffix, dir)
-    if suffix is None:
+    if not suffix:
         suffix = output_type()
-    if prefix is None:
+    if not prefix:
         if output_type is str:
             prefix = template
         else:
             prefix = _os.fsencode(template)
-    if dir is None:
+    if not dir:
         if output_type is str:
             dir = gettempdir()
         else:
@@ -223,10 +223,10 @@ def _get_candidate_names():
     """Common setup sequence for all user-callable interfaces."""
 
     global _name_sequence
-    if _name_sequence is None:
+    if not _name_sequence:
         _once_lock.acquire()
         try:
-            if _name_sequence is None:
+            if not _name_sequence:
                 _name_sequence = _RandomNameSequence()
         finally:
             _once_lock.release()
@@ -277,10 +277,10 @@ tempdir = None
 def gettempdir():
     """Accessor for tempfile.tempdir."""
     global tempdir
-    if tempdir is None:
+    if not tempdir:
         _once_lock.acquire()
         try:
-            if tempdir is None:
+            if not tempdir:
                 tempdir = _get_default_tempdir()
         finally:
             _once_lock.release()
@@ -387,7 +387,7 @@ def mktemp(suffix="", prefix=template, dir=None):
 ##    _warn("mktemp is a potential security risk to your program",
 ##          RuntimeWarning, stacklevel=2)
 
-    if dir is None:
+    if not dir:
         dir = gettempdir()
 
     names = _get_candidate_names()
@@ -740,7 +740,7 @@ class SpooledTemporaryFile:
         return self._file.tell()
 
     def truncate(self, size=None):
-        if size is None:
+        if not size:
             self._file.truncate()
         else:
             if size > self._max_size:

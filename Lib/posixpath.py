@@ -313,7 +313,7 @@ def expandvars(path):
         if name.startswith(start) and name.endswith(end):
             name = name[1:-1]
         try:
-            if environ is None:
+            if not environ:
                 value = os.fsencode(os.environ[os.fsdecode(name)])
             else:
                 value = environ[name]
@@ -462,7 +462,7 @@ def relpath(path, start=None):
         sep = '/'
         pardir = '..'
 
-    if start is None:
+    if not start:
         start = curdir
     else:
         start = os.fspath(start)

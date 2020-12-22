@@ -123,7 +123,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _handle_signal(self, sig):
         """Internal helper that is the actual signal handler."""
         handle = self._signal_handlers.get(sig)
-        if handle is None:
+        if not handle:
             return  # Assume it's some race condition.
         if handle._cancelled:
             self.remove_signal_handler(sig)  # Remove it properly.
@@ -222,7 +222,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             ssl_handshake_timeout=None):
         assert server_hostname is None or isinstance(server_hostname, str)
         if ssl:
-            if server_hostname is None:
+            if not server_hostname:
                 raise ValueError(
                     'you have to pass server_hostname when using ssl')
         else:
@@ -247,7 +247,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise
 
         else:
-            if sock is None:
+            if not sock:
                 raise ValueError('no path and sock were specified')
             if (sock.family != socket.AF_UNIX or
                     sock.type != socket.SOCK_STREAM):
@@ -307,7 +307,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 sock.close()
                 raise
         else:
-            if sock is None:
+            if not sock:
                 raise ValueError(
                     'path was not specified, and no sock specified')
 
@@ -372,7 +372,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         try:
             sent = os.sendfile(fd, fileno, offset, blocksize)
         except (BlockingIOError, InterruptedError):
-            if registered_fd is None:
+            if not registered_fd:
                 self._sock_add_cancellation_callback(fut, sock)
             self.add_writer(fd, self._sock_sendfile_native_impl, fut,
                             fd, sock, fileno,
@@ -414,7 +414,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             else:
                 offset += sent
                 total_sent += sent
-                if registered_fd is None:
+                if not registered_fd:
                     self._sock_add_cancellation_callback(fut, sock)
                 self.add_writer(fd, self._sock_sendfile_native_impl, fut,
                                 fd, sock, fileno,
@@ -469,7 +469,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        if self._pipe is None:
+        if not self._pipe:
             info.append('closed')
         elif self._closing:
             info.append('closing')
@@ -611,7 +611,7 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        if self._pipe is None:
+        if not self._pipe:
             info.append('closed')
         elif self._closing:
             info.append('closing')
@@ -1194,7 +1194,7 @@ class FastChildWatcher(BaseChildWatcher):
                         logger.debug('process %s exited with returncode %s',
                                      pid, returncode)
 
-            if callback is None:
+            if not callback:
                 logger.warning(
                     "Caught subprocess termination from unknown pid: "
                     "%d -> %d", pid, returncode)
@@ -1263,9 +1263,9 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         # The reason to do it here is that attach_loop() is called from
         # unix policy only for the main thread.
         # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is None:
+        if not self._saved_sighandler:
             self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-            if self._saved_sighandler is None:
+            if not self._saved_sighandler:
                 logger.warning("Previous SIGCHLD handler was set by non-Python code, "
                                "restore to default handler on watcher close.")
                 self._saved_sighandler = signal.SIG_DFL
@@ -1422,7 +1422,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
     def _init_watcher(self):
         with events._lock:
-            if self._watcher is None:  # pragma: no branch
+            if not self._watcher:  # pragma: no branch
                 self._watcher = ThreadedChildWatcher()
                 if threading.current_thread() is threading.main_thread():
                     self._watcher.attach_loop(self._local._loop)
@@ -1445,7 +1445,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
         If not yet set, a ThreadedChildWatcher object is automatically created.
         """
-        if self._watcher is None:
+        if not self._watcher:
             self._init_watcher()
 
         return self._watcher

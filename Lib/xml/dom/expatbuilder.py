@@ -135,7 +135,7 @@ class ExpatBuilder:
     instance."""
 
     def __init__(self, options=None):
-        if options is None:
+        if not options:
             options = xmlbuilder.Options()
         self._options = options
         if self._options.filter:
@@ -424,7 +424,7 @@ class ExpatBuilder:
 
     def element_decl_handler(self, name, model):
         info = self._elem_info.get(name)
-        if info is None:
+        if not info:
             self._elem_info[name] = ElementInfo(name, model)
         else:
             assert info._model is None
@@ -432,7 +432,7 @@ class ExpatBuilder:
 
     def attlist_decl_handler(self, elem, name, type, default, required):
         info = self._elem_info.get(elem)
-        if info is None:
+        if not info:
             info = ElementInfo(elem)
             self._elem_info[elem] = info
         info._attr_info.append(

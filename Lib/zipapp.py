@@ -126,7 +126,7 @@ def create_archive(source, target=None, interpreter=None, main=None,
             raise ZipAppError("Invalid entry point: " + main)
         main_py = MAIN_TEMPLATE.format(module=mod, fn=fn)
 
-    if target is None:
+    if not target:
         target = source.with_suffix('.pyz')
     elif not hasattr(target, 'write'):
         target = pathlib.Path(target)

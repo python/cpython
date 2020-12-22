@@ -99,8 +99,8 @@ class Popen(object):
         return reduction.duplicate(handle, self.sentinel)
 
     def wait(self, timeout=None):
-        if self.returncode is None:
-            if timeout is None:
+        if not self.returncode:
+            if not timeout:
                 msecs = _winapi.INFINITE
             else:
                 msecs = max(0, int(timeout * 1000 + 0.5))
@@ -118,7 +118,7 @@ class Popen(object):
         return self.wait(timeout=0)
 
     def terminate(self):
-        if self.returncode is None:
+        if not self.returncode:
             try:
                 _winapi.TerminateProcess(int(self._handle), TERMINATE)
             except OSError:

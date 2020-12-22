@@ -475,7 +475,7 @@ def _get_literal_prefix(pattern, flags):
             if flags1 & SRE_FLAG_IGNORECASE and flags1 & SRE_FLAG_LOCALE:
                 break
             prefix1, prefix_skip1, got_all = _get_literal_prefix(p, flags1)
-            if prefix_skip is None:
+            if not prefix_skip:
                 if group:
                     prefix_skip = len(prefix)
                 elif prefix_skip1:
@@ -580,7 +580,7 @@ def _compile_info(code, pattern, flags):
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
-        if prefix_skip is None:
+        if not prefix_skip:
             prefix_skip =  len(prefix)
         emit(prefix_skip) # skip
         code.extend(prefix)

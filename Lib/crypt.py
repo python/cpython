@@ -35,7 +35,7 @@ def mksalt(method=None, *, rounds=None):
     If not specified, the strongest available method will be used.
 
     """
-    if method is None:
+    if not method:
         method = methods[0]
     if rounds and not isinstance(rounds, int):
         raise TypeError(f'{rounds.__class__.__name__} object cannot be '
@@ -46,7 +46,7 @@ def mksalt(method=None, *, rounds=None):
         s = f'${method.ident}$'
 
     if method.ident and method.ident[0] == '2':  # Blowfish variants
-        if rounds is None:
+        if not rounds:
             log_rounds = 12
         else:
             log_rounds = int.bit_length(rounds-1)

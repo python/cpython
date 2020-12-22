@@ -29,7 +29,7 @@ class Handle:
                  '_context')
 
     def __init__(self, callback, args, loop, context=None):
-        if context is None:
+        if not context:
             context = contextvars.copy_context()
         self._context = context
         self._loop = loop
@@ -652,7 +652,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
                 threading.current_thread() is threading.main_thread()):
             self.set_event_loop(self.new_event_loop())
 
-        if self._local._loop is None:
+        if not self._local._loop:
             raise RuntimeError('There is no current event loop in thread %r.'
                                % threading.current_thread().name)
 
@@ -698,7 +698,7 @@ def get_running_loop():
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
     loop = _get_running_loop()
-    if loop is None:
+    if not loop:
         raise RuntimeError('no running event loop')
     return loop
 
@@ -728,14 +728,14 @@ def _set_running_loop(loop):
 def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
-        if _event_loop_policy is None:  # pragma: no branch
+        if not _event_loop_policy:  # pragma: no branch
             from . import DefaultEventLoopPolicy
             _event_loop_policy = DefaultEventLoopPolicy()
 
 
 def get_event_loop_policy():
     """Get the current event loop policy."""
-    if _event_loop_policy is None:
+    if not _event_loop_policy:
         _init_event_loop_policy()
     return _event_loop_policy
 

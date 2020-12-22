@@ -41,7 +41,7 @@ def token_bytes(nbytes=None):
     b'\\xebr\\x17D*t\\xae\\xd4\\xe3S\\xb6\\xe2\\xebP1\\x8b'
 
     """
-    if nbytes is None:
+    if not nbytes:
         nbytes = DEFAULT_ENTROPY
     return _sysrand.randbytes(nbytes)
 

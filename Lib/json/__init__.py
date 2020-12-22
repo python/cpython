@@ -168,7 +168,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         default is None and not sort_keys and not kw):
         iterable = _default_encoder.iterencode(obj)
     else:
-        if cls is None:
+        if not cls:
             cls = JSONEncoder
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
@@ -229,7 +229,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         cls is None and indent is None and separators is None and
         default is None and not sort_keys and not kw):
         return _default_encoder.encode(obj)
-    if cls is None:
+    if not cls:
         cls = JSONEncoder
     return cls(
         skipkeys=skipkeys, ensure_ascii=ensure_ascii,
@@ -344,7 +344,7 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
             parse_int is None and parse_float is None and
             parse_constant is None and object_pairs_hook is None and not kw):
         return _default_decoder.decode(s)
-    if cls is None:
+    if not cls:
         cls = JSONDecoder
     if object_hook:
         kw['object_hook'] = object_hook

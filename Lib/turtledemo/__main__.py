@@ -346,7 +346,7 @@ class DemoWindow(object):
             else:
                 self.state = DONE
         except turtle.Terminator:
-            if self.root is None:
+            if not self.root:
                 return
             self.state = DONE
             result = "stopped!"

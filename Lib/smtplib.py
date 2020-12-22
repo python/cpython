@@ -384,7 +384,7 @@ class SMTP:
         Raises SMTPServerDisconnected if end-of-file is reached.
         """
         resp = []
-        if self.file is None:
+        if not self.file:
             self.file = self.sock.makefile('rb')
         while 1:
             try:
@@ -649,7 +649,7 @@ class SMTP:
         """ Authobject to use with CRAM-MD5 authentication. Requires self.user
         and self.password to be set."""
         # CRAM-MD5 does not support initial-response.
-        if challenge is None:
+        if not challenge:
             return None
         return self.user + " " + hmac.HMAC(
             self.password.encode('ascii'), challenge, 'md5').hexdigest()
@@ -662,7 +662,7 @@ class SMTP:
     def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
         self.password to be set."""
-        if challenge is None:
+        if not challenge:
             return self.user
         else:
             return self.password
@@ -768,7 +768,7 @@ class SMTP:
                 import warnings
                 warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
-            if context is None:
+            if not context:
                 context = ssl._create_stdlib_context(certfile=certfile,
                                                      keyfile=keyfile)
             self.sock = context.wrap_socket(self.sock,
@@ -926,19 +926,19 @@ class SMTP:
 
         self.ehlo_or_helo_if_needed()
         resent = msg.get_all('Resent-Date')
-        if resent is None:
+        if not resent:
             header_prefix = ''
         elif len(resent) == 1:
             header_prefix = 'Resent-'
         else:
             raise ValueError("message has more than one 'Resent-' header block")
-        if from_addr is None:
+        if not from_addr:
             # Prefer the sender field per RFC 2822:3.6.2.
             from_addr = (msg[header_prefix + 'Sender']
                            if (header_prefix + 'Sender') in msg
                            else msg[header_prefix + 'From'])
             from_addr = email.utils.getaddresses([from_addr])[0][1]
-        if to_addrs is None:
+        if not to_addrs:
             addr_fields = [f for f in (msg[header_prefix + 'To'],
                                        msg[header_prefix + 'Bcc'],
                                        msg[header_prefix + 'Cc'])
@@ -1027,7 +1027,7 @@ if _have_ssl:
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
-            if context is None:
+            if not context:
                 context = ssl._create_stdlib_context(certfile=certfile,
                                                      keyfile=keyfile)
             self.context = context

@@ -222,7 +222,7 @@ def encode(string, charset='utf-8', encoding=None, lang=''):
         bstring = string.encode('ascii', 'surrogateescape')
     else:
         bstring = string.encode(charset)
-    if encoding is None:
+    if not encoding:
         qlen = _cte_encode_length['q'](bstring)
         blen = _cte_encode_length['b'](bstring)
         # Bias toward q.  5 is arbitrary.

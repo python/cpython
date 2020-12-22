@@ -86,7 +86,7 @@ class Textbox:
             ch = oldch
             (y, x) = self.win.getyx()
             # Remember where to put the cursor back since we are in insert_mode
-            if backyx is None:
+            if not backyx:
                 backyx = y, x
 
         if backyx:

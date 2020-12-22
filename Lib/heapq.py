@@ -343,7 +343,7 @@ def merge(*iterables, key=None, reverse=False):
         _heapreplace = heapreplace
         direction = 1
 
-    if key is None:
+    if not key:
         for order, it in enumerate(map(iter, iterables)):
             try:
                 next = it.__next__
@@ -481,7 +481,7 @@ def nsmallest(n, iterable, key=None):
             return sorted(iterable, key=key)[:n]
 
     # When key is none, use simpler decoration
-    if key is None:
+    if not key:
         it = iter(iterable)
         # put the range(n) first so that zip() doesn't
         # consume one too many elements from the iterator
@@ -541,7 +541,7 @@ def nlargest(n, iterable, key=None):
             return sorted(iterable, key=key, reverse=True)[:n]
 
     # When key is none, use simpler decoration
-    if key is None:
+    if not key:
         it = iter(iterable)
         result = [(elem, i) for i, elem in zip(range(0, -n, -1), it)]
         if not result:

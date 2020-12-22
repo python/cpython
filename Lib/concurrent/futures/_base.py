@@ -233,7 +233,7 @@ def as_completed(fs, timeout=None):
                                            ref_collect=(fs,))
 
         while pending:
-            if timeout is None:
+            if not timeout:
                 wait_timeout = None
             else:
                 wait_timeout = end_time - time.monotonic()
@@ -595,7 +595,7 @@ class Executor(object):
                 fs.reverse()
                 while fs:
                     # Careful not to keep a reference to the popped future
-                    if timeout is None:
+                    if not timeout:
                         yield fs.pop().result()
                     else:
                         yield fs.pop().result(end_time - time.monotonic())

@@ -146,7 +146,7 @@ class Profile:
         self.cmd = ""
         self.c_func_name = ""
 
-        if bias is None:
+        if not bias:
             bias = self.bias
         self.bias = bias     # Materialize in local dict for lookup speed.
 

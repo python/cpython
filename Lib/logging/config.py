@@ -405,7 +405,7 @@ class BaseConfigurator(object):
         """Default converter for the cfg:// protocol."""
         rest = value
         m = self.WORD_PATTERN.match(rest)
-        if m is None:
+        if not m:
             raise ValueError("Unable to convert %r" % value)
         else:
             rest = rest[m.end():]

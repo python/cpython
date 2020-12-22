@@ -137,7 +137,7 @@ def _date_from_string(s):
     lst = []
     for key in order:
         val = gd[key]
-        if val is None:
+        if not val:
             break
         lst.append(int(val))
     return datetime.datetime(*lst)
@@ -737,7 +737,7 @@ class _BinaryPlistWriter (object):
     def _write_object(self, value):
         ref = self._getrefnum(value)
         self._object_offsets[ref] = self._fp.tell()
-        if value is None:
+        if not value:
             self._fp.write(b'\x00')
 
         elif value is False:
@@ -857,7 +857,7 @@ def load(fp, *, fmt=None, dict_type=dict):
     """Read a .plist file. 'fp' should be a readable and binary file object.
     Return the unpacked root object (which usually is a dictionary).
     """
-    if fmt is None:
+    if not fmt:
         header = fp.read(32)
         fp.seek(0)
         for info in _FORMATS.values():

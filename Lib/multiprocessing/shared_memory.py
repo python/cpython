@@ -85,7 +85,7 @@ class SharedMemory:
 
             # POSIX Shared Memory
 
-            if name is None:
+            if not name:
                 while True:
                     name = _make_filename()
                     try:

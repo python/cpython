@@ -112,7 +112,7 @@ def decode_header(header):
     # form (decoded_word, charset).
     decoded_words = []
     for encoded_string, encoding, charset in words:
-        if encoding is None:
+        if not encoding:
             # This is an unencoded word.
             decoded_words.append((encoded_string, charset))
         elif encoding == 'q':
@@ -137,14 +137,14 @@ def decode_header(header):
     for word, charset in decoded_words:
         if isinstance(word, str):
             word = bytes(word, 'raw-unicode-escape')
-        if last_word is None:
+        if not last_word:
             last_word = word
             last_charset = charset
         elif charset != last_charset:
             collapsed.append((last_word, last_charset))
             last_word = word
             last_charset = charset
-        elif last_charset is None:
+        elif not last_charset:
             last_word += BSPACE + word
         else:
             last_word += word
@@ -206,7 +206,7 @@ class Header:
 
         errors is passed through to the .append() call.
         """
-        if charset is None:
+        if not charset:
             charset = USASCII
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
@@ -215,10 +215,10 @@ class Header:
         self._chunks = []
         if s:
             self.append(s, charset, errors)
-        if maxlinelen is None:
+        if not maxlinelen:
             maxlinelen = MAXLINELEN
         self._maxlinelen = maxlinelen
-        if header_name is None:
+        if not header_name:
             self._headerlen = 0
         else:
             # Take the separating colon and space into account.
@@ -283,7 +283,7 @@ class Header:
         Optional `errors' is passed as the errors argument to the decode
         call if s is a byte string.
         """
-        if charset is None:
+        if not charset:
             charset = self._charset
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
@@ -344,7 +344,7 @@ class Header:
         line separators when needed.
         """
         self._normalize()
-        if maxlinelen is None:
+        if not maxlinelen:
             maxlinelen = self._maxlinelen
         # A maxlinelen of 0 means don't wrap.  For all practical purposes,
         # choosing a huge number here accomplishes that and makes the
@@ -446,7 +446,7 @@ class _ValueFormatter:
         # possible. Note that we don't have a lot of smarts about field
         # syntax; we just try to break on semi-colons, then commas, then
         # whitespace.  Eventually, this should be pluggable.
-        if charset.header_encoding is None:
+        if not charset.header_encoding:
             self._ascii_split(fws, string, self._splitchars)
             return
         # Otherwise, we're doing either a Base64 or a quoted-printable
@@ -566,7 +566,7 @@ class _Accumulator(list):
                                 for fws, part in self))
 
     def reset(self, startval=None):
-        if startval is None:
+        if not startval:
             startval = []
         self[:] = startval
         self._initial_size = 0

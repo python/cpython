@@ -495,7 +495,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                              "compatible with ISO year directive '%G'. "
                              "Use '%Y' instead.")
     elif week_of_year is None and iso_week:
-        if weekday is None:
+        if not weekday:
             raise ValueError("ISO week directive '%V' must be used with "
                              "the ISO year directive '%G' and a weekday "
                              "directive ('%A', '%a', '%w', or '%u').")
@@ -508,7 +508,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     if year is None and month == 2 and day == 29:
         year = 1904  # 1904 is first leap year of 20th century
         leap_year_fix = True
-    elif year is None:
+    elif not year:
         year = 1900
 
 
@@ -526,7 +526,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             yday = 366 if calendar.isleap(year) else 365
             julian += yday
 
-    if julian is None:
+    if not julian:
         # Cannot pre-calculate datetime_date() since can change in Julian
         # calculation and thus could have different value for the day of
         # the week calculation.
@@ -541,7 +541,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         year = datetime_result.year
         month = datetime_result.month
         day = datetime_result.day
-    if weekday is None:
+    if not weekday:
         weekday = datetime_date(year, month, day).weekday()
     # Add timezone info
     tzname = found_dict.get("Z")

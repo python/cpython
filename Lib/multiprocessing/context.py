@@ -41,7 +41,7 @@ class BaseContext(object):
     def cpu_count(self):
         '''Returns the number of CPUs in the system'''
         num = os.cpu_count()
-        if num is None:
+        if not num:
             raise NotImplementedError('cannot determine number of cpus')
         else:
             return num
@@ -185,7 +185,7 @@ class BaseContext(object):
         set_forkserver_preload(module_names)
 
     def get_context(self, method=None):
-        if method is None:
+        if not method:
             return self
         try:
             ctx = _concrete_contexts[method]
@@ -231,8 +231,8 @@ class DefaultContext(BaseContext):
         self._actual_context = None
 
     def get_context(self, method=None):
-        if method is None:
-            if self._actual_context is None:
+        if not method:
+            if not self._actual_context:
                 self._actual_context = self._default_context
             return self._actual_context
         else:
@@ -247,7 +247,7 @@ class DefaultContext(BaseContext):
         self._actual_context = self.get_context(method)
 
     def get_start_method(self, allow_none=False):
-        if self._actual_context is None:
+        if not self._actual_context:
             if allow_none:
                 return None
             self._actual_context = self._default_context

@@ -34,15 +34,15 @@ DEFAULT_LIBRARY_FALLBACK = [
 ]
 
 def dyld_env(env, var):
-    if env is None:
+    if not env:
         env = os.environ
     rval = env.get(var)
-    if rval is None:
+    if not rval:
         return []
     return rval.split(':')
 
 def dyld_image_suffix(env=None):
-    if env is None:
+    if not env:
         env = os.environ
     return env.get('DYLD_IMAGE_SUFFIX')
 
@@ -61,7 +61,7 @@ def dyld_fallback_library_path(env=None):
 def dyld_image_suffix_search(iterator, env=None):
     """For a potential path iterator, add DYLD_IMAGE_SUFFIX semantics"""
     suffix = dyld_image_suffix(env)
-    if suffix is None:
+    if not suffix:
         return iterator
     def _inject(iterator=iterator, suffix=suffix):
         for path in iterator:

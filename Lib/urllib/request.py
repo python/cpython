@@ -209,7 +209,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     elif context:
         https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
-    elif _opener is None:
+    elif not _opener:
         _opener = opener = build_opener()
     else:
         opener = _opener
@@ -327,7 +327,7 @@ class Request:
         self._tunnel_host = None
         for key, value in headers.items():
             self.add_header(key, value)
-        if origin_req_host is None:
+        if not origin_req_host:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
@@ -373,7 +373,7 @@ class Request:
 
     def _parse(self):
         self.type, rest = _splittype(self._full_url)
-        if self.type is None:
+        if not self.type:
             raise ValueError("unknown url type: %r" % self.full_url)
         self.host, self.selector = _splithost(rest)
         if self.host:
@@ -726,7 +726,7 @@ class HTTPRedirectHandler(BaseHandler):
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
         new = self.redirect_request(req, fp, code, msg, headers, newurl)
-        if new is None:
+        if not new:
             return
 
         # loop detection
@@ -789,7 +789,7 @@ class ProxyHandler(BaseHandler):
     handler_order = 100
 
     def __init__(self, proxies=None):
-        if proxies is None:
+        if not proxies:
             proxies = getproxies()
         assert hasattr(proxies, 'keys'), "proxies must be a mapping"
         self.proxies = proxies
@@ -802,7 +802,7 @@ class ProxyHandler(BaseHandler):
     def proxy_open(self, req, proxy, type):
         orig_type = req.type
         proxy_type, user, password, hostport = _parse_proxy(proxy)
-        if proxy_type is None:
+        if not proxy_type:
             proxy_type = orig_type
 
         if req.host and proxy_bypass(req.host):
@@ -954,7 +954,7 @@ class AbstractBasicAuthHandler:
     # production).
 
     def __init__(self, password_mgr=None):
-        if password_mgr is None:
+        if not password_mgr:
             password_mgr = HTTPPasswordMgr()
         self.passwd = password_mgr
         self.add_password = self.passwd.add_password
@@ -1085,7 +1085,7 @@ class AbstractDigestAuthHandler:
     # XXX qop="auth-int" supports is shaky
 
     def __init__(self, passwd=None):
-        if passwd is None:
+        if not passwd:
             passwd = HTTPPasswordMgr()
         self.passwd = passwd
         self.add_password = self.passwd.add_password
@@ -1152,11 +1152,11 @@ class AbstractDigestAuthHandler:
             return None
 
         H, KD = self.get_algorithm_impls(algorithm)
-        if H is None:
+        if not H:
             return None
 
         user, pw = self.passwd.find_user_password(realm, req.full_url)
-        if user is None:
+        if not user:
             return None
 
         # XXX not implemented yet
@@ -1171,7 +1171,7 @@ class AbstractDigestAuthHandler:
                         req.selector)
         # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
         #     or `auth-int` to the response back. we use `auth` to send the response back.
-        if qop is None:
+        if not qop:
             respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
         elif 'auth' in qop.split(','):
             if nonce == self.last_nonce:
@@ -1394,7 +1394,7 @@ if hasattr(http.client, 'HTTPSConnection'):
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
         import http.cookiejar
-        if cookiejar is None:
+        if not cookiejar:
             cookiejar = http.cookiejar.CookieJar()
         self.cookiejar = cookiejar
 
@@ -1481,7 +1481,7 @@ class FileHandler(BaseHandler):
     # names for the localhost
     names = None
     def get_names(self):
-        if FileHandler.names is None:
+        if not FileHandler.names:
             try:
                 FileHandler.names = tuple(
                     socket.gethostbyname_ex('localhost')[2] +
@@ -1532,7 +1532,7 @@ class FTPHandler(BaseHandler):
         if not host:
             raise URLError('ftp error: no host given')
         host, port = _splitport(host)
-        if port is None:
+        if not port:
             port = ftplib.FTP_PORT
         else:
             port = int(port)
@@ -1705,7 +1705,7 @@ class URLopener:
         msg = "%(class)s style of invoking requests is deprecated. " \
               "Use newer urlopen functions/methods" % {'class': self.__class__.__name__}
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
-        if proxies is None:
+        if not proxies:
             proxies = getproxies()
         assert hasattr(proxies, 'keys'), "proxies must be a mapping"
         self.proxies = proxies
@@ -1780,7 +1780,7 @@ class URLopener:
             else:
                 return self.open_unknown(fullurl, data)
         try:
-            if data is None:
+            if not data:
                 return getattr(self, name)(url)
             else:
                 return getattr(self, name)(url, data)
@@ -1970,7 +1970,7 @@ class URLopener:
         name = 'http_error_%d' % errcode
         if hasattr(self, name):
             method = getattr(self, name)
-            if data is None:
+            if not data:
                 result = method(url, fp, errcode, errmsg, headers)
             else:
                 result = method(url, fp, errcode, errmsg, headers, data)
@@ -2202,7 +2202,7 @@ class FancyURLopener(URLopener):
 
     def http_error_307(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 307 -- relocated, but turn POST into error."""
-        if data is None:
+        if not data:
             return self.http_error_302(url, fp, errcode, errmsg, headers, data)
         else:
             return self.http_error_default(url, fp, errcode, errmsg, headers)
@@ -2227,7 +2227,7 @@ class FancyURLopener(URLopener):
             URLopener.http_error_default(self, url, fp, errcode, errmsg,
                     headers)
         name = 'retry_' + self.type + '_basic_auth'
-        if data is None:
+        if not data:
             return getattr(self,name)(url, realm)
         else:
             return getattr(self,name)(url, realm, data)
@@ -2252,7 +2252,7 @@ class FancyURLopener(URLopener):
             URLopener.http_error_default(self, url, fp, errcode, errmsg,
                     headers)
         name = 'retry_proxy_' + self.type + '_basic_auth'
-        if data is None:
+        if not data:
             return getattr(self,name)(url, realm)
         else:
             return getattr(self,name)(url, realm, data)
@@ -2270,7 +2270,7 @@ class FancyURLopener(URLopener):
         proxyhost = "%s:%s@%s" % (quote(user, safe=''),
                                   quote(passwd, safe=''), proxyhost)
         self.proxies['http'] = 'http://' + proxyhost + proxyselector
-        if data is None:
+        if not data:
             return self.open(newurl)
         else:
             return self.open(newurl, data)
@@ -2288,7 +2288,7 @@ class FancyURLopener(URLopener):
         proxyhost = "%s:%s@%s" % (quote(user, safe=''),
                                   quote(passwd, safe=''), proxyhost)
         self.proxies['https'] = 'https://' + proxyhost + proxyselector
-        if data is None:
+        if not data:
             return self.open(newurl)
         else:
             return self.open(newurl, data)
@@ -2302,7 +2302,7 @@ class FancyURLopener(URLopener):
         host = "%s:%s@%s" % (quote(user, safe=''),
                              quote(passwd, safe=''), host)
         newurl = 'http://' + host + selector
-        if data is None:
+        if not data:
             return self.open(newurl)
         else:
             return self.open(newurl, data)
@@ -2316,7 +2316,7 @@ class FancyURLopener(URLopener):
         host = "%s:%s@%s" % (quote(user, safe=''),
                              quote(passwd, safe=''), host)
         newurl = 'https://' + host + selector
-        if data is None:
+        if not data:
             return self.open(newurl)
         else:
             return self.open(newurl, data)
@@ -2351,7 +2351,7 @@ _localhost = None
 def localhost():
     """Return the IP address of the magic hostname 'localhost'."""
     global _localhost
-    if _localhost is None:
+    if not _localhost:
         _localhost = socket.gethostbyname('localhost')
     return _localhost
 
@@ -2359,7 +2359,7 @@ _thishost = None
 def thishost():
     """Return the IP addresses of the current host."""
     global _thishost
-    if _thishost is None:
+    if not _thishost:
         try:
             _thishost = tuple(socket.gethostbyname_ex(socket.gethostname())[2])
         except socket.gaierror:
@@ -2370,7 +2370,7 @@ _ftperrors = None
 def ftperrors():
     """Return the set of errors raised by the FTP class."""
     global _ftperrors
-    if _ftperrors is None:
+    if not _ftperrors:
         import ftplib
         _ftperrors = ftplib.all_errors
     return _ftperrors
@@ -2379,7 +2379,7 @@ _noheaders = None
 def noheaders():
     """Return an empty email Message object."""
     global _noheaders
-    if _noheaders is None:
+    if not _noheaders:
         _noheaders = email.message_from_string("")
     return _noheaders
 
@@ -2519,7 +2519,7 @@ def proxy_bypass_environment(host, proxies=None):
     be a list of comma separated DNS suffixes, or '*' for all hosts.
 
     """
-    if proxies is None:
+    if not proxies:
         proxies = getproxies_environment()
     # don't bypass, if no_proxy isn't specified
     try:
@@ -2585,7 +2585,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
 
         m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
         if m:
-            if hostIP is None:
+            if not hostIP:
                 try:
                     hostIP = socket.gethostbyname(hostonly)
                     hostIP = ip2num(hostIP)
@@ -2594,7 +2594,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
 
             base = ip2num(m.group(1))
             mask = m.group(2)
-            if mask is None:
+            if not mask:
                 mask = 8 * (m.group(1).count('.') + 1)
             else:
                 mask = int(mask[1:])

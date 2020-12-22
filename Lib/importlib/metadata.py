@@ -473,7 +473,7 @@ class Prepared:
 
     def __init__(self, name):
         self.name = name
-        if name is None:
+        if not name:
             return
         self.normalized = name.lower().replace('-', '_')
         self.prefix = self.normalized + '-'

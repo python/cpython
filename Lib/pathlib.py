@@ -1205,7 +1205,7 @@ class Path(PurePath):
         Windows).
         """
         s = self._flavour.resolve(self, strict=strict)
-        if s is None:
+        if not s:
             # No symlink resolution => for consistency, raise an error if
             # the path doesn't exist or is forbidden
             self.stat()

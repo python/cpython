@@ -141,7 +141,7 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
     """
     # Note: we cannot use strftime() because that honors the locale and RFC
     # 2822 requires that day and month names be the English abbreviations.
-    if timeval is None:
+    if not timeval:
         timeval = time.time()
     if localtime or usegmt:
         dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
@@ -164,7 +164,7 @@ def format_datetime(dt, usegmt=False):
         if dt.tzinfo is None or dt.tzinfo != datetime.timezone.utc:
             raise ValueError("usegmt option requires a UTC datetime")
         zone = 'GMT'
-    elif dt.tzinfo is None:
+    elif not dt.tzinfo:
         zone = '-0000'
     else:
         zone = dt.strftime("%z")
@@ -184,11 +184,11 @@ def make_msgid(idstring=None, domain=None):
     timeval = int(time.time()*100)
     pid = os.getpid()
     randint = random.getrandbits(64)
-    if idstring is None:
+    if not idstring:
         idstring = ''
     else:
         idstring = '.' + idstring
-    if domain is None:
+    if not domain:
         domain = socket.getfqdn()
     msgid = '<%d.%d.%d%s@%s>' % (timeval, pid, randint, idstring, domain)
     return msgid
@@ -196,10 +196,10 @@ def make_msgid(idstring=None, domain=None):
 
 def parsedate_to_datetime(data):
     parsed_date_tz = _parsedate_tz(data)
-    if parsed_date_tz is None:
+    if not parsed_date_tz:
         raise ValueError('Invalid date value or format "%s"' % str(data))
     *dtuple, tz = parsed_date_tz
-    if tz is None:
+    if not tz:
         return datetime.datetime(*dtuple[:6])
     return datetime.datetime(*dtuple[:6],
             tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
@@ -249,7 +249,7 @@ def encode_rfc2231(s, charset=None, language=None):
     s = urllib.parse.quote(s, safe='', encoding=charset or 'ascii')
     if charset is None and language is None:
         return s
-    if language is None:
+    if not language:
         language = ''
     return "%s'%s'%s" % (charset, language, s)
 
@@ -313,7 +313,7 @@ def collapse_rfc2231_value(value, errors='replace',
     # object.  We do not want bytes() normal utf-8 decoder, we want a straight
     # interpretation of the string as character bytes.
     charset, language, text = value
-    if charset is None:
+    if not charset:
         # Issue 17369: if charset/lang is None, decode_rfc2231 couldn't parse
         # the value, so use the fallback_charset.
         charset = fallback_charset
@@ -345,7 +345,7 @@ def localtime(dt=None, isdst=-1):
     to divine whether summer time is in effect for the specified time.
 
     """
-    if dt is None:
+    if not dt:
         return datetime.datetime.now(datetime.timezone.utc).astimezone()
     if dt.tzinfo:
         return dt.astimezone()

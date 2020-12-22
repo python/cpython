@@ -93,7 +93,7 @@ class _Ignore:
                 return 1
 
         # Now check that filename isn't in one of the directories
-        if filename is None:
+        if not filename:
             # must be a built-in, so we must ignore
             self._ignore[modulename] = 1
             return 1
@@ -154,15 +154,15 @@ class CoverageResults:
     def __init__(self, counts=None, calledfuncs=None, infile=None,
                  callers=None, outfile=None):
         self.counts = counts
-        if self.counts is None:
+        if not self.counts:
             self.counts = {}
         self.counter = self.counts.copy() # map (filename, lineno) to count
         self.calledfuncs = calledfuncs
-        if self.calledfuncs is None:
+        if not self.calledfuncs:
             self.calledfuncs = {}
         self.calledfuncs = self.calledfuncs.copy()
         self.callers = callers
-        if self.callers is None:
+        if not self.callers:
             self.callers = {}
         self.callers = self.callers.copy()
         self.infile = infile
@@ -252,7 +252,7 @@ class CoverageResults:
             if filename.endswith(".pyc"):
                 filename = filename[:-1]
 
-            if coverdir is None:
+            if not coverdir:
                 dir = os.path.dirname(os.path.abspath(filename))
                 modulename = _modname(filename)
             else:
@@ -441,8 +441,8 @@ class Trace:
         self.runctx(cmd, dict, dict)
 
     def runctx(self, cmd, globals=None, locals=None):
-        if globals is None: globals = {}
-        if locals is None: locals = {}
+        if not globals: globals = {}
+        if not locals: locals = {}
         if not self.donothing:
             threading.settrace(self.globaltrace)
             sys.settrace(self.globaltrace)
@@ -691,7 +691,7 @@ def main():
     if opts.summary and not opts.count:
         parser.error('--summary can only be used with --count or --report')
 
-    if opts.progname is None:
+    if not opts.progname:
         parser.error('progname is missing: required with the main options')
 
     t = Trace(opts.count, opts.trace, countfuncs=opts.listfuncs,

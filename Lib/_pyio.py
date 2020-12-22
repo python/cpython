@@ -545,7 +545,7 @@ class IOBase(metaclass=abc.ABCMeta):
         else:
             def nreadahead():
                 return 1
-        if size is None:
+        if not size:
             size = -1
         else:
             try:
@@ -625,13 +625,13 @@ class RawIOBase(IOBase):
         Returns an empty bytes object on EOF, or None if the object is
         set not to block and has no data to read.
         """
-        if size is None:
+        if not size:
             size = -1
         if size < 0:
             return self.readall()
         b = bytearray(size.__index__())
         n = self.readinto(b)
-        if n is None:
+        if not n:
             return None
         del b[n:]
         return bytes(b)
@@ -812,7 +812,7 @@ class _BufferedIOMixin(BufferedIOBase):
         # file state.
         self.flush()
 
-        if pos is None:
+        if not pos:
             pos = self.tell()
         # XXX: Should seek() be used, instead of passing the position
         # XXX  directly to truncate?
@@ -834,7 +834,7 @@ class _BufferedIOMixin(BufferedIOBase):
                 self.raw.close()
 
     def detach(self):
-        if self.raw is None:
+        if not self.raw:
             raise ValueError("raw stream already detached")
         self.flush()
         raw = self._raw
@@ -926,7 +926,7 @@ class BytesIO(BufferedIOBase):
     def read(self, size=-1):
         if self.closed:
             raise ValueError("read from closed file")
-        if size is None:
+        if not size:
             size = -1
         else:
             try:
@@ -997,7 +997,7 @@ class BytesIO(BufferedIOBase):
     def truncate(self, pos=None):
         if self.closed:
             raise ValueError("truncate on closed file")
-        if pos is None:
+        if not pos:
             pos = self._pos
         else:
             try:
@@ -1082,7 +1082,7 @@ class BufferedReader(_BufferedIOMixin):
             self._reset_read_buf()
             if hasattr(self.raw, 'readall'):
                 chunk = self.raw.readall()
-                if chunk is None:
+                if not chunk:
                     return buf[pos:] or None
                 else:
                     return buf[pos:] + chunk
@@ -1275,7 +1275,7 @@ class BufferedWriter(_BufferedIOMixin):
     def truncate(self, pos=None):
         with self._write_lock:
             self._flush_unlocked()
-            if pos is None:
+            if not pos:
                 pos = self.raw.tell()
             return self.raw.truncate(pos)
 
@@ -1292,7 +1292,7 @@ class BufferedWriter(_BufferedIOMixin):
             except BlockingIOError:
                 raise RuntimeError("self.raw should implement RawIOBase: it "
                                    "should not raise BlockingIOError")
-            if n is None:
+            if not n:
                 raise BlockingIOError(
                     errno.EAGAIN,
                     "write could not complete without blocking", 0)
@@ -1357,7 +1357,7 @@ class BufferedRWPair(BufferedIOBase):
         self.writer = BufferedWriter(writer, buffer_size)
 
     def read(self, size=-1):
-        if size is None:
+        if not size:
             size = -1
         return self.reader.read(size)
 
@@ -1437,13 +1437,13 @@ class BufferedRandom(BufferedWriter, BufferedReader):
             return BufferedReader.tell(self)
 
     def truncate(self, pos=None):
-        if pos is None:
+        if not pos:
             pos = self.tell()
         # Use seek to flush the read buffer.
         return BufferedWriter.truncate(self, pos)
 
     def read(self, size=None):
-        if size is None:
+        if not size:
             size = -1
         self.flush()
         return BufferedReader.read(self, size)
@@ -1557,7 +1557,7 @@ class FileIO(RawIOBase):
             if fd < 0:
                 if not closefd:
                     raise ValueError('Cannot use closefd=False with file name')
-                if opener is None:
+                if not opener:
                     fd = os.open(file, flags, 0o666)
                 else:
                     fd = opener(file, flags)
@@ -1739,7 +1739,7 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkWritable()
-        if size is None:
+        if not size:
             size = self.tell()
         os.ftruncate(self._fd, size)
         return size
@@ -1760,7 +1760,7 @@ class FileIO(RawIOBase):
     def seekable(self):
         """True if file supports random-access."""
         self._checkClosed()
-        if self._seekable is None:
+        if not self._seekable:
             try:
                 self.tell()
             except OSError:
@@ -1899,7 +1899,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
 
     def decode(self, input, final=False):
         # decode input (with the eventual \r from a previous pass)
-        if self.decoder is None:
+        if not self.decoder:
             output = input
         else:
             output = self.decoder.decode(input, final=final)
@@ -1929,7 +1929,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
         return output
 
     def getstate(self):
-        if self.decoder is None:
+        if not self.decoder:
             buf = b""
             flag = 0
         else:
@@ -2004,12 +2004,12 @@ class TextIOWrapper(TextIOBase):
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False, write_through=False):
         self._check_newline(newline)
-        if encoding is None:
+        if not encoding:
             try:
                 encoding = os.device_encoding(buffer.fileno())
             except (AttributeError, UnsupportedOperation):
                 pass
-            if encoding is None:
+            if not encoding:
                 try:
                     import locale
                 except ImportError:
@@ -2026,7 +2026,7 @@ class TextIOWrapper(TextIOBase):
                    "use codecs.open() to handle arbitrary codecs")
             raise LookupError(msg % encoding)
 
-        if errors is None:
+        if not errors:
             errors = "strict"
         else:
             if not isinstance(errors, str):
@@ -2134,15 +2134,15 @@ class TextIOWrapper(TextIOBase):
                 "It is not possible to set the encoding or newline of stream "
                 "after the first read")
 
-        if errors is None:
-            if encoding is None:
+        if not errors:
+            if not encoding:
                 errors = self._errors
             else:
                 errors = 'strict'
         elif not isinstance(errors, str):
             raise TypeError("invalid errors: %r" % errors)
 
-        if encoding is None:
+        if not encoding:
             encoding = self._encoding
         else:
             if not isinstance(encoding, str):
@@ -2152,9 +2152,9 @@ class TextIOWrapper(TextIOBase):
             newline = self._readnl
         self._check_newline(newline)
 
-        if line_buffering is None:
+        if not line_buffering:
             line_buffering = self.line_buffering
-        if write_through is None:
+        if not write_through:
             write_through = self.write_through
 
         self.flush()
@@ -2244,7 +2244,7 @@ class TextIOWrapper(TextIOBase):
     def _get_decoded_chars(self, n=None):
         """Advance into the _decoded_chars buffer."""
         offset = self._decoded_chars_used
-        if n is None:
+        if not n:
             chars = self._decoded_chars[offset:]
         else:
             chars = self._decoded_chars[offset:offset + n]
@@ -2268,7 +2268,7 @@ class TextIOWrapper(TextIOBase):
         # some of it may remain buffered in the decoder, yet to be
         # converted.
 
-        if self._decoder is None:
+        if not self._decoder:
             raise ValueError("no decoder")
 
         if self._telling:
@@ -2417,12 +2417,12 @@ class TextIOWrapper(TextIOBase):
 
     def truncate(self, pos=None):
         self.flush()
-        if pos is None:
+        if not pos:
             pos = self.tell()
         return self.buffer.truncate(pos)
 
     def detach(self):
-        if self.buffer is None:
+        if not self.buffer:
             raise ValueError("buffer is already detached")
         self.flush()
         buffer = self._buffer
@@ -2506,7 +2506,7 @@ class TextIOWrapper(TextIOBase):
 
     def read(self, size=None):
         self._checkReadable()
-        if size is None:
+        if not size:
             size = -1
         else:
             try:
@@ -2544,7 +2544,7 @@ class TextIOWrapper(TextIOBase):
     def readline(self, size=None):
         if self.closed:
             raise ValueError("read from closed file")
-        if size is None:
+        if not size:
             size = -1
         else:
             try:
@@ -2653,7 +2653,7 @@ class StringIO(TextIOWrapper):
                                        newline=newline)
         # Issue #5645: make universal newlines semantics the same as in the
         # C version, even under Windows.
-        if newline is None:
+        if not newline:
             self._writetranslate = False
         if initial_value:
             if not isinstance(initial_value, str):

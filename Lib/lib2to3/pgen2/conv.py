@@ -253,5 +253,5 @@ class Converter(grammar.Grammar):
         for ilabel, (type, value) in enumerate(self.labels):
             if type == token.NAME and value:
                 self.keywords[value] = ilabel
-            elif value is None:
+            elif not value:
                 self.tokens[type] = ilabel

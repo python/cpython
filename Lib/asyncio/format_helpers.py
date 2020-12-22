@@ -63,9 +63,9 @@ def extract_stack(f=None, limit=None):
     """Replacement for traceback.extract_stack() that only does the
     necessary work for asyncio debug mode.
     """
-    if f is None:
+    if not f:
         f = sys._getframe().f_back
-    if limit is None:
+    if not limit:
         # Limit the amount of work to a reasonable amount, as extract_stack()
         # can be called for each coroutine and future in debug mode.
         limit = constants.DEBUG_STACK_DEPTH

@@ -37,9 +37,9 @@ class MIMEImage(MIMENonMultipart):
         constructor, which turns them into parameters on the Content-Type
         header.
         """
-        if _subtype is None:
+        if not _subtype:
             _subtype = imghdr.what(None, _imagedata)
-        if _subtype is None:
+        if not _subtype:
             raise TypeError('Could not guess image MIME subtype')
         MIMENonMultipart.__init__(self, 'image', _subtype, policy=policy,
                                   **_params)

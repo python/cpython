@@ -33,7 +33,7 @@ class FixThrow(fixer_base.BaseFix):
 
         # Leave "g.throw(E)" alone
         val = results.get("val")
-        if val is None:
+        if not val:
             return
 
         val = val.clone()

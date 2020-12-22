@@ -500,7 +500,7 @@ class Wave_write:
         self._datalength = self._datawritten
 
 def open(f, mode=None):
-    if mode is None:
+    if not mode:
         if hasattr(f, 'mode'):
             mode = f.mode
         else:

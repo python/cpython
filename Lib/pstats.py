@@ -134,7 +134,7 @@ class Stats:
             raise
 
     def load_stats(self, arg):
-        if arg is None:
+        if not arg:
             self.stats = {}
             return
         elif isinstance(arg, str):

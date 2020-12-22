@@ -201,7 +201,7 @@ class Message:
         is called.  If you want to set the payload to a scalar object, use
         set_payload() instead.
         """
-        if self._payload is None:
+        if not self._payload:
             self._payload = [payload]
         else:
             try:
@@ -247,7 +247,7 @@ class Message:
         if self.is_multipart():
             if decode:
                 return None
-            if i is None:
+            if not i:
                 return self._payload
             else:
                 return self._payload[i]
@@ -307,7 +307,7 @@ class Message:
         set_charset() for details.
         """
         if hasattr(payload, 'encode'):
-            if charset is None:
+            if not charset:
                 self._payload = payload
                 return
             if not isinstance(charset, Charset):
@@ -334,7 +334,7 @@ class Message:
         representation of the message.  MIME headers (MIME-Version,
         Content-Type, Content-Transfer-Encoding) will be added as needed.
         """
-        if charset is None:
+        if not charset:
             self.del_param('charset')
             self._charset = None
             return
@@ -534,7 +534,7 @@ class Message:
         """
         parts = []
         for k, v in _params.items():
-            if v is None:
+            if not v:
                 parts.append(k.replace('_', '-'))
             else:
                 parts.append(_formatparam(k.replace('_', '-'), v))
@@ -933,7 +933,7 @@ class Message:
         according to the rfc2183.
         """
         value = self.get('content-disposition')
-        if value is None:
+        if not value:
             return None
         c_d = _splitparam(value)[0].lower()
         return c_d
@@ -945,7 +945,7 @@ class Message:
 class MIMEPart(Message):
 
     def __init__(self, policy=None):
-        if policy is None:
+        if not policy:
             from email.policy import default
             policy = default
         Message.__init__(self, policy)
@@ -963,7 +963,7 @@ class MIMEPart(Message):
         used.
         """
         policy = self.policy if policy is None else policy
-        if maxheaderlen is None:
+        if not maxheaderlen:
             maxheaderlen = policy.max_line_length
         return super().as_string(maxheaderlen=maxheaderlen, policy=policy)
 
@@ -997,7 +997,7 @@ class MIMEPart(Message):
                 if subpart['content-id'] == start:
                     candidate = subpart
                     break
-        if candidate is None:
+        if not candidate:
             subparts = part.get_payload()
             candidate = subparts[0] if subparts else None
         if candidate:
@@ -1091,12 +1091,12 @@ class MIMEPart(Message):
             yield from self.get_payload()
 
     def get_content(self, *args, content_manager=None, **kw):
-        if content_manager is None:
+        if not content_manager:
             content_manager = self.policy.content_manager
         return content_manager.get_content(self, *args, **kw)
 
     def set_content(self, *args, content_manager=None, **kw):
-        if content_manager is None:
+        if not content_manager:
             content_manager = self.policy.content_manager
         content_manager.set_content(self, *args, **kw)
 

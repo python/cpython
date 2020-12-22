@@ -11,7 +11,7 @@ __all__ = ["what"]
 def what(file, h=None):
     f = None
     try:
-        if h is None:
+        if not h:
             if isinstance(file, (str, PathLike)):
                 f = open(file, 'rb')
                 h = f.read(32)

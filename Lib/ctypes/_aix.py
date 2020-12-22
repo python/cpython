@@ -248,9 +248,9 @@ def get_libpaths():
     This mimics AIX dlopen() behavior.
     """
     libpaths = environ.get("LD_LIBRARY_PATH")
-    if libpaths is None:
+    if not libpaths:
         libpaths = environ.get("LIBPATH")
-    if libpaths is None:
+    if not libpaths:
         libpaths = []
     else:
         libpaths = libpaths.split(":")

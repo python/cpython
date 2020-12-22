@@ -99,7 +99,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._closed = True
 
         for proto in self._pipes.values():
-            if proto is None:
+            if not proto:
                 continue
             proto.pipe.close()
 
@@ -138,7 +138,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             return None
 
     def _check_proc(self):
-        if self._proc is None:
+        if not self._proc:
             raise ProcessLookupError()
 
     def send_signal(self, signal):
@@ -210,7 +210,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._loop.get_debug():
             logger.info('%r exited with return code %r', self, returncode)
         self._returncode = returncode
-        if self._proc.returncode is None:
+        if not self._proc.returncode:
             # asyncio uses a child watcher: copy the status into the Popen
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
             self._proc.returncode = returncode
@@ -236,7 +236,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
     def _try_finish(self):
         assert not self._finished
-        if self._returncode is None:
+        if not self._returncode:
             return
         if all(bool(p) and p.disconnected for p in self._pipes.values()):
             self._finished = True

@@ -9,7 +9,7 @@ def insort_right(a, x, lo=0, hi=None, *, key=None):
     Optional args lo (default 0) and hi (default len(a)) bound the
     slice of a to be searched.
     """
-    if key is None:
+    if not key:
         lo = bisect_right(a, x, lo, hi)
     else:
         lo = bisect_right(a, key(x), lo, hi, key=key)
@@ -29,11 +29,11 @@ def bisect_right(a, x, lo=0, hi=None, *, key=None):
 
     if lo < 0:
         raise ValueError('lo must be non-negative')
-    if hi is None:
+    if not hi:
         hi = len(a)
     # Note, the comparison uses "<" to match the
     # __lt__() logic in list.sort() and in heapq.
-    if key is None:
+    if not key:
         while lo < hi:
             mid = (lo + hi) // 2
             if x < a[mid]:
@@ -59,7 +59,7 @@ def insort_left(a, x, lo=0, hi=None, *, key=None):
     slice of a to be searched.
     """
 
-    if key is None:
+    if not key:
         lo = bisect_left(a, x, lo, hi)
     else:
         lo = bisect_left(a, key(x), lo, hi, key=key)
@@ -78,11 +78,11 @@ def bisect_left(a, x, lo=0, hi=None, *, key=None):
 
     if lo < 0:
         raise ValueError('lo must be non-negative')
-    if hi is None:
+    if not hi:
         hi = len(a)
     # Note, the comparison uses "<" to match the
     # __lt__() logic in list.sort() and in heapq.
-    if key is None:
+    if not key:
         while lo < hi:
             mid = (lo + hi) // 2
             if a[mid] < x:

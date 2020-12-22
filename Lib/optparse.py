@@ -210,7 +210,7 @@ class HelpFormatter:
                  short_first):
         self.parser = None
         self.indent_increment = indent_increment
-        if width is None:
+        if not width:
             try:
                 width = int(os.environ['COLUMNS'])
             except (KeyError, ValueError):
@@ -630,13 +630,13 @@ class Option:
     # -- Constructor validation methods --------------------------------
 
     def _check_action(self):
-        if self.action is None:
+        if not self.action:
             self.action = "store"
         elif self.action not in self.ACTIONS:
             raise OptionError("invalid action: %r" % self.action, self)
 
     def _check_type(self):
-        if self.type is None:
+        if not self.type:
             if self.action in self.ALWAYS_TYPED_ACTIONS:
                 if self.choices:
                     # The "choices" attribute implies "choice" type.
@@ -661,7 +661,7 @@ class Option:
 
     def _check_choice(self):
         if self.type == "choice":
-            if self.choices is None:
+            if not self.choices:
                 raise OptionError(
                     "must supply a list of choices for type 'choice'", self)
             elif not isinstance(self.choices, (tuple, list)):
@@ -694,7 +694,7 @@ class Option:
 
     def _check_nargs(self):
         if self.action in self.TYPED_ACTIONS:
-            if self.nargs is None:
+            if not self.nargs:
                 self.nargs = 1
         elif self.nargs:
             raise OptionError(
@@ -759,7 +759,7 @@ class Option:
 
     def check_value(self, opt, value):
         checker = self.TYPE_CHECKER.get(self.type)
-        if checker is None:
+        if not checker:
             return value
         else:
             return checker(self, opt, value)
@@ -1037,9 +1037,9 @@ class OptionContainer:
 
     def remove_option(self, opt_str):
         option = self._short_opt.get(opt_str)
-        if option is None:
+        if not option:
             option = self._long_opt.get(opt_str)
-        if option is None:
+        if not option:
             raise ValueError("no such option %r" % opt_str)
 
         for opt in option._short_opts:
@@ -1192,7 +1192,7 @@ class OptionParser (OptionContainer):
         self.version = version
         self.allow_interspersed_args = True
         self.process_default_values = True
-        if formatter is None:
+        if not formatter:
             formatter = IndentedHelpFormatter()
         self.formatter = formatter
         self.formatter.set_parser(self)
@@ -1261,7 +1261,7 @@ class OptionParser (OptionContainer):
     # -- Simple modifier methods ---------------------------------------
 
     def set_usage(self, usage):
-        if usage is None:
+        if not usage:
             self.usage = _("%prog [options]")
         elif usage is SUPPRESS_USAGE:
             self.usage = None
@@ -1346,7 +1346,7 @@ class OptionParser (OptionContainer):
     # -- Option-parsing methods ----------------------------------------
 
     def _get_args(self, args):
-        if args is None:
+        if not args:
             return sys.argv[1:]
         else:
             return args[:]              # don't modify caller's list
@@ -1366,7 +1366,7 @@ class OptionParser (OptionContainer):
         over after parsing options.
         """
         rargs = self._get_args(args)
-        if values is None:
+        if not values:
             values = self.get_default_values()
 
         # Store the halves of the argument list as attributes for the
@@ -1541,7 +1541,7 @@ class OptionParser (OptionContainer):
     # -- Feedback methods ----------------------------------------------
 
     def get_prog_name(self):
-        if self.prog is None:
+        if not self.prog:
             return os.path.basename(sys.argv[0])
         else:
             return self.prog
@@ -1604,7 +1604,7 @@ class OptionParser (OptionContainer):
             print(self.get_version(), file=file)
 
     def format_option_help(self, formatter=None):
-        if formatter is None:
+        if not formatter:
             formatter = self.formatter
         formatter.store_option_strings(self)
         result = []
@@ -1624,7 +1624,7 @@ class OptionParser (OptionContainer):
         return formatter.format_epilog(self.epilog)
 
     def format_help(self, formatter=None):
-        if formatter is None:
+        if not formatter:
             formatter = self.formatter
         result = []
         if self.usage:
@@ -1641,7 +1641,7 @@ class OptionParser (OptionContainer):
         Print an extended help message, listing all options and any
         help text provided with them, to 'file' (default stdout).
         """
-        if file is None:
+        if not file:
             file = sys.stdout
         file.write(self.format_help())
 

@@ -113,7 +113,7 @@ class TopologicalSorter:
 
         Raises ValueError if called without calling "prepare" previously.
         """
-        if self._ready_nodes is None:
+        if not self._ready_nodes:
             raise ValueError("prepare() must be called first")
 
         # Get the nodes that are ready and mark them
@@ -139,7 +139,7 @@ class TopologicalSorter:
 
         Raises ValueError if called without calling "prepare" previously.
         """
-        if self._ready_nodes is None:
+        if not self._ready_nodes:
             raise ValueError("prepare() must be called first")
         return self._nfinished < self._npassedout or bool(self._ready_nodes)
 
@@ -158,7 +158,7 @@ class TopologicalSorter:
         node has not yet been returned by "get_ready".
         """
 
-        if self._ready_nodes is None:
+        if not self._ready_nodes:
             raise ValueError("prepare() must be called first")
 
         n2i = self._node2info

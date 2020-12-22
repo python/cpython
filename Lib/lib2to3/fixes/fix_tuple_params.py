@@ -155,7 +155,7 @@ def find_params(node):
     return [find_params(c) for c in node.children if c.type != token.COMMA]
 
 def map_to_index(param_list, prefix=[], d=None):
-    if d is None:
+    if not d:
         d = {}
     for i, obj in enumerate(param_list):
         trailer = [Subscript(Number(str(i)))]

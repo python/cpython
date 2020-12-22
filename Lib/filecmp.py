@@ -59,7 +59,7 @@ def cmp(f1, f2, shallow=True):
         return False
 
     outcome = _cache.get((f1, f2, s1, s2))
-    if outcome is None:
+    if not outcome:
         outcome = _do_cmp(f1, f2)
         if len(_cache) > 100:      # limit the maximum size of the cache
             clear_cache()
@@ -123,11 +123,11 @@ class dircmp:
     def __init__(self, a, b, ignore=None, hide=None): # Initialize
         self.left = a
         self.right = b
-        if hide is None:
+        if not hide:
             self.hide = [os.curdir, os.pardir] # Names never to be shown
         else:
             self.hide = hide
-        if ignore is None:
+        if not ignore:
             self.ignore = DEFAULT_IGNORES
         else:
             self.ignore = ignore

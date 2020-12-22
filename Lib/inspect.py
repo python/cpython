@@ -461,7 +461,7 @@ def classify_class_attrs(cls):
                 if homecls not in metamro:
                     homecls = base
                 break
-        if homecls is None:
+        if not homecls:
             # unable to locate the attribute anywhere, most likely due to
             # buggy custom __dir__; discard and move on
             continue
@@ -508,7 +508,7 @@ def unwrap(func, *, stop=None):
    :exc:`ValueError` is raised if a cycle is encountered.
 
     """
-    if stop is None:
+    if not stop:
         def _is_wrapper(f):
             return hasattr(f, '__wrapped__')
     else:
@@ -535,7 +535,7 @@ def indentsize(line):
 
 def _findclass(func):
     cls = sys.modules.get(func.__module__)
-    if cls is None:
+    if not cls:
         return None
     for name in func.__qualname__.split('.')[:-1]:
         cls = getattr(cls, name)
@@ -615,7 +615,7 @@ def getdoc(object):
         doc = object.__doc__
     except AttributeError:
         return None
-    if doc is None:
+    if not doc:
         try:
             doc = _finddoc(object)
         except (AttributeError, TypeError):
@@ -721,7 +721,7 @@ def getabsfile(object, _filename=None):
 
     The idea is for each object to have a unique origin, so this routine
     normalizes the result as much as possible."""
-    if _filename is None:
+    if not _filename:
         _filename = getsourcefile(object) or getfile(object)
     return os.path.normcase(os.path.abspath(_filename))
 
@@ -1447,7 +1447,7 @@ def getclosurevars(func):
     code = func.__code__
     # Nonlocal references are named in co_freevars and resolved
     # by looking them up in __closure__ by positional index
-    if func.__closure__ is None:
+    if not func.__closure__:
         nonlocal_vars = {}
     else:
         nonlocal_vars = {
@@ -1670,7 +1670,7 @@ def getgeneratorstate(generator):
     """
     if generator.gi_running:
         return GEN_RUNNING
-    if generator.gi_frame is None:
+    if not generator.gi_frame:
         return GEN_CLOSED
     if generator.gi_frame.f_lasti == -1:
         return GEN_CREATED
@@ -1712,7 +1712,7 @@ def getcoroutinestate(coroutine):
     """
     if coroutine.cr_running:
         return CORO_RUNNING
-    if coroutine.cr_frame is None:
+    if not coroutine.cr_frame:
         return CORO_CLOSED
     if coroutine.cr_frame.f_lasti == -1:
         return CORO_CREATED
@@ -2392,7 +2392,7 @@ def _signature_from_callable(obj, *,
                         skip_bound_arg=skip_bound_arg,
                         sigcls=sigcls)
 
-        if sig is None:
+        if not sig:
             # At this point we know, that `obj` is a class, with no user-
             # defined '__init__', '__new__', or class-level '__call__'
 
@@ -2819,7 +2819,7 @@ class Signature:
         objects and 'return_annotation'.  All arguments are optional.
         """
 
-        if parameters is None:
+        if not parameters:
             params = OrderedDict()
         else:
             if __validate_parameters__:

@@ -19,9 +19,9 @@ def formatwarning(message, category, filename, lineno, line=None):
 
 def _showwarnmsg_impl(msg):
     file = msg.file
-    if file is None:
+    if not file:
         file = sys.stderr
-        if file is None:
+        if not file:
             # sys.stderr is None when run with pythonw.exe:
             # warnings get lost
             return
@@ -36,7 +36,7 @@ def _formatwarnmsg_impl(msg):
     category = msg.category.__name__
     s =  f"{msg.filename}:{msg.lineno}: {category}: {msg.message}\n"
 
-    if msg.line is None:
+    if not msg.line:
         try:
             import linecache
             line = linecache.getline(msg.filename, msg.lineno)
@@ -290,7 +290,7 @@ def warn(message, category=None, stacklevel=1, source=None):
     if isinstance(message, Warning):
         category = message.__class__
     # Check category argument
-    if category is None:
+    if not category:
         category = UserWarning
     if not (isinstance(category, type) and issubclass(category, Warning)):
         raise TypeError("category must be a Warning subclass, "
@@ -306,7 +306,7 @@ def warn(message, category=None, stacklevel=1, source=None):
             # Look for one frame less since the above line starts us off.
             for x in range(stacklevel-1):
                 frame = _next_external_frame(frame)
-                if frame is None:
+                if not frame:
                     raise ValueError
     except ValueError:
         globals = sys.__dict__
@@ -328,11 +328,11 @@ def warn_explicit(message, category, filename, lineno,
                   module=None, registry=None, module_globals=None,
                   source=None):
     lineno = int(lineno)
-    if module is None:
+    if not module:
         module = filename or "<unknown>"
         if module[-3:].lower() == ".py":
             module = module[:-3] # XXX What about leading pathname?
-    if registry is None:
+    if not registry:
         registry = {}
     if registry.get('version', 0) != _filters_version:
         registry.clear()

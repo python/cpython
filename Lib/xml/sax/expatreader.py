@@ -59,25 +59,25 @@ class ExpatLocator(xmlreader.Locator):
 
     def getColumnNumber(self):
         parser = self._ref
-        if parser._parser is None:
+        if not parser._parser:
             return None
         return parser._parser.ErrorColumnNumber
 
     def getLineNumber(self):
         parser = self._ref
-        if parser._parser is None:
+        if not parser._parser:
             return 1
         return parser._parser.ErrorLineNumber
 
     def getPublicId(self):
         parser = self._ref
-        if parser is None:
+        if not parser:
             return None
         return parser._source.getPublicId()
 
     def getSystemId(self):
         parser = self._ref
-        if parser is None:
+        if not parser:
             return None
         return parser._source.getSystemId()
 
@@ -149,7 +149,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             self._external_ges = state
         elif name == feature_string_interning:
             if state:
-                if self._interning is None:
+                if not self._interning:
                     self._interning = {}
             else:
                 self._interning = None
@@ -260,7 +260,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     def _reset_lex_handler_prop(self):
         lex = self._lex_handler_prop
         parser = self._parser
-        if lex is None:
+        if not lex:
             parser.CommentHandler = None
             parser.StartCdataSectionHandler = None
             parser.EndCdataSectionHandler = None
@@ -313,12 +313,12 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     # Locator methods
 
     def getColumnNumber(self):
-        if self._parser is None:
+        if not self._parser:
             return None
         return self._parser.ErrorColumnNumber
 
     def getLineNumber(self):
-        if self._parser is None:
+        if not self._parser:
             return 1
         return self._parser.ErrorLineNumber
 

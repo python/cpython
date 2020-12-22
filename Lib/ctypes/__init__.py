@@ -51,7 +51,7 @@ def create_string_buffer(init, size=None):
     create_string_buffer(aBytes, anInteger) -> character array
     """
     if isinstance(init, bytes):
-        if size is None:
+        if not size:
             size = len(init)+1
         _sys.audit("ctypes.create_string_buffer", init, size)
         buftype = c_char * size
@@ -143,7 +143,7 @@ def _check_size(typ, typecode=None):
     # Check if sizeof(ctypes_type) against struct.calcsize.  This
     # should protect somewhat against a misconfigured libffi.
     from struct import calcsize
-    if typecode is None:
+    if not typecode:
         # Most _type_ codes are the same as used in struct
         typecode = typ._type_
     actual, required = sizeof(typ), calcsize(typecode)
@@ -276,7 +276,7 @@ def create_unicode_buffer(init, size=None):
     create_unicode_buffer(aString, anInteger) -> character array
     """
     if isinstance(init, str):
-        if size is None:
+        if not size:
             if sizeof(c_wchar) == 2:
                 # UTF-16 requires a surrogate pair (2 wchar_t) for non-BMP
                 # characters (outside [U+0000; U+FFFF] range). +1 for trailing
@@ -370,7 +370,7 @@ class CDLL(object):
             _restype_ = self._func_restype_
         self._FuncPtr = _FuncPtr
 
-        if handle is None:
+        if not handle:
             self._handle = _dlopen(self._name, mode)
         else:
             self._handle = handle
@@ -472,9 +472,9 @@ if _os.name == "nt":
     from _ctypes import get_last_error, set_last_error
 
     def WinError(code=None, descr=None):
-        if code is None:
+        if not code:
             code = GetLastError()
-        if descr is None:
+        if not descr:
             descr = FormatError(code).strip()
         return OSError(None, descr, None, code)
 

@@ -73,7 +73,7 @@ class EditorWindow(object):
         # Delay import: runscript imports pyshell imports EditorWindow.
         from idlelib.runscript import ScriptBinding
 
-        if EditorWindow.help_url is None:
+        if not EditorWindow.help_url:
             dochome =  os.path.join(sys.base_prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
                 # look for html docs in a couple of standard places
@@ -286,7 +286,7 @@ class EditorWindow(object):
         menu = self.menudict.get('window')
         if menu:
             end = menu.index("end")
-            if end is None:
+            if not end:
                 end = -1
             if end >= 0:
                 menu.add_separator()
@@ -469,7 +469,7 @@ class EditorWindow(object):
         # Only called when Window menu exists
         menu = self.menudict['window']
         end = menu.index("end")
-        if end is None:
+        if not end:
             end = -1
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
@@ -523,7 +523,7 @@ class EditorWindow(object):
             except ValueError: # see issue1207589
                 continue
 
-            if verify_state is None:
+            if not verify_state:
                 continue
             state = getattr(self, verify_state)()
             rmenu.entryconfigure(label, state=state)
@@ -724,7 +724,7 @@ class EditorWindow(object):
         if not (self.__class__.__name__ == 'PyShellEditorWindow'
                 and filename):
             filename = self.open_module()
-            if filename is None:
+            if not filename:
                 return "break"
         from idlelib import browser
         browser.ModuleBrowser(self.root, filename)
@@ -877,7 +877,7 @@ class EditorWindow(object):
         for menubarItem in self.menudict:
             menu = self.menudict[menubarItem]
             end = menu.index(END)
-            if end is None:
+            if not end:
                 # Skip empty menus
                 continue
             end += 1
@@ -1146,7 +1146,7 @@ class EditorWindow(object):
                     self.text.bind(vevent, getattr(ins, methodname))
 
     def apply_bindings(self, keydefs=None):
-        if keydefs is None:
+        if not keydefs:
             keydefs = self.mainmenu.default_keydefs
         text = self.text
         text.keydefs = keydefs
@@ -1159,9 +1159,9 @@ class EditorWindow(object):
 
         Menus that are absent or None in self.menudict are ignored.
         """
-        if menudefs is None:
+        if not menudefs:
             menudefs = self.mainmenu.menudefs
-        if keydefs is None:
+        if not keydefs:
             keydefs = self.mainmenu.default_keydefs
         menudict = self.menudict
         text = self.text
@@ -1518,7 +1518,7 @@ class EditorWindow(object):
         return indentlarge - indentsmall
 
     def toggle_line_numbers_event(self, event=None):
-        if self.line_numbers is None:
+        if not self.line_numbers:
             return
 
         if self.line_numbers.is_shown:

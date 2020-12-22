@@ -299,7 +299,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 buf = separator
             if isinstance(value, str):
                 yield buf + _encoder(value)
-            elif value is None:
+            elif not value:
                 yield buf + 'null'
             elif value is True:
                 yield buf + 'true'
@@ -364,7 +364,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = 'true'
             elif key is False:
                 key = 'false'
-            elif key is None:
+            elif not key:
                 key = 'null'
             elif isinstance(key, int):
                 # see comment for int/float in _make_iterencode
@@ -382,7 +382,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield _key_separator
             if isinstance(value, str):
                 yield _encoder(value)
-            elif value is None:
+            elif not value:
                 yield 'null'
             elif value is True:
                 yield 'true'
@@ -412,7 +412,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
     def _iterencode(o, _current_indent_level):
         if isinstance(o, str):
             yield _encoder(o)
-        elif o is None:
+        elif not o:
             yield 'null'
         elif o is True:
             yield 'true'

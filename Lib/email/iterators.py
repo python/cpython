@@ -58,7 +58,7 @@ def typed_subpart_iterator(msg, maintype='text', subtype=None):
 
 def _structure(msg, fp=None, level=0, include_default=False):
     """A handy debugging aid"""
-    if fp is None:
+    if not fp:
         fp = sys.stdout
     tab = ' ' * (level * 4)
     print(tab + msg.get_content_type(), end='', file=fp)

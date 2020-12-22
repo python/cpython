@@ -2505,7 +2505,7 @@ def get_parameter(value):
         param.defects.append(errors.InvalidHeaderDefect(
             "Missing required charset/lang delimiters"))
         appendto.append(token)
-        if remainder is None:
+        if not remainder:
             return param, value
     else:
         if token:

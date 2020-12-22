@@ -484,7 +484,7 @@ class SSLContext(_SSLContext):
         return self
 
     def _encode_hostname(self, hostname):
-        if hostname is None:
+        if not hostname:
             return None
         elif isinstance(hostname, str):
             return hostname.encode('idna').decode('ascii')
@@ -529,7 +529,7 @@ class SSLContext(_SSLContext):
         self._set_npn_protocols(protos)
 
     def set_servername_callback(self, server_name_callback):
-        if server_name_callback is None:
+        if not server_name_callback:
             self.sni_callback = None
         else:
             if not callable(server_name_callback):
@@ -659,7 +659,7 @@ class SSLContext(_SSLContext):
 
     @_msg_callback.setter
     def _msg_callback(self, callback):
-        if callback is None:
+        if not callback:
             super(SSLContext, SSLContext)._msg_callback.__set__(self, None)
             return
 
@@ -1092,7 +1092,7 @@ class SSLSocket(socket):
         Return zero-length string on EOF."""
 
         self._checkClosed()
-        if self._sslobj is None:
+        if not self._sslobj:
             raise ValueError("Read on closed or unwrapped SSL socket.")
         try:
             if buffer:
@@ -1113,7 +1113,7 @@ class SSLSocket(socket):
         number of bytes of DATA actually transmitted."""
 
         self._checkClosed()
-        if self._sslobj is None:
+        if not self._sslobj:
             raise ValueError("Write on closed or unwrapped SSL socket.")
         return self._sslobj.write(data)
 
@@ -1142,7 +1142,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def cipher(self):
         self._checkClosed()
-        if self._sslobj is None:
+        if not self._sslobj:
             return None
         else:
             return self._sslobj.cipher()
@@ -1150,7 +1150,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def shared_ciphers(self):
         self._checkClosed()
-        if self._sslobj is None:
+        if not self._sslobj:
             return None
         else:
             return self._sslobj.shared_ciphers()
@@ -1158,7 +1158,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def compression(self):
         self._checkClosed()
-        if self._sslobj is None:
+        if not self._sslobj:
             return None
         else:
             return self._sslobj.compression()
@@ -1179,7 +1179,7 @@ class SSLSocket(socket):
         if self._sslobj:
             raise ValueError("sendto not allowed on instances of %s" %
                              self.__class__)
-        elif addr is None:
+        elif not addr:
             return super().sendto(data, flags_or_addr)
         else:
             return super().sendto(data, flags_or_addr, addr)
@@ -1231,7 +1231,7 @@ class SSLSocket(socket):
         self._checkClosed()
         if buffer and (nbytes is None):
             nbytes = len(buffer)
-        elif nbytes is None:
+        elif not nbytes:
             nbytes = 1024
         if self._sslobj:
             if flags != 0:

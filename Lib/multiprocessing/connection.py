@@ -137,7 +137,7 @@ class _ConnectionBase:
             self._close()
 
     def _check_closed(self):
-        if self._handle is None:
+        if not self._handle:
             raise OSError("handle is closed")
 
     def _check_readable(self):
@@ -196,7 +196,7 @@ class _ConnectionBase:
             raise ValueError("offset is negative")
         if n < offset:
             raise ValueError("buffer length < offset")
-        if size is None:
+        if not size:
             size = n - offset
         elif size < 0:
             raise ValueError("size is negative")
@@ -219,7 +219,7 @@ class _ConnectionBase:
         if maxlength and maxlength < 0:
             raise ValueError("negative maxlength")
         buf = self._recv_bytes(maxlength)
-        if buf is None:
+        if not buf:
             self._bad_message_length()
         return buf.getvalue()
 
@@ -463,7 +463,7 @@ class Listener(object):
 
         Returns a `Connection` object.
         '''
-        if self._listener is None:
+        if not self._listener:
             raise OSError('listener is closed')
         c = self._listener.accept()
         if self._authkey:
@@ -835,7 +835,7 @@ if sys.platform == 'win32':
 
         Returns list of those objects in object_list which are ready/readable.
         '''
-        if timeout is None:
+        if not timeout:
             timeout = INFINITE
         elif timeout < 0:
             timeout = 0

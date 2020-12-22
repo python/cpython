@@ -121,9 +121,9 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     the resulting file would be regular and thus not the same type of file as
     it was previously.
     """
-    if invalidation_mode is None:
+    if not invalidation_mode:
         invalidation_mode = _get_default_invalidation_mode()
-    if cfile is None:
+    if not cfile:
         if optimize >= 0:
             optimization = optimize if optimize >= 1 else ''
             cfile = importlib.util.cache_from_source(file,

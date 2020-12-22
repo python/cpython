@@ -58,7 +58,7 @@ class Completer:
         # Don't bind to namespace quite yet, but flag whether the user wants a
         # specific namespace or to use __main__.__dict__. This will allow us
         # to bind to __main__.__dict__ at completion time, not now.
-        if namespace is None:
+        if not namespace:
             self.use_main_ns = 1
         else:
             self.use_main_ns = 0

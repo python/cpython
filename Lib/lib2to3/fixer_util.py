@@ -345,7 +345,7 @@ def touch_import(package, name, node):
                 insert_pos = idx + 1
                 break
 
-    if package is None:
+    if not package:
         import_ = Node(syms.import_name, [
             Leaf(token.NAME, "import"),
             Leaf(token.NAME, name, prefix=" ")

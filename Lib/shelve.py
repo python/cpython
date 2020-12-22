@@ -84,7 +84,7 @@ class Shelf(collections.abc.MutableMapping):
     def __init__(self, dict, protocol=None, writeback=False,
                  keyencoding="utf-8"):
         self.dict = dict
-        if protocol is None:
+        if not protocol:
             protocol = DEFAULT_PROTOCOL
         self._protocol = protocol
         self.writeback = writeback
@@ -138,7 +138,7 @@ class Shelf(collections.abc.MutableMapping):
         self.close()
 
     def close(self):
-        if self.dict is None:
+        if not self.dict:
             return
         try:
             self.sync()

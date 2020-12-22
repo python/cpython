@@ -22,7 +22,7 @@ class NetrcParseError(Exception):
 class netrc:
     def __init__(self, file=None):
         default_netrc = file is None
-        if file is None:
+        if not file:
             file = os.path.join(os.path.expanduser("~"), ".netrc")
         self.hosts = {}
         self.macros = {}

@@ -369,7 +369,7 @@ def MultiCallCreator(widget):
             func, triplets = self.__eventinfo[virtual]
             for seq in sequences:
                 triplet = _parse_sequence(seq)
-                if triplet is None:
+                if not triplet:
                     #print("Tkinter event_add(%s)" % seq, file=sys.__stderr__)
                     widget.event_add(self, virtual, seq)
                 else:
@@ -383,7 +383,7 @@ def MultiCallCreator(widget):
             func, triplets = self.__eventinfo[virtual]
             for seq in sequences:
                 triplet = _parse_sequence(seq)
-                if triplet is None:
+                if not triplet:
                     #print("Tkinter event_delete: %s" % seq, file=sys.__stderr__)
                     widget.event_delete(self, virtual, seq)
                 else:

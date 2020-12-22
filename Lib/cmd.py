@@ -202,7 +202,7 @@ class Cmd:
         cmd, arg, line = self.parseline(line)
         if not line:
             return self.emptyline()
-        if cmd is None:
+        if not cmd:
             return self.default(line)
         self.lastcmd = line
         if line == 'EOF' :

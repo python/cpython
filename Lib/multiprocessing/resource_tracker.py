@@ -52,7 +52,7 @@ class ResourceTracker(object):
 
     def _stop(self):
         with self._lock:
-            if self._fd is None:
+            if not self._fd:
                 # not running
                 return
 
@@ -190,7 +190,7 @@ def main(fd):
                 try:
                     cmd, name, rtype = line.strip().decode('ascii').split(':')
                     cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
-                    if cleanup_func is None:
+                    if not cleanup_func:
                         raise ValueError(
                             f'Cannot register {name} for automatic cleanup: '
                             f'unknown resource type {rtype}')

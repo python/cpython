@@ -83,7 +83,7 @@ class _PaddedFile:
         self._read = 0
 
     def read(self, size):
-        if self._read is None:
+        if not self._read:
             return self.file.read(size)
         if self._read + size <= self._length:
             read = self._read
@@ -96,7 +96,7 @@ class _PaddedFile:
                    self.file.read(size-self._length+read)
 
     def prepend(self, prepend=b''):
-        if self._read is None:
+        if not self._read:
             self._buffer = prepend
         else:  # Assume data was read since the last prepend() call
             self._read -= len(prepend)
@@ -169,16 +169,16 @@ class GzipFile(_compression.BaseStream):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
-        if fileobj is None:
+        if not fileobj:
             fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
-        if filename is None:
+        if not filename:
             filename = getattr(fileobj, 'name', '')
             if not isinstance(filename, (str, bytes)):
                 filename = ''
         else:
             filename = os.fspath(filename)
         origmode = mode
-        if mode is None:
+        if not mode:
             mode = getattr(fileobj, 'mode', 'rb')
 
         if mode.startswith('r'):
@@ -188,7 +188,7 @@ class GzipFile(_compression.BaseStream):
             self.name = filename
 
         elif mode.startswith(('w', 'a', 'x')):
-            if origmode is None:
+            if not origmode:
                 import warnings
                 warnings.warn(
                     "GzipFile was opened for writing, but this will "
@@ -254,7 +254,7 @@ class GzipFile(_compression.BaseStream):
             flags = FNAME
         self.fileobj.write(chr(flags).encode('latin-1'))
         mtime = self._write_mtime
-        if mtime is None:
+        if not mtime:
             mtime = time.time()
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
@@ -274,7 +274,7 @@ class GzipFile(_compression.BaseStream):
             import errno
             raise OSError(errno.EBADF, "write() on read-only GzipFile object")
 
-        if self.fileobj is None:
+        if not self.fileobj:
             raise ValueError("write() on closed GzipFile object")
 
         if isinstance(data, bytes):
@@ -325,7 +325,7 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None:
+        if not fileobj:
             return
         self.fileobj = None
         try:

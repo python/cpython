@@ -131,7 +131,7 @@ def deepcopy(x, memo=None, _nil=[]):
     See the module's __doc__ string for more info.
     """
 
-    if memo is None:
+    if not memo:
         memo = {}
 
     d = id(x)

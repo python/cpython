@@ -388,7 +388,7 @@ class Binary:
     """Wrapper for binary data."""
 
     def __init__(self, data=None):
-        if data is None:
+        if not data:
             data = b""
         else:
             if not isinstance(data, (bytes, bytearray)):
@@ -1425,7 +1425,7 @@ class ServerProxy:
         self.__host = p.netloc
         self.__handler = p.path or "/RPC2"
 
-        if transport is None:
+        if not transport:
             if p.scheme == "https":
                 handler = SafeTransport
                 extra_kwargs = {"context": context}

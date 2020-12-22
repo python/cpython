@@ -104,7 +104,7 @@ class _GeneratorContextManagerBase:
         self.func, self.args, self.kwds = func, args, kwds
         # Issue 19330: ensure context manager instances have good docstrings
         doc = getattr(func, "__doc__", None)
-        if doc is None:
+        if not doc:
             doc = type(self).__doc__
         self.__doc__ = doc
         # Unfortunately, this still doesn't provide good help output when
@@ -135,7 +135,7 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
             raise RuntimeError("generator didn't yield") from None
 
     def __exit__(self, type, value, traceback):
-        if type is None:
+        if not type:
             try:
                 next(self.gen)
             except StopIteration:
@@ -143,7 +143,7 @@ class _GeneratorContextManager(_GeneratorContextManagerBase,
             else:
                 raise RuntimeError("generator didn't stop")
         else:
-            if value is None:
+            if not value:
                 # Need to force instantiation so we can reliably
                 # tell if we get the same exception back
                 value = type()
@@ -200,7 +200,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             raise RuntimeError("generator didn't yield") from None
 
     async def __aexit__(self, typ, value, traceback):
-        if typ is None:
+        if not typ:
             try:
                 await self.gen.__anext__()
             except StopAsyncIteration:
@@ -208,7 +208,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             else:
                 raise RuntimeError("generator didn't stop")
         else:
-            if value is None:
+            if not value:
                 value = typ()
             # See _GeneratorContextManager.__exit__ for comments on subtleties
             # in this implementation

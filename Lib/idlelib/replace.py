@@ -165,7 +165,7 @@ class ReplaceDialog(SearchDialogBase):
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()
             new = self._replace_expand(m, repl)
-            if new is None:
+            if not new:
                 break
             i, j = m.span()
             first = "%d.%d" % (line, i)
@@ -224,7 +224,7 @@ class ReplaceDialog(SearchDialogBase):
         if not prog:
             return False
         new = self._replace_expand(m, self.replvar.get())
-        if new is None:
+        if not new:
             return False
         text.mark_set("insert", first)
         text.undo_block_start()

@@ -102,7 +102,7 @@ class Parser(object):
         state determined by the (implicit or explicit) start symbol.
 
         """
-        if start is None:
+        if not start:
             start = self.grammar.start
         # Each stack entry is a tuple: (dfa, state, node).
         # A node is a tuple: (type, value, context, children),
@@ -171,7 +171,7 @@ class Parser(object):
             if ilabel:
                 return ilabel
         ilabel = self.grammar.tokens.get(type)
-        if ilabel is None:
+        if not ilabel:
             raise ParseError("bad token", type, value, context)
         return ilabel
 

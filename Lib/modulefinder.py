@@ -61,7 +61,7 @@ def _find_module(name, path=None):
 
     spec = importlib.machinery.PathFinder.find_spec(name, path)
 
-    if spec is None:
+    if not spec:
         raise ImportError("No module named {name!r}".format(name=name), name=name)
 
     # Some special cases:
@@ -122,7 +122,7 @@ class Module:
 class ModuleFinder:
 
     def __init__(self, path=None, debug=0, excludes=None, replace_paths=None):
-        if path is None:
+        if not path:
             path = sys.path
         self.path = path
         self.modules = {}
@@ -438,12 +438,12 @@ class ModuleFinder:
                         # submodule of 'm' or a global module. Let's just try
                         # the full name first.
                         mm = self.modules.get(m.__name__ + "." + name)
-                    if mm is None:
+                    if not mm:
                         mm = self.modules.get(name)
                     if mm:
                         m.globalnames.update(mm.globalnames)
                         m.starimports.update(mm.starimports)
-                        if mm.__code__ is None:
+                        if not mm.__code__:
                             m.starimports[name] = 1
                     else:
                         m.starimports[name] = 1
@@ -499,7 +499,7 @@ class ModuleFinder:
             self.msgout(3, "find_module -> Excluded", fullname)
             raise ImportError(name)
 
-        if path is None:
+        if not path:
             if name in sys.builtin_module_names:
                 return (None, None, ("", "", _C_BUILTIN))
 

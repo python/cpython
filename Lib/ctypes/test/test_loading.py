@@ -28,14 +28,14 @@ class LoaderTest(unittest.TestCase):
     unknowndll = "xxrandomnamexx"
 
     def test_load(self):
-        if libc_name is None:
+        if not libc_name:
             self.skipTest('could not find libc')
         CDLL(libc_name)
         CDLL(os.path.basename(libc_name))
         self.assertRaises(OSError, CDLL, self.unknowndll)
 
     def test_load_version(self):
-        if libc_name is None:
+        if not libc_name:
             self.skipTest('could not find libc')
         if os.path.basename(libc_name) != 'libc.so.6':
             self.skipTest('wrong libc path for test')

@@ -96,7 +96,7 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
-    if _CRLock is None:
+    if not _CRLock:
         return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
 
@@ -234,7 +234,7 @@ class Condition:
     """
 
     def __init__(self, lock=None):
-        if lock is None:
+        if not lock:
             lock = RLock()
         self._lock = lock
         # Export the lock's acquire() and release() methods
@@ -316,7 +316,7 @@ class Condition:
         saved_state = self._release_save()
         gotit = False
         try:    # restore state no matter what (e.g., KeyboardInterrupt)
-            if timeout is None:
+            if not timeout:
                 waiter.acquire()
                 gotit = True
             else:
@@ -346,7 +346,7 @@ class Condition:
         result = predicate()
         while not result:
             if waittime:
-                if endtime is None:
+                if not endtime:
                     endtime = _time() + waittime
                 else:
                     waittime = endtime - _time()
@@ -442,7 +442,7 @@ class Semaphore:
                 if not blocking:
                     break
                 if timeout:
-                    if endtime is None:
+                    if not endtime:
                         endtime = _time() + timeout
                     else:
                         timeout = endtime - _time()
@@ -628,7 +628,7 @@ class Barrier:
         Returns an individual index number from 0 to 'parties-1'.
 
         """
-        if timeout is None:
+        if not timeout:
             timeout = self._timeout
         with self._cond:
             self._enter() # Block while the barrier drains.
@@ -805,7 +805,7 @@ class Thread:
 
         """
         assert group is None, "group argument must be None for now"
-        if kwargs is None:
+        if not kwargs:
             kwargs = {}
         if name:
             name = str(name)
@@ -1047,7 +1047,7 @@ class Thread:
         if self is current_thread():
             raise RuntimeError("cannot join current thread")
 
-        if timeout is None:
+        if not timeout:
             self._wait_for_tstate_lock()
         else:
             # the behavior of a negative timeout isn't documented, but
@@ -1062,7 +1062,7 @@ class Thread:
         # If the lock is acquired, the C code is done, and self._stop() is
         # called.  That sets ._is_stopped to True, and ._tstate_lock to None.
         lock = self._tstate_lock
-        if lock is None:  # already determined that the C code is done
+        if not lock:  # already determined that the C code is done
             assert self._is_stopped
         elif lock.acquire(block, timeout):
             lock.release()
@@ -1185,7 +1185,7 @@ except ImportError:
             stderr = _sys.stderr
         elif args.thread:
             stderr = args.thread._stderr
-            if stderr is None:
+            if not stderr:
                 # do nothing if sys.stderr is None and sys.stderr was None
                 # when the thread was created
                 return
@@ -1215,9 +1215,9 @@ def _make_invoke_excepthook():
 
     old_excepthook = excepthook
     old_sys_excepthook = _sys.excepthook
-    if old_excepthook is None:
+    if not old_excepthook:
         raise RuntimeError("threading.excepthook is None")
-    if old_sys_excepthook is None:
+    if not old_sys_excepthook:
         raise RuntimeError("sys.excepthook is None")
 
     sys_exc_info = _sys.exc_info
@@ -1228,7 +1228,7 @@ def _make_invoke_excepthook():
         global excepthook
         try:
             hook = excepthook
-            if hook is None:
+            if not hook:
                 hook = old_excepthook
 
             args = ExceptHookArgs([*sys_exc_info(), thread])

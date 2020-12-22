@@ -235,7 +235,7 @@ def load_module(name, file, filename, details):
     elif type_ == PY_COMPILED:
         return load_compiled(name, filename, file)
     elif type_ == C_EXTENSION and load_dynamic:
-        if file is None:
+        if not file:
             with open(filename, 'rb') as opened_file:
                 return load_dynamic(name, filename, opened_file)
         else:
@@ -269,7 +269,7 @@ def find_module(name, path=None):
         raise RuntimeError("'path' must be None or a list, "
                            "not {}".format(type(path)))
 
-    if path is None:
+    if not path:
         if is_builtin(name):
             return None, None, ('', '', C_BUILTIN)
         elif is_frozen(name):

@@ -165,7 +165,7 @@ def _extend_dict(target_dict, other_dict):
 
 def _expand_vars(scheme, vars):
     res = {}
-    if vars is None:
+    if not vars:
         vars = {}
     _extend_dict(vars, get_config_vars())
 
@@ -218,7 +218,7 @@ def _parse_makefile(filename, vars=None):
     _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
     _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
 
-    if vars is None:
+    if not vars:
         vars = {}
     done = {}
     notdone = {}
@@ -446,7 +446,7 @@ def parse_config_h(fp, vars=None):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    if vars is None:
+    if not vars:
         vars = {}
     import re
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
@@ -524,7 +524,7 @@ def get_config_vars(*args):
     each argument in the configuration variable dictionary.
     """
     global _CONFIG_VARS
-    if _CONFIG_VARS is None:
+    if not _CONFIG_VARS:
         _CONFIG_VARS = {}
         # Normalized versions of prefix and exec_prefix are handy to have;
         # in fact, these are the standard versions used most places in the

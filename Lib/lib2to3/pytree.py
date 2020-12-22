@@ -154,7 +154,7 @@ class Base(object):
         The node immediately following the invocant in their parent's children
         list. If the invocant does not have a next sibling, it is None
         """
-        if self.parent is None:
+        if not self.parent:
             return None
 
         # Can't use index(); we need to test by identity
@@ -171,7 +171,7 @@ class Base(object):
         The node immediately preceding the invocant in their parent's children
         list. If the invocant does not have a previous sibling, it is None.
         """
-        if self.parent is None:
+        if not self.parent:
             return None
 
         # Can't use index(); we need to test by identity
@@ -186,7 +186,7 @@ class Base(object):
             yield from child.leaves()
 
     def depth(self):
-        if self.parent is None:
+        if not self.parent:
             return 0
         return 1 + self.parent.depth()
 
@@ -196,7 +196,7 @@ class Base(object):
         effectively equivalent to node.next_sibling.prefix
         """
         next_sib = self.next_sibling
-        if next_sib is None:
+        if not next_sib:
             return ""
         return next_sib.prefix
 
@@ -657,7 +657,7 @@ class WildcardPattern(BasePattern):
         if (self.content and len(self.content) == 1 and len(self.content[0]) == 1):
             subpattern = self.content[0][0]
         if self.min == 1 and self.max == 1:
-            if self.content is None:
+            if not self.content:
                 return NodePattern(name=self.name)
             if subpattern and self.name == subpattern.name:
                 return subpattern.optimize()
@@ -696,7 +696,7 @@ class WildcardPattern(BasePattern):
             count: the match comprises nodes[:count];
             results: dict containing named submatches.
         """
-        if self.content is None:
+        if not self.content:
             # Shortcut for special case (see __init__.__doc__)
             for count in range(self.min, 1 + min(len(nodes), self.max)):
                 r = {}
@@ -813,7 +813,7 @@ class NegatedPattern(BasePattern):
         return len(nodes) == 0
 
     def generate_matches(self, nodes):
-        if self.content is None:
+        if not self.content:
             # Return a match if there is an empty sequence
             if len(nodes) == 0:
                 yield 0, {}

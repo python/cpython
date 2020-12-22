@@ -80,7 +80,7 @@ class FixNext(fixer_base.BaseFix):
 
 def is_assign_target(node):
     assign = find_assign(node)
-    if assign is None:
+    if not assign:
         return False
 
     for child in assign.children:

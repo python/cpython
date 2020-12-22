@@ -739,7 +739,7 @@ class Aifc_write:
             self._patchheader()
 
     def close(self):
-        if self._file is None:
+        if not self._file:
             return
         try:
             self._ensure_header_written(0)
@@ -908,7 +908,7 @@ class Aifc_write:
             _write_string(self._file, name)
 
 def open(f, mode=None):
-    if mode is None:
+    if not mode:
         if hasattr(f, 'mode'):
             mode = f.mode
         else:

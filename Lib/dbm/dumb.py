@@ -137,7 +137,7 @@ class _Database(collections.abc.MutableMapping):
     sync = _commit
 
     def _verify_open(self):
-        if self._index is None:
+        if not self._index:
             raise error('DBM object has already been closed')
 
     def __getitem__(self, key):
@@ -251,7 +251,7 @@ class _Database(collections.abc.MutableMapping):
         try:
             return key in self._index
         except TypeError:
-            if self._index is None:
+            if not self._index:
                 raise error('DBM object has already been closed') from None
             else:
                 raise

@@ -9,7 +9,7 @@ from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     global sc, item, node  # For testing.
-    if top is None:
+    if not top:
         top = tk.Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
@@ -26,7 +26,7 @@ class StackTreeItem(TreeItem):
         self.text = self.get_exception()
 
     def get_stack(self, tb):
-        if tb is None:
+        if not tb:
             tb = sys.last_traceback
         stack = []
         if tb and tb.tb_frame is None:

@@ -253,7 +253,7 @@ else:
     _active = []
 
     def _cleanup():
-        if _active is None:
+        if not _active:
             return
         for inst in _active[:]:
             res = inst._internal_poll(_deadstate=sys.maxsize)
@@ -373,7 +373,7 @@ def check_call(*popenargs, **kwargs):
     retcode = call(*popenargs, **kwargs)
     if retcode:
         cmd = kwargs.get("args")
-        if cmd is None:
+        if not cmd:
             cmd = popenargs[0]
         raise CalledProcessError(retcode, cmd)
     return 0
@@ -417,7 +417,7 @@ def check_output(*popenargs, timeout=None, **kwargs):
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
 
-    if 'input' in kwargs and kwargs['input'] is None:
+    if 'input' in kwargs and not kwargs['input']:
         # Explicitly passing input=None was previously equivalent to passing an
         # empty string. That is maintained here for backwards compatibility.
         kwargs['input'] = '' if kwargs.get('universal_newlines', False) else b''
@@ -773,12 +773,12 @@ class Popen(object):
 
         self._input = None
         self._communication_started = False
-        if bufsize is None:
+        if not bufsize:
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
 
-        if pipesize is None:
+        if not pipesize:
             pipesize = -1  # Restore default
         if not isinstance(pipesize, int):
             raise TypeError("pipesize must be an integer")
@@ -871,7 +871,7 @@ class Popen(object):
                                  "current platform")
 
             elif isinstance(group, str):
-                if grp is None:
+                if not grp:
                     raise ValueError("The group parameter cannot be a string "
                                      "on systems without the grp module")
 
@@ -897,7 +897,7 @@ class Popen(object):
             gids = []
             for extra_group in extra_groups:
                 if isinstance(extra_group, str):
-                    if grp is None:
+                    if not grp:
                         raise ValueError("Items in extra_groups cannot be "
                                          "strings on systems without the "
                                          "grp module")
@@ -923,7 +923,7 @@ class Popen(object):
                                  "the current platform")
 
             elif isinstance(user, str):
-                if pwd is None:
+                if not pwd:
                     raise ValueError("The user parameter cannot be a string "
                                      "on systems without the pwd module")
 
@@ -1052,14 +1052,14 @@ class Popen(object):
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return
-        if self.returncode is None:
+        if not self.returncode:
             # Not reading subprocess exit status creates a zombie process which
             # is only destroyed at the parent python process exit
             _warn("subprocess %s is still running" % self.pid,
                   ResourceWarning, source=self)
         # In case the child hasn't been waited on, check if it's done.
         self._internal_poll(_deadstate=_maxsize)
-        if self.returncode is None and _active:
+        if not self.returncode and _active:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
 
@@ -1117,7 +1117,7 @@ class Popen(object):
         # Optimization: If we are not worried about timeouts, we haven't
         # started communicating, and we have one or zero pipes, using select()
         # or threads is unnecessary.
-        if (timeout is None and not self._communication_started and
+        if (not timeout and not self._communication_started and
             [self.stdin, self.stdout, self.stderr].count(None) >= 2):
             stdout = None
             stderr = None
@@ -1169,7 +1169,7 @@ class Popen(object):
 
     def _remaining_time(self, endtime):
         """Convenience for _communicate when computing timeouts."""
-        if endtime is None:
+        if not endtime:
             return None
         else:
             return endtime - _time()
@@ -1178,7 +1178,7 @@ class Popen(object):
     def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
                        skip_check_and_raise=False):
         """Convenience for checking if a timeout has expired."""
-        if endtime is None:
+        if not endtime:
             return
         if skip_check_and_raise or _time() > endtime:
             raise TimeoutExpired(
@@ -1247,16 +1247,16 @@ class Popen(object):
             """Construct and return tuple with IO objects:
             p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite
             """
-            if stdin is None and stdout is None and stderr is None:
+            if not stdin and not stdout and not stderr:
                 return (-1, -1, -1, -1, -1, -1)
 
             p2cread, p2cwrite = -1, -1
             c2pread, c2pwrite = -1, -1
             errread, errwrite = -1, -1
 
-            if stdin is None:
+            if not stdin:
                 p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
-                if p2cread is None:
+                if not p2cread:
                     p2cread, _ = _winapi.CreatePipe(None, 0)
                     p2cread = Handle(p2cread)
                     _winapi.CloseHandle(_)
@@ -1272,9 +1272,9 @@ class Popen(object):
                 p2cread = msvcrt.get_osfhandle(stdin.fileno())
             p2cread = self._make_inheritable(p2cread)
 
-            if stdout is None:
+            if not stdout:
                 c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
-                if c2pwrite is None:
+                if not c2pwrite:
                     _, c2pwrite = _winapi.CreatePipe(None, 0)
                     c2pwrite = Handle(c2pwrite)
                     _winapi.CloseHandle(_)
@@ -1290,9 +1290,9 @@ class Popen(object):
                 c2pwrite = msvcrt.get_osfhandle(stdout.fileno())
             c2pwrite = self._make_inheritable(c2pwrite)
 
-            if stderr is None:
+            if not stderr:
                 errwrite = _winapi.GetStdHandle(_winapi.STD_ERROR_HANDLE)
-                if errwrite is None:
+                if not errwrite:
                     _, errwrite = _winapi.CreatePipe(None, 0)
                     errwrite = Handle(errwrite)
                     _winapi.CloseHandle(_)
@@ -1369,7 +1369,7 @@ class Popen(object):
                 executable = os.fsdecode(executable)
 
             # Process startup details
-            if startupinfo is None:
+            if not startupinfo:
                 startupinfo = STARTUPINFO()
             else:
                 # bpo-34044: Copy STARTUPINFO since it is modified above,
@@ -1390,7 +1390,7 @@ class Popen(object):
 
             # If we were given an handle_list or need to create one
             if have_handle_list or (use_std_handles and close_fds):
-                if attribute_list is None:
+                if not attribute_list:
                     attribute_list = startupinfo.lpAttributeList = {}
                 handle_list = attribute_list["handle_list"] = \
                     list(attribute_list.get("handle_list", []))
@@ -1459,7 +1459,7 @@ class Popen(object):
             in its local scope.
 
             """
-            if self.returncode is None:
+            if not self.returncode:
                 if _WaitForSingleObject(self._handle, 0) == _WAIT_OBJECT_0:
                     self.returncode = _GetExitCodeProcess(self._handle)
             return self.returncode
@@ -1467,11 +1467,11 @@ class Popen(object):
 
         def _wait(self, timeout):
             """Internal implementation of wait() on Windows."""
-            if timeout is None:
+            if not timeout:
                 timeout_millis = _winapi.INFINITE
             else:
                 timeout_millis = int(timeout * 1000)
-            if self.returncode is None:
+            if not self.returncode:
                 # API note: Returns immediately if timeout_millis == 0.
                 result = _winapi.WaitForSingleObject(self._handle,
                                                      timeout_millis)
@@ -1581,7 +1581,7 @@ class Popen(object):
             c2pread, c2pwrite = -1, -1
             errread, errwrite = -1, -1
 
-            if stdin is None:
+            if not stdin:
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = os.pipe()
@@ -1595,7 +1595,7 @@ class Popen(object):
                 # Assuming file-like object
                 p2cread = stdin.fileno()
 
-            if stdout is None:
+            if not stdout:
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = os.pipe()
@@ -1609,7 +1609,7 @@ class Popen(object):
                 # Assuming file-like object
                 c2pwrite = stdout.fileno()
 
-            if stderr is None:
+            if not stderr:
                 pass
             elif stderr == PIPE:
                 errread, errwrite = os.pipe()
@@ -1638,7 +1638,7 @@ class Popen(object):
                          c2pread, c2pwrite,
                          errread, errwrite):
             """Execute program using os.posix_spawn()."""
-            if env is None:
+            if not env:
                 env = os.environ
 
             kwargs = {}
@@ -1701,24 +1701,24 @@ class Popen(object):
                 if executable:
                     args[0] = executable
 
-            if executable is None:
+            if not executable:
                 executable = args[0]
 
             sys.audit("subprocess.Popen", executable, args, cwd, env)
 
             if (_USE_POSIX_SPAWN
                     and os.path.dirname(executable)
-                    and preexec_fn is None
+                    and not preexec_fn
                     and not close_fds
                     and not pass_fds
-                    and cwd is None
+                    and not cwd
                     and (p2cread == -1 or p2cread > 2)
                     and (c2pwrite == -1 or c2pwrite > 2)
                     and (errwrite == -1 or errwrite > 2)
                     and not start_new_session
-                    and gid is None
-                    and gids is None
-                    and uid is None
+                    and not gid
+                    and not gids
+                    and not uid
                     and umask < 0):
                 self._posix_spawn(args, executable, env, restore_signals,
                                   p2cread, p2cwrite,
@@ -1857,7 +1857,7 @@ class Popen(object):
             outside of the local scope (nor can any methods it calls).
 
             """
-            if self.returncode is None:
+            if not self.returncode:
                 if not self._waitpid_lock.acquire(False):
                     # Something else is busy calling waitpid.  Don't allow two
                     # at once.  We know nothing yet.

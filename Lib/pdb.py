@@ -1168,7 +1168,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _getval_except(self, arg, frame=None):
         try:
-            if frame is None:
+            if not frame:
                 return eval(arg, self.curframe.f_globals, self.curframe_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
@@ -1235,7 +1235,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             first = max(1, self.curframe.f_lineno - 5)
         else:
             first = self.lineno + 1
-        if last is None:
+        if not last:
             last = first + 10
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
@@ -1616,11 +1616,11 @@ def set_trace(*, header=None):
 
 def post_mortem(t=None):
     # handling the default
-    if t is None:
+    if not t:
         # sys.exc_info() returns (type, value, traceback) if an exception is
         # being handled, otherwise it returns None
         t = sys.exc_info()[2]
-    if t is None:
+    if not t:
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
 

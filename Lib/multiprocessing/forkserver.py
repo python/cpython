@@ -45,7 +45,7 @@ class ForkServer(object):
             self._stop_unlocked()
 
     def _stop_unlocked(self):
-        if self._forkserver_pid is None:
+        if not self._forkserver_pid:
             return
 
         # close the "alive" file descriptor asks the server to stop

@@ -523,7 +523,7 @@ class HTMLCalendar(Calendar):
         """
         Return a formatted year as a complete HTML page.
         """
-        if encoding is None:
+        if not encoding:
             encoding = sys.getdefaultencoding()
         v = []
         a = v.append
@@ -565,7 +565,7 @@ class LocaleTextCalendar(TextCalendar):
 
     def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
-        if locale is None:
+        if not locale:
             locale = _locale.getdefaultlocale()
         self.locale = locale
 
@@ -587,7 +587,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
     """
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
-        if locale is None:
+        if not locale:
             locale = _locale.getdefaultlocale()
         self.locale = locale
 
@@ -720,13 +720,13 @@ def main(args):
         else:
             cal = HTMLCalendar()
         encoding = options.encoding
-        if encoding is None:
+        if not encoding:
             encoding = sys.getdefaultencoding()
         optdict = dict(encoding=encoding, css=options.css)
         write = sys.stdout.buffer.write
-        if options.year is None:
+        if not options.year:
             write(cal.formatyearpage(datetime.date.today().year, **optdict))
-        elif options.month is None:
+        elif not options.month:
             write(cal.formatyearpage(options.year, **optdict))
         else:
             parser.error("incorrect number of arguments")
@@ -737,12 +737,12 @@ def main(args):
         else:
             cal = TextCalendar()
         optdict = dict(w=options.width, l=options.lines)
-        if options.month is None:
+        if not options.month:
             optdict["c"] = options.spacing
             optdict["m"] = options.months
-        if options.year is None:
+        if not options.year:
             result = cal.formatyear(datetime.date.today().year, **optdict)
-        elif options.month is None:
+        elif not options.month:
             result = cal.formatyear(options.year, **optdict)
         else:
             result = cal.formatmonth(options.year, options.month, **optdict)

@@ -170,7 +170,7 @@ def _rlistdir(dirname, dir_fd, dironly):
 
 def _lexists(pathname, dir_fd):
     # Same as os.path.lexists(), but with dir_fd
-    if dir_fd is None:
+    if not dir_fd:
         return os.path.lexists(pathname)
     try:
         os.lstat(pathname, dir_fd=dir_fd)
@@ -181,7 +181,7 @@ def _lexists(pathname, dir_fd):
 
 def _isdir(pathname, dir_fd):
     # Same as os.path.isdir(), but with dir_fd
-    if dir_fd is None:
+    if not dir_fd:
         return os.path.isdir(pathname)
     try:
         st = os.stat(pathname, dir_fd=dir_fd)

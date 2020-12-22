@@ -29,7 +29,7 @@ class MIMEApplication(MIMENonMultipart):
         constructor, which turns them into parameters on the Content-Type
         header.
         """
-        if _subtype is None:
+        if not _subtype:
             raise TypeError('Invalid application MIME subtype')
         MIMENonMultipart.__init__(self, 'application', _subtype, policy=policy,
                                   **_params)

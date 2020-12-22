@@ -115,14 +115,14 @@ def default_loader(href, parse, encoding=None):
 
 def include(elem, loader=None, base_url=None,
             max_depth=DEFAULT_MAX_INCLUSION_DEPTH):
-    if max_depth is None:
+    if not max_depth:
         max_depth = -1
     elif max_depth < 0:
         raise ValueError("expected non-negative depth or None for 'max_depth', got %r" % max_depth)
 
     if hasattr(elem, 'getroot'):
         elem = elem.getroot()
-    if loader is None:
+    if not loader:
         loader = default_loader
 
     _include(elem, loader, base_url, max_depth, set())
@@ -147,7 +147,7 @@ def _include(elem, loader, base_url, max_depth, _parent_hrefs):
                         "maximum xinclude depth reached when including file %s" % href)
                 _parent_hrefs.add(href)
                 node = loader(href, parse)
-                if node is None:
+                if not node:
                     raise FatalIncludeError(
                         "cannot load %r as %r" % (href, parse)
                         )
@@ -159,7 +159,7 @@ def _include(elem, loader, base_url, max_depth, _parent_hrefs):
                 elem[i] = node
             elif parse == "text":
                 text = loader(href, parse, e.get("encoding"))
-                if text is None:
+                if not text:
                     raise FatalIncludeError(
                         "cannot load %r as %r" % (href, parse)
                         )

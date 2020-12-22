@@ -72,7 +72,7 @@ class _ResourceSharer(object):
     def register(self, send, close):
         '''Register resource, returning an identifier.'''
         with self._lock:
-            if self._address is None:
+            if not self._address:
                 self._start()
             self._key += 1
             self._cache[self._key] = (send, close)
@@ -137,7 +137,7 @@ class _ResourceSharer(object):
             try:
                 with self._listener.accept() as conn:
                     msg = conn.recv()
-                    if msg is None:
+                    if not msg:
                         break
                     key, destination_pid = msg
                     send, close = self._cache.pop(key)

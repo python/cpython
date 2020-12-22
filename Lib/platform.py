@@ -174,7 +174,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         The file is read and scanned in chunks of chunksize bytes.
 
     """
-    if executable is None:
+    if not executable:
         try:
             ver = os.confstr('CS_GNU_LIBC_VERSION')
             # parse 'glibc 2.28' as ('glibc', '2.28')
@@ -452,7 +452,7 @@ def _java_getprop(name, default):
     from java.lang import System
     try:
         value = System.getProperty(name)
-        if value is None:
+        if not value:
             return default
         return value
     except AttributeError:
@@ -992,7 +992,7 @@ def _sys_version(sys_version=None):
 
     """
     # Get the Python version
-    if sys_version is None:
+    if not sys_version:
         sys_version = sys.version
 
     # Try the cache first
@@ -1009,7 +1009,7 @@ def _sys_version(sys_version=None):
         else:
             match = _ironpython26_sys_version_parser.match(sys_version)
 
-        if match is None:
+        if not match:
             raise ValueError(
                 'failed to parse IronPython sys.version: %s' %
                 repr(sys_version))
@@ -1022,12 +1022,12 @@ def _sys_version(sys_version=None):
         # Jython
         name = 'Jython'
         match = _sys_version_parser.match(sys_version)
-        if match is None:
+        if not match:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
                 repr(sys_version))
         version, buildno, builddate, buildtime, _ = match.groups()
-        if builddate is None:
+        if not builddate:
             builddate = ''
         compiler = sys.platform
 
@@ -1035,7 +1035,7 @@ def _sys_version(sys_version=None):
         # PyPy
         name = "PyPy"
         match = _pypy_sys_version_parser.match(sys_version)
-        if match is None:
+        if not match:
             raise ValueError("failed to parse PyPy sys.version: %s" %
                              repr(sys_version))
         version, buildno, builddate, buildtime = match.groups()
@@ -1044,14 +1044,14 @@ def _sys_version(sys_version=None):
     else:
         # CPython
         match = _sys_version_parser.match(sys_version)
-        if match is None:
+        if not match:
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
                 repr(sys_version))
         version, buildno, builddate, buildtime, compiler = \
               match.groups()
         name = 'CPython'
-        if builddate is None:
+        if not builddate:
             builddate = ''
         elif buildtime:
             builddate = builddate + ' ' + buildtime
@@ -1269,7 +1269,7 @@ def freedesktop_os_release():
     """
     global _os_release_cache
 
-    if _os_release_cache is None:
+    if not _os_release_cache:
         errno = None
         for candidate in _os_release_candidates:
             try:

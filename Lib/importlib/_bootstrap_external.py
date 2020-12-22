@@ -366,10 +366,10 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     head, tail = _path_split(path)
     base, sep, rest = tail.rpartition('.')
     tag = sys.implementation.cache_tag
-    if tag is None:
+    if not tag:
         raise NotImplementedError('sys.implementation.cache_tag is None')
     almost_filename = ''.join([(base if base else rest), sep, tag])
-    if optimization is None:
+    if not optimization:
         if sys.flags.optimize == 0:
             optimization = ''
         else:
@@ -417,7 +417,7 @@ def source_from_cache(path):
     sys.implementation.cache_tag is None then NotImplementedError is raised.
 
     """
-    if sys.implementation.cache_tag is None:
+    if not sys.implementation.cache_tag:
         raise NotImplementedError('sys.implementation.cache_tag is None')
     path = _os.fspath(path)
     head, pycache_filename = _path_split(path)
@@ -500,7 +500,7 @@ def _check_name(method):
 
     """
     def _check_name_wrapper(self, name=None, *args, **kwargs):
-        if name is None:
+        if not name:
             name = self.name
         elif self.name != name:
             raise ImportError('loader for %s cannot handle %s' %
@@ -687,7 +687,7 @@ def spec_from_file_location(name, location=None, *, loader=None,
     The loader must take a spec as its only __init__() arg.
 
     """
-    if location is None:
+    if not location:
         # The caller may simply want a partially populated location-
         # oriented spec.  So we set the location to a bogus value and
         # fill in as much as we can.
@@ -711,7 +711,7 @@ def spec_from_file_location(name, location=None, *, loader=None,
     spec._set_fileattr = True
 
     # Pick a loader if one wasn't provided.
-    if loader is None:
+    if not loader:
         for loader_class, suffixes in _get_supported_file_loaders():
             if location.endswith(tuple(suffixes)):
                 loader = loader_class(name, location)
@@ -780,7 +780,7 @@ class WindowsRegistryFinder:
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         filepath = cls._search_registry(fullname)
-        if filepath is None:
+        if not filepath:
             return None
         try:
             _path_stat(filepath)
@@ -826,7 +826,7 @@ class _LoaderBasics:
     def exec_module(self, module):
         """Execute the module."""
         code = self.get_code(module.__name__)
-        if code is None:
+        if not code:
             raise ImportError('cannot load module {!r} when get_code() '
                               'returns None'.format(module.__name__))
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
@@ -961,13 +961,13 @@ class SourceLoader(_LoaderBasics):
                         return _compile_bytecode(bytes_data, name=fullname,
                                                  bytecode_path=bytecode_path,
                                                  source_path=source_path)
-        if source_bytes is None:
+        if not source_bytes:
             source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
         _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path and source_mtime):
             if hash_based:
-                if source_hash is None:
+                if not source_hash:
                     source_hash = _imp.source_hash(source_bytes)
                 data = _code_to_hash_pyc(code_object, source_hash, check_source)
             else:
@@ -1268,7 +1268,7 @@ class PathFinder:
         """Call the invalidate_caches() method on all path entry finders
         stored in sys.path_importer_caches (where implemented)."""
         for name, finder in list(sys.path_importer_cache.items()):
-            if finder is None:
+            if not finder:
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
@@ -1338,12 +1338,12 @@ class PathFinder:
                     spec = finder.find_spec(fullname, target)
                 else:
                     spec = cls._legacy_get_spec(fullname, finder)
-                if spec is None:
+                if not spec:
                     continue
                 if spec.loader:
                     return spec
                 portions = spec.submodule_search_locations
-                if portions is None:
+                if not portions:
                     raise ImportError('spec missing loader')
                 # This is possibly part of a namespace package.
                 #  Remember these path entries (if any) for when we
@@ -1361,12 +1361,12 @@ class PathFinder:
 
         The search is based on sys.path_hooks and sys.path_importer_cache.
         """
-        if path is None:
+        if not path:
             path = sys.path
         spec = cls._get_spec(fullname, path, target)
-        if spec is None:
+        if not spec:
             return None
-        elif spec.loader is None:
+        elif not spec.loader:
             namespace_path = spec.submodule_search_locations
             if namespace_path:
                 # We found at least one namespace path.  Return a spec which
@@ -1388,7 +1388,7 @@ class PathFinder:
 
         """
         spec = cls.find_spec(fullname, path)
-        if spec is None:
+        if not spec:
             return None
         return spec.loader
 
@@ -1443,7 +1443,7 @@ class FileFinder:
 
         """
         spec = self.find_spec(fullname)
-        if spec is None:
+        if not spec:
             return None, []
         return spec.loader, spec.submodule_search_locations or []
 

@@ -206,7 +206,7 @@ def _normalize_module(module, depth=2):
         return module
     elif isinstance(module, str):
         return __import__(module, globals(), locals(), ["*"])
-    elif module is None:
+    elif not module:
         return sys.modules[sys._getframe(depth).f_globals['__name__']]
     else:
         raise TypeError("Expected a module, string, or None")
@@ -370,7 +370,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
 
     def set_trace(self, frame=None):
         self.__debugger_used = True
-        if frame is None:
+        if not frame:
             frame = sys._getframe().f_back
         pdb.Pdb.set_trace(self, frame)
 
@@ -486,7 +486,7 @@ class Example:
         self.want = want
         self.lineno = lineno
         self.indent = indent
-        if options is None: options = {}
+        if not options: options = {}
         self.options = options
         self.exc_msg = exc_msg
 
@@ -882,9 +882,9 @@ class DocTestFinder:
 
         """
         # If name was not specified, then extract it from the object.
-        if name is None:
+        if not name:
             name = getattr(obj, '__name__', None)
-            if name is None:
+            if not name:
                 raise ValueError("DocTestFinder.find: name must be given "
                         "when obj.__name__ doesn't exist: %r" %
                                  (type(obj),))
@@ -894,7 +894,7 @@ class DocTestFinder:
         # case module will be None.
         if module is False:
             module = None
-        elif module is None:
+        elif not module:
             module = inspect.getmodule(obj)
 
         # Read the module's source code.  This is used by
@@ -910,7 +910,7 @@ class DocTestFinder:
                 # (see __patched_linecache_getlines).
                 file = inspect.getfile(obj)
                 if not file[0]+file[-2:] == '<]>': file = None
-            if file is None:
+            if not file:
                 source_lines = None
             else:
                 if module:
@@ -926,8 +926,8 @@ class DocTestFinder:
                     source_lines = None
 
         # Initialize globals, and merge in extraglobs.
-        if globs is None:
-            if module is None:
+        if not globs:
+            if not module:
                 globs = {}
             else:
                 globs = module.__dict__.copy()
@@ -953,7 +953,7 @@ class DocTestFinder:
         Return true if the given object is defined in the given
         module.
         """
-        if module is None:
+        if not module:
             return True
         elif inspect.getmodule(object):
             return module is inspect.getmodule(object)
@@ -1050,7 +1050,7 @@ class DocTestFinder:
             docstring = obj
         else:
             try:
-                if obj.__doc__ is None:
+                if not obj.__doc__:
                     docstring = ''
                 else:
                     docstring = obj.__doc__
@@ -1067,7 +1067,7 @@ class DocTestFinder:
             return None
 
         # Return a DocTest for this object.
-        if module is None:
+        if not module:
             filename = None
         else:
             # __file__ can be None for namespace packages.
@@ -1092,7 +1092,7 @@ class DocTestFinder:
         # Note: this could be fooled if a class is defined multiple
         # times in a single file.
         if inspect.isclass(obj):
-            if source_lines is None:
+            if not source_lines:
                 return None
             pat = re.compile(r'^\s*class\s*%s\b' %
                              getattr(obj, '__name__', '-'))
@@ -1115,7 +1115,7 @@ class DocTestFinder:
         # signature, where a continuation line begins with a quote
         # mark.
         if lineno:
-            if source_lines is None:
+            if not source_lines:
                 return lineno+1
             pat = re.compile(r'(^|.*:)\s*\w*("|\')')
             for lineno in range(lineno, len(source_lines)):
@@ -1207,7 +1207,7 @@ class DocTestRunner:
         more information.
         """
         self._checker = checker or OutputChecker()
-        if verbose is None:
+        if not verbose:
             verbose = '-v' in sys.argv
         self._verbose = verbose
         self.optionflags = optionflags
@@ -1353,7 +1353,7 @@ class DocTestRunner:
 
             # If the example executed without raising any exceptions,
             # verify its output.
-            if exception is None:
+            if not exception:
                 if check(example.want, got, self.optionflags):
                     outcome = SUCCESS
 
@@ -1365,7 +1365,7 @@ class DocTestRunner:
 
                 # If `example.exc_msg` is None, then we weren't expecting
                 # an exception.
-                if example.exc_msg is None:
+                if not example.exc_msg:
                     outcome = BOOM
 
                 # We expected an exception:  see whether it matches.
@@ -1448,11 +1448,11 @@ class DocTestRunner:
         """
         self.test = test
 
-        if compileflags is None:
+        if not compileflags:
             compileflags = _extract_future_flags(test.globs)
 
         save_stdout = sys.stdout
-        if out is None:
+        if not out:
             encoding = save_stdout.encoding
             if encoding is None or encoding.lower() == 'utf-8':
                 out = save_stdout.write
@@ -1510,7 +1510,7 @@ class DocTestRunner:
         summary is.  If the verbosity is not specified, then the
         DocTestRunner's verbosity is used.
         """
-        if verbose is None:
+        if not verbose:
             verbose = self._verbose
         notests = []
         passed = []
@@ -1934,7 +1934,7 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     global master
 
     # If no module was given, then use __main__.
-    if m is None:
+    if not m:
         # DWA - m will still be None if this wasn't invoked from the command
         # line, in which case the following TypeError is about as good an error
         # as we should expect
@@ -1945,7 +1945,7 @@ def testmod(m=None, name=None, globs=None, verbose=None,
         raise TypeError("testmod: module required; %r" % (m,))
 
     # If no name was given, then use the module's name.
-    if name is None:
+    if not name:
         name = m.__name__
 
     # Find, parse, and run all tests in the given module.
@@ -1962,7 +1962,7 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     if report:
         runner.summarize()
 
-    if master is None:
+    if not master:
         master = runner
     else:
         master.merge(runner)
@@ -2060,11 +2060,11 @@ def testfile(filename, module_relative=True, name=None, package=None,
                                     encoding or "utf-8")
 
     # If no name was given, then use the file's name.
-    if name is None:
+    if not name:
         name = os.path.basename(filename)
 
     # Assemble the globals.
-    if globs is None:
+    if not globs:
         globs = {}
     else:
         globs = globs.copy()
@@ -2085,7 +2085,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
     if report:
         runner.summarize()
 
-    if master is None:
+    if not master:
         master = runner
     else:
         master.merge(runner)
@@ -2209,7 +2209,7 @@ class DocTestCase(unittest.TestCase):
 
     def format_failure(self, err):
         test = self._dt_test
-        if test.lineno is None:
+        if not test.lineno:
             lineno = 'unknown line number'
         else:
             lineno = '%s' % test.lineno
@@ -2377,7 +2377,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
        A set of doctest option flags expressed as an integer.
     """
 
-    if test_finder is None:
+    if not test_finder:
         test_finder = DocTestFinder()
 
     module = _normalize_module(module)
@@ -2420,7 +2420,7 @@ class DocFileCase(DocTestCase):
 def DocFileTest(path, module_relative=True, package=None,
                 globs=None, parser=DocTestParser(),
                 encoding=None, **options):
-    if globs is None:
+    if not globs:
         globs = {}
     else:
         globs = globs.copy()

@@ -380,7 +380,7 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
     # Note that we mutate locals when exec() is called.  Caller
     # beware!  The only callers are internal to this module, so no
     # worries about external callers.
-    if locals is None:
+    if not locals:
         locals = {}
     if 'BUILTINS' not in locals:
         locals['BUILTINS'] = builtins
@@ -1030,7 +1030,7 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
         return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
 
     # See if we're being called as @dataclass or @dataclass().
-    if cls is None:
+    if not cls:
         # We're called with parens.
         return wrap
 
@@ -1210,7 +1210,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     dataclass().
     """
 
-    if namespace is None:
+    if not namespace:
         namespace = {}
     else:
         # Copy namespace since we're going to mutate it.

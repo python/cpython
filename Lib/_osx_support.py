@@ -32,7 +32,7 @@ def _find_executable(executable, path=None):
     A string listing directories separated by 'os.pathsep'; defaults to
     os.environ['PATH'].  Returns the complete filename or None if not found.
     """
-    if path is None:
+    if not path:
         path = os.environ['PATH']
 
     paths = path.split(os.pathsep)
@@ -93,7 +93,7 @@ def _get_system_version():
 
     global _SYSTEM_VERSION
 
-    if _SYSTEM_VERSION is None:
+    if not _SYSTEM_VERSION:
         _SYSTEM_VERSION = ''
         try:
             f = open('/System/Library/CoreServices/SystemVersion.plist')
@@ -122,7 +122,7 @@ def _get_system_version_tuple():
     two version numbers.
     """
     global _SYSTEM_VERSION_TUPLE
-    if _SYSTEM_VERSION_TUPLE is None:
+    if not _SYSTEM_VERSION_TUPLE:
         osx_version = _get_system_version()
         if osx_version:
             try:
@@ -170,7 +170,7 @@ def _default_sysroot(cc):
                 _cache_default_sysroot = '/'
             elif line.endswith(".sdk/usr/include"):
                 _cache_default_sysroot = line[:-12]
-    if _cache_default_sysroot is None:
+    if not _cache_default_sysroot:
         _cache_default_sysroot = '/'
 
     return _cache_default_sysroot

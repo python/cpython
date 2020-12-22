@@ -162,7 +162,7 @@ def addpackage(sitedir, name, known_paths):
        For each line in the file, either combine it with sitedir to a path
        and add that to known_paths, or execute it if it starts with 'import '.
     """
-    if known_paths is None:
+    if not known_paths:
         known_paths = _init_pathinfo()
         reset = True
     else:
@@ -206,7 +206,7 @@ def addsitedir(sitedir, known_paths=None):
     """Add 'sitedir' argument to sys.path if missing and handle .pth files in
     'sitedir'"""
     _trace(f"Adding directory: {sitedir!r}")
-    if known_paths is None:
+    if not known_paths:
         known_paths = _init_pathinfo()
         reset = True
     else:
@@ -300,7 +300,7 @@ def getuserbase():
     it.
     """
     global USER_BASE
-    if USER_BASE is None:
+    if not USER_BASE:
         USER_BASE = _getuserbase()
     return USER_BASE
 
@@ -314,7 +314,7 @@ def getusersitepackages():
     global USER_SITE
     userbase = getuserbase() # this will also set USER_BASE
 
-    if USER_SITE is None:
+    if not USER_SITE:
         USER_SITE = _get_path(userbase)
 
     return USER_SITE
@@ -344,7 +344,7 @@ def getsitepackages(prefixes=None):
     sitepackages = []
     seen = set()
 
-    if prefixes is None:
+    if not prefixes:
         prefixes = PREFIXES
 
     for prefix in prefixes:
@@ -589,7 +589,7 @@ def main():
         abs_paths()
 
     known_paths = venv(known_paths)
-    if ENABLE_USER_SITE is None:
+    if not ENABLE_USER_SITE:
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths)
     known_paths = addsitepackages(known_paths)
@@ -649,7 +649,7 @@ def _script():
             sys.exit(0)
         elif ENABLE_USER_SITE is False:
             sys.exit(1)
-        elif ENABLE_USER_SITE is None:
+        elif not ENABLE_USER_SITE:
             sys.exit(2)
         else:
             sys.exit(3)

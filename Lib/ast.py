@@ -44,7 +44,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
         major, minor = feature_version  # Should be a 2-tuple.
         assert major == 3
         feature_version = minor
-    elif feature_version is None:
+    elif not feature_version:
         feature_version = -1
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
@@ -417,7 +417,7 @@ class NodeVisitor(object):
     def visit_Constant(self, node):
         value = node.value
         type_name = _const_node_type_names.get(type(value))
-        if type_name is None:
+        if not type_name:
             for cls, name in _const_node_type_names.items():
                 if isinstance(value, cls):
                     type_name = name
@@ -479,7 +479,7 @@ class NodeTransformer(NodeVisitor):
                 for value in old_value:
                     if isinstance(value, AST):
                         value = self.visit(value)
-                        if value is None:
+                        if not value:
                             continue
                         elif not isinstance(value, AST):
                             new_values.extend(value)
@@ -488,7 +488,7 @@ class NodeTransformer(NodeVisitor):
                 old_value[:] = new_values
             elif isinstance(old_value, AST):
                 new_node = self.visit(old_value)
-                if new_node is None:
+                if not new_node:
                     delattr(node, field)
                 else:
                     setattr(node, field, new_node)
@@ -1281,7 +1281,7 @@ class _Unparser(NodeVisitor):
 
         def write_item(item):
             k, v = item
-            if k is None:
+            if not k:
                 # for dictionary unpacking operator in dicts {**{'y': 2}}
                 # see PEP 448 for details
                 self.write("**")
@@ -1531,7 +1531,7 @@ class _Unparser(NodeVisitor):
                 self.traverse(node.kwarg.annotation)
 
     def visit_keyword(self, node):
-        if node.arg is None:
+        if not node.arg:
             self.write("**")
         else:
             self.write(node.arg)

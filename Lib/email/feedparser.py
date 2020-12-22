@@ -146,8 +146,8 @@ class FeedParser:
         """
         self.policy = policy
         self._old_style_factory = False
-        if _factory is None:
-            if policy.message_factory is None:
+        if not _factory:
+            if not policy.message_factory:
                 from email.message import Message
                 self._factory = Message
             else:
@@ -304,7 +304,7 @@ class FeedParser:
             return
         if self._cur.get_content_maintype() == 'multipart':
             boundary = self._cur.get_boundary()
-            if boundary is None:
+            if not boundary:
                 # The message /claims/ to be a multipart but it has not
                 # defined a boundary.  That's a problem which we'll handle by
                 # reading everything until the EOF and marking the message as

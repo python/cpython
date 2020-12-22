@@ -44,7 +44,7 @@ def get_resource_reader(package):
     # TypeError.  That seems terrible.
     spec = package.__spec__
     reader = getattr(spec.loader, 'get_resource_reader', None)
-    if reader is None:
+    if not reader:
         return None
     return reader(spec.name)
 
@@ -64,7 +64,7 @@ def get_package(package):
     Raise an exception if the resolved module is not a package.
     """
     resolved = resolve(package)
-    if resolved.__spec__.submodule_search_locations is None:
+    if not resolved.__spec__.submodule_search_locations:
         raise TypeError('{!r} is not a package'.format(package))
     return resolved
 

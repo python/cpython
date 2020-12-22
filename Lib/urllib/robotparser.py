@@ -72,7 +72,7 @@ class RobotFileParser:
     def _add_entry(self, entry):
         if "*" in entry.useragents:
             # the default entry is considered last
-            if self.default_entry is None:
+            if not self.default_entry:
                 # the first default entry wins
                 self.default_entry = entry
         else:

@@ -64,9 +64,9 @@ class MIMEAudio(MIMENonMultipart):
         constructor, which turns them into parameters on the Content-Type
         header.
         """
-        if _subtype is None:
+        if not _subtype:
             _subtype = _whatsnd(_audiodata)
-        if _subtype is None:
+        if not _subtype:
             raise TypeError('Could not find audio MIME subtype')
         MIMENonMultipart.__init__(self, 'audio', _subtype, policy=policy,
                                   **_params)

@@ -738,7 +738,7 @@ class _singlefileMailbox(Mailbox):
 
     def _lookup(self, key=None):
         """Return (start, stop) or raise KeyError."""
-        if self._toc is None:
+        if not self._toc:
             self._generate_toc()
         if key:
             try:
@@ -826,7 +826,7 @@ class _mboxMMDF(_singlefileMailbox):
             from_line = message.get_unixfrom()  # May be None.
             if from_line:
                 from_line = from_line.encode('ascii')
-        if from_line is None:
+        if not from_line:
             from_line = b'From MAILER-DAEMON ' + time.asctime(time.gmtime()).encode()
         start = self._file.tell()
         self._file.write(from_line + linesep)
@@ -1503,7 +1503,7 @@ class Message(email.message.Message):
             self._become_message(email.message_from_file(message))
         elif hasattr(message, "read"):
             self._become_message(email.message_from_binary_file(message))
-        elif message is None:
+        elif not message:
             email.message.Message.__init__(self)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
@@ -1926,7 +1926,7 @@ class _ProxyFile:
     def __init__(self, f, pos=None):
         """Initialize a _ProxyFile."""
         self._file = f
-        if pos is None:
+        if not pos:
             self._pos = f.tell()
         else:
             self._pos = pos
@@ -1984,7 +1984,7 @@ class _ProxyFile:
 
     def _read(self, size, read_method):
         """Read size bytes using read_method."""
-        if size is None:
+        if not size:
             size = -1
         self._file.seek(self._pos)
         result = read_method(size)

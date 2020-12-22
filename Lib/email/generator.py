@@ -58,7 +58,7 @@ class Generator:
 
         """
 
-        if mangle_from_ is None:
+        if not mangle_from_:
             mangle_from_ = True if policy is None else policy.mangle_from_
         self._fp = outfp
         self._mangle_from_ = mangle_from_
@@ -195,7 +195,7 @@ class Generator:
         # Write the headers.  First we see if the message object wants to
         # handle that itself.  If not, we'll do it generically.
         meth = getattr(msg, '_write_headers', None)
-        if meth is None:
+        if not meth:
             self._write_headers(msg)
         else:
             meth(self)
@@ -210,10 +210,10 @@ class Generator:
         sub = msg.get_content_subtype()
         specific = UNDERSCORE.join((main, sub)).replace('-', '_')
         meth = getattr(self, '_handle_' + specific, None)
-        if meth is None:
+        if not meth:
             generic = main.replace('-', '_')
             meth = getattr(self, '_handle_' + generic, None)
-            if meth is None:
+            if not meth:
                 meth = self._writeBody
         meth(msg)
 
@@ -233,7 +233,7 @@ class Generator:
 
     def _handle_text(self, msg):
         payload = msg.get_payload()
-        if payload is None:
+        if not payload:
             return
         if not isinstance(payload, str):
             raise TypeError('string payload expected: %s' % type(payload))
@@ -261,7 +261,7 @@ class Generator:
         # present in the payload.
         msgtexts = []
         subparts = msg.get_payload()
-        if subparts is None:
+        if not subparts:
             subparts = []
         elif isinstance(subparts, str):
             # e.g. a non-strict parse of a message with no starting boundary.
@@ -376,7 +376,7 @@ class Generator:
         # boundary doesn't appear in the text.
         token = random.randrange(sys.maxsize)
         boundary = ('=' * 15) + (_fmt % token) + '=='
-        if text is None:
+        if not text:
             return boundary
         b = boundary
         counter = 0
@@ -426,7 +426,7 @@ class BytesGenerator(Generator):
     def _handle_text(self, msg):
         # If the string has surrogates the original source was bytes, so
         # just write it back out.
-        if msg._payload is None:
+        if not msg._payload:
             return
         if _has_surrogates(msg._payload) and not self.policy.cte_type=='7bit':
             if self._mangle_from_:
@@ -477,7 +477,7 @@ class DecodedGenerator(Generator):
         """
         Generator.__init__(self, outfp, mangle_from_, maxheaderlen,
                            policy=policy)
-        if fmt is None:
+        if not fmt:
             self._fmt = _FMT
         else:
             self._fmt = fmt

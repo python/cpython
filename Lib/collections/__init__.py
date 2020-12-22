@@ -500,7 +500,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # sys._getframe is not defined (Jython for example) or sys._getframe is not
     # defined for arguments greater than 0 (IronPython), or where the user has
     # specified a particular module.
-    if module is None:
+    if not module:
         try:
             module = _sys._getframe(1).f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):
@@ -605,7 +605,7 @@ class Counter(dict):
 
         '''
         # Emulate Bag.sortedByCount from Smalltalk
-        if n is None:
+        if not n:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
         # Lazy import to speedup Python startup time
@@ -1029,7 +1029,7 @@ class ChainMap(_collections_abc.MutableMapping):
         '''New ChainMap with a new map followed by all previous maps.
         If no map is provided, an empty dict is used.
         '''
-        if m is None:
+        if not m:
             m = {}
         return self.__class__(m, *self.maps)
 

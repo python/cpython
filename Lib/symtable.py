@@ -32,7 +32,7 @@ class SymbolTableFactory:
     def __call__(self, table, filename):
         key = table, filename
         obj = self.__memo.get(key, None)
-        if obj is None:
+        if not obj:
             obj = self.__memo[key] = self.new(table, filename)
         return obj
 
@@ -121,7 +121,7 @@ class SymbolTable:
         Returns a *Symbol* instance.
         """
         sym = self._symbols.get(name)
-        if sym is None:
+        if not sym:
             flags = self._table.symbols[name]
             namespaces = self.__check_children(name)
             module_scope = (self._table.name == "top")
@@ -163,14 +163,14 @@ class Function(SymbolTable):
     def get_parameters(self):
         """Return a tuple of parameters to the function.
         """
-        if self.__params is None:
+        if not self.__params:
             self.__params = self.__idents_matching(lambda x:x & DEF_PARAM)
         return self.__params
 
     def get_locals(self):
         """Return a tuple of locals in the function.
         """
-        if self.__locals is None:
+        if not self.__locals:
             locs = (LOCAL, CELL)
             test = lambda x: ((x >> SCOPE_OFF) & SCOPE_MASK) in locs
             self.__locals = self.__idents_matching(test)
@@ -179,7 +179,7 @@ class Function(SymbolTable):
     def get_globals(self):
         """Return a tuple of globals in the function.
         """
-        if self.__globals is None:
+        if not self.__globals:
             glob = (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
             test = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) in glob
             self.__globals = self.__idents_matching(test)
@@ -188,14 +188,14 @@ class Function(SymbolTable):
     def get_nonlocals(self):
         """Return a tuple of nonlocals in the function.
         """
-        if self.__nonlocals is None:
+        if not self.__nonlocals:
             self.__nonlocals = self.__idents_matching(lambda x:x & DEF_NONLOCAL)
         return self.__nonlocals
 
     def get_frees(self):
         """Return a tuple of free variables in the function.
         """
-        if self.__frees is None:
+        if not self.__frees:
             is_free = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) == FREE
             self.__frees = self.__idents_matching(is_free)
         return self.__frees
@@ -208,7 +208,7 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
-        if self.__methods is None:
+        if not self.__methods:
             d = {}
             for st in self._table.children:
                 d[st.name] = 1

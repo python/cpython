@@ -169,7 +169,7 @@ class BinHex:
             hqxer = _Hqxcoderengine(ofp)
             self.ofp = _Rlecoderengine(hqxer)
             self.crc = 0
-            if finfo is None:
+            if not finfo:
                 finfo = FInfo()
             self.dlen = dlen
             self.rlen = rlen
@@ -234,7 +234,7 @@ class BinHex:
         self._write(data)
 
     def close(self):
-        if self.state is None:
+        if not self.state:
             return
         try:
             if self.state < _DID_DATA:
@@ -464,7 +464,7 @@ class HexBin:
         return self._read(n)
 
     def close(self):
-        if self.state is None:
+        if not self.state:
             return
         try:
             if self.rlen:

@@ -48,7 +48,7 @@ class Node(xml.dom.Node):
 
     def toprettyxml(self, indent="\t", newl="\n", encoding=None,
                     standalone=None):
-        if encoding is None:
+        if not encoding:
             writer = io.StringIO()
         else:
             writer = io.TextIOWrapper(io.BytesIO(),
@@ -60,7 +60,7 @@ class Node(xml.dom.Node):
             self.writexml(writer, "", indent, newl, encoding, standalone)
         else:
             self.writexml(writer, "", indent, newl)
-        if encoding is None:
+        if not encoding:
             return writer.getvalue()
         else:
             return writer.detach().getvalue()
@@ -90,7 +90,7 @@ class Node(xml.dom.Node):
                 "%s cannot be child of %s" % (repr(newChild), repr(self)))
         if newChild.parentNode:
             newChild.parentNode.removeChild(newChild)
-        if refChild is None:
+        if not refChild:
             self.appendChild(newChild)
         else:
             try:
@@ -243,7 +243,7 @@ class Node(xml.dom.Node):
             self._user_data = d
         if key in d:
             old = d[key][0]
-        if data is None:
+        if not data:
             # ignore handlers passed for None
             handler = None
             if old:
@@ -406,7 +406,7 @@ class Attr(Node):
                 raise xml.dom.NamespaceErr(
                     "illegal use of 'xmlns' prefix for the wrong namespace")
         self._prefix = prefix
-        if prefix is None:
+        if not prefix:
             newName = self.localName
         else:
             newName = "%s:%s" % (prefix, self.localName)
@@ -438,11 +438,11 @@ class Attr(Node):
             return True
         doc = self.ownerDocument
         elem = self.ownerElement
-        if doc is None or elem is None:
+        if not doc or not elem:
             return False
 
         info = doc._get_elem_info(elem)
-        if info is None:
+        if not info:
             return False
         if self.namespaceURI:
             return info.isIdNS(self.namespaceURI, self.localName)
@@ -452,11 +452,11 @@ class Attr(Node):
     def _get_schemaType(self):
         doc = self.ownerDocument
         elem = self.ownerElement
-        if doc is None or elem is None:
+        if not doc or not elem:
             return _no_type
 
         info = doc._get_elem_info(elem)
-        if info is None:
+        if not info:
             return _no_type
         if self.namespaceURI:
             return info.getAttributeTypeNS(self.namespaceURI, self.localName)
@@ -697,7 +697,7 @@ class Element(Node):
         self._attrsNS = None
 
     def _ensure_attributes(self):
-        if self._attrs is None:
+        if not self._attrs:
             self._attrs = {}
             self._attrsNS = {}
 
@@ -727,7 +727,7 @@ class Element(Node):
         returned as an explicitly given attribute value, use the
         hasAttribute method to distinguish these two cases.
         """
-        if self._attrs is None:
+        if not self._attrs:
             return ""
         try:
             return self._attrs[attname].value
@@ -735,7 +735,7 @@ class Element(Node):
             return ""
 
     def getAttributeNS(self, namespaceURI, localName):
-        if self._attrsNS is None:
+        if not self._attrsNS:
             return ""
         try:
             return self._attrsNS[(namespaceURI, localName)].value
@@ -744,7 +744,7 @@ class Element(Node):
 
     def setAttribute(self, attname, value):
         attr = self.getAttributeNode(attname)
-        if attr is None:
+        if not attr:
             attr = Attr(attname)
             attr.value = value # also sets nodeValue
             attr.ownerDocument = self.ownerDocument
@@ -757,7 +757,7 @@ class Element(Node):
     def setAttributeNS(self, namespaceURI, qualifiedName, value):
         prefix, localname = _nssplit(qualifiedName)
         attr = self.getAttributeNodeNS(namespaceURI, localname)
-        if attr is None:
+        if not attr:
             attr = Attr(qualifiedName, namespaceURI, localname, prefix)
             attr.value = value
             attr.ownerDocument = self.ownerDocument
@@ -772,12 +772,12 @@ class Element(Node):
                 attr.nodeName = qualifiedName
 
     def getAttributeNode(self, attrname):
-        if self._attrs is None:
+        if not self._attrs:
             return None
         return self._attrs.get(attrname)
 
     def getAttributeNodeNS(self, namespaceURI, localName):
-        if self._attrsNS is None:
+        if not self._attrsNS:
             return None
         return self._attrsNS.get((namespaceURI, localName))
 
@@ -803,7 +803,7 @@ class Element(Node):
     setAttributeNodeNS = setAttributeNode
 
     def removeAttribute(self, name):
-        if self._attrsNS is None:
+        if not self._attrsNS:
             raise xml.dom.NotFoundErr()
         try:
             attr = self._attrs[name]
@@ -812,7 +812,7 @@ class Element(Node):
         self.removeAttributeNode(attr)
 
     def removeAttributeNS(self, namespaceURI, localName):
-        if self._attrsNS is None:
+        if not self._attrsNS:
             raise xml.dom.NotFoundErr()
         try:
             attr = self._attrsNS[(namespaceURI, localName)]
@@ -821,7 +821,7 @@ class Element(Node):
         self.removeAttributeNode(attr)
 
     def removeAttributeNode(self, node):
-        if node is None:
+        if not node:
             raise xml.dom.NotFoundErr()
         try:
             self._attrs[node.name]
@@ -842,12 +842,12 @@ class Element(Node):
         Returns True if the element has an attribute with the specified name.
         Otherwise, returns False.
         """
-        if self._attrs is None:
+        if not self._attrs:
             return False
         return name in self._attrs
 
     def hasAttributeNS(self, namespaceURI, localName):
-        if self._attrsNS is None:
+        if not self._attrsNS:
             return False
         return (namespaceURI, localName) in self._attrsNS
 
@@ -919,7 +919,7 @@ class Element(Node):
         self.setIdAttributeNode(idAttr)
 
     def setIdAttributeNode(self, idAttr):
-        if idAttr is None or not self.isSameNode(idAttr.ownerElement):
+        if not idAttr or not self.isSameNode(idAttr.ownerElement):
             raise xml.dom.NotFoundErr()
         if _get_containing_entref(self):
             raise xml.dom.NoModificationAllowedErr()
@@ -1102,7 +1102,7 @@ class Text(CharacterData):
         newText.ownerDocument = self.ownerDocument
         next = self.nextSibling
         if self.parentNode and self in self.parentNode.childNodes:
-            if next is None:
+            if not next:
                 self.parentNode.appendChild(newText)
             else:
                 self.parentNode.insertBefore(newText, next)
@@ -1164,10 +1164,10 @@ class Text(CharacterData):
         if self.data.strip():
             return False
         elem = _get_containing_element(self)
-        if elem is None:
+        if not elem:
             return False
         info = self.ownerDocument._get_elem_info(elem)
-        if info is None:
+        if not info:
             return False
         else:
             return info.isElementContent()
@@ -1250,7 +1250,7 @@ class ReadOnlySequentialNamedNodeMap(object):
             node = self.getNamedItemNS(*name_or_tuple)
         else:
             node = self.getNamedItem(name_or_tuple)
-        if node is None:
+        if not node:
             raise KeyError(name_or_tuple)
         return node
 
@@ -1323,7 +1323,7 @@ class DocumentType(Identified, Childless, Node):
         return self.internalSubset
 
     def cloneNode(self, deep):
-        if self.ownerDocument is None:
+        if not self.ownerDocument:
             # it's ok
             clone = DocumentType(None)
             clone.name = self.name
@@ -1434,10 +1434,7 @@ class DOMImplementation(DOMImplementationLS):
                 "doctype object owned by another DOM tree")
         doc = self._create_document()
 
-        add_root_element = not (namespaceURI is None
-                                and qualifiedName is None
-                                and doctype is None)
-
+        add_root_element = not (not namespaceURI and not qualifiedName and not doctype)
         if not qualifiedName and add_root_element:
             # The spec is unclear what to raise here; SyntaxErr
             # would be the other obvious candidate. Since Xerces raises
@@ -1659,9 +1656,9 @@ class Document(Node, DocumentLS):
             assert childclone.ownerDocument.isSameNode(clone)
             clone.childNodes.append(childclone)
             if childclone.nodeType == Node.DOCUMENT_NODE:
-                assert clone.documentElement is None
+                assert not clone.documentElement
             elif childclone.nodeType == Node.DOCUMENT_TYPE_NODE:
-                assert clone.doctype is None
+                assert not clone.doctype
                 clone.doctype = childclone
             childclone.parentNode = clone
         self._call_user_data_handler(xml.dom.UserDataHandler.NODE_CLONED,
@@ -1743,7 +1740,7 @@ class Document(Node, DocumentLS):
             return None
 
         stack = self._id_search_stack
-        if stack is None:
+        if not stack:
             # we never searched before, or the cache has been cleared
             stack = [self.documentElement]
             self._id_search_stack = stack
@@ -1983,7 +1980,7 @@ def _do_pulldom_parse(func, args, kwargs):
 
 def parse(file, parser=None, bufsize=None):
     """Parse a file into a DOM by filename or file object."""
-    if parser is None and not bufsize:
+    if not parser and not bufsize:
         from xml.dom import expatbuilder
         return expatbuilder.parse(file)
     else:
@@ -1993,7 +1990,7 @@ def parse(file, parser=None, bufsize=None):
 
 def parseString(string, parser=None):
     """Parse a file into a DOM from a string."""
-    if parser is None:
+    if not parser:
         from xml.dom import expatbuilder
         return expatbuilder.parseString(string)
     else:

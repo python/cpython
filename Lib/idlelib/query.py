@@ -209,7 +209,7 @@ class ModuleName(Query):
         except (ValueError, ImportError) as msg:
             self.showerror(str(msg))
             return None
-        if spec is None:
+        if not spec:
             self.showerror("module not found.")
             return None
         if not isinstance(spec.loader, importlib.abc.SourceLoader):

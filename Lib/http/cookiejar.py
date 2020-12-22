@@ -104,7 +104,7 @@ def time2isoz(t=None):
     1994-11-24 08:49:37Z
 
     """
-    if t is None:
+    if not t:
         dt = datetime.datetime.utcnow()
     else:
         dt = datetime.datetime.utcfromtimestamp(t)
@@ -122,7 +122,7 @@ def time2netscape(t=None):
     Wed, DD-Mon-YYYY HH:MM:SS GMT
 
     """
-    if t is None:
+    if not t:
         dt = datetime.datetime.utcnow()
     else:
         dt = datetime.datetime.utcfromtimestamp(t)
@@ -169,9 +169,9 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
             return None
 
     # make sure clock elements are defined
-    if hr is None: hr = 0
-    if min is None: min = 0
-    if sec is None: sec = 0
+    if not hr: hr = 0
+    if not min: min = 0
+    if not sec: sec = 0
 
     day = int(day)
     hr = int(hr)
@@ -194,11 +194,11 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
 
     if t:
         # adjust time using timezone string, to get absolute time since epoch
-        if tz is None:
+        if not tz:
             tz = "UTC"
         tz = tz.upper()
         offset = offset_from_tz_string(tz)
-        if offset is None:
+        if not offset:
             return None
         t = t - offset
 
@@ -809,13 +809,13 @@ class Cookie:
         self._rest[name] = value
 
     def is_expired(self, now=None):
-        if now is None: now = time.time()
+        if not now: now = time.time()
         if (self.expires) and (self.expires <= now):
             return True
         return False
 
     def __str__(self):
-        if self.port is None: p = ""
+        if not self.port: p = ""
         else: p = ":"+self.port
         limit = self.domain + p + self.path
         if self.value:
@@ -940,7 +940,7 @@ class DefaultCookiePolicy(CookiePolicy):
         self._allowed_domains = allowed_domains
 
     def is_not_allowed(self, domain):
-        if self._allowed_domains is None:
+        if not self._allowed_domains:
             return False
         for allowed_domain in self._allowed_domains:
             if user_domain_match(domain, allowed_domain):
@@ -967,7 +967,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def set_ok_version(self, cookie, request):
-        if cookie.version is None:
+        if not cookie.version:
             # Version is always set to 0 by parse_ns_headers if it's a Netscape
             # cookie, so this must be an invalid RFC 2965 cookie.
             _debug("   Set-Cookie2 without version attribute (%s=%s)",
@@ -1075,7 +1075,7 @@ class DefaultCookiePolicy(CookiePolicy):
     def set_ok_port(self, cookie, request):
         if cookie.port_specified:
             req_port = request_port(request)
-            if req_port is None:
+            if not req_port:
                 req_port = "80"
             else:
                 req_port = str(req_port)
@@ -1147,7 +1147,7 @@ class DefaultCookiePolicy(CookiePolicy):
     def return_ok_port(self, cookie, request):
         if cookie.port:
             req_port = request_port(request)
-            if req_port is None:
+            if not req_port:
                 req_port = "80"
             for p in cookie.port.split(","):
                 if p == req_port:
@@ -1264,7 +1264,7 @@ class CookieJar:
     magic_re = re.compile(r"^\#LWP-Cookies-(\d+\.\d+)", re.ASCII)
 
     def __init__(self, policy=None):
-        if policy is None:
+        if not policy:
             policy = DefaultCookiePolicy()
         self._policy = policy
 
@@ -1336,7 +1336,7 @@ class CookieJar:
                 value = cookie.value
 
             # add cookie-attributes to be returned in Cookie header
-            if cookie.value is None:
+            if not cookie.value:
                 attrs.append(cookie.name)
             else:
                 attrs.append("%s=%s" % (cookie.name, value))
@@ -1441,7 +1441,7 @@ class CookieJar:
                     # only first value is significant
                     continue
                 if k == "domain":
-                    if v is None:
+                    if not v:
                         _debug("   missing value for domain attribute")
                         bad_cookie = True
                         break
@@ -1451,7 +1451,7 @@ class CookieJar:
                     if max_age_set:
                         # Prefer max-age to expires (like Mozilla)
                         continue
-                    if v is None:
+                    if not v:
                         _debug("   missing or invalid value for expires "
                               "attribute: treating as session cookie")
                         continue
@@ -1541,7 +1541,7 @@ class CookieJar:
         # set default port
         port_specified = False
         if port is not Absent:
-            if port is None:
+            if not port:
                 # Port attr present, but has no value: default to request port.
                 # Cookie should then only be sent back on that port.
                 port = request_port(request)
@@ -1590,7 +1590,7 @@ class CookieJar:
 
     def _process_rfc2109_cookies(self, cookies):
         rfc2109_as_ns = getattr(self._policy, 'rfc2109_as_netscape', None)
-        if rfc2109_as_ns is None:
+        if not rfc2109_as_ns:
             rfc2109_as_ns = not self._policy.rfc2965
         for cookie in cookies:
             if cookie.version == 1:
@@ -1711,7 +1711,7 @@ class CookieJar:
                     "domain and path must be given to remove a cookie by name")
             del self._cookies[domain][path][name]
         elif path:
-            if domain is None:
+            if not domain:
                 raise ValueError(
                     "domain must be given to remove cookies by path")
             del self._cookies[domain][path]
@@ -1798,7 +1798,7 @@ class FileCookieJar(CookieJar):
 
     def load(self, filename=None, ignore_discard=False, ignore_expires=False):
         """Load cookies from a file."""
-        if filename is None:
+        if not filename:
             if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
@@ -1813,7 +1813,7 @@ class FileCookieJar(CookieJar):
         object's state will not be altered if this happens.
 
         """
-        if filename is None:
+        if not filename:
             if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
@@ -1890,7 +1890,7 @@ class LWPCookieJar(FileCookieJar):
         return "\n".join(r+[""])
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
-        if filename is None:
+        if not filename:
             if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
@@ -1941,7 +1941,7 @@ class LWPCookieJar(FileCookieJar):
                         if (lc in value_attrs) or (lc in boolean_attrs):
                             k = lc
                         if k in boolean_attrs:
-                            if v is None: v = True
+                            if not v: v = True
                             standard[k] = v
                         elif k in value_attrs:
                             standard[k] = v
@@ -1953,7 +1953,7 @@ class LWPCookieJar(FileCookieJar):
                     discard = h("discard")
                     if expires:
                         expires = iso2time(expires)
-                    if expires is None:
+                    if not expires:
                         discard = True
                     domain = h("domain")
                     domain_specified = domain.startswith(".")
@@ -2086,7 +2086,7 @@ class MozillaCookieJar(FileCookieJar):
                             (filename, line))
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
-        if filename is None:
+        if not filename:
             if self.filename: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
@@ -2107,7 +2107,7 @@ class MozillaCookieJar(FileCookieJar):
                     expires = str(cookie.expires)
                 else:
                     expires = ""
-                if cookie.value is None:
+                if not cookie.value:
                     # cookies.txt regards 'Set-Cookie: foo' as a cookie
                     # with no name, whereas http.cookiejar regards it as a
                     # cookie with no value.

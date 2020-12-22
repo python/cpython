@@ -348,7 +348,7 @@ def setup_master(master=None):
 
     If it is not allowed to use the default root and master is None,
     RuntimeError is raised."""
-    if master is None:
+    if not master:
         if tkinter._support_default_root:
             master = tkinter._default_root or tkinter.Tk()
         else:
@@ -516,7 +516,7 @@ class Style(object):
         """If themename is None, returns the theme in use, otherwise, set
         the current theme to themename, refreshes all widgets and emits
         a <<ThemeChanged>> event."""
-        if themename is None:
+        if not themename:
             # Starting on Tk 8.6, checking this global is no longer needed
             # since it allows doing self.tk.call(self._name, "theme", "use")
             return self.tk.eval("return $ttk::currentTheme")
@@ -712,7 +712,7 @@ class Combobox(Entry):
         element at position newindex in the list of values. Otherwise,
         returns the index of the current value in the list of values
         or -1 if the current value does not appear in the list."""
-        if newindex is None:
+        if not newindex:
             return self.tk.getint(self.tk.call(self._w, "current"))
         return self.tk.call(self._w, "current", newindex)
 
@@ -1495,7 +1495,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         all items which have the specified tag.
 
         * Availability: Tk 8.6"""
-        if item is None:
+        if not item:
             return self.tk.splitlist(
                 self.tk.call(self._w, "tag", "has", tagname))
         else:

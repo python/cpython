@@ -237,7 +237,7 @@ class Formatter:
 
     def convert_field(self, value, conversion):
         # do any conversion on the resulting object
-        if conversion is None:
+        if not conversion:
             return value
         elif conversion == 's':
             return str(value)

@@ -132,7 +132,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         if self._pending_removals:
             self._commit_removals()
         o = self.data[key]()
-        if o is None:
+        if not o:
             raise KeyError(key)
         else:
             return o
@@ -198,7 +198,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             return default
         else:
             o = wr()
-            if o is None:
+            if not o:
                 # This should only happen
                 return default
             else:
@@ -263,7 +263,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             o = self.data.pop(key)()
         except KeyError:
             o = None
-        if o is None:
+        if not o:
             if args:
                 return args[0]
             else:
@@ -276,7 +276,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             o = self.data[key]()
         except KeyError:
             o = None
-        if o is None:
+        if not o:
             if self._pending_removals:
                 self._commit_removals()
             self.data[key] = KeyedRef(default, self._remove, key)
@@ -615,7 +615,7 @@ class finalize:
     def __repr__(self):
         info = self._registry.get(self)
         obj = info and info.weakref()
-        if obj is None:
+        if not obj:
             return '<%s object at %#x; dead>' % (type(self).__name__, id(self))
         else:
             return '<%s object at %#x; for %r at %#x>' % \

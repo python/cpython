@@ -11,7 +11,7 @@ class ParserGenerator(object):
 
     def __init__(self, filename, stream=None):
         close_stream = None
-        if stream is None:
+        if not stream:
             stream = open(filename)
             close_stream = stream.close
         self.filename = filename
@@ -122,7 +122,7 @@ class ParserGenerator(object):
             if label in self.dfas:
                 if label in self.first:
                     fset = self.first[label]
-                    if fset is None:
+                    if not fset:
                         raise ValueError("recursion for rule %r" % name)
                 else:
                     self.calcfirst(label)
@@ -162,7 +162,7 @@ class ParserGenerator(object):
             newlen = len(dfa)
             dfas[name] = dfa
             #print name, oldlen, newlen
-            if startsymbol is None:
+            if not startsymbol:
                 startsymbol = name
         return dfas, startsymbol
 
@@ -183,7 +183,7 @@ class ParserGenerator(object):
                 return
             base[state] = 1
             for label, next in state.arcs:
-                if label is None:
+                if not label:
                     addclosure(next, base)
         states = [DFAState(closure(start), finish)]
         for state in states: # NB states grows while we're iterating
@@ -213,7 +213,7 @@ class ParserGenerator(object):
                 else:
                     j = len(todo)
                     todo.append(next)
-                if label is None:
+                if not label:
                     print("    -> %d" % j)
                 else:
                     print("    %s -> %d" % (label, j))

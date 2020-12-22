@@ -127,7 +127,7 @@ def _grouping_intervals(grouping):
             return
         # 0: re-use last group ad infinitum
         if interval == 0:
-            if last_interval is None:
+            if not last_interval:
                 raise ValueError("invalid grouping")
             while True:
                 yield last_interval
@@ -511,9 +511,9 @@ def _build_localename(localetuple):
     try:
         language, encoding = localetuple
 
-        if language is None:
+        if not language:
             language = 'C'
-        if encoding is None:
+        if not encoding:
             return language
         else:
             return language + '.' + encoding
@@ -631,7 +631,7 @@ except ImportError:
         if sys.flags.utf8_mode:
             return 'UTF-8'
         encoding = getdefaultlocale()[1]
-        if encoding is None:
+        if not encoding:
             # LANG not set, default conservatively to ASCII
             encoding = 'ascii'
         return encoding

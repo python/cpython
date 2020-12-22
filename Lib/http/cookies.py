@@ -397,7 +397,7 @@ class Morsel(dict):
         append("%s=%s" % (self.key, self.coded_value))
 
         # Now add any defined attributes
-        if attrs is None:
+        if not attrs:
             attrs = self._reserved
         items = sorted(self.items())
         for key, value in items:
@@ -569,7 +569,7 @@ class BaseCookie(dict):
                 if not morsel_seen:
                     # Invalid cookie string
                     return
-                if value is None:
+                if not value:
                     if key.lower() in Morsel._flags:
                         parsed_items.append((TYPE_ATTRIBUTE, key, True))
                     else:

@@ -34,7 +34,7 @@ if os.name == "nt":
     def find_msvcrt():
         """Return the name of the VC runtime dll"""
         version = _get_build_version()
-        if version is None:
+        if not version:
             # better be safe than sorry
             return None
         if version <= 6:

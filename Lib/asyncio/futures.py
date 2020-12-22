@@ -75,7 +75,7 @@ class Future:
         loop object used by the future. If it's not provided, the future uses
         the default event loop.
         """
-        if loop is None:
+        if not loop:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
@@ -122,7 +122,7 @@ class Future:
     def get_loop(self):
         """Return the event loop the Future is bound to."""
         loop = self._loop
-        if loop is None:
+        if not loop:
             raise RuntimeError("Future object is not initialized.")
         return loop
 
@@ -132,7 +132,7 @@ class Future:
         This should only be called once when handling a cancellation since
         it erases the saved context exception value.
         """
-        if self._cancel_message is None:
+        if not self._cancel_message:
             exc = exceptions.CancelledError()
         else:
             exc = exceptions.CancelledError(self._cancel_message)
@@ -227,7 +227,7 @@ class Future:
         if self._state != _PENDING:
             self._loop.call_soon(fn, self, context=context)
         else:
-            if context is None:
+            if not context:
                 context = contextvars.copy_context()
             self._callbacks.append((fn, context))
 
@@ -406,7 +406,7 @@ def wrap_future(future, *, loop=None):
         return future
     assert isinstance(future, concurrent.futures.Future), \
         f'concurrent.futures.Future is expected, got {future!r}'
-    if loop is None:
+    if not loop:
         loop = events.get_event_loop()
     new_future = loop.create_future()
     _chain_future(future, new_future)

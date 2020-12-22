@@ -97,7 +97,7 @@ def xpath_tokenizer(pattern, namespaces=None):
 
 def get_parent_map(context):
     parent_map = context.parent_map
-    if parent_map is None:
+    if not parent_map:
         context.parent_map = parent_map = {}
         for p in context.root.iter():
             for e in p:

@@ -808,7 +808,7 @@ class StreamRecoder:
 
     def readline(self, size=None):
 
-        if size is None:
+        if not size:
             data = self.reader.readline()
         else:
             data = self.reader.readline(size)
@@ -902,7 +902,7 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         # Force opening of the file in binary mode
         mode = mode + 'b'
     file = builtins.open(filename, mode, buffering)
-    if encoding is None:
+    if not encoding:
         return file
 
     try:
@@ -940,7 +940,7 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
         introspection by Python programs.
 
     """
-    if file_encoding is None:
+    if not file_encoding:
         file_encoding = data_encoding
     data_info = lookup(data_encoding)
     file_info = lookup(file_encoding)
@@ -983,7 +983,7 @@ def getincrementalencoder(encoding):
 
     """
     encoder = lookup(encoding).incrementalencoder
-    if encoder is None:
+    if not encoder:
         raise LookupError(encoding)
     return encoder
 
@@ -997,7 +997,7 @@ def getincrementaldecoder(encoding):
 
     """
     decoder = lookup(encoding).incrementaldecoder
-    if decoder is None:
+    if not decoder:
         raise LookupError(encoding)
     return decoder
 

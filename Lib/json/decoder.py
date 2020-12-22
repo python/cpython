@@ -81,7 +81,7 @@ def py_scanstring(s, end, strict=True,
     begin = end - 1
     while 1:
         chunk = _m(s, end)
-        if chunk is None:
+        if not chunk:
             raise JSONDecodeError("Unterminated string starting at", s, begin)
         end = chunk.end()
         content, terminator = chunk.groups()
@@ -139,7 +139,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
     pairs = []
     pairs_append = pairs.append
     # Backwards compatibility
-    if memo is None:
+    if not memo:
         memo = {}
     memo_get = memo.setdefault
     # Use a slice to prevent IndexError from being raised, the following

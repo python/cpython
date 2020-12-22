@@ -390,7 +390,7 @@ def expandvars(path):
                 else:
                     var = path[:index]
                     try:
-                        if environ is None:
+                        if not environ:
                             value = os.fsencode(os.environ[os.fsdecode(var)])
                         else:
                             value = environ[var]
@@ -412,7 +412,7 @@ def expandvars(path):
                 else:
                     var = path[:index]
                     try:
-                        if environ is None:
+                        if not environ:
                             value = os.fsencode(os.environ[os.fsdecode(var)])
                         else:
                             value = environ[var]
@@ -428,7 +428,7 @@ def expandvars(path):
                     index += 1
                     c = path[index:index + 1]
                 try:
-                    if environ is None:
+                    if not environ:
                         value = os.fsencode(os.environ[os.fsdecode(var)])
                     else:
                         value = environ[var]
@@ -687,7 +687,7 @@ def relpath(path, start=None):
         curdir = '.'
         pardir = '..'
 
-    if start is None:
+    if not start:
         start = curdir
 
     if not path:

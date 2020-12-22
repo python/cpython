@@ -449,7 +449,7 @@ class FTP:
         Returns:
           The response code.
         """
-        if callback is None:
+        if not callback:
             callback = print_line
         resp = self.sendcmd('TYPE A')
         with self.transfercmd(cmd) as conn, \
@@ -724,7 +724,7 @@ else:
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
-            if context is None:
+            if not context:
                 context = ssl._create_stdlib_context(self.ssl_version,
                                                      certfile=certfile,
                                                      keyfile=keyfile)
@@ -812,7 +812,7 @@ def parse150(resp):
     if resp[:3] != '150':
         raise error_reply(resp)
     global _150_re
-    if _150_re is None:
+    if not _150_re:
         import re
         _150_re = re.compile(
             r"150 .* \((\d+) bytes\)", re.IGNORECASE | re.ASCII)
@@ -831,7 +831,7 @@ def parse227(resp):
     if resp[:3] != '227':
         raise error_reply(resp)
     global _227_re
-    if _227_re is None:
+    if not _227_re:
         import re
         _227_re = re.compile(r'(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)', re.ASCII)
     m = _227_re.search(resp)

@@ -815,7 +815,7 @@ class IMAP4:
         if name not in self.capabilities:
             raise self.abort('TLS not supported by server')
         # Generate a default SSL context if none was passed.
-        if ssl_context is None:
+        if not ssl_context:
             ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
@@ -942,7 +942,7 @@ class IMAP4:
 
 
     def _append_untagged(self, typ, dat):
-        if dat is None:
+        if not dat:
             dat = b''
         ur = self.untagged_responses
         if __debug__:
@@ -982,7 +982,7 @@ class IMAP4:
         name = bytes(name, self._encoding)
         data = tag + b' ' + name
         for arg in args:
-            if arg is None: continue
+            if not arg: continue
             if isinstance(arg, str):
                 arg = bytes(arg, self._encoding)
             data = data + b' ' + arg
@@ -1007,7 +1007,7 @@ class IMAP4:
         except OSError as val:
             raise self.abort('socket error: %s' % val)
 
-        if literal is None:
+        if not literal:
             return tag
 
         while 1:
@@ -1094,7 +1094,7 @@ class IMAP4:
                 if self._match(self.Untagged_status, resp):
                     dat2 = self.mo.group('data2')
 
-            if self.mo is None:
+            if not self.mo:
                 # Only other possibility is '+' (continuation) response...
 
                 if self._match(Continuation, resp):
@@ -1106,7 +1106,7 @@ class IMAP4:
             typ = self.mo.group('type')
             typ = str(typ, self._encoding)
             dat = self.mo.group('data')
-            if dat is None: dat = b''        # Null untagged response
+            if not dat: dat = b''        # Null untagged response
             if dat2: dat = dat + b' ' + dat2
 
             # Is there a literal to come?
@@ -1245,7 +1245,7 @@ class IMAP4:
     if __debug__:
 
         def _mesg(self, s, secs=None):
-            if secs is None:
+            if not secs:
                 secs = time.time()
             tm = time.strftime('%M:%S', time.localtime(secs))
             sys.stderr.write('  %s.%02d %s\n' % (tm, (secs*100)%100, s))
@@ -1316,7 +1316,7 @@ if HAVE_SSL:
                               "custom ssl_context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
-            if ssl_context is None:
+            if not ssl_context:
                 ssl_context = ssl._create_stdlib_context(certfile=certfile,
                                                          keyfile=keyfile)
             self.ssl_context = ssl_context
@@ -1406,7 +1406,7 @@ class _Authenticator:
 
     def process(self, data):
         ret = self.mech(self.decode(data))
-        if ret is None:
+        if not ret:
             return b'*'     # Abort conversation
         return self.encode(ret)
 
@@ -1530,7 +1530,7 @@ def Time2Internaldate(date_time):
         delta = timedelta(seconds=gmtoff)
         dt = datetime(*date_time[:6], tzinfo=timezone(delta))
     elif isinstance(date_time, datetime):
-        if date_time.tzinfo is None:
+        if not date_time.tzinfo:
             raise ValueError("date_time must be aware")
         dt = date_time
     elif isinstance(date_time, str) and (date_time[0],date_time[-1]) == ('"','"'):

@@ -33,14 +33,14 @@ _task_name_counter = itertools.count(1).__next__
 
 def current_task(loop=None):
     """Return a currently executed task."""
-    if loop is None:
+    if not loop:
         loop = events.get_running_loop()
     return _current_tasks.get(loop)
 
 
 def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
-    if loop is None:
+    if not loop:
         loop = events.get_running_loop()
     # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
     # thread while we do so. Therefore we cast it to list prior to filtering. The list
@@ -99,7 +99,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._log_destroy_pending = False
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
-        if name is None:
+        if not name:
             self._name = f'Task-{_task_name_counter()}'
         else:
             self._name = str(name)
@@ -226,7 +226,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         _enter_task(self._loop, self)
         # Call either coro.throw(exc) or coro.send(None).
         try:
-            if exc is None:
+            if not exc:
                 # We use the `send` method directly, because coroutines
                 # don't have `__iter__` and `__next__` methods.
                 result = coro.send(None)
@@ -280,7 +280,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                     self._loop.call_soon(
                         self.__step, new_exc, context=self._context)
 
-            elif result is None:
+            elif not result:
                 # Bare yield relinquishes control for one event loop iteration.
                 self._loop.call_soon(self.__step, context=self._context)
             elif inspect.isgenerator(result):
@@ -404,7 +404,7 @@ async def wait_for(fut, timeout):
     """
     loop = events.get_running_loop()
 
-    if timeout is None:
+    if not timeout:
         return await fut
 
     if timeout <= 0:
@@ -565,7 +565,7 @@ def as_completed(fs, *, timeout=None):
 
     async def _wait_for_one():
         f = await done.get()
-        if f is None:
+        if not f:
             # Dummy value from _on_timeout().
             raise exceptions.TimeoutError
         return f.result()  # May raise f.exception().
@@ -613,7 +613,7 @@ def ensure_future(coro_or_future, *, loop=None):
     If the argument is a Future, it is returned directly.
     """
     if coroutines.iscoroutine(coro_or_future):
-        if loop is None:
+        if not loop:
             loop = events.get_event_loop()
         task = loop.create_task(coro_or_future)
         if task._source_traceback:
@@ -749,7 +749,7 @@ def gather(*coros_or_futures, return_exceptions=False):
                         fut._cancel_message)
                 else:
                     res = fut.exception()
-                    if res is None:
+                    if not res:
                         res = fut.result()
                 results.append(res)
 
@@ -770,7 +770,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = ensure_future(arg, loop=loop)
-            if loop is None:
+            if not loop:
                 loop = futures._get_loop(fut)
             if fut is not arg:
                 # 'arg' was not a Future, therefore, 'fut' is a new

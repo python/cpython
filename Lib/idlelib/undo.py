@@ -176,7 +176,7 @@ class Command:
     def __repr__(self):
         s = self.__class__.__name__
         t = (self.index1, self.index2, self.chars, self.tags)
-        if self.tags is None:
+        if not self.tags:
             t = t[:-1]
         return s + repr(t)
 

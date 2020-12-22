@@ -192,7 +192,7 @@ def get_comment_header(line):
     a comment block with the same  indent.
     """
     m = re.match(r"^([ \t]*#*)", line)
-    if m is None: return ""
+    if not m: return ""
     return m.group(1)
 
 
@@ -320,7 +320,7 @@ class FormatRegion:
         "Convert leading spaces to tabs for each line in selected region."
         head, tail, chars, lines = self.get_region()
         tabwidth = self._asktabwidth()
-        if tabwidth is None:
+        if not tabwidth:
             return
         for pos in range(len(lines)):
             line = lines[pos]
@@ -335,7 +335,7 @@ class FormatRegion:
         "Expand tabs to spaces for each line in region."
         head, tail, chars, lines = self.get_region()
         tabwidth = self._asktabwidth()
-        if tabwidth is None:
+        if not tabwidth:
             return
         for pos in range(len(lines)):
             lines[pos] = lines[pos].expandtabs(tabwidth)

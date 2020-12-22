@@ -345,7 +345,7 @@ class Variable:
 
     def __del__(self):
         """Unset the variable in Tcl."""
-        if self._tk is None:
+        if not self._tk:
             return
         if self._tk.getboolean(self._tk.call("info", "exists", self._name)):
             self._tk.globalunsetvar(self._name)
@@ -381,7 +381,7 @@ class Variable:
         except AttributeError:
             pass
         self._tk.createcommand(cbname, f)
-        if self._tclCommands is None:
+        if not self._tclCommands:
             self._tclCommands = []
         self._tclCommands.append(cbname)
         return cbname
@@ -682,7 +682,7 @@ class Misc:
         """Wait until a WIDGET is destroyed.
 
         If no parameter is given self is used."""
-        if window is None:
+        if not window:
             window = self
         self.tk.call('tkwait', 'window', window._w)
 
@@ -691,7 +691,7 @@ class Misc:
         (e.g. it appears).
 
         If no parameter is given self is used."""
-        if window is None:
+        if not window:
             window = self
         self.tk.call('tkwait', 'visibility', window._w)
 
@@ -1318,7 +1318,7 @@ class Misc:
         this widget. With a list of strings as argument the bindtags are
         set to this list. The bindtags determine in which order events are
         processed (see bind)."""
-        if tagList is None:
+        if not tagList:
             return self.tk.splitlist(
                 self.tk.call('bindtags', self._w))
         else:
@@ -1443,7 +1443,7 @@ class Misc:
         """Internal function."""
         if displayof:
             return ('-displayof', displayof)
-        if displayof is None:
+        if not displayof:
             return ('-displayof', self._w)
         return ()
 
@@ -1519,7 +1519,7 @@ class Misc:
             pass
         self.tk.createcommand(name, f)
         if needcleanup:
-            if self._tclCommands is None:
+            if not self._tclCommands:
                 self._tclCommands = []
             self._tclCommands.append(name)
         return name
@@ -1621,7 +1621,7 @@ class Misc:
             cnf = _cnfmerge((cnf, kw))
         elif cnf:
             cnf = _cnfmerge(cnf)
-        if cnf is None:
+        if not cnf:
             return self._getconfigure(_flatten((self._w, cmd)))
         if isinstance(cnf, str):
             return self._getconfigure1(_flatten((self._w, cmd, '-'+cnf)))
@@ -2252,7 +2252,7 @@ class Tk(Misc, Wm):
         # to avoid recursions in the getattr code in case of failure, we
         # ensure that self.tk is always _something_.
         self.tk = None
-        if baseName is None:
+        if not baseName:
             import os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
@@ -2287,7 +2287,7 @@ class Tk(Misc, Wm):
         # Create and register the tkerror and exit commands
         # We need to inline parts of _register here, _ register
         # would register differently-named commands.
-        if self._tclCommands is None:
+        if not self._tclCommands:
             self._tclCommands = []
         self.tk.createcommand('tkerror', _tkerror)
         self.tk.createcommand('exit', _exit)
@@ -2535,7 +2535,7 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
-            if master._last_child_ids is None:
+            if not master._last_child_ids:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
             master._last_child_ids[name] = count
@@ -2560,7 +2560,7 @@ class BaseWidget(Misc):
             cnf = _cnfmerge((cnf, kw))
         self.widgetName = widgetName
         BaseWidget._setup(self, master, cnf)
-        if self._tclCommands is None:
+        if not self._tclCommands:
             self._tclCommands = []
         classes = [(k, v) for k, v in cnf.items() if isinstance(k, type)]
         for k, v in classes:
@@ -3332,7 +3332,7 @@ class Menu(Widget):
 
     def delete(self, index1, index2=None):
         """Delete menu items between INDEX1 and INDEX2 (included)."""
-        if index2 is None:
+        if not index2:
             index2 = index1
 
         num_index1, num_index2 = self.index(index1), self.index(index2)
@@ -3589,7 +3589,7 @@ class Text(Widget, XView, YView):
     def debug(self, boolean=None):
         """Turn on the internal consistency checks of the B-Tree inside the text
         widget according to BOOLEAN."""
-        if boolean is None:
+        if not boolean:
             return self.tk.getboolean(self.tk.call(self._w, 'debug'))
         self.tk.call(self._w, 'debug', boolean)
 

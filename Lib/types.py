@@ -108,7 +108,7 @@ def prepare_class(name, bases=(), kwds=None):
     'metaclass' entry removed. If no kwds argument is passed in, this will
     be an empty dict.
     """
-    if kwds is None:
+    if not kwds:
         kwds = {}
     else:
         kwds = dict(kwds) # Don't alter the provided mapping
@@ -169,21 +169,21 @@ class DynamicClassAttribute:
         self.__isabstractmethod__ = bool(getattr(fget, '__isabstractmethod__', False))
 
     def __get__(self, instance, ownerclass=None):
-        if instance is None:
+        if not instance:
             if self.__isabstractmethod__:
                 return self
             raise AttributeError()
-        elif self.fget is None:
+        elif not self.fget:
             raise AttributeError("unreadable attribute")
         return self.fget(instance)
 
     def __set__(self, instance, value):
-        if self.fset is None:
+        if not self.fset:
             raise AttributeError("can't set attribute")
         self.fset(instance, value)
 
     def __delete__(self, instance):
-        if self.fdel is None:
+        if not self.fdel:
             raise AttributeError("can't delete attribute")
         self.fdel(instance)
 

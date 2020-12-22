@@ -90,7 +90,7 @@ class Queue(object):
             raise Full
 
         with self._notempty:
-            if self._thread is None:
+            if not self._thread:
                 self._start_thread()
             self._buffer.append(obj)
             self._notempty.notify()
@@ -243,7 +243,7 @@ class Queue(object):
 
                         # serialize the data before acquiring the lock
                         obj = _ForkingPickler.dumps(obj)
-                        if wacquire is None:
+                        if not wacquire:
                             send_bytes(obj)
                         else:
                             wacquire()
@@ -313,7 +313,7 @@ class JoinableQueue(Queue):
             raise Full
 
         with self._notempty, self._cond:
-            if self._thread is None:
+            if not self._thread:
                 self._start_thread()
             self._buffer.append(obj)
             self._unfinished_tasks.release()
@@ -370,7 +370,7 @@ class SimpleQueue(object):
     def put(self, obj):
         # serialize the data before acquiring the lock
         obj = _ForkingPickler.dumps(obj)
-        if self._wlock is None:
+        if not self._wlock:
             # writes to a message oriented win32 pipe are atomic
             self._writer.send_bytes(obj)
         else:

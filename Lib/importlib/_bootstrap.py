@@ -83,7 +83,7 @@ class _ModuleLock:
         seen = set()
         while True:
             lock = _blocking_on.get(tid)
-            if lock is None:
+            if not lock:
                 return False
             tid = lock.owner
             if tid == me:
@@ -189,8 +189,8 @@ def _get_module_lock(name):
         except KeyError:
             lock = None
 
-        if lock is None:
-            if _thread is None:
+        if not lock:
+            if not _thread:
                 lock = _DummyModuleLock(name)
             else:
                 lock = _ModuleLock(name)
@@ -319,7 +319,7 @@ def _module_repr(module):
     try:
         filename = module.__file__
     except AttributeError:
-        if loader is None:
+        if not loader:
             return '<module {!r}>'.format(name)
         else:
             return '<module {!r} ({!r})>'.format(name, loader)
@@ -400,9 +400,9 @@ class ModuleSpec:
 
     @property
     def cached(self):
-        if self._cached is None:
+        if not self._cached:
             if self.origin and self._set_fileattr:
-                if _bootstrap_external is None:
+                if not _bootstrap_external:
                     raise NotImplementedError
                 self._cached = _bootstrap_external._get_cached(self.origin)
         return self._cached
@@ -414,7 +414,7 @@ class ModuleSpec:
     @property
     def parent(self):
         """The name of the module's parent."""
-        if self.submodule_search_locations is None:
+        if not self.submodule_search_locations:
             return self.name.rpartition('.')[0]
         else:
             return self.name
@@ -431,17 +431,17 @@ class ModuleSpec:
 def spec_from_loader(name, loader, *, origin=None, is_package=None):
     """Return a module spec based on various loader methods."""
     if hasattr(loader, 'get_filename'):
-        if _bootstrap_external is None:
+        if not _bootstrap_external:
             raise NotImplementedError
         spec_from_file_location = _bootstrap_external.spec_from_file_location
 
-        if is_package is None:
+        if not is_package:
             return spec_from_file_location(name, loader=loader)
         search = [] if is_package else None
         return spec_from_file_location(name, loader=loader,
                                        submodule_search_locations=search)
 
-    if is_package is None:
+    if not is_package:
         if hasattr(loader, 'is_package'):
             try:
                 is_package = loader.is_package(name)
@@ -465,7 +465,7 @@ def _spec_from_module(module, loader=None, origin=None):
             return spec
 
     name = module.__name__
-    if loader is None:
+    if not loader:
         try:
             loader = module.__loader__
         except AttributeError:
@@ -475,8 +475,8 @@ def _spec_from_module(module, loader=None, origin=None):
         location = module.__file__
     except AttributeError:
         location = None
-    if origin is None:
-        if location is None:
+    if not origin:
+        if not location:
             try:
                 origin = loader._ORIGIN
             except AttributeError:
@@ -511,10 +511,10 @@ def _init_module_attrs(spec, module, *, override=False):
     # __loader__
     if override or getattr(module, '__loader__', None) is None:
         loader = spec.loader
-        if loader is None:
+        if not loader:
             # A backward compatibility hack.
             if spec.submodule_search_locations:
-                if _bootstrap_external is None:
+                if not _bootstrap_external:
                     raise NotImplementedError
                 _NamespaceLoader = _bootstrap_external._NamespaceLoader
 
@@ -582,7 +582,7 @@ def module_from_spec(spec):
     elif hasattr(spec.loader, 'exec_module'):
         raise ImportError('loaders that define exec_module() '
                           'must also define create_module()')
-    if module is None:
+    if not module:
         module = _new_module(spec.name)
     _init_module_attrs(spec, module)
     return module
@@ -592,8 +592,8 @@ def _module_repr_from_spec(spec):
     """Return the repr to use for the module."""
     # We mostly replicate _module_repr() using the spec attributes.
     name = '?' if spec.name is None else spec.name
-    if spec.origin is None:
-        if spec.loader is None:
+    if not spec.origin:
+        if not spec.loader:
             return '<module {!r}>'.format(name)
         else:
             return '<module {!r} ({!r})>'.format(name, spec.loader)
@@ -613,8 +613,8 @@ def _exec(spec, module):
             msg = 'module {!r} not in sys.modules'.format(name)
             raise ImportError(msg, name=name)
         try:
-            if spec.loader is None:
-                if spec.submodule_search_locations is None:
+            if not spec.loader:
+                if not spec.submodule_search_locations:
                     raise ImportError('missing loader', name=spec.name)
                 # Namespace package.
                 _init_module_attrs(spec, module, override=True)
@@ -690,8 +690,8 @@ def _load_unlocked(spec):
     try:
         sys.modules[spec.name] = module
         try:
-            if spec.loader is None:
-                if spec.submodule_search_locations is None:
+            if not spec.loader:
+                if not spec.submodule_search_locations:
                     raise ImportError('missing loader', name=spec.name)
                 # A namespace package so do nothing.
             else:
@@ -912,7 +912,7 @@ def _find_spec_legacy(finder, name, path):
     # This would be a good place for a DeprecationWarning if
     # we ended up going that route.
     loader = finder.find_module(name, path)
-    if loader is None:
+    if not loader:
         return None
     return spec_from_loader(name, loader)
 
@@ -920,7 +920,7 @@ def _find_spec_legacy(finder, name, path):
 def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
-    if meta_path is None:
+    if not meta_path:
         # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
@@ -938,7 +938,7 @@ def _find_spec(name, path, target=None):
                 find_spec = finder.find_spec
             except AttributeError:
                 spec = _find_spec_legacy(finder, name, path)
-                if spec is None:
+                if not spec:
                     continue
             else:
                 spec = find_spec(name, path, target)
@@ -954,7 +954,7 @@ def _find_spec(name, path, target=None):
                     # beaten us to the punch.
                     return spec
                 else:
-                    if __spec__ is None:
+                    if not __spec__:
                         return spec
                     else:
                         return __spec__
@@ -999,7 +999,7 @@ def _find_and_load_unlocked(name, import_):
             msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
             raise ModuleNotFoundError(msg, name=name) from None
     spec = _find_spec(name, path)
-    if spec is None:
+    if not spec:
         raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     else:
         module = _load_unlocked(spec)
@@ -1025,7 +1025,7 @@ def _find_and_load(name, import_):
         if module is _NEEDS_LOADING:
             return _find_and_load_unlocked(name, import_)
 
-    if module is None:
+    if not module:
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))
         raise ModuleNotFoundError(message, name=name)
@@ -1151,7 +1151,7 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
 
 def _builtin_from_name(name):
     spec = BuiltinImporter.find_spec(name)
-    if spec is None:
+    if not spec:
         raise ImportError('no built-in module named ' + name)
     return _load_unlocked(spec)
 

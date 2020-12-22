@@ -285,7 +285,7 @@ def _collapse_addresses_internal(addresses):
         net = to_merge.pop()
         supernet = net.supernet()
         existing = subnets.get(supernet)
-        if existing is None:
+        if not existing:
             subnets[supernet] = net
         elif existing != net:
             # Merge consecutive subnets
@@ -639,7 +639,7 @@ class _BaseAddress(_IPAddressBase):
 
         # From here on down, support for 'bnXx'
         global _address_fmt_re
-        if _address_fmt_re is None:
+        if not _address_fmt_re:
             import re
             _address_fmt_re = re.compile('(#?)(_?)([xbnX])')
 
@@ -1792,7 +1792,7 @@ class _BaseV6:
             ValueError: The address is bigger than 128 bits of all ones.
 
         """
-        if ip_int is None:
+        if not ip_int:
             ip_int = int(cls._ip)
 
         if ip_int > cls._ALL_ONES:

@@ -39,7 +39,7 @@ class ZoneInfo(tzinfo):
 
     def __new__(cls, key):
         instance = cls._weak_cache.get(key, None)
-        if instance is None:
+        if not instance:
             instance = cls._weak_cache.setdefault(key, cls._new_instance(key))
             instance._from_cache = True
 
@@ -156,7 +156,7 @@ class ZoneInfo(tzinfo):
             return dt
 
     def _find_trans(self, dt):
-        if dt is None:
+        if not dt:
             if self._fixed_offset:
                 return self._tz_after
             else:
@@ -647,7 +647,7 @@ def _parse_tz_str(tz_str):
 
     m = parser_re.match(offset_str)
 
-    if m is None:
+    if not m:
         raise ValueError(f"{tz_str} is not a valid TZ string")
 
     std_abbr = m.group("std")
@@ -700,7 +700,7 @@ def _parse_dst_start_end(dststr):
     if date[0] == "M":
         n_is_julian = False
         m = re.match(r"M(\d{1,2})\.(\d).(\d)$", date)
-        if m is None:
+        if not m:
             raise ValueError(f"Invalid dst start/end date: {dststr}")
         date_offset = tuple(map(int, m.groups()))
         offset = _CalendarOffset(*date_offset)

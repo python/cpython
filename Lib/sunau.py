@@ -281,7 +281,7 @@ class Au_read:
         return None             # XXX--not implemented yet
 
     def rewind(self):
-        if self._data_pos is None:
+        if not self._data_pos:
             raise OSError('cannot seek')
         self._file.seek(self._data_pos)
         self._soundpos = 0
@@ -292,7 +292,7 @@ class Au_read:
     def setpos(self, pos):
         if pos < 0 or pos > self.getnframes():
             raise Error('position not in range')
-        if self._data_pos is None:
+        if not self._data_pos:
             raise OSError('cannot seek')
         self._file.seek(self._data_pos + pos * self._framesize)
         self._soundpos = pos
@@ -505,7 +505,7 @@ class Au_write:
         self._file.write(b'\0'*(header_size - len(self._info) - 24))
 
     def _patchheader(self):
-        if self._form_length_pos is None:
+        if not self._form_length_pos:
             raise OSError('cannot seek')
         self._file.seek(self._form_length_pos)
         _write_u32(self._file, self._datawritten)
@@ -513,7 +513,7 @@ class Au_write:
         self._file.seek(0, 2)
 
 def open(f, mode=None):
-    if mode is None:
+    if not mode:
         if hasattr(f, 'mode'):
             mode = f.mode
         else:

@@ -438,7 +438,7 @@ def dedent(text):
     text = _whitespace_only_re.sub('', text)
     indents = _leading_whitespace_re.findall(text)
     for indent in indents:
-        if margin is None:
+        if not margin:
             margin = indent
 
         # Current line more deeply indented than previous winner:
@@ -478,7 +478,7 @@ def indent(text, prefix, predicate=None):
     it will default to adding 'prefix' to all non-empty lines that do not
     consist solely of whitespace characters.
     """
-    if predicate is None:
+    if not predicate:
         def predicate(line):
             return line.strip()
 

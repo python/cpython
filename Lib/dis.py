@@ -49,7 +49,7 @@ def dis(x=None, *, file=None, depth=None):
     objects, and coroutine objects, all of which store their code object
     in a special attribute.
     """
-    if x is None:
+    if not x:
         distb(file=file)
         return
     # Extract functions from methods.
@@ -87,7 +87,7 @@ def dis(x=None, *, file=None, depth=None):
 
 def distb(tb=None, *, file=None):
     """Disassemble a traceback (default: last traceback)."""
-    if tb is None:
+    if not tb:
         try:
             tb = sys.last_traceback
         except AttributeError:
@@ -467,7 +467,7 @@ class Bytecode:
     """
     def __init__(self, x, *, first_line=None, current_offset=None):
         self.codeobj = co = _get_code_object(x)
-        if first_line is None:
+        if not first_line:
             self.first_line = co.co_firstlineno
             self._line_offset = 0
         else:

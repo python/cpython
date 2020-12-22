@@ -363,7 +363,7 @@ def _get_command_stdout(command, *args):
         path_dirs = os.environ.get('PATH', os.defpath).split(os.pathsep)
         path_dirs.extend(['/sbin', '/usr/sbin'])
         executable = shutil.which(command, path=os.pathsep.join(path_dirs))
-        if executable is None:
+        if not executable:
             return None
         # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
         # on stderr (Note: we don't have an example where the words we search
@@ -411,7 +411,7 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
     lambda i: i - 1 would get the word preceding the keyword.
     """
     stdout = _get_command_stdout(command, args)
-    if stdout is None:
+    if not stdout:
         return None
 
     first_local_mac = None
@@ -472,7 +472,7 @@ def _find_mac_under_heading(command, args, heading):
     lines are then examined to see if they look like MAC addresses.
     """
     stdout = _get_command_stdout(command, args)
-    if stdout is None:
+    if not stdout:
         return None
 
     keywords = stdout.readline().rstrip().split()
@@ -490,11 +490,11 @@ def _find_mac_under_heading(command, args, heading):
             continue
 
         mac = _parse_mac(word)
-        if mac is None:
+        if not mac:
             continue
         if _is_universal(mac):
             return mac
-        if first_local_mac is None:
+        if not first_local_mac:
             first_local_mac = mac
 
     return first_local_mac
@@ -688,7 +688,7 @@ def uuid1(node=None, clock_seq=None):
     if _last_timestamp and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
-    if clock_seq is None:
+    if not clock_seq:
         import random
         clock_seq = random.getrandbits(14) # instead of stable storage
     time_low = timestamp & 0xffffffff
@@ -696,7 +696,7 @@ def uuid1(node=None, clock_seq=None):
     time_hi_version = (timestamp >> 48) & 0x0fff
     clock_seq_low = clock_seq & 0xff
     clock_seq_hi_variant = (clock_seq >> 8) & 0x3f
-    if node is None:
+    if not node:
         node = getnode()
     return UUID(fields=(time_low, time_mid, time_hi_version,
                         clock_seq_hi_variant, clock_seq_low, node), version=1)

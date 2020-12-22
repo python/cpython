@@ -404,7 +404,7 @@ class POP3:
         caps = self.capa()
         if not 'STLS' in caps:
             raise error_proto('-ERR STLS not supported by server')
-        if context is None:
+        if not context:
             context = ssl._create_stdlib_context()
         resp = self._shortcmd('STLS')
         self.sock = context.wrap_socket(self.sock,
@@ -445,7 +445,7 @@ if HAVE_SSL:
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile
-            if context is None:
+            if not context:
                 context = ssl._create_stdlib_context(certfile=certfile,
                                                      keyfile=keyfile)
             self.context = context

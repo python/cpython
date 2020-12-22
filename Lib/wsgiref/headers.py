@@ -147,7 +147,7 @@ class Headers:
         If there is no header named 'name', add a new header with name 'name'
         and value 'value'."""
         result = self.get(name)
-        if result is None:
+        if not result:
             self._headers.append((self._convert_string_type(name),
                 self._convert_string_type(value)))
             return value
@@ -176,7 +176,7 @@ class Headers:
             parts.append(_value)
         for k, v in _params.items():
             k = self._convert_string_type(k)
-            if v is None:
+            if not v:
                 parts.append(k.replace('_', '-'))
             else:
                 v = self._convert_string_type(v)

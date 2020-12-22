@@ -71,7 +71,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        if self._sock is None:
+        if not self._sock:
             info.append('closed')
         elif self._closing:
             info.append('closing')
@@ -132,7 +132,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
 
     def _force_close(self, exc):
         if self._empty_waiter and not self._empty_waiter.done():
-            if exc is None:
+            if not exc:
                 self._empty_waiter.set_result(None)
             else:
                 self._empty_waiter.set_exception(exc)
@@ -215,7 +215,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             return
 
         self._paused = False
-        if self._read_fut is None:
+        if not self._read_fut:
             self._loop.call_soon(self._loop_reading, None)
 
         length = self._pending_data_length
@@ -355,7 +355,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
         # 3. BACKED UP: _write_fut set; _buffer a bytearray
         # We always copy the data, so the caller can't modify it
         # while we're still waiting for the I/O to happen.
-        if self._write_fut is None:  # IDLE -> WRITING
+        if not self._write_fut:  # IDLE -> WRITING
             assert self._buffer is None
             # Pass a copy, except if it's already immutable.
             self._loop_writing(data=bytes(data))
@@ -379,7 +379,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
             self._pending_write = 0
             if f:
                 f.result()
-            if data is None:
+            if not data:
                 data = self._buffer
                 self._buffer = None
             if not data:
@@ -422,7 +422,7 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
         if self._empty_waiter:
             raise RuntimeError("Empty waiter is already set")
         self._empty_waiter = self._loop.create_future()
-        if self._write_fut is None:
+        if not self._write_fut:
             self._empty_waiter.set_result(None)
         return self._empty_waiter
 
@@ -496,7 +496,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport):
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
 
-        if self._write_fut is None:
+        if not self._write_fut:
             # No current write operations are active, kick one off
             self._loop_writing()
         # else: A write operation is already kicked off
@@ -614,7 +614,7 @@ class _ProactorSocketTransport(_ProactorReadPipeTransport,
         if self._closing or self._eof_written:
             return
         self._eof_written = True
-        if self._write_fut is None:
+        if not self._write_fut:
             self._sock.shutdown(socket.SHUT_WR)
 
 
@@ -799,7 +799,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         # a socket is closed, send() raises OSError (with errno set to
         # EBADF, but let's not rely on the exact error code).
         csock = self._csock
-        if csock is None:
+        if not csock:
             return
 
         try:

@@ -96,13 +96,13 @@ class SimpleDialog:
         return self.num
 
     def return_event(self, event):
-        if self.default is None:
+        if not self.default:
             self.root.bell()
         else:
             self.done(self.default)
 
     def wm_delete_window(self):
-        if self.cancel is None:
+        if not self.cancel:
             self.root.bell()
         else:
             self.done(self.cancel)

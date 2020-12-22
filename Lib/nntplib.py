@@ -234,7 +234,7 @@ def _parse_datetime(date_str, time_str=None):
     If only the date is given, it is assumed to be date and time
     concatenated together (e.g. response to the DATE command).
     """
-    if time_str is None:
+    if not time_str:
         time_str = date_str[-6:]
         date_str = date_str[:-6]
     hours = int(time_str[:2])
@@ -287,7 +287,7 @@ if _have_ssl:
         - sock: New, encrypted socket.
         """
         # Generate a default SSL context if none was passed.
-        if context is None:
+        if not context:
             context = ssl._create_stdlib_context()
         return context.wrap_socket(sock, server_hostname=hostname)
 
@@ -411,7 +411,7 @@ class NNTP:
         """Get the server capabilities, as read by __init__().
         If the CAPABILITIES command is not supported, an empty dict is
         returned."""
-        if self._caps is None:
+        if not self._caps:
             self.nntp_version = 1
             self.nntp_implementation = None
             try:

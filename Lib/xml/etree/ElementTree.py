@@ -569,7 +569,7 @@ class ElementTree:
             source = open(source, "rb")
             close_source = True
         try:
-            if parser is None:
+            if not parser:
                 # If no parser was specified, create a default XMLParser
                 parser = XMLParser()
                 if hasattr(parser, '_parse_whole'):
@@ -824,9 +824,9 @@ def _namespaces(elem, default_namespace=None):
             if qname[:1] == "{":
                 uri, tag = qname[1:].rsplit("}", 1)
                 prefix = namespaces.get(uri)
-                if prefix is None:
+                if not prefix:
                     prefix = _namespace_map.get(uri)
-                    if prefix is None:
+                    if not prefix:
                         prefix = "ns%d" % len(namespaces)
                     if prefix != "xml":
                         namespaces[uri] = prefix
@@ -878,7 +878,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
         write("<?%s?>" % text)
     else:
         tag = qnames[tag]
-        if tag is None:
+        if not tag:
             if text:
                 write(_escape_cdata(text))
             for e in elem:
@@ -935,7 +935,7 @@ def _serialize_html(write, elem, qnames, namespaces, **kwargs):
         write("<?%s?>" % _escape_cdata(text))
     else:
         tag = qnames[tag]
-        if tag is None:
+        if not tag:
             if text:
                 write(_escape_cdata(text))
             for e in elem:
@@ -1288,13 +1288,13 @@ class XMLPullParser:
         self._events_queue = collections.deque()
         self._parser = _parser or XMLParser(target=TreeBuilder())
         # wire up the parser for event reporting
-        if events is None:
+        if not events:
             events = ("end",)
         self._parser._setevents(self._events_queue, events)
 
     def feed(self, data):
         """Feed encoded data to parser."""
-        if self._parser is None:
+        if not self._parser:
             raise ValueError("feed() called after end of stream")
         if data:
             try:
@@ -1418,15 +1418,15 @@ class TreeBuilder:
         self._last = None # last element
         self._root = None # root element
         self._tail = None # true if we're after an end tag
-        if comment_factory is None:
+        if not comment_factory:
             comment_factory = Comment
         self._comment_factory = comment_factory
         self.insert_comments = insert_comments
-        if pi_factory is None:
+        if not pi_factory:
             pi_factory = ProcessingInstruction
         self._pi_factory = pi_factory
         self.insert_pis = insert_pis
-        if element_factory is None:
+        if not element_factory:
             element_factory = Element
         self._factory = element_factory
 
@@ -1463,7 +1463,7 @@ class TreeBuilder:
         self._last = elem = self._factory(tag, attrs)
         if self._elem:
             self._elem[-1].append(elem)
-        elif self._root is None:
+        elif not self._root:
             self._root = elem
         self._elem.append(elem)
         self._tail = 0
@@ -1533,7 +1533,7 @@ class XMLParser:
                     "No module named expat; use SimpleXMLTreeBuilder instead"
                     )
         parser = expat.ParserCreate(encoding, "}")
-        if target is None:
+        if not target:
             target = TreeBuilder()
         # underscored names are provided for compatibility only
         self.parser = self._parser = parser
@@ -1758,7 +1758,7 @@ def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
     if xml_data is None and from_file is None:
         raise ValueError("Either 'xml_data' or 'from_file' must be provided as input")
     sio = None
-    if out is None:
+    if not out:
         sio = out = io.StringIO()
 
     parser = XMLParser(target=C14NWriterTarget(out.write, **options))
@@ -1847,7 +1847,7 @@ class C14NWriterTarget:
         raise ValueError(f'Prefix {prefix} of QName "{prefixed_name}" is not declared in scope')
 
     def _qname(self, qname, uri=None):
-        if uri is None:
+        if not uri:
             uri, tag = qname[1:].rsplit('}', 1) if qname[:1] == '{' else ('', qname)
         else:
             tag = qname

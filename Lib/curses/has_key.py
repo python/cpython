@@ -165,7 +165,7 @@ def has_key(ch):
 
     # Figure out the correct capability name for the keycode.
     capability_name = _capability_names.get(ch)
-    if capability_name is None:
+    if not capability_name:
         return False
 
     #Check the current terminal description for that capability;

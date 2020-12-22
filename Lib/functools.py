@@ -326,11 +326,11 @@ class partial:
             raise TypeError("invalid partial state")
 
         args = tuple(args) # just in case it's a subclass
-        if kwds is None:
+        if not kwds:
             kwds = {}
         elif type(kwds) is not dict: # XXX does it need to be *exactly* dict?
             kwds = dict(kwds)
-        if namespace is None:
+        if not namespace:
             namespace = {}
 
         self.__dict__ = namespace
@@ -403,7 +403,7 @@ class partialmethod(object):
                     result.__self__ = new_func.__self__
                 except AttributeError:
                     pass
-        if result is None:
+        if not result:
             # If the underlying descriptor didn't do anything, treat this
             # like an instance method
             result = self._make_unbound_method().__get__(obj, cls)
@@ -546,7 +546,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             result = user_function(*args, **kwds)
             return result
 
-    elif maxsize is None:
+    elif not maxsize:
 
         def wrapper(*args, **kwds):
             # Simple caching without ordering or size limit
@@ -676,7 +676,7 @@ def _c3_merge(sequences):
                     break      # reject the current head, it appears later
             else:
                 break
-        if candidate is None:
+        if not candidate:
             raise RuntimeError("Inconsistent hierarchy")
         result.append(candidate)
         # remove the chosen candidate
@@ -844,7 +844,7 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
-        if func is None:
+        if not func:
             if isinstance(cls, type):
                 return lambda f: register(cls, f)
             ann = getattr(cls, '__annotations__', {})
@@ -939,7 +939,7 @@ class cached_property:
         self.lock = RLock()
 
     def __set_name__(self, owner, name):
-        if self.attrname is None:
+        if not self.attrname:
             self.attrname = name
         elif name != self.attrname:
             raise TypeError(
@@ -948,9 +948,9 @@ class cached_property:
             )
 
     def __get__(self, instance, owner=None):
-        if instance is None:
+        if not instance:
             return self
-        if self.attrname is None:
+        if not self.attrname:
             raise TypeError(
                 "Cannot use cached_property instance without calling __set_name__ on it.")
         try:

@@ -22,7 +22,7 @@ class MIMEBase(message.Message):
         arguments.  Additional parameters for this header are taken from the
         keyword arguments.
         """
-        if policy is None:
+        if not policy:
             policy = email.policy.compat32
         message.Message.__init__(self, policy=policy)
         ctype = '%s/%s' % (_maintype, _subtype)

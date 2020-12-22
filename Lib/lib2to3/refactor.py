@@ -52,7 +52,7 @@ def _get_head_types(pat):
         # NodePatters must either have no type and no content
         #   or a type and content -- so they don't get any farther
         # Always return leafs
-        if pat.type is None:
+        if not pat.type:
             raise _EveryNode
         return {pat.type}
 
@@ -324,7 +324,7 @@ class RefactoringTool(object):
     def refactor_file(self, filename, write=False, doctests_only=False):
         """Refactors a file."""
         input, encoding = self._read_python_source(filename)
-        if input is None:
+        if not input:
             # Reading the file failed.
             return
         input += "\n" # Silence certain parse errors
@@ -495,9 +495,9 @@ class RefactoringTool(object):
         Called when a file has been refactored and there may be changes.
         """
         self.files.append(filename)
-        if old_text is None:
+        if not old_text:
             old_text = self._read_python_source(filename)[0]
-            if old_text is None:
+            if not old_text:
                 return
         equal = old_text == new_text
         self.print_output(old_text, new_text, filename, equal)

@@ -121,7 +121,7 @@ class Bdb:
         Return self.trace_dispatch to continue tracing in this scope.
         """
         # XXX 'arg' is no longer used
-        if self.botframe is None:
+        if not self.botframe:
             # First call of dispatch since reset()
             self.botframe = frame.f_back # (CT) Note that this may also be None!
             return self.trace_dispatch
@@ -190,7 +190,7 @@ class Bdb:
 
     def is_skipped_module(self, module_name):
         "Return True if module_name matches any skip pattern."
-        if module_name is None:  # some modules do not have names
+        if not module_name:  # some modules do not have names
             return False
         for pattern in self.skip:
             if fnmatch.fnmatch(module_name, pattern):
@@ -291,7 +291,7 @@ class Bdb:
         """Stop when the line with the lineno greater than the current one is
         reached or when returning from current frame."""
         # the name "until" is borrowed from gdb
-        if lineno is None:
+        if not lineno:
             lineno = frame.f_lineno + 1
         self._set_stopinfo(frame, frame, lineno)
 
@@ -323,7 +323,7 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
-        if frame is None:
+        if not frame:
             frame = sys._getframe().f_back
         self.reset()
         while frame:
@@ -470,7 +470,7 @@ class Bdb:
             bp = Breakpoint.bpbynumber[number]
         except IndexError:
             raise ValueError('Breakpoint number %d out of range' % number) from None
-        if bp is None:
+        if not bp:
             raise ValueError('Breakpoint %d already deleted' % number)
         return bp
 
@@ -527,7 +527,7 @@ class Bdb:
         while t:
             stack.append((t.tb_frame, t.tb_lineno))
             t = t.tb_next
-        if f is None:
+        if not f:
             i = max(0, len(stack) - 1)
         return stack, i
 
@@ -567,10 +567,10 @@ class Bdb:
 
         globals defaults to __main__.dict; locals defaults to globals.
         """
-        if globals is None:
+        if not globals:
             import __main__
             globals = __main__.__dict__
-        if locals is None:
+        if not locals:
             locals = globals
         self.reset()
         if isinstance(cmd, str):
@@ -589,10 +589,10 @@ class Bdb:
 
         globals defaults to __main__.dict; locals defaults to globals.
         """
-        if globals is None:
+        if not globals:
             import __main__
             globals = __main__.__dict__
-        if locals is None:
+        if not locals:
             locals = globals
         self.reset()
         sys.settrace(self.trace_dispatch)
@@ -709,7 +709,7 @@ class Breakpoint:
         The optional out argument directs where the output is sent
         and defaults to standard output.
         """
-        if out is None:
+        if not out:
             out = sys.stdout
         print(self.bpformat(), file=out)
 

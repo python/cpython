@@ -141,7 +141,7 @@ def _remove_temp_dir(rmtree, tempdir):
 def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
-    if tempdir is None:
+    if not tempdir:
         import shutil, tempfile
         tempdir = tempfile.mkdtemp(prefix='pymp-')
         info('created temp directory %s', tempdir)
@@ -191,7 +191,7 @@ class Finalize(object):
 
         if obj:
             self._weakref = weakref.ref(obj, self)
-        elif exitpriority is None:
+        elif not exitpriority:
             raise ValueError("Without object, exitpriority cannot be None")
 
         self._callback = callback
@@ -250,7 +250,7 @@ class Finalize(object):
         except (AttributeError, TypeError):
             obj = None
 
-        if obj is None:
+        if not obj:
             return '<%s object, dead>' % self.__class__.__name__
 
         x = '<%s object, callback=%s' % (
@@ -272,13 +272,13 @@ def _run_finalizers(minpriority=None):
     Finalizers with highest priority are called first; finalizers with
     the same priority will be called in reverse order of creation.
     '''
-    if _finalizer_registry is None:
+    if not _finalizer_registry:
         # This function may be called after this module's globals are
         # destroyed.  See the _exit_function function in this module for more
         # notes.
         return
 
-    if minpriority is None:
+    if not minpriority:
         f = lambda p : p[0] is not None
     else:
         f = lambda p : p[0] is not None and p[0] >= minpriority
@@ -302,7 +302,7 @@ def _run_finalizers(minpriority=None):
                 import traceback
                 traceback.print_exc()
 
-    if minpriority is None:
+    if not minpriority:
         _finalizer_registry.clear()
 
 #
@@ -408,7 +408,7 @@ def close_all_fds_except(fds):
 #
 
 def _close_stdin():
-    if sys.stdin is None:
+    if not sys.stdin:
         return
 
     try:

@@ -30,7 +30,7 @@ class InteractiveInterpreter:
         "__doc__" set to None.
 
         """
-        if locals is None:
+        if not locals:
             locals = {"__name__": "__console__", "__doc__": None}
         self.locals = locals
         self.compile = CommandCompiler()
@@ -66,7 +66,7 @@ class InteractiveInterpreter:
             self.showsyntaxerror(filename)
             return False
 
-        if code is None:
+        if not code:
             # Case 2
             return True
 
@@ -210,7 +210,7 @@ class InteractiveConsole(InteractiveInterpreter):
         except AttributeError:
             sys.ps2 = "... "
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-        if banner is None:
+        if not banner:
             self.write("Python %s on %s\n%s\n(%s)\n" %
                        (sys.version, sys.platform, cprt,
                         self.__class__.__name__))
@@ -234,7 +234,7 @@ class InteractiveConsole(InteractiveInterpreter):
                 self.write("\nKeyboardInterrupt\n")
                 self.resetbuffer()
                 more = 0
-        if exitmsg is None:
+        if not exitmsg:
             self.write('now exiting %s...\n' % self.__class__.__name__)
         elif exitmsg != '':
             self.write('%s\n' % exitmsg)

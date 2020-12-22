@@ -342,7 +342,7 @@ def detect_encoding(readline):
             codec = lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
-            if filename is None:
+            if not filename:
                 msg = "unknown encoding: " + encoding
             else:
                 msg = "unknown encoding for {!r}: {}".format(filename,
@@ -352,7 +352,7 @@ def detect_encoding(readline):
         if bom_found:
             if encoding != 'utf-8':
                 # This behaviour mimics the Python interpreter
-                if filename is None:
+                if not filename:
                     msg = 'encoding problem: utf-8'
                 else:
                     msg = 'encoding problem for {!r}: utf-8'.format(filename)

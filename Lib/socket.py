@@ -222,7 +222,7 @@ class socket(_socket.socket):
         # for the underlying _socket.socket they're just integers. The
         # constructor of _socket.socket converts the given argument to an
         # integer automatically.
-        if fileno is None:
+        if not fileno:
             if family == -1:
                 family = AF_INET
             if type == -1:
@@ -320,7 +320,7 @@ class socket(_socket.socket):
             rawmode += "w"
         raw = SocketIO(self, rawmode)
         self._io_refs += 1
-        if buffering is None:
+        if not buffering:
             buffering = -1
         if buffering < 0:
             buffering = io.DEFAULT_BUFFER_SIZE
@@ -598,7 +598,7 @@ if hasattr(_socket, "socketpair"):
         The arguments are the same as for socket() except the default family is
         AF_UNIX if defined on the platform; otherwise, the default is AF_INET.
         """
-        if family is None:
+        if not family:
             try:
                 family = AF_UNIX
             except NameError:
@@ -923,7 +923,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
             msg = '%s (while attempting to bind on address %r)' % \
                 (err.strerror, address)
             raise error(err.errno, msg) from None
-        if backlog is None:
+        if not backlog:
             sock.listen()
         else:
             sock.listen(backlog)

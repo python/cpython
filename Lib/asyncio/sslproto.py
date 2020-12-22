@@ -322,7 +322,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
 
     def is_reading(self):
         tr = self._ssl_protocol._transport
-        if tr is None:
+        if not tr:
             raise RuntimeError('SSL transport has not been initialized yet')
         return tr.is_reading()
 
@@ -411,10 +411,10 @@ class SSLProtocol(protocols.Protocol):
                  server_side=False, server_hostname=None,
                  call_connection_made=True,
                  ssl_handshake_timeout=None):
-        if ssl is None:
+        if not ssl:
             raise RuntimeError('stdlib ssl module not available')
 
-        if ssl_handshake_timeout is None:
+        if not ssl_handshake_timeout:
             ssl_handshake_timeout = constants.SSL_HANDSHAKE_TIMEOUT
         elif ssl_handshake_timeout <= 0:
             raise ValueError(
@@ -459,7 +459,7 @@ class SSLProtocol(protocols.Protocol):
             isinstance(app_protocol, protocols.BufferedProtocol)
 
     def _wakeup_waiter(self, exc=None):
-        if self._waiter is None:
+        if not self._waiter:
             return
         if not self._waiter.cancelled():
             if exc:
@@ -520,7 +520,7 @@ class SSLProtocol(protocols.Protocol):
 
         The argument is a bytes object.
         """
-        if self._sslpipe is None:
+        if not self._sslpipe:
             # transport closing, sslpipe is destroyed
             return
 

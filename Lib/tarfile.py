@@ -238,7 +238,7 @@ def copyfileobj(src, dst, length=None, exception=OSError, bufsize=None):
     bufsize = bufsize or 16 * 1024
     if length == 0:
         return
-    if length is None:
+    if not length:
         shutil.copyfileobj(src, dst, bufsize)
         return
 
@@ -339,7 +339,7 @@ class _Stream:
         """Construct a _Stream object.
         """
         self._extfileobj = True
-        if fileobj is None:
+        if not fileobj:
             fileobj = _LowLevelFile(name, mode)
             self._extfileobj = False
 
@@ -610,7 +610,7 @@ class _FileInFile(object):
         self.name = getattr(fileobj, "name", None)
         self.closed = False
 
-        if blockinfo is None:
+        if not blockinfo:
             blockinfo = [(0, size)]
 
         # Construct a map with data and zero blocks.
@@ -663,7 +663,7 @@ class _FileInFile(object):
     def read(self, size=None):
         """Read data from the file.
         """
-        if size is None:
+        if not size:
             size = self.size - self.position
         else:
             size = min(size, self.size - self.position)
@@ -1786,7 +1786,7 @@ class TarFile(object):
            most up-to-date version.
         """
         tarinfo = self._getmember(name)
-        if tarinfo is None:
+        if not tarinfo:
             raise KeyError("filename %r not found" % name)
         return tarinfo
 
@@ -1825,7 +1825,7 @@ class TarFile(object):
         # Building the name of the member in the archive.
         # Backward slashes are converted to forward slashes,
         # Absolute paths are turned to relative paths.
-        if arcname is None:
+        if not arcname:
             arcname = name
         drv, arcname = os.path.splitdrive(arcname)
         arcname = arcname.replace(os.sep, "/")
@@ -1837,7 +1837,7 @@ class TarFile(object):
         tarinfo.tarfile = self  # Not needed
 
         # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
-        if fileobj is None:
+        if not fileobj:
             if not self.dereference:
                 statres = os.lstat(name)
             else:
@@ -1913,7 +1913,7 @@ class TarFile(object):
         """
         self._check()
 
-        if members is None:
+        if not members:
             members = self
         for tarinfo in members:
             if verbose:
@@ -1949,7 +1949,7 @@ class TarFile(object):
         """
         self._check("awx")
 
-        if arcname is None:
+        if not arcname:
             arcname = name
 
         # Skip if somebody tries to archive the archive...
@@ -1962,14 +1962,14 @@ class TarFile(object):
         # Create a TarInfo object from the file.
         tarinfo = self.gettarinfo(name, arcname)
 
-        if tarinfo is None:
+        if not tarinfo:
             self._dbg(1, "tarfile: Unsupported type %r" % name)
             return
 
         # Change or exclude the TarInfo object.
         if filter:
             tarinfo = filter(tarinfo)
-            if tarinfo is None:
+            if not tarinfo:
                 self._dbg(2, "tarfile: Excluded %r" % name)
                 return
 
@@ -2023,7 +2023,7 @@ class TarFile(object):
         """
         directories = []
 
-        if members is None:
+        if not members:
             members = self
 
         for tarinfo in members:
@@ -2081,7 +2081,7 @@ class TarFile(object):
             if self.errorlevel > 0:
                 raise
             else:
-                if e.filename is None:
+                if not e.filename:
                     self._dbg(1, "tarfile: %s" % e.strerror)
                 else:
                     self._dbg(1, "tarfile: %s %r" % (e.strerror, e.filename))
@@ -2386,7 +2386,7 @@ class TarFile(object):
         """
         while True:
             tarinfo = self.next()
-            if tarinfo is None:
+            if not tarinfo:
                 break
         self._loaded = True
 
@@ -2414,7 +2414,7 @@ class TarFile(object):
             limit = tarinfo
 
         member = self._getmember(linkname, tarinfo=limit, normalize=True)
-        if member is None:
+        if not member:
             raise KeyError("linkname %r not found" % linkname)
         return member
 
@@ -2460,7 +2460,7 @@ class TarFile(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        if type is None:
+        if not type:
             self.close()
         else:
             # An exception occurred. We must not call close() because

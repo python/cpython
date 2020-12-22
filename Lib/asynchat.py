@@ -227,7 +227,7 @@ class async_chat(asyncore.dispatcher):
             # handle empty string/buffer or None entry
             if not first:
                 del self.producer_fifo[0]
-                if first is None:
+                if not first:
                     self.handle_close()
                     return
 

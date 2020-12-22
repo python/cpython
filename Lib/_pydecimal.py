@@ -500,7 +500,7 @@ def localcontext(ctx=None):
     >>> print(getcontext().prec)
     28
     """
-    if ctx is None: ctx = getcontext()
+    if not ctx: ctx = getcontext()
     return _ContextManager(ctx)
 
 
@@ -548,8 +548,8 @@ class Decimal(object):
         # REs insist on real strings, so we can too.
         if isinstance(value, str):
             m = _parser(value.strip().replace("_", ""))
-            if m is None:
-                if context is None:
+            if not m:
+                if not context:
                     context = getcontext()
                 return context._raise_error(ConversionSyntax,
                                 "Invalid literal for Decimal: %r" % value)
@@ -655,7 +655,7 @@ class Decimal(object):
             return self
 
         if isinstance(value, float):
-            if context is None:
+            if not context:
                 context = getcontext()
             context._raise_error(FloatOperation,
                 "strict semantics for mixing floats and Decimals are "
@@ -753,13 +753,13 @@ class Decimal(object):
         """
 
         self_is_nan = self._isnan()
-        if other is None:
+        if not other:
             other_is_nan = False
         else:
             other_is_nan = other._isnan()
 
         if self_is_nan or other_is_nan:
-            if context is None:
+            if not context:
                 context = getcontext()
 
             if self_is_nan == 2:
@@ -785,7 +785,7 @@ class Decimal(object):
         Return 0 if neither operand is a NaN.
 
         """
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special or other._is_special:
@@ -1074,7 +1074,7 @@ class Decimal(object):
         if leftdigits == dotplace:
             exp = ''
         else:
-            if context is None:
+            if not context:
                 context = getcontext()
             exp = ['e', 'E'][context.capitals] + "%+d" % (leftdigits-dotplace)
 
@@ -1099,7 +1099,7 @@ class Decimal(object):
             if ans:
                 return ans
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if not self and context.rounding != ROUND_FLOOR:
@@ -1121,7 +1121,7 @@ class Decimal(object):
             if ans:
                 return ans
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if not self and context.rounding != ROUND_FLOOR:
@@ -1163,7 +1163,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special or other._is_special:
@@ -1273,7 +1273,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         resultsign = self._sign ^ other._sign
@@ -1327,7 +1327,7 @@ class Decimal(object):
         if other is NotImplemented:
             return NotImplemented
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         sign = self._sign ^ other._sign
@@ -1428,7 +1428,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         ans = self._check_nans(other, context)
@@ -1471,7 +1471,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         ans = self._check_nans(other, context)
@@ -1501,7 +1501,7 @@ class Decimal(object):
         """
         Remainder nearest to 0-  abs(remainder-near) <= other/2
         """
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -1578,7 +1578,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         ans = self._check_nans(other, context)
@@ -1936,7 +1936,7 @@ class Decimal(object):
         # compute product; raise InvalidOperation if either operand is
         # a signaling NaN or if the product is zero times infinity.
         if self._is_special or other._is_special:
-            if context is None:
+            if not context:
                 context = getcontext()
             if self._exp == 'N':
                 return context._raise_error(InvalidOperation, 'sNaN', self)
@@ -1973,7 +1973,7 @@ class Decimal(object):
         if modulo is NotImplemented:
             return modulo
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         # deal with NaNs: if there are any sNaNs then first one wins,
@@ -2316,7 +2316,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         # either argument is a NaN => result is NaN
@@ -2422,7 +2422,7 @@ class Decimal(object):
                 ans = _dec_from_triple(result_sign, '1', Etiny-1)
 
         # try for an exact result with precision +1
-        if ans is None:
+        if not ans:
             ans = self._power_exact(other, context.prec + 1)
             if ans:
                 if result_sign == 1:
@@ -2430,7 +2430,7 @@ class Decimal(object):
                 exact = True
 
         # usual case: inexact result, x**y computed directly as exp(y*log(x))
-        if ans is None:
+        if not ans:
             p = context.prec
             x = _WorkRep(self)
             xc, xe = x.int, x.exp
@@ -2511,7 +2511,7 @@ class Decimal(object):
     def normalize(self, context=None):
         """Normalize- strip trailing 0s, change anything equal to 0 to 0e0"""
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special:
@@ -2540,9 +2540,9 @@ class Decimal(object):
         """
         exp = _convert_other(exp, raiseit=True)
 
-        if context is None:
+        if not context:
             context = getcontext()
-        if rounding is None:
+        if not rounding:
             rounding = context.rounding
 
         if self._is_special or exp._is_special:
@@ -2685,9 +2685,9 @@ class Decimal(object):
             return Decimal(self)
         if not self:
             return _dec_from_triple(self._sign, '0', 0)
-        if context is None:
+        if not context:
             context = getcontext()
-        if rounding is None:
+        if not rounding:
             rounding = context.rounding
         ans = self._rescale(0, rounding)
         if ans != self:
@@ -2697,9 +2697,9 @@ class Decimal(object):
 
     def to_integral_value(self, rounding=None, context=None):
         """Rounds to the nearest integer, without raising inexact, rounded."""
-        if context is None:
+        if not context:
             context = getcontext()
-        if rounding is None:
+        if not rounding:
             rounding = context.rounding
         if self._is_special:
             ans = self._check_nans(context=context)
@@ -2716,7 +2716,7 @@ class Decimal(object):
 
     def sqrt(self, context=None):
         """Return the square root of self."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special:
@@ -2821,7 +2821,7 @@ class Decimal(object):
         """
         other = _convert_other(other, raiseit=True)
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special or other._is_special:
@@ -2863,7 +2863,7 @@ class Decimal(object):
         """
         other = _convert_other(other, raiseit=True)
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special or other._is_special:
@@ -3036,7 +3036,7 @@ class Decimal(object):
     def exp(self, context=None):
         """Returns e ** self."""
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         # exp(NaN) = NaN
@@ -3136,7 +3136,7 @@ class Decimal(object):
         """Return True if self is a normal number; otherwise return False."""
         if self._is_special or not self:
             return False
-        if context is None:
+        if not context:
             context = getcontext()
         return context.Emin <= self.adjusted()
 
@@ -3156,7 +3156,7 @@ class Decimal(object):
         """Return True if self is subnormal; otherwise return False."""
         if self._is_special or not self:
             return False
-        if context is None:
+        if not context:
             context = getcontext()
         return self.adjusted() < context.Emin
 
@@ -3192,7 +3192,7 @@ class Decimal(object):
     def ln(self, context=None):
         """Returns the natural (base e) logarithm of self."""
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         # ln(NaN) = NaN
@@ -3272,7 +3272,7 @@ class Decimal(object):
     def log10(self, context=None):
         """Returns the base 10 logarithm of self."""
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         # log10(NaN) = NaN
@@ -3333,7 +3333,7 @@ class Decimal(object):
         if ans:
             return ans
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         # logb(+/-Inf) = +Inf
@@ -3379,7 +3379,7 @@ class Decimal(object):
 
     def logical_and(self, other, context=None):
         """Applies an 'and' operation between self and other's digits."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -3396,14 +3396,14 @@ class Decimal(object):
 
     def logical_invert(self, context=None):
         """Invert all its digits."""
-        if context is None:
+        if not context:
             context = getcontext()
         return self.logical_xor(_dec_from_triple(0,'1'*context.prec,0),
                                 context)
 
     def logical_or(self, other, context=None):
         """Applies an 'or' operation between self and other's digits."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -3420,7 +3420,7 @@ class Decimal(object):
 
     def logical_xor(self, other, context=None):
         """Applies an 'xor' operation between self and other's digits."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -3439,7 +3439,7 @@ class Decimal(object):
         """Compares the values numerically with their sign ignored."""
         other = _convert_other(other, raiseit=True)
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special or other._is_special:
@@ -3469,7 +3469,7 @@ class Decimal(object):
         """Compares the values numerically with their sign ignored."""
         other = _convert_other(other, raiseit=True)
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         if self._is_special or other._is_special:
@@ -3497,7 +3497,7 @@ class Decimal(object):
 
     def next_minus(self, context=None):
         """Returns the largest representable number smaller than itself."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         ans = self._check_nans(context=context)
@@ -3520,7 +3520,7 @@ class Decimal(object):
 
     def next_plus(self, context=None):
         """Returns the smallest representable number larger than itself."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         ans = self._check_nans(context=context)
@@ -3552,7 +3552,7 @@ class Decimal(object):
         """
         other = _convert_other(other, raiseit=True)
 
-        if context is None:
+        if not context:
             context = getcontext()
 
         ans = self._check_nans(other, context)
@@ -3616,7 +3616,7 @@ class Decimal(object):
                 return "-Zero"
             else:
                 return "+Zero"
-        if context is None:
+        if not context:
             context = getcontext()
         if self.is_subnormal(context=context):
             if self._sign:
@@ -3635,7 +3635,7 @@ class Decimal(object):
 
     def rotate(self, other, context=None):
         """Returns a rotated copy of self, value-of-other times."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -3668,7 +3668,7 @@ class Decimal(object):
 
     def scaleb(self, other, context=None):
         """Returns self operand after adding the second value to its exp."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -3693,7 +3693,7 @@ class Decimal(object):
 
     def shift(self, other, context=None):
         """Returns a shifted copy of self, value-of-other times."""
-        if context is None:
+        if not context:
             context = getcontext()
 
         other = _convert_other(other, raiseit=True)
@@ -3760,7 +3760,7 @@ class Decimal(object):
         # We take the liberty of ignoring this requirement for
         # Decimal---it's presumably there to make sure that
         # format(float, '') behaves similarly to str(float).
-        if context is None:
+        if not context:
             context = getcontext()
 
         spec = _parse_format_specifier(specifier, _localeconv=_localeconv)
@@ -3902,19 +3902,19 @@ class Context(object):
         self.capitals = capitals if capitals else dc.capitals
         self.clamp = clamp if clamp else dc.clamp
 
-        if _ignored_flags is None:
+        if not _ignored_flags:
             self._ignored_flags = []
         else:
             self._ignored_flags = _ignored_flags
 
-        if traps is None:
+        if not traps:
             self.traps = dc.traps.copy()
         elif not isinstance(traps, dict):
             self.traps = dict((s, int(s in traps)) for s in _signals + traps)
         else:
             self.traps = traps
 
-        if flags is None:
+        if not flags:
             self.flags = dict.fromkeys(_signals, 0)
         elif not isinstance(flags, dict):
             self.flags = dict((s, int(s in flags)) for s in _signals + flags)
@@ -5618,7 +5618,7 @@ class _WorkRep(object):
     # exp:  None, int, or string
 
     def __init__(self, value=None):
-        if value is None:
+        if not value:
             self.sign = None
             self.int = 0
             self.exp = None
@@ -6190,7 +6190,7 @@ def _parse_format_specifier(format_spec, _localeconv=None):
 
     """
     m = _parse_format_specifier_regex.match(format_spec)
-    if m is None:
+    if not m:
         raise ValueError("Invalid format specifier: " + format_spec)
 
     # get the dictionary
@@ -6234,7 +6234,7 @@ def _parse_format_specifier(format_spec, _localeconv=None):
     if format_dict['type'] == 'n':
         # apart from separators, 'n' behaves just like 'g'
         format_dict['type'] = 'g'
-        if _localeconv is None:
+        if not _localeconv:
             _localeconv = _locale.localeconv()
         if format_dict['thousands_sep']:
             raise ValueError("Explicit thousands separator conflicts with "

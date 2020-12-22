@@ -1064,7 +1064,7 @@ class StreamHandler(Handler):
         If stream is not specified, sys.stderr is used.
         """
         Handler.__init__(self)
-        if stream is None:
+        if not stream:
             stream = sys.stderr
         self.stream = stream
 
@@ -1198,7 +1198,7 @@ class FileHandler(StreamHandler):
         If the stream was not opened because 'delay' was specified in the
         constructor, open it before calling the superclass's emit.
         """
-        if self.stream is None:
+        if not self.stream:
             self.stream = self._open()
         StreamHandler.emit(self, record)
 
@@ -1998,7 +1998,7 @@ def basicConfig(**kwargs):
                 h.close()
         if len(root.handlers) == 0:
             handlers = kwargs.pop("handlers", None)
-            if handlers is None:
+            if not handlers:
                 if "stream" in kwargs and "filename" in kwargs:
                     raise ValueError("'stream' and 'filename' should not be "
                                      "specified together")
@@ -2006,7 +2006,7 @@ def basicConfig(**kwargs):
                 if "stream" in kwargs or "filename" in kwargs:
                     raise ValueError("'stream' or 'filename' should not be "
                                      "specified together with 'handlers'")
-            if handlers is None:
+            if not handlers:
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
@@ -2026,7 +2026,7 @@ def basicConfig(**kwargs):
             fs = kwargs.pop("format", _STYLES[style][1])
             fmt = Formatter(fs, dfs, style)
             for h in handlers:
-                if h.formatter is None:
+                if not h.formatter:
                     h.setFormatter(fmt)
                 root.addHandler(h)
             level = kwargs.pop("level", None)
@@ -2227,7 +2227,7 @@ def captureWarnings(capture):
     """
     global _warnings_showwarning
     if capture:
-        if _warnings_showwarning is None:
+        if not _warnings_showwarning:
             _warnings_showwarning = warnings.showwarning
             warnings.showwarning = _showwarning
     else:

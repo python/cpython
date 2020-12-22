@@ -90,7 +90,7 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
             from concurrent.futures import ProcessPoolExecutor
         except ImportError:
             workers = 1
-    if maxlevels is None:
+    if not maxlevels:
         maxlevels = sys.getrecursionlimit()
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
@@ -173,7 +173,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
         dfile = os.path.join(*ddir_parts)
 
     if prependdir:
-        if dfile is None:
+        if not dfile:
             dfile = os.path.join(prependdir, fullname)
         else:
             dfile = os.path.join(prependdir, dfile)
@@ -390,7 +390,7 @@ def main():
     else:
         maxlevels = args.maxlevels
 
-    if args.opt_levels is None:
+    if not args.opt_levels:
         args.opt_levels = [-1]
 
     if len(args.opt_levels) == 1 and args.hardlink_dupes:

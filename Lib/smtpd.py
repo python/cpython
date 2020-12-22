@@ -518,7 +518,7 @@ class SMTPChannel(asynchat.async_chat):
         syntaxerr = '501 Syntax: MAIL FROM: <address>'
         if self.extended_smtp:
             syntaxerr += ' [SP <mail-parameters>]'
-        if arg is None:
+        if not arg:
             self.push(syntaxerr)
             return
         arg = self._strip_command_keyword('FROM:', arg)
@@ -534,7 +534,7 @@ class SMTPChannel(asynchat.async_chat):
             return
         self.mail_options = params.upper().split()
         params = self._getparams(self.mail_options)
-        if params is None:
+        if not params:
             self.push(syntaxerr)
             return
         if not self._decode_data:
@@ -575,7 +575,7 @@ class SMTPChannel(asynchat.async_chat):
         syntaxerr = '501 Syntax: RCPT TO: <address>'
         if self.extended_smtp:
             syntaxerr += ' [SP <mail-parameters>]'
-        if arg is None:
+        if not arg:
             self.push(syntaxerr)
             return
         arg = self._strip_command_keyword('TO:', arg)
@@ -588,7 +588,7 @@ class SMTPChannel(asynchat.async_chat):
             return
         self.rcpt_options = params.upper().split()
         params = self._getparams(self.rcpt_options)
-        if params is None:
+        if not params:
             self.push(syntaxerr)
             return
         # XXX currently there are no options we recognize.

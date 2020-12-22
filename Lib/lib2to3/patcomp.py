@@ -42,7 +42,7 @@ class PatternCompiler(object):
 
         Takes an optional alternative filename for the pattern grammar.
         """
-        if grammar_file is None:
+        if not grammar_file:
             self.grammar = pygram.pattern_grammar
             self.syms = pygram.pattern_symbols
         else:
@@ -155,7 +155,7 @@ class PatternCompiler(object):
                     type = None
                 elif not value.startswith("_"):
                     type = getattr(self.pysyms, value, None)
-                    if type is None:
+                    if not type:
                         raise PatternSyntaxError("Invalid symbol: %r" % value)
                 if nodes[1:]: # Details present
                     content = [self.compile_node(nodes[1].children[1])]

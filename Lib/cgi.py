@@ -135,7 +135,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
     """
-    if fp is None:
+    if not fp:
         fp = sys.stdin
 
     # field keys and values (except for files) are returned as strings
@@ -375,10 +375,10 @@ class FieldStorage:
                 qs = ""
             qs = qs.encode(locale.getpreferredencoding(), 'surrogateescape')
             fp = BytesIO(qs)
-            if headers is None:
+            if not headers:
                 headers = {'content-type':
                            "application/x-www-form-urlencoded"}
-        if headers is None:
+        if not headers:
             headers = {}
             if method == 'POST':
                 # Set default content-type for POST to what's traditional
@@ -394,7 +394,7 @@ class FieldStorage:
                 raise TypeError("headers must be mapping or an instance of "
                                 "email.message.Message")
         self.headers = headers
-        if fp is None:
+        if not fp:
             self.fp = sys.stdin.buffer
         # self.fp.read() must return bytes
         elif isinstance(fp, TextIOWrapper):
@@ -511,7 +511,7 @@ class FieldStorage:
 
     def __getitem__(self, key):
         """Dictionary style indexing."""
-        if self.list is None:
+        if not self.list:
             raise TypeError("not indexable")
         found = []
         for item in self.list:
@@ -558,13 +558,13 @@ class FieldStorage:
 
     def keys(self):
         """Dictionary style keys() method."""
-        if self.list is None:
+        if not self.list:
             raise TypeError("not indexable")
         return list(set(item.name for item in self.list))
 
     def __contains__(self, key):
         """Dictionary style __contains__ method."""
-        if self.list is None:
+        if not self.list:
             raise TypeError("not indexable")
         return any(item.name == key for item in self.list)
 
@@ -573,7 +573,7 @@ class FieldStorage:
         return len(self.keys())
 
     def __bool__(self):
-        if self.list is None:
+        if not self.list:
             raise TypeError("Cannot be converted to bool.")
         return bool(self.list)
 
@@ -874,7 +874,7 @@ def test(environ=os.environ):
         print_exception()
 
 def print_exception(type=None, value=None, tb=None, limit=None):
-    if type is None:
+    if not type:
         type, value, tb = sys.exc_info()
     import traceback
     print()

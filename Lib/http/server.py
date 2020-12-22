@@ -450,9 +450,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             shortmsg, longmsg = self.responses[code]
         except KeyError:
             shortmsg, longmsg = '???', '???'
-        if message is None:
+        if not message:
             message = shortmsg
-        if explain is None:
+        if not explain:
             explain = longmsg
         self.log_error("code %d, message %s", code, message)
         self.send_response(code, message)
@@ -497,7 +497,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     def send_response_only(self, code, message=None):
         """Send the response header only."""
         if self.request_version != 'HTTP/0.9':
-            if message is None:
+            if not message:
                 if code in self.responses:
                     message = self.responses[code][0]
                 else:
@@ -586,7 +586,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     def date_time_string(self, timestamp=None):
         """Return the current date and time formatted for a message header."""
-        if timestamp is None:
+        if not timestamp:
             timestamp = time.time()
         return email.utils.formatdate(timestamp, usegmt=True)
 
@@ -647,7 +647,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     }
 
     def __init__(self, *args, directory=None, **kwargs):
-        if directory is None:
+        if not directory:
             directory = os.getcwd()
         self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
@@ -726,7 +726,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     # ignore ill-formed values
                     pass
                 else:
-                    if ims.tzinfo is None:
+                    if not ims.tzinfo:
                         # obsolete format with no timezone, cf.
                         # https://tools.ietf.org/html/rfc7231#section-7.1.1.1
                         ims = ims.replace(tzinfo=datetime.timezone.utc)

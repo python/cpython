@@ -300,7 +300,7 @@ class Random(_random.Random):
         istart = int(start)
         if istart != start:
             raise ValueError("non-integer arg 1 for randrange()")
-        if stop is None:
+        if not stop:
             if istart > 0:
                 return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
@@ -354,7 +354,7 @@ class Random(_random.Random):
 
         """
 
-        if random is None:
+        if not random:
             randbelow = self._randbelow
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]
@@ -479,8 +479,8 @@ class Random(_random.Random):
         """
         random = self.random
         n = len(population)
-        if cum_weights is None:
-            if weights is None:
+        if not cum_weights:
+            if not weights:
                 floor = _floor
                 n += 0.0    # convert to float for a small speed improvement
                 return [population[floor(random() * n)] for i in _repeat(None, k)]
@@ -577,7 +577,7 @@ class Random(_random.Random):
         random = self.random
         z = self.gauss_next
         self.gauss_next = None
-        if z is None:
+        if not z:
             x2pi = random() * TWOPI
             g2rad = _sqrt(-2.0 * _log(1.0 - random()))
             z = _cos(x2pi) * g2rad

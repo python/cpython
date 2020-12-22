@@ -7,7 +7,7 @@ from ctypes.util import find_library
 class Test(unittest.TestCase):
     def test_open(self):
         libc_name = find_library("c")
-        if libc_name is None:
+        if not libc_name:
             raise unittest.SkipTest("Unable to find C library")
         libc = CDLL(libc_name, use_errno=True)
         if os.name == "nt":

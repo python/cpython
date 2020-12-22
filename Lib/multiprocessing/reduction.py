@@ -72,9 +72,9 @@ if sys.platform == 'win32':
                   *, source_process=None):
         '''Duplicate a handle.  (target_process is a handle not a pid!)'''
         current_process = _winapi.GetCurrentProcess()
-        if source_process is None:
+        if not source_process:
             source_process = current_process
-        if target_process is None:
+        if not target_process:
             target_process = current_process
         return _winapi.DuplicateHandle(
             source_process, handle, target_process,
@@ -104,7 +104,7 @@ if sys.platform == 'win32':
     class DupHandle(object):
         '''Picklable wrapper for a handle.'''
         def __init__(self, handle, access, pid=None):
-            if pid is None:
+            if not pid:
                 # We just duplicate the handle in the current process and
                 # let the receiving process steal the handle.
                 pid = os.getpid()
@@ -204,7 +204,7 @@ else:
 #
 
 def _reduce_method(m):
-    if m.__self__ is None:
+    if not m.__self__:
         return getattr, (m.__class__, m.__func__.__name__)
     else:
         return getattr, (m.__self__, m.__func__.__name__)

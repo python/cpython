@@ -143,7 +143,7 @@ class shlex:
             if self.debug >= 3:
                 print("shlex: in state %r I see character: %r" % (self.state,
                                                                   nextchar))
-            if self.state is None:
+            if not self.state:
                 self.token = ''        # past end of file
                 break
             elif self.state == ' ':
@@ -287,9 +287,9 @@ class shlex:
 
     def error_leader(self, infile=None, lineno=None):
         "Emit a C-compiler-like, Emacs-friendly error-message leader."
-        if infile is None:
+        if not infile:
             infile = self.infile
-        if lineno is None:
+        if not lineno:
             lineno = self.lineno
         return "\"%s\", line %d: " % (infile, lineno)
 
@@ -304,7 +304,7 @@ class shlex:
 
 def split(s, comments=False, posix=True):
     """Split the string *s* using shell-like syntax."""
-    if s is None:
+    if not s:
         import warnings
         warnings.warn("Passing None for 's' to shlex.split() is deprecated.",
                       DeprecationWarning, stacklevel=2)

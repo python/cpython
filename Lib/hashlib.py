@@ -219,7 +219,7 @@ except ImportError:
 
         if iterations < 1:
             raise ValueError(iterations)
-        if dklen is None:
+        if not dklen:
             dklen = outer.digest_size
         if dklen < 1:
             raise ValueError(dklen)

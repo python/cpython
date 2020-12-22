@@ -393,9 +393,9 @@ class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
-        if ahi is None:
+        if not ahi:
             ahi = len(a)
-        if bhi is None:
+        if not bhi:
             bhi = len(b)
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
@@ -661,7 +661,7 @@ class SequenceMatcher:
         # viewing a and b as multisets, set matches to the cardinality
         # of their intersection; this counts the number of matches
         # without regard to order, so is clearly an upper bound
-        if self.fullbcount is None:
+        if not self.fullbcount:
             self.fullbcount = fullbcount = {}
             for elt in self.b:
                 fullbcount[elt] = fullbcount.get(elt, 0) + 1
@@ -964,7 +964,7 @@ class Differ:
             for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
-                    if eqi is None:
+                    if not eqi:
                         eqi, eqj = i, j
                     continue
                 cruncher.set_seq1(ai)
@@ -980,7 +980,7 @@ class Differ:
                     best_ratio, best_i, best_j = cruncher.ratio(), i, j
         if best_ratio < cutoff:
             # no non-identical "pretty close" pair
-            if eqi is None:
+            if not eqi:
                 # no identical pair either -- treat it as a straight replace
                 yield from self._plain_replace(a, alo, ahi, b, blo, bhi)
                 return
@@ -998,7 +998,7 @@ class Differ:
 
         # do intraline marking on the synch pair
         aelt, belt = a[best_i], b[best_j]
-        if eqi is None:
+        if not eqi:
             # pump out a '-', '?', '+', '?' quad for the synched lines
             atags = btags = ""
             cruncher.set_seqs(aelt, belt)
@@ -1445,7 +1445,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         num_lines[side] += 1
         # Handle case where no user markup is to be added, just return line of
         # text with user's line format to allow for usage of the line number.
-        if format_key is None:
+        if not format_key:
             return (num_lines[side],lines.pop(0)[2:])
         # Handle case of intraline changes
         if format_key == '?':
@@ -1597,7 +1597,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     # Handle case where user does not want context differencing, just yield
     # them up without doing anything else with them.
     line_pair_iterator = _line_pair_iterator()
-    if context is None:
+    if not context:
         yield from line_pair_iterator
     # Handle case where user wants context differencing.  We must do some
     # storage of lines until we know for sure that they are to be yielded.
@@ -1853,7 +1853,7 @@ class HtmlDiff(object):
         # pull from/to data and flags from mdiff iterator
         for fromdata,todata,flag in diffs:
             # check for context separators and pass them through
-            if flag is None:
+            if not flag:
                 yield fromdata,todata,flag
                 continue
             (fromline,fromtext),(toline,totext) = fromdata,todata

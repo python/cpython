@@ -125,7 +125,7 @@ class ThreadPoolExecutor(_base.Executor):
             initializer: A callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
         """
-        if max_workers is None:
+        if not max_workers:
             # ThreadPoolExecutor is often used to:
             # * CPU bound task which releases GIL
             # * I/O bound task (which releases GIL, of course)

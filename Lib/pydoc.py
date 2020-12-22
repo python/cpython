@@ -92,7 +92,7 @@ def pathdirs():
 
 def _findclass(func):
     cls = sys.modules.get(func.__module__)
-    if cls is None:
+    if not cls:
         return None
     for name in func.__qualname__.split('.')[:-1]:
         cls = getattr(cls, name)
@@ -156,7 +156,7 @@ def _getowndoc(obj):
     inherited from its class."""
     try:
         doc = object.__getattribute__(obj, '__doc__')
-        if doc is None:
+        if not doc:
             return None
         if obj is not type:
             typedoc = type(obj).__doc__
@@ -173,7 +173,7 @@ def _getdoc(object):
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
     doc = _getowndoc(object)
-    if doc is None:
+    if not doc:
         try:
             doc = _finddoc(object)
         except (AttributeError, TypeError):
@@ -353,7 +353,7 @@ def synopsis(filename, cache={}):
         else:
             loader_cls = None
         # Now handle the choice.
-        if loader_cls is None:
+        if not loader_cls:
             # Must be a source file.
             try:
                 file = tokenize.open(filename)
@@ -588,7 +588,7 @@ class HTMLDoc(Doc):
     def section(self, title, fgcol, bgcol, contents, width=6,
                 prelude='', marginalia=None, gap='&nbsp;'):
         """Format a section with a heading."""
-        if marginalia is None:
+        if not marginalia:
             marginalia = '<tt>' + '&nbsp;' * width + '</tt>'
         result = '''<p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -1108,7 +1108,7 @@ class HTMLDoc(Doc):
     def index(self, dir, shadowed=None):
         """Generate an HTML index for a directory of modules."""
         modpkgs = []
-        if shadowed is None: shadowed = {}
+        if not shadowed: shadowed = {}
         for importer, name, ispkg in pkgutil.iter_modules([dir]):
             if any((0xD800 <= ord(ch) <= 0xDFFF) for ch in name):
                 # ignore a module if its name contains a surrogate character
@@ -1734,7 +1734,7 @@ def resolve(thing, forceload=0):
     """Given an object or a path to an object, get the object and its name."""
     if isinstance(thing, str):
         object = locate(thing, forceload)
-        if object is None:
+        if not object:
             raise ImportError('''\
 No Python documentation found for %r.
 Use help() to get the interactive help utility.
@@ -1747,7 +1747,7 @@ Use help(str) for help on the str class.''' % thing)
 def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
         renderer=None):
     """Render text documentation, given an object or a path to an object."""
-    if renderer is None:
+    if not renderer:
         renderer = text
     object, name = resolve(thing, forceload)
     desc = describe(object)
@@ -1775,7 +1775,7 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
         output=None):
     """Display text documentation, given an object or a path to an object."""
     try:
-        if output is None:
+        if not output:
             pager(render_doc(thing, title, forceload))
         else:
             output.write(render_doc(thing, title, forceload, plaintext))
@@ -1795,7 +1795,7 @@ def writedoc(thing, forceload=0):
 
 def writedocs(dir, pkgpath='', done=None):
     """Write out HTML documentation for all modules in a directory tree."""
-    if done is None: done = {}
+    if not done: done = {}
     for importer, modname, ispkg in pkgutil.walk_packages([dir], pkgpath):
         writedoc(modname)
     return
@@ -2216,7 +2216,7 @@ class ModuleScanner:
         for modname in sys.builtin_module_names:
             if modname != '__main__':
                 seen[modname] = 1
-                if key is None:
+                if not key:
                     callback(None, modname, '')
                 else:
                     name = __import__(modname).__doc__ or ''
@@ -2229,7 +2229,7 @@ class ModuleScanner:
             if self.quit:
                 break
 
-            if key is None:
+            if not key:
                 callback(None, modname, '')
             else:
                 try:

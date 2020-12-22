@@ -609,7 +609,7 @@ class TurtleScreenBase(object):
         of the clicked point on the canvas.
         num, the number of the mouse-button defaults to 1
         """
-        if fun is None:
+        if not fun:
             self.cv.tag_unbind(item, "<Button-%s>" % num)
         else:
             def eventfun(event):
@@ -627,7 +627,7 @@ class TurtleScreenBase(object):
         If a turtle is clicked, first _onclick-event will be performed,
         then _onscreensclick-event.
         """
-        if fun is None:
+        if not fun:
             self.cv.tag_unbind(item, "<Button%s-ButtonRelease>" % num)
         else:
             def eventfun(event):
@@ -646,7 +646,7 @@ class TurtleScreenBase(object):
         Every sequence of mouse-move-events on a turtle is preceded by a
         mouse-click event on that turtle.
         """
-        if fun is None:
+        if not fun:
             self.cv.tag_unbind(item, "<Button%s-Motion>" % num)
         else:
             def eventfun(event):
@@ -667,7 +667,7 @@ class TurtleScreenBase(object):
         If a turtle is clicked, first _onclick-event will be performed,
         then _onscreensclick-event.
         """
-        if fun is None:
+        if not fun:
             self.cv.unbind("<Button-%s>" % num)
         else:
             def eventfun(event):
@@ -680,7 +680,7 @@ class TurtleScreenBase(object):
         """Bind fun to key-release event of key.
         Canvas must have focus. See method listen
         """
-        if fun is None:
+        if not fun:
             self.cv.unbind("<KeyRelease-%s>" % key, None)
         else:
             def eventfun(event):
@@ -692,15 +692,15 @@ class TurtleScreenBase(object):
         Otherwise bind fun to any key-press.
         Canvas must have focus. See method listen.
         """
-        if fun is None:
-            if key is None:
+        if not fun:
+            if not key:
                 self.cv.unbind("<KeyPress>", None)
             else:
                 self.cv.unbind("<KeyPress-%s>" % key, None)
         else:
             def eventfun(event):
                 fun()
-            if key is None:
+            if not key:
                 self.cv.bind("<KeyPress>", eventfun)
             else:
                 self.cv.bind("<KeyPress-%s>" % key, eventfun)
@@ -911,7 +911,7 @@ class Shape(object):
         if self._type != "compound":
             raise TurtleGraphicsError("Cannot add component to %s Shape"
                                                                 % self._type)
-        if outline is None:
+        if not outline:
             outline = fill
         self._data.append([poly, fill, outline])
 
@@ -924,7 +924,7 @@ class Tbuffer(object):
         self.ptr = -1
         self.cumulate = False
     def reset(self, bufsize=None):
-        if bufsize is None:
+        if not bufsize:
             for i in range(self.bufsize):
                 self.buffer[i] = [None]
         else:
@@ -941,7 +941,7 @@ class Tbuffer(object):
     def pop(self):
         if self.bufsize > 0:
             item = self.buffer[self.ptr]
-            if item is None:
+            if not item:
                 return None
             else:
                 self.buffer[self.ptr] = [None]
@@ -1054,7 +1054,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> mode()
         'logo'
         """
-        if mode is None:
+        if not mode:
             return self._mode
         mode = mode.lower()
         if mode not in ["standard", "logo", "world"]:
@@ -1128,7 +1128,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> screen.register_shape("triangle", ((5,-3),(0,5),(-5,-3)))
 
         """
-        if shape is None:
+        if not shape:
             # image
             if name.lower().endswith(".gif"):
                 shape = Shape("image", self._image(name))
@@ -1192,7 +1192,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> screen.colormode(255)
         >>> pencolor(240,160,80)
         """
-        if cmode is None:
+        if not cmode:
             return self._colormode
         if cmode == 1.0:
             self._colormode = float(cmode)
@@ -1262,7 +1262,7 @@ class TurtleScreen(TurtleScreenBase):
         ...     rt(90)
         ...     dist += 2
         """
-        if n is None:
+        if not n:
             return self._tracing
         self._tracing = int(n)
         self._updatecounter = 0
@@ -1282,7 +1282,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> screen.delay()
         15
         """
-        if delay is None:
+        if not delay:
             return self._delayvalue
         self._delayvalue = int(delay)
 
@@ -1387,7 +1387,7 @@ class TurtleScreen(TurtleScreenBase):
         the up-arrow key, consequently drawing a hexagon
 
         """
-        if fun is None:
+        if not fun:
             if key in self._keys:
                 self._keys.remove(key)
         elif key not in self._keys:
@@ -1419,7 +1419,7 @@ class TurtleScreen(TurtleScreenBase):
         the up-arrow key, or by keeping pressed the up-arrow key.
         consequently drawing a hexagon.
         """
-        if fun is None:
+        if not fun:
             if key in self._keys:
                 self._keys.remove(key)
         elif key and key not in self._keys:
@@ -1476,7 +1476,7 @@ class TurtleScreen(TurtleScreenBase):
         >>> screen.bgpic()
         'landscape.gif'
         """
-        if picname is None:
+        if not picname:
             return self._bgpicname
         if picname not in self._bgpics:
             self._bgpics[picname] = self._image(picname)
@@ -1541,7 +1541,7 @@ class TNavigator(object):
     def _setmode(self, mode=None):
         """Set turtle-mode to 'standard', 'world' or 'logo'.
         """
-        if mode is None:
+        if not mode:
             return self._mode
         if mode not in ["standard", "logo", "world"]:
             return
@@ -1771,7 +1771,7 @@ class TNavigator(object):
         >>> turtle.pos()
         (0.00,0.00)
         """
-        if y is None:
+        if not y:
             self._goto(Vec2D(*x))
         else:
             self._goto(Vec2D(x, y))
@@ -1970,9 +1970,9 @@ class TNavigator(object):
             self.undobuffer.push(["seq"])
             self.undobuffer.cumulate = True
         speed = self.speed()
-        if extent is None:
+        if not extent:
             extent = self._fullcircle
-        if steps is None:
+        if not steps:
             frac = abs(extent)/self._fullcircle
             steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
         w = 1.0 * extent / steps
@@ -2064,7 +2064,7 @@ class TPen(object):
         >>> turtle.resizemode()
         'noresize'
         """
-        if rmode is None:
+        if not rmode:
             return self._resizemode
         rmode = rmode.lower()
         if rmode in ["auto", "user", "noresize"]:
@@ -2088,7 +2088,7 @@ class TPen(object):
         1
         >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
         """
-        if width is None:
+        if not width:
             return self._pensize
         self.pen(pensize=width)
 
@@ -2164,7 +2164,7 @@ class TPen(object):
         >>> turtle.speed(3)
         """
         speeds = {'fastest':0, 'fast':10, 'normal':6, 'slow':3, 'slowest':1 }
-        if speed is None:
+        if not speed:
             return self._speed
         if speed in speeds:
             speed = speeds[speed]
@@ -2610,7 +2610,7 @@ class RawTurtle(TPen, TNavigator):
         >>> while undobufferentries():
         ...     undo()
         """
-        if self.undobuffer is None:
+        if not self.undobuffer:
             return 0
         return self.undobuffer.nr_of_items()
 
@@ -2771,7 +2771,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.shape()
         'turtle'
         """
-        if name is None:
+        if not name:
             return self.turtle.shapeIndex
         if not name in self.screen.getshapes():
             raise TurtleGraphicsError("There is no shape named %s" % name)
@@ -2805,7 +2805,7 @@ class RawTurtle(TPen, TNavigator):
         if stretch_wid == 0 or stretch_len == 0:
             raise TurtleGraphicsError("stretch_wid/stretch_len must not be zero")
         if stretch_wid:
-            if stretch_len is None:
+            if not stretch_len:
                 stretchfactor = stretch_wid, stretch_wid
             else:
                 stretchfactor = stretch_wid, stretch_len
@@ -2813,7 +2813,7 @@ class RawTurtle(TPen, TNavigator):
             stretchfactor = self._stretchfactor[0], stretch_len
         else:
             stretchfactor = self._stretchfactor
-        if outline is None:
+        if not outline:
             outline = self._outlinewidth
         self.pen(resizemode="user",
                  stretchfactor=stretchfactor, outline=outline)
@@ -2837,7 +2837,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.shearfactor()
         >>> 0.5
         """
-        if shear is None:
+        if not shear:
             return self._shearfactor
         self.pen(resizemode="user", shearfactor=shear)
 
@@ -2885,7 +2885,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.tilt(45)
         >>> turtle.tiltangle()
         """
-        if angle is None:
+        if not angle:
             tilt = -math.degrees(self._tilt) * self._angleOrient
             return (tilt / self._degreesPerAU) % self._fullcircle
         else:
@@ -3132,7 +3132,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.clearstamps(-2)
         >>> turtle.clearstamps()
         """
-        if n is None:
+        if not n:
             toDelete = self.stampItems[:]
         elif n >= 0:
             toDelete = self.stampItems[:n]
@@ -3372,7 +3372,7 @@ class RawTurtle(TPen, TNavigator):
                 if not size:
                     size = self._pensize + max(self._pensize, 4)
         else:
-            if size is None:
+            if not size:
                 size = self._pensize + max(self._pensize, 4)
             color = self._colorstr(color)
         if hasattr(self.screen, "_dot"):
@@ -3591,7 +3591,7 @@ class RawTurtle(TPen, TNavigator):
     def _undo(self, action, data):
         """Does the main part of the work for undo()
         """
-        if self.undobuffer is None:
+        if not self.undobuffer:
             return
         if action == "rot":
             angle, degPAU = data
@@ -3637,7 +3637,7 @@ class RawTurtle(TPen, TNavigator):
         ...     turtle.undo()
         ...
         """
-        if self.undobuffer is None:
+        if not self.undobuffer:
             return
         item = self.undobuffer.pop()
         action = item[0]
@@ -3659,7 +3659,7 @@ def Screen():
     """Return the singleton screen object.
     If none exists at the moment, create a new one and return it,
     else return the existing one."""
-    if Turtle._screen is None:
+    if not Turtle._screen:
         Turtle._screen = _Screen()
     return Turtle._screen
 
@@ -3675,11 +3675,11 @@ class _Screen(TurtleScreen):
         # XXX actually, the turtle demo is injecting root window,
         # so perhaps the conditional creation of a root should be
         # preserved (perhaps by passing it as an optional parameter)
-        if _Screen._root is None:
+        if not _Screen._root:
             _Screen._root = self._root = _Root()
             self._root.title(_Screen._title)
             self._root.ondestroy(self._destroy)
-        if _Screen._canvas is None:
+        if not _Screen._canvas:
             width = _CFG["width"]
             height = _CFG["height"]
             canvwidth = _CFG["canvwidth"]
@@ -3722,11 +3722,11 @@ class _Screen(TurtleScreen):
         sh = self._root.win_height()
         if isinstance(width, float) and 0 <= width <= 1:
             width = sw*width
-        if startx is None:
+        if not startx:
             startx = (sw - width) / 2
         if isinstance(height, float) and 0 <= height <= 1:
             height = sh*height
-        if starty is None:
+        if not starty:
             starty = (sh - height) / 2
         self._root.set_geometry(width, height, startx, starty)
         self.update()
@@ -3809,7 +3809,7 @@ class Turtle(RawTurtle):
                  shape=_CFG["shape"],
                  undobuffersize=_CFG["undobuffersize"],
                  visible=_CFG["visible"]):
-        if Turtle._screen is None:
+        if not Turtle._screen:
             Turtle._screen = Screen()
         RawTurtle.__init__(self, Turtle._screen,
                            shape=shape,
@@ -3916,7 +3916,7 @@ def _turtle_docrevise(docstr):
     """To reduce docstrings from RawTurtle class for functions
     """
     import re
-    if docstr is None:
+    if not docstr:
         return None
     turtlename = _CFG["exampleturtle"]
     newdocstr = docstr.replace("%s." % turtlename,"")
@@ -3928,7 +3928,7 @@ def _screen_docrevise(docstr):
     """To reduce docstrings from TurtleScreen class for functions
     """
     import re
-    if docstr is None:
+    if not docstr:
         return None
     screenname = _CFG["examplescreen"]
     newdocstr = docstr.replace("%s." % screenname,"")

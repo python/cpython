@@ -12,7 +12,7 @@ class BaseTransport:
     __slots__ = ('_extra',)
 
     def __init__(self, extra=None):
-        if extra is None:
+        if not extra:
             extra = {}
         self._extra = extra
 
@@ -306,12 +306,12 @@ class _FlowControlMixin(Transport):
         return (self._low_water, self._high_water)
 
     def _set_write_buffer_limits(self, high=None, low=None):
-        if high is None:
-            if low is None:
+        if not high:
+            if not low:
                 high = 64 * 1024
             else:
                 high = 4 * low
-        if low is None:
+        if not low:
             low = high // 4
 
         if not high >= low >= 0:

@@ -69,7 +69,7 @@ def quoteattr(data, entities={}):
 
 
 def _gettextwriter(out, encoding):
-    if out is None:
+    if not out:
         import sys
         return sys.stdout
 

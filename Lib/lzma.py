@@ -101,11 +101,11 @@ class LZMAFile(_compression.BaseStream):
             if preset:
                 raise ValueError("Cannot specify a preset compression "
                                  "level when opening a file for reading")
-            if format is None:
+            if not format:
                 format = FORMAT_AUTO
             mode_code = _MODE_READ
         elif mode in ("w", "wb", "a", "ab", "x", "xb"):
-            if format is None:
+            if not format:
                 format = FORMAT_XZ
             mode_code = _MODE_WRITE
             self._compressor = LZMACompressor(format=format, check=check,

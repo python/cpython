@@ -110,7 +110,7 @@ class SubPattern:
     # a subpattern, in intermediate form
     def __init__(self, state, data=None):
         self.state = state
-        if data is None:
+        if not data:
             data = []
         self.data = data
         self.width = None
@@ -269,7 +269,7 @@ class Tokenizer:
         while True:
             c = self.next
             self.__next()
-            if c is None:
+            if not c:
                 if not result:
                     raise self.error("missing " + name)
                 raise self.error("missing %s, unterminated name" % terminator,
@@ -456,7 +456,7 @@ def _parse_sub(source, state, verbose, nested):
         for item in items:
             if not item:
                 break
-            if prefix is None:
+            if not prefix:
                 prefix = item[0]
             elif item[0] != prefix:
                 break
@@ -504,7 +504,7 @@ def _parse(source, state, verbose, nested, first=False):
     while True:
 
         this = source.next
-        if this is None:
+        if not this:
             break # end of pattern
         if this in "|)":
             break # end of subpattern
@@ -545,7 +545,7 @@ def _parse(source, state, verbose, nested, first=False):
             # check remaining characters
             while True:
                 this = sourceget()
-                if this is None:
+                if not this:
                     raise source.error("unterminated character set",
                                        source.tell() - here)
                 if this == "]" and set:
@@ -568,7 +568,7 @@ def _parse(source, state, verbose, nested, first=False):
                 if sourcematch("-"):
                     # potential range
                     that = sourceget()
-                    if that is None:
+                    if not that:
                         raise source.error("unterminated character set",
                                            source.tell() - here)
                     if that == "]":
@@ -691,7 +691,7 @@ def _parse(source, state, verbose, nested, first=False):
             if sourcematch("?"):
                 # options
                 char = sourceget()
-                if char is None:
+                if not char:
                     raise source.error("unexpected end of pattern")
                 if char == "P":
                     # python extensions
@@ -708,7 +708,7 @@ def _parse(source, state, verbose, nested, first=False):
                             msg = "bad character in group name %r" % name
                             raise source.error(msg, len(name) + 1)
                         gid = state.groupdict.get(name)
-                        if gid is None:
+                        if not gid:
                             msg = "unknown group name %r" % name
                             raise source.error(msg, len(name) + 1)
                         if not state.checkgroup(gid):
@@ -720,7 +720,7 @@ def _parse(source, state, verbose, nested, first=False):
 
                     else:
                         char = sourceget()
-                        if char is None:
+                        if not char:
                             raise source.error("unexpected end of pattern")
                         raise source.error("unknown extension ?P" + char,
                                            len(char) + 2)
@@ -730,7 +730,7 @@ def _parse(source, state, verbose, nested, first=False):
                 elif char == "#":
                     # comment
                     while True:
-                        if source.next is None:
+                        if not source.next:
                             raise source.error("missing ), unterminated comment",
                                                source.tell() - start)
                         if sourceget() == ")":
@@ -742,18 +742,18 @@ def _parse(source, state, verbose, nested, first=False):
                     dir = 1
                     if char == "<":
                         char = sourceget()
-                        if char is None:
+                        if not char:
                             raise source.error("unexpected end of pattern")
                         if char not in "=!":
                             raise source.error("unknown extension ?<" + char,
                                                len(char) + 2)
                         dir = -1 # lookbehind
                         lookbehindgroups = state.lookbehindgroups
-                        if lookbehindgroups is None:
+                        if not lookbehindgroups:
                             state.lookbehindgroups = state.groups
                     p = _parse_sub(source, state, verbose, nested + 1)
                     if dir < 0:
-                        if lookbehindgroups is None:
+                        if not lookbehindgroups:
                             state.lookbehindgroups = None
                     if not sourcematch(")"):
                         raise source.error("missing ), unterminated subpattern",
@@ -769,7 +769,7 @@ def _parse(source, state, verbose, nested, first=False):
                     condname = source.getuntil(")", "group name")
                     if condname.isidentifier():
                         condgroup = state.groupdict.get(condname)
-                        if condgroup is None:
+                        if not condgroup:
                             msg = "unknown group name %r" % condname
                             raise source.error(msg, len(condname) + 1)
                     else:
@@ -803,7 +803,7 @@ def _parse(source, state, verbose, nested, first=False):
                 elif char in FLAGS or char == "-":
                     # flags
                     flags = _parse_flags(source, state, char)
-                    if flags is None:  # global flags
+                    if not flags:  # global flags
                         if not first or subpattern:
                             import warnings
                             warnings.warn(
@@ -878,7 +878,7 @@ def _parse_flags(source, state, char):
                 msg = "bad inline flags: flags 'a', 'u' and 'L' are incompatible"
                 raise source.error(msg)
             char = sourceget()
-            if char is None:
+            if not char:
                 raise source.error("missing -, : or )")
             if char in ")-:":
                 break
@@ -892,7 +892,7 @@ def _parse_flags(source, state, char):
         raise source.error("bad inline flags: cannot turn on global flag", 1)
     if char == "-":
         char = sourceget()
-        if char is None:
+        if not char:
             raise source.error("missing flag")
         if char not in FLAGS:
             msg = "unknown flag" if char.isalpha() else "missing flag"
@@ -904,7 +904,7 @@ def _parse_flags(source, state, char):
                 raise source.error(msg)
             del_flags |= flag
             char = sourceget()
-            if char is None:
+            if not char:
                 raise source.error("missing :")
             if char == ":":
                 break
@@ -939,7 +939,7 @@ def parse(str, flags=0, state=None):
 
     source = Tokenizer(str)
 
-    if state is None:
+    if not state:
         state = State()
     state.flags = flags
     state.str = str
@@ -986,7 +986,7 @@ def parse_template(source, state):
     groupindex = state.groupindex
     while True:
         this = sget()
-        if this is None:
+        if not this:
             break # end of replacement string
         if this[0] == "\\":
             # group

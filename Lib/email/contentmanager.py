@@ -44,7 +44,7 @@ class ContentManager:
             qname = typ.__qualname__
             modname = getattr(typ, '__module__', '')
             full_path = '.'.join((modname, qname)) if modname else qname
-            if full_path_for_error is None:
+            if not full_path_for_error:
                 full_path_for_error = full_path
             if full_path in self.set_handlers:
                 return self.set_handlers[full_path]
@@ -214,7 +214,7 @@ def set_message_content(msg, message, subtype="rfc822", cte=None,
             raise ValueError(
                 "message/external-body parts do not support cte={}".format(cte))
         cte = '7bit'
-    elif cte is None:
+    elif not cte:
         # http://tools.ietf.org/html/rfc2046#section-5.2.4 says all future
         # subtypes should be restricted to 7bit, so assume that.
         cte = '7bit'

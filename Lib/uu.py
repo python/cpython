@@ -49,9 +49,9 @@ def encode(in_file, out_file, name=None, mode=None, *, backtick=False):
         if in_file == '-':
             in_file = sys.stdin.buffer
         elif isinstance(in_file, str):
-            if name is None:
+            if not name:
                 name = os.path.basename(in_file)
-            if mode is None:
+            if not mode:
                 try:
                     mode = os.stat(in_file).st_mode
                 except AttributeError:
@@ -69,9 +69,9 @@ def encode(in_file, out_file, name=None, mode=None, *, backtick=False):
         #
         # Set defaults for name and mode
         #
-        if name is None:
+        if not name:
             name = '-'
-        if mode is None:
+        if not mode:
             mode = 0o666
 
         #
@@ -126,12 +126,12 @@ def decode(in_file, out_file=None, mode=None, quiet=False):
                     break
                 except ValueError:
                     pass
-        if out_file is None:
+        if not out_file:
             # If the filename isn't ASCII, what's up with that?!?
             out_file = hdrfields[2].rstrip(b' \t\r\n\f').decode("ascii")
             if os.path.exists(out_file):
                 raise Error('Cannot overwrite existing file: %s' % out_file)
-        if mode is None:
+        if not mode:
             mode = int(hdrfields[1], 8)
         #
         # Open the output file

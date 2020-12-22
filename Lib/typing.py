@@ -136,7 +136,7 @@ def _type_check(arg, msg, is_argument=True):
     if is_argument:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
-    if arg is None:
+    if not arg:
         return type(None)
     if isinstance(arg, str):
         return ForwardRef(arg)
@@ -549,9 +549,9 @@ class ForwardRef(_Final, _root=True):
         if not self.__forward_evaluated__ or localns is not globalns:
             if globalns is None and localns is None:
                 globalns = localns = {}
-            elif globalns is None:
+            elif not globalns:
                 globalns = localns
-            elif localns is None:
+            elif not localns:
                 localns = globalns
             type_ =_type_check(
                 eval(self.__forward_code__, globalns, localns),
@@ -833,7 +833,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
 class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __init__(self, origin, nparams, *, inst=True, name=None):
-        if name is None:
+        if not name:
             name = origin.__name__
         super().__init__(origin, inst=inst, name=name)
         self._nparams = nparams
@@ -1446,13 +1446,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     if isinstance(obj, type):
         hints = {}
         for base in reversed(obj.__mro__):
-            if globalns is None:
+            if not globalns:
                 base_globals = sys.modules[base.__module__].__dict__
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
             for name, value in ann.items():
-                if value is None:
+                if not value:
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
@@ -1460,7 +1460,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
-    if globalns is None:
+    if not globalns:
         if isinstance(obj, types.ModuleType):
             globalns = obj.__dict__
         else:
@@ -1469,12 +1469,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
             globalns = getattr(nsobj, '__globals__', {})
-        if localns is None:
+        if not localns:
             localns = globalns
-    elif localns is None:
+    elif not localns:
         localns = globalns
     hints = getattr(obj, '__annotations__', None)
-    if hints is None:
+    if not hints:
         # Return empty annotations for something that _could_ have them.
         if isinstance(obj, _allowed_types):
             return {}
@@ -1484,7 +1484,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     defaults = _get_defaults(obj)
     hints = dict(hints)
     for name, value in hints.items():
-        if value is None:
+        if not value:
             value = type(None)
         if isinstance(value, str):
             value = ForwardRef(value)
@@ -1921,7 +1921,7 @@ def NamedTuple(typename, fields=None, /, **kwargs):
 
         Employee = NamedTuple('Employee', [('name', str), ('id', int)])
     """
-    if fields is None:
+    if not fields:
         fields = kwargs.items()
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
@@ -2037,7 +2037,7 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
     The class syntax is only supported in Python 3.6+, while two other
     syntax forms work for Python 2.7 and 3.2+
     """
-    if fields is None:
+    if not fields:
         fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"

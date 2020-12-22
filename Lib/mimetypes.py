@@ -287,7 +287,7 @@ def guess_type(url, strict=True):
     Optional `strict' argument when false adds a bunch of commonly found, but
     non-standard types.
     """
-    if _db is None:
+    if not _db:
         init()
     return _db.guess_type(url, strict)
 
@@ -305,7 +305,7 @@ def guess_all_extensions(type, strict=True):
     Optional `strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
-    if _db is None:
+    if not _db:
         init()
     return _db.guess_all_extensions(type, strict)
 
@@ -321,7 +321,7 @@ def guess_extension(type, strict=True):
     Optional `strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
-    if _db is None:
+    if not _db:
         init()
     return _db.guess_extension(type, strict)
 
@@ -337,7 +337,7 @@ def add_type(type, ext, strict=True):
     list of standard types, else to the list of non-standard
     types.
     """
-    if _db is None:
+    if not _db:
         init()
     return _db.add_type(type, ext, strict)
 
@@ -352,7 +352,7 @@ def init(files=None):
         if _winreg:
             db.read_windows_registry()
 
-        if files is None:
+        if not files:
             files = knownfiles
         else:
             files = knownfiles + list(files)

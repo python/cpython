@@ -377,7 +377,7 @@ class AddressHeader:
 
     @property
     def addresses(self):
-        if self._addresses is None:
+        if not self._addresses:
             self._addresses = tuple(address for group in self._groups
                                             for address in group.addresses)
         return self._addresses
@@ -452,7 +452,7 @@ class ParameterizedMIMEHeader:
         kwds['parse_tree'] = parse_tree = cls.value_parser(value)
         kwds['decoded'] = str(parse_tree)
         kwds['defects'].extend(parse_tree.all_defects)
-        if parse_tree.params is None:
+        if not parse_tree.params:
             kwds['params'] = {}
         else:
             # The MIME RFCs specify that parameter ordering is arbitrary.

@@ -153,7 +153,7 @@ def _readmodule(module, path, inpackage=None):
     else:
         search_path = path + sys.path
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
-    if spec is None:
+    if not spec:
         raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree
     # Is module a package?
@@ -165,7 +165,7 @@ def _readmodule(module, path, inpackage=None):
         # If module is not Python source, we cannot do anything.
         return tree
     else:
-        if source is None:
+        if not source:
             return tree
 
     fname = spec.loader.get_filename(fullmodule)
@@ -201,7 +201,7 @@ class _ModuleBrowser(ast.NodeVisitor):
         class_ = Class(
             self.module, node.name, bases, self.file, node.lineno, parent
         )
-        if parent is None:
+        if not parent:
             self.tree[node.name] = class_
         self.stack.append(class_)
         self.generic_visit(node)
@@ -212,7 +212,7 @@ class _ModuleBrowser(ast.NodeVisitor):
         function = Function(
             self.module, node.name, self.file, node.lineno, parent, is_async
         )
-        if parent is None:
+        if not parent:
             self.tree[node.name] = function
         self.stack.append(function)
         self.generic_visit(node)

@@ -541,9 +541,9 @@ class GNUTranslations(NullTranslations):
 # Locate a .mo file using the gettext strategy
 def find(domain, localedir=None, languages=None, all=False):
     # Get some reasonable defaults for arguments that were not supplied
-    if localedir is None:
+    if not localedir:
         localedir = _default_localedir
-    if languages is None:
+    if not languages:
         languages = []
         for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
             val = os.environ.get(envar)
@@ -582,7 +582,7 @@ _unspecified = ['unspecified']
 
 def translation(domain, localedir=None, languages=None,
                 class_=None, fallback=False, codeset=_unspecified):
-    if class_ is None:
+    if not class_:
         class_ = GNUTranslations
     mofiles = find(domain, localedir, languages, all=True)
     if not mofiles:
@@ -597,7 +597,7 @@ def translation(domain, localedir=None, languages=None,
     for mofile in mofiles:
         key = (class_, os.path.abspath(mofile))
         t = _translations.get(key)
-        if t is None:
+        if not t:
             with open(mofile, 'rb') as fp:
                 t = _translations.setdefault(key, class_(fp))
         # Copy the translation object to allow setting fallbacks and
@@ -616,7 +616,7 @@ def translation(domain, localedir=None, languages=None,
                     warnings.filterwarnings('ignore', r'.*\bset_output_charset\b.*',
                                             DeprecationWarning)
                     t.set_output_charset(codeset)
-        if result is None:
+        if not result:
             result = t
         else:
             result.add_fallback(t)

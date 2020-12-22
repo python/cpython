@@ -380,7 +380,7 @@ class EnumMeta(type):
 
         `type`, if set, will be mixed in as the first base class.
         """
-        if names is None:  # simple value lookup
+        if not names:  # simple value lookup
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
         return cls._create_(
@@ -511,12 +511,12 @@ class EnumMeta(type):
 
         # TODO: replace the frame hack if a blessed way to know the calling
         # module is ever developed
-        if module is None:
+        if not module:
             try:
                 module = sys._getframe(2).f_globals['__name__']
             except (AttributeError, ValueError, KeyError):
                 pass
-        if module is None:
+        if not module:
             _make_class_unpicklable(enum_class)
         else:
             enum_class.__module__ = module
@@ -632,7 +632,7 @@ class EnumMeta(type):
         # should __new__ be saved as __new_member__ later?
         save_new = bool(__new__) #isnot None
 
-        if __new__ is None:
+        if not __new__:
             # check all possibles for __new_member__ before falling back to
             # __new__
             for method in ('__new_member__', '__new__'):
@@ -699,7 +699,7 @@ class Enum(metaclass=EnumMeta):
             ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             if result is None and exc is None:
                 raise ve_exc
-            elif exc is None:
+            elif not exc:
                 exc = TypeError(
                         'error in %s._missing_: returned %r instead of None or a valid member'
                         % (cls.__name__, result)
@@ -873,7 +873,7 @@ class Flag(Enum):
         Create a composite member iff value contains only members.
         """
         pseudo_member = cls._value2member_map_.get(value, None)
-        if pseudo_member is None:
+        if not pseudo_member:
             # verify all bits are accounted for
             _, extra_flags = _decompose(cls, value)
             if extra_flags:
@@ -976,7 +976,7 @@ class IntFlag(int, Flag):
         Create a composite member iff value contains only members.
         """
         pseudo_member = cls._value2member_map_.get(value, None)
-        if pseudo_member is None:
+        if not pseudo_member:
             need_to_create = [value]
             # get unaccounted for bits
             _, extra_flags = _decompose(cls, value)

@@ -344,7 +344,7 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     global _a85chars, _a85chars2
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _a85chars is None:
+    if not _a85chars:
         _a85chars = [bytes((i,)) for i in range(33, 118)]
         _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
 
@@ -452,7 +452,7 @@ def b85encode(b, pad=False):
     global _b85chars, _b85chars2
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _b85chars is None:
+    if not _b85chars:
         _b85chars = [bytes((i,)) for i in _b85alphabet]
         _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
     return _85encode(b, _b85chars, _b85chars2, pad)
@@ -465,7 +465,7 @@ def b85decode(b):
     global _b85dec
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _b85dec is None:
+    if not _b85dec:
         _b85dec = [None] * 256
         for i, c in enumerate(_b85alphabet):
             _b85dec[c] = i

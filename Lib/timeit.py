@@ -255,7 +255,7 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
-    if args is None:
+    if not args:
         args = sys.argv[1:]
     import getopt
     try:

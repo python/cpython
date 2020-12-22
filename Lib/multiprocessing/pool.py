@@ -116,7 +116,7 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None,
             util.debug('worker got EOFError or OSError -- exiting')
             break
 
-        if task is None:
+        if not task:
             util.debug('worker got sentinel -- exiting')
             break
 
@@ -199,7 +199,7 @@ class Pool(object):
         self._initializer = initializer
         self._initargs = initargs
 
-        if processes is None:
+        if not processes:
             processes = os.cpu_count() or 1
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
@@ -212,7 +212,7 @@ class Pool(object):
             self._repopulate_pool()
         except Exception:
             for p in self._pool:
-                if p.exitcode is None:
+                if not p.exitcode:
                     p.terminate()
             for p in self._pool:
                 p.join()
@@ -474,7 +474,7 @@ class Pool(object):
         if not hasattr(iterable, '__len__'):
             iterable = list(iterable)
 
-        if chunksize is None:
+        if not chunksize:
             chunksize, extra = divmod(len(iterable), len(self._pool) * 4)
             if extra:
                 chunksize += 1
@@ -583,7 +583,7 @@ class Pool(object):
                 util.debug('result handler found thread._state=TERMINATE')
                 break
 
-            if task is None:
+            if not task:
                 util.debug('result handler got sentinel')
                 break
 
@@ -601,7 +601,7 @@ class Pool(object):
                 util.debug('result handler got EOFError/OSError -- exiting')
                 return
 
-            if task is None:
+            if not task:
                 util.debug('result handler ignoring extra sentinel')
                 continue
             job, i, obj = task
@@ -709,7 +709,7 @@ class Pool(object):
         if pool and hasattr(pool[0], 'terminate'):
             util.debug('terminating workers')
             for p in pool:
-                if p.exitcode is None:
+                if not p.exitcode:
                     p.terminate()
 
         util.debug('joining task handler')

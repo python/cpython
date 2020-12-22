@@ -185,7 +185,7 @@ class RotatingFileHandler(BaseRotatingHandler):
         Basically, see if the supplied record would cause the file to exceed
         the size limit we have.
         """
-        if self.stream is None:                 # delay was set...
+        if not self.stream:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
@@ -285,7 +285,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             currentSecond = t[5]
             currentDay = t[6]
             # r is the number of seconds left between now and the next rotation
-            if self.atTime is None:
+            if not self.atTime:
                 rotate_ts = _MIDNIGHT
             else:
                 rotate_ts = ((self.atTime.hour * 60 + self.atTime.minute)*60 +
@@ -516,7 +516,7 @@ class SocketHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.host = host
         self.port = port
-        if port is None:
+        if not port:
             self.address = host
         else:
             self.address = (host, port)
@@ -557,7 +557,7 @@ class SocketHandler(logging.Handler):
         # Either retryTime is None, in which case this
         # is the first time back after a disconnect, or
         # we've waited long enough.
-        if self.retryTime is None:
+        if not self.retryTime:
             attempt = True
         else:
             attempt = (now >= self.retryTime)
@@ -567,7 +567,7 @@ class SocketHandler(logging.Handler):
                 self.retryTime = None # next time, no delay before trying
             except OSError:
                 #Creation failed, so set the retry time and return.
-                if self.retryTime is None:
+                if not self.retryTime:
                     self.retryPeriod = self.retryStart
                 else:
                     self.retryPeriod = self.retryPeriod * self.retryFactor
@@ -582,7 +582,7 @@ class SocketHandler(logging.Handler):
         This function allows for partial sends which can happen when the
         network is busy.
         """
-        if self.sock is None:
+        if not self.sock:
             self.createSocket()
         #self.sock can be None either because we haven't reached the retry
         #time yet, or because we have reached the retry time and retried,
@@ -682,7 +682,7 @@ class DatagramHandler(SocketHandler):
         The factory method of SocketHandler is here overridden to create
         a UDP socket (SOCK_DGRAM).
         """
-        if self.port is None:
+        if not self.port:
             family = socket.AF_UNIX
         else:
             family = socket.AF_INET
@@ -697,7 +697,7 @@ class DatagramHandler(SocketHandler):
         when the network is busy - UDP does not guarantee delivery and
         can deliver packets out of sequence.
         """
-        if self.sock is None:
+        if not self.sock:
             self.createSocket()
         self.sock.sendto(s, self.address)
 
@@ -842,7 +842,7 @@ class SysLogHandler(logging.Handler):
                 pass
         else:
             self.unixsocket = False
-            if socktype is None:
+            if not socktype:
                 socktype = socket.SOCK_DGRAM
             host, port = address
             ress = socket.getaddrinfo(host, port, 0, socktype)
@@ -867,7 +867,7 @@ class SysLogHandler(logging.Handler):
 
     def _connect_unixsocket(self, address):
         use_socktype = self.socktype
-        if use_socktype is None:
+        if not use_socktype:
             use_socktype = socket.SOCK_DGRAM
         self.socket = socket.socket(socket.AF_UNIX, use_socktype)
         try:

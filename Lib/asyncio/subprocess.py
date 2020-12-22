@@ -77,7 +77,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             if pipe:
                 pipe.close()
             self.connection_lost(exc)
-            if exc is None:
+            if not exc:
                 self._stdin_closed.set_result(None)
             else:
                 self._stdin_closed.set_exception(exc)
@@ -89,7 +89,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         else:
             reader = None
         if reader:
-            if exc is None:
+            if not exc:
                 reader.feed_eof()
             else:
                 reader.set_exception(exc)

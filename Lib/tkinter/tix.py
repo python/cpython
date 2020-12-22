@@ -114,7 +114,7 @@ class tixCommand:
             cnf = _cnfmerge((cnf, kw))
         elif cnf:
             cnf = _cnfmerge(cnf)
-        if cnf is None:
+        if not cnf:
             return self._getconfigure('tix', 'configure')
         if isinstance(cnf, str):
             return self._getconfigure1('tix', 'configure', '-'+cnf)
@@ -913,7 +913,7 @@ class HList(TixWidget, XView, YView):
         self.tk.call(self._w, 'header', 'create', col, *self._options(cnf, kw))
 
     def header_configure(self, col, cnf={}, **kw):
-        if cnf is None:
+        if not cnf:
             return self._getconfigure(self._w, 'header', 'configure', col)
         self.tk.call(self._w, 'header', 'configure', col,
                      *self._options(cnf, kw))
@@ -942,7 +942,7 @@ class HList(TixWidget, XView, YView):
               self._w, 'indicator', 'create', entry, *self._options(cnf, kw))
 
     def indicator_configure(self, entry, cnf={}, **kw):
-        if cnf is None:
+        if not cnf:
             return self._getconfigure(
                 self._w, 'indicator', 'configure', entry)
         self.tk.call(
@@ -1003,7 +1003,7 @@ class HList(TixWidget, XView, YView):
         return self.tk.call(self._w, 'item', 'cget', entry, col, opt)
 
     def item_configure(self, entry, col, cnf={}, **kw):
-        if cnf is None:
+        if not cnf:
             return self._getconfigure(self._w, 'item', 'configure', entry, col)
         self.tk.call(self._w, 'item', 'configure', entry, col,
               *self._options(cnf, kw))
@@ -1022,7 +1022,7 @@ class HList(TixWidget, XView, YView):
         return self.tk.call(self._w, 'entrycget', entry, opt)
 
     def entryconfigure(self, entry, cnf={}, **kw):
-        if cnf is None:
+        if not cnf:
             return self._getconfigure(self._w, 'entryconfigure', entry)
         self.tk.call(self._w, 'entryconfigure', entry,
               *self._options(cnf, kw))
@@ -1236,7 +1236,7 @@ class PanedWindow(TixWidget):
         return self.tk.call(self._w, 'panecget', entry, opt)
 
     def paneconfigure(self, entry, cnf={}, **kw):
-        if cnf is None:
+        if not cnf:
             return self._getconfigure(self._w, 'paneconfigure', entry)
         self.tk.call(self._w, 'paneconfigure', entry, *self._options(cnf, kw))
 
@@ -1809,7 +1809,7 @@ class Grid(TixWidget, XView, YView):
     def delete_row(self, from_, to=None):
         """Delete rows between from_ and to inclusive.
         If to is not provided,  delete only row at from_"""
-        if to is None:
+        if not to:
             self.tk.call(self, 'delete', 'row', from_)
         else:
             self.tk.call(self, 'delete', 'row', from_, to)
@@ -1817,7 +1817,7 @@ class Grid(TixWidget, XView, YView):
     def delete_column(self, from_, to=None):
         """Delete columns between from_ and to inclusive.
         If to is not provided,  delete only column at from_"""
-        if to is None:
+        if not to:
             self.tk.call(self, 'delete', 'column', from_)
         else:
             self.tk.call(self, 'delete', 'column', from_, to)

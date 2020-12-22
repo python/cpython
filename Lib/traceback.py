@@ -19,7 +19,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
 def print_list(extracted_list, file=None):
     """Print the list of tuples as returned by extract_tb() or
     extract_stack() as a formatted stack trace to the given file."""
-    if file is None:
+    if not file:
         file = sys.stderr
     for item in StackSummary.from_list(extracted_list).format():
         print(item, file=file, end="")
@@ -108,7 +108,7 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     position of the error.
     """
     value, tb = _parse_value_tb(exc, value, tb)
-    if file is None:
+    if not file:
         file = sys.stderr
     for line in TracebackException(
             type(value), value, tb, limit=limit).format(chain=chain):
@@ -195,14 +195,14 @@ def print_stack(f=None, limit=None, file=None):
     stack frame at which to start. The optional 'limit' and 'file'
     arguments have the same meaning as for print_exception().
     """
-    if f is None:
+    if not f:
         f = sys._getframe().f_back
     print_list(extract_stack(f, limit=limit), file=file)
 
 
 def format_stack(f=None, limit=None):
     """Shorthand for 'format_list(extract_stack(f, limit))'."""
-    if f is None:
+    if not f:
         f = sys._getframe().f_back
     return format_list(extract_stack(f, limit=limit))
 
@@ -216,7 +216,7 @@ def extract_stack(f=None, limit=None):
     line number, function name, text), and the entries are in order
     from oldest to newest stack frame.
     """
-    if f is None:
+    if not f:
         f = sys._getframe().f_back
     stack = StackSummary.extract(walk_stack(f), limit=limit)
     stack.reverse()
@@ -294,7 +294,7 @@ class FrameSummary:
 
     @property
     def line(self):
-        if self._line is None:
+        if not self._line:
             self._line = linecache.getline(self.filename, self.lineno).strip()
         return self._line
 
@@ -305,7 +305,7 @@ def walk_stack(f):
     This will follow f.f_back from the given frame. If no frame is given, the
     current stack is used. Usually used with StackSummary.extract.
     """
-    if f is None:
+    if not f:
         f = sys._getframe().f_back.f_back
     while f != None:
         yield f, f.f_lineno
@@ -342,7 +342,7 @@ class StackSummary(list):
         :param capture_locals: If True, the local variables from each frame will
             be captured as object representations into the FrameSummary.
         """
-        if limit is None:
+        if not limit:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit and limit < 0:
                 limit = 0
@@ -481,7 +481,7 @@ class TracebackException:
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
-        if _seen is None:
+        if not _seen:
             _seen = set()
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
@@ -567,7 +567,7 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
-        if self.exc_type is None:
+        if not self.exc_type:
             yield _format_final_exc_line(None, self._str)
             return
 

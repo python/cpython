@@ -123,7 +123,7 @@ def readwrite(obj, flags):
         obj.handle_error()
 
 def poll(timeout=0.0, map=None):
-    if map is None:
+    if not map:
         map = socket_map
     if map:
         r = []; w = []; e = []
@@ -145,25 +145,25 @@ def poll(timeout=0.0, map=None):
 
         for fd in r:
             obj = map.get(fd)
-            if obj is None:
+            if not obj:
                 continue
             read(obj)
 
         for fd in w:
             obj = map.get(fd)
-            if obj is None:
+            if not obj:
                 continue
             write(obj)
 
         for fd in e:
             obj = map.get(fd)
-            if obj is None:
+            if not obj:
                 continue
             _exception(obj)
 
 def poll2(timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
-    if map is None:
+    if not map:
         map = socket_map
     if timeout:
         # timeout is in milliseconds
@@ -183,14 +183,14 @@ def poll2(timeout=0.0, map=None):
         r = pollster.poll(timeout)
         for fd, flags in r:
             obj = map.get(fd)
-            if obj is None:
+            if not obj:
                 continue
             readwrite(obj, flags)
 
 poll3 = poll2                           # Alias for backward compatibility
 
 def loop(timeout=30.0, use_poll=False, map=None, count=None):
-    if map is None:
+    if not map:
         map = socket_map
 
     if use_poll and hasattr(select, 'poll'):
@@ -198,7 +198,7 @@ def loop(timeout=30.0, use_poll=False, map=None, count=None):
     else:
         poll_fun = poll
 
-    if count is None:
+    if not count:
         while map:
             poll_fun(timeout, map)
 
@@ -218,7 +218,7 @@ class dispatcher:
     ignore_log_types = frozenset({'warning'})
 
     def __init__(self, sock=None, map=None):
-        if map is None:
+        if not map:
             self._map = socket_map
         else:
             self._map = map
@@ -264,13 +264,13 @@ class dispatcher:
 
     def add_channel(self, map=None):
         #self.log_info('adding channel %s' % self)
-        if map is None:
+        if not map:
             map = self._map
         map[self._fileno] = self
 
     def del_channel(self, map=None):
         fd = self._fileno
-        if map is None:
+        if not map:
             map = self._map
         if fd in map:
             #self.log_info('closing channel %d:%s' % (fd, self))
@@ -551,7 +551,7 @@ def compact_traceback():
     return (file, function, line), t, v, info
 
 def close_all(map=None, ignore_all=False):
-    if map is None:
+    if not map:
         map = socket_map
     for x in list(map.values()):
         try:

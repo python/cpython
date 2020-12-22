@@ -53,7 +53,7 @@ def checkcache(filename=None):
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
-    if filename is None:
+    if not filename:
         filenames = list(cache.keys())
     elif filename in cache:
         filenames = [filename]
@@ -66,7 +66,7 @@ def checkcache(filename=None):
             # lazy cache entry, leave it lazy.
             continue
         size, mtime, lines, fullname = entry
-        if mtime is None:
+        if not mtime:
             continue   # no-op for files loaded via a __loader__
         try:
             stat = os.stat(fullname)
@@ -102,7 +102,7 @@ def updatecache(filename, module_globals=None):
             except (ImportError, OSError):
                 pass
             else:
-                if data is None:
+                if not data:
                     # No luck, the PEP302 loader cannot find the source
                     # for this module.
                     return []

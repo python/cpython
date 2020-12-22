@@ -56,7 +56,7 @@ def open_binary(package: Package, resource: Resource) -> BinaryIO:
         if hasattr(package.__spec__.loader, 'get_data'):
             with suppress(OSError):
                 data = loader.get_data(full_path)
-        if data is None:
+        if not data:
             package_name = package.__spec__.name
             message = '{!r} resource not found in {!r}'.format(
                 resource, package_name)

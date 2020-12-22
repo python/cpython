@@ -176,7 +176,7 @@ class InspectLoader(Loader):
         found.
         """
         source = self.get_source(fullname)
-        if source is None:
+        if not source:
             return None
         return self.source_to_code(source)
 
@@ -228,7 +228,7 @@ class ExecutionLoader(InspectLoader):
         Raise ImportError if the module cannot be found.
         """
         source = self.get_source(fullname)
-        if source is None:
+        if not source:
             return None
         try:
             path = self.get_filename(fullname)

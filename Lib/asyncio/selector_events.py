@@ -54,7 +54,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def __init__(self, selector=None):
         super().__init__()
 
-        if selector is None:
+        if not selector:
             selector = selectors.DefaultSelector()
         logger.debug('Using selector: %s', selector.__class__.__name__)
         self._selector = selector
@@ -133,7 +133,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # a socket is closed, send() raises OSError (with errno set to
         # EBADF, but let's not rely on the exact error code).
         csock = self._csock
-        if csock is None:
+        if not csock:
             return
 
         try:
@@ -650,7 +650,7 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def __repr__(self):
         info = [self.__class__.__name__]
-        if self._sock is None:
+        if not self._sock:
             info.append('closed')
         elif self._closing:
             info.append('closing')

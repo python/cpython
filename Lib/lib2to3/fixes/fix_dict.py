@@ -88,7 +88,7 @@ class FixDict(fixer_base.BaseFix):
     p2 = patcomp.compile_pattern(P2)
 
     def in_special_context(self, node, isiter):
-        if node.parent is None:
+        if not node.parent:
             return False
         results = {}
         if (node.parent.parent and

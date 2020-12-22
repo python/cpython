@@ -491,7 +491,7 @@ class PrettyPrinter:
         stream.write(cls.__name__ + '(')
         indent += len(cls.__name__) + 1
         stream.write('[')
-        if object.maxlen is None:
+        if not object.maxlen:
             self._format_items(object, stream, indent, allowance + 2,
                                context, level)
             stream.write('])')
@@ -602,7 +602,7 @@ def _recursion(object):
 
 def _perfcheck(object=None):
     import time
-    if object is None:
+    if not object:
         object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
     p = PrettyPrinter()
     t1 = time.perf_counter()

@@ -694,7 +694,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     if ignore_errors:
         def onerror(*args):
             pass
-    elif onerror is None:
+    elif not onerror:
         def onerror(*args):
             raise
     if _use_fd_functions:
@@ -870,7 +870,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 
     Returns the output filename.
     """
-    if compress is None:
+    if not compress:
         tar_compression = ''
     elif _ZLIB_SUPPORTED and compress == 'gzip':
         tar_compression = 'gz'
@@ -999,7 +999,7 @@ def register_archive_format(name, function, extra_args=None, description=''):
     description can be provided to describe the format, and will be returned
     by the get_archive_formats() function.
     """
-    if extra_args is None:
+    if not extra_args:
         extra_args = []
     if not callable(function):
         raise TypeError('The %s object is not callable' % function)
@@ -1041,7 +1041,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
         if not dry_run:
             os.chdir(root_dir)
 
-    if base_dir is None:
+    if not base_dir:
         base_dir = os.curdir
 
     kwargs = {'dry_run': dry_run, 'logger': logger}
@@ -1116,7 +1116,7 @@ def register_unpack_format(name, extensions, function, extra_args=None,
     description can be provided to describe the format, and will be returned
     by the get_unpack_formats() function.
     """
-    if extra_args is None:
+    if not extra_args:
         extra_args = []
     _check_unpack_options(extensions, function, extra_args)
     _UNPACK_FORMATS[name] = extensions, function, extra_args, description
@@ -1220,7 +1220,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
     """
     sys.audit("shutil.unpack_archive", filename, extract_dir, format)
 
-    if extract_dir is None:
+    if not extract_dir:
         extract_dir = os.getcwd()
 
     extract_dir = os.fspath(extract_dir)
@@ -1237,7 +1237,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
     else:
         # we need to look at the registered unpackers supported extensions
         format = _find_unpack_format(filename)
-        if format is None:
+        if not format:
             raise ReadError("Unknown archive format '{0}'".format(filename))
 
         func = _UNPACK_FORMATS[format][1]
@@ -1296,19 +1296,19 @@ def chown(path, user=None, group=None):
     _group = group
 
     # -1 means don't change it
-    if user is None:
+    if not user:
         _user = -1
     # user can either be an int (the uid) or a string (the system username)
     elif isinstance(user, str):
         _user = _get_uid(user)
-        if _user is None:
+        if not _user:
             raise LookupError("no such user: {!r}".format(user))
 
-    if group is None:
+    if not group:
         _group = -1
     elif not isinstance(group, int):
         _group = _get_gid(group)
-        if _group is None:
+        if not _group:
             raise LookupError("no such group: {!r}".format(group))
 
     os.chown(path, _user, _group)
@@ -1387,9 +1387,9 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 
     use_bytes = isinstance(cmd, bytes)
 
-    if path is None:
+    if not path:
         path = os.environ.get("PATH", None)
-        if path is None:
+        if not path:
             try:
                 path = os.confstr("CS_PATH")
             except (AttributeError, ValueError):

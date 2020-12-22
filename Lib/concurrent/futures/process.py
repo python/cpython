@@ -235,7 +235,7 @@ def _process_worker(call_queue, result_queue, initializer, initargs):
             return
     while True:
         call_item = call_queue.get(block=True)
-        if call_item is None:
+        if not call_item:
             # Wake up queue management thread
             result_queue.put(os.getpid())
             return
@@ -585,7 +585,7 @@ class ProcessPoolExecutor(_base.Executor):
         """
         _check_system_limits()
 
-        if max_workers is None:
+        if not max_workers:
             self._max_workers = os.cpu_count() or 1
             if sys.platform == 'win32':
                 self._max_workers = min(_MAX_WINDOWS_WORKERS,
@@ -600,7 +600,7 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._max_workers = max_workers
 
-        if mp_context is None:
+        if not mp_context:
             mp_context = mp.get_context()
         self._mp_context = mp_context
 
@@ -652,7 +652,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._work_ids = queue.Queue()
 
     def _start_executor_manager_thread(self):
-        if self._executor_manager_thread is None:
+        if not self._executor_manager_thread:
             # Start the processes so that their sentinels are known.
             self._executor_manager_thread = _ExecutorManagerThread(self)
             self._executor_manager_thread.start()

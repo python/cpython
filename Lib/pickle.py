@@ -441,7 +441,7 @@ class _Pickler:
         It is an error if *buffer_callback* is not None and *protocol*
         is None or smaller than 5.
         """
-        if protocol is None:
+        if not protocol:
             protocol = DEFAULT_PROTOCOL
         if protocol < 0:
             protocol = HIGHEST_PROTOCOL
@@ -713,7 +713,7 @@ class _Pickler:
             self._batch_setitems(dictitems)
 
         if state:
-            if state_setter is None:
+            if not state_setter:
                 save(state)
                 write(BUILD)
             else:
@@ -1056,9 +1056,9 @@ class _Pickler:
         write = self.write
         memo = self.memo
 
-        if name is None:
+        if not name:
             name = getattr(obj, '__qualname__', None)
-        if name is None:
+        if not name:
             name = obj.__name__
 
         module_name = whichmodule(obj, name)
@@ -1393,7 +1393,7 @@ class _Unpickler:
     dispatch[BYTEARRAY8[0]] = load_bytearray8
 
     def load_next_buffer(self):
-        if self._buffers is None:
+        if not self._buffers:
             raise UnpicklingError("pickle stream refers to out-of-band data "
                                   "but no *buffers* argument was given")
         try:

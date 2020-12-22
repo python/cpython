@@ -92,7 +92,7 @@ class Fraction(numbers.Rational):
         """
         self = super(Fraction, cls).__new__(cls)
 
-        if denominator is None:
+        if not denominator:
             if type(numerator) is int:
                 self._numerator = numerator
                 self._denominator = 1
@@ -111,7 +111,7 @@ class Fraction(numbers.Rational):
             elif isinstance(numerator, str):
                 # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
-                if m is None:
+                if not m:
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      numerator)
                 numerator = int(m.group('num') or '0')
@@ -507,7 +507,7 @@ class Fraction(numbers.Rational):
 
         Rounds half toward even.
         """
-        if ndigits is None:
+        if not ndigits:
             floor, remainder = divmod(self.numerator, self.denominator)
             if remainder * 2 < self.denominator:
                 return floor

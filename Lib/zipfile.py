@@ -422,7 +422,7 @@ class ZipInfo (object):
         extra = self.extra
 
         min_version = 0
-        if zip64 is None:
+        if not zip64:
             zip64 = file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT
         if zip64:
             fmt = '<HHQQ'
@@ -508,7 +508,7 @@ class ZipInfo (object):
         elif not strict_timestamps and date_time[0] > 2107:
             date_time = (2107, 12, 31, 23, 59, 59)
         # Create ZipInfo instance to store file information
-        if arcname is None:
+        if not arcname:
             arcname = filename
         arcname = os.path.normpath(os.path.splitdrive(arcname)[1])
         while arcname[0] in (os.sep, os.altsep):
@@ -557,7 +557,7 @@ def _ZipDecrypter(pwd):
     key2 = 878082192
 
     global _crctable
-    if _crctable is None:
+    if not _crctable:
         _crctable = list(map(_gen_crc, range(256)))
     crctable = _crctable
 
@@ -602,12 +602,12 @@ class LZMACompressor:
         return struct.pack('<BBH', 9, 4, len(props)) + props
 
     def compress(self, data):
-        if self._comp is None:
+        if not self._comp:
             return self._init() + self._comp.compress(data)
         return self._comp.compress(data)
 
     def flush(self):
-        if self._comp is None:
+        if not self._comp:
             return self._init() + self._comp.flush()
         return self._comp.flush()
 
@@ -620,7 +620,7 @@ class LZMADecompressor:
         self.eof = False
 
     def decompress(self, data):
-        if self._decomp is None:
+        if not self._decomp:
             self._unconsumed += data
             if len(self._unconsumed) <= 4:
                 return b''
@@ -932,7 +932,7 @@ class ZipExtFile(io.BufferedIOBase):
 
     def _update_crc(self, newdata):
         # Update the CRC using the given data.
-        if self._expected_crc is None:
+        if not self._expected_crc:
             # No need to compute the CRC if we don't have a reference value
             return
         self._running_crc = crc32(newdata, self._running_crc)
@@ -1426,7 +1426,7 @@ class ZipFile:
     def getinfo(self, name):
         """Return the instance of ZipInfo given 'name'."""
         info = self.NameToInfo.get(name)
-        if info is None:
+        if not info:
             raise KeyError(
                 'There is no item named %r in the archive' % name)
 
@@ -1609,7 +1609,7 @@ class ZipFile:
            as possible. `member' may be a filename or a ZipInfo object. You can
            specify a different directory using `path'.
         """
-        if path is None:
+        if not path:
             path = os.getcwd()
         else:
             path = os.fspath(path)
@@ -1622,10 +1622,10 @@ class ZipFile:
            `members' is optional and must be a subset of the list returned
            by namelist().
         """
-        if members is None:
+        if not members:
             members = self.namelist()
 
-        if path is None:
+        if not path:
             path = os.getcwd()
         else:
             path = os.fspath(path)
@@ -1810,7 +1810,7 @@ class ZipFile:
     def close(self):
         """Close the file, and for mode 'w', 'x' and 'a' write the ending
         records."""
-        if self.fp is None:
+        if not self.fp:
             return
 
         if self._writing:

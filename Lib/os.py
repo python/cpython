@@ -609,7 +609,7 @@ def _execvpe(file, args, env=None):
             last_exc = e
         except OSError as e:
             last_exc = e
-            if saved_exc is None:
+            if not saved_exc:
                 saved_exc = e
     if saved_exc:
         raise saved_exc
@@ -628,7 +628,7 @@ def get_exec_path(env=None):
     # Python. It may also avoid a bootstrap issue.
     import warnings
 
-    if env is None:
+    if not env:
         env = environ
 
     # {b'PATH': ...}.get('PATH') and {'PATH': ...}.get(b'PATH') emit a
@@ -655,7 +655,7 @@ def get_exec_path(env=None):
             if path_list and isinstance(path_list, bytes):
                 path_list = fsdecode(path_list)
 
-    if path_list is None:
+    if not path_list:
         path_list = defpath
     return path_list.split(pathsep)
 
@@ -852,7 +852,7 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
         if not pid:
             # Child
             try:
-                if env is None:
+                if not env:
                     func(file, args)
                 else:
                     func(file, args, env)

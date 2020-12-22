@@ -12,7 +12,7 @@ else:
 def normalize(format):
     # Remove current endian specifier and white space from a format
     # string
-    if format is None:
+    if not format:
         return ""
     format = format.replace(OTHER_ENDIAN, THIS_ENDIAN)
     return re.sub(r"\s", "", format)

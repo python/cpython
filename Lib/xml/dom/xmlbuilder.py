@@ -189,7 +189,7 @@ class DOMBuilder:
         options.filter = self.filter
         options.errorHandler = self.errorHandler
         fp = input.byteStream
-        if fp is None and options.systemId:
+        if not fp and options.systemId:
             import urllib.request
             fp = urllib.request.urlopen(input.systemId)
         return self._parse_bytestream(fp, options)
@@ -357,7 +357,7 @@ class DocumentLS:
         raise NotImplementedError("haven't written this yet")
 
     def saveXML(self, snode):
-        if snode is None:
+        if not snode:
             snode = self
         elif snode.ownerDocument is not self:
             raise xml.dom.WrongDocumentErr()

@@ -231,7 +231,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         contain the module, but has no source for it.
         """
         mi = _get_module_info(self, fullname)
-        if mi is None:
+        if not mi:
             raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
 
         path = _get_module_path(self, fullname)
@@ -256,7 +256,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         Raise ZipImportError if the module couldn't be found.
         """
         mi = _get_module_info(self, fullname)
-        if mi is None:
+        if not mi:
             raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
         return mi
 
@@ -744,7 +744,7 @@ def _get_module_code(self, fullname):
                 code = _unmarshal_code(self, modpath, fullpath, fullname, data)
             else:
                 code = _compile_source(modpath, data)
-            if code is None:
+            if not code:
                 # bad magic number or non-matching mtime
                 # in byte code, try next
                 continue

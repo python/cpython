@@ -62,7 +62,7 @@ def open(file, flag='r', mode=0o666):
     only if it doesn't exist; and 'n' always creates a new database.
     """
     global _defaultmod
-    if _defaultmod is None:
+    if not _defaultmod:
         for name in _names:
             try:
                 mod = __import__(name, fromlist=['open'])
@@ -76,7 +76,7 @@ def open(file, flag='r', mode=0o666):
 
     # guess the type of an existing database, if not creating a new one
     result = whichdb(file) if 'n' not in flag else None
-    if result is None:
+    if not result:
         # db doesn't exist or 'n' flag was specified to create a new db
         if 'c' in flag or 'n' in flag:
             # file doesn't exist and the new flag was used so use default type

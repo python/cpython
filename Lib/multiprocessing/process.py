@@ -159,11 +159,11 @@ class BaseProcess(object):
             return True
         assert self._parent_pid == os.getpid(), 'can only test a child process'
 
-        if self._popen is None:
+        if not self._popen:
             return False
 
         returncode = self._popen.poll()
-        if returncode is None:
+        if not returncode:
             return True
         else:
             _children.discard(self)
@@ -227,7 +227,7 @@ class BaseProcess(object):
         Return exit code of process or `None` if it has yet to stop
         '''
         self._check_closed()
-        if self._popen is None:
+        if not self._popen:
             return self._popen
         return self._popen.poll()
 
@@ -264,7 +264,7 @@ class BaseProcess(object):
             status = 'closed'
         elif self._parent_pid != os.getpid():
             status = 'unknown'
-        elif self._popen is None:
+        elif not self._popen:
             status = 'initial'
         else:
             exitcode = self._popen.poll()
@@ -317,7 +317,7 @@ class BaseProcess(object):
             finally:
                 util._exit_function()
         except SystemExit as e:
-            if e.code is None:
+            if not e.code:
                 exitcode = 0
             elif isinstance(e.code, int):
                 exitcode = e.code

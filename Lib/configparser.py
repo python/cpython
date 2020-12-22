@@ -423,7 +423,7 @@ class BasicInterpolation(Interpolation):
                 rest = rest[2:]
             elif c == "(":
                 m = self._KEYCRE.match(rest)
-                if m is None:
+                if not m:
                     raise InterpolationSyntaxError(option, section,
                         "bad interpolation variable reference %r" % rest)
                 var = parser.optionxform(m.group(1))
@@ -484,7 +484,7 @@ class ExtendedInterpolation(Interpolation):
                 rest = rest[2:]
             elif c == "{":
                 m = self._KEYCRE.match(rest)
-                if m is None:
+                if not m:
                     raise InterpolationSyntaxError(option, section,
                         "bad interpolation variable reference %r" % rest)
                 path = m.group(1).split(':')
@@ -551,7 +551,7 @@ class LegacyInterpolation(Interpolation):
     @staticmethod
     def _interpolation_replace(match, parser):
         s = match.group(1)
-        if s is None:
+        if not s:
             return match.group()
         else:
             return "%%(%s)s" % parser.optionxform(s)
@@ -631,7 +631,7 @@ class RawConfigParser(MutableMapping):
         self._interpolation = interpolation
         if self._interpolation is _UNSET:
             self._interpolation = self._DEFAULT_INTERPOLATION
-        if self._interpolation is None:
+        if not self._interpolation:
             self._interpolation = Interpolation()
         if converters is not _UNSET:
             self._converters.update(converters)
@@ -710,7 +710,7 @@ class RawConfigParser(MutableMapping):
         file being read. If not given, it is taken from f.name. If `f' has no
         `name' attribute, `<???>' is used.
         """
-        if source is None:
+        if not source:
             try:
                 source = f.name
             except AttributeError:
@@ -1075,7 +1075,7 @@ class RawConfigParser(MutableMapping):
                     # So sections can't start with a continuation line
                     optname = None
                 # no section header in the file?
-                elif cursect is None:
+                elif not cursect:
                     raise MissingSectionHeaderError(fpname, lineno, line)
                 # an option line?
                 else:

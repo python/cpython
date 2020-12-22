@@ -100,7 +100,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
             self._locked = True
             return True
 
-        if self._waiters is None:
+        if not self._waiters:
             self._waiters = collections.deque()
         fut = self._get_loop().create_future()
         self._waiters.append(fut)
@@ -228,7 +228,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     def __init__(self, lock=None, *, loop=mixins._marker):
         super().__init__(loop=loop)
-        if lock is None:
+        if not lock:
             lock = Lock()
         elif lock._loop is not self._get_loop():
             raise ValueError("loop argument must agree with lock")

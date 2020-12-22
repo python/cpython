@@ -55,7 +55,7 @@ class FileDialog:
     title = "File Selection Dialog"
 
     def __init__(self, master, title=None):
-        if title is None: title = self.title
+        if not title: title = self.title
         self.master = master
         self.directory = None
 

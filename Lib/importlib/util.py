@@ -58,14 +58,14 @@ def _find_spec_from_path(name, path=None):
         return _find_spec(name, path)
     else:
         module = sys.modules[name]
-        if module is None:
+        if not module:
             return None
         try:
             spec = module.__spec__
         except AttributeError:
             raise ValueError('{}.__spec__ is not set'.format(name)) from None
         else:
-            if spec is None:
+            if not spec:
                 raise ValueError('{}.__spec__ is None'.format(name))
             return spec
 
@@ -103,14 +103,14 @@ def find_spec(name, package=None):
         return _find_spec(fullname, parent_path)
     else:
         module = sys.modules[fullname]
-        if module is None:
+        if not module:
             return None
         try:
             spec = module.__spec__
         except AttributeError:
             raise ValueError('{}.__spec__ is not set'.format(name)) from None
         else:
-            if spec is None:
+            if not spec:
                 raise ValueError('{}.__spec__ is None'.format(name))
             return spec
 

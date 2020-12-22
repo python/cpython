@@ -466,7 +466,7 @@ class AddrlistClass:
         getphraselist() since phrase endings must not include the `.' (which
         is legal in phrases)."""
         atomlist = ['']
-        if atomends is None:
+        if not atomends:
             atomends = self.atomends
 
         while self.pos < len(self.field):

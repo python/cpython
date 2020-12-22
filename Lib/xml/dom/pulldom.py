@@ -61,7 +61,7 @@ class PullDOM(xml.sax.ContentHandler):
             # When using namespaces, the reader may or may not
             # provide us with the original name. If not, create
             # *a* valid tagName from the current context.
-            if tagName is None:
+            if not tagName:
                 prefix = self._current_context[uri]
                 if prefix:
                     tagName = prefix + ":" + localname
@@ -157,7 +157,7 @@ class PullDOM(xml.sax.ContentHandler):
         self.lastEvent = self.lastEvent[1]
 
     def startDocument(self):
-        if self.documentFactory is None:
+        if not self.documentFactory:
             import xml.dom.minidom
             self.documentFactory = xml.dom.minidom.Document.implementation
 
@@ -329,7 +329,7 @@ class SAX2DOM(PullDOM):
 default_bufsize = (2 ** 14) - 20
 
 def parse(stream_or_string, parser=None, bufsize=None):
-    if bufsize is None:
+    if not bufsize:
         bufsize = default_bufsize
     if isinstance(stream_or_string, str):
         stream = open(stream_or_string, 'rb')
