@@ -1,0 +1,1 @@
+Added a root parameter to :func:`tkinter.font.nametofont`.

@@ -101,6 +101,11 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertTrue(name)
         self.assertIn(fontname, names)
 
+    def test_nametofont(self):
+        testfont = font.nametofont(fontname, root=self.root)
+        self.assertIsInstance(testfont, font.Font)
+        self.assertEqual(testfont.name, fontname)
+
     def test_repr(self):
         self.assertEqual(
             repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
@@ -135,6 +140,16 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         root.destroy()
         tkinter.NoDefaultRoot()
         self.assertRaises(RuntimeError, font.names)
+
+    def test_nametofont(self):
+        self.assertRaises(RuntimeError, font.nametofont, fontname)
+        root = tkinter.Tk()
+        testfont = font.nametofont(fontname)
+        self.assertIsInstance(testfont, font.Font)
+        self.assertEqual(testfont.name, fontname)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, font.nametofont, fontname)
 
 
 tests_gui = (FontTest, DefaultRootTest)
