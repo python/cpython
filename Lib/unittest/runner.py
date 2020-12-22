@@ -10,6 +10,12 @@ from .signals import registerResult
 __unittest = True
 
 
+class TestRunner:
+    def debug(self, test):
+        """Run the given test case or test suite in debug mode."""
+        test.debug()
+
+
 class _WritelnDecorator(object):
     """Used to decorate file-like objects with a handy 'writeln' method"""
     def __init__(self,stream):
@@ -117,7 +123,7 @@ class TextTestResult(result.TestResult):
             self.stream.writeln("%s" % err)
 
 
-class TextTestRunner(object):
+class TextTestRunner(TestRunner):
     """A test runner class that displays results in textual form.
 
     It prints out the names of tests as they are run, errors as they
