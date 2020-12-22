@@ -2055,7 +2055,8 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: makedirs(name, mode=0o777, exist_ok=False)
+.. function:: makedirs(name, mode=0o777, exist_ok=False, *, \
+                       recursive_mode=False)
 
    .. index::
       single: directory; creating
@@ -2072,6 +2073,9 @@ features:
 
    If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
    raised if the target directory already exists.
+
+   If *recursive_mode* is ``True``, the *mode* argument will affect the file
+   permission bits of any newly-created, intermediate-level directories.
 
    .. note::
 
@@ -2098,6 +2102,9 @@ features:
    .. versionchanged:: 3.7
       The *mode* argument no longer affects the file permission bits of
       newly-created intermediate-level directories.
+
+   .. versionadded:: 3.10
+      The *recursive_mode* parameter.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)

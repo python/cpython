@@ -259,6 +259,9 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
+The :func:`os.makedirs` function now has a *recursive_mode* parameter.
+(Contributed by Zackery Spytz in :issue:`42367`.)
+
 pathlib
 -------
 

@@ -197,14 +197,16 @@ SEEK_END = 2
 # Super directory utilities.
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
-def makedirs(name, mode=0o777, exist_ok=False):
-    """makedirs(name [, mode=0o777][, exist_ok=False])
+def makedirs(name, mode=0o777, exist_ok=False, *, recursive_mode=False):
+    """makedirs(name [, mode=0o777][, exist_ok=False][, recursive_mode=False])
 
     Super-mkdir; create a leaf directory and all intermediate ones.  Works like
     mkdir, except that any intermediate path segment (not just the rightmost)
     will be created if it does not exist. If the target directory already
     exists, raise an OSError if exist_ok is False. Otherwise no exception is
-    raised.  This is recursive.
+    raised.  If recursive_mode is True, the mode argument will affect the file
+    permission bits of any newly-created, intermediate-level directories.  This
+    is recursive.
 
     """
     head, tail = path.split(name)
@@ -212,7 +214,11 @@ def makedirs(name, mode=0o777, exist_ok=False):
         head, tail = path.split(head)
     if head and tail and not path.exists(head):
         try:
-            makedirs(head, exist_ok=exist_ok)
+            if recursive_mode:
+                makedirs(head, mode=mode, exist_ok=exist_ok,
+                         recursive_mode=True)
+            else:
+                makedirs(head, exist_ok=exist_ok)
         except FileExistsError:
             # Defeats race condition when another thread created the path
             pass

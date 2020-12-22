@@ -1572,16 +1572,19 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path)
 
     def test_mode(self):
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
         with os_helper.temp_umask(0o002):
-            base = os_helper.TESTFN
-            parent = os.path.join(base, 'dir1')
-            path = os.path.join(parent, 'dir2')
-            os.makedirs(path, 0o555)
-            self.assertTrue(os.path.exists(path))
-            self.assertTrue(os.path.isdir(path))
-            if os.name != 'nt':
-                self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
-                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
+            for mode, recursive_mode, path_mode, parent_mode in \
+                    (0o555, False, 0o555, 0o775), (0o770, True, 0o770, 0o770):
+                os.makedirs(path, mode, recursive_mode=recursive_mode)
+                self.assertTrue(os.path.exists(path))
+                self.assertTrue(os.path.isdir(path))
+                if os.name != 'nt':
+                    self.assertEqual(os.stat(path).st_mode & 0o777, path_mode)
+                    self.assertEqual(os.stat(parent).st_mode & 0o777,
+                                     parent_mode)
+                shutil.rmtree(parent)
 
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
