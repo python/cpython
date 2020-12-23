@@ -416,7 +416,7 @@ class Collection(Sized, Iterable, Container):
 class _CallableGenericAlias(GenericAlias):
     """ Represent `Callable[argtypes, resulttype]`.
 
-    This sets ``__args__`` to a tuple containing the flattened``argtypes``
+    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
     followed by ``resulttype``.
 
     Example: ``Callable[[int, str], float]`` sets ``__args__`` to
@@ -444,8 +444,7 @@ class _CallableGenericAlias(GenericAlias):
         return super().__new__(cls, origin, ga_args)
 
     def __repr__(self):
-        if len(self.__args__) == 2 and (self.__args__[0] is Ellipsis
-                                        or _concat_or_paramspec(self.__args__[0])):
+        if len(self.__args__) == 2 and _has_special_args(self.__args__[0]):
             return super().__repr__()
         return (f'collections.abc.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
@@ -453,8 +452,7 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and (args[0] is Ellipsis
-                                    or _concat_or_paramspec(args[0]))):
+        if not (len(args) == 2 and _has_special_args(args[0])):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -465,6 +463,7 @@ class _CallableGenericAlias(GenericAlias):
         #    C1[[int, str], str] == Callable[[int, str], str]
         ga = super().__getitem__(item)
         args = ga.__args__
+        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
         if not isinstance(ga.__args__[0], tuple):
             t_result = ga.__args__[-1]
             t_args = ga.__args__[:-1]
@@ -472,13 +471,16 @@ class _CallableGenericAlias(GenericAlias):
         return _CallableGenericAlias(Callable, args)
 
 
-def _is_typing_names(obj, names):
-    """Checks if obj matches one of the names in *names* in typing.py"""
+def _has_special_args(obj):
+    """Checks if obj matches either ``...``, 'ParamSpec' or
+    '_ConcatenateGenericAlias' from typing.py
+    """
+    if obj is Ellipsis:
+        return True
     obj = type(obj)
+    names = ('ParamSpec', '_ConcatenateGenericAlias')
     return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
 
-def _concat_or_paramspec(obj):
-    return _is_typing_names(obj, ('ParamSpec', '_ConcatenateGenericAlias'))
 
 def _type_repr(obj):
     """Return the repr() of an object, special-casing types (internal helper).

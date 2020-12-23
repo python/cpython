@@ -187,14 +187,14 @@ def _type_repr(obj):
 
 
 def _collect_type_vars(types):
-    """Collect all type variable and parameter specification variables contained
+    """Collect all type variable-like variables contained
     in types in order of first appearance (lexicographic order). For example::
 
         _collect_type_vars((T, List[S, T])) == (T, S)
     """
     tvars = []
     for t in types:
-        if isinstance(t, (TypeVar, ParamSpec)) and t not in tvars:
+        if isinstance(t, _TypeVarLike) and t not in tvars:
             tvars.append(t)
         if isinstance(t, (_GenericAlias, GenericAlias)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
@@ -218,7 +218,7 @@ def _prepare_paramspec_params(cls, params):
     """
     # Special case where Z[[int, str, bool]] == Z[int, str, bool] in PEP 612.
     if len(cls.__parameters__) == 1 and len(params) > 1:
-        return params,
+        return (params,)
     else:
         _params = []
         # Convert lists to tuples to help other libraries cache the results.
@@ -557,11 +557,11 @@ def Concatenate(self, parameters):
         raise TypeError("Cannot take a Concatenate of no types.")
     if not isinstance(parameters, tuple):
         parameters = (parameters,)
-    msg = "Concatenate[arg, ...]: each arg must be a type."
-    parameters = tuple(_type_check(p, msg) for p in parameters)
     if not isinstance(parameters[-1], ParamSpec):
         raise TypeError("The last parameter to Concatenate should be a "
                         "ParamSpec variable.")
+    msg = "Concatenate[arg, ...]: each arg must be a type."
+    parameters = tuple(_type_check(p, msg) for p in parameters)
     return _ConcatenateGenericAlias(self, parameters)
 
 

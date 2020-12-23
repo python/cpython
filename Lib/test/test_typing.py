@@ -4264,26 +4264,18 @@ class ParamSpecTests(BaseTestCase):
         P = ParamSpec('P')
         with self.assertRaises(TypeError):
             isinstance(42, P)
-
-    def test_instance_type_error(self):
-        P = ParamSpec('P')
         with self.assertRaises(TypeError):
             issubclass(int, P)
         with self.assertRaises(TypeError):
             issubclass(P, int)
 
-    def test_union_unique(self):
+    def test_unique(self):
         P1 = ParamSpec('P1')
         P2 = ParamSpec('P2')
         self.assertNotEqual(P1, P2)
-        self.assertEqual(Union[P1], P1)
-        self.assertNotEqual(Union[P1], Union[P1, P2])
-        self.assertEqual(Union[P1, P1], P1)
-        self.assertNotEqual(Union[P1, int], Union[P1])
-        self.assertNotEqual(Union[P1, int], Union[int])
-        self.assertEqual(Union[P1, int].__args__, (P1, int))
-        self.assertEqual(Union[P1, int].__parameters__, (P1,))
-        self.assertIs(Union[P1, int].__origin__, Union)
+        self.assertEqual(Callable[P1, int].__args__, (P1, int))
+        self.assertEqual(Union[Callable[P1, int], Callable[P1, int]].__parameters__, (P1,))
+        self.assertEqual(Union[Callable[P1, int], Callable[P2, int]].__parameters__, (P1, P2))
 
     def test_repr(self):
         P = ParamSpec('P')
@@ -4292,28 +4284,6 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(repr(P_co), '+P_co')
         P_contra = ParamSpec('P_contra', contravariant=True)
         self.assertEqual(repr(P_contra), '-P_contra')
-
-    def test_no_redefinition(self):
-        self.assertNotEqual(ParamSpec('P'), ParamSpec('P'))
-        self.assertNotEqual(ParamSpec('P', int, str), ParamSpec('P', int, str))
-
-    def test_cannot_subclass_vars(self):
-        with self.assertRaises(TypeError):
-            class V(ParamSpec('P')):
-                pass
-
-    def test_cannot_subclass_var_itself(self):
-        with self.assertRaises(TypeError):
-            class V(ParamSpec):
-                pass
-
-    def test_cannot_instantiate_vars(self):
-        with self.assertRaises(TypeError):
-            ParamSpec('A')()
-
-    def test_no_bivariant(self):
-        with self.assertRaises(ValueError):
-            ParamSpec('P', covariant=True, contravariant=True)
 
     def test_user_generics(self):
         T = TypeVar("T")
@@ -4331,7 +4301,6 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G2.__args__, (int, Concatenate[int, P_2]))
         self.assertEqual(G2.__parameters__, (P_2,))
 
-        # currently raises TypeError for _type_check
         G3 = X[int, [int, bool]]
         self.assertEqual(G3.__args__, (int, (int, bool)))
         self.assertEqual(G3.__parameters__, ())
