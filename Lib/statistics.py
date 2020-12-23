@@ -370,24 +370,24 @@ def harmonic_mean(data):
     The harmonic mean, sometimes called the subcontrary mean, is the
     reciprocal of the arithmetic mean of the reciprocals of the data,
     and is often appropriate when averaging quantities which are rates
-    or ratios, for example speeds. Example:
+    or ratios, for example speeds.
 
-    Suppose an investor purchases an equal value of shares in each of
-    three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
-    What is the average P/E ratio for the investor's portfolio?
+    Suppose a car travels 40 km/hr for 5 km and then speeds-up to
+    60 km/hr for another 5 km. What is the average speed?
 
-    >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
-    3.6
+        >>> harmonic_mean([40, 60])
+        48.0
 
-    Using the arithmetic mean would give an average of about 5.167, which
-    is too high.
+    Suppose a car travels 40 km/hr for 5 km, and when traffic clears,
+    speeds-up to 60 km/hr for the remaining 30 km of the journey. What
+    is the average speed?
+
+        >>> harmonic_mean([40, 60], weights=[5, 30])
+        56.0
 
     If ``data`` is empty, or any element is less than zero,
     ``harmonic_mean`` will raise ``StatisticsError``.
     """
-    # For a justification for using harmonic mean for P/E ratios, see
-    # http://fixthepitch.pellucid.com/comps-analysis-the-missing-harmony-of-summary-statistics/
-    # http://papers.ssrn.com/sol3/papers.cfm?abstract_id=2621087
     if iter(data) is data:
         data = list(data)
     errmsg = 'harmonic mean does not support negative values'
@@ -402,6 +402,8 @@ def harmonic_mean(data):
             return x
         else:
             raise TypeError('unsupported type')
+    # List[Real | Decimal] with size >= 1
+    # _fail_neg converts back to generator, likely not necessary
     try:
         T, total, count = _sum(1 / x for x in _fail_neg(data, errmsg))
     except ZeroDivisionError:
