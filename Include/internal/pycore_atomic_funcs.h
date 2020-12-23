@@ -19,6 +19,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#if defined(_MSC_VER)
+#  include <intrin.h>             // _InterlockedExchange()
+#endif
+
+
 // Use builtin atomic operations in GCC >= 4.7 and clang
 #ifdef HAVE_BUILTIN_ATOMIC
 
@@ -38,18 +43,18 @@ static inline Py_ssize_t _Py_atomic_size_get(Py_ssize_t *var)
 {
 #if SIZEOF_VOID_P == 8
     Py_BUILD_ASSERT(sizeof(LONG64) == sizeof(Py_ssize_t));
-    volatile LONG64 *lvar = (volatile LONG64 *)var;
+    volatile LONG64 *volatile_var = (volatile LONG64 *)var;
     LONG64 old;
     do {
-        old = *lvar;
-    } while(_InterlockedCompareExchange64(lvar, old, old) != old);
+        old = *volatile_var;
+    } while(_InterlockedCompareExchange64(volatile_var, old, old) != old);
 #else
     Py_BUILD_ASSERT(sizeof(LONG) == sizeof(Py_ssize_t));
-    volatile LONG *lvar = (volatile LONG *)var;
+    volatile LONG *volatile_var = (volatile LONG *)var;
     LONG old;
     do {
-        old = *lvar;
-    } while(_InterlockedCompareExchange(lvar, old, old) != old);
+        old = *volatile_var;
+    } while(_InterlockedCompareExchange(volatile_var, old, old) != old);
 #endif
     return old;
 }
@@ -57,13 +62,13 @@ static inline Py_ssize_t _Py_atomic_size_get(Py_ssize_t *var)
 static inline void _Py_atomic_size_set(Py_ssize_t *var, Py_ssize_t value)
 {
 #if SIZEOF_VOID_P == 8
-    Py_BUILD_ASSERT(sizeof(long) == sizeof(Py_ssize_t));
-    volatile long *lvar = (volatile long *)var;
-    _InterlockedExchange(lvar, value);
+    Py_BUILD_ASSERT(sizeof(LONG64) == sizeof(Py_ssize_t));
+    volatile LONG64 *volatile_var = (volatile LONG64 *)var;
+    _InterlockedExchange64(volatile_var, value);
 #else
     Py_BUILD_ASSERT(sizeof(LONG) == sizeof(Py_ssize_t));
-    volatile LONG *lvar = (volatile LONG *)var;
-    _InterlockedExchange(lvar, value);
+    volatile LONG *volatile_var = (volatile LONG *)var;
+    _InterlockedExchange(volatile_var, value);
 #endif
 }
 
