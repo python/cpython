@@ -1,1 +1,1 @@
-Optimized collections.deque.remove().
+Optimized :meth:`collections.deque.remove`.
