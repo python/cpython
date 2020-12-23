@@ -394,7 +394,7 @@ def harmonic_mean(data, weights=None):
     n = len(data)
     if n < 1:
         raise StatisticsError('harmonic_mean requires at least one data point')
-    elif n == 1:
+    elif n == 1 and weights is None:
         x = data[0]
         if isinstance(x, (numbers.Real, Decimal)):
             if x < 0:
@@ -416,6 +416,8 @@ def harmonic_mean(data, weights=None):
         T, total, count = _sum(w / x if w else 0 for w, x in zip(weights, data))
     except ZeroDivisionError:
         return 0
+    if total <= 0:
+        raise StatisticsError('Weighted sum must be positive')
     return _convert(sum_weights / total, T)
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
