@@ -581,7 +581,7 @@ function.
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.
 
-   ``globalns`` and ``localns`` are the namespaces that are passed into
+   ``globalns`` and ``localns`` are passed into
    :func:`typing.get_type_hints` when resolving the annotations.
 
    A slash(/) in the signature of a function denotes that the parameters prior
