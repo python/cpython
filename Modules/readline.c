@@ -51,7 +51,7 @@ extern char **completion_matches(char *, CPFunction *);
  *
  * This emulation library is not 100% API compatible with the "real" readline
  * and cannot be detected at compile-time,
- * hence we use a runtime check to detect if the Python readlinke module is
+ * hence we use a runtime check to detect if the Python readline module is
  * linked to libedit.
  *
  * Currently there is one known API incompatibility:
