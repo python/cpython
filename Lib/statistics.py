@@ -364,7 +364,7 @@ def geometric_mean(data):
                               ' containing positive numbers') from None
 
 
-def harmonic_mean(data):
+def harmonic_mean(data, weights=None):
     """Return the harmonic mean of data.
 
     The harmonic mean, sometimes called the subcontrary mean, is the
@@ -402,15 +402,20 @@ def harmonic_mean(data):
             return x
         else:
             raise TypeError('unsupported type')
-    # List[Real | Decimal] with size >= 1
-    # _fail_neg converts back to generator, likely not necessary
+    if weights is None:
+        weights = [1] * n
+        sum_weights = n
+    else:
+        if iter(weights) is weights:
+            weights = list(weights)
+        if len(weights) != n:
+            raise StatisticsError('Number of weights does not match data size')
+        _, sum_weights, _ = _sum(w for w in _fail_neg(weights, errmsg))
     try:
-        T, total, count = _sum(1 / x for x in _fail_neg(data, errmsg))
+        T, total, count = _sum(w / x if w else 0 for w, x in zip(weights, data))
     except ZeroDivisionError:
         return 0
-    assert count == n
-    return _convert(n / total, T)
-
+    return _convert(sum_weights / total, T)
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
 def median(data):
