@@ -3152,6 +3152,17 @@ PyType_FromSpec(PyType_Spec *spec)
     return PyType_FromSpecWithBases(spec, NULL);
 }
 
+const char *
+PyType_GetName(PyTypeObject *type)
+{
+    assert(PyType_Check(type));
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        return PyUnicode_AsUTF8(((PyHeapTypeObject *)type)->ht_name);
+    } else {
+        return type->tp_name;
+    }
+}
+
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {

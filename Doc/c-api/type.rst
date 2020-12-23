@@ -95,6 +95,12 @@ Type Objects
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
+.. c:function:: const char* PyType_GetName(PyTypeObject *type)
+
+   Return the type's name. This function can accept heap or static types.
+
+   .. versionadded:: 3.10
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
