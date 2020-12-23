@@ -247,9 +247,9 @@ def _cli_capi(parser):
         args.kinds = set(kinds)
 
     parser.add_argument('--group-by', dest='groupby',
-                        choices=['level', 'kind'], default='kind')
+                        choices=['level', 'kind'])
 
-    parser.add_argument('--format', choices=['brief', 'summary'], default='brief')
+    parser.add_argument('--format', choices=['brief', 'full', 'summary'], default='brief')
     parser.add_argument('--summary', dest='format',
                         action='store_const', const='summary')
 
@@ -287,6 +287,7 @@ def cmd_capi(filenames=None, *,
         items = (item for item in items if item.kind in kinds)
 
     lines = render(items, groupby=groupby, verbose=verbosity > VERBOSITY)
+    print()
     for line in lines:
         print(line)
 

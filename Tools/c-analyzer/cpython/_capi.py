@@ -330,6 +330,36 @@ def render_table(items, *, groupby='kind', verbose=False):
     yield f'total: {total}'
 
 
+def render_full(items, *, groupby=None, verbose=False):
+    if groupby:
+        collated, groupby, _, _, _ = _collate(items, groupby)
+        for group, grouped in collated.items():
+            yield '#' * 25
+            yield f'# {group} ({len(grouped)})'
+            yield '#' * 25
+            yield ''
+            if not grouped:
+                continue
+            for item in grouped:
+                yield from _render_item_full(item, groupby, verbose)
+                yield ''
+    else:
+        for item in items:
+            yield from _render_item_full(item, None, verbose)
+            yield ''
+
+
+def _render_item_full(item, groupby, verbose):
+    yield item.name
+    yield f'  {"filename:":10} {item.relfile}'
+    for extra in ('kind', 'level'):
+        if groupby != extra:
+            yield f'  {extra+":":10} {getattr(item, extra)}'
+    if verbose:
+        # Show the actual text.
+        raise NotImplementedError
+
+
 def render_summary(items, *, groupby='kind', verbose=False):
     total = 0
     summary = summarize(items, groupby=groupby)
@@ -345,5 +375,6 @@ def render_summary(items, *, groupby='kind', verbose=False):
 
 FORMATS = {
     'brief': render_table,
+    'full': render_full,
     'summary': render_summary,
 }
