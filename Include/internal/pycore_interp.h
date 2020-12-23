@@ -64,6 +64,11 @@ struct _Py_bytes_state {
     PyBytesObject *characters[256];
 };
 
+struct _Py_unicode_ids {
+    Py_ssize_t size;
+    PyObject **array;
+};
+
 struct _Py_unicode_state {
     // The empty Unicode object is a singleton to improve performance.
     PyObject *empty_string;
@@ -71,6 +76,8 @@ struct _Py_unicode_state {
        shared as well. */
     PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
+    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
+    struct _Py_unicode_ids ids;
 };
 
 struct _Py_float_state {
