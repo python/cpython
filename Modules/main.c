@@ -223,7 +223,7 @@ pymain_import_readline(const PyConfig *config)
 
 
 static int
-pymain_run_command(wchar_t *command, PyCompilerFlags *cf)
+pymain_run_command(wchar_t *command)
 {
     PyObject *unicode, *bytes;
     int ret;
@@ -243,7 +243,9 @@ pymain_run_command(wchar_t *command, PyCompilerFlags *cf)
         goto error;
     }
 
-    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    cf.cf_flags |= PyCF_IGNORE_COOKIE;
+    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), &cf);
     Py_DECREF(bytes);
     return (ret != 0);
 
@@ -306,7 +308,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
 
 static int
 pymain_run_file_obj(PyObject *program_name, PyObject *filename,
-                    int skip_source_first_line, PyCompilerFlags *cf)
+                    int skip_source_first_line)
 {
     if (PySys_Audit("cpython.run_file", "O", filename) < 0) {
         return pymain_exit_err_print();
@@ -347,12 +349,13 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
     }
 
     /* PyRun_AnyFileExFlags(closeit=1) calls fclose(fp) before running code */
-    int run = _PyRun_AnyFileObject(fp, filename, 1, cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int run = _PyRun_AnyFileObject(fp, filename, 1, &cf);
     return (run != 0);
 }
 
 static int
-pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
+pymain_run_file(const PyConfig *config)
 {
     PyObject *filename = PyUnicode_FromWideChar(config->run_filename, -1);
     if (filename == NULL) {
@@ -367,7 +370,7 @@ pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
     }
 
     int res = pymain_run_file_obj(program_name, filename,
-                                  config->skip_source_first_line, cf);
+                                  config->skip_source_first_line);
     Py_DECREF(filename);
     Py_DECREF(program_name);
     return res;
@@ -375,7 +378,7 @@ pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
 
 
 static int
-pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
+pymain_run_startup(PyConfig *config, int *exitcode)
 {
     int ret;
     if (!config->use_environment) {
@@ -416,7 +419,8 @@ pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
         goto error;
     }
 
-    (void) _PyRun_SimpleFileObject(fp, startup, 0, cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    (void) _PyRun_SimpleFileObject(fp, startup, 0, &cf);
     PyErr_Clear();
     fclose(fp);
     ret = 0;
@@ -469,14 +473,14 @@ error:
 
 
 static int
-pymain_run_stdin(PyConfig *config, PyCompilerFlags *cf)
+pymain_run_stdin(PyConfig *config)
 {
     if (stdin_is_interactive(config)) {
         config->inspect = 0;
         Py_InspectFlag = 0; /* do exit on SystemExit */
 
         int exitcode;
-        if (pymain_run_startup(config, cf, &exitcode)) {
+        if (pymain_run_startup(config, &exitcode)) {
             return exitcode;
         }
 
@@ -494,13 +498,14 @@ pymain_run_stdin(PyConfig *config, PyCompilerFlags *cf)
         return pymain_exit_err_print();
     }
 
-    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     return (run != 0);
 }
 
 
 static void
-pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
+pymain_repl(PyConfig *config, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
@@ -519,7 +524,8 @@ pymain_repl(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
         return;
     }
 
-    int res = PyRun_AnyFileFlags(stdin, "<stdin>", cf);
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
+    int res = PyRun_AnyFileFlags(stdin, "<stdin>", &cf);
     *exitcode = (res != 0);
 }
 
@@ -565,13 +571,11 @@ pymain_run_python(int *exitcode)
         }
     }
 
-    PyCompilerFlags cf = _PyCompilerFlags_INIT;
-
     pymain_header(config);
     pymain_import_readline(config);
 
     if (config->run_command) {
-        *exitcode = pymain_run_command(config->run_command, &cf);
+        *exitcode = pymain_run_command(config->run_command);
     }
     else if (config->run_module) {
         *exitcode = pymain_run_module(config->run_module, 1);
@@ -580,13 +584,13 @@ pymain_run_python(int *exitcode)
         *exitcode = pymain_run_module(L"__main__", 0);
     }
     else if (config->run_filename != NULL) {
-        *exitcode = pymain_run_file(config, &cf);
+        *exitcode = pymain_run_file(config);
     }
     else {
-        *exitcode = pymain_run_stdin(config, &cf);
+        *exitcode = pymain_run_stdin(config);
     }
 
-    pymain_repl(config, &cf, exitcode);
+    pymain_repl(config, exitcode);
     goto done;
 
 error:
