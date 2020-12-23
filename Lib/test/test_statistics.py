@@ -1601,6 +1601,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
 
     def test_with_weights(self):
         self.assertEqual(self.func([40, 60], weights=[5, 30]), 56.0)
+        self.assertEqual(self.func([40, 60], weights=iter([5, 30])), 56.0)
         self.assertEqual(
             self.func([Fraction(10, 3), Fraction(23, 5), Fraction(7, 2)], [5, 2, 10]),
             self.func([Fraction(10, 3)] * 5 +

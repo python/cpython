@@ -106,7 +106,7 @@ import random
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby
+from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter
@@ -403,7 +403,7 @@ def harmonic_mean(data, weights=None):
         else:
             raise TypeError('unsupported type')
     if weights is None:
-        weights = [1] * n
+        weights = repeat(1, n)
         sum_weights = n
     else:
         if iter(weights) is weights:
