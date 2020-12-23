@@ -57,7 +57,7 @@ CAPI_INLINE = textwrap.dedent(r'''
 CAPI_MACRO = textwrap.dedent(r'''
     (?:
         (\w+)  # <macro>
-        \s* [(]
+        [(]
     )
 ''')
 CAPI_CONSTANT = textwrap.dedent(r'''
