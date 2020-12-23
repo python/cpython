@@ -302,7 +302,6 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
         }
         for (Py_ssize_t i = 0; i < nsubargs; ++i) {
             PyObject *arg = PyTuple_GET_ITEM(subparams, i);
-            PyObject *subst = arg;
             Py_ssize_t iparam = tuple_index(params, nparams, arg);
             if (iparam >= 0) {
                 arg = argitems[iparam];
