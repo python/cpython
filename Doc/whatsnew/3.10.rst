@@ -238,6 +238,11 @@ inspect
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
+Added *globalns* and *localns* parameters in :func:`~inspect.signature` and
+:meth:`inspect.Signature.from_callable` to retrieve the annotations in given
+local and global namespaces.
+(Contributed by Batuhan Taskaya in :issue:`41960`.)
+
 linecache
 ---------
 
