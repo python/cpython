@@ -246,8 +246,12 @@ def _cli_capi(parser):
                     parser.error(f'expected KIND to be one of {sorted(_capi.KINDS)}, got {kind!r}')
         args.kinds = set(kinds)
 
+    parser.add_argument('--format', choices=['brief', 'summary'])
     parser.add_argument('--summary', nargs='?')
-    def process_summary(args):
+    def process_format(args):
+        if not args.format:
+            args.format = 'brief'
+
         if args.summary:
             if args.summary not in ('kind', 'level'):
                 if not args.summary.endswith('.h'):
@@ -256,13 +260,15 @@ def _cli_capi(parser):
                             parser.error(f'expected SUMMARY to be one of {["kind", "level"]}, got {args.summary!r}')
                 args.filenames.insert(0, args.summary)
                 args.summary = None
+        elif args.format == 'summary':
+            args.summary = 'level'
 
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
     process_progress = add_progress_cli(parser)
 
     return [
         process_levels,
-        process_summary,
+        process_format,
         process_progress,
     ]
 
