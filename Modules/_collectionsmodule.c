@@ -1128,38 +1128,6 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(insert_doc,
 "D.insert(index, object) -- insert object before index");
 
-static PyObject *
-deque_remove(dequeobject *deque, PyObject *value)
-{
-    Py_ssize_t i, n=Py_SIZE(deque);
-
-    for (i=0 ; i<n ; i++) {
-        PyObject *item = deque->leftblock->data[deque->leftindex];
-        int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
-
-        if (Py_SIZE(deque) != n) {
-            PyErr_SetString(PyExc_IndexError,
-                "deque mutated during remove().");
-            return NULL;
-        }
-        if (cmp > 0) {
-            PyObject *tgt = deque_popleft(deque, NULL);
-            assert (tgt != NULL);
-            if (_deque_rotate(deque, i))
-                return NULL;
-            Py_DECREF(tgt);
-            Py_RETURN_NONE;
-        }
-        else if (cmp < 0) {
-            _deque_rotate(deque, i);
-            return NULL;
-        }
-        _deque_rotate(deque, -1);
-    }
-    PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
-    return NULL;
-}
-
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
@@ -1225,6 +1193,48 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
     assert (item != NULL);
     Py_DECREF(item);
     return rv;
+}
+
+static PyObject *
+deque_remove(dequeobject *deque, PyObject *value)
+{
+    PyObject *item;
+    block *b = deque->leftblock;
+    Py_ssize_t i, n = Py_SIZE(deque), index = deque->leftindex;
+    size_t start_state = deque->state;
+    int cmp, rv;
+
+    for (i = 0 ; i < n; i++) {
+        item = b->data[index];
+        Py_INCREF(item);
+        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (cmp < 0) {
+            return NULL;
+        }
+        if (start_state != deque->state) {
+            PyErr_SetString(PyExc_IndexError,
+                            "deque mutated during iteration");
+            return NULL;
+        }
+        if (cmp > 0) {
+            break;
+        }
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
+    }
+    if (i == n) {
+        PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
+        return NULL;
+    }
+    rv = deque_del_item(deque, i);
+    if (rv == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
