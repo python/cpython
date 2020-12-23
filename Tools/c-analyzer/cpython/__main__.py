@@ -246,31 +246,18 @@ def _cli_capi(parser):
                     parser.error(f'expected KIND to be one of {sorted(_capi.KINDS)}, got {kind!r}')
         args.kinds = set(kinds)
 
-    parser.add_argument('--format', choices=['brief', 'summary'])
-    parser.add_argument('--summary', nargs='?')
-    def process_format(args, *, argv):
-        if not args.format:
-            args.format = 'brief'
+    parser.add_argument('--group-by', dest='groupby',
+                        choices=['level', 'kind'], default='kind')
 
-        if args.summary:
-            if args.summary not in ('kind', 'level'):
-                if not args.summary.endswith('.h'):
-                    if args.summary != 'Include':
-                        if not args.summary.startswith('Include' + os.path.sep):
-                            parser.error(f'expected SUMMARY to be one of {["kind", "level"]}, got {args.summary!r}')
-                args.filenames.insert(0, args.summary)
-                args.summary = None
-        elif args.format == 'summary':
-            args.summary = 'level'
-        elif '--summary' in argv:
-            args.summary = 'level'
+    parser.add_argument('--format', choices=['brief', 'summary'], default='brief')
+    parser.add_argument('--summary', dest='format',
+                        action='store_const', const='summary')
 
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
     process_progress = add_progress_cli(parser)
 
     return [
         process_levels,
-        process_format,
         process_progress,
     ]
 
@@ -278,11 +265,17 @@ def _cli_capi(parser):
 def cmd_capi(filenames=None, *,
              levels=None,
              kinds=None,
+             groupby='kind',
+             format='brief',
              track_progress=None,
              verbosity=VERBOSITY,
-             summary=None,
              **kwargs
              ):
+    try:
+        render = _capi.FORMATS[format or 'brief']
+    except KeyError:
+        raise ValueError(f'unsupported format {format!r}')
+
     filenames = _files.iter_header_files(filenames, levels=levels)
     #filenames = (file for file, _ in main_for_filenames(filenames))
     if track_progress is not None:
@@ -292,12 +285,10 @@ def cmd_capi(filenames=None, *,
         items = (item for item in items if item.level in levels)
     if kinds:
         items = (item for item in items if item.kind in kinds)
-    if summary:
-        for line in _capi.render_summary(items, bykind=summary == 'kind'):
-            print(line)
-    else:
-        for line in _capi.render_table(items, verbose=verbosity > VERBOSITY):
-            print(line)
+
+    lines = render(items, groupby=groupby, verbose=verbosity > VERBOSITY)
+    for line in lines:
+        print(line)
 
 
 # We do not define any other cmd_*() handlers here,

@@ -165,6 +165,47 @@ class CAPIItem(namedtuple('CAPIItem', 'file lno name kind level')):
         return self.file[len(REPO_ROOT) + 1:]
 
 
+def _parse_groupby(raw):
+    if not raw:
+        raw = 'kind'
+
+    if isinstance(raw, str):
+        groupby = raw.replace(',', ' ').strip().split()
+    else:
+        raise NotImplementedError
+
+    if not all(v in ('kind', 'level') for v in groupby):
+        raise ValueError(f'invalid groupby value {raw!r}')
+    return groupby
+
+
+def summarize(items, *, groupby='kind'):
+    summary = {}
+
+    groupby = _parse_groupby(groupby)[0]
+    if groupby == 'kind':
+        outers = KINDS
+        inners = LEVELS
+        def increment(item):
+            summary[item.kind][item.level] += 1
+    elif groupby == 'level':
+        outers = LEVELS
+        inners = KINDS
+        def increment(item):
+            summary[item.level][item.kind] += 1
+    else:
+        raise NotImplementedError
+
+    for outer in outers:
+        summary[outer] = _outer = {}
+        for inner in inners:
+            _outer[inner] = 0
+    for item in items:
+        increment(item)
+
+    return summary
+
+
 def _parse_capi(lines, filename):
     if isinstance(lines, str):
         lines = lines.splitlines()
@@ -182,22 +223,27 @@ def iter_capi(filenames=None):
                 yield item
 
 
-def _collate_by_kind(items):
+def _collate(items, groupby):
+    groupby = _parse_groupby(groupby)[0]
     maxfilename = maxname = maxlevel = 0
     collated = {}
     for item in items:
-        if item.kind in collated:
-            collated[item.kind].append(item)
+        key = getattr(item, groupby)
+        if key in collated:
+            collated[key].append(item)
         else:
-            collated[item.kind] = [item]
+            collated[key] = [item]
         maxfilename = max(len(item.relfile), maxfilename)
         maxname = max(len(item.name), maxname)
         maxlevel = max(len(item.name), maxlevel)
     return collated, maxfilename, maxname, maxlevel
 
 
-def render_table(items, *, verbose=False):
-    collated, maxfilename, maxname, maxlevel = _collate_by_kind(items)
+def render_table(items, *, groupby='kind', verbose=False):
+    groupby = groupby or 'kind'
+    if groupby != 'kind':
+        raise NotImplementedError
+    collated, maxfilename, maxname, maxlevel = _collate(items, groupby)
     maxlevel = max(len(level) for level in LEVELS)
     header, div, fmt = build_table([
         f'filename:{maxfilename}',
@@ -244,9 +290,9 @@ def render_table(items, *, verbose=False):
     yield f'total: {total}'
 
 
-def render_summary(items, *, bykind=True):
+def render_summary(items, *, groupby='kind', verbose=False):
     total = 0
-    summary = summarize(items, bykind=bykind)
+    summary = summarize(items, groupby=groupby)
     # XXX Stablize the sorting to match KINDS/LEVELS.
     for outer, counts in summary.items():
         subtotal = sum(c for _, c in counts.items())
@@ -257,23 +303,7 @@ def render_summary(items, *, bykind=True):
     yield f'{"total:":20} ({total})'
 
 
-def summarize(items, *, bykind=True):
-    if bykind:
-        outers = KINDS
-        inners = LEVELS
-    else:
-        outers = LEVELS
-        inners = KINDS
-    summary = {}
-    for outer in outers:
-        summary[outer] = _outer = {}
-        for inner in inners:
-            _outer[inner] = 0
-
-    if bykind:
-        for item in items:
-            summary[item.kind][item.level] += 1
-    else:
-        for item in items:
-            summary[item.level][item.kind] += 1
-    return summary
+FORMATS = {
+    'brief': render_table,
+    'summary': render_summary,
+}
