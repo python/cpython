@@ -4260,31 +4260,6 @@ class ParamSpecTests(BaseTestCase):
         P.args
         P.kwargs
 
-    def test_instance_type_error(self):
-        P = ParamSpec('P')
-        with self.assertRaises(TypeError):
-            isinstance(42, P)
-        with self.assertRaises(TypeError):
-            issubclass(int, P)
-        with self.assertRaises(TypeError):
-            issubclass(P, int)
-
-    def test_unique(self):
-        P1 = ParamSpec('P1')
-        P2 = ParamSpec('P2')
-        self.assertNotEqual(P1, P2)
-        self.assertEqual(Callable[P1, int].__args__, (P1, int))
-        self.assertEqual(Union[Callable[P1, int], Callable[P1, int]].__parameters__, (P1,))
-        self.assertEqual(Union[Callable[P1, int], Callable[P2, int]].__parameters__, (P1, P2))
-
-    def test_repr(self):
-        P = ParamSpec('P')
-        self.assertEqual(repr(P), '~P')
-        P_co = ParamSpec('P_co', covariant=True)
-        self.assertEqual(repr(P_co), '+P_co')
-        P_contra = ParamSpec('P_contra', contravariant=True)
-        self.assertEqual(repr(P_contra), '-P_contra')
-
     def test_user_generics(self):
         T = TypeVar("T")
         P = ParamSpec("P")
