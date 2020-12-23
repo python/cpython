@@ -1062,18 +1062,18 @@ def gen_preprocess_options(macros, include_dirs):
                   % macro)
 
         if len(macro) == 1:        # undefine this macro
-            pp_opts.append("-U%s" % macro[0])
+            pp_opts.append("-U %s" % macro[0])
         elif len(macro) == 2:
             if macro[1] is None:    # define with no explicit value
-                pp_opts.append("-D%s" % macro[0])
+                pp_opts.append("-D %s" % macro[0])
             else:
                 # XXX *don't* need to be clever about quoting the
                 # macro value here, because we're going to avoid the
                 # shell at all costs when we spawn the command!
-                pp_opts.append("-D%s=%s" % macro)
+                pp_opts.append("-D %s=%s" % macro)
 
     for dir in include_dirs:
-        pp_opts.append("-I%s" % dir)
+        pp_opts.append("-I %s" % dir)
     return pp_opts
 
 
