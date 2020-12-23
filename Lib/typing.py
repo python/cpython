@@ -736,10 +736,10 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     Parameter specification variables exist primarily for the benefit of static
     type checkers.  They are used to forward the parameter types of one
     Callable to another Callable, a pattern commonly found in higher order
-    functions and decorators.  They are only valid as the first argument to
-    Callable, or as parameters for user-defined Generics.  See class Generic
-    for more information on generic types.  An example for annotating a
-    decorator::
+    functions and decorators.  They are only valid when used in Concatenate, or
+    as the first argument to Callable, or as parameters for user-defined Generics.
+    See class Generic for more information on generic types.  An example for
+    annotating a decorator::
 
        T = TypeVar('T')
        P = ParamSpec('P')
@@ -904,7 +904,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         subst = dict(zip(self.__parameters__, params))
         new_args = []
         for arg in self.__args__:
-            if isinstance(arg, (TypeVar, ParamSpec)):
+            if isinstance(arg, _TypeVarLike):
                 arg = subst[arg]
             elif isinstance(arg, (_GenericAlias, GenericAlias)):
                 subparams = arg.__parameters__
@@ -1150,7 +1150,7 @@ class Generic:
         params = tuple(_type_convert(p) for p in params)
         if cls in (Generic, Protocol):
             # Generic and Protocol can only be subscripted with unique type variables.
-            if not all(isinstance(p, (TypeVar, ParamSpec)) for p in params):
+            if not all(isinstance(p, _TypeVarLike) for p in params):
                 raise TypeError(
                     f"Parameters to {cls.__name__}[...] must all be type variables "
                     f"or parameter specification variables.")
@@ -1159,7 +1159,6 @@ class Generic:
                     f"Parameters to {cls.__name__}[...] must all be unique")
         else:
             # Subscripting a regular Generic subclass.
-
             if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
                 params = _prepare_paramspec_params(cls, params)
             _check_generic(cls, params, len(cls.__parameters__))

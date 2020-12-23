@@ -472,8 +472,8 @@ class _CallableGenericAlias(GenericAlias):
 
 
 def _has_special_args(obj):
-    """Checks if obj matches either ``...``, 'ParamSpec' or
-    '_ConcatenateGenericAlias' from typing.py
+    """Checks if obj matches either ``...``, ``ParamSpec`` or
+    ``_ConcatenateGenericAlias`` from typing.py
     """
     if obj is Ellipsis:
         return True
