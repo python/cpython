@@ -1241,7 +1241,7 @@ _os_release_line = re.compile(
 # unescape five special characters mentioned in the standard
 _os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
 # /etc takes precedence over /usr/lib
-_os_release_candidates = ("/etc/os-release", "/usr/lib/os-relesase")
+_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
 _os_release_cache = None
 
 
