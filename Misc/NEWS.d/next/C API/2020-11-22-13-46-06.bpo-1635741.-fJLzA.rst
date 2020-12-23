@@ -1,0 +1,1 @@
+Port :mod:`resource` extension module to module state
