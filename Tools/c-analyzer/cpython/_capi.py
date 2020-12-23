@@ -225,7 +225,7 @@ def iter_capi(filenames=None):
 
 def _collate(items, groupby):
     groupby = _parse_groupby(groupby)[0]
-    maxfilename = maxname = maxlevel = 0
+    maxfilename = maxname = maxkind = maxlevel = 0
     collated = {}
     for item in items:
         key = getattr(item, groupby)
@@ -235,55 +235,95 @@ def _collate(items, groupby):
             collated[key] = [item]
         maxfilename = max(len(item.relfile), maxfilename)
         maxname = max(len(item.name), maxname)
-        maxlevel = max(len(item.name), maxlevel)
-    return collated, maxfilename, maxname, maxlevel
+        maxkind = max(len(item.kind), maxkind)
+        maxlevel = max(len(item.level), maxlevel)
+    maxextra = {
+        'kind': maxkind,
+        'level': maxlevel,
+    }
+    return collated, groupby, maxfilename, maxname, maxextra
+
+
+_LEVEL_MARKERS = {
+    'S': 'stable',
+    'C': 'cpython',
+    'P': 'private',
+    'I': 'internal',
+}
+_KIND_MARKERS = {
+    'F': 'func',
+    'D': 'data',
+    'I': 'inline',
+    'M': 'macro',
+    'C': 'constant',
+}
 
 
 def render_table(items, *, groupby='kind', verbose=False):
-    groupby = groupby or 'kind'
-    if groupby != 'kind':
+    if groupby:
+        collated, groupby, maxfilename, maxname, maxextra = _collate(items, groupby)
+        if groupby == 'kind':
+            groups = KINDS
+            extras = ['level']
+            markers = {'level': _LEVEL_MARKERS}
+        elif groupby == 'level':
+            groups = LEVELS
+            extras = ['kind']
+            markers = {'kind': _KIND_MARKERS}
+        else:
+            raise NotImplementedError
+    else:
+        # XXX Support no grouping?
         raise NotImplementedError
-    collated, maxfilename, maxname, maxlevel = _collate(items, groupby)
-    maxlevel = max(len(level) for level in LEVELS)
+
+    if verbose:
+        maxextra['kind'] = max(len(kind) for kind in KINDS)
+        maxextra['level'] = max(len(level) for level in LEVELS)
+        extracols = [f'{extra}:{maxextra[extra]}'
+                     for extra in extras]
+        def get_extra(item):
+            return {extra: getattr(item, extra)
+                    for extra in extras}
+    elif len(extras) == 1:
+        extra, = extras
+        extracols = [f'{m}:1' for m in markers[extra]]
+        def get_extra(item):
+            return {m: m if getattr(item, extra) == markers[extra][m] else ''
+                    for m in markers[extra]}
+    else:
+        raise NotImplementedError
+        #extracols = [[f'{m}:1' for m in markers[extra]]
+        #             for extra in extras]
+        #def get_extra(item):
+        #    values = {}
+        #    for extra in extras:
+        #        cur = markers[extra]
+        #        for m in cur:
+        #            values[m] = m if getattr(item, m) == cur[m] else ''
+        #    return values
+
     header, div, fmt = build_table([
         f'filename:{maxfilename}',
         f'name:{maxname}',
-        *([f'level:{maxlevel}']
-          if verbose
-          else [
-            f'S:1',
-            f'C:1',
-            f'P:1',
-            f'I:1',
-          ]
-        ),
+        *extracols,
     ])
     total = 0
-    for kind in KINDS:
-        if kind not in collated:
+    for group in groups:
+        if group not in collated:
             continue
         yield ''
-        yield f' === {kind} ==='
+        yield f' === {group} ==='
         yield ''
         yield header
         yield div
-        for item in collated[kind]:
+        for item in collated[group]:
             yield fmt.format(
                 filename=item.relfile,
                 name=item.name,
-                **(dict(level=item.level)
-                   if verbose
-                   else dict(
-                       S='S' if item.level == 'stable' else '',
-                       C='C' if item.level == 'cpython' else '',
-                       P='P' if item.level == 'private' else '',
-                       I='I' if item.level == 'internal' else '',
-                   )
-                )
-
+                **get_extra(item),
             )
         yield div
-        subtotal = len(collated[kind])
+        subtotal = len(collated[group])
         yield f'  sub-total: {subtotal}'
         total += subtotal
     yield ''
