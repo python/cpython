@@ -42,16 +42,16 @@ static inline void _Py_atomic_size_set(Py_ssize_t *var, Py_ssize_t value)
 static inline Py_ssize_t _Py_atomic_size_get(Py_ssize_t *var)
 {
 #if SIZEOF_VOID_P == 8
-    Py_BUILD_ASSERT(sizeof(LONG64) == sizeof(Py_ssize_t));
-    volatile LONG64 *volatile_var = (volatile LONG64 *)var;
-    LONG64 old;
+    Py_BUILD_ASSERT(sizeof(__int64) == sizeof(Py_ssize_t));
+    volatile __int64 *volatile_var = (volatile __int64 *)var;
+    __int64 old;
     do {
         old = *volatile_var;
     } while(_InterlockedCompareExchange64(volatile_var, old, old) != old);
 #else
-    Py_BUILD_ASSERT(sizeof(LONG) == sizeof(Py_ssize_t));
-    volatile LONG *volatile_var = (volatile LONG *)var;
-    LONG old;
+    Py_BUILD_ASSERT(sizeof(long) == sizeof(Py_ssize_t));
+    volatile long *volatile_var = (volatile long *)var;
+    long old;
     do {
         old = *volatile_var;
     } while(_InterlockedCompareExchange(volatile_var, old, old) != old);
@@ -62,12 +62,12 @@ static inline Py_ssize_t _Py_atomic_size_get(Py_ssize_t *var)
 static inline void _Py_atomic_size_set(Py_ssize_t *var, Py_ssize_t value)
 {
 #if SIZEOF_VOID_P == 8
-    Py_BUILD_ASSERT(sizeof(LONG64) == sizeof(Py_ssize_t));
-    volatile LONG64 *volatile_var = (volatile LONG64 *)var;
+    Py_BUILD_ASSERT(sizeof(__int64) == sizeof(Py_ssize_t));
+    volatile __int64 *volatile_var = (volatile __int64 *)var;
     _InterlockedExchange64(volatile_var, value);
 #else
-    Py_BUILD_ASSERT(sizeof(LONG) == sizeof(Py_ssize_t));
-    volatile LONG *volatile_var = (volatile LONG *)var;
+    Py_BUILD_ASSERT(sizeof(long) == sizeof(Py_ssize_t));
+    volatile long *volatile_var = (volatile long *)var;
     _InterlockedExchange(volatile_var, value);
 #endif
 }
