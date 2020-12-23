@@ -1,1 +1,2 @@
-Argparse help no longer use the confusing phrase, "optional arguments".
+Argparse help no longer uses the confusing phrase, "optional arguments".
+It uses "options" instead.

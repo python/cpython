@@ -468,7 +468,8 @@ verbosity argument (check the output of ``python --help``)::
        print(answer)
 
 We have introduced another action, "count",
-to count the number of occurrences of a specific options:
+to count the number of occurrences of specific options.
+
 
 .. code-block:: shell-session
 
