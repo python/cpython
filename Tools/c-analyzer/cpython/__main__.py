@@ -216,7 +216,7 @@ def _cli_capi(parser):
     for level in _capi.LEVELS:
         parser.add_argument(f'--{level}', dest='levels',
                             action='append_const', const=level)
-    def process_levels(args):
+    def process_levels(args, *, argv=None):
         levels = []
         for raw in args.levels or ():
             for level in raw.replace(',', ' ').strip().split():
@@ -236,7 +236,7 @@ def _cli_capi(parser):
     for kind in _capi.KINDS:
         parser.add_argument(f'--{kind}', dest='kinds',
                             action='append_const', const=kind)
-    def process_kinds(args):
+    def process_kinds(args, *, argv=None):
         kinds = []
         for raw in args.kinds or ():
             for kind in raw.replace(',', ' ').strip().split():
@@ -248,7 +248,7 @@ def _cli_capi(parser):
 
     parser.add_argument('--format', choices=['brief', 'summary'])
     parser.add_argument('--summary', nargs='?')
-    def process_format(args):
+    def process_format(args, *, argv):
         if not args.format:
             args.format = 'brief'
 
@@ -261,6 +261,8 @@ def _cli_capi(parser):
                 args.filenames.insert(0, args.summary)
                 args.summary = None
         elif args.format == 'summary':
+            args.summary = 'level'
+        elif '--summary' in argv:
             args.summary = 'level'
 
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
@@ -362,15 +364,13 @@ def parse_args(argv=sys.argv[1:], prog=None, *, subset=None):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )
     if cmd != 'parse':
         # "verbosity" is sent to the commands, so we put it back.
         args.verbosity = verbosity
-    if cmd == 'capi':
-        if not args.summary and '--summary' in argv:
-            args.summary = 'level'
 
     return cmd, ns, verbosity, traceback_cm
 
