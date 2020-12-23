@@ -16279,9 +16279,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
         Py_CLEAR(state->latin1[i]);
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
-        unicode_clear_identifiers(tstate);
-    }
+    unicode_clear_identifiers(tstate);
 
     _PyUnicode_FiniEncodings(&tstate->interp->unicode.fs_codec);
 }
