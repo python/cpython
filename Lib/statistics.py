@@ -412,6 +412,7 @@ def harmonic_mean(data, weights=None):
             raise StatisticsError('Number of weights does not match data size')
         _, sum_weights, _ = _sum(w for w in _fail_neg(weights, errmsg))
     try:
+        data = _fail_neg(data, errmsg)
         T, total, count = _sum(w / x if w else 0 for w, x in zip(weights, data))
     except ZeroDivisionError:
         return 0
