@@ -277,7 +277,8 @@ def cmd_capi(filenames=None, *,
              ):
     filenames = _files.iter_header_files(filenames, levels=levels)
     #filenames = (file for file, _ in main_for_filenames(filenames))
-    filenames = track_progress(filenames)
+    if track_progress is not None:
+        filenames = track_progress(filenames)
     items = _capi.iter_capi(filenames)
     if levels:
         items = (item for item in items if item.level in levels)
