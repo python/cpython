@@ -347,6 +347,12 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(C2[int, float, str], Callable[[int, float], str])
             self.assertEqual(C3[int], Callable[..., int])
 
+            # multi chaining
+            C4 = C2[int, V, str]
+            self.assertEqual(repr(C4).split(".")[-1], "Callable[[int, ~V], str]")
+            self.assertEqual(repr(C4[dict]).split(".")[-1], "Callable[[int, dict], str]")
+            self.assertEqual(C4[dict], Callable[[int, dict], str])
+
         with self.subTest("Testing type erasure"):
             class C1(Callable):
                 def __call__(self):
