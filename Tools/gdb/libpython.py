@@ -468,7 +468,7 @@ class InstanceProxy(object):
     def __repr__(self):
         if isinstance(self.attrdict, dict):
             kwargs = ', '.join(["%s=%r" % (arg, val)
-                                for arg, val in self.attrdict.iteritems()])
+                                for arg, val in self.attrdict.items()])
             return '<%s(%s) at remote 0x%x>' % (self.cl_name,
                                                 kwargs, self.address)
         else:
