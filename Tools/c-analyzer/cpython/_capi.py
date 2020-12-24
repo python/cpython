@@ -486,6 +486,8 @@ def render_table(items, *,
                  showempty=False,
                  verbose=False,
                  ):
+    if groupby is None:
+        groupby = 'kind'
     if showempty is None:
         showempty = False
 
@@ -574,6 +576,8 @@ def render_full(items, *,
                 showempty=None,
                 verbose=False,
                 ):
+    if groupby is None:
+        groupby = 'kind'
     if showempty is None:
         showempty = False
 
@@ -621,6 +625,8 @@ def render_summary(items, *,
                    showempty=None,
                    verbose=False,
                    ):
+    if groupby is None:
+        groupby = 'kind'
     summary = summarize(
         items,
         groupby=groupby,
