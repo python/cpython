@@ -359,7 +359,7 @@ _KIND_MARKERS = {
 
 def resolve_format(format):
     if not format:
-        return 'brief'
+        return 'table'
     elif isinstance(format, str) and format in _FORMATS:
         return format
     else:
@@ -520,7 +520,7 @@ def render_summary(items, *, groupby='kind', sort=None, verbose=False):
 
 
 _FORMATS = {
-    'brief': render_table,
+    'table': render_table,
     'full': render_full,
     'summary': render_summary,
 }

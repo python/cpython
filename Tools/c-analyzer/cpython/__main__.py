@@ -249,7 +249,7 @@ def _cli_capi(parser):
     parser.add_argument('--group-by', dest='groupby',
                         choices=['level', 'kind'])
 
-    parser.add_argument('--format', default='brief')
+    parser.add_argument('--format', default='table')
     parser.add_argument('--summary', dest='format',
                         action='store_const', const='summary')
     def process_format(args, *, argv=None):
@@ -278,7 +278,7 @@ def cmd_capi(filenames=None, *,
              levels=None,
              kinds=None,
              groupby='kind',
-             format='brief',
+             format='table',
              track_progress=None,
              verbosity=VERBOSITY,
              **kwargs
