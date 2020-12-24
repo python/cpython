@@ -369,6 +369,27 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(c1.__args__, c2.__args__)
             self.assertEqual(hash(c1.__args__), hash(c2.__args__))
 
+        with self.subTest("Testing ParamSpec uses"):
+            P = typing.ParamSpec('P')
+            C1 = Callable[P, T]
+            # substitution
+            self.assertEqual(C1[int, str], Callable[[int], str])
+            self.assertEqual(C1[[int, str], str], Callable[[int, str], str])
+            self.assertEqual(repr(C1).split(".")[-1], "Callable[~P, ~T]")
+            self.assertEqual(repr(C1[int, str]).split(".")[-1], "Callable[[int], str]")
+
+            C2 = Callable[P, int]
+            # special case in PEP 612 where
+            # X[int, str, float] == X[[int, str, float]]
+            self.assertEqual(C2[int, str, float], C2[[int, str, float]])
+            self.assertEqual(repr(C2).split(".")[-1], "Callable[~P, int]")
+            self.assertEqual(repr(C2[int, str]).split(".")[-1], "Callable[[int, str], int]")
+
+        with self.subTest("Testing Concatenate uses"):
+            P = typing.ParamSpec('P')
+            C1 = Callable[typing.Concatenate[int, P], int]
+            self.assertEqual(repr(C1), "collections.abc.Callable"
+                                       "[typing.Concatenate[int, ~P], int]")
 
 if __name__ == "__main__":
     unittest.main()
