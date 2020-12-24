@@ -444,7 +444,7 @@ class _CallableGenericAlias(GenericAlias):
         return super().__new__(cls, origin, ga_args)
 
     def __repr__(self):
-        if len(self.__args__) == 2 and _has_special_args(self.__args__[0]):
+        if _has_special_args(self.__args__):
             return super().__repr__()
         return (f'collections.abc.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
@@ -452,7 +452,7 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and _has_special_args(args[0])):
+        if not _has_special_args(args):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
 
@@ -469,10 +469,13 @@ class _CallableGenericAlias(GenericAlias):
         return _CallableGenericAlias(Callable, args)
 
 
-def _has_special_args(obj):
-    """Checks if obj matches either ``...``, ``ParamSpec`` or
+def _has_special_args(args):
+    """Checks if args[0] matches either ``...``, ``ParamSpec`` or
     ``_ConcatenateGenericAlias`` from typing.py
     """
+    if not (len(args) == 2):
+        return False
+    obj = args[0]
     if obj is Ellipsis:
         return True
     obj = type(obj)
