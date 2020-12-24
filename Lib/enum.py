@@ -235,10 +235,10 @@ class EnumMeta(type):
         # create our new Enum type
         if bases:
             bases = (_NoInitSubclass, ) + bases
-            enum_class = type.__new__(metacls, cls, bases, classdict)
+            enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
             enum_class.__bases__ = enum_class.__bases__[1:] #or (object, )
         else:
-            enum_class = type.__new__(metacls, cls, bases, classdict)
+            enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
         old_init_subclass = getattr(enum_class, '__init_subclass__', None)
         # and restore the new one (if there was one)
         if new_init_subclass is not None:
