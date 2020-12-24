@@ -21,6 +21,7 @@ from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 from tkinter import messagebox
+from tkinter.simpledialog import _place_window
 
 from idlelib.config import idleConf, ConfigChanges
 from idlelib.config_key import GetKeysDialog
