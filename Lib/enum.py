@@ -178,7 +178,7 @@ class EnumMeta(type):
     Metaclass for Enum
     """
     @classmethod
-    def __prepare__(metacls, cls, bases):
+    def __prepare__(metacls, cls, bases, **kwds):
         # check that previous enum members do not exist
         metacls._check_for_existing_members(cls, bases)
         # create the namespace dict
