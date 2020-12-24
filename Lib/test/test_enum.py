@@ -2049,23 +2049,66 @@ class TestEnum(unittest.TestCase):
         local_ls = {}
         exec(code, global_ns, local_ls)
 
-    @unittest.skipUnless(
-            sys.version_info[:2] == (3, 9),
-            'private variables are now normal attributes',
-            )
-    def test_warning_for_private_variables(self):
-        with self.assertWarns(DeprecationWarning):
-            class Private(Enum):
-                __corporal = 'Radar'
-        self.assertEqual(Private._Private__corporal.value, 'Radar')
-        try:
-            with self.assertWarns(DeprecationWarning):
-                class Private(Enum):
-                    __major_ = 'Hoolihan'
-        except ValueError:
-            pass
-
-    def test_init_subclass(self):
+    def test_strenum(self):
+        class GoodStrEnum(StrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        self.assertEqual(GoodStrEnum.one, '1')
+        self.assertEqual(str(GoodStrEnum.one), '1')
+        self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
+        self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, StrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, StrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(HelloEnum.eight, str(HelloEnum.eight))
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, StrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(GoodbyeEnum.nine, str(GoodbyeEnum.nine))
+        #
+        with self.assertRaisesRegex(TypeError, '1 is not a string'):
+            class FirstFailedStrEnum(StrEnum):
+                one = 1
+                two = '2'
+        with self.assertRaisesRegex(TypeError, "2 is not a string"):
+            class SecondFailedStrEnum(StrEnum):
+                one = '1'
+                two = 2,
+                three = '3'
+        with self.assertRaisesRegex(TypeError, '2 is not a string'):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = 2
+        with self.assertRaisesRegex(TypeError, 'encoding must be a string, not %r' % (sys.getdefaultencoding, )):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
+                
+    def test_init_subclass_calling(self):
         class MyEnum(Enum):
             def __init_subclass__(cls, **kwds):
                 super(MyEnum, cls).__init_subclass__(**kwds)
@@ -2101,6 +2144,16 @@ class TestEnum(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test1', False))
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
+    def test_init_subclass_parameter(self):
+        class multiEnum(Enum):
+            def __init_subclass__(cls, multi):
+                for member in cls:
+                    member._as_parameter_ = multi * member.value
+        class E(multiEnum, multi=3):
+            A = 1
+            B = 2
+        self.assertEqual(E.A._as_parameter_, 3)
+        self.assertEqual(E.B._as_parameter_, 6)
 
 class TestOrder(unittest.TestCase):
 
