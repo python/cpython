@@ -241,7 +241,7 @@ def _cli_capi(parser):
         for raw in args.kinds or ():
             for kind in raw.replace(',', ' ').strip().split():
                 if kind in _capi.KINDS:
-                    kind.append(kind)
+                    kinds.append(kind)
                 else:
                     parser.error(f'expected KIND to be one of {sorted(_capi.KINDS)}, got {kind!r}')
         args.kinds = set(kinds)
@@ -264,6 +264,7 @@ def _cli_capi(parser):
 
     return [
         process_levels,
+        process_kinds,
         process_format,
         process_progress,
     ]
