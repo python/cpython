@@ -301,15 +301,17 @@ def _get_default_root(what=None):
 
 
 def _get_temp_root():
-    global _default_root
+    global _support_default_root
     if not _support_default_root:
         raise RuntimeError("No master specified and tkinter is "
-                            "configured to not support default root")
+                           "configured to not support default root")
     root = _default_root
     if root is None:
+        assert _support_default_root
+        _support_default_root = False
         root = Tk()
-        assert _default_root is root
-        _default_root = None
+        _support_default_root = True
+        assert _default_root is None
         root.withdraw()
         root._temporary = True
     return root
