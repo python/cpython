@@ -41,7 +41,7 @@ class Dialog:
         if master is None:
             master = _get_temp_root()
         try:
-            self._test_callback(master)
+            self._test_callback(master)  # The function below is replaced for some tests.
             s = master.tk.call(self.command, *master._options(self.options))
             s = self._fixresult(master, s)
         finally:
