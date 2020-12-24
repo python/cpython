@@ -524,6 +524,8 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             randrange(10, 20.0, 2)
         with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 1.0)
+        with self.assertWarns(DeprecationWarning):
             randrange(10, 20, 2.0)
         with self.assertWarns(DeprecationWarning):
             with self.assertRaises(ValueError):

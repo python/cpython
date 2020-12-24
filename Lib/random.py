@@ -330,13 +330,7 @@ class Random(_random.Random):
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer stop for randrange()")
-        width = istop - istart
-        if step == 1 and width > 0:
-            return istart + self._randbelow(width)
-        if step == 1:
-            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
-        # Non-unit step argument supplied.
         try:
             istep = _index(step)
         except TypeError:
@@ -350,6 +344,13 @@ class Random(_random.Random):
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer step for randrange()")
+        width = istop - istart
+        if istep == 1 and width > 0:
+            return istart + self._randbelow(width)
+        if istep == 1:
+            raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
+
+        # Non-unit step argument supplied.
         if istep > 0:
             n = (width + istep - 1) // istep
         elif istep < 0:
