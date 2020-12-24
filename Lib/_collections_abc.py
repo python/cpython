@@ -457,10 +457,8 @@ class _CallableGenericAlias(GenericAlias):
         return _CallableGenericAlias, (Callable, args)
 
     def __getitem__(self, item):
-        # To allow the following::
-        #    P = ParamSpec('P)
-        #    C1 = Callable[P, T]
-        #    C1[[int, str], str] == Callable[[int, str], str]
+        # Called during TypeVar substitution, returns the custom subclass
+        # rather than the default types.GenericAlias object.
         ga = super().__getitem__(item)
         args = ga.__args__
         # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
