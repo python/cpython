@@ -17731,14 +17731,17 @@ fi
 $as_echo_n "checking for --enable-test-modules... " >&6; }
 # Check whether --enable-test-modules was given.
 if test "${enable_test_modules+set}" = set; then :
-  enableval=$enable_test_modules;  TEST_MODULES="${enableval}"
-else
-   TEST_MODULES=yes
+  enableval=$enable_test_modules;
 fi
 
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+else
+    TEST_MODULES=yes
+fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_test_modules" >&5
-$as_echo "$enable_test_modules" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $TEST_MODULES" >&5
+$as_echo "$TEST_MODULES" >&6; }
 
 
 # generate output files

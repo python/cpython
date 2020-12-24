@@ -5836,10 +5836,14 @@ fi],
 # check whether to disable test modules
 AC_MSG_CHECKING(for --enable-test-modules)
 AC_ARG_ENABLE(test-modules,
-              AS_HELP_STRING([--enable-test-modules], [enable test modules (default is yes)]),
-              [ TEST_MODULES="${enableval}" ], [ TEST_MODULES=yes ])
+              AS_HELP_STRING([--enable-test-modules], [enable test modules (default is yes)]))
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+else
+    TEST_MODULES=yes
+fi
 AC_SUBST(TEST_MODULES)
-AC_MSG_RESULT($enable_test_modules)
+AC_MSG_RESULT($TEST_MODULES)
 
 
 # generate output files
