@@ -253,7 +253,7 @@ Command-line options
 .. versionadded:: 3.7
    The command-line option ``-k``.
 
-.. versionadded:: 3.11
+.. versionadded:: 3.10
    The command-line option ``--debug``.
 
 The command line can also be used for test discovery, for running all of the
