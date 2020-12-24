@@ -51,6 +51,28 @@ def parse(source, filename='<unknown>', mode='exec', *,
                    _feature_version=feature_version)
 
 
+def parse_tokens(token_stream, filename='<unknown>', mode='exec', *,
+          type_comments=False, feature_version=None):
+    """
+    Parse the token iterable (e.g. as returned by tokenize.tokenize())
+    into an AST node.
+    All other parameters and features are the same as parse().
+    """
+    # Current implementation just naively converts token stream to
+    # character stream. The purpose of this function is to connect
+    # Python's tokenization phase with the rest of the compilation
+    # infrastructure, in the same as it's possible to compile an AST
+    # tree, without converting it to the source program form. So,
+    # the purpose of this function is to establish API, and
+    # implementation can be optimized later as needed (perhaps in
+    # other implementations, frugal in memory usage/wanting to get
+    # last bits of performance.
+    import tokenize
+    source = tokenize.untokenize(token_stream)
+    return parse(source, filename, mode, type_comments=type_comments,
+                 feature_version=feature_version)
+
+
 def literal_eval(node_or_string):
     """
     Safely evaluate an expression node or a string containing a Python
