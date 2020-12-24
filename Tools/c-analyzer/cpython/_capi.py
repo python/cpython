@@ -450,7 +450,7 @@ def _render_item_full(item, groupby, verbose):
     yield item.name
     yield f'  {"filename:":10} {item.relfile}'
     for extra in ('kind', 'level'):
-        if groupby != extra:
+        #if groupby != extra:
             yield f'  {extra+":":10} {getattr(item, extra)}'
     if verbose:
         print('  ---------------------------------------')
