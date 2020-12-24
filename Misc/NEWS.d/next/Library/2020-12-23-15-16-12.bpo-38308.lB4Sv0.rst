@@ -1,0 +1,1 @@
+Add optional *weights* to *statistics.harmonic_mean()*.
