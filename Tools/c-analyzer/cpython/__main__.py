@@ -259,7 +259,9 @@ def _cli_capi(parser):
             if args.format not in _capi._FORMATS:
                 parser.error(f'unsupported format {orig!r}')
 
-    # XXX Add an option to ignore empty sets.
+    parser.add_argument('--show-empty', dest='showempty', action='store_true')
+    parser.add_argument('--no-show-empty', dest='showempty', action='store_false')
+    parser.set_defaults(showempty=None)
 
     # XXX Add --sort-by, --sort and --no-sort.
 
@@ -279,6 +281,7 @@ def cmd_capi(filenames=None, *,
              kinds=None,
              groupby='kind',
              format='table',
+             showempty=None,
              track_progress=None,
              verbosity=VERBOSITY,
              **kwargs
@@ -295,7 +298,12 @@ def cmd_capi(filenames=None, *,
     if kinds:
         items = (item for item in items if item.kind in kinds)
 
-    lines = render(items, groupby=groupby, verbose=verbosity > VERBOSITY)
+    lines = render(
+        items,
+        groupby=groupby,
+        showempty=showempty,
+        verbose=verbosity > VERBOSITY,
+    )
     print()
     for line in lines:
         print(line)

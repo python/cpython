@@ -168,6 +168,12 @@ def _get_level(filename, name, *,
     #return '???'
 
 
+GROUPINGS = {
+    'kind': KINDS,
+    'level': LEVELS,
+}
+
+
 class CAPIItem(namedtuple('CAPIItem', 'file lno name kind level')):
 
     @classmethod
@@ -234,34 +240,70 @@ def _parse_groupby(raw):
     else:
         raise NotImplementedError
 
-    if not all(v in ('kind', 'level') for v in groupby):
+    if not all(v in GROUPINGS for v in groupby):
         raise ValueError(f'invalid groupby value {raw!r}')
     return groupby
 
 
-def summarize(items, *, groupby='kind'):
-    summary = {}
+def _resolve_full_groupby(groupby):
+    if isinstance(groupby, str):
+        groupby = [groupby]
+    groupings = []
+    for grouping in groupby + list(GROUPINGS):
+        if grouping not in groupings:
+            groupings.append(grouping)
+    return groupings
+
+
+def summarize(items, *, groupby='kind', includeempty=True, minimize=None):
+    if minimize is None:
+        if includeempty is None:
+            minimize = True
+            includeempty = False
+        else:
+            minimize = includeempty
+    elif includeempty is None:
+        includeempty = minimize
+    elif minimize and includeempty:
+        raise ValueError(f'cannot minimize and includeempty at the same time')
 
     groupby = _parse_groupby(groupby)[0]
-    if groupby == 'kind':
-        outers = KINDS
-        inners = LEVELS
-        def increment(item):
-            summary[item.kind][item.level] += 1
-    elif groupby == 'level':
-        outers = LEVELS
-        inners = KINDS
-        def increment(item):
-            summary[item.level][item.kind] += 1
-    else:
-        raise NotImplementedError
+    _outer, _inner = _resolve_full_groupby(groupby)
+    outers = GROUPINGS[_outer]
+    inners = GROUPINGS[_inner]
 
-    for outer in outers:
-        summary[outer] = _outer = {}
-        for inner in inners:
-            _outer[inner] = 0
+    summary = {
+        'totals': {
+            'all': 0,
+            'subs': {o: 0 for o in outers},
+            'bygroup': {o: {i: 0 for i in inners}
+                        for o in outers},
+        },
+    }
+
     for item in items:
-        increment(item)
+        outer = getattr(item, _outer)
+        inner = getattr(item, _inner)
+        # Update totals.
+        summary['totals']['all'] += 1
+        summary['totals']['subs'][outer] += 1
+        summary['totals']['bygroup'][outer][inner] += 1
+
+    if not includeempty:
+        subtotals = summary['totals']['subs']
+        bygroup = summary['totals']['bygroup']
+        for outer in outers:
+            if subtotals[outer] == 0:
+                del subtotals[outer]
+                del bygroup[outer]
+                continue
+
+            for inner in inners:
+                if bygroup[outer][inner] == 0:
+                    del bygroup[outer][inner]
+            if minimize:
+                if len(bygroup[outer]) == 1:
+                    del bygroup[outer]
 
     return summary
 
@@ -292,20 +334,26 @@ def iter_capi(filenames=None):
                 yield item
 
 
-def _collate(items, groupby):
+def _collate(items, groupby, includeempty):
     groupby = _parse_groupby(groupby)[0]
     maxfilename = maxname = maxkind = maxlevel = 0
+
     collated = {}
+    groups = GROUPINGS[groupby]
+    for group in groups:
+        collated[group] = []
+
     for item in items:
         key = getattr(item, groupby)
-        if key in collated:
-            collated[key].append(item)
-        else:
-            collated[key] = [item]
+        collated[key].append(item)
         maxfilename = max(len(item.relfile), maxfilename)
         maxname = max(len(item.name), maxname)
         maxkind = max(len(item.kind), maxkind)
         maxlevel = max(len(item.level), maxlevel)
+    if not includeempty:
+        for group in groups:
+            if not collated[group]:
+                del collated[group]
     maxextra = {
         'kind': maxkind,
         'level': maxlevel,
@@ -342,18 +390,20 @@ def _get_sortkey(sort, _groupby, _columns):
 ##################################
 # CLI rendering
 
-_LEVEL_MARKERS = {
-    'S': 'stable',
-    'C': 'cpython',
-    'P': 'private',
-    'I': 'internal',
-}
-_KIND_MARKERS = {
-    'F': 'func',
-    'D': 'data',
-    'I': 'inline',
-    'M': 'macro',
-    'C': 'constant',
+_MARKERS = {
+    'level': {
+        'S': 'stable',
+        'C': 'cpython',
+        'P': 'private',
+        'I': 'internal',
+    },
+    'kind': {
+        'F': 'func',
+        'D': 'data',
+        'I': 'inline',
+        'M': 'macro',
+        'C': 'constant',
+    },
 }
 
 
@@ -383,26 +433,26 @@ def render_table(items, *,
                  columns=None,
                  groupby='kind',
                  sort=True,
+                 showempty=False,
                  verbose=False,
                  ):
+    if showempty is None:
+        showempty = False
+
     if groupby:
-        collated, groupby, maxfilename, maxname, maxextra = _collate(items, groupby)
-        if groupby == 'kind':
-            groups = KINDS
-            extras = ['level']
-            markers = {'level': _LEVEL_MARKERS}
-        elif groupby == 'level':
-            groups = LEVELS
-            extras = ['kind']
-            markers = {'kind': _KIND_MARKERS}
-        else:
-            raise NotImplementedError
+        (collated, groupby, maxfilename, maxname, maxextra,
+         ) = _collate(items, groupby, showempty)
+        for grouping in GROUPINGS:
+            maxextra[grouping] = max(len(g) for g in GROUPINGS[grouping])
+
+        _, extra = _resolve_full_groupby(groupby)
+        extras = [extra]
+        markers = {extra: _MARKERS[extra]}
+
+        groups = GROUPINGS[groupby]
     else:
         # XXX Support no grouping?
         raise NotImplementedError
-
-    if sort:
-        sortkey = _get_sortkey(sort, groupby, columns)
 
     if columns:
         def get_extra(item):
@@ -410,8 +460,6 @@ def render_table(items, *,
                     for extra in ('kind', 'level')}
     else:
         if verbose:
-            maxextra['kind'] = max(len(kind) for kind in KINDS)
-            maxextra['level'] = max(len(level) for level in LEVELS)
             extracols = [f'{extra}:{maxextra[extra]}'
                          for extra in extras]
             def get_extra(item):
@@ -441,38 +489,49 @@ def render_table(items, *,
         ]
     header, div, fmt = build_table(columns)
 
+    if sort:
+        sortkey = _get_sortkey(sort, groupby, columns)
+
     total = 0
-    for group in groups:
-        if group not in collated:
+    for group, grouped in collated.items():
+        if not showempty and group not in collated:
             continue
         yield ''
         yield f' === {group} ==='
         yield ''
         yield header
         yield div
-        grouped = collated[group]
-        if sort:
-            grouped = sorted(grouped, key=sortkey)
-        for item in grouped:
-            yield fmt.format(
-                filename=item.relfile,
-                name=item.name,
-                **get_extra(item),
-            )
+        if grouped:
+            if sort:
+                grouped = sorted(grouped, key=sortkey)
+            for item in grouped:
+                yield fmt.format(
+                    filename=item.relfile,
+                    name=item.name,
+                    **get_extra(item),
+                )
         yield div
-        subtotal = len(collated[group])
+        subtotal = len(grouped)
         yield f'  sub-total: {subtotal}'
         total += subtotal
     yield ''
     yield f'total: {total}'
 
 
-def render_full(items, *, groupby=None, sort=True, verbose=False):
+def render_full(items, *,
+                groupby='kind',
+                sort=None,
+                showempty=None,
+                verbose=False,
+                ):
+    if showempty is None:
+        showempty = False
+
     if sort:
         sortkey = _get_sortkey(sort, groupby, None)
 
     if groupby:
-        collated, groupby, _, _, _ = _collate(items, groupby)
+        collated, groupby, _, _, _ = _collate(items, groupby, showempty)
         for group, grouped in collated.items():
             yield '#' * 25
             yield f'# {group} ({len(grouped)})'
@@ -506,17 +565,41 @@ def _render_item_full(item, groupby, verbose):
         print('  ---------------------------------------')
 
 
-def render_summary(items, *, groupby='kind', sort=None, verbose=False):
-    total = 0
-    summary = summarize(items, groupby=groupby)
-    # XXX Stablize the sorting to match KINDS/LEVELS.
-    for outer, counts in summary.items():
-        subtotal = sum(c for _, c in counts.items())
-        yield f'{outer + ":":20} ({subtotal})'
-        for inner, count in counts.items():
-            yield f'   {inner + ":":9} {count}'
-        total += subtotal
-    yield f'{"total:":20} ({total})'
+def render_summary(items, *,
+                   groupby='kind',
+                   sort=None,
+                   showempty=None,
+                   verbose=False,
+                   ):
+    summary = summarize(
+        items,
+        groupby=groupby,
+        includeempty=showempty,
+        minimize=None if showempty else not verbose,
+    )
+
+    subtotals = summary['totals']['subs']
+    bygroup = summary['totals']['bygroup']
+    lastempty = False
+    for outer, subtotal in subtotals.items():
+        if bygroup:
+            subtotal = f'({subtotal})'
+            yield f'{outer + ":":20} {subtotal:>8}'
+        else:
+            yield f'{outer + ":":10} {subtotal:>8}'
+        if outer in bygroup:
+            for inner, count in bygroup[outer].items():
+                yield f'   {inner + ":":9} {count}'
+            lastempty = False
+        else:
+            lastempty = True
+
+    total = f'*{summary["totals"]["all"]}*'
+    label = '*total*:'
+    if bygroup:
+        yield f'{label:20} {total:>8}'
+    else:
+        yield f'{label:10} {total:>9}'
 
 
 _FORMATS = {
