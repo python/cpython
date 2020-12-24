@@ -303,8 +303,12 @@ class Random(_random.Random):
         except TypeError:
             istart = int(start)
             if istart != start:
+                _warn('randrange() will raise TypeError in the future',
+                      DeprecationWarning, 2)
                 raise ValueError("non-integer arg 1 for randrange()")
-            _warn('non-integer arg 1 for randrange()',
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
                   DeprecationWarning, 2)
         if stop is None:
             if istart > 0:
@@ -317,8 +321,12 @@ class Random(_random.Random):
         except TypeError:
             istop = int(stop)
             if istop != stop:
+                _warn('randrange() will raise TypeError in the future',
+                      DeprecationWarning, 2)
                 raise ValueError("non-integer stop for randrange()")
-            _warn('non-integer stop for randrange()',
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
                   DeprecationWarning, 2)
         width = istop - istart
         try:
@@ -326,8 +334,12 @@ class Random(_random.Random):
         except TypeError:
             istep = int(step)
             if istep != step:
+                _warn('randrange() will raise TypeError in the future',
+                      DeprecationWarning, 2)
                 raise ValueError("non-integer step for randrange()")
-            _warn('non-integer step for randrange()',
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
                   DeprecationWarning, 2)
         # Fast path.
         if istep == 1:

@@ -537,20 +537,20 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises(0, 100, -12)
         self.assertWarns(DeprecationWarning, raises, 3, 3, 1.0)
         # Non-integer start/stop
-        raises(3.14159)
+        self.assertWarns(DeprecationWarning, raises, 3.14159)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
         self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
-        raises('3')
-        raises(0, 2.71828)
+        self.assertWarns(DeprecationWarning, raises, '3')
+        self.assertWarns(DeprecationWarning, raises, 0, 2.71828)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
-        raises(0, '2')
+        self.assertWarns(DeprecationWarning, raises, 0, '2')
         # Zero and non-integer step
         raises(0, 42, 0)
-        raises(0, 42, 3.14159)
+        self.assertWarns(DeprecationWarning, raises, 0, 42, 3.14159)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
-        raises(0, 42, '3')
+        self.assertWarns(DeprecationWarning, raises, 0, 42, '3')
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1

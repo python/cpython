@@ -1,1 +1,7 @@
-Deprecated support of non-integer arguments in :func:`random.randrange`.
+Harmonized :func:`random.randrange` argument handling to better match
+that used by :func:`range`.
+
+* The integer test/conversion in ``randrange()`` now uses :func:`operator.index`.
+* Non-integer arguments to ``randrange()`` are deprecated.
+* The ``ValueError`` is deprecated in favor of a ``TypeError``.
+* It now runs a little faster than before.

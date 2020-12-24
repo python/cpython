@@ -136,7 +136,14 @@ Functions for integers
       slightly uneven distributions.
 
    .. deprecated:: 3.10
-      Accepting non-integer arguments is deprecated.
+      The automatic conversion of non-integer types to equivalent integers is
+      deprecated.  Currently ``randrange(10.0)`` is losslessly converted to
+      ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
+
+   .. deprecated:: 3.10
+      The exception raised for non-integral values such as ``randrange(10.5)``
+      or ``randrange('10')`` will be changed from :exc:`ValueError` to
+      :exc:`TypeError`.
 
 
 .. function:: randint(a, b)
