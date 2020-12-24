@@ -1,4 +1,5 @@
 from collections import namedtuple
+import os
 import os.path
 import re
 import textwrap
@@ -106,8 +107,11 @@ KINDS = [
 
 
 def _parse_line(line, prev=None):
+    last = line
     if prev:
-        line = prev + ' ' + line
+        if not prev.endswith(os.linesep):
+            prev += os.linesep
+        line = prev + line
     m = CAPI_RE.match(line)
     if not m:
         if not prev and line.startswith('static inline '):
@@ -118,6 +122,17 @@ def _parse_line(line, prev=None):
     results = zip(KINDS, m.groups())
     for kind, name in results:
         if name:
+            if kind == 'macro' or kind == 'constant':
+                if line.endswith('\\' + os.linesep):
+                    return line  # the new "prev"
+            elif kind == 'inline':
+                if not prev:
+                    if not line.rstrip().endswith('}'):
+                        return line  # the new "prev"
+                elif last.rstrip() != '}':
+                    return line  # the new "prev"
+            elif not line.endswith(';' + os.linesep):
+                return line  # the new "prev"
             return name, kind
     # It was a plain #define.
     return None
@@ -155,14 +170,53 @@ class CAPIItem(namedtuple('CAPIItem', 'file lno name kind level')):
         if not parsed:
             return None, None
         if isinstance(parsed, str):
+            # incomplete
             return None, parsed
         name, kind = parsed
         level = _get_level(filename, name)
-        return cls(filename, lno, name, kind, level), None
+        self = cls(filename, lno, name, kind, level)
+        if prev:
+            self._text = (prev + line).rstrip().splitlines()
+        else:
+            self._text = [line.rstrip()]
+        return self, None
 
     @property
     def relfile(self):
         return self.file[len(REPO_ROOT) + 1:]
+
+    @property
+    def text(self):
+        try:
+            return self._text
+        except AttributeError:
+            # XXX Actually ready the text from disk?.
+            self._text = []
+            if self.kind == 'data':
+                self._text = [
+                    f'PyAPI_DATA(...) {self.name}',
+                ]
+            elif self.kind == 'func':
+                self._text = [
+                    f'PyAPI_FUNC(...) {self.name}(...);',
+                ]
+            elif self.kind == 'inline':
+                self._text = [
+                    f'static inline {self.name}(...);',
+                ]
+            elif self.kind == 'macro':
+                self._text = [
+                    f'#define {self.name}(...) \\',
+                    f'    ...',
+                ]
+            elif self.kind == 'constant':
+                self._text = [
+                    f'#define {self.name} ...',
+                ]
+            else:
+                raise NotImplementedError
+
+            return self._text
 
 
 def _parse_groupby(raw):
@@ -214,6 +268,15 @@ def _parse_capi(lines, filename):
         parsed, prev = CAPIItem.from_line(line, filename, lno, prev)
         if parsed:
             yield parsed
+    if prev:
+        parsed, prev = CAPIItem.from_line('', filename, lno, prev)
+        if parsed:
+            yield parsed
+        if prev:
+            print('incomplete match:')
+            print(filename)
+            print(prev)
+            raise Exception
 
 
 def iter_capi(filenames=None):
@@ -387,8 +450,10 @@ def _render_item_full(item, groupby, verbose):
         if groupby != extra:
             yield f'  {extra+":":10} {getattr(item, extra)}'
     if verbose:
-        # Show the actual text.
-        raise NotImplementedError
+        print('  ---------------------------------------')
+        for lno, line in enumerate(item.text, item.lno):
+            print(f'  | {lno:3} {line}')
+        print('  ---------------------------------------')
 
 
 def render_summary(items, *, groupby='kind', verbose=False):
