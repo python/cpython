@@ -84,13 +84,13 @@ def write_known():
 
 def read_ignored():
     if not _IGNORED:
-        _IGNORED.update(_datafiles.read_ignored(IGNORED_FILE))
+        _IGNORED.update(_datafiles.read_ignored(IGNORED_FILE, relroot=REPO_ROOT))
     return dict(_IGNORED)
 
 
 def write_ignored():
     raise NotImplementedError
-    datafiles.write_ignored(variables, IGNORED_FILE)
+    _datafiles.write_ignored(variables, IGNORED_FILE, relroot=REPO_ROOT)
 
 
 def analyze(filenames, *,

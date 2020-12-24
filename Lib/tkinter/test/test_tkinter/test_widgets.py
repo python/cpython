@@ -2,11 +2,11 @@ import unittest
 import tkinter
 from tkinter import TclError
 import os
-import sys
 from test.support import requires
 
 from tkinter.test.support import (tcl_version, requires_tcl,
-                                  get_tk_patchlevel, widget_eq)
+                                  get_tk_patchlevel, widget_eq,
+                                  AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (
     add_standard_options, noconv, pixels_round,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
@@ -265,8 +265,6 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     test_highlightthickness = StandardOptionsTests.test_highlightthickness
 
-    @unittest.skipIf(sys.platform == 'darwin',
-                     'crashes with Cocoa Tk (issue19733)')
     def test_image(self):
         widget = self.create()
         image = tkinter.PhotoImage(master=self.root, name='image1')
@@ -1298,12 +1296,21 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         self.checkIntegerParam(widget, 'aspect', 250, 0, -300)
 
 
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_frame(self):
+        self._test_widget(tkinter.Frame)
+
+    def test_label(self):
+        self._test_widget(tkinter.Label)
+
+
 tests_gui = (
         ButtonTest, CanvasTest, CheckbuttonTest, EntryTest,
         FrameTest, LabelFrameTest,LabelTest, ListboxTest,
         MenubuttonTest, MenuTest, MessageTest, OptionMenuTest,
         PanedWindowTest, RadiobuttonTest, ScaleTest, ScrollbarTest,
-        SpinboxTest, TextTest, ToplevelTest,
+        SpinboxTest, TextTest, ToplevelTest, DefaultRootTest,
 )
 
 if __name__ == '__main__':

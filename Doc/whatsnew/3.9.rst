@@ -135,8 +135,8 @@ More generally, try to run your tests in the :ref:`Python Development Mode
 <devmode>` which helps to prepare your code to make it compatible with the
 next Python version.
 
-Note: a number of pre-existing deprecatations were removed in this version
-of Python as well. Consult the :ref:`removed-in-python-39` section.
+Note: a number of pre-existing deprecations were removed in this version of
+Python as well. Consult the :ref:`removed-in-python-39` section.
 
 
 New Features
@@ -1289,6 +1289,10 @@ New Features
   representation of a function-like object.
   (Patch by Jeroen Demeyer in :issue:`37645`.)
 
+* Added :c:func:`PyObject_CallOneArg` for calling an object with one
+  positional argument
+  (Patch by Jeroen Demeyer in :issue:`37483`.)
+
 
 Porting to Python 3.9
 ---------------------
@@ -1450,3 +1454,32 @@ Removed
   ``PyNullImporter_Type``, ``PyCmpWrapper_Type``, ``PySortWrapper_Type``,
   ``PyNoArgsFunction``.
   (Contributed by Pablo Galindo Salgado in :issue:`39372`.)
+
+Notable changes in Python 3.9.1
+===============================
+
+typing
+------
+
+The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
+and to match the behavior of static type checkers specified in the PEP.
+
+1. ``Literal`` now de-duplicates parameters.
+2. Equality comparisons between ``Literal`` objects are now order independent.
+3. ``Literal`` comparisons now respect types.  For example,
+   ``Literal[0] == Literal[False]`` previously evaluated to ``True``.  It is
+   now ``False``.  To support this change, the internally used type cache now
+   supports differentiating types.
+4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
+   equality comparisons if one of their parameters are not :term:`immutable`.
+   Note that declaring ``Literal`` with mutable parameters will not throw
+   an error::
+
+      >>> from typing import Literal
+      >>> Literal[{0}]
+      >>> Literal[{0}] == Literal[{False}]
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: unhashable type: 'set'
+
+(Contributed by Yurii Karabas in :issue:`42345`.)

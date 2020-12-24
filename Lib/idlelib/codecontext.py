@@ -7,11 +7,14 @@ the lines which contain the block opening keywords, e.g. 'if', for the
 enclosing block.  The number of hint lines is determined by the maxlines
 variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
+
+For EditorWindows, <<toggle-code-context>> is bound to CodeContext(self).
+toggle_code_context_event.
 """
 import re
 from sys import maxsize as INFINITY
 
-import tkinter
+from tkinter import Frame, Text, TclError
 from tkinter.constants import NSEW, SUNKEN
 
 from idlelib.config import idleConf
@@ -83,7 +86,7 @@ class CodeContext:
         if self.t1 is not None:
             try:
                 self.text.after_cancel(self.t1)
-            except tkinter.TclError:  # pragma: no cover
+            except TclError:  # pragma: no cover
                 pass
             self.t1 = None
 
@@ -111,7 +114,7 @@ class CodeContext:
                 padx += widget.tk.getint(info['padx'])
                 padx += widget.tk.getint(widget.cget('padx'))
                 border += widget.tk.getint(widget.cget('border'))
-            context = self.context = tkinter.Text(
+            context = self.context = Text(
                 self.editwin.text_frame,
                 height=1,
                 width=1,  # Don't request more than we get.
@@ -127,7 +130,7 @@ class CodeContext:
 
             line_number_colors = idleConf.GetHighlight(idleConf.CurrentTheme(),
                                                        'linenumber')
-            self.cell00 = tkinter.Frame(self.editwin.text_frame,
+            self.cell00 = Frame(self.editwin.text_frame,
                                         bg=line_number_colors['background'])
             self.cell00.grid(row=0, column=0, sticky=NSEW)
             menu_status = 'Hide'
@@ -221,7 +224,7 @@ class CodeContext:
         """
         try:
             self.context.index("sel.first")
-        except tkinter.TclError:
+        except TclError:
             lines = len(self.info)
             if lines == 1:  # No context lines are showing.
                 newtop = 1

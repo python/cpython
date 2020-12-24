@@ -1,0 +1,3 @@
+Make the :mod:`atexit` module state per-interpreter. It is now safe have more
+than one :mod:`atexit` module instance.
+Patch by Dong-hee Na and Victor Stinner.

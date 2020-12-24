@@ -2,6 +2,7 @@ import logging
 import os.path
 import sys
 
+from c_common import fsutil
 from c_common.scriptutil import (
     CLIArgSpec as Arg,
     add_verbosity_cli,
@@ -64,8 +65,9 @@ def fmt_raw(filename, item, *, showfwd=None):
 
 
 def fmt_summary(filename, item, *, showfwd=None):
-    if item.filename and item.filename != os.path.join('.', filename):
+    if item.filename != filename:
         yield f'> {item.filename}'
+
     if showfwd is None:
         LINE = ' {lno:>5} {kind:10} {funcname:40} {fwd:1} {name:40} {data}'
     else:
@@ -172,6 +174,7 @@ def cmd_parse(filenames, *,
               fmt='summary',
               showfwd=None,
               iter_filenames=None,
+              relroot=None,
               **kwargs
               ):
     if 'get_file_preprocessor' not in kwargs:
@@ -180,9 +183,10 @@ def cmd_parse(filenames, *,
         do_fmt = FORMATS[fmt]
     except KeyError:
         raise ValueError(f'unsupported fmt {fmt!r}')
-    for filename in main_for_filenames(filenames, iter_filenames):
+    for filename, relfile in main_for_filenames(filenames, iter_filenames, relroot):
         for item in _iter_parsed(filename, **kwargs):
-            for line in do_fmt(filename, item, showfwd=showfwd):
+            item = item.fix_filename(relroot, fixroot=False, normalize=False)
+            for line in do_fmt(relfile, item, showfwd=showfwd):
                 print(line)
 
 

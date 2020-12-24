@@ -280,10 +280,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         filename = os.path.join(tmpdir, "tstfile")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
-        # The reason for this rather odd construct is that Windows sprinkles
-        # a \*.* at the end of file names. But only sometimes on some buildbots
-        possible_args = [filename, os.path.join(filename, '*.*')]
-        self.assertIn(cm.exception.filename, possible_args)
+        self.assertEqual(cm.exception.filename, filename)
         self.assertTrue(os.path.exists(filename))
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -296,11 +293,11 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
-        self.assertIn(errors[0][2][1].filename, possible_args)
+        self.assertEqual(errors[0][2][1].filename, filename)
         self.assertIs(errors[1][0], os.rmdir)
         self.assertEqual(errors[1][1], filename)
         self.assertIsInstance(errors[1][2][1], NotADirectoryError)
-        self.assertIn(errors[1][2][1].filename, possible_args)
+        self.assertEqual(errors[1][2][1].filename, filename)
 
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
@@ -683,6 +680,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
     @os_helper.skip_unless_symlink
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copytree_named_pipe(self):
         os.mkdir(TESTFN)
         try:
@@ -1206,6 +1205,8 @@ class TestCopy(BaseTest, unittest.TestCase):
 
     # Issue #3002: copyfile and copytree block indefinitely on named pipes
     @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_copyfile_named_pipe(self):
         try:
             os.mkfifo(TESTFN)

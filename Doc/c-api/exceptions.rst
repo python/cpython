@@ -182,8 +182,8 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromErrnoWithFilenameObject`, but the filename
-   is given as a C string.  *filename* is decoded from the filesystem encoding
-   (:func:`os.fsdecode`).
+   is given as a C string.  *filename* is decoded from the :term:`filesystem
+   encoding and error handler`.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
@@ -266,7 +266,7 @@ For convenience, some of these functions will always return a
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
-   decoded from the filesystem encoding (:func:`os.fsdecode`).
+   decoded from the :term:`filesystem encoding and error handler`.
 
    .. versionadded:: 3.2
 
@@ -343,7 +343,7 @@ an error value).
 
    Similar to :c:func:`PyErr_WarnExplicitObject` except that *message* and
    *module* are UTF-8 encoded strings, and *filename* is decoded from the
-   filesystem encoding (:func:`os.fsdecode`).
+   :term:`filesystem encoding and error handler`.
 
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)

@@ -5,6 +5,12 @@
 
 #if defined(__APPLE__)
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
+
+#if defined(__APPLE__) && defined(__has_builtin)
+#  if __has_builtin(__builtin_available)
+#    define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
+#  endif
+#endif
 #endif
 
 #define _PyTime_check_mul_overflow(a, b) \
@@ -298,8 +304,8 @@ pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise)
     if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
         if (raise) {
             _PyTime_overflow();
+            res = -1;
         }
-        res = -1;
         t = (t > 0) ? _PyTime_MAX : _PyTime_MIN;
     }
     else {
@@ -312,8 +318,8 @@ pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise)
     if (t > _PyTime_MAX - nsec) {
         if (raise) {
             _PyTime_overflow();
+            res = -1;
         }
-        res = -1;
         t = _PyTime_MAX;
     }
     else {
@@ -344,8 +350,8 @@ pytime_fromtimeval(_PyTime_t *tp, struct timeval *tv, int raise)
     if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
         if (raise) {
             _PyTime_overflow();
+            res = -1;
         }
-        res = -1;
         t = (t > 0) ? _PyTime_MAX : _PyTime_MIN;
     }
     else {
@@ -358,8 +364,8 @@ pytime_fromtimeval(_PyTime_t *tp, struct timeval *tv, int raise)
     if (t > _PyTime_MAX - usec) {
         if (raise) {
             _PyTime_overflow();
+            res = -1;
         }
-        res = -1;
         t = _PyTime_MAX;
     }
     else {
@@ -650,7 +656,7 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
 #endif
 
 static int
-pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
 #ifdef MS_WINDOWS
     FILETIME system_time;
@@ -683,15 +689,22 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #else   /* MS_WINDOWS */
     int err;
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME)
     struct timespec ts;
-#else
+#endif
+
+#if !defined(HAVE_CLOCK_GETTIME) || defined(__APPLE__)
     struct timeval tv;
 #endif
 
     assert(info == NULL || raise);
 
 #ifdef HAVE_CLOCK_GETTIME
+
+#ifdef HAVE_CLOCK_GETTIME_RUNTIME
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+#endif
+
     err = clock_gettime(CLOCK_REALTIME, &ts);
     if (err) {
         if (raise) {
@@ -715,7 +728,14 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             info->resolution = 1e-9;
         }
     }
-#else   /* HAVE_CLOCK_GETTIME */
+
+#ifdef HAVE_CLOCK_GETTIME_RUNTIME
+    } else {
+#endif
+
+#endif
+
+#if !defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_GETTIME_RUNTIME)
 
      /* test gettimeofday() */
     err = gettimeofday(&tv, (struct timezone *)NULL);
@@ -735,6 +755,11 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         info->monotonic = 0;
         info->adjustable = 1;
     }
+
+#if defined(HAVE_CLOCK_GETTIME_RUNTIME) && defined(HAVE_CLOCK_GETTIME)
+    } /* end of availibity block */
+#endif
+
 #endif   /* !HAVE_CLOCK_GETTIME */
 #endif   /* !MS_WINDOWS */
     return 0;
@@ -744,9 +769,10 @@ _PyTime_t
 _PyTime_GetSystemClock(void)
 {
     _PyTime_t t;
-    if (pygettimeofday(&t, NULL, 0) < 0) {
-        /* should not happen, _PyTime_Init() checked the clock at startup */
-        Py_FatalError("pygettimeofday() failed");
+    if (py_get_system_clock(&t, NULL, 0) < 0) {
+        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
     }
     return t;
 }
@@ -754,11 +780,61 @@ _PyTime_GetSystemClock(void)
 int
 _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 {
-    return pygettimeofday(t, info, 1);
+    return py_get_system_clock(t, info, 1);
 }
 
+#if __APPLE__
 static int
-pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+py_mach_timebase_info(_PyTime_t *pnumer, _PyTime_t *pdenom, int raise)
+{
+    static mach_timebase_info_data_t timebase;
+    /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
+       fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
+    (void)mach_timebase_info(&timebase);
+
+    /* Sanity check: should never occur in practice */
+    if (timebase.numer < 1 || timebase.denom < 1) {
+        if (raise) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "invalid mach_timebase_info");
+        }
+        return -1;
+    }
+
+    /* Check that timebase.numer and timebase.denom can be casted to
+       _PyTime_t. In practice, timebase uses uint32_t, so casting cannot
+       overflow. At the end, only make sure that the type is uint32_t
+       (_PyTime_t is 64-bit long). */
+    Py_BUILD_ASSERT(sizeof(timebase.numer) < sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(timebase.denom) < sizeof(_PyTime_t));
+
+    /* Make sure that (ticks * timebase.numer) cannot overflow in
+       _PyTime_MulDiv(), with ticks < timebase.denom.
+
+       Known time bases:
+
+       * always (1, 1) on Intel
+       * (1000000000, 33333335) or (1000000000, 25000000) on PowerPC
+
+       None of these time bases can overflow with 64-bit _PyTime_t, but
+       check for overflow, just in case. */
+    if ((_PyTime_t)timebase.numer > _PyTime_MAX / (_PyTime_t)timebase.denom) {
+        if (raise) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "mach_timebase_info is too large");
+        }
+        return -1;
+    }
+
+    *pnumer = (_PyTime_t)timebase.numer;
+    *pdenom = (_PyTime_t)timebase.denom;
+    return 0;
+}
+#endif
+
+
+static int
+py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
 #if defined(MS_WINDOWS)
     ULONGLONG ticks;
@@ -775,10 +851,12 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             _PyTime_overflow();
             return -1;
         }
-        /* Hello, time traveler! */
-        Py_FatalError("pymonotonic: integer overflow");
+        // Truncate to _PyTime_MAX silently.
+        *tp = _PyTime_MAX;
     }
-    *tp = t * MS_TO_NS;
+    else {
+        *tp = t * MS_TO_NS;
+    }
 
     if (info) {
         DWORD timeAdjustment, timeIncrement;
@@ -796,62 +874,23 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     }
 
 #elif defined(__APPLE__)
-    static mach_timebase_info_data_t timebase;
-    static uint64_t t0 = 0;
-    uint64_t ticks;
-
-    if (timebase.denom == 0) {
-        /* According to the Technical Q&A QA1398, mach_timebase_info() cannot
-           fail: https://developer.apple.com/library/mac/#qa/qa1398/ */
-        (void)mach_timebase_info(&timebase);
-
-        /* Sanity check: should never occur in practice */
-        if (timebase.numer < 1 || timebase.denom < 1) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "invalid mach_timebase_info");
+    static _PyTime_t timebase_numer = 0;
+    static _PyTime_t timebase_denom = 0;
+    if (timebase_denom == 0) {
+        if (py_mach_timebase_info(&timebase_numer, &timebase_denom, raise) < 0) {
             return -1;
         }
-
-        /* Check that timebase.numer and timebase.denom can be casted to
-           _PyTime_t. In practice, timebase uses uint32_t, so casting cannot
-           overflow. At the end, only make sure that the type is uint32_t
-           (_PyTime_t is 64-bit long). */
-        assert(sizeof(timebase.numer) < sizeof(_PyTime_t));
-        assert(sizeof(timebase.denom) < sizeof(_PyTime_t));
-
-        /* Make sure that (ticks * timebase.numer) cannot overflow in
-           _PyTime_MulDiv(), with ticks < timebase.denom.
-
-           Known time bases:
-
-           * always (1, 1) on Intel
-           * (1000000000, 33333335) or (1000000000, 25000000) on PowerPC
-
-           None of these time bases can overflow with 64-bit _PyTime_t, but
-           check for overflow, just in case. */
-        if ((_PyTime_t)timebase.numer > _PyTime_MAX / (_PyTime_t)timebase.denom) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "mach_timebase_info is too large");
-            return -1;
-        }
-
-        t0 = mach_absolute_time();
     }
 
     if (info) {
         info->implementation = "mach_absolute_time()";
-        info->resolution = (double)timebase.numer / (double)timebase.denom * 1e-9;
+        info->resolution = (double)timebase_numer / (double)timebase_denom * 1e-9;
         info->monotonic = 1;
         info->adjustable = 0;
     }
 
-    ticks = mach_absolute_time();
-    /* Use a "time zero" to reduce precision loss when converting time
-       to floatting point number, as in time.monotonic(). */
-    ticks -= t0;
-    *tp = _PyTime_MulDiv(ticks,
-                         (_PyTime_t)timebase.numer,
-                         (_PyTime_t)timebase.denom);
+    uint64_t ticks = mach_absolute_time();
+    *tp = _PyTime_MulDiv((_PyTime_t)ticks, timebase_numer, timebase_denom);
 
 #elif defined(__hpux)
     hrtime_t time;
@@ -915,10 +954,10 @@ _PyTime_t
 _PyTime_GetMonotonicClock(void)
 {
     _PyTime_t t;
-    if (pymonotonic(&t, NULL, 0) < 0) {
-        /* should not happen, _PyTime_Init() checked that monotonic clock at
-           startup */
-        Py_FatalError("pymonotonic() failed");
+    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
+        // If mach_timebase_info(), clock_gettime() or gethrtime() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
     }
     return t;
 }
@@ -926,56 +965,69 @@ _PyTime_GetMonotonicClock(void)
 int
 _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    return pymonotonic(tp, info, 1);
+    return py_get_monotonic_clock(tp, info, 1);
 }
 
 
 #ifdef MS_WINDOWS
 static int
-win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
+win_perf_counter_frequency(LONGLONG *pfrequency, int raise)
 {
-    static LONGLONG frequency = 0;
-    static LONGLONG t0 = 0;
-    LARGE_INTEGER now;
-    LONGLONG ticksll;
-    _PyTime_t ticks;
+    LONGLONG frequency;
 
-    if (frequency == 0) {
-        LARGE_INTEGER freq;
-        if (!QueryPerformanceFrequency(&freq)) {
+    LARGE_INTEGER freq;
+    if (!QueryPerformanceFrequency(&freq)) {
+        if (raise) {
             PyErr_SetFromWindowsErr(0);
-            return -1;
         }
-        frequency = freq.QuadPart;
+        return -1;
+    }
+    frequency = freq.QuadPart;
 
-        /* Sanity check: should never occur in practice */
-        if (frequency < 1) {
+    /* Sanity check: should never occur in practice */
+    if (frequency < 1) {
+        if (raise) {
             PyErr_SetString(PyExc_RuntimeError,
                             "invalid QueryPerformanceFrequency");
-            return -1;
         }
+        return -1;
+    }
 
-        /* Check that frequency can be casted to _PyTime_t.
+    /* Check that frequency can be casted to _PyTime_t.
 
-           Make also sure that (ticks * SEC_TO_NS) cannot overflow in
-           _PyTime_MulDiv(), with ticks < frequency.
+       Make also sure that (ticks * SEC_TO_NS) cannot overflow in
+       _PyTime_MulDiv(), with ticks < frequency.
 
-           Known QueryPerformanceFrequency() values:
+       Known QueryPerformanceFrequency() values:
 
-           * 10,000,000 (10 MHz): 100 ns resolution
-           * 3,579,545 Hz (3.6 MHz): 279 ns resolution
+       * 10,000,000 (10 MHz): 100 ns resolution
+       * 3,579,545 Hz (3.6 MHz): 279 ns resolution
 
-           None of these frequencies can overflow with 64-bit _PyTime_t, but
-           check for overflow, just in case. */
-        if (frequency > _PyTime_MAX
-            || frequency > (LONGLONG)_PyTime_MAX / (LONGLONG)SEC_TO_NS) {
+       None of these frequencies can overflow with 64-bit _PyTime_t, but
+       check for overflow, just in case. */
+    if (frequency > _PyTime_MAX
+        || frequency > (LONGLONG)_PyTime_MAX / (LONGLONG)SEC_TO_NS)
+    {
+        if (raise) {
             PyErr_SetString(PyExc_OverflowError,
                             "QueryPerformanceFrequency is too large");
+        }
+        return -1;
+    }
+
+    *pfrequency = frequency;
+    return 0;
+}
+
+
+static int
+py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+{
+    static LONGLONG frequency = 0;
+    if (frequency == 0) {
+        if (win_perf_counter_frequency(&frequency, raise) < 0) {
             return -1;
         }
-
-        QueryPerformanceCounter(&now);
-        t0 = now.QuadPart;
     }
 
     if (info) {
@@ -985,15 +1037,13 @@ win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
     }
 
+    LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
-    ticksll = now.QuadPart;
-
-    /* Use a "time zero" to reduce precision loss when converting time
-       to floatting point number, as in time.perf_counter(). */
-    ticksll -= t0;
+    LONGLONG ticksll = now.QuadPart;
 
     /* Make sure that casting LONGLONG to _PyTime_t cannot overflow,
        both types are signed */
+    _PyTime_t ticks;
     Py_BUILD_ASSERT(sizeof(ticksll) <= sizeof(ticks));
     ticks = (_PyTime_t)ticksll;
 
@@ -1007,7 +1057,7 @@ int
 _PyTime_GetPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
-    return win_perf_counter(t, info);
+    return py_get_win_perf_counter(t, info, 1);
 #else
     return _PyTime_GetMonotonicClockWithInfo(t, info);
 #endif
@@ -1018,31 +1068,20 @@ _PyTime_t
 _PyTime_GetPerfCounter(void)
 {
     _PyTime_t t;
-    if (_PyTime_GetPerfCounterWithInfo(&t, NULL)) {
-        Py_FatalError("_PyTime_GetPerfCounterWithInfo() failed");
+    int res;
+#ifdef MS_WINDOWS
+    res = py_get_win_perf_counter(&t, NULL, 0);
+#else
+    res = py_get_monotonic_clock(&t, NULL, 0);
+#endif
+    if (res  < 0) {
+        // If win_perf_counter_frequency() or py_get_monotonic_clock() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
     }
     return t;
 }
 
-
-int
-_PyTime_Init(void)
-{
-    /* check that time.time(), time.monotonic() and time.perf_counter() clocks
-       are working properly to not have to check for exceptions at runtime. If
-       a clock works once, it cannot fail in next calls. */
-    _PyTime_t t;
-    if (_PyTime_GetSystemClockWithInfo(&t, NULL) < 0) {
-        return -1;
-    }
-    if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0) {
-        return -1;
-    }
-    if (_PyTime_GetPerfCounterWithInfo(&t, NULL) < 0) {
-        return -1;
-    }
-    return 0;
-}
 
 int
 _PyTime_localtime(time_t t, struct tm *tm)

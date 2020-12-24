@@ -254,7 +254,8 @@ present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if it is the class or a base class of the exception
-object or a tuple containing an item compatible with the exception.
+object, or a tuple containing an item that is the class or a base class of
+the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
@@ -301,9 +302,27 @@ Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  :func:`sys.exc_info`
-values are restored to their previous values (before the call) when returning
-from a function that handled an exception.
+the point in the program where the exception occurred.  The details about the
+exception accessed via :func:`sys.exc_info` are restored to their previous values
+when leaving an exception handler::
+
+   >>> print(sys.exc_info())
+   (None, None, None)
+   >>> try:
+   ...     raise TypeError
+   ... except:
+   ...     print(sys.exc_info())
+   ...     try:
+   ...          raise ValueError
+   ...     except:
+   ...         print(sys.exc_info())
+   ...     print(sys.exc_info())
+   ...
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   >>> print(sys.exc_info())
+   (None, None, None)
 
 .. index::
    keyword: else
@@ -796,12 +815,12 @@ The :keyword:`!async for` statement
 .. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
-An :term:`asynchronous iterable` is able to call asynchronous code in its
-*iter* implementation, and :term:`asynchronous iterator` can call asynchronous
-code in its *next* method.
+An :term:`asynchronous iterable` provides an ``__aiter__`` method that directly
+returns an :term:`asynchronous iterator`, which can call asynchronous code in
+its ``__anext__`` method.
 
 The ``async for`` statement allows convenient iteration over asynchronous
-iterators.
+iterables.
 
 The following code::
 

@@ -1,0 +1,2 @@
+Fix ``freeze.py`` tool to use the prope config and library directories.
+Patch by Victor Stinner.

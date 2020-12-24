@@ -339,7 +339,7 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None, pipesize=-1)
 
@@ -718,11 +718,8 @@ If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
 quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
-vulnerabilities.
-
-When using ``shell=True``, the :func:`shlex.quote` function can be
-used to properly escape whitespace and shell metacharacters in strings
-that are going to be used to construct shell commands.
+vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
+to use :func:`shlex.quote` for this escaping.
 
 
 Popen Objects
@@ -1284,7 +1281,7 @@ be used directly:
 
 becomes::
 
-   output=check_output("dmesg | grep hda", shell=True)
+   output = check_output("dmesg | grep hda", shell=True)
 
 
 Replacing :func:`os.system`

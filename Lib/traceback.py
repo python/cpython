@@ -84,7 +84,19 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+_sentinel = object()
+
+
+def _parse_value_tb(exc, value, tb):
+    if (value is _sentinel) != (tb is _sentinel):
+        raise ValueError("Both or neither of value and tb must be given")
+    if value is tb is _sentinel:
+        return exc, exc.__traceback__
+    return value, tb
+
+
+def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                    file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -95,9 +107,7 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
+    value, tb = _parse_value_tb(exc, value, tb)
     if file is None:
         file = sys.stderr
     for line in TracebackException(
@@ -105,7 +115,8 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
         print(line, file=file, end="")
 
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                     chain=True):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -114,19 +125,15 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
+    value, tb = _parse_value_tb(exc, value, tb)
     return list(TracebackException(
         type(value), value, tb, limit=limit).format(chain=chain))
 
 
-def format_exception_only(etype, value):
+def format_exception_only(exc, /, value=_sentinel):
     """Format the exception part of a traceback.
 
-    The arguments are the exception type and value such as given by
-    sys.last_type and sys.last_value. The return value is a list of
-    strings, each ending in a newline.
+    The return value is a list of strings, each ending in a newline.
 
     Normally, the list contains a single string; however, for
     SyntaxError exceptions, it contains several lines that (when
@@ -137,7 +144,10 @@ def format_exception_only(etype, value):
     string in the list.
 
     """
-    return list(TracebackException(etype, value, None).format_exception_only())
+    if value is _sentinel:
+        value = exc
+    return list(TracebackException(
+        type(value), value, None).format_exception_only())
 
 
 # -- not official API but folk probably use these two functions.
@@ -500,7 +510,6 @@ class TracebackException:
                 _seen=_seen)
         else:
             context = None
-        self.exc_traceback = exc_traceback
         self.__cause__ = cause
         self.__context__ = context
         self.__suppress_context__ = \
@@ -516,7 +525,8 @@ class TracebackException:
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
-            self.lineno = str(exc_value.lineno)
+            lno = exc_value.lineno
+            self.lineno = str(lno) if lno is not None else None
             self.text = exc_value.text
             self.offset = exc_value.offset
             self.msg = exc_value.msg
@@ -575,9 +585,12 @@ class TracebackException:
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
-        filename = self.filename or "<string>"
-        lineno = str(self.lineno) or '?'
-        yield '  File "{}", line {}\n'.format(filename, lineno)
+        filename_suffix = ''
+        if self.lineno is not None:
+            yield '  File "{}", line {}\n'.format(
+                self.filename or "<string>", self.lineno)
+        elif self.filename is not None:
+            filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
         if text is not None:
@@ -595,7 +608,7 @@ class TracebackException:
                 caretspace = ((c if c.isspace() else ' ') for c in ltext[:caret])
                 yield '    {}^\n'.format(''.join(caretspace))
         msg = self.msg or "<no detail available>"
-        yield "{}: {}\n".format(stype, msg)
+        yield "{}: {}{}\n".format(stype, msg, filename_suffix)
 
     def format(self, *, chain=True):
         """Format the exception.
@@ -617,7 +630,7 @@ class TracebackException:
                 not self.__suppress_context__):
                 yield from self.__context__.format(chain=chain)
                 yield _context_message
-        if self.exc_traceback is not None:
+        if self.stack:
             yield 'Traceback (most recent call last):\n'
-        yield from self.stack.format()
+            yield from self.stack.format()
         yield from self.format_exception_only()

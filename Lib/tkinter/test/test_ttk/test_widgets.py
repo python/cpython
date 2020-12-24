@@ -6,7 +6,7 @@ import sys
 
 from tkinter.test.test_ttk.test_functions import MockTclObj
 from tkinter.test.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
-                                  simulate_mouse_click)
+                                  simulate_mouse_click, AbstractDefaultRootTest)
 from tkinter.test.widget_tests import (add_standard_options, noconv,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
     setUpModule)
@@ -60,11 +60,10 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         super().setUp()
         self.widget = ttk.Button(self.root, width=0, text="Text")
         self.widget.pack()
-        self.widget.wait_visibility()
 
 
     def test_identify(self):
-        self.widget.update_idletasks()
+        self.widget.update()
         self.assertEqual(self.widget.identify(
             int(self.widget.winfo_width() / 2),
             int(self.widget.winfo_height() / 2)
@@ -326,8 +325,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_identify(self):
         self.entry.pack()
-        self.entry.wait_visibility()
-        self.entry.update_idletasks()
+        self.entry.update()
 
         # bpo-27313: macOS Cocoa widget differs from X, allow either
         if sys.platform == 'darwin':
@@ -437,10 +435,11 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
     def _show_drop_down_listbox(self):
         width = self.combo.winfo_width()
-        self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
-        self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
+        x, y = width - 5, 5
+        self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
+        self.combo.event_generate('<ButtonPress-1>', x=x, y=y)
+        self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.combo.update_idletasks()
-
 
     def test_virtual_event(self):
         success = []
@@ -449,7 +448,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         self.combo.bind('<<ComboboxSelected>>',
             lambda evt: success.append(True))
         self.combo.pack()
-        self.combo.wait_visibility()
+        self.combo.update()
 
         height = self.combo.winfo_height()
         self._show_drop_down_listbox()
@@ -465,7 +464,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
 
         self.combo['postcommand'] = lambda: success.append(True)
         self.combo.pack()
-        self.combo.wait_visibility()
+        self.combo.update()
 
         self._show_drop_down_listbox()
         self.assertTrue(success)
@@ -665,7 +664,6 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, self.paned.sashpos, 1)
 
         self.paned.pack(expand=True, fill='both')
-        self.paned.wait_visibility()
 
         curr_pos = self.paned.sashpos(0)
         self.paned.sashpos(0, 1000)
@@ -933,7 +931,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.add(self.child1, text='a')
 
         self.nb.pack()
-        self.nb.wait_visibility()
+        self.nb.update()
         if sys.platform == 'darwin':
             tb_idx = "@20,5"
         else:
@@ -1041,7 +1039,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_select(self):
         self.nb.pack()
-        self.nb.wait_visibility()
+        self.nb.update()
 
         success = []
         tab_changed = []
@@ -1084,10 +1082,11 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_traversal(self):
         self.nb.pack()
-        self.nb.wait_visibility()
+        self.nb.update()
 
         self.nb.select(0)
 
+        self.assertEqual(self.nb.identify(5, 5), 'focus')
         simulate_mouse_click(self.nb, 5, 5)
         self.nb.focus_force()
         self.nb.event_generate('<Control-Tab>')
@@ -1102,6 +1101,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.tab(self.child1, text='a', underline=0)
         self.nb.enable_traversal()
         self.nb.focus_force()
+        self.assertEqual(self.nb.identify(5, 5), 'focus')
         simulate_mouse_click(self.nb, 5, 5)
         if sys.platform == 'darwin':
             self.nb.event_generate('<Option-a>')
@@ -1132,6 +1132,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 - 5
+        self.assertRegex(self.spin.identify(x, y), r'.*uparrow\Z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1141,6 +1142,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         height = self.spin.winfo_height()
         x = width - 5
         y = height//2 + 4
+        self.assertRegex(self.spin.identify(x, y), r'.*downarrow\Z')
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.spin.update_idletasks()
@@ -1342,7 +1344,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
     def test_bbox(self):
         self.tv.pack()
         self.assertEqual(self.tv.bbox(''), '')
-        self.tv.wait_visibility()
         self.tv.update()
 
         item_id = self.tv.insert('', 'end')
@@ -1530,13 +1531,15 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
+            if tcl_version >= (8, 6):
+                self.assertEqual(self.tv.identify_column(x), '#0')
+                self.assertEqual(self.tv.identify_region(x, y), 'heading')
             simulate_mouse_click(self.tv, x, y)
             self.tv.update()
 
         success = [] # no success for now
 
         self.tv.pack()
-        self.tv.wait_visibility()
         self.tv.heading('#0', command=lambda: success.append(True))
         self.tv.column('#0', width=100)
         self.tv.update()
@@ -1784,7 +1787,6 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             lambda evt: events.append(2))
 
         self.tv.pack()
-        self.tv.wait_visibility()
         self.tv.update()
 
         pos_y = set()
@@ -1858,12 +1860,22 @@ class SizegripTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return ttk.Sizegrip(self.root, **kwargs)
 
+
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_frame(self):
+        self._test_widget(ttk.Frame)
+
+    def test_label(self):
+        self._test_widget(ttk.Label)
+
+
 tests_gui = (
         ButtonTest, CheckbuttonTest, ComboboxTest, EntryTest,
         FrameTest, LabelFrameTest, LabelTest, MenubuttonTest,
         NotebookTest, PanedWindowTest, ProgressbarTest,
         RadiobuttonTest, ScaleTest, ScrollbarTest, SeparatorTest,
-        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest,
+        SizegripTest, SpinboxTest, TreeviewTest, WidgetTest, DefaultRootTest,
         )
 
 if __name__ == "__main__":

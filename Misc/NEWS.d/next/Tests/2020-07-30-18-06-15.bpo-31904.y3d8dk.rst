@@ -1,0 +1,1 @@
+Disable os.popen and impacted tests on VxWorks

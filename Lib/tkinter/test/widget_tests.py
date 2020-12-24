@@ -1,7 +1,6 @@
 # Common tests for test_tkinter/test_widgets.py and test_ttk/test_widgets.py
 
 import unittest
-import sys
 import tkinter
 from tkinter.test.support import (AbstractTkTest, tcl_version, requires_tcl,
                                   get_tk_patchlevel, pixels_conv, tcl_obj_eq)
@@ -332,8 +331,6 @@ class StandardOptionsTests:
         self.checkParam(widget, 'highlightthickness', -2, expected=0,
                         conv=self._conv_pixels)
 
-    @unittest.skipIf(sys.platform == 'darwin',
-                     'crashes with Cocoa Tk (issue19733)')
     def test_image(self):
         widget = self.create()
         self.checkImageParam(widget, 'image')

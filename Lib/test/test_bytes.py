@@ -1036,6 +1036,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             c_char_p)
 
         PyBytes_FromFormat = pythonapi.PyBytes_FromFormat
+        PyBytes_FromFormat.argtypes = (c_char_p,)
         PyBytes_FromFormat.restype = py_object
 
         # basic tests

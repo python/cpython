@@ -8,10 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"    /* _Py_atomic_address */
-#include "pycore_gil.h"       /* struct _gil_runtime_state  */
-#include "pycore_gc.h"        /* struct _gc_runtime_state */
-#include "pycore_warnings.h"  /* struct _warnings_runtime_state */
+#include "pycore_atomic.h"        // _Py_atomic_address
+#include "pycore_ast.h"           // struct ast_state
+#include "pycore_gil.h"           // struct _gil_runtime_state
+#include "pycore_gc.h"            // struct _gc_runtime_state
+#include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -158,6 +159,20 @@ struct _Py_exc_state {
 };
 
 
+// atexit state
+typedef struct {
+    PyObject *func;
+    PyObject *args;
+    PyObject *kwargs;
+} atexit_callback;
+
+struct atexit_state {
+    atexit_callback **callbacks;
+    int ncallbacks;
+    int callback_len;
+};
+
+
 /* interpreter state */
 
 #define _PY_NSMALLPOSINTS           257
@@ -189,10 +204,14 @@ struct _is {
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
+    // sys.modules dictionary
     PyObject *modules;
     PyObject *modules_by_index;
+    // Dictionary of the sys module
     PyObject *sysdict;
+    // Dictionary of the builtins module
     PyObject *builtins;
+    // importlib module
     PyObject *importlib;
 
     /* Used in Modules/_threadmodule.c. */
@@ -217,7 +236,7 @@ struct _is {
 
     PyObject *builtins_copy;
     PyObject *import_func;
-    /* Initialized to PyEval_EvalFrameDefault(). */
+    // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
 
     Py_ssize_t co_extra_user_count;
@@ -228,13 +247,11 @@ struct _is {
     PyObject *after_forkers_parent;
     PyObject *after_forkers_child;
 #endif
-    /* AtExit module */
-    void (*pyexitfunc)(PyObject *);
-    PyObject *pyexitmodule;
 
     uint64_t tstate_next_unique_id;
 
     struct _warnings_runtime_state warnings;
+    struct atexit_state atexit;
 
     PyObject *audit_hooks;
 
@@ -258,15 +275,11 @@ struct _is {
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
     struct _Py_exc_state exc_state;
+
+    struct ast_state ast;
 };
 
-/* Used by _PyImport_Cleanup() */
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
-
-extern PyStatus _PyInterpreterState_SetConfig(
-    PyInterpreterState *interp,
-    const PyConfig *config);
-
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 

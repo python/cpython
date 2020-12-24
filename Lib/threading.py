@@ -28,7 +28,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
-           'excepthook', 'ExceptHookArgs']
+           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
@@ -65,6 +65,10 @@ def setprofile(func):
     global _profile_hook
     _profile_hook = func
 
+def getprofile():
+    """Get the profiler function as set by threading.setprofile()."""
+    return _profile_hook
+
 def settrace(func):
     """Set a trace function for all threads started from the threading module.
 
@@ -74,6 +78,10 @@ def settrace(func):
     """
     global _trace_hook
     _trace_hook = func
+
+def gettrace():
+    """Get the trace function as set by threading.settrace()."""
+    return _trace_hook
 
 # Synchronization classes
 
@@ -836,8 +844,12 @@ class Thread:
         # they may be in an invalid state leading to a deadlock or crash.
         self._started._at_fork_reinit()
         if is_alive:
-            self._tstate_lock._at_fork_reinit()
-            self._tstate_lock.acquire()
+            # bpo-42350: If the fork happens when the thread is already stopped
+            # (ex: after threading._shutdown() has been called), _tstate_lock
+            # is None. Do nothing in this case.
+            if self._tstate_lock is not None:
+                self._tstate_lock._at_fork_reinit()
+                self._tstate_lock.acquire()
         else:
             # The thread isn't alive after fork: it doesn't have a tstate
             # anymore.
@@ -1190,6 +1202,10 @@ except ImportError:
         _print_exception(args.exc_type, args.exc_value, args.exc_traceback,
                          file=stderr)
         stderr.flush()
+
+
+# Original value of threading.excepthook
+__excepthook__ = excepthook
 
 
 def _make_invoke_excepthook():

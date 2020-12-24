@@ -1019,6 +1019,62 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 
 static PyObject *
+test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    newfunc tp_new = PyType_GetSlot(&PyLong_Type, Py_tp_new);
+    if (PyLong_Type.tp_new != tp_new) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: tp_new of long");
+        return NULL;
+    }
+
+    reprfunc tp_repr = PyType_GetSlot(&PyLong_Type, Py_tp_repr);
+    if (PyLong_Type.tp_repr != tp_repr) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: tp_repr of long");
+        return NULL;
+    }
+
+    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type, Py_tp_call);
+    if (tp_call != NULL) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: tp_call of long");
+        return NULL;
+    }
+
+    binaryfunc nb_add = PyType_GetSlot(&PyLong_Type, Py_nb_add);
+    if (PyLong_Type.tp_as_number->nb_add != nb_add) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: nb_add of long");
+        return NULL;
+    }
+
+    lenfunc mp_length = PyType_GetSlot(&PyLong_Type, Py_mp_length);
+    if (mp_length != NULL) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: mp_length of long");
+        return NULL;
+    }
+
+    void *over_value = PyType_GetSlot(&PyLong_Type, Py_bf_releasebuffer + 1);
+    if (over_value != NULL) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: max+1 of long");
+        return NULL;
+    }
+
+    tp_new = PyType_GetSlot(&PyLong_Type, 0);
+    if (tp_new != NULL) {
+        PyErr_SetString(PyExc_AssertionError, "mismatch: slot 0 of long");
+        return NULL;
+    }
+    if (PyErr_ExceptionMatches(PyExc_SystemError)) {
+        // This is the right exception
+        PyErr_Clear();
+    }
+    else {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
 get_args(PyObject *self, PyObject *args)
 {
     if (args == NULL) {
@@ -1932,12 +1988,12 @@ unicode_asucs4(PyObject *self, PyObject *args)
     buffer[str_len] = 0xffffU;
 
     if (!PyUnicode_AsUCS4(unicode, buffer, buf_len, copy_null)) {
-        PyMem_FREE(buffer);
+        PyMem_Free(buffer);
         return NULL;
     }
 
     result = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buffer, buf_len);
-    PyMem_FREE(buffer);
+    PyMem_Free(buffer);
     return result;
 }
 
@@ -5556,6 +5612,59 @@ pynumber_tobase(PyObject *module, PyObject *args)
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
+
+static PyObject*
+test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    // Ensure that following tests don't modify the object,
+    // to ensure that Py_DECREF() will not crash.
+    assert(Py_TYPE(obj) == &PyList_Type);
+    assert(Py_SIZE(obj) == 0);
+
+    // bpo-39573: Check that Py_TYPE() and Py_SIZE() can be used
+    // as l-values to set an object type and size.
+    Py_TYPE(obj) = &PyList_Type;
+    Py_SIZE(obj) = 0;
+
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_NewRef() and Py_XNewRef() functions
+static PyObject*
+test_refcount(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Test Py_NewRef()
+    PyObject *ref = Py_NewRef(obj);
+    assert(ref == obj);
+    assert(Py_REFCNT(obj) == 2);
+    Py_DECREF(ref);
+
+    // Test Py_XNewRef()
+    PyObject *xref = Py_XNewRef(obj);
+    assert(xref == obj);
+    assert(Py_REFCNT(obj) == 2);
+    Py_DECREF(xref);
+
+    assert(Py_XNewRef(NULL) == NULL);
+
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5627,8 +5736,10 @@ static PyMethodDef TestMethods[] = {
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat, METH_VARARGS},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
-    {"get_args", get_args, METH_VARARGS},
-    {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
+    {"get_args",                get_args,                        METH_VARARGS},
+    {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
+    {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs,
+      METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_keywords", (PyCFunction)(void(*)(void))getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
@@ -5825,6 +5936,8 @@ static PyMethodDef TestMethods[] = {
     {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
+    {"test_set_type_size", test_set_type_size, METH_NOARGS},
+    {"test_refcount", test_refcount, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -5927,7 +6040,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static void
 test_structmembers_free(PyObject *ob)
 {
-    PyObject_FREE(ob);
+    PyObject_Free(ob);
 }
 
 static PyTypeObject test_structmembersType = {
@@ -6142,7 +6255,8 @@ awaitObject_await(awaitObject *ao)
 static PyAsyncMethods awaitType_as_async = {
     (unaryfunc)awaitObject_await,           /* am_await */
     0,                                      /* am_aiter */
-    0                                       /* am_anext */
+    0,                                      /* am_anext */
+    0,                                      /* am_send  */
 };
 
 
@@ -6508,6 +6622,23 @@ static PyType_Spec HeapDocCType_spec = {
     HeapDocCType_slots
 };
 
+typedef struct {
+    PyObject_HEAD
+} NullTpDocTypeObject;
+
+static PyType_Slot NullTpDocType_slots[] = {
+    {Py_tp_doc, NULL},
+    {0, 0},
+};
+
+static PyType_Spec NullTpDocType_spec = {
+    "_testcapi.NullTpDocType",
+    sizeof(NullTpDocTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    NullTpDocType_slots
+};
+
 
 PyDoc_STRVAR(heapgctype__doc__,
 "A heap type with GC, and with overridden dealloc.\n\n"
@@ -6563,7 +6694,7 @@ static void
 heapctype_dealloc(HeapCTypeObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -6753,7 +6884,7 @@ heapctypewithdict_dealloc(HeapCTypeWithDictObject* self)
 
     PyTypeObject *tp = Py_TYPE(self);
     Py_XDECREF(self->dict);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -6824,7 +6955,7 @@ heapctypewithweakref_dealloc(HeapCTypeWithWeakrefObject* self)
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_XDECREF(self->weakreflist);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -6867,7 +6998,7 @@ static void
 heapctypesetattr_dealloc(HeapCTypeSetattrObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -7182,6 +7313,14 @@ PyInit__testcapi(void)
         return NULL;
     }
     PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
+
+    /* bpo-41832: Add a new type to test PyType_FromSpec()
+       now can accept a NULL tp_doc slot. */
+    PyObject *NullTpDocType = PyType_FromSpec(&NullTpDocType_spec);
+    if (NullTpDocType == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "NullTpDocType", NullTpDocType);
 
     PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
     if (HeapGcCType == NULL) {

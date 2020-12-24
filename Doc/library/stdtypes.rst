@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length, byteorder, \*, signed=False)
+.. method:: int.to_bytes(length, byteorder, *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -531,7 +531,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
-.. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -4764,10 +4764,20 @@ Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
 
+Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union <types-union>`
+===============================================================================================
+
+.. index::
+   single: annotation; type annotation; type hint
+
+The core built-in types for :term:`type annotations <annotation>` are
+:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
+
+
 .. _types-genericalias:
 
 Generic Alias Type
-==================
+------------------
 
 .. index::
    object: GenericAlias
@@ -4870,7 +4880,7 @@ in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 
 
 Standard Generic Collections
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These standard library collections support parameterized generics.
 
@@ -4915,7 +4925,7 @@ These standard library collections support parameterized generics.
 
 
 Special Attributes of Generic Alias
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All parameterized generics implement special read-only attributes.
 
@@ -4961,7 +4971,7 @@ All parameterized generics implement special read-only attributes.
 .. _types-union:
 
 Union Type
-==========
+----------
 
 .. index::
    object: Union
@@ -5055,7 +5065,7 @@ instantiated from the type::
 
       >>> class M(type):
       ...     def __or__(self, other):
-      ...     return "Hello"
+      ...         return "Hello"
       ...
       >>> class C(metaclass=M):
       ...     pass
@@ -5343,8 +5353,8 @@ types, where they are relevant.  Some of these are not reported by the
 .. method:: class.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.
-   Example::
+   method returns a list of all those references still alive.  The list is in
+   definition order.  Example::
 
       >>> int.__subclasses__()
       [<class 'bool'>]

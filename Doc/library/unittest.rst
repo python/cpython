@@ -897,8 +897,7 @@ Test cases
    .. method:: assertIs(first, second, msg=None)
                assertIsNot(first, second, msg=None)
 
-      Test that *first* and *second* evaluate (or don't evaluate) to the
-      same object.
+      Test that *first* and *second* are (or are not) the same object.
 
       .. versionadded:: 3.1
 

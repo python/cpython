@@ -458,32 +458,36 @@ class LoaderLoadModuleTests:
         return SpecLoader()
 
     def test_fresh(self):
-        loader = self.loader()
-        name = 'blah'
-        with test_util.uncache(name):
-            loader.load_module(name)
-            module = loader.found
-            self.assertIs(sys.modules[name], module)
-        self.assertEqual(loader, module.__loader__)
-        self.assertEqual(loader, module.__spec__.loader)
-        self.assertEqual(name, module.__name__)
-        self.assertEqual(name, module.__spec__.name)
-        self.assertIsNotNone(module.__path__)
-        self.assertIsNotNone(module.__path__,
-                             module.__spec__.submodule_search_locations)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            loader = self.loader()
+            name = 'blah'
+            with test_util.uncache(name):
+                loader.load_module(name)
+                module = loader.found
+                self.assertIs(sys.modules[name], module)
+            self.assertEqual(loader, module.__loader__)
+            self.assertEqual(loader, module.__spec__.loader)
+            self.assertEqual(name, module.__name__)
+            self.assertEqual(name, module.__spec__.name)
+            self.assertIsNotNone(module.__path__)
+            self.assertIsNotNone(module.__path__,
+                                module.__spec__.submodule_search_locations)
 
     def test_reload(self):
-        name = 'blah'
-        loader = self.loader()
-        module = types.ModuleType(name)
-        module.__spec__ = self.util.spec_from_loader(name, loader)
-        module.__loader__ = loader
-        with test_util.uncache(name):
-            sys.modules[name] = module
-            loader.load_module(name)
-            found = loader.found
-            self.assertIs(found, sys.modules[name])
-            self.assertIs(module, sys.modules[name])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            name = 'blah'
+            loader = self.loader()
+            module = types.ModuleType(name)
+            module.__spec__ = self.util.spec_from_loader(name, loader)
+            module.__loader__ = loader
+            with test_util.uncache(name):
+                sys.modules[name] = module
+                loader.load_module(name)
+                found = loader.found
+                self.assertIs(found, sys.modules[name])
+                self.assertIs(module, sys.modules[name])
 
 
 (Frozen_LoaderLoadModuleTests,
@@ -837,25 +841,29 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         # Loading a module should set __name__, __loader__, __package__,
         # __path__ (for packages), __file__, and __cached__.
         # The module should also be put into sys.modules.
-        with test_util.uncache(self.name):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                module = self.loader.load_module(self.name)
-            self.verify_module(module)
-            self.assertEqual(module.__path__, [os.path.dirname(self.path)])
-            self.assertIn(self.name, sys.modules)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            with test_util.uncache(self.name):
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    module = self.loader.load_module(self.name)
+                self.verify_module(module)
+                self.assertEqual(module.__path__, [os.path.dirname(self.path)])
+                self.assertIn(self.name, sys.modules)
 
     def test_package_settings(self):
         # __package__ needs to be set, while __path__ is set on if the module
         # is a package.
         # Testing the values for a package are covered by test_load_module.
-        self.setUp(is_package=False)
-        with test_util.uncache(self.name):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                module = self.loader.load_module(self.name)
-            self.verify_module(module)
-            self.assertFalse(hasattr(module, '__path__'))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            self.setUp(is_package=False)
+            with test_util.uncache(self.name):
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    module = self.loader.load_module(self.name)
+                self.verify_module(module)
+                self.assertFalse(hasattr(module, '__path__'))
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise

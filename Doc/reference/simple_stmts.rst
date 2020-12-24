@@ -950,7 +950,7 @@ Names listed in a :keyword:`global` statement must not be used in the same code
 block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
-parameters or in a :keyword:`for` loop control target, :keyword:`class`
+parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
 definition, function definition, :keyword:`import` statement, or variable
 annotation.
 

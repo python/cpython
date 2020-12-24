@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
@@ -478,7 +479,7 @@ keyobject_dealloc(keyobject *ko)
 {
     Py_DECREF(ko->cmp);
     Py_XDECREF(ko->object);
-    PyObject_FREE(ko);
+    PyObject_Free(ko);
 }
 
 static int
@@ -673,6 +674,11 @@ functools_reduce(PyObject *self, PyObject *args)
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {
                 goto Fail;
             }
+            // bpo-42536: The GC may have untracked this args tuple. Since we're
+            // recycling it, make sure it's tracked again:
+            if (!_PyObject_GC_IS_TRACKED(args)) {
+                _PyObject_GC_TRACK(args);
+            }
         }
     }
 
@@ -742,7 +748,7 @@ lru_list_elem_dealloc(lru_list_elem *link)
 {
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
-    PyObject_Del(link);
+    PyObject_Free(link);
 }
 
 static PyTypeObject lru_list_elem_type = {

@@ -282,7 +282,7 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
         Py_DECREF(po->wo);
         remove_lop(po);
     }
-    PyObject_DEL(po);
+    PyObject_Free(po);
     Py_DECREF(tp);
 }
 

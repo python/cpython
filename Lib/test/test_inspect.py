@@ -390,6 +390,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
                           ('Tit', mod.MalodorousPervert),
+                          ('WhichComments', mod.WhichComments),
                          ])
         tree = inspect.getclasstree([cls[1] for cls in classes])
         self.assertEqual(tree,
@@ -403,7 +404,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
@@ -415,7 +417,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
 
@@ -646,6 +649,18 @@ class TestOneliners(GetSourceBase):
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
 
+class TestBlockComments(GetSourceBase):
+    fodderModule = mod
+
+    def test_toplevel_class(self):
+        self.assertSourceEqual(mod.WhichComments, 96, 114)
+
+    def test_class_method(self):
+        self.assertSourceEqual(mod.WhichComments.f, 99, 104)
+
+    def test_class_async_method(self):
+        self.assertSourceEqual(mod.WhichComments.asyncf, 109, 112)
+
 class TestBuggyCases(GetSourceBase):
     fodderModule = mod2
 
@@ -696,6 +711,17 @@ class TestBuggyCases(GetSourceBase):
             co = compile('x=1', fname, "exec")
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
+
+    def test_findsource_with_out_of_bounds_lineno(self):
+        mod_len = len(inspect.getsource(mod))
+        src = '\n' * 2* mod_len + "def f(): pass"
+        co = compile(src, mod.__file__, "exec")
+        g, l = {}, {}
+        eval(co, g, l)
+        func = l['f']
+        self.assertEqual(func.__code__.co_firstlineno, 1+2*mod_len)
+        with self.assertRaisesRegex(IOError, "lineno is out of bounds"):
+            inspect.findsource(func)
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
@@ -3224,6 +3250,26 @@ class TestSignatureObject(unittest.TestCase):
         p2 = inspect.signature(lambda y, x: None).parameters
         self.assertNotEqual(p1, p2)
 
+    def test_signature_annotations_with_local_namespaces(self):
+        class Foo: ...
+        def func(foo: Foo) -> int: pass
+        def func2(foo: Foo, bar: Bar) -> int: pass
+
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                sig1 = signature_func(func)
+                self.assertEqual(sig1.return_annotation, 'int')
+                self.assertEqual(sig1.parameters['foo'].annotation, 'Foo')
+
+                sig2 = signature_func(func, localns=locals())
+                self.assertEqual(sig2.return_annotation, int)
+                self.assertEqual(sig2.parameters['foo'].annotation, Foo)
+
+                sig3 = signature_func(func2, globalns={'Bar': int}, localns=locals())
+                self.assertEqual(sig3.return_annotation, int)
+                self.assertEqual(sig3.parameters['foo'].annotation, Foo)
+                self.assertEqual(sig3.parameters['bar'].annotation, int)
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -4014,8 +4060,8 @@ def foo():
 
 def test_main():
     run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
-        TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
+        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
+        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,

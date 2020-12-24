@@ -17,12 +17,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#if ((defined(__GNUC__) \
-      && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))) \
-     || (defined(__clang__) \
-         && (__clang_major__ >= 4 \
-             || (__clang_major__ == 3 && __clang_minor__ >= 2))))
-   /* __builtin_bswap16() is available since GCC 4.8 and clang 3.2,
+#if defined(__GNUC__) \
+      && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))
+   /* __builtin_bswap16() is available since GCC 4.8,
       __builtin_bswap32() is available since GCC 4.3,
       __builtin_bswap64() is available since GCC 4.3. */
 #  define _PY_HAVE_BUILTIN_BSWAP
@@ -36,7 +33,7 @@ extern "C" {
 static inline uint16_t
 _Py_bswap16(uint16_t word)
 {
-#ifdef _PY_HAVE_BUILTIN_BSWAP
+#if defined(_PY_HAVE_BUILTIN_BSWAP) || _Py__has_builtin(__builtin_bswap16)
     return __builtin_bswap16(word);
 #elif defined(_MSC_VER)
     Py_BUILD_ASSERT(sizeof(word) == sizeof(unsigned short));
@@ -51,7 +48,7 @@ _Py_bswap16(uint16_t word)
 static inline uint32_t
 _Py_bswap32(uint32_t word)
 {
-#ifdef _PY_HAVE_BUILTIN_BSWAP
+#if defined(_PY_HAVE_BUILTIN_BSWAP) || _Py__has_builtin(__builtin_bswap32)
     return __builtin_bswap32(word);
 #elif defined(_MSC_VER)
     Py_BUILD_ASSERT(sizeof(word) == sizeof(unsigned long));
@@ -68,7 +65,7 @@ _Py_bswap32(uint32_t word)
 static inline uint64_t
 _Py_bswap64(uint64_t word)
 {
-#ifdef _PY_HAVE_BUILTIN_BSWAP
+#if defined(_PY_HAVE_BUILTIN_BSWAP) || _Py__has_builtin(__builtin_bswap64)
     return __builtin_bswap64(word);
 #elif defined(_MSC_VER)
     return _byteswap_uint64(word);

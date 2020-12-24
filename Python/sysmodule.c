@@ -84,17 +84,24 @@ _PySys_GetObjectId(_Py_Identifier *key)
     return sys_get_object_id(tstate, key);
 }
 
+static PyObject *
+_PySys_GetObject(PyThreadState *tstate, const char *name)
+{
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        return NULL;
+    }
+    return _PyDict_GetItemStringWithError(sysdict, name);
+}
+
 PyObject *
 PySys_GetObject(const char *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *sd = tstate->interp->sysdict;
-    if (sd == NULL) {
-        return NULL;
-    }
+
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
-    PyObject *value = _PyDict_GetItemStringWithError(sd, name);
+    PyObject *value = _PySys_GetObject(tstate, name);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
@@ -1174,7 +1181,6 @@ static PyObject *
 sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 /*[clinic end generated code: output=35e1c64754800ace input=b0f7a23393924af3]*/
 {
-    int mark;
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (new_limit < 1) {
@@ -1192,8 +1198,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
        Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
-    mark = _Py_RecursionLimitLowerWaterMark(new_limit);
-    if (tstate->recursion_depth >= mark) {
+    if (tstate->recursion_depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
@@ -1838,6 +1843,21 @@ sys__current_frames_impl(PyObject *module)
 }
 
 /*[clinic input]
+sys._current_exceptions
+
+Return a dict mapping each thread's identifier to its current raised exception.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
+
+static PyObject *
+sys__current_exceptions_impl(PyObject *module)
+/*[clinic end generated code: output=2ccfd838c746f0ba input=0e91818fbf2edc1f]*/
+{
+    return _PyThread_CurrentExceptions();
+}
+
+/*[clinic input]
 sys.call_tracing
 
     func: object
@@ -1887,12 +1907,12 @@ sys__debugmallocstats_impl(PyObject *module)
 }
 
 #ifdef Py_TRACE_REFS
-/* Defined in objects.c because it uses static globals if that file */
+/* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
-/* Defined in ceval.c because it uses static globals if that file */
+/* Defined in ceval.c because it uses static globals in that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 #endif
 
@@ -1953,6 +1973,7 @@ static PyMethodDef sys_methods[] = {
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
+    SYS__CURRENT_EXCEPTIONS_METHODDEF
     SYS_DISPLAYHOOK_METHODDEF
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
@@ -2448,8 +2469,6 @@ static PyStructSequence_Field flags_fields[] = {
     {"no_site",                 "-S"},
     {"ignore_environment",      "-E"},
     {"verbose",                 "-v"},
-    /* {"unbuffered",                   "-u"}, */
-    /* {"skip_first",                   "-x"}, */
     {"bytes_warning",           "-b"},
     {"quiet",                   "-q"},
     {"hash_randomization",      "-R"},
@@ -2466,21 +2485,27 @@ static PyStructSequence_Desc flags_desc = {
     15
 };
 
-static PyObject*
-make_flags(PyThreadState *tstate)
+static int
+set_flags_from_config(PyObject *flags, PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    PyObject *seq = PyStructSequence_New(&FlagsType);
-    if (seq == NULL) {
-        return NULL;
-    }
-
-    int pos = 0;
-#define SetFlag(flag) \
-    PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
+    // _PySys_UpdateConfig() modifies sys.flags in-place:
+    // Py_XDECREF() is needed in this case.
+    Py_ssize_t pos = 0;
+#define SetFlagObj(expr) \
+    do { \
+        PyObject *value = (expr); \
+        if (value == NULL) { \
+            return -1; \
+        } \
+        Py_XDECREF(PyStructSequence_GET_ITEM(flags, pos)); \
+        PyStructSequence_SET_ITEM(flags, pos, value); \
+        pos++; \
+    } while (0)
+#define SetFlag(expr) SetFlagObj(PyLong_FromLong(expr))
 
     SetFlag(config->parser_debug);
     SetFlag(config->inspect);
@@ -2491,22 +2516,33 @@ make_flags(PyThreadState *tstate)
     SetFlag(!config->site_import);
     SetFlag(!config->use_environment);
     SetFlag(config->verbose);
-    /* SetFlag(saw_unbuffered_flag); */
-    /* SetFlag(skipfirstline); */
     SetFlag(config->bytes_warning);
     SetFlag(config->quiet);
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
     SetFlag(config->isolated);
-    PyStructSequence_SET_ITEM(seq, pos++, PyBool_FromLong(config->dev_mode));
+    SetFlagObj(PyBool_FromLong(config->dev_mode));
     SetFlag(preconfig->utf8_mode);
+#undef SetFlagObj
 #undef SetFlag
+    return 0;
+}
 
-    if (_PyErr_Occurred(tstate)) {
-        Py_DECREF(seq);
+
+static PyObject*
+make_flags(PyThreadState *tstate)
+{
+    PyObject *flags = PyStructSequence_New(&FlagsType);
+    if (flags == NULL) {
         return NULL;
     }
-    return seq;
+
+    if (set_flags_from_config(flags, tstate) < 0) {
+        Py_DECREF(flags);
+        return NULL;
+    }
+    return flags;
 }
+
 
 PyDoc_STRVAR(version_info__doc__,
 "sys.version_info\n\
@@ -2751,14 +2787,23 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
-    /* flags */
+    // sys.flags: updated in-place later by _PySys_UpdateConfig()
     if (FlagsType.tp_name == 0) {
         if (PyStructSequence_InitType2(&FlagsType, &flags_desc) < 0) {
             goto type_init_failed;
         }
     }
-    /* Set flags to their default values (updated by _PySys_InitMain()) */
     SET_SYS("flags", make_flags(tstate));
+    /* prevent user from creating new instances */
+    FlagsType.tp_init = NULL;
+    FlagsType.tp_new = NULL;
+    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
+    if (res < 0) {
+        if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+            goto err_occurred;
+        }
+        _PyErr_Clear(tstate);
+    }
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2793,6 +2838,11 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
+
+    /* adding sys.path_hooks and sys.path_importer_cache */
+    SET_SYS("meta_path", PyList_New(0));
+    SET_SYS("path_importer_cache", PyDict_New());
+    SET_SYS("path_hooks", PyList_New(0));
 
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
@@ -2860,8 +2910,10 @@ sys_create_xoptions_dict(const PyConfig *config)
 }
 
 
+// Update sys attributes for a new PyConfig configuration.
+// This function also adds attributes that _PySys_InitCore() didn't add.
 int
-_PySys_InitMain(PyThreadState *tstate)
+_PySys_UpdateConfig(PyThreadState *tstate)
 {
     PyObject *sysdict = tstate->interp->sysdict;
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
@@ -2873,15 +2925,22 @@ _PySys_InitMain(PyThreadState *tstate)
 #define SET_SYS_FROM_WSTR(KEY, VALUE) \
         SET_SYS(KEY, PyUnicode_FromWideChar(VALUE, -1));
 
-    COPY_LIST("path", config->module_search_paths);
+#define COPY_WSTR(SYS_ATTR, WSTR) \
+    if (WSTR != NULL) { \
+        SET_SYS_FROM_WSTR(SYS_ATTR, WSTR); \
+    }
 
-    SET_SYS_FROM_WSTR("executable", config->executable);
-    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
-    SET_SYS_FROM_WSTR("prefix", config->prefix);
-    SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
-    SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
-    SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
-    SET_SYS_FROM_WSTR("platlibdir", config->platlibdir);
+    if (config->module_search_paths_set) {
+        COPY_LIST("path", config->module_search_paths);
+    }
+
+    COPY_WSTR("executable", config->executable);
+    COPY_WSTR("_base_executable", config->base_executable);
+    COPY_WSTR("prefix", config->prefix);
+    COPY_WSTR("base_prefix", config->base_prefix);
+    COPY_WSTR("exec_prefix", config->exec_prefix);
+    COPY_WSTR("base_exec_prefix", config->base_exec_prefix);
+    COPY_WSTR("platlibdir", config->platlibdir);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2895,31 +2954,20 @@ _PySys_InitMain(PyThreadState *tstate)
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
 
-#undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
+#undef COPY_LIST
+#undef COPY_WSTR
 
-
-    /* Set flags to their final values */
-    SET_SYS("flags", make_flags(tstate));
-    /* prevent user from creating new instances */
-    FlagsType.tp_init = NULL;
-    FlagsType.tp_new = NULL;
-    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
-    if (res < 0) {
-        if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-            return res;
-        }
-        _PyErr_Clear(tstate);
+    // sys.flags
+    PyObject *flags = _PySys_GetObject(tstate, "flags");  // borrowed ref
+    if (flags == NULL) {
+        return -1;
+    }
+    if (set_flags_from_config(flags, tstate) < 0) {
+        return -1;
     }
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
-
-    if (get_warnoptions(tstate) == NULL) {
-        return -1;
-    }
-
-    if (get_xoptions(tstate) == NULL)
-        return -1;
 
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
@@ -2961,8 +3009,8 @@ error:
 }
 
 
-/* Create sys module without all attributes: _PySys_InitMain() should be called
-   later to add remaining attributes. */
+/* Create sys module without all attributes.
+   _PySys_UpdateConfig() should be called later to add remaining attributes. */
 PyStatus
 _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 {

@@ -307,7 +307,9 @@ def add_file_filtering_cli(parser, *, excluded=None):
             exclude=tuple(_parse_files(_exclude)),
             # We use the default for "show_header"
         )
-        ns[key] = (lambda files: fsutil.iter_filenames(files, **kwargs))
+        def process_filenames(filenames, relroot=None):
+            return fsutil.process_filenames(filenames, relroot=relroot, **kwargs)
+        ns[key] = process_filenames
     return process_args
 
 
@@ -529,42 +531,46 @@ def set_command(name, add_cli):
 ##################################
 # main() helpers
 
-def filter_filenames(filenames, iter_filenames=None):
-    for filename, check, _ in _iter_filenames(filenames, iter_filenames):
+def filter_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
+    # We expect each filename to be a normalized, absolute path.
+    for filename, _, check, _ in _iter_filenames(filenames, process_filenames, relroot):
         if (reason := check()):
             logger.debug(f'{filename}: {reason}')
             continue
         yield filename
 
 
-def main_for_filenames(filenames, iter_filenames=None):
-    for filename, check, show in _iter_filenames(filenames, iter_filenames):
+def main_for_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    for filename, relfile, check, show in _iter_filenames(filenames, process_filenames, relroot):
         if show:
             print()
+            print(relfile)
             print('-------------------------------------------')
-            print(filename)
         if (reason := check()):
             print(reason)
             continue
-        yield filename
+        yield filename, relfile
 
 
-def _iter_filenames(filenames, iter_files):
-    if iter_files is None:
-        iter_files = fsutil.iter_filenames
-        yield from iter_files(filenames)
+def _iter_filenames(filenames, process, relroot):
+    if process is None:
+        yield from fsutil.process_filenames(filenames, relroot=relroot)
         return
 
     onempty = Exception('no filenames provided')
-    items = iter_files(filenames)
+    items = process(filenames, relroot=relroot)
     items, peeked = iterutil.peek_and_iter(items)
     if not items:
         raise onempty
     if isinstance(peeked, str):
+        if relroot and relroot is not fsutil.USE_CWD:
+            relroot = os.path.abspath(relroot)
         check = (lambda: True)
         for filename, ismany in iterutil.iter_many(items, onempty):
-            yield filename, check, ismany
-    elif len(peeked) == 3:
+            relfile = fsutil.format_filename(filename, relroot, fixroot=False)
+            yield filename, relfile, check, ismany
+    elif len(peeked) == 4:
         yield from items
     else:
         raise NotImplementedError
