@@ -434,7 +434,7 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
-        if isinstance(t_args, list):
+        if isinstance(t_args, (list, tuple)):
             ga_args = tuple(t_args) + (t_result,)
         # This relaxes what t_args can be on purpose to allow things like
         # PEP 612 ParamSpec.  Responsibility for whether a user is using
@@ -455,6 +455,16 @@ class _CallableGenericAlias(GenericAlias):
         if not (len(args) == 2 and args[0] is Ellipsis):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
+
+    def __getitem__(self, item):
+        # Called during TypeVar substitution, returns the custom subclass
+        # rather than the default types.GenericAlias object.
+        ga = super().__getitem__(item)
+        args = ga.__args__
+        t_result = args[-1]
+        t_args = args[:-1]
+        args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, args)
 
 
 def _type_repr(obj):
