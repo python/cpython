@@ -259,6 +259,10 @@ def _cli_capi(parser):
             if args.format not in _capi._FORMATS:
                 parser.error(f'unsupported format {orig!r}')
 
+    # XXX Add an option to ignore empty sets.
+
+    # XXX Add --sort-by, --sort and --no-sort.
+
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
     process_progress = add_progress_cli(parser)
 

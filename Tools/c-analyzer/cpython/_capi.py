@@ -144,12 +144,12 @@ def _parse_line(line, prev=None):
     return None
 
 
-LEVELS = {
+LEVELS = [
     'stable',
     'cpython',
     'private',
     'internal',
-}
+]
 
 def _get_level(filename, name, *,
                _cpython=INCLUDE_CPYTHON + os.path.sep,
@@ -313,6 +313,32 @@ def _collate(items, groupby):
     return collated, groupby, maxfilename, maxname, maxextra
 
 
+def _get_sortkey(sort, _groupby, _columns):
+    if sort is True or sort is None:
+        # For now:
+        def sortkey(item):
+            return (
+                item.level == 'private',
+                LEVELS.index(item.level),
+                KINDS.index(item.kind),
+                os.path.dirname(item.file),
+                os.path.basename(item.file),
+                item.name,
+            )
+        return sortkey
+
+        sortfields = 'not-private level kind dirname basename name'.split()
+    elif isinstance(sort, str):
+        sortfields = sort.replace(',', ' ').strip().split()
+    elif callable(sort):
+        return sort
+    else:
+        raise NotImplementedError
+
+    # XXX Build a sortkey func from sortfields.
+    raise NotImplementedError
+
+
 ##################################
 # CLI rendering
 
@@ -353,7 +379,12 @@ def get_renderer(format):
         return render
 
 
-def render_table(items, *, columns=None, groupby='kind', verbose=False):
+def render_table(items, *,
+                 columns=None,
+                 groupby='kind',
+                 sort=True,
+                 verbose=False,
+                 ):
     if groupby:
         collated, groupby, maxfilename, maxname, maxextra = _collate(items, groupby)
         if groupby == 'kind':
@@ -369,6 +400,9 @@ def render_table(items, *, columns=None, groupby='kind', verbose=False):
     else:
         # XXX Support no grouping?
         raise NotImplementedError
+
+    if sort:
+        sortkey = _get_sortkey(sort, groupby, columns)
 
     if columns:
         def get_extra(item):
@@ -416,7 +450,10 @@ def render_table(items, *, columns=None, groupby='kind', verbose=False):
         yield ''
         yield header
         yield div
-        for item in collated[group]:
+        grouped = collated[group]
+        if sort:
+            grouped = sorted(grouped, key=sortkey)
+        for item in grouped:
             yield fmt.format(
                 filename=item.relfile,
                 name=item.name,
@@ -430,7 +467,10 @@ def render_table(items, *, columns=None, groupby='kind', verbose=False):
     yield f'total: {total}'
 
 
-def render_full(items, *, groupby=None, verbose=False):
+def render_full(items, *, groupby=None, sort=True, verbose=False):
+    if sort:
+        sortkey = _get_sortkey(sort, groupby, None)
+
     if groupby:
         collated, groupby, _, _, _ = _collate(items, groupby)
         for group, grouped in collated.items():
@@ -440,10 +480,14 @@ def render_full(items, *, groupby=None, verbose=False):
             yield ''
             if not grouped:
                 continue
+            if sort:
+                grouped = sorted(grouped, key=sortkey)
             for item in grouped:
                 yield from _render_item_full(item, groupby, verbose)
                 yield ''
     else:
+        if sort:
+            items = sorted(items, key=sortkey)
         for item in items:
             yield from _render_item_full(item, None, verbose)
             yield ''
@@ -462,7 +506,7 @@ def _render_item_full(item, groupby, verbose):
         print('  ---------------------------------------')
 
 
-def render_summary(items, *, groupby='kind', verbose=False):
+def render_summary(items, *, groupby='kind', sort=None, verbose=False):
     total = 0
     summary = summarize(items, groupby=groupby)
     # XXX Stablize the sorting to match KINDS/LEVELS.
