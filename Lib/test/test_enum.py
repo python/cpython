@@ -2049,6 +2049,22 @@ class TestEnum(unittest.TestCase):
         local_ls = {}
         exec(code, global_ns, local_ls)
 
+    @unittest.skipUnless(
+            sys.version_info[:2] == (3, 9),
+            'private variables are now normal attributes',
+            )
+    def test_warning_for_private_variables(self):
+        with self.assertWarns(DeprecationWarning):
+            class Private(Enum):
+                __corporal = 'Radar'
+        self.assertEqual(Private._Private__corporal.value, 'Radar')
+        try:
+            with self.assertWarns(DeprecationWarning):
+                class Private(Enum):
+                    __major_ = 'Hoolihan'
+        except ValueError:
+            pass
+
     def test_strenum(self):
         class GoodStrEnum(StrEnum):
             one = '1'
