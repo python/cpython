@@ -249,15 +249,22 @@ def _cli_capi(parser):
     parser.add_argument('--group-by', dest='groupby',
                         choices=['level', 'kind'])
 
-    parser.add_argument('--format', choices=['brief', 'full', 'summary'], default='brief')
+    parser.add_argument('--format', default='brief')
     parser.add_argument('--summary', dest='format',
                         action='store_const', const='summary')
+    def process_format(args, *, argv=None):
+        orig = args.format
+        args.format = _capi.resolve_format(args.format)
+        if isinstance(args.format, str):
+            if args.format not in _capi._FORMATS:
+                parser.error(f'unsupported format {orig!r}')
 
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
     process_progress = add_progress_cli(parser)
 
     return [
         process_levels,
+        process_format,
         process_progress,
     ]
 
@@ -271,10 +278,7 @@ def cmd_capi(filenames=None, *,
              verbosity=VERBOSITY,
              **kwargs
              ):
-    try:
-        render = _capi.FORMATS[format or 'brief']
-    except KeyError:
-        raise ValueError(f'unsupported format {format!r}')
+    render = _capi.get_renderer(format)
 
     filenames = _files.iter_header_files(filenames, levels=levels)
     #filenames = (file for file, _ in main_for_filenames(filenames))

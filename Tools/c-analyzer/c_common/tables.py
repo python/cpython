@@ -1,4 +1,6 @@
 import csv
+import re
+import textwrap
 
 from . import NOT_SET, strutil, fsutil
 
@@ -220,83 +222,141 @@ def _normalize_table_file_props(header, sep):
 WIDTH = 20
 
 
-def build_table(columns, *, sep=' '):
-    if isinstance(columns, str):
-        columns = columns.replace(',', ' ').strip().split()
-    columns = _parse_columns(columns)
-    return _build_table(columns, sep=sep)
+def resolve_columns(specs):
+    if isinstance(specs, str):
+        specs = specs.replace(',', ' ').strip().split()
+    return _resolve_colspecs(specs)
+
+
+def build_table(specs, *, sep=' ', defaultwidth=None):
+    columns = resolve_columns(specs)
+    return _build_table(columns, sep=sep, defaultwidth=defaultwidth)
+
+
+_COLSPEC_RE = re.compile(textwrap.dedent(r'''
+    ^
+    (?:
+        [[]
+        (
+            (?: [^\s\]] [^\]]* )?
+            [^\s\]]
+        )  # <label>
+        []]
+    )?
+    ( \w+ )  # <field>
+    (?:
+        (?:
+            :
+            ( [<^>] )  # <align>
+            ( \d+ )  # <width1>
+        )
+        |
+        (?:
+            (?:
+                :
+                ( \d+ )  # <width2>
+            )?
+            (?:
+                :
+                ( .*? )  # <fmt>
+            )?
+        )
+    )?
+    $
+'''), re.VERBOSE)
+
+
+def _parse_fmt(fmt):
+    if fmt.startswith(tuple('<^>')):
+        align = fmt[0]
+        width = fmt[1:]
+        if width.isdigit():
+            return int(width), align
+    return None, None
 
 
 def _parse_colspec(raw):
-    width = align = fmt = None
-    if raw.isdigit():
-        width = int(raw)
-        align = 'left'
-    elif raw == '<':
-        align = 'left'
-    elif raw == '^':
-        align = 'middle'
-    elif raw == '>':
-        align = 'right'
+    m = _COLSPEC_RE.match(raw)
+    if not m:
+        return None
+    label, field, align, width1, width2, fmt = m.groups()
+    if not label:
+        label = field
+    if width1:
+        width = None
+        fmt = f'{align}{width1}'
+    elif width2:
+        width = int(width2)
+        if fmt:
+            _width, _ = _parse_fmt(fmt)
+            if _width == width:
+                width = None
     else:
-        # XXX Handle combined specs.
-        fmt = raw
-    return width, align, fmt
+        width = None
+    return field, label, width, fmt
 
 
-def _render_colspec(spec):
-    if not spec:
-        return ''
-    width, align, colfmt = spec
+def _normalize_colspec(spec):
+    if len(spec) == 1:
+        raw, = spec
+        return _resolve_column(raw)
 
-    parts = []
-    if align:
-        if align == 'left':
-            align = '<'
-        elif align == 'middle':
-            align = '^'
-        elif align == 'right':
-            align = '>'
-        else:
-            raise NotImplementedError
-        parts.append(align)
-    if width:
-        parts.append(str(width))
-    if colfmt:
+    if len(spec) == 4:
+        label, field, width, fmt = spec
+        if width:
+            fmt = f'{width}:{fmt}' if fmt else width
+    elif len(raw) == 3:
+        label, field, fmt = spec
+        if not field:
+            label, field = None, label
+        elif not isinstance(field, str) or not field.isidentifier():
+            fmt = f'{field}:{fmt}' if fmt else field
+            label, field = None, label
+    elif len(raw) == 2:
+        label = None
+        field, fmt = raw
+        if not field:
+            field, fmt = fmt, None
+        elif not field.isidentifier() or fmt.isidentifier():
+            label, field = field, fmt
+    else:
         raise NotImplementedError
-    return ''.join(parts)
+
+    fmt = f':{fmt}' if fmt else ''
+    if label:
+        return _parse_colspec(f'[{label}]{field}{fmt}')
+    else:
+        return _parse_colspec(f'{field}{fmt}')
 
 
-def _parse_column(raw):
+def _resolve_colspec(raw):
     if isinstance(raw, str):
-        colname, _, rawspec = raw.partition(':')
-        spec = _parse_colspec(rawspec)
-        return (colname, spec)
+        spec = _parse_colspec(raw)
     else:
-        raise NotImplementedError
+        spec = _normalize_colspec(raw)
+    if spec is None:
+        raise ValueError(f'unsupported column spec {raw!r}')
+    return spec
 
 
-def _render_column(colname, spec):
-    spec = _render_colspec(spec)
-    if spec:
-        return f'{colname}:{spec}'
-    else:
-        return colname
-
-
-def _parse_columns(columns):
+def _resolve_colspecs(columns):
     parsed = []
     for raw in columns:
-        column = _parse_column(raw)
+        column = _resolve_colspec(raw)
         parsed.append(column)
     return parsed
 
 
-def _resolve_width(width, colname, defaultwidth):
+def _resolve_width(spec, defaultwidth):
+    _, label, width, fmt = spec
     if width:
         if not isinstance(width, int):
             raise NotImplementedError
         return width
+    elif width and fmt:
+        width, _ = _parse_fmt(fmt)
+        if width:
+            return width
 
     if not defaultwidth:
         return WIDTH
@@ -305,22 +365,24 @@ def _resolve_width(width, colname, defaultwidth):
 
     defaultwidths = defaultwidth
     defaultwidth = defaultwidths.get(None) or WIDTH
-    return defaultwidths.get(colname) or defaultwidth
+    return defaultwidths.get(label) or defaultwidth
 
 
 def _build_table(columns, *, sep=' ', defaultwidth=None):
     header = []
     div = []
     rowfmt = []
-    for colname, spec in columns:
-        width, align, colfmt = spec
-        width = _resolve_width(width, colname, defaultwidth)
-        if width != spec[0]:
-            spec = width, align, colfmt
+    for spec in columns:
+        label, field, _, colfmt = spec
+        width = _resolve_width(spec, defaultwidth)
+        if colfmt:
+            colfmt = f':{colfmt}'
+        else:
+            colfmt = f':{width}'
 
-        header.append(f' {{:^{width}}} '.format(colname))
+        header.append(f' {{:^{width}}} '.format(label))
         div.append('-' * (width + 2))
-        rowfmt.append(' {' + _render_column(colname, spec) + '} ')
+        rowfmt.append(f' {{{field}{colfmt}}} ')
     return (
         sep.join(header),
         sep.join(div),

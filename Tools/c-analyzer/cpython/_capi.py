@@ -3,7 +3,7 @@ import os.path
 import re
 import textwrap
 
-from c_common.tables import build_table
+from c_common.tables import build_table, resolve_columns
 from c_parser.parser._regexes import _ind
 from ._files import iter_header_files, resolve_filename
 from . import REPO_ROOT
@@ -244,6 +244,9 @@ def _collate(items, groupby):
     return collated, groupby, maxfilename, maxname, maxextra
 
 
+##################################
+# CLI rendering
+
 _LEVEL_MARKERS = {
     'S': 'stable',
     'C': 'cpython',
@@ -259,7 +262,29 @@ _KIND_MARKERS = {
 }
 
 
-def render_table(items, *, groupby='kind', verbose=False):
+def resolve_format(format):
+    if not format:
+        return 'brief'
+    elif isinstance(format, str) and format in _FORMATS:
+        return format
+    else:
+        return resolve_columns(format)
+
+
+def get_renderer(format):
+    format = resolve_format(format)
+    if isinstance(format, str):
+        try:
+            return _FORMATS[format]
+        except KeyError:
+            raise ValueError(f'unsupported format {format!r}')
+    else:
+        def render(items, **kwargs):
+            return render_table(items, columns=format, **kwargs)
+        return render
+
+
+def render_table(items, *, columns=None, groupby='kind', verbose=False):
     if groupby:
         collated, groupby, maxfilename, maxname, maxextra = _collate(items, groupby)
         if groupby == 'kind':
@@ -276,37 +301,43 @@ def render_table(items, *, groupby='kind', verbose=False):
         # XXX Support no grouping?
         raise NotImplementedError
 
-    if verbose:
-        maxextra['kind'] = max(len(kind) for kind in KINDS)
-        maxextra['level'] = max(len(level) for level in LEVELS)
-        extracols = [f'{extra}:{maxextra[extra]}'
-                     for extra in extras]
+    if columns:
         def get_extra(item):
             return {extra: getattr(item, extra)
-                    for extra in extras}
-    elif len(extras) == 1:
-        extra, = extras
-        extracols = [f'{m}:1' for m in markers[extra]]
-        def get_extra(item):
-            return {m: m if getattr(item, extra) == markers[extra][m] else ''
-                    for m in markers[extra]}
+                    for extra in ('kind', 'level')}
     else:
-        raise NotImplementedError
-        #extracols = [[f'{m}:1' for m in markers[extra]]
-        #             for extra in extras]
-        #def get_extra(item):
-        #    values = {}
-        #    for extra in extras:
-        #        cur = markers[extra]
-        #        for m in cur:
-        #            values[m] = m if getattr(item, m) == cur[m] else ''
-        #    return values
+        if verbose:
+            maxextra['kind'] = max(len(kind) for kind in KINDS)
+            maxextra['level'] = max(len(level) for level in LEVELS)
+            extracols = [f'{extra}:{maxextra[extra]}'
+                         for extra in extras]
+            def get_extra(item):
+                return {extra: getattr(item, extra)
+                        for extra in extras}
+        elif len(extras) == 1:
+            extra, = extras
+            extracols = [f'{m}:1' for m in markers[extra]]
+            def get_extra(item):
+                return {m: m if getattr(item, extra) == markers[extra][m] else ''
+                        for m in markers[extra]}
+        else:
+            raise NotImplementedError
+            #extracols = [[f'{m}:1' for m in markers[extra]]
+            #             for extra in extras]
+            #def get_extra(item):
+            #    values = {}
+            #    for extra in extras:
+            #        cur = markers[extra]
+            #        for m in cur:
+            #            values[m] = m if getattr(item, m) == cur[m] else ''
+            #    return values
+        columns = [
+            f'filename:{maxfilename}',
+            f'name:{maxname}',
+            *extracols,
+        ]
+    header, div, fmt = build_table(columns)
 
-    header, div, fmt = build_table([
-        f'filename:{maxfilename}',
-        f'name:{maxname}',
-        *extracols,
-    ])
     total = 0
     for group in groups:
         if group not in collated:
@@ -373,7 +404,7 @@ def render_summary(items, *, groupby='kind', verbose=False):
     yield f'{"total:":20} ({total})'
 
 
-FORMATS = {
+_FORMATS = {
     'brief': render_table,
     'full': render_full,
     'summary': render_summary,
