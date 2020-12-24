@@ -265,6 +265,13 @@ def _cli_capi(parser):
 
     # XXX Add --sort-by, --sort and --no-sort.
 
+    parser.add_argument('--ignore', dest='ignored', action='append')
+    def process_ignored(args, *, argv=None):
+        ignored = []
+        for raw in args.ignored or ():
+            ignored.extend(raw.replace(',', ' ').strip().split())
+        args.ignored = ignored or None
+
     parser.add_argument('filenames', nargs='*', metavar='FILENAME')
     process_progress = add_progress_cli(parser)
 
@@ -272,6 +279,7 @@ def _cli_capi(parser):
         process_levels,
         process_kinds,
         process_format,
+        process_ignored,
         process_progress,
     ]
 
@@ -282,6 +290,7 @@ def cmd_capi(filenames=None, *,
              groupby='kind',
              format='table',
              showempty=None,
+             ignored=None,
              track_progress=None,
              verbosity=VERBOSITY,
              **kwargs
@@ -297,6 +306,10 @@ def cmd_capi(filenames=None, *,
         items = (item for item in items if item.level in levels)
     if kinds:
         items = (item for item in items if item.kind in kinds)
+
+    filter = _capi.resolve_filter(ignored)
+    if filter:
+        items = (item for item in items if filter(item, log=lambda msg: logger.log(1, msg)))
 
     lines = render(
         items,

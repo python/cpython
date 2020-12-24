@@ -1,4 +1,5 @@
 from collections import namedtuple
+import logging
 import os
 import os.path
 import re
@@ -8,6 +9,9 @@ from c_common.tables import build_table, resolve_columns
 from c_parser.parser._regexes import _ind
 from ._files import iter_header_files, resolve_filename
 from . import REPO_ROOT
+
+
+logger = logging.getLogger(__name__)
 
 
 INCLUDE_ROOT = os.path.join(REPO_ROOT, 'Include')
@@ -332,6 +336,52 @@ def iter_capi(filenames=None):
         with open(filename) as infile:
             for item in _parse_capi(infile, filename):
                 yield item
+
+
+def resolve_filter(ignored):
+    if not ignored:
+        return None
+    ignored = set(_resolve_ignored(ignored))
+    def filter(item, *, log=None):
+        if item.name not in ignored:
+            return True
+        if log is not None:
+            log(f'ignored {item.name!r}')
+        return False
+    return filter
+
+
+def _resolve_ignored(ignored):
+    if isinstance(ignored, str):
+        ignored = [ignored]
+    for raw in ignored:
+        if isinstance(raw, str):
+            if raw.startswith('|'):
+                yield raw[1:]
+            elif raw.startswith('<') and raw.endswith('>'):
+                filename = raw[1:-1]
+                try:
+                    infile = open(filename)
+                except Exception as exc:
+                    logger.error(f'ignore file failed: {exc}')
+                    continue
+                logger.log(1, f'reading ignored names from {filename!r}')
+                with infile:
+                    for line in infile:
+                        if not line:
+                            continue
+                        if line[0].isspace():
+                            continue
+                        line = line.partition('#')[0].rstrip()
+                        if line:
+                            # XXX Recurse?
+                            yield line
+            else:
+                raw = raw.strip()
+                if raw:
+                    yield raw
+        else:
+            raise NotImplementedError
 
 
 def _collate(items, groupby, includeempty):
