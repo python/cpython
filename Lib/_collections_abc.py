@@ -473,7 +473,7 @@ def _has_special_args(args):
     """Checks if args[0] matches either ``...``, ``ParamSpec`` or
     ``_ConcatenateGenericAlias`` from typing.py
     """
-    if not (len(args) == 2):
+    if len(args) != 2:
         return False
     obj = args[0]
     if obj is Ellipsis:
