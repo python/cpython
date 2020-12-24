@@ -2065,7 +2065,7 @@ class TestEnum(unittest.TestCase):
         except ValueError:
             pass
 
-    def test_init_subclass(self):
+    def test_init_subclass_calling(self):
         class MyEnum(Enum):
             def __init_subclass__(cls, **kwds):
                 super(MyEnum, cls).__init_subclass__(**kwds)
@@ -2101,6 +2101,16 @@ class TestEnum(unittest.TestCase):
         self.assertFalse(NeverEnum.__dict__.get('_test1', False))
         self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
+    def test_init_subclass_parameter(self):
+        class multiEnum(Enum):
+            def __init_subclass__(cls, multi):
+                for member in cls:
+                    member._as_parameter_ = multi * member.value
+        class E(multiEnum, multi=3):
+            A = 1
+            B = 2
+        self.assertEqual(E.A._as_parameter_, 3)
+        self.assertEqual(E.B._as_parameter_, 6)
 
 class TestOrder(unittest.TestCase):
 
