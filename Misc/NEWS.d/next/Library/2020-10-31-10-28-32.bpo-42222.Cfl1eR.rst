@@ -2,7 +2,7 @@ Harmonized random.randrange() argument handling to better match
 that used by range().
 
 * The integer test/conversion in randrange() now uses operator.index().
-* Float arguments to randrange() is deprecated.
+* Non-integer arguments to randrange() are deprecated.
 * The *ValueError* is deprecated in favor of a *TypeError*.
 * It now runs a little faster than before.
 
