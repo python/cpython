@@ -7,7 +7,6 @@ from tkinter.ttk import Frame, Scrollbar
 from idlelib import macosx
 from idlelib.scrolledlist import ScrolledList
 from idlelib.window import ListedToplevel
-from tkinter.simpledialog import _place_window
 
 
 class Idb(bdb.Bdb):

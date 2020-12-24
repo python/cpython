@@ -28,7 +28,6 @@ from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
-from tkinter.simpledialog import _place_window
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -75,10 +74,19 @@ class Query(Toplevel):
         self.bind("<KP_Enter>", self.ok)
 
         self.create_widgets()
-        _place_window(self, parent)
+        self.update_idletasks()  # Need here for winfo_reqwidth below.
+        self.geometry(  # Center dialog over parent (or below htest box).
+                "+%d+%d" % (
+                    parent.winfo_rootx() +
+                    (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
+                    parent.winfo_rooty() +
+                    ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
+                    if not _htest else 150)
+                ) )
         self.resizable(height=False, width=False)
 
         if not _utest:
+            self.deiconify()  # Unhide now that geometry set.
             self.wait_window()
 
     def create_widgets(self, ok_text='OK'):  # Do not replace.

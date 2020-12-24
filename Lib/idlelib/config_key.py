@@ -4,7 +4,6 @@ Dialog for building Tkinter accelerator key bindings
 from tkinter import Toplevel, Listbox, StringVar, TclError
 from tkinter.ttk import Frame, Button, Checkbutton, Entry, Label, Scrollbar
 from tkinter import messagebox
-from tkinter.simpledialog import _place_window
 import string
 import sys
 
@@ -81,8 +80,17 @@ class GetKeysDialog(Toplevel):
             self.modifier_vars.append(variable)
         self.advanced = False
         self.create_widgets()
-        _place_window(self, parent)
+        self.update_idletasks()
+        self.geometry(
+                "+%d+%d" % (
+                    parent.winfo_rootx() +
+                    (parent.winfo_width()/2 - self.winfo_reqwidth()/2),
+                    parent.winfo_rooty() +
+                    ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
+                    if not _htest else 150)
+                ) )  # Center dialog over parent (or below htest box).
         if not _utest:
+            self.deiconify()  # Geometry set, unhide.
             self.wait_window()
 
     def showerror(self, *args, **kwargs):
