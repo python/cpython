@@ -122,16 +122,19 @@ def _parse_line(line, prev=None):
     results = zip(KINDS, m.groups())
     for kind, name in results:
         if name:
+            clean = last.split('//')[0].strip()
+            if clean.endswith('*/'):
+                clean = clean.split('/*')[0].rstrip()
             if kind == 'macro' or kind == 'constant':
-                if line.endswith('\\' + os.linesep):
+                if clean.endswith('\\'):
                     return line  # the new "prev"
             elif kind == 'inline':
                 if not prev:
-                    if not line.rstrip().endswith('}'):
+                    if not clean.endswith('}'):
                         return line  # the new "prev"
-                elif last.rstrip() != '}':
+                elif clean != '}':
                     return line  # the new "prev"
-            elif not line.endswith(';' + os.linesep):
+            elif not clean.endswith(';'):
                 return line  # the new "prev"
             return name, kind
     # It was a plain #define.
