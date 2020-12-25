@@ -1,0 +1,1 @@
+Fixed support of non-BMP characters in :mod:`tkinter` on macOS.
