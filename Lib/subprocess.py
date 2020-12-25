@@ -1778,8 +1778,8 @@ class Popen(object):
                             errread, errwrite,
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
-                            gid, gids, uid, umask,
-                            preexec_fn, setpgid)
+                            setpgid, gid, gids, uid, umask,
+                            preexec_fn)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what

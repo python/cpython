@@ -3105,7 +3105,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True,
+                        True, True, 0,
                         False, [], 0, -1,
                         func)
                 # Attempt to prevent
@@ -3154,7 +3154,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, fds_to_keep, None, [b"env"],
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True,
+                        True, True, 0,
                         None, None, None, -1,
                         None)
                 self.assertIn('fds_to_keep', str(c.exception))
