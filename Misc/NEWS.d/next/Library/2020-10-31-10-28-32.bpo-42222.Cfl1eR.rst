@@ -1,7 +1,7 @@
-Harmonized random.randrange() argument handling to better match
-that used by range().
+Harmonized random.randrange() argument handling to match range().
 
-* The integer test/conversion in randrange() now uses operator.index().
+* The integer test and conversion in randrange() now uses
+  operator.index().
 * Non-integer arguments to randrange() are deprecated.
 * The *ValueError* is deprecated in favor of a *TypeError*.
 * It now runs a little faster than before.
