@@ -95,5 +95,5 @@ The different font weights and slants are:
 
    Return a :class:`Font` representation of a tk named font.
 
-  .. versionchanged:: 3.10
-     The *root* parameter was added.
+   .. versionchanged:: 3.10
+      The *root* parameter was added.
