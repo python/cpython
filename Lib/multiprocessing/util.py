@@ -452,7 +452,7 @@ def spawnv_passfds(path, args, passfds):
         return _posixsubprocess.fork_exec(
             args, [os.fsencode(path)], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None, None, None, -1, None)
+            False, False, -1, None, None, None, -1, None)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
