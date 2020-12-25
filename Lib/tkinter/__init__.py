@@ -300,6 +300,31 @@ def _get_default_root(what=None):
     return _default_root
 
 
+def _get_temp_root():
+    global _support_default_root
+    if not _support_default_root:
+        raise RuntimeError("No master specified and tkinter is "
+                           "configured to not support default root")
+    root = _default_root
+    if root is None:
+        assert _support_default_root
+        _support_default_root = False
+        root = Tk()
+        _support_default_root = True
+        assert _default_root is None
+        root.withdraw()
+        root._temporary = True
+    return root
+
+
+def _destroy_temp_root(master):
+    if getattr(master, '_temporary', False):
+        try:
+            master.destroy()
+        except TclError:
+            pass
+
+
 def _tkerror(err):
     """Internal function."""
     pass
