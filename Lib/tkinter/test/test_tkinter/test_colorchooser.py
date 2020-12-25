@@ -1,10 +1,13 @@
 import unittest
 import tkinter
+from test.support import requires, run_unittest, swap_attr
+from tkinter.test.support import AbstractDefaultRootTest, AbstractTkTest
 from tkinter import colorchooser
-from test.support import requires, run_unittest
-from tkinter.test.support import AbstractTkTest
+from tkinter.colorchooser import askcolor
+from tkinter.commondialog import Dialog
 
 requires('gui')
+
 
 class ChooserTest(AbstractTkTest, unittest.TestCase):
 
@@ -36,7 +39,32 @@ class ChooserTest(AbstractTkTest, unittest.TestCase):
                          ((30, 144, 255), '#1e90ff'))
 
 
-tests_gui = (ChooserTest, )
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_askcolor(self):
+        def test_callback(dialog, master):
+            nonlocal ismapped
+            master.update()
+            ismapped = master.winfo_ismapped()
+            raise ZeroDivisionError
+
+        with swap_attr(Dialog, '_test_callback', test_callback):
+            ismapped = None
+            self.assertRaises(ZeroDivisionError, askcolor)
+            #askcolor()
+            self.assertEqual(ismapped, False)
+
+            root = tkinter.Tk()
+            ismapped = None
+            self.assertRaises(ZeroDivisionError, askcolor)
+            self.assertEqual(ismapped, True)
+            root.destroy()
+
+            tkinter.NoDefaultRoot()
+            self.assertRaises(RuntimeError, askcolor)
+
+
+tests_gui = (ChooserTest, DefaultRootTest,)
 
 if __name__ == "__main__":
     run_unittest(*tests_gui)
