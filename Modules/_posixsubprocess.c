@@ -500,7 +500,7 @@ child_exec(char *const exec_array[],
            int errread, int errwrite,
            int errpipe_read, int errpipe_write,
            int close_fds, int restore_signals,
-           int call_setsid,
+           int call_setsid, pid_t pgid_to_set,
            int call_setgid, gid_t gid,
            int call_setgroups, size_t groups_size, const gid_t *groups,
            int call_setuid, uid_t uid, int child_umask,
@@ -592,6 +592,11 @@ child_exec(char *const exec_array[],
 #ifdef HAVE_SETSID
     if (call_setsid)
         POSIX_CALL(setsid());
+#endif
+
+#ifdef HAVE_SETPGID
+    if (pgid_to_set >= 0)
+        POSIX_CALL(setpgid(0, pgid_to_set));
 #endif
 
 #ifdef HAVE_SETGROUPS
@@ -768,6 +773,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
+    pid_t pgid_to_set;
     int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
     uid_t uid;
     gid_t gid, *groups = NULL;
@@ -783,13 +789,13 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     _posixsubprocessstate *state = get_posixsubprocess_state(module);
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
+            args, "OOpO!OOiiiiiiiiii" _Py_PARSE_PID "OOOiO:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
-            &restore_signals, &call_setsid,
+            &restore_signals, &call_setsid, &pgid_to_set,
             &gid_object, &groups_list, &uid_object, &child_umask,
             &preexec_fn))
         return NULL;
@@ -1020,7 +1026,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     pid = do_fork_exec(exec_array, argv, envp, cwd,
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
-                       close_fds, restore_signals, call_setsid,
+                       close_fds, restore_signals, call_setsid, pgid_to_set,
                        call_setgid, gid, call_setgroups, num_groups, groups,
                        call_setuid, uid, child_umask, old_sigmask,
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
@@ -1083,7 +1089,7 @@ PyDoc_STRVAR(subprocess_fork_exec_doc,
 "fork_exec(args, executable_list, close_fds, pass_fds, cwd, env,\n\
           p2cread, p2cwrite, c2pread, c2pwrite,\n\
           errread, errwrite, errpipe_read, errpipe_write,\n\
-          restore_signals, call_setsid,\n\
+          restore_signals, call_setsid, pgid_to_set,\n\
           gid, groups_list, uid,\n\
           preexec_fn)\n\
 \n\

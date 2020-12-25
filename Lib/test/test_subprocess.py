@@ -1843,13 +1843,31 @@ class POSIXProcessTestCase(BaseTestCase):
             output = subprocess.check_output(
                     [sys.executable, "-c", "import os; print(os.getsid(0))"],
                     start_new_session=True)
-        except OSError as e:
+        except PermissionError as e:
             if e.errno != errno.EPERM:
-                raise
+                raise  # EACCES?
         else:
             parent_sid = os.getsid(0)
             child_sid = int(output)
             self.assertNotEqual(parent_sid, child_sid)
+
+    @unittest.skipUnless(hasattr(os, 'setpgid') and hasattr(os, 'getpgid'),
+                         'no setpgid or getpgid on platform')
+    def test_setpgid_0(self):
+        # For code coverage of calling setpgid().  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c", "import os; print(os.getpgid(0))"],
+                    setpgid=0)
+        except PermissionError as e:
+            if e.errno != errno.EPERM:
+                raise  # EACCES?
+        else:
+            parent_pgid = os.getpgid(0)
+            child_pgid = int(output)
+            self.assertNotEqual(parent_pgid, child_pgid)
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):

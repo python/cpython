@@ -736,6 +736,8 @@ class Popen(object):
 
       start_new_session (POSIX only)
 
+      setpgid (POSIX only)
+
       group (POSIX only)
 
       extra_groups (POSIX only)
@@ -761,7 +763,8 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1):
+                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1,
+                 setpgid=-1):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -963,7 +966,7 @@ class Popen(object):
                                 errread, errwrite,
                                 restore_signals,
                                 gid, gids, uid, umask,
-                                start_new_session)
+                                start_new_session, setpgid)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -1347,7 +1350,7 @@ class Popen(object):
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
                            unused_umask,
-                           unused_start_new_session):
+                           unused_start_new_session, unused_setpgid):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
@@ -1681,7 +1684,7 @@ class Popen(object):
                            errread, errwrite,
                            restore_signals,
                            gid, gids, uid, umask,
-                           start_new_session):
+                           start_new_session, setpgid):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
@@ -1717,6 +1720,7 @@ class Popen(object):
                     and (c2pwrite == -1 or c2pwrite > 2)
                     and (errwrite == -1 or errwrite > 2)
                     and not start_new_session
+                    and setpgid == -1
                     and gid is None
                     and gids is None
                     and uid is None
@@ -1775,7 +1779,7 @@ class Popen(object):
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             gid, gids, uid, umask,
-                            preexec_fn)
+                            preexec_fn, setpgid)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what

@@ -1,0 +1,2 @@
+Add a ``setpgid`` parameter to *subprocess.POpen* to help ease the
+deprecation of the unsafe ``preexec_fn`` parameter.
