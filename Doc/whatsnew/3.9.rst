@@ -1483,3 +1483,36 @@ and to match the behavior of static type checkers specified in the PEP.
       TypeError: unhashable type: 'set'
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
+
+macOS 11.0 (Big Sur) and Apple Silicon Mac support
+--------------------------------------------------
+
+As of 3.9.1, Python now fully supports building and running on macOS 11.0
+(Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
+A new universal build variant, ``universal2``, is now available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables. Binaries
+can also now be built on current versions of macOS to be deployed on a range
+of older macOS versions (tested to 10.9) while making some newer OS
+functions and options conditionally available based on the operating system
+version in use at runtime ("weaklinking").
+
+(Contributed by Ronald Oussoren and Lawrence D'Anna in :issue:`41100`.)
+
+Notable changes in Python 3.9.2
+===============================
+
+collections.abc
+---------------
+
+:class:`collections.abc.Callable` generic now flattens type parameters, similar
+to what :data:`typing.Callable` currently does.  This means that
+``collections.abc.Callable[[int, str], str]`` will have ``__args__`` of
+``(int, str, str)``; previously this was ``([int, str], str)``.  To allow this
+change, :class:`types.GenericAlias` can now be subclassed, and a subclass will
+be returned when subscripting the :class:`collections.abc.Callable` type.
+Code which accesses the arguments via :func:`typing.get_args` or ``__args__``
+need to account for this change.  A :exc:`DeprecationWarning` may be emitted for
+invalid forms of parameterizing :class:`collections.abc.Callable` which may have
+passed silently in Python 3.9.1.  This :exc:`DeprecationWarning` will
+become a :exc:`TypeError` in Python 3.10.
+(Contributed by Ken Jin in :issue:`42195`.)
