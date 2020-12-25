@@ -1750,7 +1750,7 @@ Py_FinalizeEx(void)
     _PyImport_Fini();
 
     /* Cleanup typeobject.c's internal caches. */
-    _PyType_Fini();
+    _PyType_Fini(tstate);
 
     /* unload faulthandler module */
     _PyFaulthandler_Fini();
