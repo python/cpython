@@ -17,10 +17,10 @@ BOLD   = "bold"
 ITALIC = "italic"
 
 
-def nametofont(name):
+def nametofont(name, root=None):
     """Given the name of a tk named font, returns a Font representation.
     """
-    return Font(name=name, exists=True)
+    return Font(name=name, exists=True, root=root)
 
 
 class Font:
