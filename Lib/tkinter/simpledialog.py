@@ -24,7 +24,8 @@ askstring -- get a string from the user
 """
 
 from tkinter import *
-from tkinter import messagebox, _get_default_root
+from tkinter import _get_temp_root, _destroy_temp_root
+from tkinter import messagebox
 
 
 class SimpleDialog:
@@ -100,7 +101,7 @@ class Dialog(Toplevel):
         '''
         master = parent
         if master is None:
-            master = _get_default_root('create dialog window')
+            master = _get_temp_root()
 
         Toplevel.__init__(self, master)
 
@@ -142,6 +143,7 @@ class Dialog(Toplevel):
         '''Destroy the window'''
         self.initial_focus = None
         Toplevel.destroy(self)
+        _destroy_temp_root(self.master)
 
     #
     # construction hooks
