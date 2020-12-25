@@ -937,6 +937,10 @@ class Popen(object):
             if uid < 0:
                 raise ValueError(f"User ID cannot be negative, got {uid}")
 
+        if preexec_fn == os.setsid:  # A common unnecessary legacy use.
+            start_new_session = True
+            preexec_fn = None
+
         try:
             if p2cwrite != -1:
                 self.stdin = io.open(p2cwrite, 'wb', bufsize)
