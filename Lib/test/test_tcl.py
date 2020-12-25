@@ -195,7 +195,7 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        filename = support.TESTFN_ASCII
+        filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
         with open(filename, 'w') as f:
             f.write("""set a 1
@@ -209,7 +209,7 @@ class TclTest(unittest.TestCase):
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        filename = support.TESTFN_ASCII
+        filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
         with open(filename, 'w') as f:
             f.write("""
@@ -226,7 +226,7 @@ class TclTest(unittest.TestCase):
         self.addCleanup(tcl.call, 'encoding', 'system', encoding)
         tcl.call('encoding', 'system', 'utf-8')
 
-        filename = support.TESTFN_ASCII
+        filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
         with open(filename, 'wb') as f:
             f.write(b"""
