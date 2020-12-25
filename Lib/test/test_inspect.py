@@ -3250,6 +3250,26 @@ class TestSignatureObject(unittest.TestCase):
         p2 = inspect.signature(lambda y, x: None).parameters
         self.assertNotEqual(p1, p2)
 
+    def test_signature_annotations_with_local_namespaces(self):
+        class Foo: ...
+        def func(foo: Foo) -> int: pass
+        def func2(foo: Foo, bar: Bar) -> int: pass
+
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                sig1 = signature_func(func)
+                self.assertEqual(sig1.return_annotation, 'int')
+                self.assertEqual(sig1.parameters['foo'].annotation, 'Foo')
+
+                sig2 = signature_func(func, localns=locals())
+                self.assertEqual(sig2.return_annotation, int)
+                self.assertEqual(sig2.parameters['foo'].annotation, Foo)
+
+                sig3 = signature_func(func2, globalns={'Bar': int}, localns=locals())
+                self.assertEqual(sig3.return_annotation, int)
+                self.assertEqual(sig3.parameters['foo'].annotation, Foo)
+                self.assertEqual(sig3.parameters['bar'].annotation, int)
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):

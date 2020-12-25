@@ -1,0 +1,4 @@
+Improved placing of simple query windows in Tkinter (such as
+:func:`tkinter.simpledialog.askinteger`). They are now centered at the
+center of the parent window if it is specified and shown, otherwise at the
+center of the screen.

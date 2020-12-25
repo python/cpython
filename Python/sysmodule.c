@@ -1907,12 +1907,12 @@ sys__debugmallocstats_impl(PyObject *module)
 }
 
 #ifdef Py_TRACE_REFS
-/* Defined in objects.c because it uses static globals if that file */
+/* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
-/* Defined in ceval.c because it uses static globals if that file */
+/* Defined in ceval.c because it uses static globals in that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 #endif
 

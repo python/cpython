@@ -569,7 +569,7 @@ class Widget(tkinter.Widget):
         matches statespec. statespec is expected to be a sequence."""
         ret = self.tk.getboolean(
                 self.tk.call(self._w, "instate", ' '.join(statespec)))
-        if ret and callback:
+        if ret and callback is not None:
             return callback(*args, **kw)
 
         return ret

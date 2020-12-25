@@ -15429,6 +15429,7 @@ _ACEOF
 
 fi
 
+
 EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDVERSION" >&5
@@ -17095,16 +17096,17 @@ $as_echo "#define HAVE_STD_ATOMIC 1" >>confdefs.h
 
 fi
 
-# Check for GCC >= 4.7 __atomic builtins
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GCC >= 4.7 __atomic builtins" >&5
-$as_echo_n "checking for GCC >= 4.7 __atomic builtins... " >&6; }
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for builtin __atomic_load_n and __atomic_store_n functions" >&5
+$as_echo_n "checking for builtin __atomic_load_n and __atomic_store_n functions... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-    volatile int val = 1;
+    int val;
     int main() {
-      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
     }
 
