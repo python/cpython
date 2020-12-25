@@ -416,7 +416,7 @@ class Collection(Sized, Iterable, Container):
 class _CallableGenericAlias(GenericAlias):
     """ Represent `Callable[argtypes, resulttype]`.
 
-    This sets ``__args__`` to a tuple containing the flattened``argtypes``
+    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
     followed by ``resulttype``.
 
     Example: ``Callable[[int, str], float]`` sets ``__args__`` to
@@ -434,7 +434,7 @@ class _CallableGenericAlias(GenericAlias):
             raise TypeError(
                 "Callable must be used as Callable[[arg, ...], result].")
         t_args, t_result = args
-        if isinstance(t_args, list):
+        if isinstance(t_args, (list, tuple)):
             ga_args = tuple(t_args) + (t_result,)
         # This relaxes what t_args can be on purpose to allow things like
         # PEP 612 ParamSpec.  Responsibility for whether a user is using
@@ -444,7 +444,7 @@ class _CallableGenericAlias(GenericAlias):
         return super().__new__(cls, origin, ga_args)
 
     def __repr__(self):
-        if len(self.__args__) == 2 and self.__args__[0] is Ellipsis:
+        if _has_special_args(self.__args__):
             return super().__repr__()
         return (f'collections.abc.Callable'
                 f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
@@ -452,9 +452,35 @@ class _CallableGenericAlias(GenericAlias):
 
     def __reduce__(self):
         args = self.__args__
-        if not (len(args) == 2 and args[0] is Ellipsis):
+        if not _has_special_args(args):
             args = list(args[:-1]), args[-1]
         return _CallableGenericAlias, (Callable, args)
+
+    def __getitem__(self, item):
+        # Called during TypeVar substitution, returns the custom subclass
+        # rather than the default types.GenericAlias object.
+        ga = super().__getitem__(item)
+        args = ga.__args__
+        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
+        if not isinstance(ga.__args__[0], tuple):
+            t_result = ga.__args__[-1]
+            t_args = ga.__args__[:-1]
+            args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, args)
+
+
+def _has_special_args(args):
+    """Checks if args[0] matches either ``...``, ``ParamSpec`` or
+    ``_ConcatenateGenericAlias`` from typing.py
+    """
+    if len(args) != 2:
+        return False
+    obj = args[0]
+    if obj is Ellipsis:
+        return True
+    obj = type(obj)
+    names = ('ParamSpec', '_ConcatenateGenericAlias')
+    return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
 
 
 def _type_repr(obj):

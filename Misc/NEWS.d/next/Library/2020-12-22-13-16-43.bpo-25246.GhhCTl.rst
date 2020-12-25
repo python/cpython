@@ -1,0 +1,1 @@
+Optimized :meth:`collections.deque.remove`.
