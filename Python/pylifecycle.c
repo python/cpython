@@ -1573,6 +1573,7 @@ finalize_interp_types(PyThreadState *tstate)
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
+    _PyType_Fini(tstate);
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
     _PyUnicode_ClearInterned(tstate);
@@ -1750,9 +1751,6 @@ Py_FinalizeEx(void)
 
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
     _PyImport_Fini();
-
-    /* Cleanup typeobject.c's internal caches. */
-    _PyType_Fini(tstate);
 
     /* unload faulthandler module */
     _PyFaulthandler_Fini();
