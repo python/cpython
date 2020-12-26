@@ -1,11 +1,13 @@
 """Tests for the asdl parser in Parser/asdl.py"""
 
 import importlib.machinery
+import importlib.util
 import os
 from os.path import dirname
 import sys
 import sysconfig
 import unittest
+import types
 
 
 # This test is only relevant for from-source builds of Python.
@@ -26,7 +28,10 @@ class TestAsdlParser(unittest.TestCase):
         sys.path.insert(0, parser_dir)
         loader = importlib.machinery.SourceFileLoader(
                 'asdl', os.path.join(parser_dir, 'asdl.py'))
-        cls.asdl = loader.load_module()
+        module = types.ModuleType('asdl')
+        module.__spec__ = importlib.util.spec_from_loader('asdl', loader)
+        loader.exec_module(module)
+        cls.asdl = module
         cls.mod = cls.asdl.parse(os.path.join(parser_dir, 'Python.asdl'))
         cls.assertTrue(cls.asdl.check(cls.mod), 'Module validation failed')
 
