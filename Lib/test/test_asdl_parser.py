@@ -6,8 +6,8 @@ import os
 from os.path import dirname
 import sys
 import sysconfig
-import unittest
 import types
+import unittest
 
 
 # This test is only relevant for from-source builds of Python.
