@@ -2359,10 +2359,9 @@ _PyUnicode_FromId(_Py_Identifier *id)
 
 
 static void
-unicode_clear_identifiers(PyThreadState *tstate)
+unicode_clear_identifiers(struct _Py_unicode_state *state)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_unicode_ids *ids = &interp->unicode.ids;
+    struct _Py_unicode_ids *ids = &state->ids;
     for (Py_ssize_t i=0; i < ids->size; i++) {
         Py_XDECREF(ids->array[i]);
     }
@@ -16243,7 +16242,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 
-    unicode_clear_identifiers(tstate);
+    unicode_clear_identifiers(state);
 
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);
