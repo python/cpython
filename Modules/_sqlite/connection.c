@@ -1424,12 +1424,13 @@ _sqlite3.Connection.executescript as pysqlite_connection_executescript
     sql_script as script_obj: object
     /
 
+Executes a multiple SQL statements at once. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_executescript(pysqlite_Connection *self,
                                   PyObject *script_obj)
-/*[clinic end generated code: output=4c4f9d77aa0ae37d input=d577986d8f6bcaf4]*/
+/*[clinic end generated code: output=4c4f9d77aa0ae37d input=c0b14695aa6c81d9]*/
 {
     _Py_IDENTIFIER(executescript);
     PyObject* cursor = 0;
@@ -1594,6 +1595,7 @@ _sqlite3.Connection.backup as pysqlite_connection_backup
     name: str = "main"
     sleep: double = 0.250
 
+Makes a backup of the database. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1601,7 +1603,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
                                 double sleep)
-/*[clinic end generated code: output=306a3e6a38c36334 input=c71435ef1b7282a8]*/
+/*[clinic end generated code: output=306a3e6a38c36334 input=2f3497ea530144b1]*/
 {
     int rc;
     int callback_error = 0;

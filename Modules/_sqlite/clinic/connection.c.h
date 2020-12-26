@@ -479,7 +479,8 @@ exit:
 PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
 "executescript($self, sql_script, /)\n"
 "--\n"
-"\n");
+"\n"
+"Executes a multiple SQL statements at once. Non-standard.");
 
 #define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
@@ -526,7 +527,8 @@ PyDoc_STRVAR(pysqlite_connection_backup__doc__,
 "backup($self, /, target=<unrepresentable>, *, pages=-1, progress=None,\n"
 "       name=\'main\', sleep=0.25)\n"
 "--\n"
-"\n");
+"\n"
+"Makes a backup of the database. Non-standard.");
 
 #define PYSQLITE_CONNECTION_BACKUP_METHODDEF    \
     {"backup", (PyCFunction)(void(*)(void))pysqlite_connection_backup, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_backup__doc__},
@@ -722,4 +724,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=f0287a1469b2594a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8f2ae5034cface4 input=a9049054013a1b77]*/
