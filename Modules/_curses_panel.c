@@ -654,6 +654,7 @@ _curses_panel_exec(PyObject *mod)
     if (state->PyCursesPanel_Type == NULL) {
         return -1;
     }
+    ((PyTypeObject *)state->PyCursesPanel_Type)->tp_new = NULL;
 
     if (PyModule_AddType(mod, state->PyCursesPanel_Type) < 0) {
         return -1;
