@@ -24,7 +24,6 @@
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
-#include "cache.h"
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
@@ -373,7 +372,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_row_setup_types(module) < 0) ||
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
-        (pysqlite_cache_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
         (pysqlite_prepare_protocol_setup_types(module) < 0)
        ) {
@@ -421,6 +419,10 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* initialize the default converters */
     if (converters_init(module) < 0) {
+        goto error;
+    }
+
+    if (load_functools_lru_cache(module) < 0) {
         goto error;
     }
 

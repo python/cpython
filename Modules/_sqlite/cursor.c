@@ -415,6 +415,14 @@ static int check_cursor(pysqlite_Cursor* cur)
 }
 
 static PyObject *
+get_statement(pysqlite_Cursor *self, PyObject *operation)
+{
+    PyObject *args[] = { operation, };
+    PyObject *cache = self->connection->statement_cache;
+    return PyObject_Vectorcall(cache, args, 1, NULL);
+}
+
+static PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
     PyObject* parameters_list = NULL;
@@ -422,7 +430,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     PyObject* parameters = NULL;
     int i;
     int rc;
-    PyObject* func_args;
     PyObject* result;
     int numcols;
     PyObject* column_name;
@@ -484,22 +491,12 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     Py_SETREF(self->description, Py_None);
     self->rowcount = 0L;
 
-    func_args = PyTuple_New(1);
-    if (!func_args) {
-        goto error;
-    }
-    if (PyTuple_SetItem(func_args, 0, Py_NewRef(operation)) != 0) {
-        goto error;
-    }
-
     if (self->statement) {
         (void)pysqlite_statement_reset(self->statement);
     }
 
-    Py_XSETREF(self->statement,
-              (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
-    Py_DECREF(func_args);
-
+    PyObject *stmt = get_statement(self, operation);
+    Py_XSETREF(self->statement, (pysqlite_Statement *)stmt);
     if (!self->statement) {
         goto error;
     }

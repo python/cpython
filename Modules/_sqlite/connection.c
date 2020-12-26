@@ -21,7 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "cache.h"
 #include "module.h"
 #include "structmember.h"         // PyMemberDef
 #include "connection.h"
@@ -56,6 +55,39 @@ static const char * const begin_statements[] = {
 
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
+
+static PyObject *_lru_cache = NULL;
+
+int
+load_functools_lru_cache(PyObject *Py_UNUSED(module))
+{
+    PyObject *functools = PyImport_ImportModule("functools");
+    if (functools == NULL) {
+        return -1;
+    }
+    _lru_cache = PyObject_GetAttrString(functools, "lru_cache");
+    Py_DECREF(functools);
+    if (_lru_cache == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+new_statement_cache(pysqlite_Connection *self, int maxsize)
+{
+    PyObject *args[] = { PyLong_FromLong(maxsize), };
+    PyObject *inner = PyObject_Vectorcall(_lru_cache, args, 1, NULL);
+    Py_XDECREF(args[0]);
+    if (inner == NULL) {
+        return NULL;
+    }
+
+    args[0] = (PyObject *)self;  // Borrowed ref.
+    PyObject *res = PyObject_Vectorcall(inner, args, 1, NULL);
+    Py_DECREF(inner);
+    return res;
+}
 
 static int
 pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
@@ -134,7 +166,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     }
     Py_DECREF(isolation_level);
 
-    self->statement_cache = (pysqlite_Cache*)PyObject_CallFunction((PyObject*)pysqlite_CacheType, "Oi", self, cached_statements);
+    self->statement_cache = new_statement_cache(self, cached_statements);
+    if (self->statement_cache == NULL) {
+        return -1;
+    }
     if (PyErr_Occurred()) {
         return -1;
     }
@@ -148,14 +183,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     if (!self->statements || !self->cursors) {
         return -1;
     }
-
-    /* By default, the Cache class INCREFs the factory in its initializer, and
-     * decrefs it in its deallocator method. Since this would create a circular
-     * reference here, we're breaking it by decrementing self, and telling the
-     * cache class to not decref the factory (self) in its deallocator.
-     */
-    self->statement_cache->decref_factory = 0;
-    Py_DECREF(self);
 
     self->detect_types = detect_types;
     self->timeout = timeout;
@@ -261,9 +288,10 @@ connection_clear(pysqlite_Connection *self)
 static void
 connection_dealloc(pysqlite_Connection *self)
 {
+    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    (void)connection_clear(self);
 
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {
@@ -299,6 +327,21 @@ int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObjec
 error:
     return 0;
 }
+
+
+/*[clinic input]
+_sqlite3.Connection.statement_cache as pysqlite_connection_statement_cache
+
+Return the connection statement cache.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_statement_cache_impl(pysqlite_Connection *self)
+/*[clinic end generated code: output=a88b63d0c46650ba input=32465d5ec271ca8c]*/
+{
+    return Py_NewRef(self->statement_cache);
+}
+
 
 /*[clinic input]
 _sqlite3.Connection.cursor as pysqlite_connection_cursor
@@ -1911,6 +1954,7 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
+    PYSQLITE_CONNECTION_STATEMENT_CACHE_METHODDEF
     {NULL, NULL}
 };
 
