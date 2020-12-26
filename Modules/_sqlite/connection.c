@@ -1360,7 +1360,7 @@ Executes a SQL statement. Non-standard.
 static PyObject *
 pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
                                  PyObject *parameters)
-/*[clinic end generated code: output=5be05ae01ee17ee4 input=ec86c00fe1b371be]*/
+/*[clinic end generated code: output=5be05ae01ee17ee4 input=fbd17c75c7140271]*/
 {
     _Py_IDENTIFIER(execute);
     PyObject* cursor = 0;

@@ -392,31 +392,26 @@ exit:
 #endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 PyDoc_STRVAR(pysqlite_connection_execute__doc__,
-"execute($self, sql, /, parameters=<unrepresentable>)\n"
+"execute($self, sql, parameters=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Executes a SQL statement. Non-standard.");
 
 #define PYSQLITE_CONNECTION_EXECUTE_METHODDEF    \
-    {"execute", (PyCFunction)(void(*)(void))pysqlite_connection_execute, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_execute__doc__},
+    {"execute", (PyCFunction)(void(*)(void))pysqlite_connection_execute, METH_FASTCALL, pysqlite_connection_execute__doc__},
 
 static PyObject *
 pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
                                  PyObject *parameters);
 
 static PyObject *
-pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "parameters", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "execute", 0};
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *sql;
     PyObject *parameters = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("execute", nargs, 1, 2)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -427,11 +422,11 @@ pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py
         goto exit;
     }
     sql = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (nargs < 2) {
+        goto skip_optional;
     }
     parameters = args[1];
-skip_optional_pos:
+skip_optional:
     return_value = pysqlite_connection_execute_impl(self, sql, parameters);
 
 exit:
@@ -724,4 +719,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=d8f2ae5034cface4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7cb13d491a5970aa input=a9049054013a1b77]*/
