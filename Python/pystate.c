@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"
 #include "pycore_initconfig.h"
+#include "pycore_object.h"        // _PyType_InitCache()
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
@@ -223,6 +224,7 @@ PyInterpreterState_New(void)
 
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
+    _PyType_InitCache(interp);
 
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
