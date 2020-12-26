@@ -6,7 +6,6 @@ import os
 from os.path import dirname
 import sys
 import sysconfig
-import types
 import unittest
 
 
@@ -28,8 +27,8 @@ class TestAsdlParser(unittest.TestCase):
         sys.path.insert(0, parser_dir)
         loader = importlib.machinery.SourceFileLoader(
                 'asdl', os.path.join(parser_dir, 'asdl.py'))
-        module = types.ModuleType('asdl')
-        module.__spec__ = importlib.util.spec_from_loader('asdl', loader)
+        spec = importlib.util.spec_from_loader('asdl', loader)
+        module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
         cls.asdl = module
         cls.mod = cls.asdl.parse(os.path.join(parser_dir, 'Python.asdl'))
