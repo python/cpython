@@ -1351,8 +1351,8 @@ error:
 _sqlite3.Connection.execute as pysqlite_connection_execute
 
     sql: unicode
-    /
     parameters: object = NULL
+    /
 
 Executes a SQL statement. Non-standard.
 [clinic start generated code]*/
