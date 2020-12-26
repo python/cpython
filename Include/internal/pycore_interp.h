@@ -180,6 +180,27 @@ struct atexit_state {
 };
 
 
+// Type attribute lookup cache: speed up attribute and method lookups,
+// see _PyType_Lookup().
+struct type_cache_entry {
+    unsigned int version;  // initialized from type->tp_version_tag
+    PyObject *name;        // reference to exactly a str or None
+    PyObject *value;       // borrowed reference or NULL
+};
+
+#define MCACHE_SIZE_EXP 12
+#define MCACHE_STATS 0
+
+struct type_cache {
+    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
+#if MCACHE_STATS
+    size_t hits;
+    size_t misses;
+    size_t collisions;
+#endif
+};
+
+
 /* interpreter state */
 
 #define _PY_NSMALLPOSINTS           257
@@ -284,6 +305,7 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
+    struct type_cache type_cache;
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
