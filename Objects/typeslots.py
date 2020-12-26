@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # Usage: typeslots.py < Include/typeslots.h typeslots.inc
 
-import sys, re
+import sys
+import re
 
 
 def generate_typeslots(out=sys.stdout):
@@ -16,24 +17,24 @@ def generate_typeslots(out=sys.stdout):
         if member.startswith("tp_"):
             member = f'{{-1, offsetof(PyTypeObject, {member})}}'
         elif member.startswith("am_"):
-            member = (f'{{offsetof(PyAsyncMethods, {member}),'+
+            member = (f'{{offsetof(PyAsyncMethods, {member}),' +
                       ' offsetof(PyTypeObject, tp_as_async)}')
         elif member.startswith("nb_"):
-            member = (f'{{offsetof(PyNumberMethods, {member}),'+
+            member = (f'{{offsetof(PyNumberMethods, {member}),' +
                       ' offsetof(PyTypeObject, tp_as_number)}')
         elif member.startswith("mp_"):
-            member = (f'{{offsetof(PyMappingMethods, {member}),'+
+            member = (f'{{offsetof(PyMappingMethods, {member}),' +
                       ' offsetof(PyTypeObject, tp_as_mapping)}')
         elif member.startswith("sq_"):
-            member = (f'{{offsetof(PySequenceMethods, {member}),'+
+            member = (f'{{offsetof(PySequenceMethods, {member}),' +
                       ' offsetof(PyTypeObject, tp_as_sequence)}')
         elif member.startswith("bf_"):
-            member = (f'{{offsetof(PyBufferProcs, {member}),'+
+            member = (f'{{offsetof(PyBufferPros, {member}),' +
                       ' offsetof(PyTypeObject, tp_as_buffer)}')
         res[int(m.group(2))] = member
 
-    M = max(res.keys())+1
-    for i in range(1,M):
+    m2 = max(res.keys())+1
+    for i in range(1, m2):
         if i in res:
             out.write("%s,\n" % res[i])
         else:
@@ -46,6 +47,7 @@ def main():
             generate_typeslots(f)
     else:
         generate_typeslots()
+
 
 if __name__ == "__main__":
     main()
