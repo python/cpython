@@ -304,16 +304,19 @@ class _PropertyUnreachableAttribute:
     prop = None
 
     def _format_exc_msg(self, msg):
-        if self.prop.name is None:
+        name = self.prop[0].name
+
+        if name is None:
             return msg
 
-        return "{} {}".format(msg, self.prop.name)
+        return "{} {}".format(msg, name)
 
-    def setUpClass(self):
+    @classmethod
+    def setUpClass(cls):
         class TestCls:
-            foo = self.prop
+            foo, = cls.prop
 
-        self.obj = TestCls()
+        cls.obj = TestCls()
 
     def test_get_property(self):
         with self.assertRaisesRegex(AttributeError, self._format_exc_msg("unreadable attribute")):
@@ -329,15 +332,11 @@ class _PropertyUnreachableAttribute:
 
 
 class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
-    def setUpClass(self):
-        self.prop = property(name='foo')
-        super().setUpClass()
+    prop = property(name='foo'),
 
 
 class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
-    def setUpClass(self):
-        self.prop = property()
-        super().setUpClass()
+    prop = property(),
 
 
 if __name__ == '__main__':
