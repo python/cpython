@@ -628,6 +628,7 @@ PyObject* pysqlite_cursor_executemany(pysqlite_Cursor* self, PyObject* args)
 static PyObject *
 pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
 {
+    _Py_IDENTIFIER(commit);
     PyObject* script_obj;
     const char* script_cstr;
     sqlite3_stmt* statement;
@@ -655,7 +656,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
     }
 
     /* commit first */
-    result = pysqlite_connection_commit(self->connection, NULL);
+    result = _PyObject_CallMethodIdNoArgs((PyObject *)self->connection, &PyId_commit);
     if (!result) {
         goto error;
     }
