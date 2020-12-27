@@ -546,7 +546,7 @@ Connection Objects
          con.close()
 
 
-   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       This method makes a backup of a SQLite database even while it's being accessed
       by other clients, or concurrently by the same connection.  The copy will be
