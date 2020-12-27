@@ -155,7 +155,9 @@ error = socket_module.error
 _GLOBAL_DEFAULT_TIMEOUT = socket_module._GLOBAL_DEFAULT_TIMEOUT
 AF_INET = socket_module.AF_INET
 AF_INET6 = socket_module.AF_INET6
-AF_UNIX = socket_module.AF_UNIX
 SOCK_STREAM = socket_module.SOCK_STREAM
 SOL_SOCKET = None
 SO_REUSEADDR = None
+
+if hasattr(socket_module, 'AF_UNIX'):
+    AF_UNIX = socket_module.AF_UNIX
