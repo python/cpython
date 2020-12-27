@@ -575,8 +575,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 /* TODO: have a way to show errors here */
                 if (!cur_py_value) {
                     PyErr_Clear();
-                    Py_INCREF(Py_None);
-                    cur_py_value = Py_None;
+                    cur_py_value = Py_NewRef(Py_None);
                 }
                 break;
             case SQLITE_BLOB:
@@ -586,8 +585,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 break;
             case SQLITE_NULL:
             default:
-                Py_INCREF(Py_None);
-                cur_py_value = Py_None;
+                cur_py_value = Py_NewRef(Py_None);
         }
 
         if (!cur_py_value) {
@@ -853,12 +851,11 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
         flags |= SQLITE_DETERMINISTIC;
 #endif
     }
-    Py_INCREF(func);
     rc = sqlite3_create_function_v2(self->db,
                                     name,
                                     narg,
                                     flags,
-                                    (void*)func,
+                                    (void*)Py_NewRef(func),
                                     _pysqlite_func_callback,
                                     NULL,
                                     NULL,
@@ -899,7 +896,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                     name,
                                     n_arg,
                                     SQLITE_UTF8,
-                                    (void*)aggregate_class,
+                                    (void*)Py_NewRef(aggregate_class),
                                     0,
                                     &_pysqlite_step_callback,
                                     &_pysqlite_final_callback,
@@ -1212,8 +1209,7 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 
 static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
 {
-    Py_INCREF(self->isolation_level);
-    return self->isolation_level;
+    return Py_NewRef(self->isolation_level);
 }
 
 static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self, void* unused)
@@ -1526,8 +1522,7 @@ pysqlite_connection_interrupt_impl(pysqlite_Connection *self)
 
     sqlite3_interrupt(self->db);
 
-    Py_INCREF(Py_None);
-    retval = Py_None;
+    retval = Py_NewRef(Py_None);
 
 finally:
     return retval;
@@ -1746,7 +1741,6 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
 /*[clinic end generated code: output=0f63b8995565ae22 input=5c3898813a776cf2]*/
 {
     PyObject* uppercase_name = 0;
-    PyObject* retval;
     Py_ssize_t i, len;
     _Py_IDENTIFIER(upper);
     const char *uppercase_name_str;
@@ -1814,13 +1808,9 @@ finally:
     Py_XDECREF(uppercase_name);
 
     if (PyErr_Occurred()) {
-        retval = NULL;
-    } else {
-        Py_INCREF(Py_None);
-        retval = Py_None;
+        return NULL;
     }
-
-    return retval;
+    return Py_NewRef(Py_None);
 }
 
 /*[clinic input]
@@ -1835,8 +1825,7 @@ static PyObject *
 pysqlite_connection_enter_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=457b09726d3e9dcd input=127d7a4f17e86d8f]*/
 {
-    Py_INCREF(self);
-    return (PyObject*)self;
+    return Py_NewRef((PyObject *)self);
 }
 
 /*[clinic input]
