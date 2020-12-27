@@ -1,2 +1,0 @@
-:func:`typing.get_args` is now consistent between the parameterized generic
-of ``collections.abc.Callable`` and ``typing.Callable``.
