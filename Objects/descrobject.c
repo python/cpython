@@ -1590,7 +1590,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
-        if (gs->prop_name != Py_None) {
+        if (gs->prop_name != NULL) {
             PyErr_Format(PyExc_AttributeError, "unreadable attribute %S", gs->prop_name);
         } else {
             PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
@@ -1613,7 +1613,7 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     else
         func = gs->prop_set;
     if (func == NULL) {
-        if (gs->prop_name != Py_None) {
+        if (gs->prop_name != NULL) {
             PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
                         "can't delete attribute %S" :

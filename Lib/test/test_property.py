@@ -307,9 +307,9 @@ class _PropertyUnreachableAttribute:
         name = self.prop[0].name
 
         if name is None:
-            return msg
+            return '^{}$'.format(msg)
 
-        return "{} {}".format(msg, name)
+        return "^{} {}$".format(msg, name)
 
     @classmethod
     def setUpClass(cls):
