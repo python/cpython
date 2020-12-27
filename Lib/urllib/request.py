@@ -202,6 +202,8 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
                                              cafile=cafile,
                                              capath=capath)
+        # send ALPN extension to indicate HTTP/1.1 protocol
+        context.set_alpn_protocols(['http/1.1'])
         https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif context:

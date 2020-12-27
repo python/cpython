@@ -165,6 +165,7 @@ def get_argspec(ob):
         ob_call = ob.__call__
     except BaseException:  # Buggy user object could raise anything.
         return ''  # No popup for non-callables.
+    # For Get_argspecTest.test_buggy_getattr_class, CallA() & CallB().
     fob = ob_call if isinstance(ob_call, types.MethodType) else ob
 
     # Initialize argspec and wrap it to get lines.
@@ -185,10 +186,7 @@ def get_argspec(ob):
              if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
     # Augment lines from docstring, if any, and join to get argspec.
-    if isinstance(ob_call, types.MethodType):
-        doc = ob_call.__doc__
-    else:
-        doc = getattr(ob, "__doc__", "")
+    doc = inspect.getdoc(ob)
     if doc:
         for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
             line = line.strip()

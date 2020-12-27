@@ -115,7 +115,7 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
-/* Has builtin atomics */
+/* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
 /* Define to 1 if you have the 'chflags' function. */
@@ -287,6 +287,9 @@
 /* Define to 1 if you have the `dup3' function. */
 #undef HAVE_DUP3
 
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
 
@@ -307,6 +310,9 @@
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
+
+/* Define if you have the 'eventfd' function. */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
@@ -1012,6 +1018,9 @@
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
+/* Define to 1 if you have the `splice' function. */
+#undef HAVE_SPLICE
+
 /* Define if your compiler provides ssize_t */
 #undef HAVE_SSIZE_T
 
@@ -1115,6 +1124,9 @@
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/eventfd.h> header file. */
+#undef HAVE_SYS_EVENTFD_H
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 #undef HAVE_SYS_EVENT_H

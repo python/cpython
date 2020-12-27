@@ -55,9 +55,6 @@ get_surrogateescape(_Py_error_handler errors, int *surrogateescape)
 PyObject *
 _Py_device_encoding(int fd)
 {
-#if defined(MS_WINDOWS)
-    UINT cp;
-#endif
     int valid;
     _Py_BEGIN_SUPPRESS_IPH
     valid = isatty(fd);
@@ -66,6 +63,7 @@ _Py_device_encoding(int fd)
         Py_RETURN_NONE;
 
 #if defined(MS_WINDOWS)
+    UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
     else if (fd == 1 || fd == 2)
@@ -74,16 +72,14 @@ _Py_device_encoding(int fd)
         cp = 0;
     /* GetConsoleCP() and GetConsoleOutputCP() return 0 if the application
        has no console */
-    if (cp != 0)
-        return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
-#elif defined(CODESET)
-    {
-        char *codeset = nl_langinfo(CODESET);
-        if (codeset != NULL && codeset[0] != 0)
-            return PyUnicode_FromString(codeset);
+    if (cp == 0) {
+        Py_RETURN_NONE;
     }
+
+    return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
+    return _Py_GetLocaleEncodingObject();
 #endif
-    Py_RETURN_NONE;
 }
 
 #if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
@@ -1459,33 +1455,6 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen().
-
-   The file descriptor is created non-inheritable.
-
-   If interrupted by a signal, fail with EINTR. */
-FILE*
-_Py_fopen(const char *pathname, const char *mode)
-{
-    PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
-    if (pathname_obj == NULL) {
-        return NULL;
-    }
-    if (PySys_Audit("open", "Osi", pathname_obj, mode, 0) < 0) {
-        Py_DECREF(pathname_obj);
-        return NULL;
-    }
-    Py_DECREF(pathname_obj);
-
-    FILE *f = fopen(pathname, mode);
-    if (f == NULL)
-        return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
-        fclose(f);
-        return NULL;
-    }
-    return f;
-}
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
    encoding and call fopen() otherwise.
@@ -2074,7 +2043,9 @@ _Py_get_blocking(int fd)
 int
 _Py_set_blocking(int fd, int blocking)
 {
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)
+/* bpo-41462: On VxWorks, ioctl(FIONBIO) only works on sockets.
+   Use fcntl() instead. */
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO) && !defined(__VXWORKS__)
     int arg = !blocking;
     if (ioctl(fd, FIONBIO, &arg) < 0)
         goto error;

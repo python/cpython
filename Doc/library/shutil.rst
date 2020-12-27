@@ -218,7 +218,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: ignore_patterns(\*patterns)
+.. function:: ignore_patterns(*patterns)
 
    This factory function creates a function that can be used as a callable for
    :func:`copytree`\'s *ignore* argument, ignoring files and directories that

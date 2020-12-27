@@ -1,3 +1,0 @@
-Support for the legacy AIX-specific shared library loading support has been
-removed. All versions of AIX since 4.3 have supported and defaulted to using
-the common Unix mechanism instead.

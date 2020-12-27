@@ -1,2 +1,0 @@
-Fixed potential issues with removing not completely initialized module from
-``sys.modules`` when import fails.

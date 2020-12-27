@@ -1667,6 +1667,14 @@ mmap_exec(PyObject *module)
 #ifdef MADV_PROTECT
     ADD_INT_MACRO(module, MADV_PROTECT);
 #endif
+
+    // Darwin-specific
+#ifdef MADV_FREE_REUSABLE // (As MADV_FREE but reclaims more faithful for task_info/Activity Monitor...)
+    ADD_INT_MACRO(module, MADV_FREE_REUSABLE);
+#endif
+#ifdef MADV_FREE_REUSE // (Reuse pages previously tagged as reusable)
+    ADD_INT_MACRO(module, MADV_FREE_REUSE);
+#endif
 #endif // HAVE_MADVISE
     return 0;
 }

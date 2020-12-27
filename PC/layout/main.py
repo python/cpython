@@ -36,7 +36,7 @@ from .support.nuspec import *
 BDIST_WININST_FILES_ONLY = FileNameSet("wininst-*", "bdist_wininst.py")
 BDIST_WININST_STUB = "PC/layout/support/distutils.command.bdist_wininst.py"
 
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")

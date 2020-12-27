@@ -440,9 +440,18 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
         self.assertEqual(par[2], P('.'))
+        self.assertEqual(par[-1], P('.'))
+        self.assertEqual(par[-2], P('a'))
+        self.assertEqual(par[-3], P('a/b'))
+        self.assertEqual(par[0:1], (P('a/b'),))
+        self.assertEqual(par[:2], (P('a/b'), P('a')))
+        self.assertEqual(par[:-1], (P('a/b'), P('a')))
+        self.assertEqual(par[1:], (P('a'), P('.')))
+        self.assertEqual(par[::2], (P('a/b'), P('.')))
+        self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
         self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
-            par[-1]
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
         with self.assertRaises(TypeError):
@@ -454,6 +463,12 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[0:1], (P('/a/b'),))
+        self.assertEqual(par[:2], (P('/a/b'), P('/a')))
+        self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
+        self.assertEqual(par[1:], (P('/a'), P('/')))
+        self.assertEqual(par[::2], (P('/a/b'), P('/')))
+        self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
         with self.assertRaises(IndexError):
             par[3]
@@ -905,6 +920,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:a'))
         self.assertEqual(par[1], P('z:'))
+        self.assertEqual(par[0:1], (P('z:a'),))
+        self.assertEqual(par[:-1], (P('z:a'),))
+        self.assertEqual(par[:2], (P('z:a'), P('z:')))
+        self.assertEqual(par[1:], (P('z:'),))
+        self.assertEqual(par[::2], (P('z:a'),))
+        self.assertEqual(par[::-1], (P('z:'), P('z:a')))
         self.assertEqual(list(par), [P('z:a'), P('z:')])
         with self.assertRaises(IndexError):
             par[2]
@@ -913,6 +934,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:/a'))
         self.assertEqual(par[1], P('z:/'))
+        self.assertEqual(par[0:1], (P('z:/a'),))
+        self.assertEqual(par[0:-1], (P('z:/a'),))
+        self.assertEqual(par[:2], (P('z:/a'), P('z:/')))
+        self.assertEqual(par[1:], (P('z:/'),))
+        self.assertEqual(par[::2], (P('z:/a'),))
+        self.assertEqual(par[::-1], (P('z:/'), P('z:/a'),))
         self.assertEqual(list(par), [P('z:/a'), P('z:/')])
         with self.assertRaises(IndexError):
             par[2]
@@ -921,6 +948,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('//a/b/c'))
         self.assertEqual(par[1], P('//a/b'))
+        self.assertEqual(par[0:1], (P('//a/b/c'),))
+        self.assertEqual(par[0:-1], (P('//a/b/c'),))
+        self.assertEqual(par[:2], (P('//a/b/c'), P('//a/b')))
+        self.assertEqual(par[1:], (P('//a/b'),))
+        self.assertEqual(par[::2], (P('//a/b/c'),))
+        self.assertEqual(par[::-1], (P('//a/b'), P('//a/b/c')))
         self.assertEqual(list(par), [P('//a/b/c'), P('//a/b')])
         with self.assertRaises(IndexError):
             par[2]
@@ -2186,6 +2219,8 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         try:
@@ -2432,6 +2467,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
     def test_expanduser(self):
         P = self.cls
         import_helper.import_module('pwd')

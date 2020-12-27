@@ -2379,8 +2379,8 @@ class Path:
     def __repr__(self):
         return self.__repr.format(self=self)
 
-    def joinpath(self, add):
-        next = posixpath.join(self.at, add)
+    def joinpath(self, *other):
+        next = posixpath.join(self.at, *other)
         return self._next(self.root.resolve_dir(next))
 
     __truediv__ = joinpath

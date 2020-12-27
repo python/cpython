@@ -862,6 +862,9 @@ they add the ability to access fields by name instead of position index.
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
 
+    To support pickling, the named tuple class should be assigned to a variable
+    that matches *typename*.
+
     .. versionchanged:: 3.1
        Added support for *rename*.
 

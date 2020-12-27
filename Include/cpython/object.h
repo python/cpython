@@ -35,12 +35,13 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
    _PyObject_{Get,Set,Has}AttrId are __getattr__ versions using _Py_Identifier*.
 */
 typedef struct _Py_Identifier {
-    struct _Py_Identifier *next;
     const char* string;
-    PyObject *object;
+    // Index in PyInterpreterState.unicode.ids.array. It is process-wide
+    // unique and must be initialized to -1.
+    Py_ssize_t index;
 } _Py_Identifier;
 
-#define _Py_static_string_init(value) { .next = NULL, .string = value, .object = NULL }
+#define _Py_static_string_init(value) { .string = value, .index = -1 }
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
@@ -167,10 +168,13 @@ typedef struct {
     objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
+typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
+
 typedef struct {
     unaryfunc am_await;
     unaryfunc am_aiter;
     unaryfunc am_anext;
+    sendfunc am_send;
 } PyAsyncMethods;
 
 typedef struct {
@@ -241,6 +245,7 @@ struct _typeobject {
     struct PyMethodDef *tp_methods;
     struct PyMemberDef *tp_members;
     struct PyGetSetDef *tp_getset;
+    // Strong reference on a heap type, borrowed reference on a static type
     struct _typeobject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
@@ -296,6 +301,8 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
+struct PyModuleDef;
+PyAPI_FUNC(PyObject *) _PyType_GetModuleByDef(PyTypeObject *, struct PyModuleDef *);
 
 struct _Py_Identifier;
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
@@ -510,6 +517,8 @@ struct _ts;
 /* Python 3.9 private API, invoked by the macros below. */
 PyAPI_FUNC(int) _PyTrash_begin(struct _ts *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
+/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
+PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
 #define PyTrash_UNWIND_LEVEL 50
 
@@ -533,7 +542,7 @@ PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
 
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
     Py_TRASHCAN_BEGIN_CONDITION(op, \
-        Py_TYPE(op)->tp_dealloc == (destructor)(dealloc))
+        _PyTrash_cond(_PyObject_CAST(op), (destructor)dealloc))
 
 /* For backwards compatibility, these macros enable the trashcan
  * unconditionally */

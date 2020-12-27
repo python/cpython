@@ -2547,8 +2547,10 @@ _PyExc_Init(PyThreadState *tstate)
     do { \
         PyObject *_code = PyLong_FromLong(CODE); \
         assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
-        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) \
+        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) { \
+            Py_XDECREF(_code); \
             return _PyStatus_ERR("errmap insertion problem."); \
+        } \
         Py_DECREF(_code); \
     } while (0)
 

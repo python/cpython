@@ -708,7 +708,8 @@ iterations of the loop.
 
 .. opcode:: RERAISE
 
-    Re-raises the exception currently on top of the stack.
+    Re-raises the exception currently on top of the stack. If oparg is non-zero,
+    restores ``f_lasti`` of the current frame to its value when the exception was raised.
 
     .. versionadded:: 3.9
 
@@ -861,7 +862,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LIST_TO_TUPLE
 
-    Pops a list from the stack and pushes a tuple containing the same values.
+   Pops a list from the stack and pushes a tuple containing the same values.
 
    .. versionadded:: 3.9
 
@@ -889,7 +890,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: DICT_MERGE
 
-    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
+   Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 
    .. versionadded:: 3.9
 
@@ -907,14 +908,14 @@ All of the following opcodes use their arguments.
 
 .. opcode:: IS_OP (invert)
 
-    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+   Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: CONTAINS_OP (invert)
 
-    Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+   Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
 
    .. versionadded:: 3.9
 
@@ -955,8 +956,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
-    Tests whether the second value on the stack is an exception matching TOS,
-    and jumps if it is not. Pops two values from the stack.
+   Tests whether the second value on the stack is an exception matching TOS,
+   and jumps if it is not. Pops two values from the stack.
 
    .. versionadded:: 3.9
 
@@ -1144,11 +1145,13 @@ All of the following opcodes use their arguments.
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
-   * ``0x04`` an annotation dictionary
+   * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
    * the code associated with the function (at TOS1)
    * the :term:`qualified name` of the function (at TOS)
 
+   .. versionchanged:: 3.10
+      Flag value ``0x04`` is a tuple of strings instead of dictionary
 
 .. opcode:: BUILD_SLICE (argc)
 

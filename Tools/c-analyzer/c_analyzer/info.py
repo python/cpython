@@ -1,5 +1,7 @@
 from collections import namedtuple
+import os.path
 
+from c_common import fsutil
 from c_common.clsutil import classonly
 import c_common.misc as _misc
 from c_parser.info import (
@@ -223,8 +225,9 @@ class Analyzed:
         else:
             return UNKNOWN not in self.typedecl
 
-    def fix_filename(self, relroot):
-        self.item.fix_filename(relroot)
+    def fix_filename(self, relroot=fsutil.USE_CWD, **kwargs):
+        self.item.fix_filename(relroot, **kwargs)
+        return self
 
     def as_rowdata(self, columns=None):
         # XXX finsih!
@@ -309,9 +312,11 @@ class Analysis:
         else:
             return self._analyzed[key]
 
-    def fix_filenames(self, relroot):
+    def fix_filenames(self, relroot=fsutil.USE_CWD, **kwargs):
+        if relroot and relroot is not fsutil.USE_CWD:
+            relroot = os.path.abspath(relroot)
         for item in self._analyzed:
-            item.fix_filename(relroot)
+            item.fix_filename(relroot, fixroot=False, **kwargs)
 
     def _add_result(self, info, resolved):
         analyzed = type(self).build_item(info, resolved)

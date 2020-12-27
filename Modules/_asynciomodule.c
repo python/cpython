@@ -1479,7 +1479,8 @@ future_cls_getitem(PyObject *cls, PyObject *type)
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
     0,                                  /* am_aiter */
-    0                                   /* am_anext */
+    0,                                  /* am_anext */
+    0,                                  /* am_send  */
 };
 
 static PyMethodDef FutureType_methods[] = {
@@ -1597,37 +1598,61 @@ FutureIter_dealloc(futureiterobject *it)
     }
 }
 
-static PyObject *
-FutureIter_iternext(futureiterobject *it)
+static PySendResult
+FutureIter_am_send(futureiterobject *it,
+                   PyObject *Py_UNUSED(arg),
+                   PyObject **result)
 {
+    /* arg is unused, see the comment on FutureIter_send for clarification */
+
     PyObject *res;
     FutureObj *fut = it->future;
 
+    *result = NULL;
     if (fut == NULL) {
-        return NULL;
+        return PYGEN_ERROR;
     }
 
     if (fut->fut_state == STATE_PENDING) {
         if (!fut->fut_blocking) {
             fut->fut_blocking = 1;
             Py_INCREF(fut);
-            return (PyObject *)fut;
+            *result = (PyObject *)fut;
+            return PYGEN_NEXT;
         }
         PyErr_SetString(PyExc_RuntimeError,
                         "await wasn't used with future");
-        return NULL;
+        return PYGEN_ERROR;
     }
 
     it->future = NULL;
     res = _asyncio_Future_result_impl(fut);
     if (res != NULL) {
-        /* The result of the Future is not an exception. */
-        (void)_PyGen_SetStopIterationValue(res);
-        Py_DECREF(res);
+        Py_DECREF(fut);
+        *result = res;
+        return PYGEN_RETURN;
     }
 
     Py_DECREF(fut);
-    return NULL;
+    return PYGEN_ERROR;
+}
+
+static PyObject *
+FutureIter_iternext(futureiterobject *it)
+{
+    PyObject *result;
+    switch (FutureIter_am_send(it, Py_None, &result)) {
+        case PYGEN_RETURN:
+            (void)_PyGen_SetStopIterationValue(result);
+            Py_DECREF(result);
+            return NULL;
+        case PYGEN_NEXT:
+            return result;
+        case PYGEN_ERROR:
+            return NULL;
+        default:
+            Py_UNREACHABLE();
+    }
 }
 
 static PyObject *
@@ -1716,14 +1741,24 @@ static PyMethodDef FutureIter_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyAsyncMethods FutureIterType_as_async = {
+    0,                                  /* am_await */
+    0,                                  /* am_aiter */
+    0,                                  /* am_anext */
+    (sendfunc)FutureIter_am_send,       /* am_send  */
+};
+
+
 static PyTypeObject FutureIterType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_asyncio.FutureIter",
     .tp_basicsize = sizeof(futureiterobject),
     .tp_itemsize = 0,
     .tp_dealloc = (destructor)FutureIter_dealloc,
+    .tp_as_async = &FutureIterType_as_async,
     .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,
     .tp_traverse = (traverseproc)FutureIter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)FutureIter_iternext,

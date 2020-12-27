@@ -691,7 +691,7 @@ static struct PyMethodDef multibytecodec_methods[] = {
 static void
 multibytecodec_dealloc(MultibyteCodecObject *self)
 {
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyTypeObject MultibyteCodec_Type = {
@@ -1191,13 +1191,13 @@ _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDeco
         goto errorexit;
 
     if (wdata != data)
-        PyMem_Del(wdata);
+        PyMem_Free(wdata);
     Py_XDECREF(buf.excobj);
     return res;
 
 errorexit:
     if (wdata != NULL && wdata != data)
-        PyMem_Del(wdata);
+        PyMem_Free(wdata);
     Py_XDECREF(buf.excobj);
     _PyUnicodeWriter_Dealloc(&buf.writer);
     return NULL;

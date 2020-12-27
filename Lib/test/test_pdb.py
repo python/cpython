@@ -1645,9 +1645,10 @@ def bœr():
             'debug doesnotexist',
             'c',
         ])
-        stdout, _ = self.run_pdb_script('', commands + '\n')
+        stdout, _ = self.run_pdb_script('pass', commands + '\n')
 
         self.assertEqual(stdout.splitlines()[1:], [
+            '-> pass',
             '(Pdb) *** SyntaxError: unexpected EOF while parsing',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',

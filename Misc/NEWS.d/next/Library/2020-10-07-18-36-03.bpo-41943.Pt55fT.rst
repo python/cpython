@@ -1,1 +1,0 @@
-Fix bug where TestCase.assertLogs doesn't correctly filter messages by level.

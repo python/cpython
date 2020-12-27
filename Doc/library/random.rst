@@ -142,10 +142,11 @@ Functions for integers
 
 .. function:: getrandbits(k)
 
-   Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
-   as an optional part of the API. When available, :meth:`getrandbits` enables
-   :meth:`randrange` to handle arbitrarily large ranges.
+   Returns a non-negative Python integer with *k* random bits. This method
+   is supplied with the MersenneTwister generator and some other generators
+   may also provide it as an optional part of the API. When available,
+   :meth:`getrandbits` enables :meth:`randrange` to handle arbitrarily large
+   ranges.
 
    .. versionchanged:: 3.9
       This method now accepts zero for *k*.

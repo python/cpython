@@ -120,17 +120,11 @@ static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 /*[clinic end generated code: output=e55f1ff1952df558 input=f6b24996b31c5c33]*/
 {
-    PyObject* result;
-
     if (sqlite3_complete(statement)) {
-        result = Py_True;
+        return Py_NewRef(Py_True);
     } else {
-        result = Py_False;
+        return Py_NewRef(Py_False);
     }
-
-    Py_INCREF(result);
-
-    return result;
 }
 
 /*[clinic input]
@@ -219,8 +213,7 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
         goto error;
     }
 
-    Py_INCREF(Py_None);
-    retval = Py_None;
+    retval = Py_NewRef(Py_None);
 error:
     Py_XDECREF(name);
     return retval;
@@ -263,17 +256,17 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
     return pysqlite_microprotocols_adapt(obj, proto, alt);
 }
 
-static void converters_init(PyObject* module)
+static int converters_init(PyObject* module)
 {
     _pysqlite_converters = PyDict_New();
     if (!_pysqlite_converters) {
-        return;
+        return -1;
     }
 
-    if (PyModule_AddObject(module, "converters", _pysqlite_converters) < 0) {
-        Py_DECREF(_pysqlite_converters);
-    }
-    return;
+    int res = PyModule_AddObjectRef(module, "converters", _pysqlite_converters);
+    Py_DECREF(_pysqlite_converters);
+
+    return res;
 }
 
 static PyMethodDef module_methods[] = {
@@ -361,8 +354,9 @@ do {                                                            \
     if (!exc) {                                                 \
         goto error;                                             \
     }                                                           \
-    if (PyModule_AddObject(module, name, exc) < 0) {            \
-        Py_DECREF(exc);                                         \
+    int res = PyModule_AddObjectRef(module, name, exc);         \
+    Py_DECREF(exc);                                             \
+    if (res < 0) {                                              \
         goto error;                                             \
     }                                                           \
 } while (0)
@@ -411,17 +405,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
     ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
 
-    /* In Python 2.x, setting Connection.text_factory to
-       OptimizedUnicode caused Unicode objects to be returned for
-       non-ASCII data and bytestrings to be returned for ASCII data.
-       Now OptimizedUnicode is an alias for str, so it has no
-       effect. */
-    Py_INCREF((PyObject*)&PyUnicode_Type);
-    if (PyModule_AddObject(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type) < 0) {
-        Py_DECREF((PyObject*)&PyUnicode_Type);
-        goto error;
-    }
-
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {
         goto error;
@@ -441,7 +424,9 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     /* initialize the default converters */
-    converters_init(module);
+    if (converters_init(module) < 0) {
+        goto error;
+    }
 
 error:
     if (PyErr_Occurred())

@@ -3007,6 +3007,9 @@ Py_GetVersion:const char*:::
 Py_INCREF:void:::
 Py_INCREF:PyObject*:o:+1:
 
+Py_NewRef:void:::
+Py_NewRef:PyObject*:o:+1:
+
 Py_Initialize:void:::
 
 Py_IsInitialized:int:::
@@ -3027,6 +3030,9 @@ Py_XDECREF:PyObject*:o:-1:if o is not NULL
 
 Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
+
+Py_XNewRef:void:::
+Py_XNewRef:PyObject*:o:+1:if o is not NULL
 
 _PyImport_Fini:void:::
 

@@ -1,0 +1,2 @@
+Fix implicit function declarations in configure which could have resulted in
+incorrect configuration checks.  Patch contributed by Joshua Root.
