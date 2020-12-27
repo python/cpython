@@ -1070,7 +1070,7 @@ class LMTP(SMTP):
         """Initialize a new instance."""
         super().__init__(host, port, local_hostname=local_hostname,
                          source_address=source_address, timeout=timeout)
-
+ 
     def connect(self, host='localhost', port=0, source_address=None):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
         if host[0] != '/':
@@ -1082,7 +1082,9 @@ class LMTP(SMTP):
         # Handle Unix-domain sockets.
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sock.settimeout(self.timeout)
+
+            if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                self.sock.settimeout(self.timeout)
             self.file = None
             self.sock.connect(host)
         except OSError:
