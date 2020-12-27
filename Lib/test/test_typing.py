@@ -3050,6 +3050,10 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(list[int]), (int,))
         self.assertEqual(get_args(list), ())
         self.assertEqual(get_args(collections.abc.Callable[[int], str]), ([int], str))
+        self.assertEqual(get_args(collections.abc.Callable[..., str]), (..., str))
+        self.assertEqual(get_args(collections.abc.Callable[[], str]), ([], str))
+        self.assertEqual(get_args(collections.abc.Callable[[int], str]),
+                         get_args(Callable[[int], str]))
         P = ParamSpec('P')
         self.assertEqual(get_args(Callable[P, int]), (P, int))
         self.assertEqual(get_args(Callable[Concatenate[int, P], int]),
