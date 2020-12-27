@@ -407,7 +407,15 @@ error:
     }
 }
 
-PyObject* pysqlite_connection_commit(pysqlite_Connection* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Connection.commit as pysqlite_connection_commit
+
+Commit the current transaction.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_commit_impl(pysqlite_Connection *self)
+/*[clinic end generated code: output=3da45579e89407f2 input=39c12c04dda276a8]*/
 {
     int rc;
     const char* tail;
@@ -1339,89 +1347,108 @@ error:
     return NULL;
 }
 
-PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Connection.execute as pysqlite_connection_execute
+
+    sql: unicode
+    parameters: object = NULL
+    /
+
+Executes a SQL statement. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
+                                 PyObject *parameters)
+/*[clinic end generated code: output=5be05ae01ee17ee4 input=fbd17c75c7140271]*/
 {
+    _Py_IDENTIFIER(execute);
     PyObject* cursor = 0;
     PyObject* result = 0;
-    PyObject* method = 0;
 
     cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
     if (!cursor) {
         goto error;
     }
 
-    method = PyObject_GetAttrString(cursor, "execute");
-    if (!method) {
-        Py_CLEAR(cursor);
-        goto error;
-    }
-
-    result = PyObject_CallObject(method, args);
+    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_execute, sql, parameters, NULL);
     if (!result) {
         Py_CLEAR(cursor);
     }
 
 error:
     Py_XDECREF(result);
-    Py_XDECREF(method);
 
     return cursor;
 }
 
-PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Connection.executemany as pysqlite_connection_executemany
+
+    sql: unicode
+    parameters: object
+    /
+
+Repeatedly executes a SQL statement. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_executemany_impl(pysqlite_Connection *self,
+                                     PyObject *sql, PyObject *parameters)
+/*[clinic end generated code: output=776cd2fd20bfe71f input=4feab80659ffc82b]*/
 {
+    _Py_IDENTIFIER(executemany);
     PyObject* cursor = 0;
     PyObject* result = 0;
-    PyObject* method = 0;
 
     cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
     if (!cursor) {
         goto error;
     }
 
-    method = PyObject_GetAttrString(cursor, "executemany");
-    if (!method) {
-        Py_CLEAR(cursor);
-        goto error;
-    }
-
-    result = PyObject_CallObject(method, args);
+    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_executemany, sql,
+                                           parameters, NULL);
     if (!result) {
         Py_CLEAR(cursor);
     }
 
 error:
     Py_XDECREF(result);
-    Py_XDECREF(method);
 
     return cursor;
 }
 
-PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Connection.executescript as pysqlite_connection_executescript
+
+    sql_script as script_obj: object
+    /
+
+Executes a multiple SQL statements at once. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_executescript(pysqlite_Connection *self,
+                                  PyObject *script_obj)
+/*[clinic end generated code: output=4c4f9d77aa0ae37d input=c0b14695aa6c81d9]*/
 {
+    _Py_IDENTIFIER(executescript);
     PyObject* cursor = 0;
     PyObject* result = 0;
-    PyObject* method = 0;
 
     cursor = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_cursor);
     if (!cursor) {
         goto error;
     }
 
-    method = PyObject_GetAttrString(cursor, "executescript");
-    if (!method) {
-        Py_CLEAR(cursor);
-        goto error;
-    }
-
-    result = PyObject_CallObject(method, args);
+    result = _PyObject_CallMethodIdObjArgs(cursor, &PyId_executescript,
+                                           script_obj, NULL);
     if (!result) {
         Py_CLEAR(cursor);
     }
 
 error:
     Py_XDECREF(result);
-    Py_XDECREF(method);
 
     return cursor;
 }
@@ -1558,51 +1585,41 @@ finally:
     return retval;
 }
 
+/*[clinic input]
+_sqlite3.Connection.backup as pysqlite_connection_backup
+
+    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType') = NULL
+    *
+    pages: int = -1
+    progress: object = None
+    name: str = "main"
+    sleep: double = 0.250
+
+Makes a backup of the database. Non-standard.
+[clinic start generated code]*/
+
 static PyObject *
-pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *kwds)
+pysqlite_connection_backup_impl(pysqlite_Connection *self,
+                                pysqlite_Connection *target, int pages,
+                                PyObject *progress, const char *name,
+                                double sleep)
+/*[clinic end generated code: output=306a3e6a38c36334 input=2f3497ea530144b1]*/
 {
-    PyObject *target = NULL;
-    int pages = -1;
-    PyObject *progress = Py_None;
-    const char *name = "main";
     int rc;
     int callback_error = 0;
-    PyObject *sleep_obj = NULL;
-    int sleep_ms = 250;
+    int sleep_ms = sleep * 1000.0;
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
-    static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", keywords,
-                                     pysqlite_ConnectionType, &target,
-                                     &pages, &progress, &name, &sleep_obj)) {
-        return NULL;
-    }
-
-    if (sleep_obj != NULL) {
-        _PyTime_t sleep_secs;
-        if (_PyTime_FromSecondsObject(&sleep_secs, sleep_obj,
-                                      _PyTime_ROUND_TIMEOUT)) {
-            return NULL;
-        }
-        _PyTime_t ms = _PyTime_AsMilliseconds(sleep_secs,
-                                              _PyTime_ROUND_TIMEOUT);
-        if (ms < INT_MIN || ms > INT_MAX) {
-            PyErr_SetString(PyExc_OverflowError, "sleep is too large");
-            return NULL;
-        }
-        sleep_ms = (int)ms;
-    }
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
+    if (!pysqlite_check_connection(target)) {
         return NULL;
     }
 
-    if ((pysqlite_Connection *)target == self) {
+    if (target == self) {
         PyErr_SetString(PyExc_ValueError, "target cannot be the same connection instance");
         return NULL;
     }
@@ -1610,7 +1627,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
 #if SQLITE_VERSION_NUMBER < 3008008
     /* Since 3.8.8 this is already done, per commit
        https://www.sqlite.org/src/info/169b5505498c0a7e */
-    if (!sqlite3_get_autocommit(((pysqlite_Connection *)target)->db)) {
+    if (!sqlite3_get_autocommit(target->db)) {
         PyErr_SetString(pysqlite_OperationalError, "target is in transaction");
         return NULL;
     }
@@ -1625,7 +1642,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         pages = -1;
     }
 
-    bck_conn = ((pysqlite_Connection *)target)->db;
+    bck_conn = target->db;
 
     Py_BEGIN_ALLOW_THREADS
     bck_handle = sqlite3_backup_init(bck_conn, "main", self->db, name);
@@ -1869,13 +1886,18 @@ static PyGetSetDef connection_getset[] = {
 };
 
 static PyMethodDef connection_methods[] = {
+    PYSQLITE_CONNECTION_BACKUP_METHODDEF
     PYSQLITE_CONNECTION_CLOSE_METHODDEF
+    PYSQLITE_CONNECTION_COMMIT_METHODDEF
     PYSQLITE_CONNECTION_CREATE_AGGREGATE_METHODDEF
     PYSQLITE_CONNECTION_CREATE_COLLATION_METHODDEF
     PYSQLITE_CONNECTION_CREATE_FUNCTION_METHODDEF
     PYSQLITE_CONNECTION_CURSOR_METHODDEF
     PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF
     PYSQLITE_CONNECTION_ENTER_METHODDEF
+    PYSQLITE_CONNECTION_EXECUTEMANY_METHODDEF
+    PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF
+    PYSQLITE_CONNECTION_EXECUTE_METHODDEF
     PYSQLITE_CONNECTION_EXIT_METHODDEF
     PYSQLITE_CONNECTION_INTERRUPT_METHODDEF
     PYSQLITE_CONNECTION_ITERDUMP_METHODDEF
@@ -1884,16 +1906,6 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
-    {"commit", (PyCFunction)pysqlite_connection_commit, METH_NOARGS,
-        PyDoc_STR("Commit the current transaction.")},
-    {"execute", (PyCFunction)pysqlite_connection_execute, METH_VARARGS,
-        PyDoc_STR("Executes a SQL statement. Non-standard.")},
-    {"executemany", (PyCFunction)pysqlite_connection_executemany, METH_VARARGS,
-        PyDoc_STR("Repeatedly executes a SQL statement. Non-standard.")},
-    {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_VARARGS,
-        PyDoc_STR("Executes a multiple SQL statements at once. Non-standard.")},
-    {"backup", (PyCFunction)(void(*)(void))pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
-        PyDoc_STR("Makes a backup of the database. Non-standard.")},
     {NULL, NULL}
 };
 
