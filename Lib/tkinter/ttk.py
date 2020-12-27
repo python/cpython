@@ -349,12 +349,7 @@ def setup_master(master=None):
     If it is not allowed to use the default root and master is None,
     RuntimeError is raised."""
     if master is None:
-        if tkinter._support_default_root:
-            master = tkinter._default_root or tkinter.Tk()
-        else:
-            raise RuntimeError(
-                    "No master specified and tkinter is "
-                    "configured to not support default root")
+        master = tkinter._get_default_root()
     return master
 
 
@@ -574,7 +569,7 @@ class Widget(tkinter.Widget):
         matches statespec. statespec is expected to be a sequence."""
         ret = self.tk.getboolean(
                 self.tk.call(self._w, "instate", ' '.join(statespec)))
-        if ret and callback:
+        if ret and callback is not None:
             return callback(*args, **kw)
 
         return ret

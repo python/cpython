@@ -582,7 +582,7 @@ loops that truncate the stream.
 
    Before :func:`product` runs, it completely consumes the input iterables,
    keeping pools of values in memory to generate the products.  Accordingly,
-   it only useful with finite inputs.
+   it is only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
@@ -785,6 +785,18 @@ which incur interpreter overhead.
 
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
+
+   def convolve(signal, kernel):
+       # See:  https://betterexplained.com/articles/intuitive-convolution/
+       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
+       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
+       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       kernel = list(reversed(kernel))
+       n = len(kernel)
+       window = collections.deque([0] * n, maxlen=n)
+       for x in chain(signal, repeat(0, n-1)):
+           window.append(x)
+           yield sum(map(operator.mul, kernel, window))
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"

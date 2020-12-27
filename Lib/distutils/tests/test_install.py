@@ -8,7 +8,7 @@ import site
 from test.support import captured_stdout, run_unittest
 
 from distutils import sysconfig
-from distutils.command.install import install
+from distutils.command.install import install, HAS_USER_SITE
 from distutils.command import install as install_module
 from distutils.command.build_ext import build_ext
 from distutils.command.install import INSTALL_SCHEMES
@@ -66,6 +66,7 @@ class InstallTestCase(support.TempdirManager,
         check_path(cmd.install_scripts, os.path.join(destination, "bin"))
         check_path(cmd.install_data, destination)
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_user_site(self):
         # test install with --user
         # preparing the environment for the test
@@ -93,8 +94,9 @@ class InstallTestCase(support.TempdirManager,
 
         self.addCleanup(cleanup)
 
-        for key in ('nt_user', 'unix_user'):
-            self.assertIn(key, INSTALL_SCHEMES)
+        if HAS_USER_SITE:
+            for key in ('nt_user', 'unix_user'):
+                self.assertIn(key, INSTALL_SCHEMES)
 
         dist = Distribution({'name': 'xx'})
         cmd = install(dist)
