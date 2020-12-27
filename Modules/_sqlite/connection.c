@@ -812,6 +812,64 @@ static void _destructor(void* args)
     Py_DECREF((PyObject*)args);
 }
 
+static int apply_deterministic_flag_if_supported(int *flags, int is_set)
+{
+#if SQLITE_VERSION_NUMBER < 3008003
+    PyErr_SetString(pysqlite_NotSupportedError,
+                    "deterministic=True requires SQLite 3.8.3 or higher");
+    return -1;
+#else
+    if (sqlite3_libversion_number() < 3008003) {
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "deterministic=True requires SQLite 3.8.3 or higher");
+        return -1;
+    }
+    if (is_set) {
+        *flags |= SQLITE_DETERMINISTIC;
+    }
+    return 0;
+#endif
+}
+
+static int apply_innocuous_flag_if_supported(int *flags, int is_set)
+{
+#if SQLITE_VERSION_NUMBER < 3031000
+    PyErr_SetString(pysqlite_NotSupportedError,
+                    "innocuous=True requires SQLite 3.31.0 or higher");
+    return -1;
+#else
+    if (sqlite3_libversion_number() < 3031000) {
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "innocuous=True requires SQLite 3.31.0 or higher");
+        return -1;
+    }
+    if (is_set) {
+        *flags |= SQLITE_INNOCUOUS;
+    }
+    return 0;
+#endif
+}
+
+static int apply_directonly_flag_if_supported(int *flags, int is_set)
+{
+#if SQLITE_VERSION_NUMBER < 3031000
+    PyErr_SetString(pysqlite_NotSupportedError,
+                    "directonly=True requires SQLite 3.31.0 or higher");
+    return -1;
+#else
+    if (sqlite3_libversion_number() < 3031000) {
+        PyErr_SetString(pysqlite_NotSupportedError,
+                        "directonly=True requires SQLite 3.31.0 or higher");
+        return -1;
+    }
+    if (is_set) {
+        *flags |= SQLITE_DIRECTONLY;
+    }
+    return 0;
+#endif
+}
+
+
 /*[clinic input]
 _sqlite3.Connection.create_function as pysqlite_connection_create_function
 
@@ -820,6 +878,8 @@ _sqlite3.Connection.create_function as pysqlite_connection_create_function
     func: object
     *
     deterministic: bool = False
+    directonly: bool = False
+    innocuous: bool = False
 
 Creates a new function. Non-standard.
 [clinic start generated code]*/
@@ -827,30 +887,27 @@ Creates a new function. Non-standard.
 static PyObject *
 pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          const char *name, int narg,
-                                         PyObject *func, int deterministic)
-/*[clinic end generated code: output=07d1877dd98c0308 input=f2edcf073e815beb]*/
+                                         PyObject *func, int deterministic,
+                                         int directonly, int innocuous)
+/*[clinic end generated code: output=985f70400f2127a5 input=6574448150660add]*/
 {
     int rc;
-    int flags = SQLITE_UTF8;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    if (deterministic) {
-#if SQLITE_VERSION_NUMBER < 3008003
-        PyErr_SetString(pysqlite_NotSupportedError,
-                        "deterministic=True requires SQLite 3.8.3 or higher");
+    int flags = SQLITE_UTF8;
+    if (apply_deterministic_flag_if_supported(&flags, deterministic) < 0) {
         return NULL;
-#else
-        if (sqlite3_libversion_number() < 3008003) {
-            PyErr_SetString(pysqlite_NotSupportedError,
-                            "deterministic=True requires SQLite 3.8.3 or higher");
-            return NULL;
-        }
-        flags |= SQLITE_DETERMINISTIC;
-#endif
     }
+    if (apply_directonly_flag_if_supported(&flags, directonly) < 0) {
+        return NULL;
+    }
+    if (apply_innocuous_flag_if_supported(&flags, innocuous) < 0) {
+        return NULL;
+    }
+
     rc = sqlite3_create_function_v2(self->db,
                                     name,
                                     narg,
@@ -875,6 +932,10 @@ _sqlite3.Connection.create_aggregate as pysqlite_connection_create_aggregate
     name: str
     n_arg: int
     aggregate_class: object
+    *
+    deterministic: bool = False
+    directonly: bool = False
+    innocuous: bool = False
 
 Creates a new aggregate. Non-standard.
 [clinic start generated code]*/
@@ -882,8 +943,10 @@ Creates a new aggregate. Non-standard.
 static PyObject *
 pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           const char *name, int n_arg,
-                                          PyObject *aggregate_class)
-/*[clinic end generated code: output=fbb2f858cfa4d8db input=c2e13bbf234500a5]*/
+                                          PyObject *aggregate_class,
+                                          int deterministic, int directonly,
+                                          int innocuous)
+/*[clinic end generated code: output=6b1d5a52bc5f8d3e input=8e99cf6ed595b7a3]*/
 {
     int rc;
 
@@ -891,10 +954,21 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
         return NULL;
     }
 
+    int flags = SQLITE_UTF8;
+    if (apply_deterministic_flag_if_supported(&flags, deterministic) < 0) {
+        return NULL;
+    }
+    if (apply_directonly_flag_if_supported(&flags, directonly) < 0) {
+        return NULL;
+    }
+    if (apply_innocuous_flag_if_supported(&flags, innocuous) < 0) {
+        return NULL;
+    }
+
     rc = sqlite3_create_function_v2(self->db,
                                     name,
                                     n_arg,
-                                    SQLITE_UTF8,
+                                    flags,
                                     (void*)Py_NewRef(aggregate_class),
                                     0,
                                     &_pysqlite_step_callback,

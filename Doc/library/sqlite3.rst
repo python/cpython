@@ -343,7 +343,7 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func, *, deterministic=False)
+   .. method:: create_function(name, num_params, func, *, deterministic=False, directonly=False, innocous=False)
 
       Creates a user-defined function that you can later use from within SQL
       statements under the function name *name*. *num_params* is the number of
@@ -355,18 +355,40 @@ Connection Objects
       SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
       with older versions.
 
+      The *innocuous* flag means that the function is unlikely to cause problems
+      even if misused. An innocuous function should have no side effects and
+      should not depend on any values other than its input parameters.
+      Developers are advised to avoid using the *innocuous* flag for
+      application-defined functions unless the function has been carefully
+      audited and found to be free of potentially security-adverse side-effects
+      and information-leaks. This flag is supported by SQLite 3.31.0 or higher.
+      :exc:`NotSupportedError` will be raised if used with older SQLite versions.
+
+      The *directonly* flag means that the function may only be invoked from
+      top-level SQL, and cannot be used in VIEWs or TRIGGERs nor in schema
+      structures such as CHECK constraints, DEFAULT clauses, expression indexes,
+      partial indexes, or generated columns. The *directonly* flag is a security
+      feature which is recommended for all application-defined SQL functions,
+      and especially for functions that have side-effects or that could
+      potentially leak sensitive information. This flag is supported by SQLite
+      3.31.0 or higher. :exc:`NotSupportedError` will be raised if used with
+      older SQLite versions.
+
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
 
       .. versionchanged:: 3.8
          The *deterministic* parameter was added.
 
+      .. versionchanged:: 3.10
+         The *innocuous* and *directonly* parameters were added.
+
       Example:
 
       .. literalinclude:: ../includes/sqlite3/md5func.py
 
 
-   .. method:: create_aggregate(name, num_params, aggregate_class)
+   .. method:: create_aggregate(name, num_params, aggregate_class, directonly=False, innocuous=False)
 
       Creates a user-defined aggregate function.
 
@@ -377,6 +399,12 @@ Connection Objects
 
       The ``finalize`` method can return any of the types supported by SQLite:
       bytes, str, int, float and ``None``.
+
+      See :func:`create_function` for a description of the *innocuous* and
+      *directonly* parameters.
+
+      .. versionchanged:: 3.10
+         The *innocuous* and *directonly* parameters were added.
 
       Example:
 

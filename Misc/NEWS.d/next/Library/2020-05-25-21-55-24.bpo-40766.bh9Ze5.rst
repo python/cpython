@@ -1,0 +1,2 @@
+Add support for `SQLITE_INNOCUOUS` and `SQLITE_DIRECTONLY` flags in
+:mod:`sqlite3`.

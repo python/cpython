@@ -94,7 +94,8 @@ pysqlite_connection_rollback(pysqlite_Connection *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(pysqlite_connection_create_function__doc__,
-"create_function($self, /, name, narg, func, *, deterministic=False)\n"
+"create_function($self, /, name, narg, func, *, deterministic=False,\n"
+"                directonly=False, innocuous=False)\n"
 "--\n"
 "\n"
 "Creates a new function. Non-standard.");
@@ -105,20 +106,23 @@ PyDoc_STRVAR(pysqlite_connection_create_function__doc__,
 static PyObject *
 pysqlite_connection_create_function_impl(pysqlite_Connection *self,
                                          const char *name, int narg,
-                                         PyObject *func, int deterministic);
+                                         PyObject *func, int deterministic,
+                                         int directonly, int innocuous);
 
 static PyObject *
 pysqlite_connection_create_function(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"name", "narg", "func", "deterministic", NULL};
+    static const char * const _keywords[] = {"name", "narg", "func", "deterministic", "directonly", "innocuous", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "create_function", 0};
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *name;
     int narg;
     PyObject *func;
     int deterministic = 0;
+    int directonly = 0;
+    int innocuous = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
@@ -145,19 +149,38 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyObject *const *
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    deterministic = PyObject_IsTrue(args[3]);
-    if (deterministic < 0) {
+    if (args[3]) {
+        deterministic = PyObject_IsTrue(args[3]);
+        if (deterministic < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        directonly = PyObject_IsTrue(args[4]);
+        if (directonly < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    innocuous = PyObject_IsTrue(args[5]);
+    if (innocuous < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = pysqlite_connection_create_function_impl(self, name, narg, func, deterministic);
+    return_value = pysqlite_connection_create_function_impl(self, name, narg, func, deterministic, directonly, innocuous);
 
 exit:
     return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_connection_create_aggregate__doc__,
-"create_aggregate($self, /, name, n_arg, aggregate_class)\n"
+"create_aggregate($self, /, name, n_arg, aggregate_class, *,\n"
+"                 deterministic=False, directonly=False, innocuous=False)\n"
 "--\n"
 "\n"
 "Creates a new aggregate. Non-standard.");
@@ -168,18 +191,24 @@ PyDoc_STRVAR(pysqlite_connection_create_aggregate__doc__,
 static PyObject *
 pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
                                           const char *name, int n_arg,
-                                          PyObject *aggregate_class);
+                                          PyObject *aggregate_class,
+                                          int deterministic, int directonly,
+                                          int innocuous);
 
 static PyObject *
 pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"name", "n_arg", "aggregate_class", NULL};
+    static const char * const _keywords[] = {"name", "n_arg", "aggregate_class", "deterministic", "directonly", "innocuous", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "create_aggregate", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[6];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *name;
     int n_arg;
     PyObject *aggregate_class;
+    int deterministic = 0;
+    int directonly = 0;
+    int innocuous = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
     if (!args) {
@@ -203,7 +232,33 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyObject *const 
         goto exit;
     }
     aggregate_class = args[2];
-    return_value = pysqlite_connection_create_aggregate_impl(self, name, n_arg, aggregate_class);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        deterministic = PyObject_IsTrue(args[3]);
+        if (deterministic < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        directonly = PyObject_IsTrue(args[4]);
+        if (directonly < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    innocuous = PyObject_IsTrue(args[5]);
+    if (innocuous < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = pysqlite_connection_create_aggregate_impl(self, name, n_arg, aggregate_class, deterministic, directonly, innocuous);
 
 exit:
     return return_value;
@@ -719,4 +774,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=7cb13d491a5970aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=33bcda978b5bc004 input=a9049054013a1b77]*/
