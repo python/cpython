@@ -3050,6 +3050,9 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(list), ())
         self.assertEqual(get_args(collections.abc.Callable[[int], str]), ([int], str))
         self.assertEqual(get_args(collections.abc.Callable[..., str]), (..., str))
+        self.assertEqual(get_args(collections.abc.Callable[[], str]), ([], str))
+        self.assertEqual(get_args(collections.abc.Callable[[int], str]),
+                         get_args(Callable[[int], str]))
 
 
 class CollectionsAbcTests(BaseTestCase):
