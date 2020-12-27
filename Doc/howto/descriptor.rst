@@ -907,7 +907,7 @@ Properties
 Calling :func:`property` is a succinct way of building a data descriptor that
 triggers a function call upon access to an attribute.  Its signature is::
 
-    property(fget=None, fset=None, fdel=None, doc=None, name=None) -> property
+    property(fget=None, fset=None, fdel=None, doc=None) -> property
 
 The documentation shows a typical use to define a managed attribute ``x``:
 
@@ -927,14 +927,14 @@ here is a pure Python equivalent:
     class Property:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
 
-        def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
+        def __init__(self, fget=None, fset=None, fdel=None, doc=None):
             self.fget = fget
             self.fset = fset
             self.fdel = fdel
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self.name = name
+            self.name = None
 
         def __set_name__(self, owner, name):
             self.name = name
@@ -966,13 +966,19 @@ here is a pure Python equivalent:
             self.fdel(obj)
 
         def getter(self, fget):
-            return type(self)(fget, self.fset, self.fdel, self.__doc__, self.name)
+            prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
+            prop.name = self.name
+            return prop
 
         def setter(self, fset):
-            return type(self)(self.fget, fset, self.fdel, self.__doc__, self.name)
+            prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
+            prop.name = self.name
+            return prop
 
         def deleter(self, fdel):
-            return type(self)(self.fget, self.fset, fdel, self.__doc__, self.name)
+            prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
+            prop.name = self.name
+            return prop
 
 .. testcode::
     :hide:

@@ -1457,14 +1457,13 @@ PyWrapper_New(PyObject *d, PyObject *self)
 /*
 class property(object):
 
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
         if doc is None and fget is not None and hasattr(fget, "__doc__"):
             doc = fget.__doc__
         self.__get = fget
         self.__set = fset
         self.__del = fdel
         self.__doc__ = doc
-        self.name = name
 
     def __get__(self, inst, type=None):
         if inst is None:
@@ -1667,10 +1666,12 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
         doc = pold->prop_doc ? pold->prop_doc : Py_None;
     }
 
-    new =  PyObject_CallFunctionObjArgs(type, get, set, del, doc, pold->prop_name, NULL);
+    new =  PyObject_CallFunctionObjArgs(type, get, set, del, doc, NULL);
     Py_DECREF(type);
     if (new == NULL)
         return NULL;
+
+    Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
     return new;
 }
 
@@ -1685,8 +1686,6 @@ property.__init__ as property_init
         function to be used for del'ing an attribute
     doc: object(c_default="NULL") = None
         docstring
-    name: object(c_default="NULL") = None
-        name of a property
 
 Property attribute.
 
@@ -1715,8 +1714,8 @@ class C(object):
 
 static int
 property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
-                   PyObject *fdel, PyObject *doc, PyObject *name)
-/*[clinic end generated code: output=e9a13f227c218be9 input=fa7a7e0378f4e253]*/
+                   PyObject *fdel, PyObject *doc)
+/*[clinic end generated code: output=01a960742b692b57 input=dfb5dbbffc6932d5]*/
 {
     if (fget == Py_None)
         fget = NULL;
@@ -1724,20 +1723,18 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         fset = NULL;
     if (fdel == Py_None)
         fdel = NULL;
-    if (name == Py_None)
-        name = NULL;
 
     Py_XINCREF(fget);
     Py_XINCREF(fset);
     Py_XINCREF(fdel);
     Py_XINCREF(doc);
-    Py_XINCREF(name);
 
     Py_XSETREF(self->prop_get, fget);
     Py_XSETREF(self->prop_set, fset);
     Py_XSETREF(self->prop_del, fdel);
     Py_XSETREF(self->prop_doc, doc);
-    Py_XSETREF(self->prop_name, name);
+    Py_XSETREF(self->prop_name, NULL);
+
     self->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */

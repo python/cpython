@@ -28,7 +28,7 @@ exit:
 }
 
 PyDoc_STRVAR(property_init__doc__,
-"property(fget=None, fset=None, fdel=None, doc=None, name=None)\n"
+"property(fget=None, fset=None, fdel=None, doc=None)\n"
 "--\n"
 "\n"
 "Property attribute.\n"
@@ -41,8 +41,6 @@ PyDoc_STRVAR(property_init__doc__,
 "    function to be used for del\'ing an attribute\n"
 "  doc\n"
 "    docstring\n"
-"  name\n"
-"    name of a property\n"
 "\n"
 "Typical use is to define a managed attribute x:\n"
 "\n"
@@ -68,15 +66,15 @@ PyDoc_STRVAR(property_init__doc__,
 
 static int
 property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
-                   PyObject *fdel, PyObject *doc, PyObject *name);
+                   PyObject *fdel, PyObject *doc);
 
 static int
 property_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"fget", "fset", "fdel", "doc", "name", NULL};
+    static const char * const _keywords[] = {"fget", "fset", "fdel", "doc", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "property", 0};
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -84,9 +82,8 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *fset = NULL;
     PyObject *fdel = NULL;
     PyObject *doc = NULL;
-    PyObject *name = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 5, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -111,17 +108,11 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    if (fastargs[3]) {
-        doc = fastargs[3];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    name = fastargs[4];
+    doc = fastargs[3];
 skip_optional_pos:
-    return_value = property_init_impl((propertyobject *)self, fget, fset, fdel, doc, name);
+    return_value = property_init_impl((propertyobject *)self, fget, fset, fdel, doc);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=562ff56bb7a4dbf0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=916624e717862abc input=a9049054013a1b77]*/
