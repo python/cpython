@@ -907,7 +907,7 @@ Properties
 Calling :func:`property` is a succinct way of building a data descriptor that
 triggers a function call upon access to an attribute.  Its signature is::
 
-    property(fget=None, fset=None, fdel=None, doc=None) -> property
+    property(fget=None, fset=None, fdel=None, doc=None, name=None) -> property
 
 The documentation shows a typical use to define a managed attribute ``x``:
 
@@ -927,39 +927,52 @@ here is a pure Python equivalent:
     class Property:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
 
-        def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
             self.fget = fget
             self.fset = fset
             self.fdel = fdel
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
+            self.name = name
+
+        def __set_name__(self, owner, name):
+            self.name = name
 
         def __get__(self, obj, objtype=None):
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError("unreadable attribute")
+                raise AttributeError(
+                    "unreadable attribute" +
+                    (" " + self.name if self.name is not None else "")
+                )
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError("can't set attribute")
+                raise AttributeError(
+                    "can't set attribute" +
+                    (" " + self.name if self.name is not None else "")
+                )
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError("can't delete attribute")
+                raise AttributeError(
+                    "can't delete attribute" +
+                    (" " + self.name if self.name is not None else "")
+                )
             self.fdel(obj)
 
         def getter(self, fget):
-            return type(self)(fget, self.fset, self.fdel, self.__doc__)
+            return type(self)(fget, self.fset, self.fdel, self.__doc__, self.name)
 
         def setter(self, fset):
-            return type(self)(self.fget, fset, self.fdel, self.__doc__)
+            return type(self)(self.fget, fset, self.fdel, self.__doc__, self.name)
 
         def deleter(self, fdel):
-            return type(self)(self.fget, self.fset, fdel, self.__doc__)
+            return type(self)(self.fget, self.fset, fdel, self.__doc__, self.name)
 
 .. testcode::
     :hide:

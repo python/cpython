@@ -1,0 +1,2 @@
+Add ``name`` attribute to ``property`` class to add more information when
+``AttributeError`` exception raised. Patch provided by Yurii Karabas.

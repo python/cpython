@@ -299,6 +299,46 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(Foo.spam.__doc__, "a new docstring")
 
 
+class _PropertyUnreachableAttribute:
+    obj = None
+    prop = None
+
+    def _format_exc_msg(self, msg):
+        if self.prop.name is None:
+            return msg
+
+        return "{} {}".format(msg, self.prop.name)
+
+    def setUpClass(self):
+        class TestCls:
+            foo = self.prop
+
+        self.obj = TestCls()
+
+    def test_get_property(self):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("unreadable attribute")):
+            self.obj.foo
+
+    def test_set_property(self):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("can't set attribute")):
+            self.obj.foo = None
+
+    def test_del_property(self):
+        with self.assertRaisesRegex(AttributeError, self._format_exc_msg("can't delete attribute")):
+            del self.obj.foo
+
+
+class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
+    def setUpClass(self):
+        self.prop = property(name='foo')
+        super().setUpClass()
+
+
+class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
+    def setUpClass(self):
+        self.prop = property()
+        super().setUpClass()
+
 
 if __name__ == '__main__':
     unittest.main()
