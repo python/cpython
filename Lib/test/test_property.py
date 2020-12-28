@@ -300,16 +300,12 @@ class PropertySubclassTests(unittest.TestCase):
 
 
 class _PropertyUnreachableAttribute:
+    msg_format = None
     obj = None
     cls = None
 
     def _format_exc_msg(self, msg):
-        name = self.cls.foo.name
-
-        if name is None:
-            return '^{}$'.format(msg)
-
-        return "^{} {}$".format(msg, name)
+        return self.msg_format.format(msg)
 
     @classmethod
     def setUpClass(cls):
@@ -329,11 +325,15 @@ class _PropertyUnreachableAttribute:
 
 
 class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
+    msg_format = "^{} foo$"
+
     class cls:
         foo = property()
 
 
 class PropertyUnreachableAttributeNoName(_PropertyUnreachableAttribute, unittest.TestCase):
+    msg_format = "^{}$"
+
     class cls:
         pass
 

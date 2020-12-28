@@ -1502,7 +1502,6 @@ static PyMemberDef property_members[] = {
     {"fset", T_OBJECT, offsetof(propertyobject, prop_set), READONLY},
     {"fdel", T_OBJECT, offsetof(propertyobject, prop_del), READONLY},
     {"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), 0},
-    {"name",  T_OBJECT, offsetof(propertyobject, prop_name), READONLY},
     {0}
 };
 
@@ -1671,6 +1670,7 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     if (new == NULL)
         return NULL;
 
+    Py_XINCREF(pold->prop_name);
     Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
     return new;
 }

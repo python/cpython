@@ -1,2 +1,3 @@
-Add ``name`` attribute to ``property`` class to add more information when
-``AttributeError`` exception raised. Patch provided by Yurii Karabas.
+Improve the error message for failed writes/deletes to property objects.
+When possible, the attribute name is now shown. Patch provided by
+Yurii Karabas.
