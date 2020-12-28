@@ -535,7 +535,6 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises(3, 3)
         raises(-721)
         raises(0, 100, -12)
-        self.assertWarns(DeprecationWarning, raises, 3, 3, 1.0)
         # Non-integer start/stop
         self.assertWarns(DeprecationWarning, raises, 3.14159)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
@@ -547,10 +546,34 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertWarns(DeprecationWarning, raises, 0, '2')
         # Zero and non-integer step
         raises(0, 42, 0)
+        self.assertWarns(DeprecationWarning, raises, 0, 42, 0.0)
+        self.assertWarns(DeprecationWarning, raises, 0, 0, 0.0)
         self.assertWarns(DeprecationWarning, raises, 0, 42, 3.14159)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
         self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
         self.assertWarns(DeprecationWarning, raises, 0, 42, '3')
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 1.0)
+        self.assertWarns(DeprecationWarning, raises, 0, 0, 1.0)
+
+    def test_randrange_argument_handling(self):
+        randrange = self.gen.randrange
+        with self.assertWarns(DeprecationWarning):
+            randrange(10.0, 20, 2)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20.0, 2)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 1.0)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 2.0)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10.5)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10, 20.5)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10, 20, 1.5)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1

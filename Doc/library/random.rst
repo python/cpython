@@ -145,7 +145,6 @@ Functions for integers
       or ``randrange('10')`` will be changed from :exc:`ValueError` to
       :exc:`TypeError`.
 
-
 .. function:: randint(a, b)
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for

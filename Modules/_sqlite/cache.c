@@ -34,11 +34,8 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
         return NULL;
     }
 
-    Py_INCREF(key);
-    node->key = key;
-
-    Py_INCREF(data);
-    node->data = data;
+    node->key = Py_NewRef(key);
+    node->data = Py_NewRef(data);
 
     node->prev = NULL;
     node->next = NULL;
@@ -81,8 +78,7 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         return -1;
     }
 
-    Py_INCREF(factory);
-    self->factory = factory;
+    self->factory = Py_NewRef(factory);
 
     self->decref_factory = 1;
 
@@ -218,8 +214,7 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
         self->last = node;
     }
 
-    Py_INCREF(node->data);
-    return node->data;
+    return Py_NewRef(node->data);
 }
 
 PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
