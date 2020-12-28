@@ -48,37 +48,57 @@ class TestCurses(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if not sys.__stdout__.isatty():
-            # Temporary skip tests on non-tty
-            raise unittest.SkipTest('sys.__stdout__ is not a tty')
-            cls.tmp = tempfile.TemporaryFile()
-            fd = cls.tmp.fileno()
-        else:
-            cls.tmp = None
-            fd = sys.__stdout__.fileno()
         # testing setupterm() inside initscr/endwin
         # causes terminal breakage
-        curses.setupterm(fd=fd)
-
-    @classmethod
-    def tearDownClass(cls):
-        if cls.tmp:
-            cls.tmp.close()
-            del cls.tmp
+        stdout_fd = sys.__stdout__.fileno()
+        curses.setupterm(fd=stdout_fd)
 
     def setUp(self):
+        self.isatty = True
+        self.output = sys.__stdout__
+        stdout_fd = sys.__stdout__.fileno()
+        if not sys.__stdout__.isatty():
+            # initstr() unconditionally uses C stdout.
+            # If it is redirected to file or pipe, try to attach it
+            # to terminal.
+            # First, save a copy of the file descriptor of stdout, so it
+            # can be restored after finishing the test.
+            dup_fd = os.dup(stdout_fd)
+            self.addCleanup(os.close, dup_fd)
+            self.addCleanup(os.dup2, dup_fd, stdout_fd)
+
+            if sys.__stderr__.isatty():
+                # If stderr is connected to terminal, use it.
+                tmp = sys.__stderr__
+                self.output = sys.__stderr__
+            else:
+                try:
+                    # Try to open the terminal device.
+                    tmp = open('/xdev/tty', 'wb', buffering=0)
+                except OSError:
+                    # As a fallback, use regular file to write control codes.
+                    # Some functions (like savetty) will not work, but at
+                    # least the garbage control sequences will not be mixed
+                    # with the testing report.
+                    tmp = tempfile.TemporaryFile(mode='wb', buffering=0)
+                    self.isatty = False
+                self.addCleanup(tmp.close)
+                self.output = None
+            os.dup2(tmp.fileno(), stdout_fd)
+
         self.save_signals = SaveSignals()
         self.save_signals.save()
-        if verbose:
+        self.addCleanup(self.save_signals.restore)
+        if verbose and self.output is not None:
             # just to make the test output a little more readable
-            print()
+            sys.stderr.flush()
+            sys.stdout.flush()
+            print(file=self.output, flush=True)
         self.stdscr = curses.initscr()
-        curses.savetty()
-
-    def tearDown(self):
-        curses.resetty()
-        curses.endwin()
-        self.save_signals.restore()
+        if self.isatty:
+            curses.savetty()
+            self.addCleanup(curses.endwin)
+            self.addCleanup(curses.resetty)
 
     def test_window_funcs(self):
         "Test the methods of windows"
@@ -96,7 +116,7 @@ class TestCurses(unittest.TestCase):
         for meth in [stdscr.clear, stdscr.clrtobot,
                      stdscr.clrtoeol, stdscr.cursyncup, stdscr.delch,
                      stdscr.deleteln, stdscr.erase, stdscr.getbegyx,
-                     stdscr.getbkgd, stdscr.getkey, stdscr.getmaxyx,
+                     stdscr.getbkgd, stdscr.getmaxyx,
                      stdscr.getparyx, stdscr.getyx, stdscr.inch,
                      stdscr.insertln, stdscr.instr, stdscr.is_wintouched,
                      win.noutrefresh, stdscr.redrawwin, stdscr.refresh,
@@ -207,6 +227,11 @@ class TestCurses(unittest.TestCase):
         if hasattr(stdscr, 'enclose'):
             stdscr.enclose(10, 10)
 
+        with tempfile.TemporaryFile() as f:
+            self.stdscr.putwin(f)
+            f.seek(0)
+            curses.getwin(f)
+
         self.assertRaises(ValueError, stdscr.getstr, -400)
         self.assertRaises(ValueError, stdscr.getstr, 2, 3, -400)
         self.assertRaises(ValueError, stdscr.instr, -2)
@@ -225,17 +250,20 @@ class TestCurses(unittest.TestCase):
     def test_module_funcs(self):
         "Test module-level functions"
         for func in [curses.baudrate, curses.beep, curses.can_change_color,
-                     curses.cbreak, curses.def_prog_mode, curses.doupdate,
-                     curses.flash, curses.flushinp,
+                     curses.doupdate, curses.flash, curses.flushinp,
                      curses.has_colors, curses.has_ic, curses.has_il,
                      curses.isendwin, curses.killchar, curses.longname,
-                     curses.nocbreak, curses.noecho, curses.nonl,
-                     curses.noqiflush, curses.noraw,
-                     curses.reset_prog_mode, curses.termattrs,
-                     curses.termname, curses.erasechar,
+                     curses.noecho, curses.nonl, curses.noqiflush,
+                     curses.termattrs, curses.termname, curses.erasechar,
                      curses.has_extended_color_support]:
             with self.subTest(func=func.__qualname__):
                 func()
+        if self.isatty:
+            for func in [curses.cbreak, curses.def_prog_mode,
+                         curses.nocbreak, curses.noraw,
+                         curses.reset_prog_mode]:
+                with self.subTest(func=func.__qualname__):
+                    func()
         if hasattr(curses, 'filter'):
             curses.filter()
         if hasattr(curses, 'getsyx'):
@@ -247,13 +275,9 @@ class TestCurses(unittest.TestCase):
         curses.delay_output(1)
         curses.echo() ; curses.echo(1)
 
-        with tempfile.TemporaryFile() as f:
-            self.stdscr.putwin(f)
-            f.seek(0)
-            curses.getwin(f)
-
         curses.halfdelay(1)
-        curses.intrflush(1)
+        if self.isatty:
+            curses.intrflush(1)
         curses.meta(1)
         curses.napms(100)
         curses.newpad(50,50)
@@ -262,7 +286,8 @@ class TestCurses(unittest.TestCase):
         curses.nl() ; curses.nl(1)
         curses.putp(b'abc')
         curses.qiflush()
-        curses.raw() ; curses.raw(1)
+        if self.isatty:
+            curses.raw() ; curses.raw(1)
         curses.set_escdelay(25)
         self.assertEqual(curses.get_escdelay(), 25)
         curses.set_tabsize(4)
@@ -373,7 +398,6 @@ class TestCurses(unittest.TestCase):
 
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
-        stdscr = self.stdscr
         lines, cols = curses.LINES, curses.COLS
         new_lines = lines - 1
         new_cols = cols + 1
