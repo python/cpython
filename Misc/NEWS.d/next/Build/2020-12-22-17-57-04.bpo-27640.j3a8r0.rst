@@ -1,1 +1,3 @@
-Add --enable-test-modules option for configure.
+Added ``--enable-test-modules`` option to the ``configure`` script. If this
+option is set to no, ``make install`` will not install test suites. Also
+setup.py will not build test extension modules.
