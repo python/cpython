@@ -17726,7 +17726,9 @@ $as_echo "no" >&6; }
 fi
 
 
-# check whether to disable test modules
+# Check whether to enable test modules. Any values other than no will be treated as yes.
+# If this option is set to no, "make install" will not install test suites. Also setup.py
+# will not build test extension modules.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-test-modules" >&5
 $as_echo_n "checking for --enable-test-modules... " >&6; }
 # Check whether --enable-test-modules was given.
