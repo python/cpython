@@ -542,6 +542,26 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises(0, 42, 0)
         raises(0, 42, 3.14159)
 
+    def test_randrange_argument_handling(self):
+        randrange = self.gen.randrange
+        with self.assertWarns(DeprecationWarning):
+            randrange(10.0, 20, 2)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20.0, 2)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 1.0)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 2.0)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10.5)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10, 20.5)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10, 20, 1.5)
+
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
         # show that: k = int(1.001 + _log(n, 2))
