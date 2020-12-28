@@ -36,9 +36,16 @@ extern "C" {
 
 #define _PyRuntimeGILState_GetThreadState(gilstate) \
     ((PyThreadState*)_Py_atomic_load_relaxed(&(gilstate)->tstate_current))
-#define _PyRuntimeGILState_SetThreadState(gilstate, value) \
-    _Py_atomic_store_relaxed(&(gilstate)->tstate_current, \
-                             (uintptr_t)(value))
+
+
+#ifdef HAVE__THREAD_LOCAL_KEYWORD
+_Thread_local PyInterpreterState *_Py_current_interp = NULL;
+_Thread_local PyThreadState *_Py_current_tstate = NULL;
+#elif defined(__GNUC__) || defined(__clang__)
+#  define _Py_HAVE_TSS_TSTATE
+__thread PyInterpreterState *_Py_current_interp = NULL;
+__thread PyThreadState *_Py_current_tstate = NULL;
+#endif
 
 /* Forward declarations */
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
@@ -603,6 +610,22 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
+
+static void
+set_current_tstate(struct _gilstate_runtime_state *gilstate,
+                   PyThreadState *tstate)
+{
+#ifdef _Py_HAVE_TSS_TSTATE
+    _Py_current_tstate = tstate;
+    _Py_current_interp = tstate ? tstate->interp : NULL;
+#endif
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyThread_tss_set(&gilstate->autoTSSkey, tstate);
+#endif
+    _Py_atomic_store_relaxed(&gilstate->tstate_current, (uintptr_t)tstate);
+}
+
+
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
@@ -929,7 +952,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_EnsureTstateNotNULL(tstate);
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
     tstate_delete_common(tstate, gilstate);
-    _PyRuntimeGILState_SetThreadState(gilstate, NULL);
+    set_current_tstate(gilstate, NULL);
     _PyEval_ReleaseLock(tstate);
     PyMem_RawFree(tstate);
 }
@@ -1018,7 +1041,8 @@ _PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *new
     PyThreadState *oldts = _PyRuntimeGILState_GetThreadState(gilstate);
 #endif
 
-    _PyRuntimeGILState_SetThreadState(gilstate, newts);
+    set_current_tstate(gilstate, newts);
+
     /* It should not be possible for more than one thread state
        to be used for a thread.  Check this the best we can in debug
        builds.
@@ -1034,9 +1058,6 @@ _PyThreadState_Swap(struct _gilstate_runtime_state *gilstate, PyThreadState *new
             Py_FatalError("Invalid thread state for this thread");
         errno = err;
     }
-#endif
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    PyThread_tss_set(&gilstate->autoTSSkey, newts);
 #endif
     return oldts;
 }

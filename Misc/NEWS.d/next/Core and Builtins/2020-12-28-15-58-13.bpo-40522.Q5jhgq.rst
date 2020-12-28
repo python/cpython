@@ -1,0 +1,2 @@
+If Python is built with GCC or clang, the current interpreter and the current
+Python thread state are now stored in a Thread Local Storage.

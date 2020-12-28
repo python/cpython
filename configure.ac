@@ -5606,6 +5606,24 @@ if test "$have_builtin_atomic" = yes; then
     AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 fi
 
+# Check for _Thread_local keyword
+AC_MSG_CHECKING(for _Thread_local keyword)
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    _Thread_local int val;
+    int main() {
+      val = 1;
+      return val;
+    }
+  ]])
+],[have__thread_local_keyword=yes],[have__thread_local_keyword=no])
+AC_MSG_RESULT($have__thread_local_keyword)
+
+if test "$have__thread_local_keyword" = yes; then
+    AC_DEFINE(HAVE__THREAD_LOCAL_KEYWORD, 1, [Has C11 _Thread_local keyword])
+fi
+
 # ensurepip option
 AC_MSG_CHECKING(for ensurepip)
 AC_ARG_WITH(ensurepip,

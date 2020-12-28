@@ -17129,6 +17129,37 @@ $as_echo "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
 
 fi
 
+# Check for _Thread_local keyword
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _Thread_local keyword" >&5
+$as_echo_n "checking for _Thread_local keyword... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    _Thread_local int val;
+    int main() {
+      val = 1;
+      return val;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have__thread_local_keyword=yes
+else
+  have__thread_local_keyword=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have__thread_local_keyword" >&5
+$as_echo "$have__thread_local_keyword" >&6; }
+
+if test "$have__thread_local_keyword" = yes; then
+
+$as_echo "#define HAVE__THREAD_LOCAL_KEYWORD 1" >>confdefs.h
+
+fi
+
 # ensurepip option
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ensurepip" >&5
 $as_echo_n "checking for ensurepip... " >&6; }

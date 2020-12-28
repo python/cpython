@@ -53,6 +53,22 @@ _Py_ThreadCanHandlePendingCalls(void)
 PyAPI_FUNC(PyThreadState*) _PyThreadState_GetTSS(void);
 #endif
 
+
+// Thread local storage for the current interpreter and the current Python
+// thread state, if supported by the compiler.
+#ifdef HAVE__THREAD_LOCAL_KEYWORD
+// C11 _Thread_local keyword
+#  define _Py_HAVE_TSS_TSTATE
+PyAPI_DATA(_Thread_local PyInterpreterState*) _Py_current_interp;
+PyAPI_DATA(_Thread_local PyThreadState*) _Py_current_tstate;
+#elif defined(__GNUC__) || defined(__clang__)
+// GCC and clang __thread extension
+#  define _Py_HAVE_TSS_TSTATE
+PyAPI_DATA(__thread PyInterpreterState*) _Py_current_interp;
+PyAPI_DATA(__thread PyThreadState*) _Py_current_tstate;
+#endif
+
+
 static inline PyThreadState*
 _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 {
@@ -75,7 +91,9 @@ _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+#ifdef _Py_HAVE_TSS_TSTATE
+    return _Py_current_tstate;
+#elif defined(EXPERIMENTAL_ISOLATED_SUBINTERPRETERS)
     return _PyThreadState_GetTSS();
 #else
     return _PyRuntimeState_GetThreadState(&_PyRuntime);
@@ -110,11 +128,15 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
    See also _PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
+#ifdef _Py_HAVE_TSS_TSTATE
+    return _Py_current_interp;
+#else
     PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
     _Py_EnsureTstateNotNULL(tstate);
 #endif
     return tstate->interp;
+#endif
 }
 
 
