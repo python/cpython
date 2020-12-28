@@ -891,7 +891,6 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    Py_INCREF(aggregate_class);
     rc = sqlite3_create_function_v2(self->db,
                                     name,
                                     n_arg,
