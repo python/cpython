@@ -26,6 +26,63 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
     return 1;
 }
 
+static asdl_expr_seq*
+unpack_iterable(asdl_expr_seq* seq, PyArena *arena) {
+    Py_ssize_t elements = 0;
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(seq); i++) {
+        expr_ty elt = (expr_ty)asdl_seq_GET(seq, i);
+        if (elt->kind == Starred_kind && elt->v.Starred.value->kind == Constant_kind) {
+           Py_ssize_t len = PyObject_Length(elt->v.Starred.value->v.Constant.value);
+           if (len == -1) {
+               return NULL;
+           }
+           elements += len;
+        } else {
+            elements++;
+        }
+    }
+    if (elements == asdl_seq_LEN(seq)) {
+        // No Starred elements to unpack;
+        return seq;
+    }
+    asdl_expr_seq *res = _Py_asdl_expr_seq_new(elements, arena);
+    size_t position = 0;
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(seq); i++) {
+       expr_ty elt = asdl_seq_GET(seq, i);
+       if (elt->kind == Starred_kind && elt->v.Starred.value->kind == Constant_kind) {
+           PyObject *iterator = PyObject_GetIter(elt->v.Starred.value->v.Constant.value);
+           if (iterator == NULL) {
+              return NULL;
+           }
+           PyObject *item = NULL;;
+           while ((item = PyIter_Next(iterator))) {
+               expr_ty c = _Py_Constant(item, NULL, elt->lineno, elt->col_offset,
+                                        elt->end_lineno, elt->end_col_offset, arena);
+               asdl_seq_SET(res, position++, c);
+               Py_DECREF(item);
+           }
+           Py_DECREF(iterator);
+       } else {
+           asdl_seq_SET(res, position++, asdl_seq_GET(seq, i));
+       }
+    }
+    return res;
+}
+
+#define UNPACK_STARRED_CONSTANTS(TARGET) { \
+    asdl_expr_seq *seq = TARGET; \
+    asdl_expr_seq *unpacked = unpack_iterable(seq, ctx_); \
+    if (unpacked == NULL) { \
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) { \
+            return -1; \
+        } \
+        PyErr_Clear(); \
+    } else { \
+        TARGET = unpacked; \
+    } \
+} \
+
+
 #define COPY_NODE(TO, FROM) (memcpy((TO), (FROM), sizeof(struct _expr)))
 
 static PyObject*
@@ -511,6 +568,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
+        UNPACK_STARRED_CONSTANTS(node_->v.Set.elts);
         break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);
@@ -573,10 +631,15 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case List_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.List.elts);
+        UNPACK_STARRED_CONSTANTS(node_->v.List.elts);
         break;
     case Tuple_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Tuple.elts);
         CALL(fold_tuple, expr_ty, node_);
+        // The fold can change the type to a constant node
+        if (node_->kind == Tuple_kind) {
+            UNPACK_STARRED_CONSTANTS(node_->v.Tuple.elts);
+        }
         break;
     case Name_kind:
         if (node_->v.Name.ctx == Load &&
