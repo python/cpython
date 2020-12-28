@@ -1211,7 +1211,7 @@ Using a "defining class" converter
 
 Argument Clinic facilitates gaining access to the defining class of a method.
 This is useful for heap type methods that need to fetch module level state.
-Example from `Modules/zlibmodule.c`::
+Example from ``Modules/zlibmodule.c``::
 
     /*[clinic input]
     zlib.Compress.compress
@@ -1229,15 +1229,15 @@ Example from `Modules/zlibmodule.c`::
 
 
 Each method may only have one argument using this converter, and it must appear
-after `self`, or, if `self` is not used, as the first argument. The argument
-will be of type `PyTypeObject *`.
+after ``self``, or, if ``self`` is not used, as the first argument. The argument
+will be of type ``PyTypeObject *``.
 
-When used, Argument Clinic will select `METH_FASTCALL | METH_KEYWORDS |
-METH_METHOD` as the calling convention. The argument will not appear in
-`__text_signature__`.
+When used, Argument Clinic will select ``METH_FASTCALL | METH_KEYWORDS |
+METH_METHOD`` as the calling convention. The argument will not appear in
+``__text_signature__``.
 
-The `defining_class` converter is not compatible with `__init__` and `__new__`
-methods, which cannot use the `METH_METHOD` convention.
+The ``defining_class`` converter is not compatible with ``__init__`` and ``__new__``
+methods, which cannot use the ``METH_METHOD`` convention.
 
 See also PEP 573.
 
