@@ -41,8 +41,7 @@ from distutils.spawn import find_executable
 
 
 # Compile extensions used to test Python?
-ENABLE_TEST_MODULES = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
-TEST_EXTENSIONS = (True if ENABLE_TEST_MODULES else False)
+TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
 
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
