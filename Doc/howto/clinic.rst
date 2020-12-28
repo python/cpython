@@ -1206,6 +1206,41 @@ type for ``self``, it's best to create your own converter, subclassing
     [clinic start generated code]*/
 
 
+Using a "defining class" converter
+----------------------------------
+
+Argument Clinic facilitates gaining access to the defining class of a method.
+This is useful for heap type methods that need to fetch module level state.
+Example from `Modules/zlibmodule.c`::
+
+    /*[clinic input]
+    zlib.Compress.compress
+
+        cls: defining_class
+        data: Py_buffer
+        /
+    ...
+    [clinic start generated code]*/
+    static PyObject *
+    zlib_Compress_compress_impl(...)
+    /*[clinic end generated code ...]*/
+    {
+        zlibstate *state = PyType_GetModuleState(cls)
+
+
+Each method may only have one argument using this converter, and it must appear
+after `self`, or, if `self` is not used, as the first argument. The argument
+will be of type `PyTypeObject *`.
+
+When used, Argument Clinic will select `METH_FASTCALL | METH_KEYWORDS |
+METH_METHOD` as the calling convention. The argument will not appear in
+`__text_signature__`.
+
+The `defining_class` converter is not compatible with `__init__` and `__new__`
+methods, which cannot use the `METH_METHOD` convention.
+
+See also PEP 573.
+
 
 Writing a custom converter
 --------------------------
