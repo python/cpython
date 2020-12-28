@@ -2325,10 +2325,13 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds);
 static int
 type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 {
+    PyTypeObject *type;
     int res;
 
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
+
+    type = (PyTypeObject *)cls;
 
     if (kwds != NULL && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
         PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) != 0) {
@@ -2343,6 +2346,12 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
                         "type.__init__() takes 1 or 3 arguments");
         return -1;
     }
+
+    if (set_names(type) < 0)
+        return -1;
+
+    if (init_subclass(type, kwds) < 0)
+        return -1;
 
     /* Call object.__init__(self) now. */
     /* XXX Could call super(type, cls).__init__() but what's the point? */
@@ -2870,12 +2879,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     if (type->tp_dictoffset) {
         et->ht_cached_keys = _PyDict_NewKeysForClass();
     }
-
-    if (set_names(type) < 0)
-        goto error;
-
-    if (init_subclass(type, kwds) < 0)
-        goto error;
 
     Py_DECREF(dict);
     return (PyObject *)type;
