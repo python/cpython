@@ -491,13 +491,11 @@ class Variable:
             self._tk.call("trace", "vinfo", self._name))]
 
     def __eq__(self, other):
-        """Comparison for equality (==).
-
-        Note: if the Variable's master matters to behavior
-        also compare self._master == other._master
-        """
-        return self.__class__.__name__ == other.__class__.__name__ \
-            and self._name == other._name
+        if not isinstance(other, Variable):
+            return NotImplemented
+        return (self._name == other._name
+                and self.__class__.__name__ == other.__class__.__name__
+                and self._tk == other._tk)
 
 
 class StringVar(Variable):
