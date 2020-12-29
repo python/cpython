@@ -64,6 +64,11 @@ struct _Py_bytes_state {
     PyBytesObject *characters[256];
 };
 
+struct _Py_unicode_ids {
+    Py_ssize_t size;
+    PyObject **array;
+};
+
 struct _Py_unicode_state {
     // The empty Unicode object is a singleton to improve performance.
     PyObject *empty_string;
@@ -71,6 +76,19 @@ struct _Py_unicode_state {
        shared as well. */
     PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
+
+    /* This dictionary holds all interned unicode strings.  Note that references
+       to strings in this dictionary are *not* counted in the string's ob_refcnt.
+       When the interned string reaches a refcnt of 0 the string deallocation
+       function will delete the reference from this dictionary.
+
+       Another way to look at this is that to say that the actual reference
+       count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
+    */
+    PyObject *interned;
+
+    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
+    struct _Py_unicode_ids ids;
 };
 
 struct _Py_float_state {
@@ -170,6 +188,27 @@ struct atexit_state {
     atexit_callback **callbacks;
     int ncallbacks;
     int callback_len;
+};
+
+
+// Type attribute lookup cache: speed up attribute and method lookups,
+// see _PyType_Lookup().
+struct type_cache_entry {
+    unsigned int version;  // initialized from type->tp_version_tag
+    PyObject *name;        // reference to exactly a str or None
+    PyObject *value;       // borrowed reference or NULL
+};
+
+#define MCACHE_SIZE_EXP 12
+#define MCACHE_STATS 0
+
+struct type_cache {
+    struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
+#if MCACHE_STATS
+    size_t hits;
+    size_t misses;
+    size_t collisions;
+#endif
 };
 
 
@@ -277,6 +316,7 @@ struct _is {
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
+    struct type_cache type_cache;
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
