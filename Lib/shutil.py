@@ -813,6 +813,10 @@ def move(src, dst, copy_function=copy2):
             if _destinsrc(src, dst):
                 raise Error("Cannot move a directory '%s' into itself"
                             " '%s'." % (src, dst))
+            if not os.access(src, os.W_OK) and os.listdir(src):
+                raise Error("Cannot move the non-empty directory '%s': "
+                            "Lacking write permission to '%s'."
+                            % (src, src))
             copytree(src, real_dst, copy_function=copy_function,
                      symlinks=True)
             rmtree(src)
