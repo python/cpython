@@ -6113,9 +6113,7 @@ socket_ntohs(PyObject *self, PyObject *args)
 PyDoc_STRVAR(ntohs_doc,
 "ntohs(integer) -> integer\n\
 \n\
-Convert a 16-bit unsigned integer from network to host byte order.\n\
-An OverflowError is raised if the received integer does not fit in\n\
-a 16-bit unsigned integer, but does fit in a positive C int.");
+Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -6178,9 +6176,7 @@ socket_htons(PyObject *self, PyObject *args)
 PyDoc_STRVAR(htons_doc,
 "htons(integer) -> integer\n\
 \n\
-Convert a 16-bit unsigned integer from host to network byte order.\n\
-An OverflowError is raised if the received integer does not fit in\n\
-a 16-bit unsigned integer, but does fit in a positive C int.");
+Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
