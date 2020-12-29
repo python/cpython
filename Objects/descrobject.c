@@ -1541,12 +1541,16 @@ PyDoc_STRVAR(set_name_doc,
 
 static PyObject *
 property_set_name(PyObject *self, PyObject *args) {
-    propertyobject *prop = (propertyobject *)self;
-    PyObject *name = PyTuple_GetItem(args, 1);
-
-    if (name == NULL) {
+    if (PyTuple_GET_SIZE(args) != 2) {
+        PyErr_Format(
+                PyExc_TypeError,
+                "__set_name__() takes 2 positional arguments but %d were given",
+                PyTuple_GET_SIZE(args));
         return NULL;
     }
+
+    propertyobject *prop = (propertyobject *)self;
+    PyObject *name = PyTuple_GET_ITEM(args, 1);
 
     Py_XINCREF(name);
     Py_XSETREF(prop->prop_name, name);
@@ -1588,7 +1592,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
         if (gs->prop_name != NULL) {
-            PyErr_Format(PyExc_AttributeError, "unreadable attribute %S", gs->prop_name);
+            PyErr_Format(PyExc_AttributeError, "unreadable attribute %R", gs->prop_name);
         } else {
             PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
         }
@@ -1613,8 +1617,8 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         if (gs->prop_name != NULL) {
             PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
-                        "can't delete attribute %S" :
-                        "can't set attribute %S",
+                        "can't delete attribute %R" :
+                        "can't set attribute %R",
                         gs->prop_name);
         } else {
             PyErr_SetString(PyExc_AttributeError,

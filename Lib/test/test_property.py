@@ -204,6 +204,16 @@ class PropertyTests(unittest.TestCase):
                 return 'Second'
         self.assertEqual(A.__doc__, 'Second')
 
+    def test_property_set_name_incorrect_args(self):
+        p = property()
+
+        for i in (0, 1, 3):
+            with self.assertRaisesRegex(
+                TypeError,
+                fr'^__set_name__\(\) takes 2 positional arguments but {i} were given$'
+            ):
+                p.__set_name__(*([0] * i))
+
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):
@@ -325,7 +335,7 @@ class _PropertyUnreachableAttribute:
 
 
 class PropertyUnreachableAttributeWithName(_PropertyUnreachableAttribute, unittest.TestCase):
-    msg_format = "^{} foo$"
+    msg_format = "^{} 'foo'$"
 
     class cls:
         foo = property()

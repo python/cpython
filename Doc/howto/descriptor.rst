@@ -948,12 +948,12 @@ here is a pure Python equivalent:
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError(f'can\'t set attribute {self._name}')
+                raise AttributeError(f"can't set attribute {self._name}")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError(f'can\'t delete attribute {self._name}')
+                raise AttributeError(f"can't delete attribute {self._name}")
             self.fdel(obj)
 
         def getter(self, fget):
