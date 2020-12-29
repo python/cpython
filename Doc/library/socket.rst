@@ -905,8 +905,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Convert 16-bit positive integers from network to host byte order.  On machines
    where the host byte order is the same as network byte order, this is a no-op;
-   otherwise, it performs a 2-byte swap operation.  :exc:`OverflowError` is raised
-   if *x* does not fit in a 16-bit unsigned integer.
+   otherwise, it performs a 2-byte swap operation.
 
 
 .. function:: htonl(x)
@@ -920,8 +919,7 @@ The :mod:`socket` module also offers various network-related services:
 
    Convert 16-bit positive integers from host to network byte order.  On machines
    where the host byte order is the same as network byte order, this is a no-op;
-   otherwise, it performs a 2-byte swap operation.  :exc:`OverflowError` is raised
-   if *x* does not fit in a 16-bit unsigned integer.
+   otherwise, it performs a 2-byte swap operation.
 
 
 .. function:: inet_aton(ip_string)
