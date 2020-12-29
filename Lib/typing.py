@@ -1668,6 +1668,8 @@ def get_origin(tp):
         return tp.__origin__
     if tp is Generic:
         return Generic
+    if isinstance(tp, types.Union):
+        return types.Union
     return None
 
 
@@ -1684,12 +1686,14 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
-        if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
+        if (tp.__origin__ is collections.abc.Callable
+                and not (res[0] is Ellipsis
+                         or isinstance(res[0], (ParamSpec, _ConcatenateGenericAlias)))):
             res = (list(res[:-1]), res[-1])
         return res
-    if isinstance(tp, GenericAlias):
+    if isinstance(tp, types.Union):
         return tp.__args__
     return ()
 
