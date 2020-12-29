@@ -49,6 +49,9 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
 
         return cls
 
+    def __init__(cls, name, bases, dct, *, source_date_epoch):
+        super().__init__(name, bases, dct)
+
 
 class PyCompileTestsBase:
 

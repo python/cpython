@@ -1347,6 +1347,8 @@ order (MRO) for bases """
             def __new__(cls, name, bases, namespace, attr):
                 self.assertIn(attr, namespace)
                 return super().__new__(cls, name, bases, namespace)
+            def __init__(cls, name, bases, namespace, attr):
+                super().__init__(name, bases, namespace)
 
         class C1:
             def __init__(self):

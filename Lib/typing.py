@@ -2119,6 +2119,9 @@ class _TypedDictMeta(type):
             tp_dict.__total__ = total
         return tp_dict
 
+    def __init__(cls, name, bases, ns, total=True):
+        super().__init__(name, bases, ns)
+
     __call__ = dict  # static method
 
     def __subclasscheck__(cls, other):
