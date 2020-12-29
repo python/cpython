@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd, temp_dir
+from test.support.os_helper import temp_cwd, temp_dir
 
 
 skip_if_missing()
@@ -219,6 +219,76 @@ class Test_pygettext(unittest.TestCase):
             """doc"""
         '''))
         self.assertIn('doc', msgids)
+
+    def test_calls_in_fstrings(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_raw(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        rf"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_nested(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"""{f'{_("foo bar")}'}"""
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_attribute(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{obj._('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_call_on_call(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{type(str)('foo bar')}"
+        '''))
+        self.assertNotIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_format(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo {bar}').format(bar='baz')}"
+        '''))
+        self.assertIn('foo {bar}', msgids)
+
+    def test_calls_in_fstrings_with_wrong_input_1(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo {bar}')}"
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'foo {bar}' in msgid])
+
+    def test_calls_in_fstrings_with_wrong_input_2(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(1)}"
+        '''))
+        self.assertNotIn(1, msgids)
+
+    def test_calls_in_fstring_with_multiple_args(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo', 'bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+
+    def test_calls_in_fstring_with_keyword_args(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo', bar='baz')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+        self.assertNotIn('baz', msgids)
+
+    def test_calls_in_fstring_with_partially_wrong_expression(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo') + _('bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertIn('bar', msgids)
 
     def test_files_list(self):
         """Make sure the directories are inspected for source files

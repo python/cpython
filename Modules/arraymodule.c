@@ -133,7 +133,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     }
 
     if (newsize == 0) {
-        PyMem_FREE(self->ob_item);
+        PyMem_Free(self->ob_item);
         self->ob_item = NULL;
         Py_SET_SIZE(self, 0);
         self->allocated = 0;
@@ -652,7 +652,7 @@ array_dealloc(arrayobject *op)
     if (op->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) op);
     if (op->ob_item != NULL)
-        PyMem_DEL(op->ob_item);
+        PyMem_Free(op->ob_item);
     Py_TYPE(op)->tp_free((PyObject *)op);
 }
 
@@ -1130,7 +1130,7 @@ array_array_index(arrayobject *self, PyObject *v)
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
         if (cmp > 0) {
-            return PyLong_FromLong((long)i);
+            return PyLong_FromSsize_t(i);
         }
         else if (cmp < 0)
             return NULL;
@@ -2989,6 +2989,26 @@ array_modexec(PyObject *m)
         Py_DECREF((PyObject *)&Arraytype);
         return -1;
     }
+
+    PyObject *abc_mod = PyImport_ImportModule("collections.abc");
+    if (!abc_mod) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
+    PyObject *mutablesequence = PyObject_GetAttrString(abc_mod, "MutableSequence");
+    Py_DECREF(abc_mod);
+    if (!mutablesequence) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
+    PyObject *res = PyObject_CallMethod(mutablesequence, "register", "O", (PyObject *)&Arraytype);
+    Py_DECREF(mutablesequence);
+    if (!res) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
+    Py_DECREF(res);
+
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
         Py_DECREF((PyObject *)&Arraytype);

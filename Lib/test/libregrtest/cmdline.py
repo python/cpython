@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 from test import support
+from test.support import os_helper
 
 
 USAGE = """\
@@ -291,7 +292,7 @@ def _create_parser():
 def relative_filename(string):
     # CWD is replaced with a temporary dir before calling main(), so we
     # join it with the saved CWD so it ends up where the user expects.
-    return os.path.join(support.SAVEDCWD, string)
+    return os.path.join(os_helper.SAVEDCWD, string)
 
 
 def huntrleaks(string):

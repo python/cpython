@@ -27,7 +27,6 @@ __all__ = [
 ]
 
 import _collections_abc
-import heapq as _heapq
 import sys as _sys
 
 from itertools import chain as _chain
@@ -592,7 +591,10 @@ class Counter(dict):
         # Emulate Bag.sortedByCount from Smalltalk
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
-        return _heapq.nlargest(n, self.items(), key=_itemgetter(1))
+
+        # Lazy import to speedup Python startup time
+        import heapq
+        return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.
@@ -983,7 +985,7 @@ class ChainMap(_collections_abc.MutableMapping):
     def __iter__(self):
         d = {}
         for mapping in reversed(self.maps):
-            d.update(mapping)                   # reuses stored hash values if possible
+            d.update(dict.fromkeys(mapping))    # reuses stored hash values if possible
         return iter(d)
 
     def __contains__(self, key):

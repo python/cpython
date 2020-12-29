@@ -49,6 +49,11 @@ typedef struct _Py_AuditHookEntry {
     void *userData;
 } _Py_AuditHookEntry;
 
+struct _Py_unicode_runtime_ids {
+    PyThread_type_lock lock;
+    Py_ssize_t next_index;
+};
+
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
@@ -105,6 +110,8 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;
+
+    struct _Py_unicode_runtime_ids unicode_ids;
 
     // XXX Consolidate globals found via the check-c-globals script.
 } _PyRuntimeState;

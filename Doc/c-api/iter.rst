@@ -44,3 +44,21 @@ something like this::
    else {
        /* continue doing useful work */
    }
+
+
+.. c:type:: PySendResult
+
+   The enum value used to represent different results of :c:func:`PyIter_Send`.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: PySendResult PyIter_Send(PyObject *iter, PyObject *arg, PyObject **presult)
+
+   Sends the *arg* value into the iterator *iter*. Returns:
+
+   - ``PYGEN_RETURN`` if iterator returns. Return value is returned via *presult*.
+   - ``PYGEN_NEXT`` if iterator yields. Yielded value is returned via *presult*.
+   - ``PYGEN_ERROR`` if iterator has raised and exception. *presult* is set to ``NULL``.
+
+   .. versionadded:: 3.10

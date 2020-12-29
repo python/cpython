@@ -158,6 +158,18 @@ Glossary
       See also :term:`text file` for a file object able to read and write
       :class:`str` objects.
 
+   borrowed reference
+      In Python's C API, a borrowed reference is a reference to an object.
+      It does not modify the object reference count. It becomes a dangling
+      pointer if the object is destroyed. For example, a garbage collection can
+      remove the last :term:`strong reference` to the object and so destroy it.
+
+      Calling :c:func:`Py_INCREF` on the :term:`borrowed reference` is
+      recommended to convert it to a :term:`strong reference` in-place, except
+      when the object cannot be destroyed before the last usage of the borrowed
+      reference. The :c:func:`Py_NewRef` function can be used to create a new
+      :term:`strong reference`.
+
    bytes-like object
       An object that supports the :ref:`bufferobjects` and can
       export a C-:term:`contiguous` buffer. This includes all :class:`bytes`,
@@ -188,6 +200,10 @@ Glossary
 
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
+
+   callback
+      A subroutine function which is passed as an argument to be executed at
+      some point in the future.
 
    class
       A template for creating user-defined objects. Class definitions
@@ -297,12 +313,19 @@ Glossary
       including functions, methods, properties, class methods, static methods,
       and reference to super classes.
 
-      For more information about descriptors' methods, see :ref:`descriptors`.
+      For more information about descriptors' methods, see :ref:`descriptors`
+      or the :ref:`Descriptor How To Guide <descriptorhowto>`.
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The
       keys can be any object with :meth:`__hash__` and :meth:`__eq__` methods.
       Called a hash in Perl.
+
+   dictionary comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a dictionary with the results. ``results = {n: n ** 2 for n in
+      range(10)}`` generates a dictionary containing key ``n`` mapped to
+      value ``n ** 2``. See :ref:`comprehensions`.
 
    dictionary view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
@@ -374,6 +397,25 @@ Glossary
 
    file-like object
       A synonym for :term:`file object`.
+
+   filesystem encoding and error handler
+      Encoding and error handler used by Python to decode bytes from the
+      operating system and encode Unicode to the operating system.
+
+      The filesystem encoding must guarantee to successfully decode all bytes
+      below 128. If the file system encoding fails to provide this guarantee,
+      API functions can raise :exc:`UnicodeError`.
+
+      The :func:`sys.getfilesystemencoding` and
+      :func:`sys.getfilesystemencodeerrors` functions can be used to get the
+      filesystem encoding and error handler.
+
+      The :term:`filesystem encoding and error handler` are configured at
+      Python startup by the :c:func:`PyConfig_Read` function: see
+      :c:member:`~PyConfig.filesystem_encoding` and
+      :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
+
+      See also the :term:`locale encoding`.
 
    finder
       An object that tries to find the :term:`loader` for a module that is
@@ -472,6 +514,13 @@ Glossary
       See also the :term:`single dispatch` glossary entry, the
       :func:`functools.singledispatch` decorator, and :pep:`443`.
 
+   generic type
+      A :term:`type` that can be parameterized; typically a container like
+      :class:`list`. Used for :term:`type hints <type hint>` and
+      :term:`annotations <annotation>`.
+
+      See :pep:`483` for more details, and :mod:`typing` or
+      :ref:`generic alias type <types-genericalias>` for its uses.
 
    GIL
       See :term:`global interpreter lock`.
@@ -583,7 +632,7 @@ Glossary
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
       with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence` semantics.
+      that implements :term:`Sequence <sequence>` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
@@ -654,6 +703,18 @@ Glossary
       code, ``if key in mapping: return mapping[key]`` can fail if another
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
+
+      On Windows, it is is the ANSI code page (ex: ``cp1252``).
+
+      ``locale.getpreferredencoding(False)`` can be used to get the locale
+      encoding.
+
+      Python uses the :term:`filesystem encoding and error handler` to convert
+      between Unicode filenames and bytes filenames.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -1020,7 +1081,13 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
+
+   set comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
@@ -1044,6 +1111,18 @@ Glossary
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
+
+   strong reference
+      In Python's C API, a strong reference is a reference to an object
+      which increments the object's reference count when it is created and
+      decrements the object's reference count when it is deleted.
+
+      The :c:func:`Py_NewRef` function can be used to create a strong reference
+      to an object. Usually, the :c:func:`Py_DECREF` function must be called on
+      the strong reference before exiting the scope of the strong reference, to
+      avoid leaking one reference.
+
+      See also :term:`borrowed reference`.
 
    text encoding
       A codec which encodes Unicode strings to bytes.
@@ -1080,19 +1159,15 @@ Glossary
       Type aliases are useful for simplifying :term:`type hints <type hint>`.
       For example::
 
-         from typing import List, Tuple
-
          def remove_gray_shades(
-                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+                 colors: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
              pass
 
       could be made more readable like this::
 
-         from typing import List, Tuple
+         Color = tuple[int, int, int]
 
-         Color = Tuple[int, int, int]
-
-         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+         def remove_gray_shades(colors: list[Color]) -> list[Color]:
              pass
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.

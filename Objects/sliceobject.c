@@ -15,6 +15,7 @@ this type and there is exactly one in existence.
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "structmember.h"         // PyMemberDef
 
@@ -113,27 +114,35 @@ void _PySlice_Fini(PyThreadState *tstate)
 PyObject *
 PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 {
+    if (step == NULL) {
+        step = Py_None;
+    }
+    if (start == NULL) {
+        start = Py_None;
+    }
+    if (stop == NULL) {
+        stop = Py_None;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PySliceObject *obj;
     if (interp->slice_cache != NULL) {
         obj = interp->slice_cache;
         interp->slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
-    } else {
+    }
+    else {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
-        if (obj == NULL)
+        if (obj == NULL) {
             return NULL;
+        }
     }
 
-    if (step == NULL) step = Py_None;
     Py_INCREF(step);
-    if (start == NULL) start = Py_None;
-    Py_INCREF(start);
-    if (stop == NULL) stop = Py_None;
-    Py_INCREF(stop);
-
     obj->step = step;
+    Py_INCREF(start);
     obj->start = start;
+    Py_INCREF(stop);
     obj->stop = stop;
 
     _PyObject_GC_TRACK(obj);
@@ -380,7 +389,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = _PyLong_One;
+        step = _PyLong_GetOne();
         Py_INCREF(step);
         step_is_negative = 0;
     }
@@ -409,7 +418,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = _PyLong_Zero;
+        lower = _PyLong_GetZero();
         Py_INCREF(lower);
         upper = length;
         Py_INCREF(upper);

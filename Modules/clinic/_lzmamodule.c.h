@@ -241,39 +241,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
-"_encode_filter_properties($module, filter, /)\n"
-"--\n"
-"\n"
-"Return a bytes object encoding the options (properties) of the filter specified by *filter* (a dict).\n"
-"\n"
-"The result does not include the filter ID itself, only the options.");
-
-#define _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_encode_filter_properties", (PyCFunction)_lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
-
-static PyObject *
-_lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter);
-
-static PyObject *
-_lzma__encode_filter_properties(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    lzma_filter filter = {LZMA_VLI_UNKNOWN, NULL};
-
-    if (!lzma_filter_converter(arg, &filter)) {
-        goto exit;
-    }
-    return_value = _lzma__encode_filter_properties_impl(module, filter);
-
-exit:
-    /* Cleanup for filter */
-    if (filter.id != LZMA_VLI_UNKNOWN)
-       PyMem_Free(filter.options);
-
-    return return_value;
-}
-
 PyDoc_STRVAR(_lzma__decode_filter_properties__doc__,
 "_decode_filter_properties($module, filter_id, encoded_props, /)\n"
 "--\n"
@@ -319,4 +286,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d6e997ebc269f78f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=867b9e334053b679 input=a9049054013a1b77]*/

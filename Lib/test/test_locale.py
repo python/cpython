@@ -1,4 +1,5 @@
-from test.support import verbose, is_android, check_warnings
+from test.support import verbose, is_android
+from test.support.warnings_helper import check_warnings
 import unittest
 import locale
 import sys

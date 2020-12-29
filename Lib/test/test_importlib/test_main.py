@@ -32,6 +32,18 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
         with self.assertRaises(PackageNotFoundError):
             Distribution.from_name('does-not-exist')
 
+    def test_package_not_found_mentions_metadata(self):
+        """
+        When a package is not found, that could indicate that the
+        packgae is not installed or that it is installed without
+        metadata. Ensure the exception mentions metadata to help
+        guide users toward the cause. See #124.
+        """
+        with self.assertRaises(PackageNotFoundError) as ctx:
+            Distribution.from_name('does-not-exist')
+
+        assert "metadata" in str(ctx.exception)
+
     def test_new_style_classes(self):
         self.assertIsInstance(Distribution, type)
 

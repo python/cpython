@@ -2,6 +2,7 @@
 
 import sys
 from test import support
+from test.support import os_helper
 from test.support import script_helper
 import unittest
 
@@ -48,14 +49,18 @@ class EOFTestCase(unittest.TestCase):
     @unittest.skipIf(not sys.executable, "sys.executable required")
     def test_line_continuation_EOF_from_file_bpo2180(self):
         """Ensure tok_nextc() does not add too many ending newlines."""
-        with support.temp_dir() as temp_dir:
+        with os_helper.temp_dir() as temp_dir:
             file_name = script_helper.make_script(temp_dir, 'foo', '\\')
             rc, out, err = script_helper.assert_python_failure(file_name)
             self.assertIn(b'unexpected EOF while parsing', err)
+            self.assertIn(b'line 2', err)
+            self.assertIn(b'\\', err)
 
             file_name = script_helper.make_script(temp_dir, 'foo', 'y = 6\\')
             rc, out, err = script_helper.assert_python_failure(file_name)
             self.assertIn(b'unexpected EOF while parsing', err)
+            self.assertIn(b'line 2', err)
+            self.assertIn(b'y = 6\\', err)
 
 if __name__ == "__main__":
     unittest.main()

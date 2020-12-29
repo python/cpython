@@ -571,6 +571,11 @@ def main():
     (options, args) = parser.parse_args()
     sys.argv[:] = args
 
+    # The script that we're profiling may chdir, so capture the absolute path
+    # to the output file at startup.
+    if options.outfile is not None:
+        options.outfile = os.path.abspath(options.outfile)
+
     if len(args) > 0:
         if options.module:
             import runpy

@@ -7,6 +7,9 @@ import unittest
 from test import support
 import os, sys
 
+if not hasattr(os, 'popen'):
+    raise unittest.SkipTest("need os.popen()")
+
 # Test that command-lines get down as we expect.
 # To do this we execute:
 #    python -c "import sys;print(sys.argv)" {rest_of_commandline}

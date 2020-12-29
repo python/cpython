@@ -16,7 +16,7 @@ __all__ = [
     'encode', 'decode', 'encodebytes', 'decodebytes',
     # Generalized interface for other encodings
     'b64encode', 'b64decode', 'b32encode', 'b32decode',
-    'b16encode', 'b16decode',
+    'b32hexencode', 'b32hexdecode', 'b16encode', 'b16decode',
     # Base85 and Ascii85 encodings
     'b85encode', 'b85decode', 'a85encode', 'a85decode',
     # Standard Base64 encoding
@@ -135,19 +135,40 @@ def urlsafe_b64decode(s):
 
 
 # Base32 encoding/decoding must be done in Python
-_b32alphabet = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-_b32tab2 = None
-_b32rev = None
+_B32_ENCODE_DOCSTRING = '''
+Encode the bytes-like objects using {encoding} and return a bytes object.
+'''
+_B32_DECODE_DOCSTRING = '''
+Decode the {encoding} encoded bytes-like object or ASCII string s.
 
-def b32encode(s):
-    """Encode the bytes-like object s using Base32 and return a bytes object.
-    """
+Optional casefold is a flag specifying whether a lowercase alphabet is
+acceptable as input.  For security purposes, the default is False.
+{extra_args}
+The result is returned as a bytes object.  A binascii.Error is raised if
+the input is incorrectly padded or if there are non-alphabet
+characters present in the input.
+'''
+_B32_DECODE_MAP01_DOCSTRING = '''
+RFC 3548 allows for optional mapping of the digit 0 (zero) to the
+letter O (oh), and for optional mapping of the digit 1 (one) to
+either the letter I (eye) or letter L (el).  The optional argument
+map01 when not None, specifies which letter the digit 1 should be
+mapped to (when map01 is not None, the digit 0 is always mapped to
+the letter O).  For security purposes the default is None, so that
+0 and 1 are not allowed in the input.
+'''
+_b32alphabet = b'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+_b32hexalphabet = b'0123456789ABCDEFGHIJKLMNOPQRSTUV'
+_b32tab2 = {}
+_b32rev = {}
+
+def _b32encode(alphabet, s):
     global _b32tab2
     # Delay the initialization of the table to not waste memory
     # if the function is never called
-    if _b32tab2 is None:
-        b32tab = [bytes((i,)) for i in _b32alphabet]
-        _b32tab2 = [a + b for a in b32tab for b in b32tab]
+    if alphabet not in _b32tab2:
+        b32tab = [bytes((i,)) for i in alphabet]
+        _b32tab2[alphabet] = [a + b for a in b32tab for b in b32tab]
         b32tab = None
 
     if not isinstance(s, bytes_types):
@@ -158,7 +179,7 @@ def b32encode(s):
         s = s + b'\0' * (5 - leftover)  # Don't use += !
     encoded = bytearray()
     from_bytes = int.from_bytes
-    b32tab2 = _b32tab2
+    b32tab2 = _b32tab2[alphabet]
     for i in range(0, len(s), 5):
         c = from_bytes(s[i: i + 5], 'big')
         encoded += (b32tab2[c >> 30] +           # bits 1 - 10
@@ -177,29 +198,12 @@ def b32encode(s):
         encoded[-1:] = b'='
     return bytes(encoded)
 
-def b32decode(s, casefold=False, map01=None):
-    """Decode the Base32 encoded bytes-like object or ASCII string s.
-
-    Optional casefold is a flag specifying whether a lowercase alphabet is
-    acceptable as input.  For security purposes, the default is False.
-
-    RFC 3548 allows for optional mapping of the digit 0 (zero) to the
-    letter O (oh), and for optional mapping of the digit 1 (one) to
-    either the letter I (eye) or letter L (el).  The optional argument
-    map01 when not None, specifies which letter the digit 1 should be
-    mapped to (when map01 is not None, the digit 0 is always mapped to
-    the letter O).  For security purposes the default is None, so that
-    0 and 1 are not allowed in the input.
-
-    The result is returned as a bytes object.  A binascii.Error is raised if
-    the input is incorrectly padded or if there are non-alphabet
-    characters present in the input.
-    """
+def _b32decode(alphabet, s, casefold=False, map01=None):
     global _b32rev
     # Delay the initialization of the table to not waste memory
     # if the function is never called
-    if _b32rev is None:
-        _b32rev = {v: k for k, v in enumerate(_b32alphabet)}
+    if alphabet not in _b32rev:
+        _b32rev[alphabet] = {v: k for k, v in enumerate(alphabet)}
     s = _bytes_from_decode_data(s)
     if len(s) % 8:
         raise binascii.Error('Incorrect padding')
@@ -220,7 +224,7 @@ def b32decode(s, casefold=False, map01=None):
     padchars = l - len(s)
     # Now decode the full quanta
     decoded = bytearray()
-    b32rev = _b32rev
+    b32rev = _b32rev[alphabet]
     for i in range(0, len(s), 8):
         quanta = s[i: i + 8]
         acc = 0
@@ -239,6 +243,26 @@ def b32decode(s, casefold=False, map01=None):
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
     return bytes(decoded)
+
+
+def b32encode(s):
+    return _b32encode(_b32alphabet, s)
+b32encode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32')
+
+def b32decode(s, casefold=False, map01=None):
+    return _b32decode(_b32alphabet, s, casefold, map01)
+b32decode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32',
+                                        extra_args=_B32_DECODE_MAP01_DOCSTRING)
+
+def b32hexencode(s):
+    return _b32encode(_b32hexalphabet, s)
+b32hexencode.__doc__ = _B32_ENCODE_DOCSTRING.format(encoding='base32hex')
+
+def b32hexdecode(s, casefold=False):
+    # base32hex does not have the 01 mapping
+    return _b32decode(_b32hexalphabet, s, casefold)
+b32hexdecode.__doc__ = _B32_DECODE_DOCSTRING.format(encoding='base32hex',
+                                                    extra_args='')
 
 
 # RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns

@@ -4,38 +4,23 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
-import errno
-import fnmatch
 import functools
-import glob
 import os
 import re
 import stat
-import struct
 import sys
 import sysconfig
 import time
 import types
 import unittest
-import warnings
-
-from .import_helper import (
-    CleanImport, DirsOnSysPath, _ignore_deprecated_imports,
-    _save_and_block_module, _save_and_remove_module,
-    forget, import_fresh_module, import_module, make_legacy_pyc,
-    modules_cleanup, modules_setup, unload)
-from .os_helper import (
-    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_NONASCII,
-    TESTFN_UNENCODABLE, TESTFN_UNDECODABLE,
-    TESTFN_UNICODE, can_symlink, can_xattr,
-    change_cwd, create_empty_file, fd_count,
-    fs_is_case_insensitive, make_bad_fd, rmdir,
-    rmtree, skip_unless_symlink, skip_unless_xattr,
-    temp_cwd, temp_dir, temp_umask, unlink,
-    EnvironmentVarGuard, FakePath, _longpath)
 
 from .testresult import get_test_runner
 
+
+try:
+    from _testcapi import unicode_legacy_string
+except ImportError:
+    unicode_legacy_string = None
 
 __all__ = [
     # globals
@@ -48,15 +33,13 @@ __all__ = [
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
-    "check_syntax_error", "check_syntax_warning",
-    "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
+    "check_syntax_error",
     "BasicTestRunner", "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
-    "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -65,7 +48,6 @@ __all__ = [
     # processes
     "reap_children",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "check_no_warnings",
     "run_with_locale", "swap_item", "findfile",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable",
@@ -87,6 +69,8 @@ LOOPBACK_TIMEOUT = 5.0
 if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
+    LOOPBACK_TIMEOUT = 10
+elif sys.platform == 'vxworks':
     LOOPBACK_TIMEOUT = 10
 
 # Timeout in seconds for network requests going to the Internet. The timeout is
@@ -130,22 +114,6 @@ class ResourceDenied(unittest.SkipTest):
     has not be enabled.  It is used to distinguish between expected
     and unexpected skips.
     """
-
-def ignore_warnings(*, category):
-    """Decorator to suppress deprecation warnings.
-
-    Use of context managers to hide warnings make diffs
-    more noisy and tools like 'git blame' less useful.
-    """
-    def decorator(test):
-        @functools.wraps(test)
-        def wrapper(self, *args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=category)
-                return test(self, *args, **kwargs)
-        return wrapper
-    return decorator
-
 
 def anticipate_failure(condition):
     """Decorator to mark a test that is known to be broken in some cases
@@ -319,26 +287,25 @@ def _requires_unix_version(sysname, min_version):
     For example, @_requires_unix_version('FreeBSD', (7, 2)) raises SkipTest if
     the FreeBSD version is less than 7.2.
     """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kw):
-            import platform
-            if platform.system() == sysname:
-                version_txt = platform.release().split('-', 1)[0]
-                try:
-                    version = tuple(map(int, version_txt.split('.')))
-                except ValueError:
-                    pass
-                else:
-                    if version < min_version:
-                        min_version_txt = '.'.join(map(str, min_version))
-                        raise unittest.SkipTest(
-                            "%s version %s or higher required, not %s"
-                            % (sysname, min_version_txt, version_txt))
-            return func(*args, **kw)
-        wrapper.min_version = min_version
-        return wrapper
-    return decorator
+    import platform
+    min_version_txt = '.'.join(map(str, min_version))
+    version_txt = platform.release().split('-', 1)[0]
+    if platform.system() == sysname:
+        try:
+            version = tuple(map(int, version_txt.split('.')))
+        except ValueError:
+            skip = False
+        else:
+            skip = version < min_version
+    else:
+        skip = False
+
+    return unittest.skipIf(
+        skip,
+        f"{sysname} version {min_version_txt} or higher required, not "
+        f"{version_txt}"
+    )
+
 
 def requires_freebsd_version(*min_version):
     """Decorator raising SkipTest if the OS is FreeBSD and the FreeBSD version is
@@ -447,11 +414,14 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
+requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
+                        'requires legacy Unicode C API')
+
 is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
 
-if sys.platform != 'win32':
+if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
@@ -514,35 +484,10 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
     if offset is not None:
         testcase.assertEqual(err.offset, offset)
 
-def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None):
-    # Test also that a warning is emitted only once.
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.simplefilter('always', SyntaxWarning)
-        compile(statement, '<testcase>', 'exec')
-    testcase.assertEqual(len(warns), 1, warns)
-
-    warn, = warns
-    testcase.assertTrue(issubclass(warn.category, SyntaxWarning), warn.category)
-    if errtext:
-        testcase.assertRegex(str(warn.message), errtext)
-    testcase.assertEqual(warn.filename, '<testcase>')
-    testcase.assertIsNotNone(warn.lineno)
-    if lineno is not None:
-        testcase.assertEqual(warn.lineno, lineno)
-
-    # SyntaxWarning should be converted to SyntaxError when raised,
-    # since the latter contains more information and provides better
-    # error report.
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.simplefilter('error', SyntaxWarning)
-        check_syntax_error(testcase, statement, errtext,
-                           lineno=lineno, offset=offset)
-    # No warnings are leaked when a SyntaxError is raised.
-    testcase.assertEqual(warns, [])
-
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
+    from .os_helper import unlink
     try:
         import gzip
     except ImportError:
@@ -593,167 +538,6 @@ def open_urlresource(url, *args, **kw):
     if f is not None:
         return f
     raise TestFailed('invalid resource %r' % fn)
-
-
-class WarningsRecorder(object):
-    """Convenience wrapper for the warnings list returned on
-       entry to the warnings.catch_warnings() context manager.
-    """
-    def __init__(self, warnings_list):
-        self._warnings = warnings_list
-        self._last = 0
-
-    def __getattr__(self, attr):
-        if len(self._warnings) > self._last:
-            return getattr(self._warnings[-1], attr)
-        elif attr in warnings.WarningMessage._WARNING_DETAILS:
-            return None
-        raise AttributeError("%r has no attribute %r" % (self, attr))
-
-    @property
-    def warnings(self):
-        return self._warnings[self._last:]
-
-    def reset(self):
-        self._last = len(self._warnings)
-
-
-def _filterwarnings(filters, quiet=False):
-    """Catch the warnings, then check if all the expected
-    warnings have been raised and re-raise unexpected warnings.
-    If 'quiet' is True, only re-raise the unexpected warnings.
-    """
-    # Clear the warning registry of the calling module
-    # in order to re-raise the warnings.
-    frame = sys._getframe(2)
-    registry = frame.f_globals.get('__warningregistry__')
-    if registry:
-        registry.clear()
-    with warnings.catch_warnings(record=True) as w:
-        # Set filter "always" to record all warnings.  Because
-        # test_warnings swap the module, we need to look up in
-        # the sys.modules dictionary.
-        sys.modules['warnings'].simplefilter("always")
-        yield WarningsRecorder(w)
-    # Filter the recorded warnings
-    reraise = list(w)
-    missing = []
-    for msg, cat in filters:
-        seen = False
-        for w in reraise[:]:
-            warning = w.message
-            # Filter out the matching messages
-            if (re.match(msg, str(warning), re.I) and
-                issubclass(warning.__class__, cat)):
-                seen = True
-                reraise.remove(w)
-        if not seen and not quiet:
-            # This filter caught nothing
-            missing.append((msg, cat.__name__))
-    if reraise:
-        raise AssertionError("unhandled warning %s" % reraise[0])
-    if missing:
-        raise AssertionError("filter (%r, %s) did not catch any warning" %
-                             missing[0])
-
-
-@contextlib.contextmanager
-def check_warnings(*filters, **kwargs):
-    """Context manager to silence warnings.
-
-    Accept 2-tuples as positional arguments:
-        ("message regexp", WarningCategory)
-
-    Optional argument:
-     - if 'quiet' is True, it does not fail if a filter catches nothing
-        (default True without argument,
-         default False if some filters are defined)
-
-    Without argument, it defaults to:
-        check_warnings(("", Warning), quiet=True)
-    """
-    quiet = kwargs.get('quiet')
-    if not filters:
-        filters = (("", Warning),)
-        # Preserve backward compatibility
-        if quiet is None:
-            quiet = True
-    return _filterwarnings(filters, quiet)
-
-
-@contextlib.contextmanager
-def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
-    """Context manager to check that no warnings are emitted.
-
-    This context manager enables a given warning within its scope
-    and checks that no warnings are emitted even with that warning
-    enabled.
-
-    If force_gc is True, a garbage collection is attempted before checking
-    for warnings. This may help to catch warnings emitted when objects
-    are deleted, such as ResourceWarning.
-
-    Other keyword arguments are passed to warnings.filterwarnings().
-    """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always',
-                                message=message,
-                                category=category)
-        yield
-        if force_gc:
-            gc_collect()
-    testcase.assertEqual(warns, [])
-
-
-@contextlib.contextmanager
-def check_no_resource_warning(testcase):
-    """Context manager to check that no ResourceWarning is emitted.
-
-    Usage:
-
-        with check_no_resource_warning(self):
-            f = open(...)
-            ...
-            del f
-
-    You must remove the object which may emit ResourceWarning before
-    the end of the context manager.
-    """
-    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
-        yield
-
-
-class TransientResource(object):
-
-    """Raise ResourceDenied if an exception is raised while the context manager
-    is in effect that matches the specified exception and attributes."""
-
-    def __init__(self, exc, **kwargs):
-        self.exc = exc
-        self.attrs = kwargs
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type_=None, value=None, traceback=None):
-        """If type_ is a subclass of self.exc and value has attributes matching
-        self.attrs, raise ResourceDenied.  Otherwise let the exception
-        propagate (if any)."""
-        if type_ is not None and issubclass(self.exc, type_):
-            for attr, attr_value in self.attrs.items():
-                if not hasattr(value, attr):
-                    break
-                if getattr(value, attr) != attr_value:
-                    break
-            else:
-                raise ResourceDenied("an optional resource is not available")
-
-# Context managers that raise ResourceDenied when various issues
-# with the Internet connection manifest themselves as exceptions.
-# XXX deprecate these and use transient_internet() instead
-time_out = TransientResource(OSError, errno=errno.ETIMEDOUT)
-socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
-ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
 @contextlib.contextmanager
@@ -846,9 +630,11 @@ if hasattr(sys, "getobjects"):
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):
+    import struct
     return struct.calcsize(_header + fmt + _align)
 
 def calcvobjsize(fmt):
+    import struct
     return struct.calcsize(_vheader + fmt + _align)
 
 
@@ -979,6 +765,7 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
+        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
@@ -1255,6 +1042,7 @@ def _compile_match_function(patterns):
         # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
+        import fnmatch
         regex = '|'.join(map(fnmatch.translate, patterns))
         # The search *is* case sensitive on purpose:
         # don't use flags=re.IGNORECASE
@@ -1520,6 +1308,8 @@ def skip_if_buggy_ucrt_strfptime(test):
 class PythonSymlink:
     """Creates a symlink for the current Python executable"""
     def __init__(self, link=None):
+        from .os_helper import TESTFN
+
         self.link = link or os.path.abspath(TESTFN)
         self._linked = []
         self.real = os.path.realpath(sys.executable)
@@ -1534,6 +1324,7 @@ class PythonSymlink:
 
     if sys.platform == "win32":
         def _platform_specific(self):
+            import glob
             import _winapi
 
             if os.path.lexists(self.real) and not os.path.exists(self.real):
@@ -1548,7 +1339,7 @@ class PythonSymlink:
                 dll,
                 os.path.join(dest_dir, os.path.basename(dll))
             ))
-            for runtime in glob.glob(os.path.join(src_dir, "vcruntime*.dll")):
+            for runtime in glob.glob(os.path.join(glob.escape(src_dir), "vcruntime*.dll")):
                 self._also_link.append((
                     runtime,
                     os.path.join(dest_dir, os.path.basename(runtime))
@@ -1619,7 +1410,7 @@ def detect_api_mismatch(ref_api, other_api, *, ignore=()):
 
 
 def check__all__(test_case, module, name_of_module=None, extra=(),
-                 blacklist=()):
+                 not_exported=()):
     """Assert that the __all__ variable of 'module' contains all public names.
 
     The module's public names (its API) are detected automatically based on
@@ -1636,7 +1427,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     '__module__' attribute. If provided, it will be added to the
     automatically detected ones.
 
-    The 'blacklist' argument can be a set of names that must not be treated
+    The 'not_exported' argument can be a set of names that must not be treated
     as part of the public API even though their names indicate otherwise.
 
     Usage:
@@ -1652,10 +1443,10 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
         class OtherTestCase(unittest.TestCase):
             def test__all__(self):
                 extra = {'BAR_CONST', 'FOO_CONST'}
-                blacklist = {'baz'}  # Undocumented name.
+                not_exported = {'baz'}  # Undocumented name.
                 # bar imports part of its API from _bar.
                 support.check__all__(self, bar, ('bar', '_bar'),
-                                     extra=extra, blacklist=blacklist)
+                                     extra=extra, not_exported=not_exported)
 
     """
 
@@ -1667,7 +1458,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     expected = set(extra)
 
     for name in dir(module):
-        if name.startswith('_') or name in blacklist:
+        if name.startswith('_') or name in not_exported:
             continue
         obj = getattr(module, name)
         if (getattr(obj, '__module__', None) in name_of_module or
@@ -1876,9 +1667,15 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from distutils import ccompiler, sysconfig, spawn
+    from distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
+    if compiler.compiler_type == "msvc":
+        # MSVC has no executables, so check whether initialization succeeds
+        try:
+            compiler.initialize()
+        except errors.DistutilsPlatformError:
+            return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
             continue
@@ -2161,12 +1958,26 @@ def wait_process(pid, *, exitcode, timeout=None):
     if pid2 != pid:
         raise AssertionError(f"pid {pid2} != pid {pid}")
 
+def skip_if_broken_multiprocessing_synchronize():
+    """
+    Skip tests if the multiprocessing.synchronize module is missing, if there
+    is no available semaphore implementation, or if creating a lock raises an
+    OSError (on Linux only).
+    """
+    from .import_helper import import_module
 
-def use_old_parser():
-    import _testinternalcapi
-    config = _testinternalcapi.get_configs()
-    return (config['config']['_use_peg_parser'] == 0)
+    # Skip tests if the _multiprocessing extension is missing.
+    import_module('_multiprocessing')
 
+    # Skip tests if there is no available semaphore implementation:
+    # multiprocessing.synchronize requires _multiprocessing.SemLock.
+    synchronize = import_module('multiprocessing.synchronize')
 
-def skip_if_new_parser(msg):
-    return unittest.skipIf(not use_old_parser(), msg)
+    if sys.platform == "linux":
+        try:
+            # bpo-38377: On Linux, creating a semaphore fails with OSError
+            # if the current user does not have the permission to create
+            # a file in /dev/shm/ directory.
+            synchronize.Lock(ctx=None)
+        except OSError as exc:
+            raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
