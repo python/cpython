@@ -632,7 +632,7 @@ _PyLong_FromGid(gid_t gid)
 }
 
 int
-_Py_Uid_Converter(PyObject *obj, void *p)
+_Py_Uid_Converter(PyObject *obj, uid_t *p)
 {
     uid_t uid;
     PyObject *index;
@@ -719,7 +719,7 @@ _Py_Uid_Converter(PyObject *obj, void *p)
 
 success:
     Py_DECREF(index);
-    *(uid_t *)p = uid;
+    *p = uid;
     return 1;
 
 underflow:
@@ -738,7 +738,7 @@ fail:
 }
 
 int
-_Py_Gid_Converter(PyObject *obj, void *p)
+_Py_Gid_Converter(PyObject *obj, gid_t *p)
 {
     gid_t gid;
     PyObject *index;
@@ -826,7 +826,7 @@ _Py_Gid_Converter(PyObject *obj, void *p)
 
 success:
     Py_DECREF(index);
-    *(gid_t *)p = gid;
+    *p = gid;
     return 1;
 
 underflow:
