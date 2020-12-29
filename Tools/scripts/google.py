@@ -17,9 +17,14 @@ def main(args):
             arg = '"%s"' % arg
         return urllib.parse.quote_plus(arg)
 
-    qstring = '+'.join(quote(arg) for arg in args)
+    qstring = '%20'.join(quote(arg) for arg in args)
     url = urllib.parse.urljoin('https://www.google.com/search', '?q=' + qstring)
     webbrowser.open(url)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    if len(sys.argv)>1:
+        main(sys.argv[1:])
+    else:
+        print("Enter what you want to search in Google\n"+
+              "example : google.py python")
+        sys.exit(1)
