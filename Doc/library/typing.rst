@@ -18,7 +18,8 @@
 --------------
 
 This module provides runtime support for type hints as specified by
-:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`, and :pep:`613`.
+:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`,
+:pep:`612` and :pep:`613`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
@@ -171,6 +172,22 @@ It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 
+Callables which take other callables as arguments may indicate that their
+parameter types are dependent on each other using :class:`ParamSpec`.
+Additionally, if that callable adds or remove arguments from other
+callables, the :data:`Concatenate` operator may be appropriate.  They
+take the form ``Callable[ParamSpecVariable, ReturnType]`` and
+``Callable[Concatenate[Arg1Type, ..., ParamSpecVariable], ReturnType]``
+respectively.
+
+.. versionchanged:: 3.10
+   ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
+   See :pep:`612` for more information.
+
+.. seealso::
+   The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
+   examples of usage in ``Callable``.
+
 .. _generics:
 
 Generics
@@ -315,6 +332,38 @@ User defined generic type aliases are also supported. Examples::
 
 .. versionchanged:: 3.7
     :class:`Generic` no longer has a custom metaclass.
+
+User-defined generics for parameter expressions are also supported via parameter
+specification variables in the form ``Generic[P]``.  The behavior is consistent
+with type variables' described above as parameter specification variables are
+treated by the typing module as a specialized type variable.  The one exception
+to this is that lists of types can be used to substitute a ``ParamSpec``::
+
+   >>> from typing import Generic, ParamSpec, TypeVar
+
+   >>> T = TypeVar('T')
+   >>> P = ParamSpec('P')
+
+   >>> class Z(Generic[T, P]): ...
+   ...
+   >>> Z[int, [dict, float]]
+   __main__.Z[int, (<class 'dict'>, <class 'float'>)]
+
+
+Furthermore, ``Z[int, str, bool]`` is internally converted to
+``Z[[int, str, bool]]`` and is thus equivalent.  This is a conscious design choice to improve the aesthetics of
+substitution::
+
+   assert Z[[int, str, bool]] == Z[int, str, bool]
+
+
+Do note that generics with :class:`ParamSpec` may not have correct parameters
+returned by ``__parameters__`` after substitution in some cases because they
+are intended primarily for static type checking.
+
+.. versionchanged:: 3.10
+   :class:`Generic` can now be parameterized over parameter expressions.
+   See :class:`ParamSpec` and :pep:`612` for more details.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
@@ -602,9 +651,69 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    ``Callable[..., Any]``, and in turn to
    :class:`collections.abc.Callable`.
 
+   Callables which take other callables as arguments may indicate that their
+   parameter types are dependent on each other using :class:`ParamSpec`.
+   Additionally, if that callable adds or remove arguments from other
+   callables, the :data:`Concatenate` operator may be appropriate.  They
+   take the form ``Callable[ParamSpecVariable, ReturnType]`` and
+   ``Callable[Concatenate[Arg1Type, ..., ParamSpecVariable], ReturnType]``
+   respectively.
+
    .. deprecated:: 3.9
       :class:`collections.abc.Callable` now supports ``[]``. See :pep:`585` and
       :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.10
+      ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
+      See :pep:`612` for more information.
+
+   .. seealso::
+      The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
+      examples of usage with ``Callable``.
+
+.. data:: Concatenate
+
+   Type annotates a higher order callable which adds, removes, or transforms
+   parameters of another callable.  Usage is in the form
+   ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
+   is currently only valid when used in conjunction with :data:`Callable` and
+   :class:`ParamSpec`.  The last parameter to ``Concatenate`` must be a
+   :class:`ParamSpec`.
+
+   For example, to indicate a decorator ``with_lock`` which provides a
+   :class:`threading.Lock` to the decorated function::
+
+      from collections.abc import Callable
+      from threading import Lock
+      from typing import Any, Concatenate, ParamSpec
+
+      P = ParamSpec('P')
+      R = ParamSpec('R')
+      my_lock = Lock()
+
+      def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
+          '''A type-safe decorator which provides a lock.'''
+          global my_lock
+          def inner(*args: P.args, **kwargs: P.kwargs) -> T:
+              # provide the lock as the first argument
+              return f(my_lock, *args, **kwargs)
+          return inner
+
+      @with_lock
+      def sum_threadsafe(lock: Lock, numbers: list[float]) -> float:
+          '''Add a list of numbers together, thread-safe version.'''
+          with lock:
+              return sum(numbers)
+
+
+.. versionadded:: 3.10
+
+.. seealso::
+
+   * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
+     ``Concatenate``).
+   * :class:`ParamSpec` and :class:`Callable`.
+
 
 .. class:: Type(Generic[CT_co])
 
@@ -875,6 +984,63 @@ These are not used in annotations. They are building blocks for creating generic
     This means that an actual type substituted (explicitly or implicitly)
     for the type variable must be a subclass of the boundary type,
     see :pep:`484`.
+
+.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
+
+   Parameter specification variable.  A specialized version of type variables.
+
+   Usage::
+
+      P = ParamSpec('P')
+
+
+   Parameter specification variables exist primarily for the benefit of static
+   type checkers.  They are used to forward the parameter types of one
+   callable to another callable -- a pattern commonly found in higher order
+   functions and decorators.  They are only valid when used in ``Concatenate``,
+   or as the first argument to ``Callable``, or as parameters for user-defined
+   Generics.  See :class:`Generic` for more information on generic types.
+
+   For example, to add basic logging to a function, one can create a decorator
+   ``add_logging`` to log function calls.  The parameter specification variable
+   tells the type checker that the ``inner`` function in ``add_logging`` has
+   arguments which are dependent on the outer function::
+
+      from collections.abc import Callable
+      from typing import TypeVar, ParamSpec
+      import logging
+
+      T = TypeVar('T')
+      P = ParamSpec('P')
+
+      def add_logging(f: Callable[P, T]) -> Callable[P, T]:
+          '''A type-safe decorator to add logging to a function.'''
+          def inner(*args: P.args, **kwargs: P.kwargs) -> T:
+              logging.info(f'{f.__name__} was called')
+              return f(*args, **kwargs)
+          return inner
+
+      @add_logging
+      def add_two(x: float, y: float) -> float:
+          '''Add two numbers together.'''
+          return x + y
+
+   Parameter specification variables created with ``covariant=True`` or
+   ``contravariant=True`` can be used to declare covariant or contravariant
+   generic types.  The ``bound`` argument is also accepted, similar to
+   :class:`TypeVar`.  However, although these keyword arguments are valid,
+   their actual semantics are yet to be decided.
+
+   .. versionadded:: 3.10
+
+   .. note::
+      Only parameter specification variables defined in global scope can
+      be pickled.
+
+   .. seealso::
+      * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
+        ``Concatenate``).
+      * :class:`Callable` and :class:`Concatenate`.
 
 .. data:: AnyStr
 
