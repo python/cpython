@@ -63,14 +63,21 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(self.font.name, fontname)
         self.assertEqual(str(self.font), fontname)
 
-    def test_eq(self):
+    def test_equality(self):
         font1 = font.Font(root=self.root, name=fontname, exists=True)
         font2 = font.Font(root=self.root, name=fontname, exists=True)
         self.assertIsNot(font1, font2)
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
+
         self.assertNotEqual(font1, 0)
         self.assertEqual(font1, ALWAYS_EQ)
+
+        root2 = tkinter.Tk()
+        self.addCleanup(root2.destroy)
+        font3 = font.Font(root=root2, name=fontname, exists=True)
+        self.assertEqual(str(font1), str(font3))
+        self.assertNotEqual(font1, font3)
 
     def test_measure(self):
         self.assertIsInstance(self.font.measure('abc'), int)
