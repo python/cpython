@@ -1,0 +1,4 @@
+Move the calls to ``__init_subclass__`` and ``__set_name__`` from
+``type.__new__`` to ``type.__init__``.  This ensures that custom metaclasses
+are able to completely finish creating a class before the
+``__init_subclass__`` and ``__set_name__`` methods are run.

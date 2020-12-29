@@ -62,6 +62,11 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.10.
    Brevity is key.
 
+The methods :func:`__init_subclass__` and :func:`__set_name__`, introduced
+in :pep:`487`, have been moved from :func:`type.__new__` to
+:func:`type.__init__`.  This ensures that custome metaclasses are able to
+finish creating a class before those two methods are called.
+
 
 .. PEP-sized items next.
 
