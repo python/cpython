@@ -1601,7 +1601,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
 {
     int rc;
     int callback_error = 0;
-    int sleep_ms = sleep * 1000.0;
+    int sleep_ms = (int)(sleep * 1000.0);
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
 
