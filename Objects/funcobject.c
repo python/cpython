@@ -19,9 +19,23 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
             return NULL;
     }
 
-    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
-    if (op == NULL)
+    /* __module__: If module name is in globals, use it.
+       Otherwise, use None. */
+    module = PyDict_GetItemWithError(globals, __name__);
+    if (module) {
+        Py_INCREF(module);
+    }
+    else if (PyErr_Occurred()) {
         return NULL;
+    }
+
+    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        Py_XDECREF(module);
+        return NULL;
+    }
+    /* Note: No failures from this point on, since func_dealloc() does not
+       expect a partially-created object. */
 
     op->func_weakreflist = NULL;
     Py_INCREF(code);
@@ -34,6 +48,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_kwdefaults = NULL; /* No keyword only defaults */
     op->func_closure = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
+    op->func_module = module;
 
     consts = ((PyCodeObject *)code)->co_consts;
     if (PyTuple_Size(consts) >= 1) {
@@ -47,20 +62,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_doc = doc;
 
     op->func_dict = NULL;
-    op->func_module = NULL;
     op->func_annotations = NULL;
 
-    /* __module__: If module name is in globals, use it.
-       Otherwise, use None. */
-    module = PyDict_GetItemWithError(globals, __name__);
-    if (module) {
-        Py_INCREF(module);
-        op->func_module = module;
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF(op);
-        return NULL;
-    }
     if (qualname)
         op->func_qualname = qualname;
     else
@@ -420,6 +423,25 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL)
             return NULL;
+    }
+    if (PyTuple_CheckExact(op->func_annotations)) {
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
+
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
+
+            if (err < 0)
+                return NULL;
+        }
+        Py_SETREF(op->func_annotations, ann_dict);
     }
     Py_INCREF(op->func_annotations);
     return op->func_annotations;

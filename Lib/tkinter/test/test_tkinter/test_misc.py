@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from test import support
-from tkinter.test.support import AbstractTkTest
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
 support.requires('gui')
 
@@ -241,7 +241,85 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                          " num=3 delta=-1 focus=True"
                          " x=10 y=20 width=300 height=200>")
 
-tests_gui = (MiscTest, )
+    def test_getboolean(self):
+        for v in 'true', 'yes', 'on', '1', 't', 'y', 1, True:
+            self.assertIs(self.root.getboolean(v), True)
+        for v in 'false', 'no', 'off', '0', 'f', 'n', 0, False:
+            self.assertIs(self.root.getboolean(v), False)
+        self.assertRaises(ValueError, self.root.getboolean, 'yea')
+        self.assertRaises(ValueError, self.root.getboolean, '')
+        self.assertRaises(TypeError, self.root.getboolean, None)
+        self.assertRaises(TypeError, self.root.getboolean, ())
+
+    def test_mainloop(self):
+        log = []
+        def callback():
+            log.append(1)
+            self.root.after(100, self.root.quit)
+        self.root.after(100, callback)
+        self.root.mainloop(1)
+        self.assertEqual(log, [])
+        self.root.mainloop(0)
+        self.assertEqual(log, [1])
+        self.assertTrue(self.root.winfo_exists())
+
+
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_default_root(self):
+        self.assertIs(tkinter._support_default_root, True)
+        self.assertIsNone(tkinter._default_root)
+        root = tkinter.Tk()
+        root2 = tkinter.Tk()
+        root3 = tkinter.Tk()
+        self.assertIs(tkinter._default_root, root)
+        root2.destroy()
+        self.assertIs(tkinter._default_root, root)
+        root.destroy()
+        self.assertIsNone(tkinter._default_root)
+        root3.destroy()
+        self.assertIsNone(tkinter._default_root)
+
+    def test_no_default_root(self):
+        self.assertIs(tkinter._support_default_root, True)
+        self.assertIsNone(tkinter._default_root)
+        root = tkinter.Tk()
+        self.assertIs(tkinter._default_root, root)
+        tkinter.NoDefaultRoot()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        # repeated call is no-op
+        tkinter.NoDefaultRoot()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        root.destroy()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        root = tkinter.Tk()
+        self.assertIs(tkinter._support_default_root, False)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+        root.destroy()
+
+    def test_getboolean(self):
+        self.assertRaises(RuntimeError, tkinter.getboolean, '1')
+        root = tkinter.Tk()
+        self.assertIs(tkinter.getboolean('1'), True)
+        self.assertRaises(ValueError, tkinter.getboolean, 'yea')
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, tkinter.getboolean, '1')
+
+    def test_mainloop(self):
+        self.assertRaises(RuntimeError, tkinter.mainloop)
+        root = tkinter.Tk()
+        root.after_idle(root.quit)
+        tkinter.mainloop()
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, tkinter.mainloop)
+
+
+tests_gui = (MiscTest, DefaultRootTest)
 
 if __name__ == "__main__":
     support.run_unittest(*tests_gui)

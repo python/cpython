@@ -12,7 +12,7 @@ import sys
 
 from urllib.request import *
 
-VERSION_RE = re.compile(r'(\d+\.\d+\.\d+)(\w+\d+)?$')
+VERSION_RE = re.compile(r'(\d+\.\d+\.\d+)([A-Za-z_]+\d+)?$')
 
 try:
     m = VERSION_RE.match(sys.argv[1])

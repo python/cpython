@@ -80,12 +80,13 @@ Node classes
                   end_col_offset
 
       Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno`, :attr:`col_offset`, :attr:`lineno`, and :attr:`col_offset`
-      attributes.  The :attr:`lineno` and :attr:`end_lineno` are the first and
-      last line numbers of source text span (1-indexed so the first line is line 1)
-      and the :attr:`col_offset` and :attr:`end_col_offset` are the corresponding
-      UTF-8 byte offsets of the first and last tokens that generated the node.
-      The UTF-8 offset is recorded because the parser uses UTF-8 internally.
+      :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`, and
+      :attr:`end_col_offset` attributes.  The :attr:`lineno` and :attr:`end_lineno`
+      are the first and last line numbers of source text span (1-indexed so the
+      first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
+      are the corresponding UTF-8 byte offsets of the first and last tokens that
+      generated the node. The UTF-8 offset is recorded because the parser uses
+      UTF-8 internally.
 
       Note that the end positions are not required by the compiler and are
       therefore optional. The end offset is *after* the last symbol, for example
@@ -1503,6 +1504,13 @@ Async and await
    fields as :class:`For` and :class:`With`, respectively. Only valid in the
    body of an :class:`AsyncFunctionDef`.
 
+.. note::
+   When a string is parsed by :func:`ast.parse`, operator nodes (subclasses
+   of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
+   :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
+   will be singletons. Changes to one will be reflected in all other
+   occurrences of the same value (e.g. :class:`ast.Add`).
+
 
 :mod:`ast` Helpers
 ------------------
@@ -1568,7 +1576,7 @@ and classes for traversing abstract syntax trees:
    Safely evaluate an expression node or a string containing a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
-   dicts, sets, booleans, and ``None``.
+   dicts, sets, booleans, ``None`` and ``Ellipsis``.
 
    This can be used for safely evaluating strings containing Python values from
    untrusted sources without the need to parse the values oneself.  It is not
@@ -1579,6 +1587,10 @@ and classes for traversing abstract syntax trees:
       It is possible to crash the Python interpreter with a
       sufficiently large/complex string due to stack depth limitations
       in Python's AST compiler.
+
+      It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
+      :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
+      input.
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
@@ -1754,6 +1766,34 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.9
       Added the *indent* option.
+
+
+.. _ast-compiler-flags:
+
+Compiler Flags
+--------------
+
+The following flags may be passed to :func:`compile` in order to change
+effects on the compilation of a program:
+
+.. data:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+   Enables support for top-level ``await``, ``async for``, ``async with``
+   and async comprehensions.
+
+   .. versionadded:: 3.8
+
+.. data:: PyCF_ONLY_AST
+
+   Generates and returns an abstract syntax tree instead of returning a
+   compiled code object.
+
+.. data:: PyCF_TYPE_COMMENTS
+
+   Enables support for :pep:`484` and :pep:`526` style type comments
+   (``# type: <type>``, ``# type: ignore <stuff>``).
+
+   .. versionadded:: 3.8
 
 
 .. _ast-cli:

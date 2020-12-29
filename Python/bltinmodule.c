@@ -924,12 +924,12 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         return NULL;
     }
 
-    if (_PyDict_GetItemIdWithError(globals, &PyId___builtins__) == NULL) {
-        if (_PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-            return NULL;
+    int r = _PyDict_ContainsId(globals, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(globals, &PyId___builtins__,
+                              PyEval_GetBuiltins());
     }
-    else if (PyErr_Occurred()) {
+    if (r < 0) {
         return NULL;
     }
 
@@ -1012,12 +1012,12 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         return NULL;
     }
-    if (_PyDict_GetItemIdWithError(globals, &PyId___builtins__) == NULL) {
-        if (_PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-            return NULL;
+    int r = _PyDict_ContainsId(globals, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(globals, &PyId___builtins__,
+                              PyEval_GetBuiltins());
     }
-    else if (PyErr_Occurred()) {
+    if (r < 0) {
         return NULL;
     }
 
@@ -2089,7 +2089,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_DECREF(stdin_encoding);
         Py_DECREF(stdin_errors);
         Py_XDECREF(po);
-        PyMem_FREE(s);
+        PyMem_Free(s);
 
         if (result != NULL) {
             if (PySys_Audit("builtins.input/result", "O", result) < 0) {
@@ -2635,6 +2635,11 @@ zip_next(zipobject *lz)
             olditem = PyTuple_GET_ITEM(result, i);
             PyTuple_SET_ITEM(result, i, item);
             Py_DECREF(olditem);
+        }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
         }
     } else {
         result = PyTuple_New(tuplesize);

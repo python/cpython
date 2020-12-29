@@ -31,15 +31,21 @@ always available.
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
-   called first, followed by hooks added in the current interpreter.
+   called first, followed by hooks added in the current interpreter.  Hooks
+   can then log the event, raise an exception to abort the operation,
+   or terminate the process entirely.
 
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
-      Raise an auditing event ``sys.addaudithook`` with no arguments. If any
+      Calling :func:`sys.addaudithook` will itself raise an auditing event
+      named ``sys.addaudithook`` with no arguments. If any
       existing hooks raise an exception derived from :class:`RuntimeError`, the
       new hook will not be added and the exception suppressed. As a result,
       callers cannot assume that their hook has been added unless they control
       all existing hooks.
+
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   CPython, and :pep:`578` for the original design discussion.
 
    .. versionadded:: 3.8
 
@@ -81,14 +87,23 @@ always available.
 
    .. index:: single: auditing
 
-   Raise an auditing event with any active hooks. The event name is a string
-   identifying the event and its associated schema, which is the number and
-   types of arguments. The schema for a given event is considered public and
-   stable API and should not be modified between releases.
+   Raise an auditing event and trigger any active auditing hooks.
+   *event* is a string identifying the event, and *args* may contain
+   optional arguments with more information about the event.  The
+   number and types of arguments for a given event are considered a
+   public and stable API and should not be modified between releases.
 
-   This function will raise the first exception raised by any hook. In general,
-   these errors should not be handled and should terminate the process as
-   quickly as possible.
+   For example, one auditing event is named ``os.chdir``. This event has
+   one argument called *path* that will contain the requested new
+   working directory.
+
+   :func:`sys.audit` will call the existing auditing hooks, passing
+   the event name and arguments, and will re-raise the first exception
+   from any hook. In general, if an exception is raised, it should not
+   be handled and the process should be terminated as quickly as
+   possible. This allows hook implementations to decide how to respond
+   to particular events: they can merely log the event or abort the
+   operation by raising an exception.
 
    Hooks are added using the :func:`sys.addaudithook` or
    :c:func:`PySys_AddAuditHook` functions.
@@ -181,6 +196,18 @@ always available.
 
    .. audit-event:: sys._current_frames "" sys._current_frames
 
+.. function:: _current_exceptions()
+
+   Return a dictionary mapping each thread's identifier to the topmost exception
+   currently active in that thread at the time the function is called.
+   If a thread is not currently handling an exception, it is not included in
+   the result dictionary.
+
+   This is most useful for statistical profiling.
+
+   This function should be used for internal and specialized purposes only.
+
+   .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
 .. function:: breakpointhook()
 
@@ -600,30 +627,24 @@ always available.
 
 .. function:: getfilesystemencoding()
 
-   Return the name of the encoding used to convert between Unicode
-   filenames and bytes filenames. For best compatibility, str should be
-   used for filenames in all cases, although representing filenames as bytes
-   is also supported. Functions accepting or returning filenames should support
-   either str or bytes and internally convert to the system's preferred
-   representation.
+   Get the :term:`filesystem encoding <filesystem encoding and error handler>`:
+   the encoding used with the :term:`filesystem error handler <filesystem
+   encoding and error handler>` to convert between Unicode filenames and bytes
+   filenames. The filesystem error handler is returned from
+   :func:`getfilesystemencoding`.
 
-   This encoding is always ASCII-compatible.
+   For best compatibility, str should be used for filenames in all cases,
+   although representing filenames as bytes is also supported. Functions
+   accepting or returning filenames should support either str or bytes and
+   internally convert to the system's preferred representation.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
-   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
-
-   * On macOS, the encoding is ``'utf-8'``.
-
-   * On Unix, the encoding is the locale encoding.
-
-   * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
-     on user configuration.
-
-   * On Android, the encoding is ``'utf-8'``.
-
-   * On VxWorks, the encoding is ``'utf-8'``.
+   The :term:`filesystem encoding and error handler` are configured at Python
+   startup by the :c:func:`PyConfig_Read` function: see
+   :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
@@ -633,17 +654,25 @@ always available.
       and :func:`_enablelegacywindowsfsencoding` for more information.
 
    .. versionchanged:: 3.7
-      Return 'utf-8' in the UTF-8 mode.
+      Return ``'utf-8'`` if the :ref:`Python UTF-8 Mode <utf8-mode>` is
+      enabled.
 
 
 .. function:: getfilesystemencodeerrors()
 
-   Return the name of the error mode used to convert between Unicode filenames
-   and bytes filenames. The encoding name is returned from
+   Get the :term:`filesystem error handler <filesystem encoding and error
+   handler>`: the error handler used with the :term:`filesystem encoding
+   <filesystem encoding and error handler>` to convert between Unicode
+   filenames and bytes filenames. The filesystem encoding is returned from
    :func:`getfilesystemencoding`.
 
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
+
+   The :term:`filesystem encoding and error handler` are configured at Python
+   startup by the :c:func:`PyConfig_Read` function: see
+   :c:member:`~PyConfig.filesystem_encoding` and
+   :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionadded:: 3.6
 
@@ -1436,11 +1465,15 @@ always available.
 
 .. function:: _enablelegacywindowsfsencoding()
 
-   Changes the default filesystem encoding and errors mode to 'mbcs' and
-   'replace' respectively, for consistency with versions of Python prior to 3.6.
+   Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
+   'replace' respectively, for consistency with versions of Python prior to
+   3.6.
 
    This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
    environment variable before launching Python.
+
+   See also :func:`sys.getfilesystemencoding` and
+   :func:`sys.getfilesystemencodeerrors`.
 
    .. availability:: Windows.
 
@@ -1464,9 +1497,8 @@ always available.
    returned by the :func:`open` function.  Their parameters are chosen as
    follows:
 
-   * The character encoding is platform-dependent.  Non-Windows
-     platforms use the locale encoding (see
-     :meth:`locale.getpreferredencoding()`).
+   * The encoding and error handling are is initialized from
+     :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`.
 
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
@@ -1474,7 +1506,7 @@ always available.
      devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
-     system locale encoding if the process is not initially attached
+     system :term:`locale encoding` if the process is not initially attached
      to a console.
 
      The special behaviour of the console can be overridden

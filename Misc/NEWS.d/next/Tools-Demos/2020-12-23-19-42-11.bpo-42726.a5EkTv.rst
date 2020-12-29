@@ -1,0 +1,2 @@
+Fixed Python 3 compatibility issue with gdb/libpython.py handling of attribute
+dictionaries.

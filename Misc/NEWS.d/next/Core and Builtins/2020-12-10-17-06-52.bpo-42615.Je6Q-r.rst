@@ -1,0 +1,2 @@
+Remove jump commands made redundant by the deletion of unreachable bytecode
+blocks

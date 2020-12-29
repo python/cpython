@@ -55,6 +55,7 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -850,7 +851,7 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_One) {
+        if (res == _PyLong_GetOne()) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -923,7 +924,7 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_Zero) {
+        if (res == _PyLong_GetZero()) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -1837,7 +1838,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     if (a_too_large) {
-        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_One));
+        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
     }
     Py_DECREF(n);
     return a;
@@ -3295,7 +3296,7 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     factor = n;
     Py_INCREF(factor);
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
         if (factor == NULL) {
             goto error;
         }
@@ -3417,7 +3418,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     factor = n;
     Py_INCREF(factor);
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
         if (factor == NULL) {
             goto error;
         }

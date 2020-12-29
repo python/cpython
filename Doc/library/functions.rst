@@ -164,8 +164,8 @@ are always available.  They are listed here in alphabetical order.
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
 
-   * If it is an object conforming to the *buffer* interface, a read-only buffer
-     of the object will be used to initialize the bytes array.
+   * If it is an object conforming to the :ref:`buffer interface <bufferobjects>`,
+     a read-only buffer of the object will be used to initialize the bytes array.
 
    * If it is an *iterable*, it must be an iterable of integers in the range
      ``0 <= x < 256``, which are used as the initial contents of the array.
@@ -259,26 +259,24 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which :ref:`future
-   statements <future>` affect the compilation of *source*.  If neither
-   is present (or both are zero) the code is compiled with those future
-   statements that are in effect in the code that is calling :func:`compile`.  If the
-   *flags* argument is given and *dont_inherit* is not (or is zero) then the
-   future statements specified by the *flags* argument are used in addition to
-   those that would be used anyway. If *dont_inherit* is a non-zero integer then
-   the *flags* argument is it -- the future statements in effect around the call
-   to compile are ignored.
+   The optional arguments *flags* and *dont_inherit* control which
+   :ref:`compiler options <ast-compiler-flags>` should be activated
+   and which :ref:`future features <future>` should be allowed. If neither
+   is present (or both are zero) the code is compiled with the same flags that
+   affect the code that is calling :func:`compile`. If the *flags*
+   argument is given and *dont_inherit* is not (or is zero) then the compiler
+   options and the future statements specified by the *flags* argument are used
+   in addition to those that would be used anyway. If *dont_inherit* is a
+   non-zero integer then the *flags* argument is it -- the flags (future
+   features and compiler options) in the surrounding code are ignored.
 
-   Future statements are specified by bits which can be bitwise ORed together to
-   specify multiple statements.  The bitfield required to specify a given feature
-   can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
-   the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
-
-   The optional argument *flags* also controls whether the compiled source is
-   allowed to contain top-level ``await``, ``async for`` and ``async with``.
-   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
-   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
-   executed via ``await eval(code_object)``.
+   Compiler options and future statements are specified by bits which can be
+   bitwise ORed together to specify multiple options. The bitfield required to
+   specify a given future feature can be found as the
+   :attr:`~__future__._Feature.compiler_flag` attribute on the
+   :class:`~__future__._Feature` instance in the :mod:`__future__` module.
+   :ref:`Compiler flags <ast-compiler-flags>` can be found in :mod:`ast`
+   module, with ``PyCF_`` prefix.
 
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
@@ -480,14 +478,15 @@ are always available.  They are listed here in alphabetical order.
    dictionaries as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.  This means that
-   *expression* normally has full access to the standard :mod:`builtins`
-   module and restricted environments are propagated.  If the *locals*
-   dictionary is omitted it defaults to the *globals* dictionary.  If both
-   dictionaries are omitted, the expression is executed with the *globals* and
-   *locals* in the environment where :func:`eval` is called.  Note, *eval()*
-   does not have access to the :term:`nested scopes <nested scope>` (non-locals) in the
-   enclosing environment.
+   inserted under that key before *expression* is parsed.  That way you can
+   control what builtins are available to the executed code by inserting your
+   own ``__builtins__`` dictionary into *globals* before passing it to
+   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
+   *globals* dictionary.  If both dictionaries are omitted, the expression is
+   executed with the *globals* and *locals* in the environment where
+   :func:`eval` is called.  Note, *eval()* does not have access to the
+   :term:`nested scopes <nested scope>` (non-locals) in the enclosing
+   environment.
 
    The return value is the result of
    the evaluated expression. Syntax errors are reported as exceptions.  Example:
@@ -784,6 +783,8 @@ are always available.  They are listed here in alphabetical order.
    value.
 
    .. impl-detail:: This is the address of the object in memory.
+
+   .. audit-event:: builtins.id id id
 
 
 .. function:: input([prompt])
@@ -1333,7 +1334,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file* and *flush*, if present, must be given as keyword

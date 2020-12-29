@@ -1969,6 +1969,17 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
 
+    def test_newobj_overridden_new(self):
+        # Test that Python class with C implemented __new__ is pickleable
+        for proto in protocols:
+            x = MyIntWithNew2(1)
+            x.foo = 42
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertIs(type(y), MyIntWithNew2)
+            self.assertEqual(int(y), 1)
+            self.assertEqual(y.foo, 42)
+
     def test_newobj_not_class(self):
         # Issue 24552
         global SimpleNewObj
@@ -3088,6 +3099,13 @@ myclasses = [MyInt, MyFloat,
              MyComplex,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict, MySet, MyFrozenSet]
+
+class MyIntWithNew(int):
+    def __new__(cls, value):
+        raise AssertionError
+
+class MyIntWithNew2(MyIntWithNew):
+    __new__ = int.__new__
 
 
 class SlotList(MyList):

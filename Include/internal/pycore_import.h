@@ -8,7 +8,7 @@ extern "C" {
 #ifdef HAVE_FORK
 extern PyStatus _PyImport_ReInitLock(void);
 #endif
-extern void _PyImport_Cleanup(PyThreadState *tstate);
+extern PyObject* _PyImport_BootstrapImp(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

@@ -455,6 +455,12 @@ Supported XPath syntax
 |                       | has the given value.  The value cannot contain       |
 |                       | quotes.                                              |
 +-----------------------+------------------------------------------------------+
+| ``[@attrib!='value']``| Selects all elements for which the given attribute   |
+|                       | does not have the given value. The value cannot      |
+|                       | contain quotes.                                      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
@@ -463,9 +469,21 @@ Supported XPath syntax
 |                       |                                                      |
 |                       | .. versionadded:: 3.7                                |
 +-----------------------+------------------------------------------------------+
+| ``[.!='text']``       | Selects all elements whose complete text content,    |
+|                       | including descendants, does not equal the given      |
+|                       | ``text``.                                            |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |
++-----------------------+------------------------------------------------------+
+| ``[tag!='text']``     | Selects all elements that have a child named         |
+|                       | ``tag`` whose complete text content, including       |
+|                       | descendants, does not equal the given ``text``.      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
 +-----------------------+------------------------------------------------------+
 | ``[position]``        | Selects all elements that are located at the given   |
 |                       | position.  The position can be either an integer     |

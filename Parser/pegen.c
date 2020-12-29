@@ -62,8 +62,7 @@ init_normalization(Parser *p)
 /* Checks if the NOTEQUAL token is valid given the current parser flags
 0 indicates success and nonzero indicates failure (an exception may be set) */
 int
-_PyPegen_check_barry_as_flufl(Parser *p) {
-    Token *t = p->tokens[p->fill - 1];
+_PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     assert(t->bytes != NULL);
     assert(t->type == NOTEQUAL);
 
@@ -990,7 +989,8 @@ bad_single_statement(Parser *p)
 
     /* Newlines are allowed if preceded by a line continuation character
        or if they appear inside a string. */
-    if (!cur || *(cur - 1) == '\\' || newline_in_string(p, cur)) {
+    if (!cur || (cur != p->tok->buf && *(cur - 1) == '\\')
+             || newline_in_string(p, cur)) {
         return 0;
     }
     char c = *cur;
@@ -1101,8 +1101,19 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->feature_version = feature_version;
     p->known_err_token = NULL;
     p->level = 0;
+    p->call_invalid_rules = 0;
 
     return p;
+}
+
+static void
+reset_parser_state(Parser *p)
+{
+    for (int i = 0; i < p->fill; i++) {
+        p->tokens[i]->memo = NULL;
+    }
+    p->mark = 0;
+    p->call_invalid_rules = 1;
 }
 
 void *
@@ -1110,6 +1121,8 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        reset_parser_state(p);
+        _PyPegen_parse(p);
         if (PyErr_Occurred()) {
             return NULL;
         }
@@ -1143,7 +1156,9 @@ _PyPegen_run_parser(Parser *p)
         p->start_rule == Py_file_input ||
         p->start_rule == Py_eval_input)
     {
-        assert(PyAST_Validate(res));
+        if (!PyAST_Validate(res)) {
+            return NULL;
+        }
     }
 #endif
     return res;
