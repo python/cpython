@@ -1554,7 +1554,6 @@ property_set_name(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-
 static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
