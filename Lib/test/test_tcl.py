@@ -449,7 +449,7 @@ class TclTest(unittest.TestCase):
             else:
                 self.assertEqual(result, str(i))
                 self.assertIsInstance(result, str)
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
+        if get_tk_patchlevel() < (8, 5):  # bignum was added in Tcl 8.5
             self.assertRaises(TclError, tcl.call, 'expr', str(2**1000))
 
     def test_passing_values(self):
