@@ -912,8 +912,7 @@ is_builtin(PyObject *name)
    that can handle the path item. Return None if no hook could;
    this tells our caller that the path based finder could not find
    a finder for this path item. Cache the result in
-   path_importer_cache.
-   Returns a borrowed reference. */
+   path_importer_cache. */
 
 static PyObject *
 get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
@@ -931,8 +930,10 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         return NULL; /* Shouldn't happen */
 
     importer = PyDict_GetItemWithError(path_importer_cache, p);
-    if (importer != NULL || _PyErr_Occurred(tstate))
+    if (importer != NULL || _PyErr_Occurred(tstate)) {
+        Py_XINCREF(importer);
         return importer;
+    }
 
     /* set path_importer_cache[p] to None to avoid recursion */
     if (PyDict_SetItem(path_importer_cache, p, Py_None) != 0)
@@ -952,13 +953,11 @@ get_path_importer(PyThreadState *tstate, PyObject *path_importer_cache,
         _PyErr_Clear(tstate);
     }
     if (importer == NULL) {
-        return Py_None;
+        Py_RETURN_NONE;
     }
-    if (importer != NULL) {
-        int err = PyDict_SetItem(path_importer_cache, p, importer);
+    if (PyDict_SetItem(path_importer_cache, p, importer) < 0) {
         Py_DECREF(importer);
-        if (err != 0)
-            return NULL;
+        return NULL;
     }
     return importer;
 }
@@ -967,16 +966,12 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
-
-    path_importer_cache = PySys_GetObject("path_importer_cache");
-    path_hooks = PySys_GetObject("path_hooks");
-    if (path_importer_cache != NULL && path_hooks != NULL) {
-        importer = get_path_importer(tstate, path_importer_cache,
-                                     path_hooks, path);
+    PyObject *path_importer_cache = PySys_GetObject("path_importer_cache");
+    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    if (path_importer_cache == NULL || path_hooks == NULL) {
+        return NULL;
     }
-    Py_XINCREF(importer); /* get_path_importer returns a borrowed reference */
-    return importer;
+    return get_path_importer(tstate, path_importer_cache, path_hooks, path);
 }
 
 static PyObject*
@@ -1178,13 +1173,12 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         goto err_return;
     }
     m = exec_code_in_module(tstate, name, d, co);
+    Py_DECREF(d);
     if (m == NULL) {
-        Py_DECREF(d);
         goto err_return;
     }
     Py_DECREF(co);
     Py_DECREF(m);
-    Py_DECREF(d);
     return 1;
 
 err_return:
