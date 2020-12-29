@@ -2592,10 +2592,20 @@ class LinkSymlink(unittest.TestCase):
             shutil.rmtree(self.tmp_dir)
         except BaseException:
             pass
+    
+    # Helper functions
 
     def is_dir(self, path):
         """Helper - avoid long lines - wrapping is already an issue"""
         return {'target_is_directory': os.path.isdir(path)}
+
+    # Are the two paths the same file (without following symbolic links)?
+    # Can be removed when this issue is resolved:
+    # bpo-42778 Add follow_symlinks=True parameter to samefile()
+    def same_lstat(self, path1, path2):
+        stat1 = os.lstat(path1)
+        stat2 = os.lstat(path2)
+        return os.path.samestat(stat1, stat2)
 
     # _link_or_symlink
 
