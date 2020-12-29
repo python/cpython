@@ -1249,7 +1249,7 @@ def _no_init(self, *args, **kwargs):
         raise TypeError('Protocols cannot be instantiated')
 
 
-def _allow_reckless_class_cheks():
+def _allow_reckless_class_checks():
     """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
@@ -1338,12 +1338,12 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
 
             # First, perform various sanity checks.
             if not getattr(cls, '_is_runtime_protocol', False):
-                if _allow_reckless_class_cheks():
+                if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
             if not _is_callable_members_only(cls):
-                if _allow_reckless_class_cheks():
+                if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Protocols with non-method members"
                                 " don't support issubclass()")
