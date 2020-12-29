@@ -160,7 +160,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is annotated.
 
-      .. versionadded:: 3.10
+      .. versionadded:: 3.6
 
    .. method:: is_free()
 
