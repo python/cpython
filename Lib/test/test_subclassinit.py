@@ -114,11 +114,10 @@ class Test(unittest.TestCase):
 
     def test_set_name_metaclass(self):
         class Meta(type):
-            def __new__(cls, name, bases, ns):
-                ret = super().__new__(cls, name, bases, ns)
-                self.assertEqual(ret.d.name, "d")
-                self.assertIs(ret.d.owner, ret)
-                return 0
+            def __init__(this, name, bases, ns):
+                super().__init__(name, bases, ns)
+                self.assertEqual(this.d.name, "d")
+                self.assertIs(this.d.owner, this)
 
         class Descriptor:
             def __set_name__(self, owner, name):
@@ -127,7 +126,6 @@ class Test(unittest.TestCase):
 
         class A(metaclass=Meta):
             d = Descriptor()
-        self.assertEqual(A, 0)
 
     def test_set_name_error(self):
         class Descriptor:
@@ -178,11 +176,10 @@ class Test(unittest.TestCase):
                 self.name = name
 
         class Meta(type):
-            def __new__(cls, name, bases, ns):
-                self = super().__new__(cls, name, bases, ns)
+            def __init__(self, name, bases, ns):
+                super().__init__(name, bases, ns)
                 self.meta_owner = self.owner
                 self.meta_name = self.name
-                return self
 
         class A:
             def __init_subclass__(cls):
@@ -228,11 +225,19 @@ class Test(unittest.TestCase):
                             dict(metaclass=MyMeta, otherarg=1))
 
         class MyMeta(type):
-            def __init__(self, name, bases, namespace, otherarg):
+            def __init__(self, name, bases, namespace, otherarg=0):
                 super().__init__(name, bases, namespace)
+                self.otherarg = otherarg
 
-        with self.assertRaises(TypeError):
-            class MyClass(metaclass=MyMeta, otherarg=1):
+        class MyClass(metaclass=MyMeta):
+            def __init_subclass__(cls, otherarg):
+                pass
+
+        with self.assertRaisesRegex(
+                TypeError,
+                ".*MyClass\.__init_subclass__.. missing 1 required positional argument: .otherarg.",
+            ):
+            class MyOtherClass(MyClass, otherarg=2):
                 pass
 
         class MyMeta(type):
@@ -264,6 +269,8 @@ class Test(unittest.TestCase):
                 self = super().__new__(cls, name, bases, namespace)
                 self.otherarg = otherarg
                 return self
+            def __init__(self, name, bases, namespace, otherarg):
+                super().__init__(name, bases, namespace)
 
         class MyClass(metaclass=MyMeta, otherarg=1):
             pass
