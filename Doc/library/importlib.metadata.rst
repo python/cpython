@@ -43,7 +43,7 @@ something into it:
 
     $ python3 -m venv example
     $ source example/bin/activate
-    (example) $ pip install wheel
+    (example) $ python -m pip install wheel
 
 You can get the version string for ``wheel`` by running the following:
 
