@@ -631,7 +631,7 @@ pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
 _sqlite3.Cursor.executemany as pysqlite_cursor_executemany
 
     sql: unicode
-    seq_of_parameters: object
+    seq_of_parameters as parameters: object
     /
 
 Repeatedly executes a SQL statement.
@@ -639,8 +639,8 @@ Repeatedly executes a SQL statement.
 
 static PyObject *
 pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
-                                 PyObject *seq_of_parameters)
-/*[clinic end generated code: output=2c65a3c4733fb5d8 input=440707b7af87fba8]*/
+                                 PyObject *parameters)
+/*[clinic end generated code: output=df8e2d0b7300aab6 input=d8bbe53a5634f68d]*/
 {
     return _pysqlite_query_execute(self, 1, sql, parameters);
 }
