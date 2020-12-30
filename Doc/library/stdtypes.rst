@@ -4961,9 +4961,8 @@ All parameterized generics implement special read-only attributes.
 
    .. note::
       A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
-      have correct parameters returned by ``__parameters__`` after substitution
-      because :class:`typing.ParamSpec` is intended primarily for static type
-      checking.
+      have correct ``__parameters__`` after substitution because
+      :class:`typing.ParamSpec` is intended primarily for static type checking.
 
 .. seealso::
 

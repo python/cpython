@@ -174,7 +174,7 @@ for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 
 Callables which take other callables as arguments may indicate that their
 parameter types are dependent on each other using :class:`ParamSpec`.
-Additionally, if that callable adds or remove arguments from other
+Additionally, if that callable adds or removes arguments from other
 callables, the :data:`Concatenate` operator may be appropriate.  They
 take the form ``Callable[ParamSpecVariable, ReturnType]`` and
 ``Callable[Concatenate[Arg1Type, ..., ParamSpecVariable], ReturnType]``
@@ -359,8 +359,8 @@ to the former and are thus equivalent::
    ...
    >>> assert X[[int, str, bool]] == X[int, str, bool]
 
-Do note that generics with :class:`ParamSpec` may not have correct parameters
-returned by ``__parameters__`` after substitution in some cases because they
+Do note that generics with :class:`ParamSpec` may not have correct
+``__parameters__`` after substitution in some cases because they
 are intended primarily for static type checking.
 
 .. versionchanged:: 3.10
@@ -655,7 +655,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Callables which take other callables as arguments may indicate that their
    parameter types are dependent on each other using :class:`ParamSpec`.
-   Additionally, if that callable adds or remove arguments from other
+   Additionally, if that callable adds or removes arguments from other
    callables, the :data:`Concatenate` operator may be appropriate.  They
    take the form ``Callable[ParamSpecVariable, ReturnType]`` and
    ``Callable[Concatenate[Arg1Type, ..., ParamSpecVariable], ReturnType]``
