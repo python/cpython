@@ -1436,6 +1436,7 @@ _functools_exec(PyObject *module)
         Py_DECREF(lru_cache_type);
         return -1;
     }
+    Py_DECREF(lru_cache_type);
 
     state->keyobject_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
         &keyobject_type_spec, NULL);
