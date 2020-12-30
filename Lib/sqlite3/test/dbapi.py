@@ -83,6 +83,13 @@ class ModuleTests(unittest.TestCase):
                                    sqlite.DatabaseError),
                         "NotSupportedError is not a subclass of DatabaseError")
 
+    def CheckSharedCacheDeprecated(self):
+        for enable in (True, False):
+            with self.assertWarns(DeprecationWarning) as cm:
+                sqlite.enable_shared_cache(enable)
+            self.assertIn("dbapi.py", cm.filename)
+
+
 class ConnectionTests(unittest.TestCase):
 
     def setUp(self):
