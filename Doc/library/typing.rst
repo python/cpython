@@ -675,7 +675,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Concatenate
 
-   Used with :data:`Callable` and :class:`ParamSpec` to type annotates a higher
+   Used with :data:`Callable` and :class:`ParamSpec` to type annotate a higher
    order callable which adds, removes, or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
@@ -1013,9 +1013,8 @@ These are not used in annotations. They are building blocks for creating generic
 
    For example, to add basic logging to a function, one can create a decorator
    ``add_logging`` to log function calls.  The parameter specification variable
-   tells the type checker that the parameter types of the callable returned by
-   the ``add_logging`` function are dependent on the parameter types of the
-   callable passed in::
+   tells the type checker that the callable passed into the decorator and the
+   new callable returned by it have inter-dependent type parameters::
 
       from collections.abc import Callable
       from typing import TypeVar, ParamSpec
