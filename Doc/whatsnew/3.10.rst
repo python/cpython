@@ -555,7 +555,7 @@ Build Changes
 
 * Added ``--disable-test-modules`` option to the ``configure`` script:
   don't build nor install test modules.
-  (Contributed by Peixing Xin in :issue:`27640`.)
+  (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
 
 C API Changes
