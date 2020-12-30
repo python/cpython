@@ -793,7 +793,7 @@ which incur interpreter overhead.
        # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
        kernel = list(reversed(kernel))
        n = len(kernel)
-       window = collections.deque([0] * n, maxlen=n)
+       window = collections.deque([0], maxlen=n) * n
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
            yield sum(map(operator.mul, kernel, window))
