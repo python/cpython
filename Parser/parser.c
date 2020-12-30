@@ -15777,7 +15777,7 @@ invalid_for_target_rule(Parser *p)
     return _res;
 }
 
-// invalid_group: '(' starred_expression ')'
+// invalid_group: '(' star_expression ')' | '(' starred_expression ')'
 static void *
 invalid_group_rule(Parser *p)
 {
@@ -15788,6 +15788,36 @@ invalid_group_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
+    { // '(' star_expression ')'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_group[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' star_expression ')'"));
+        Token * _literal;
+        Token * _literal_1;
+        expr_ty a;
+        if (
+            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (a = star_expression_rule(p))  // star_expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_group[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' star_expression ')'"));
+            _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( DEL_TARGETS , a );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_group[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' star_expression ')'"));
+    }
     { // '(' starred_expression ')'
         if (p->error_indicator) {
             D(p->level--);

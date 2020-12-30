@@ -724,6 +724,8 @@ invalid_for_target:
         RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
 
 invalid_group:
+    | '(' a=star_expression ')' {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
     | '(' a=starred_expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use starred expression here") }
 invalid_import_from_targets:

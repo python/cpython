@@ -789,6 +789,7 @@ class SyntaxTestCase(unittest.TestCase):
         try:
             compile(code, filename, mode)
         except SyntaxError as err:
+            print(err)
             if subclass and not isinstance(err, subclass):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
@@ -821,7 +822,9 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("del (1, 2)", "delete literal")
         self._check_error("del None", "delete None")
         self._check_error("del *x", "delete starred")
-        self._check_error("del (*x)", "use starred expression")
+        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x, *y)", "delete starred")
+        self._check_error("del (x, *y)", "delete starred")
         self._check_error("del (*x,)", "delete starred")
         self._check_error("del [*x,]", "delete starred")
         self._check_error("del f()", "delete function call")
