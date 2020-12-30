@@ -1,0 +1,2 @@
+:mod:`subprocess` *extra_groups* is now correctly passed into setgroups()
+system call.
