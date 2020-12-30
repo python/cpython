@@ -29,7 +29,7 @@ _PyPegen_parse(Parser *p)
 '''
 file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
 interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
-eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
+eval[mod_ty]: a=star_expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
 func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMARKER { FunctionType(a, b, p->arena) }
 fstring[expr_ty]: star_expressions
 
@@ -311,18 +311,22 @@ block[asdl_stmt_seq*] (memo):
     | simple_stmts
     | invalid_block
 
+star_element[expr_ty]:
+    | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
+    | '(' '*' a=bitwise_or ')' { _Py_Starred(a, Load, EXTRA) }
+
 star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
         _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
     | a=star_expression ',' { _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
     | star_expression
 star_expression[expr_ty] (memo):
-    | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
+    | star_element
     | expression
 
 star_named_expressions[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_named_expression+ [','] { a }
 star_named_expression[expr_ty]:
-    | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
+    | star_element
     | named_expression
 named_expression[expr_ty]:
     | a=NAME ':=' ~ b=expression { _Py_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
@@ -331,11 +335,6 @@ named_expression[expr_ty]:
 
 annotated_rhs[expr_ty]: yield_expr | star_expressions
 
-expressions[expr_ty]:
-    | a=expression b=(',' c=expression { c })+ [','] {
-        _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=expression ',' { _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
-    | expression
 expression[expr_ty] (memo):
     | a=disjunction 'if' b=disjunction 'else' c=expression { _Py_IfExp(b, a, c, EXTRA) }
     | disjunction

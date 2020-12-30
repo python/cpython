@@ -1,0 +1,2 @@
+Fix a bug in the PEG parser that prevents parsing tuples with
+single-element, parenthesized unpacking. Patch by Pablo Galindo
