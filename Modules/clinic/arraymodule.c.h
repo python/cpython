@@ -36,28 +36,7 @@ PyDoc_STRVAR(array_array_count__doc__,
 "Return number of occurrences of v in the array.");
 
 #define ARRAY_ARRAY_COUNT_METHODDEF    \
-    {"count", (PyCFunction)(void(*)(void))array_array_count, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_count__doc__},
-
-static PyObject *
-array_array_count_impl(arrayobject *self, PyTypeObject *cls, PyObject *v);
-
-static PyObject *
-array_array_count(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:count", _keywords, 0};
-    PyObject *v;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &v)) {
-        goto exit;
-    }
-    return_value = array_array_count_impl(self, cls, v);
-
-exit:
-    return return_value;
-}
+    {"count", (PyCFunction)array_array_count, METH_O, array_array_count__doc__},
 
 PyDoc_STRVAR(array_array_index__doc__,
 "index($self, v, /)\n"
@@ -66,28 +45,7 @@ PyDoc_STRVAR(array_array_index__doc__,
 "Return index of first occurrence of v in the array.");
 
 #define ARRAY_ARRAY_INDEX_METHODDEF    \
-    {"index", (PyCFunction)(void(*)(void))array_array_index, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_index__doc__},
-
-static PyObject *
-array_array_index_impl(arrayobject *self, PyTypeObject *cls, PyObject *v);
-
-static PyObject *
-array_array_index(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:index", _keywords, 0};
-    PyObject *v;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &v)) {
-        goto exit;
-    }
-    return_value = array_array_index_impl(self, cls, v);
-
-exit:
-    return return_value;
-}
+    {"index", (PyCFunction)array_array_index, METH_O, array_array_index__doc__},
 
 PyDoc_STRVAR(array_array_remove__doc__,
 "remove($self, v, /)\n"
@@ -96,28 +54,7 @@ PyDoc_STRVAR(array_array_remove__doc__,
 "Remove the first occurrence of v in the array.");
 
 #define ARRAY_ARRAY_REMOVE_METHODDEF    \
-    {"remove", (PyCFunction)(void(*)(void))array_array_remove, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_remove__doc__},
-
-static PyObject *
-array_array_remove_impl(arrayobject *self, PyTypeObject *cls, PyObject *v);
-
-static PyObject *
-array_array_remove(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O:remove", _keywords, 0};
-    PyObject *v;
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &v)) {
-        goto exit;
-    }
-    return_value = array_array_remove_impl(self, cls, v);
-
-exit:
-    return return_value;
-}
+    {"remove", (PyCFunction)array_array_remove, METH_O, array_array_remove__doc__},
 
 PyDoc_STRVAR(array_array_pop__doc__,
 "pop($self, i=-1, /)\n"
@@ -128,24 +65,37 @@ PyDoc_STRVAR(array_array_pop__doc__,
 "i defaults to -1.");
 
 #define ARRAY_ARRAY_POP_METHODDEF    \
-    {"pop", (PyCFunction)(void(*)(void))array_array_pop, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, array_array_pop__doc__},
+    {"pop", (PyCFunction)(void(*)(void))array_array_pop, METH_FASTCALL, array_array_pop__doc__},
 
 static PyObject *
-array_array_pop_impl(arrayobject *self, PyTypeObject *cls, Py_ssize_t i);
+array_array_pop_impl(arrayobject *self, Py_ssize_t i);
 
 static PyObject *
-array_array_pop(arrayobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"|n:pop", _keywords, 0};
     Py_ssize_t i = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &i)) {
+    if (!_PyArg_CheckPositional("pop", nargs, 0, 1)) {
         goto exit;
     }
-    return_value = array_array_pop_impl(self, cls, i);
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        i = ival;
+    }
+skip_optional:
+    return_value = array_array_pop_impl(self, i);
 
 exit:
     return return_value;
@@ -585,4 +535,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=f98c6e141a9a5dcf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7f71a18b994c88f input=a9049054013a1b77]*/

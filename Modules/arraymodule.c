@@ -616,10 +616,13 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
 }
 
 static PyObject *
-getarrayitem(array_state *state, PyObject *op, Py_ssize_t i)
+getarrayitem(PyObject *op, Py_ssize_t i)
 {
-    arrayobject *ap;
+#ifndef NDEBUG
+    array_state *state = find_array_state_by_type(Py_TYPE(op));
     assert(array_Check(op, state));
+#endif
+    arrayobject *ap;
     ap = (arrayobject *)op;
     assert(i>=0 && i<Py_SIZE(ap));
     return (*ap->ob_descr->getitem)(ap, i);
@@ -724,8 +727,8 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     /* Search for the first index where items are different */
     k = 1;
     for (i = 0; i < Py_SIZE(va) && i < Py_SIZE(wa); i++) {
-        vi = getarrayitem(state, v, i);
-        wi = getarrayitem(state, w, i);
+        vi = getarrayitem(v, i);
+        wi = getarrayitem(w, i);
         if (vi == NULL || wi == NULL) {
             Py_XDECREF(vi);
             Py_XDECREF(wi);
@@ -792,13 +795,11 @@ array_length(arrayobject *a)
 static PyObject *
 array_item(arrayobject *a, Py_ssize_t i)
 {
-    array_state *state = find_array_state_by_type(Py_TYPE(a));
-
     if (i < 0 || i >= Py_SIZE(a)) {
         PyErr_SetString(PyExc_IndexError, "array index out of range");
         return NULL;
     }
-    return getarrayitem(state, (PyObject *)a, i);
+    return getarrayitem((PyObject *)a, i);
 }
 
 static PyObject *
@@ -977,9 +978,12 @@ array_ass_item(arrayobject *a, Py_ssize_t i, PyObject *v)
 }
 
 static int
-setarrayitem(array_state *state, PyObject *a, Py_ssize_t i, PyObject *v)
+setarrayitem(PyObject *a, Py_ssize_t i, PyObject *v)
 {
+#ifndef NDEBUG
+    array_state *state = find_array_state_by_type(Py_TYPE(a));
     assert(array_Check(a, state));
+#endif
     return array_ass_item((arrayobject *)a, i, v);
 }
 
@@ -1097,7 +1101,6 @@ ins(arrayobject *self, Py_ssize_t where, PyObject *v)
 /*[clinic input]
 array.array.count
 
-    cls: defining_class
     v: object
     /
 
@@ -1105,10 +1108,9 @@ Return number of occurrences of v in the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_count_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
-/*[clinic end generated code: output=241855185ec96660 input=dfe72cd1f59fb7e8]*/
+array_array_count(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=3dd3624bf7135a3a input=d9bce9d65e39d1f5]*/
 {
-    array_state *state = get_array_state_by_class(cls);
     Py_ssize_t count = 0;
     Py_ssize_t i;
 
@@ -1116,7 +1118,7 @@ array_array_count_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
         PyObject *selfi;
         int cmp;
 
-        selfi = getarrayitem(state, (PyObject *)self, i);
+        selfi = getarrayitem((PyObject *)self, i);
         if (selfi == NULL)
             return NULL;
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -1133,7 +1135,6 @@ array_array_count_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
 /*[clinic input]
 array.array.index
 
-    cls: defining_class
     v: object
     /
 
@@ -1141,17 +1142,16 @@ Return index of first occurrence of v in the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_index_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
-/*[clinic end generated code: output=1a14f9773acaa19b input=f5096176943e0366]*/
+array_array_index(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=d48498d325602167 input=cf619898c6649d08]*/
 {
-    array_state *state = get_array_state_by_class(cls);
     Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *selfi;
         int cmp;
 
-        selfi = getarrayitem(state, (PyObject *)self, i);
+        selfi = getarrayitem((PyObject *)self, i);
         if (selfi == NULL)
             return NULL;
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -1169,12 +1169,11 @@ array_array_index_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
 static int
 array_contains(arrayobject *self, PyObject *v)
 {
-    array_state *state = find_array_state_by_type(Py_TYPE(self));
     Py_ssize_t i;
     int cmp;
 
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(self); i++) {
-        PyObject *selfi = getarrayitem(state, (PyObject *)self, i);
+        PyObject *selfi = getarrayitem((PyObject *)self, i);
         if (selfi == NULL)
             return -1;
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -1186,7 +1185,6 @@ array_contains(arrayobject *self, PyObject *v)
 /*[clinic input]
 array.array.remove
 
-    cls: defining_class
     v: object
     /
 
@@ -1194,17 +1192,16 @@ Remove the first occurrence of v in the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_remove_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
-/*[clinic end generated code: output=ebaff78df1f62f4d input=c7d793c223b5b32f]*/
+array_array_remove(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=bef06be9fdf9dceb input=0b1e5aed25590027]*/
 {
-    array_state *state = get_array_state_by_class(cls);
     Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *selfi;
         int cmp;
 
-        selfi = getarrayitem(state, (PyObject *)self,i);
+        selfi = getarrayitem((PyObject *)self,i);
         if (selfi == NULL)
             return NULL;
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -1224,7 +1221,6 @@ array_array_remove_impl(arrayobject *self, PyTypeObject *cls, PyObject *v)
 /*[clinic input]
 array.array.pop
 
-    cls: defining_class
     i: Py_ssize_t = -1
     /
 
@@ -1234,10 +1230,9 @@ i defaults to -1.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_pop_impl(arrayobject *self, PyTypeObject *cls, Py_ssize_t i)
-/*[clinic end generated code: output=21f64a81d0509c1d input=412909f4b0eea987]*/
+array_array_pop_impl(arrayobject *self, Py_ssize_t i)
+/*[clinic end generated code: output=bc1f0c54fe5308e4 input=8e5feb4c1a11cd44]*/
 {
-    array_state *state = get_array_state_by_class(cls);
     PyObject *v;
 
     if (Py_SIZE(self) == 0) {
@@ -1251,7 +1246,7 @@ array_array_pop_impl(arrayobject *self, PyTypeObject *cls, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
-    v = getarrayitem(state, (PyObject *)self, i);
+    v = getarrayitem((PyObject *)self, i);
     if (v == NULL)
         return NULL;
     if (array_del_slice(self, i, i+1) != 0) {
@@ -1600,14 +1595,13 @@ static PyObject *
 array_array_tolist_impl(arrayobject *self)
 /*[clinic end generated code: output=00b60cc9eab8ef89 input=a8d7784a94f86b53]*/
 {
-    array_state *state = find_array_state_by_type(Py_TYPE(self));
     PyObject *list = PyList_New(Py_SIZE(self));
     Py_ssize_t i;
 
     if (list == NULL)
         return NULL;
     for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *v = getarrayitem(state, (PyObject *)self, i);
+        PyObject *v = getarrayitem((PyObject *)self, i);
         if (v == NULL)
             goto error;
         PyList_SET_ITEM(list, i, v);
@@ -2669,7 +2663,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         Py_DECREF(a);
                         return NULL;
                     }
-                    if (setarrayitem(state, a, i, v) != 0) {
+                    if (setarrayitem(a, i, v) != 0) {
                         Py_DECREF(v);
                         Py_DECREF(a);
                         return NULL;
@@ -2875,16 +2869,20 @@ array_iter(arrayobject *ao)
 static PyObject *
 arrayiter_next(arrayiterobject *it)
 {
-    array_state *state = find_array_state_by_type(Py_TYPE(it));
     arrayobject *ao;
 
     assert(it != NULL);
+#ifndef NDEBUG
+    array_state *state = find_array_state_by_type(Py_TYPE(it));
     assert(PyObject_TypeCheck(it, state->ArrayIterType));
+#endif
     ao = it->ao;
     if (ao == NULL) {
         return NULL;
     }
+#ifndef NDEBUG
     assert(array_Check(ao, state));
+#endif
     if (it->index < Py_SIZE(ao)) {
         return (*it->getitem)(ao, it->index++);
     }
