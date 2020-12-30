@@ -791,9 +791,9 @@ which incur interpreter overhead.
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
        # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
        # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
-       kernel = list(reversed(kernel))
+       kernel = tuple(kernel)[::-1]
        n = len(kernel)
-       window = collections.deque([0] * n, maxlen=n)
+       window = collections.deque([0], maxlen=n) * n
        for x in chain(signal, repeat(0, n-1)):
            window.append(x)
            yield sum(map(operator.mul, kernel, window))
