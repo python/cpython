@@ -83,14 +83,14 @@ PyDoc_STRVAR(pysqlite_cursor_executemany__doc__,
 
 static PyObject *
 pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
-                                 PyObject *parameters);
+                                 PyObject *seq_of_parameters);
 
 static PyObject *
 pysqlite_cursor_executemany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sql;
-    PyObject *parameters;
+    PyObject *seq_of_parameters;
 
     if (!_PyArg_CheckPositional("executemany", nargs, 2, 2)) {
         goto exit;
@@ -103,8 +103,8 @@ pysqlite_cursor_executemany(pysqlite_Cursor *self, PyObject *const *args, Py_ssi
         goto exit;
     }
     sql = args[0];
-    parameters = args[1];
-    return_value = pysqlite_cursor_executemany_impl(self, sql, parameters);
+    seq_of_parameters = args[1];
+    return_value = pysqlite_cursor_executemany_impl(self, sql, seq_of_parameters);
 
 exit:
     return return_value;
@@ -256,4 +256,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=76e0ac8ad72a5d6c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11db0de4fb1951a9 input=a9049054013a1b77]*/
