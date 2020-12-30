@@ -558,6 +558,10 @@ Build Changes
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
+* Added ``--disable-test-modules`` option to the ``configure`` script:
+  don't build nor install test modules.
+  (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
+
 
 C API Changes
 =============
