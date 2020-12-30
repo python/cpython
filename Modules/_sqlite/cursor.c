@@ -891,15 +891,15 @@ pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self)
 /*[clinic input]
 _sqlite3.Cursor.setinputsizes as pysqlite_cursor_setinputsizes
 
-    sizes: object = None
+    sizes: object
     /
 
 Required by DB-API. Does nothing in pysqlite.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_setinputsizes_impl(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=a06c12790bd05f2e input=d058d07e828431de]*/
+pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
+/*[clinic end generated code: output=893c817afe9d08ad input=7cffbb168663bc69]*/
 {
     Py_RETURN_NONE;
 }
