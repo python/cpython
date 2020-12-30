@@ -158,7 +158,7 @@ dependency of parameter types in such a precise manner.
 
 The second option is the new ``Concatenate`` operator. It's used in conjunction
 with parameter specification variables to type annotate a higher order callable
-which adds, or removes parameters of another callable.  Examples of usage can
+which adds or removes parameters of another callable.  Examples of usage can
 be found in :class:`typing.Concatenate`.
 
 See :class:`typing.Callable`, :class:`typing.ParamSpec`,
