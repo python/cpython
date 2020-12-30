@@ -553,9 +553,8 @@ Build Changes
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
-* Added ``--enable-test-modules`` option to the ``configure`` script. If this
-  option is set to no, ``make install`` will not install test suites. Also setup.py
-  will not build test extension modules.
+* Added ``--disable-test-modules`` option to the ``configure`` script:
+  don't build nor install test modules.
   (Contributed by Peixing Xin in :issue:`27640`.)
 
 
