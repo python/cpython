@@ -5833,19 +5833,19 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
-# Check whether to enable test modules. Any values other than no will be treated as yes.
-# If this option is set to no, "make install" will not install test suites. Also setup.py
-# will not build test extension modules.
-AC_MSG_CHECKING(for --enable-test-modules)
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+AC_MSG_CHECKING(for --disable-test-modules)
 AC_ARG_ENABLE(test-modules,
               AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
+    AC_MSG_RESULT(yes)
 else
     TEST_MODULES=yes
+    AC_MSG_RESULT(no)
 fi
 AC_SUBST(TEST_MODULES)
-AC_MSG_RESULT($TEST_MODULES)
 
 
 # generate output files
