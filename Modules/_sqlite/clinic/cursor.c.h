@@ -31,7 +31,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_cursor_execute__doc__,
-"execute($self, sql, parameters=<unrepresentable>, /)\n"
+"execute($self, sql, parameters=(), /)\n"
 "--\n"
 "\n"
 "Executes a SQL statement.");
@@ -73,7 +73,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_cursor_executemany__doc__,
-"executemany($self, sql, parameters=<unrepresentable>, /)\n"
+"executemany($self, sql, seq_of_parameters, /)\n"
 "--\n"
 "\n"
 "Repeatedly executes a SQL statement.");
@@ -83,16 +83,16 @@ PyDoc_STRVAR(pysqlite_cursor_executemany__doc__,
 
 static PyObject *
 pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
-                                 PyObject *parameters);
+                                 PyObject *seq_of_parameters);
 
 static PyObject *
 pysqlite_cursor_executemany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *sql;
-    PyObject *parameters = NULL;
+    PyObject *seq_of_parameters;
 
-    if (!_PyArg_CheckPositional("executemany", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("executemany", nargs, 2, 2)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -103,12 +103,8 @@ pysqlite_cursor_executemany(pysqlite_Cursor *self, PyObject *const *args, Py_ssi
         goto exit;
     }
     sql = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    parameters = args[1];
-skip_optional:
-    return_value = pysqlite_cursor_executemany_impl(self, sql, parameters);
+    seq_of_parameters = args[1];
+    return_value = pysqlite_cursor_executemany_impl(self, sql, seq_of_parameters);
 
 exit:
     return return_value;
@@ -283,4 +279,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=29b5b24ed34ba996 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84d4ba48a211657b input=a9049054013a1b77]*/

@@ -613,7 +613,7 @@ error:
 _sqlite3.Cursor.execute as pysqlite_cursor_execute
 
     sql: unicode
-    parameters: object = NULL
+    parameters: object(c_default = 'NULL') = ()
     /
 
 Executes a SQL statement.
@@ -622,7 +622,7 @@ Executes a SQL statement.
 static PyObject *
 pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
                              PyObject *parameters)
-/*[clinic end generated code: output=d81b4655c7c0bbad input=f146ded55ff8c7d4]*/
+/*[clinic end generated code: output=d81b4655c7c0bbad input=91d7bb36f127f597]*/
 {
     return _pysqlite_query_execute(self, 0, sql, parameters);
 }
@@ -631,7 +631,7 @@ pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
 _sqlite3.Cursor.executemany as pysqlite_cursor_executemany
 
     sql: unicode
-    parameters: object = NULL
+    seq_of_parameters: object
     /
 
 Repeatedly executes a SQL statement.
@@ -639,8 +639,8 @@ Repeatedly executes a SQL statement.
 
 static PyObject *
 pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
-                                 PyObject *parameters)
-/*[clinic end generated code: output=df8e2d0b7300aab6 input=fa99d0eb3dd5971e]*/
+                                 PyObject *seq_of_parameters)
+/*[clinic end generated code: output=2c65a3c4733fb5d8 input=440707b7af87fba8]*/
 {
     return _pysqlite_query_execute(self, 1, sql, parameters);
 }
