@@ -1366,18 +1366,54 @@ maninstall:	altmaninstall
 
 # Install the library
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
-LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
-		tkinter/test/test_ttk site-packages test \
-		test/audiodata \
-		test/capath test/data \
-		test/cjkencodings test/decimaltestdata \
-		test/xmltestdata test/xmltestdata/c14n-20 \
-		test/dtracedata \
-		test/eintrdata \
-		test/imghdrdata \
-		test/libregrtest \
-		test/subprocessdata test/sndhdrdata test/support \
-		test/tracedmodules test/encoded_modules \
+LIBSUBDIRS=	asyncio \
+		collections \
+		concurrent concurrent/futures \
+		csv \
+		ctypes ctypes/macholib \
+		curses \
+		dbm \
+		distutils distutils/command \
+		email email/mime \
+		encodings \
+		ensurepip ensurepip/_bundled \
+		html \
+		http \
+		idlelib idlelib/Icons \
+		importlib importlib/metadata \
+		json \
+		lib2to3 lib2to3/fixes lib2to3/pgen2 \
+		logging \
+		multiprocessing multiprocessing/dummy \
+		pydoc_data \
+		site-packages \
+		sqlite3 \
+		tkinter \
+		turtledemo \
+		unittest \
+		urllib \
+		venv venv/scripts venv/scripts/common venv/scripts/posix \
+		wsgiref \
+		$(XMLLIBSUBDIRS) \
+		xmlrpc \
+		zoneinfo
+TESTSUBDIRS=	ctypes/test \
+		distutils/tests \
+		idlelib/idle_test \
+		lib2to3/tests \
+		lib2to3/tests/data \
+		lib2to3/tests/data/fixers \
+		lib2to3/tests/data/fixers/myfixes \
+		sqlite3/test \
+		test test/audiodata \
+		test/capath test/cjkencodings \
+		test/data test/decimaltestdata \
+		test/dtracedata test/eintrdata \
+		test/encoded_modules test/imghdrdata \
+		test/libregrtest test/sndhdrdata \
+		test/subprocessdata test/support \
+		test/test_asyncio \
+		test/test_email test/test_email/data \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -1385,8 +1421,6 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
 		test/test_import/data/unwritable \
-		importlib \
-		importlib/metadata \
 		test/test_importlib \
 		test/test_importlib/builtin \
 		test/test_importlib/data \
@@ -1425,30 +1459,19 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
-		test/test_zoneinfo test/test_zoneinfo/data \
-		test/ziptestdata \
-		asyncio \
-		test/test_asyncio \
-		collections concurrent concurrent/futures encodings \
-		email email/mime test/test_email test/test_email/data \
-		ensurepip ensurepip/_bundled \
-		html json test/test_json http dbm xmlrpc \
-		sqlite3 sqlite3/test \
-		logging csv wsgiref urllib \
-		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
-		lib2to3/tests/data lib2to3/tests/data/fixers \
-		lib2to3/tests/data/fixers/myfixes \
-		ctypes ctypes/test ctypes/macholib \
-		idlelib idlelib/Icons idlelib/idle_test \
-		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		test/test_json \
 		test/test_peg_generator \
-		test/test_tools test/test_warnings test/test_warnings/data \
-		turtledemo \
-		multiprocessing multiprocessing/dummy \
-		unittest unittest/test unittest/test/testmock \
-		venv venv/scripts venv/scripts/common venv/scripts/posix \
-		curses pydoc_data \
-		zoneinfo
+		test/test_tools \
+		test/test_warnings test/test_warnings/data \
+		test/test_zoneinfo test/test_zoneinfo/data \
+		test/tracedmodules \
+		test/xmltestdata test/xmltestdata/c14n-20 \
+		test/ziptestdata \
+		tkinter/test tkinter/test/test_tkinter \
+		tkinter/test/test_ttk \
+		unittest/test unittest/test/testmock
+
+TEST_MODULES=@TEST_MODULES@
 libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
@@ -1458,7 +1481,12 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 		else	true; \
 		fi; \
 	done
-	@for d in $(LIBSUBDIRS); \
+	@if test "$(TEST_MODULES)" = yes; then \
+		subdirs="$(LIBSUBDIRS) $(TESTSUBDIRS)"; \
+	else \
+		subdirs="$(LIBSUBDIRS)"; \
+	fi; \
+	for d in $$subdirs; \
 	do \
 		a=$(srcdir)/Lib/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
@@ -1479,7 +1507,12 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 			echo $(INSTALL_DATA) $$i $(LIBDEST); \
 		fi; \
 	done
-	@for d in $(LIBSUBDIRS); \
+	@if test "$(TEST_MODULES)" = yes; then \
+		subdirs="$(LIBSUBDIRS) $(TESTSUBDIRS)"; \
+	else \
+		subdirs="$(LIBSUBDIRS)"; \
+	fi; \
+	for d in $$subdirs; \
 	do \
 		a=$(srcdir)/Lib/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
