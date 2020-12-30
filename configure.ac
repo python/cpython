@@ -5838,7 +5838,7 @@ fi],
 # will not build test extension modules.
 AC_MSG_CHECKING(for --enable-test-modules)
 AC_ARG_ENABLE(test-modules,
-              AS_HELP_STRING([--enable-test-modules], [enable test modules (default is yes)]))
+              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
 if test "$enable_test_modules" = no; then
     TEST_MODULES=no
 else
@@ -5873,4 +5873,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
 fi
-
