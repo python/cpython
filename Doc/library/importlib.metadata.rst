@@ -115,8 +115,9 @@ Every distribution includes some metadata, which you can extract using the
 
     >>> wheel_metadata = metadata('wheel')  # doctest: +SKIP
 
-The keys of the returned data structure [#f1]_ name the metadata keywords, and
-their values are returned unparsed from the distribution metadata::
+The keys of the returned data structure, a ``PackageMetadata``,
+name the metadata keywords, and
+the values are returned unparsed from the distribution metadata::
 
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
@@ -259,9 +260,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 
 
 .. rubric:: Footnotes
-
-.. [#f1] Technically, the returned distribution metadata object is an
-         :class:`email.message.EmailMessage`
-         instance, but this is an implementation detail, and not part of the
-         stable API.  You should only use dictionary-like methods and syntax
-         to access the metadata contents.
