@@ -346,6 +346,34 @@ Now some general starred expressions (all fail).
       ...
     SyntaxError: can't use starred expression here
 
+    >>> (*x),y = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: starred assignment target cannot be used with parentheses around
+
+    >>> (((*x))),y = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: starred assignment target cannot be used with parentheses around
+
+    >>> z,(*x),y = 1, 2, 4 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: starred assignment target cannot be used with parentheses around
+
+    >>> z,(*x) = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: starred assignment target cannot be used with parentheses around
+
+    >>> ((*x),y) = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: starred assignment target cannot be used with parentheses around
+
+
+
+
 Some size constraints (all fail.)
 
     >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"

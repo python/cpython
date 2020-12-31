@@ -12680,7 +12680,10 @@ kwarg_or_double_starred_rule(Parser *p)
     return _res;
 }
 
-// star_targets: star_target !',' | star_target ((',' star_target))* ','?
+// star_targets:
+//     | star_target !','
+//     | '(' starred_expression ')'
+//     | star_target ((',' star_target))* ','?
 static expr_ty
 star_targets_rule(Parser *p)
 {
@@ -12725,6 +12728,36 @@ star_targets_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s star_targets[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_target !','"));
+    }
+    { // '(' starred_expression ')'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> star_targets[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' starred_expression ')'"));
+        Token * _literal;
+        Token * _literal_1;
+        expr_ty a;
+        if (
+            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (a = starred_expression_rule(p))  // starred_expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ star_targets[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' starred_expression ')'"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "starred assignment target must be in a list or tuple" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s star_targets[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' starred_expression ')'"));
     }
     { // star_target ((',' star_target))* ','?
         if (p->error_indicator) {
@@ -12994,6 +13027,7 @@ star_target_rule(Parser *p)
 
 // star_atom:
 //     | NAME
+//     | '(' starred_expression ')'
 //     | '(' star_target ')'
 //     | '(' star_targets_seq? ')'
 //     | '[' star_targets_seq? ']'
@@ -13039,6 +13073,36 @@ star_atom_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s star_atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME"));
+    }
+    { // '(' starred_expression ')'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> star_atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' starred_expression ')'"));
+        Token * _literal;
+        Token * _literal_1;
+        expr_ty a;
+        if (
+            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (a = starred_expression_rule(p))  // starred_expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ star_atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' starred_expression ')'"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "starred assignment target cannot be used with parentheses around" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s star_atom[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' starred_expression ')'"));
     }
     { // '(' star_target ')'
         if (p->error_indicator) {

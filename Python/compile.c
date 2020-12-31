@@ -5071,17 +5071,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Subscript_kind:
         return compiler_subscript(c, e);
     case Starred_kind:
-        switch (e->v.Starred.ctx) {
-        case Store:
-            /* In all legitimate cases, the Starred node was already replaced
-             * by compiler_list/compiler_tuple. XXX: is that okay? */
-            return compiler_error(c,
-                "starred assignment target must be in a list or tuple");
-        default:
-            return compiler_error(c,
-                "can't use starred expression here");
-        }
-        break;
+        return compiler_error(c, "can't use starred expression here");
     case Slice_kind:
         return compiler_slice(c, e);
     case Name_kind:

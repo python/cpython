@@ -578,6 +578,8 @@ kwarg_or_double_starred[KeywordOrStarred*]:
 # NOTE: star_targets may contain *bitwise_or, targets may not.
 star_targets[expr_ty]:
     | a=star_target !',' { a }
+    | '(' a=starred_expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "starred assignment target must be in a list or tuple") }
     | a=star_target b=(',' c=star_target { c })* [','] {
         _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 star_targets_seq[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_target+ [','] { a }
@@ -589,6 +591,8 @@ star_target[expr_ty] (memo):
     | star_atom
 star_atom[expr_ty]:
     | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
+    | '(' a=starred_expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "starred assignment target cannot be used with parentheses around") }
     | '(' a=star_target ')' { _PyPegen_set_expr_context(p, a, Store) }
     | '(' a=[star_targets_seq] ')' { _Py_Tuple(a, Store, EXTRA) }
     | '[' a=[star_targets_seq] ']' { _Py_List(a, Store, EXTRA) }
