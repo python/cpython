@@ -1045,7 +1045,7 @@ These are not used in annotations. They are building blocks for creating generic
    causes two problems:
 
       1. The type checker can't type check the ``inner`` function because
-         ``*args`` and ``**kwargs`` have to be :data:`Any`.
+         ``*args`` and ``**kwargs`` have to be typed :data:`Any`.
       2. :func:`~cast` may be required in the body of the ``add_logging``
          decorator when returning the ``inner`` function, or the static type
          checker must be told to ignore the ``return inner``.
