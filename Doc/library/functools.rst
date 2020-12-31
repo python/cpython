@@ -62,16 +62,13 @@ The :mod:`functools` module defines the following functions:
    Example::
 
        class DataSet:
+
            def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
+               self._data = tuple(sequence_of_numbers)
 
            @cached_property
            def stdev(self):
                return statistics.stdev(self._data)
-
-           @cached_property
-           def variance(self):
-               return statistics.variance(self._data)
 
    The mechanics of :func:`cached_property` are somewhat different from
    :func:`property`.  A regular property blocks attribute writes unless a
