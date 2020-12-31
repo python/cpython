@@ -175,9 +175,9 @@ for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 Callables which take other callables as arguments may indicate that their
 parameter types are dependent on each other using :class:`ParamSpec`.
 Additionally, if that callable adds or removes arguments from other
-callables, the :data:`Concatenate` operator may be appropriate.  They
+callables, the :data:`Concatenate` operator may be used.  They
 take the form ``Callable[ParamSpecVariable, ReturnType]`` and
-``Callable[Concatenate[Arg1Type, ..., ParamSpecVariable], ReturnType]``
+``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
 respectively.
 
 .. versionchanged:: 3.10
@@ -357,7 +357,10 @@ to the former and are thus equivalent::
 
    >>> class X(Generic[P]): ...
    ...
-   >>> assert X[[int, str, bool]] == X[int, str, bool]
+   >>> X[int, str]
+   __main__.X[(<class 'int'>, <class 'str'>)]
+   >>> X[[int, str]]
+   __main__.X[(<class 'int'>, <class 'str'>)]
 
 Do note that generics with :class:`ParamSpec` may not have correct
 ``__parameters__`` after substitution in some cases because they
@@ -656,9 +659,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    Callables which take other callables as arguments may indicate that their
    parameter types are dependent on each other using :class:`ParamSpec`.
    Additionally, if that callable adds or removes arguments from other
-   callables, the :data:`Concatenate` operator may be appropriate.  They
+   callables, the :data:`Concatenate` operator may be used.  They
    take the form ``Callable[ParamSpecVariable, ReturnType]`` and
-   ``Callable[Concatenate[Arg1Type, ..., ParamSpecVariable], ReturnType]``
+   ``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
    respectively.
 
    .. deprecated:: 3.9
@@ -715,13 +718,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
           with lock:
               return sum(numbers)
 
+      # We don't need to pass in the lock ourselves thanks to the decorator.
+      sum_threadsafe([1.1, 2.2, 3.3])
 
 .. versionadded:: 3.10
 
 .. seealso::
 
    * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-     ``Concatenate``).
+     ``ParamSpec`` and ``Concatenate``).
    * :class:`ParamSpec` and :class:`Callable`.
 
 
@@ -1035,6 +1040,17 @@ These are not used in annotations. They are building blocks for creating generic
           '''Add two numbers together.'''
           return x + y
 
+   Without ``ParamSpec``, the simplest way to annotate this previously was to
+   use a ``TypeVar`` with bound ``Callable[..., Any]``.  However this causes two
+   problems:
+
+      1. The type checker will type check the inner function, but allow
+         incorrectly typed arguments to be passed into ``add_two``, causing a
+         ``TypeError`` during runtime because the ``...`` tells the type checker
+         to not perform validation on argument types.
+      2. :func:`~cast` may be required in the body of the ``add_logging``
+         decorator when using more complex types, or type checking has to be
+         disabled for the decorator entirely.
 
    .. attribute:: args
    .. attribute:: kwargs
@@ -1061,7 +1077,7 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. seealso::
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-        ``Concatenate``).
+        ``ParamSpec`` and ``Concatenate``).
       * :class:`Callable` and :class:`Concatenate`.
 
 .. data:: AnyStr
