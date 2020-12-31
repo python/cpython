@@ -140,8 +140,11 @@ __all__ = [
     # Limits for the C version for compatibility
     'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
 
-    # C version: compile time choice that enables the thread local context
-    'HAVE_THREADS'
+    # C version: compile time choice that enables the thread local context (deprecated, now always true)
+    'HAVE_THREADS',
+
+    # C version: compile time choice that enables the coroutine local context
+    'HAVE_CONTEXTVAR'
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
@@ -172,6 +175,7 @@ ROUND_05UP = 'ROUND_05UP'
 
 # Compatibility with the C version
 HAVE_THREADS = True
+HAVE_CONTEXTVAR = True
 if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999
@@ -433,13 +437,11 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 # The getcontext() and setcontext() function manage access to a thread-local
 # current context.
 
-import threading
+import contextvars
 
-local = threading.local()
-if hasattr(local, '__decimal_context__'):
-    del local.__decimal_context__
+_current_context_var = contextvars.ContextVar('decimal_context')
 
-def getcontext(_local=local):
+def getcontext():
     """Returns this thread's context.
 
     If this thread does not yet have a context, returns
@@ -447,20 +449,20 @@ def getcontext(_local=local):
     New contexts are copies of DefaultContext.
     """
     try:
-        return _local.__decimal_context__
-    except AttributeError:
+        return _current_context_var.get()
+    except LookupError:
         context = Context()
-        _local.__decimal_context__ = context
+        _current_context_var.set(context)
         return context
 
-def setcontext(context, _local=local):
+def setcontext(context):
     """Set this thread's context to context."""
     if context in (DefaultContext, BasicContext, ExtendedContext):
         context = context.copy()
         context.clear_flags()
-    _local.__decimal_context__ = context
+    _current_context_var.set(context)
 
-del threading, local        # Don't contaminate the namespace
+del contextvars        # Don't contaminate the namespace
 
 def localcontext(ctx=None):
     """Return a context manager for a copy of the supplied context
@@ -2023,7 +2025,7 @@ class Decimal(object):
         if not other and not self:
             return context._raise_error(InvalidOperation,
                                         'at least one of pow() 1st argument '
-                                        'and 2nd argument must be nonzero ;'
+                                        'and 2nd argument must be nonzero; '
                                         '0**0 is not defined')
 
         # compute sign of result
@@ -5632,8 +5634,6 @@ class _WorkRep(object):
 
     def __repr__(self):
         return "(%r, %r, %r)" % (self.sign, self.int, self.exp)
-
-    __str__ = __repr__
 
 
 

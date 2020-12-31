@@ -80,7 +80,7 @@ def freeze_support():
 #
 
 class Namespace(object):
-    def __init__(self, **kwds):
+    def __init__(self, /, **kwds):
         self.__dict__.update(kwds)
     def __repr__(self):
         items = list(self.__dict__.items())

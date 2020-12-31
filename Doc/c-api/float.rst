@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _floatobjects:
 
@@ -34,12 +34,12 @@ Floating Point Objects
 .. c:function:: PyObject* PyFloat_FromString(PyObject *str)
 
    Create a :c:type:`PyFloatObject` object based on the string value in *str*, or
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyFloat_FromDouble(double v)
 
-   Create a :c:type:`PyFloatObject` object from *v*, or *NULL* on failure.
+   Create a :c:type:`PyFloatObject` object from *v*, or ``NULL`` on failure.
 
 
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
@@ -47,8 +47,12 @@ Floating Point Objects
    Return a C :c:type:`double` representation of the contents of *pyfloat*.  If
    *pyfloat* is not a Python floating point object but has a :meth:`__float__`
    method, this method will first be called to convert *pyfloat* into a float.
+   If ``__float__()`` is not defined then it falls back to :meth:`__index__`.
    This method returns ``-1.0`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
+
+   .. versionchanged:: 3.8
+      Use :meth:`__index__` if available.
 
 
 .. c:function:: double PyFloat_AS_DOUBLE(PyObject *pyfloat)
@@ -72,8 +76,3 @@ Floating Point Objects
 .. c:function:: double PyFloat_GetMin()
 
    Return the minimum normalized positive float *DBL_MIN* as C :c:type:`double`.
-
-.. c:function:: int PyFloat_ClearFreeList()
-
-   Clear the float free list. Return the number of items that could not
-   be freed.

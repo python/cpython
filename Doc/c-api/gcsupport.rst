@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _supporting-cycle-detection:
 
@@ -49,7 +49,7 @@ Constructors for container types must conform to two rules:
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
 
    Resize an object allocated by :c:func:`PyObject_NewVar`.  Returns the
-   resized object or *NULL* on failure.
+   resized object or ``NULL`` on failure.  *op* must not be tracked by the collector yet.
 
 
 .. c:function:: void PyObject_GC_Track(PyObject *op)
@@ -61,10 +61,32 @@ Constructors for container types must conform to two rules:
    end of the constructor.
 
 
-.. c:function:: void _PyObject_GC_TRACK(PyObject *op)
+.. c:function:: int PyObject_IS_GC(PyObject *obj)
 
-   A macro version of :c:func:`PyObject_GC_Track`.  It should not be used for
-   extension modules.
+   Returns non-zero if the object implements the garbage collector protocol,
+   otherwise returns 0.
+
+   The object cannot be tracked by the garbage collector if this function returns 0.
+
+
+.. c:function:: int PyObject_GC_IsTracked(PyObject *op)
+
+   Returns 1 if the object type of *op* implements the GC protocol and *op* is being
+   currently tracked by the garbage collector and 0 otherwise.
+
+   This is analogous to the Python function :func:`gc.is_tracked`.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: int PyObject_GC_IsFinalized(PyObject *op)
+
+   Returns 1 if the object type of *op* implements the GC protocol and *op* has been
+   already finalized by the garbage collector and 0 otherwise.
+
+   This is analogous to the Python function :func:`gc.is_finalized`.
+
+   .. versionadded:: 3.9
 
 Similarly, the deallocator for the object must conform to a similar pair of
 rules:
@@ -90,10 +112,10 @@ rules:
    the fields used by the :c:member:`~PyTypeObject.tp_traverse` handler become invalid.
 
 
-.. c:function:: void _PyObject_GC_UNTRACK(PyObject *op)
+.. versionchanged:: 3.8
 
-   A macro version of :c:func:`PyObject_GC_UnTrack`.  It should not be used for
-   extension modules.
+   The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+   have been removed from the public C API.
 
 The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
 
@@ -115,7 +137,7 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    Traversal function for a container object.  Implementations must call the
    *visit* function for each object directly contained by *self*, with the
    parameters to *visit* being the contained object and the *arg* value passed
-   to the handler.  The *visit* function must not be called with a *NULL*
+   to the handler.  The *visit* function must not be called with a ``NULL``
    object argument.  If *visit* returns a non-zero value that value should be
    returned immediately.
 
@@ -126,7 +148,7 @@ must name its arguments exactly *visit* and *arg*:
 
 .. c:function:: void Py_VISIT(PyObject *o)
 
-   If *o* is not *NULL*, call the *visit* callback, with arguments *o*
+   If *o* is not ``NULL``, call the *visit* callback, with arguments *o*
    and *arg*.  If *visit* returns a non-zero value, then return it.
    Using this macro, :c:member:`~PyTypeObject.tp_traverse` handlers
    look like::
@@ -139,7 +161,7 @@ must name its arguments exactly *visit* and *arg*:
           return 0;
       }
 
-The :c:member:`~PyTypeObject.tp_clear` handler must be of the :c:type:`inquiry` type, or *NULL*
+The :c:member:`~PyTypeObject.tp_clear` handler must be of the :c:type:`inquiry` type, or ``NULL``
 if the object is immutable.
 
 

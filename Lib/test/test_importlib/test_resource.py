@@ -1,10 +1,14 @@
 import sys
 import unittest
+import uuid
+import pathlib
 
 from . import data01
-from . import zipdata02
+from . import zipdata01, zipdata02
 from . import util
-from importlib import resources
+from importlib import resources, import_module
+from test.support import import_helper
+from test.support.os_helper import unlink
 
 
 class ResourceTests:
@@ -110,11 +114,34 @@ class ResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
             {'__init__.py', 'resource2.txt'})
 
 
+class SubdirectoryResourceFromZipsTest(util.ZipSetupBase, unittest.TestCase):
+    ZIP_MODULE = zipdata01                          # type: ignore
+
+    def test_is_submodule_resource(self):
+        submodule = import_module('ziptestdata.subdirectory')
+        self.assertTrue(
+            resources.is_resource(submodule, 'binary.file'))
+
+    def test_read_submodule_resource_by_name(self):
+        self.assertTrue(
+            resources.is_resource('ziptestdata.subdirectory', 'binary.file'))
+
+    def test_submodule_contents(self):
+        submodule = import_module('ziptestdata.subdirectory')
+        self.assertEqual(
+            set(resources.contents(submodule)),
+            {'__init__.py', 'binary.file'})
+
+    def test_submodule_contents_by_name(self):
+        self.assertEqual(
+            set(resources.contents('ziptestdata.subdirectory')),
+            {'__init__.py', 'binary.file'})
+
+
 class NamespaceTest(unittest.TestCase):
-    def test_namespaces_cant_have_resources(self):
-        contents = set(resources.contents(
-            'test.test_importlib.data03.namespace'))
-        self.assertEqual(len(contents), 0)
+    def test_namespaces_cannot_have_resources(self):
+        contents = resources.contents('test.test_importlib.data03.namespace')
+        self.assertFalse(list(contents))
         # Even though there is a file in the namespace directory, it is not
         # considered a resource, since namespace packages can't have them.
         self.assertFalse(resources.is_resource(
@@ -137,6 +164,81 @@ class NamespaceTest(unittest.TestCase):
             FileNotFoundError,
             resources.read_binary,
             'test.test_importlib.data03.namespace', 'resource1.txt')
+
+
+class DeletingZipsTest(unittest.TestCase):
+    """Having accessed resources in a zip file should not keep an open
+    reference to the zip.
+    """
+    ZIP_MODULE = zipdata01
+
+    def setUp(self):
+        modules = import_helper.modules_setup()
+        self.addCleanup(import_helper.modules_cleanup, *modules)
+
+        data_path = pathlib.Path(self.ZIP_MODULE.__file__)
+        data_dir = data_path.parent
+        self.source_zip_path = data_dir / 'ziptestdata.zip'
+        self.zip_path = pathlib.Path('{}.zip'.format(uuid.uuid4())).absolute()
+        self.zip_path.write_bytes(self.source_zip_path.read_bytes())
+        sys.path.append(str(self.zip_path))
+        self.data = import_module('ziptestdata')
+
+    def tearDown(self):
+        try:
+            sys.path.remove(str(self.zip_path))
+        except ValueError:
+            pass
+
+        try:
+            del sys.path_importer_cache[str(self.zip_path)]
+            del sys.modules[self.data.__name__]
+        except KeyError:
+            pass
+
+        try:
+            unlink(self.zip_path)
+        except OSError:
+            # If the test fails, this will probably fail too
+            pass
+
+    def test_contents_does_not_keep_open(self):
+        c = resources.contents('ziptestdata')
+        self.zip_path.unlink()
+        del c
+
+    def test_is_resource_does_not_keep_open(self):
+        c = resources.is_resource('ziptestdata', 'binary.file')
+        self.zip_path.unlink()
+        del c
+
+    def test_is_resource_failure_does_not_keep_open(self):
+        c = resources.is_resource('ziptestdata', 'not-present')
+        self.zip_path.unlink()
+        del c
+
+    @unittest.skip("Desired but not supported.")
+    def test_path_does_not_keep_open(self):
+        c = resources.path('ziptestdata', 'binary.file')
+        self.zip_path.unlink()
+        del c
+
+    def test_entered_path_does_not_keep_open(self):
+        # This is what certifi does on import to make its bundle
+        # available for the process duration.
+        c = resources.path('ziptestdata', 'binary.file').__enter__()
+        self.zip_path.unlink()
+        del c
+
+    def test_read_binary_does_not_keep_open(self):
+        c = resources.read_binary('ziptestdata', 'binary.file')
+        self.zip_path.unlink()
+        del c
+
+    def test_read_text_does_not_keep_open(self):
+        c = resources.read_text('ziptestdata', 'utf-8.file', encoding='utf-8')
+        self.zip_path.unlink()
+        del c
 
 
 if __name__ == '__main__':

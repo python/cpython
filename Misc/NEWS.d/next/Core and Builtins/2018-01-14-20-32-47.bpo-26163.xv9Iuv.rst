@@ -1,2 +1,0 @@
-Improved frozenset() hash to create more distinct hash values when faced
-with datasets containing many similar values.

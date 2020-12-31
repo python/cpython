@@ -1,1 +1,0 @@
-Pickling with protocol 4 no longer creates too small frames.

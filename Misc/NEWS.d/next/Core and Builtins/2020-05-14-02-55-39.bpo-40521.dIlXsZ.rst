@@ -1,0 +1,2 @@
+Make the Unicode dictionary of interned strings compatible with
+subinterpreters. Patch by Victor Stinner.

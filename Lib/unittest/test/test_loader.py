@@ -1,3 +1,4 @@
+import functools
 import sys
 import types
 import warnings
@@ -1573,6 +1574,21 @@ class Test_TestLoader(unittest.TestCase):
     def test_suiteClass__default_value(self):
         loader = unittest.TestLoader()
         self.assertIs(loader.suiteClass, unittest.TestSuite)
+
+
+    def test_partial_functions(self):
+        def noop(arg):
+            pass
+
+        class Foo(unittest.TestCase):
+            pass
+
+        setattr(Foo, 'test_partial', functools.partial(noop, None))
+
+        loader = unittest.TestLoader()
+
+        test_names = ['test_partial']
+        self.assertEqual(loader.getTestCaseNames(Foo), test_names)
 
 
 if __name__ == "__main__":

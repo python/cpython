@@ -1,0 +1,3 @@
+:func:`atexit._run_exitfuncs` now logs callback exceptions using
+:data:`sys.unraisablehook`, rather than logging them directly into
+:data:`sys.stderr` and raise the last exception.

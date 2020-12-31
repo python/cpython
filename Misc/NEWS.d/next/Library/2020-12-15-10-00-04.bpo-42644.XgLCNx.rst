@@ -1,0 +1,3 @@
+``logging.disable`` will now validate the types and value of its parameter. It
+also now accepts strings representing the levels (as does ``loging.setLevel``)
+instead of only the numerical values.

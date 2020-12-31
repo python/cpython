@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _building:
 
@@ -20,7 +20,7 @@ The initialization function has the signature:
 It returns either a fully-initialized module, or a :c:type:`PyModuleDef`
 instance. See :ref:`initializing-modules` for details.
 
-.. highlightlang:: python
+.. highlight:: python
 
 For modules with ASCII-only names, the function must be named
 ``PyInit_<modulename>``, with ``<modulename>`` replaced by the name of the
@@ -43,7 +43,7 @@ function corresponding to the filename is found.
 See the *"Multiple modules in one library"* section in :pep:`489` for details.
 
 
-.. highlightlang:: c
+.. highlight:: c
 
 Building C and C++ Extensions with distutils
 ============================================
@@ -145,7 +145,7 @@ that distutils gets the invocations right.
 Distributing your extension modules
 ===================================
 
-When an extension has been successfully build, there are three ways to use it.
+When an extension has been successfully built, there are three ways to use it.
 
 End-users will typically want to install the module, they do so by running ::
 
@@ -158,7 +158,7 @@ Module maintainers should produce source packages; to do so, they run ::
 In some cases, additional files need to be included in a source distribution;
 this is done through a :file:`MANIFEST.in` file; see :ref:`manifest` for details.
 
-If the source distribution has been build successfully, maintainers can also
+If the source distribution has been built successfully, maintainers can also
 create binary distributions. Depending on the platform, one of the following
 commands can be used to do so. ::
 
