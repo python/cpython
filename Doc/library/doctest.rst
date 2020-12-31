@@ -130,6 +130,29 @@ And so on, eventually ending with:
    Test passed.
    $
 
+You can also limit the number of tests by passing a glob-like expression, and
+optionally the indexes of the test cases:
+
+The following will only run tests for methods that end in 'my_method':
+
+.. code-block:: shell-session
+
+   $ python example.py -m my_method
+
+The following will only run tests for methods in my module that end in
+'my_method':
+
+.. code-block:: shell-session
+
+   $ python example.py -m my_module.*.my_method
+
+The following will only run tests for methods in my module that end in
+'my_method', and also only test cases 0, 1, 4, 5, 6, 10, and all the rest:
+
+.. code-block:: shell-session
+
+   $ python example.py -m my_module.*.my_method:-1,4-6,10-
+
 That's all you need to know to start making productive use of :mod:`doctest`!
 Jump in.  The following sections provide full details.  Note that there are many
 examples of doctests in the standard Python test suite and libraries.
@@ -287,6 +310,22 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
+
+You can also filter the tests and test cases via ``-m``/``--match``:
+
+.. code-block:: shell-session
+
+   $ python example.py -m my_method:4 -m ...
+
+The first part is required and it is the suffix of the full test name (usually
+something like ``__main__.method_name`` or ``__main__.ClassName.method_name``),
+where you can also add ``*`` to match any substring, eg ``my_method``,
+``my_*_method``, ``my_module.*.my_method``. Since it's a suffix a ``*`` is
+implicitly added to the beginning of the pattern.
+
+The second part is optional (along with ``:``) and it can be a list of 0-based
+indexes or range of indexes, eg ``1``, ``4-8``, ``-8``, ``4-``, or a mix of them
+``-3,8,12,15-``.
 
 .. impl-detail::
    Prior to version 3.4, extension modules written in C were not fully

@@ -7,6 +7,7 @@ import sys
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
+from typing import _SpecialForm
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
 
@@ -87,7 +88,8 @@ class PyclbrTest(TestCase):
             self.assertHasattr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
-                self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
+                self.assertIsInstance(py_item, (
+                    FunctionType, BuiltinFunctionType, _SpecialForm))
                 if py_item.__module__ != moduleName:
                     continue   # skip functions that came from somewhere else
                 self.assertEqual(py_item.__module__, value.module)

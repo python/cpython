@@ -1,0 +1,2 @@
+Add a ``-m``/``--match`` option to the :mod:`doctest` module to filter which
+tests and examples should be run.
