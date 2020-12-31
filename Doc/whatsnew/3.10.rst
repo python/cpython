@@ -537,6 +537,12 @@ Changes in the Python API
   silently in Python 3.9.
   (Contributed by Ken Jin in :issue:`42195`.)
 
+* :meth:`socket.htons` and :meth:`socket.ntohs` now raise :exc:`OverflowError`
+  instead of :exc:`DeprecationWarning` if the given parameter will not fit in
+  a 16-bit unsigned integer.
+  (Contributed by Erlend E. Aasland in :issue:`42393`.)
+
+
 CPython bytecode changes
 ========================
 
