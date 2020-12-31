@@ -1041,16 +1041,14 @@ These are not used in annotations. They are building blocks for creating generic
           return x + y
 
    Without ``ParamSpec``, the simplest way to annotate this previously was to
-   use a ``TypeVar`` with bound ``Callable[..., Any]``.  However this causes two
-   problems:
+   use a :class:`TypeVar` with bound ``Callable[..., Any]``.  However this
+   causes two problems:
 
-      1. The type checker will type check the inner function, but allow
-         incorrectly typed arguments to be passed into ``add_two``, causing a
-         ``TypeError`` during runtime because the ``...`` tells the type checker
-         to not perform validation on argument types.
+      1. The type checker can't type check the ``inner`` function because
+         ``*args`` and ``**kwargs`` have to be :data:`Any`.
       2. :func:`~cast` may be required in the body of the ``add_logging``
-         decorator when using more complex types, or type checking has to be
-         disabled for the decorator entirely.
+         decorator when returning the ``inner`` function, or the static type
+         checker must be told to ignore the ``return inner``.
 
    .. attribute:: args
    .. attribute:: kwargs
