@@ -769,7 +769,7 @@ class uname_result(
         ):
     """
     A uname_result that's largely compatible with a
-    simple namedtuple except that 'platform' is
+    simple namedtuple except that 'processor' is
     resolved late and cached to avoid calling "uname"
     except when needed.
     """
@@ -784,11 +784,24 @@ class uname_result(
             (self.processor,)
         )
 
+    @classmethod
+    def _make(cls, iterable):
+        # override factory to affect length check
+        num_fields = len(cls._fields)
+        result = cls.__new__(cls, *iterable)
+        if len(result) != num_fields + 1:
+            msg = f'Expected {num_fields} arguments, got {len(result)}'
+            raise TypeError(msg)
+        return result
+
     def __getitem__(self, key):
-        return tuple(iter(self))[key]
+        return tuple(self)[key]
 
     def __len__(self):
         return len(tuple(iter(self)))
+
+    def __reduce__(self):
+        return uname_result, tuple(self)[:len(self._fields)]
 
 
 _uname_cache = None
