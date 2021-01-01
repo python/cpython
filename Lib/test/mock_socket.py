@@ -119,7 +119,7 @@ def create_connection(address, timeout=socket_module._GLOBAL_DEFAULT_TIMEOUT,
     try:
         int_port = int(address[1])
     except ValueError:
-        raise
+        raise error
     ms = MockSocket()
     if timeout is socket_module._GLOBAL_DEFAULT_TIMEOUT:
         timeout = getdefaulttimeout()
