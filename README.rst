@@ -13,7 +13,7 @@ This is Python version 3.7.9+
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython/branch/3.7
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -242,7 +242,7 @@ See :pep:`537` for Python 3.7 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
