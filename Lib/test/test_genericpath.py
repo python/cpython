@@ -227,7 +227,8 @@ class GenericTest:
 
         self.assertRaises(TypeError, self.pathmodule.samefile)
 
-    def _test_samefile_on_link_func(self, func):
+    @os_helper.skip_unless_symlink
+    def test_samefile_on_symlink(self):
         test_fn1 = os_helper.TESTFN
         test_fn2 = os_helper.TESTFN + "2"
         self.addCleanup(os_helper.unlink, test_fn1)
@@ -235,20 +236,32 @@ class GenericTest:
 
         create_file(test_fn1)
 
-        func(test_fn1, test_fn2)
+        os.symlink(test_fn1, test_fn2)
         self.assertTrue(self.pathmodule.samefile(test_fn1, test_fn2))
+        self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2, follow_symlinks=False))
         os.remove(test_fn2)
 
         create_file(test_fn2)
         self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2))
-
-    @os_helper.skip_unless_symlink
-    def test_samefile_on_symlink(self):
-        self._test_samefile_on_link_func(os.symlink)
+        self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2, follow_symlinks=False))
 
     def test_samefile_on_link(self):
         try:
-            self._test_samefile_on_link_func(os.link)
+            test_fn1 = os_helper.TESTFN
+            test_fn2 = os_helper.TESTFN + "2"
+            self.addCleanup(os_helper.unlink, test_fn1)
+            self.addCleanup(os_helper.unlink, test_fn2)
+
+            create_file(test_fn1)
+
+            os.link(test_fn1, test_fn2)
+            self.assertTrue(self.pathmodule.samefile(test_fn1, test_fn2))
+            self.assertTrue(self.pathmodule.samefile(test_fn1, test_fn2, follow_symlinks=False))
+            os.remove(test_fn2)
+
+            create_file(test_fn2)
+            self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2))
+            self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2, follow_symlinks=False))
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
 

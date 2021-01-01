@@ -264,6 +264,9 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
+Added optional ``follow_symlinks`` argument to :func:`os.path.samefile`.
+(Contributed by Ross Rhodes in :issue:`42778`.)
+
 pathlib
 -------
 
@@ -273,6 +276,9 @@ Added slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
 Added negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
+
+Added optional ``follow_symlinks`` argument to :func:`pathlib.samefile`.
+(Contributed by Ross Rhodes in :issue:`42778`.)
 
 platform
 --------

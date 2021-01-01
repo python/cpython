@@ -1,0 +1,2 @@
+Add 'follow_symlinks' optional argument to os.path and pathlib samefile
+methods

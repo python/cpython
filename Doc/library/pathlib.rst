@@ -1078,7 +1078,7 @@ call fails (for example because the path doesn't exist).
    Remove this directory.  The directory must be empty.
 
 
-.. method:: Path.samefile(other_path)
+.. method:: Path.samefile(other_path, follow_symlinks=True)
 
    Return whether this path points to the same file as *other_path*, which
    can be either a Path object, or a string.  The semantics are similar
@@ -1097,6 +1097,9 @@ call fails (for example because the path doesn't exist).
       True
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      Supports optional argument ``follow_symlinks``.
 
 
 .. method:: Path.symlink_to(target, target_is_directory=False)

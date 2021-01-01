@@ -1134,15 +1134,15 @@ class Path(PurePath):
         """
         return cls(cls()._flavour.gethomedir(None))
 
-    def samefile(self, other_path):
+    def samefile(self, other_path, follow_symlinks=True):
         """Return whether other_path is the same or not as this file
         (as returned by os.path.samefile()).
         """
-        st = self.stat()
+        st = self.stat(follow_symlinks=follow_symlinks)
         try:
-            other_st = other_path.stat()
+            other_st = other_path.stat(follow_symlinks=follow_symlinks)
         except AttributeError:
-            other_st = self._accessor.stat(other_path)
+            other_st = self._accessor.stat(other_path, follow_symlinks=follow_symlinks)
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
@@ -1216,12 +1216,12 @@ class Path(PurePath):
         obj._init(template=self)
         return obj
 
-    def stat(self):
+    def stat(self, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return self._accessor.stat(self)
+        return self._accessor.stat(self, follow_symlinks=follow_symlinks)
 
     def owner(self):
         """

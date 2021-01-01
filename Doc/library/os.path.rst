@@ -377,7 +377,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: samefile(path1, path2)
+.. function:: samefile(path1, path2, follow_symlinks=True)
 
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
@@ -393,6 +393,9 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.10
+      Supports optional argument ``follow_symlinks``.
 
 
 .. function:: sameopenfile(fp1, fp2)
