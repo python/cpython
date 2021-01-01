@@ -165,6 +165,17 @@ class LMTPGeneralTests(GeneralTests, unittest.TestCase):
 
     client = smtplib.LMTP
 
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), "test requires Unix domain socket")
+    def testUnixDomainSocketTimeoutDefault(self):
+        local_host = '/some/local/lmtp/delivery/program'
+        mock_socket.reply_with(b"220 Hello world")
+        try:
+            client = self.client(local_host, self.port)
+        finally:
+            mock_socket.setdefaulttimeout(None)
+        self.assertIsNone(client.sock.gettimeout())
+        client.close()
+
     def testTimeoutZero(self):
         super().testTimeoutZero()
         local_host = '/some/local/lmtp/delivery/program'
