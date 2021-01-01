@@ -18,7 +18,7 @@ This is Python version 3.8.7
    :target: https://python.zulipchat.com
 
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -246,7 +246,7 @@ See :pep:`569` for Python 3.8 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
