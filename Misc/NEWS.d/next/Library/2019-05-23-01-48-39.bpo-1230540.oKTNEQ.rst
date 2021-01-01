@@ -1,3 +1,0 @@
-Add a new :func:`threading.excepthook` function which handles uncaught
-:meth:`threading.Thread.run` exception. It can be overridden to control how
-uncaught :meth:`threading.Thread.run` exceptions are handled.

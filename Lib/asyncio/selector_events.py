@@ -40,6 +40,11 @@ def _test_selector_event(selector, fd, event):
         return bool(key.events & event)
 
 
+def _check_ssl_socket(sock):
+    if ssl is not None and isinstance(sock, ssl.SSLSocket):
+        raise TypeError("Socket cannot be of type SSLSocket")
+
+
 class BaseSelectorEventLoop(base_events.BaseEventLoop):
     """Selector event loop.
 
@@ -128,14 +133,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # a socket is closed, send() raises OSError (with errno set to
         # EBADF, but let's not rely on the exact error code).
         csock = self._csock
-        if csock is not None:
-            try:
-                csock.send(b'\0')
-            except OSError:
-                if self._debug:
-                    logger.debug("Fail to write a null byte into the "
-                                 "self-pipe socket",
-                                 exc_info=True)
+        if csock is None:
+            return
+
+        try:
+            csock.send(b'\0')
+        except OSError:
+            if self._debug:
+                logger.debug("Fail to write a null byte into the "
+                             "self-pipe socket",
+                             exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
@@ -261,6 +268,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                   (handle, writer))
             if reader is not None:
                 reader.cancel()
+        return handle
 
     def _remove_reader(self, fd):
         if self.is_closed():
@@ -297,6 +305,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                                   (reader, handle))
             if writer is not None:
                 writer.cancel()
+        return handle
 
     def _remove_writer(self, fd):
         """Remove a writer callback."""
@@ -324,7 +333,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
         self._ensure_fd_no_transport(fd)
-        return self._add_reader(fd, callback, *args)
+        self._add_reader(fd, callback, *args)
 
     def remove_reader(self, fd):
         """Remove a reader callback."""
@@ -334,7 +343,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def add_writer(self, fd, callback, *args):
         """Add a writer callback.."""
         self._ensure_fd_no_transport(fd)
-        return self._add_writer(fd, callback, *args)
+        self._add_writer(fd, callback, *args)
 
     def remove_writer(self, fd):
         """Remove a writer callback."""
@@ -348,6 +357,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The maximum amount of data to be received at once is specified by
         nbytes.
         """
+        _check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -356,13 +366,15 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
         fut = self.create_future()
         fd = sock.fileno()
-        self.add_reader(fd, self._sock_recv, fut, sock, n)
+        self._ensure_fd_no_transport(fd)
+        handle = self._add_reader(fd, self._sock_recv, fut, sock, n)
         fut.add_done_callback(
-            functools.partial(self._sock_read_done, fd))
+            functools.partial(self._sock_read_done, fd, handle=handle))
         return await fut
 
-    def _sock_read_done(self, fd, fut):
-        self.remove_reader(fd)
+    def _sock_read_done(self, fd, fut, handle=None):
+        if handle is None or not handle.cancelled():
+            self.remove_reader(fd)
 
     def _sock_recv(self, fut, sock, n):
         # _sock_recv() can add itself as an I/O callback if the operation can't
@@ -386,6 +398,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
         """
+        _check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -394,9 +407,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             pass
         fut = self.create_future()
         fd = sock.fileno()
-        self.add_reader(fd, self._sock_recv_into, fut, sock, buf)
+        self._ensure_fd_no_transport(fd)
+        handle = self._add_reader(fd, self._sock_recv_into, fut, sock, buf)
         fut.add_done_callback(
-            functools.partial(self._sock_read_done, fd))
+            functools.partial(self._sock_read_done, fd, handle=handle))
         return await fut
 
     def _sock_recv_into(self, fut, sock, buf):
@@ -425,6 +439,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
         """
+        _check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -438,11 +453,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         fut = self.create_future()
         fd = sock.fileno()
-        fut.add_done_callback(
-            functools.partial(self._sock_write_done, fd))
+        self._ensure_fd_no_transport(fd)
         # use a trick with a list in closure to store a mutable state
-        self.add_writer(fd, self._sock_sendall, fut, sock,
-                        memoryview(data), [n])
+        handle = self._add_writer(fd, self._sock_sendall, fut, sock,
+                                  memoryview(data), [n])
+        fut.add_done_callback(
+            functools.partial(self._sock_write_done, fd, handle=handle))
         return await fut
 
     def _sock_sendall(self, fut, sock, view, pos):
@@ -472,6 +488,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
+        _check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
 
@@ -493,9 +510,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             # connection runs in background. We have to wait until the socket
             # becomes writable to be notified when the connection succeed or
             # fails.
+            self._ensure_fd_no_transport(fd)
+            handle = self._add_writer(
+                fd, self._sock_connect_cb, fut, sock, address)
             fut.add_done_callback(
-                functools.partial(self._sock_write_done, fd))
-            self.add_writer(fd, self._sock_connect_cb, fut, sock, address)
+                functools.partial(self._sock_write_done, fd, handle=handle))
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
@@ -503,8 +522,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             fut.set_result(None)
 
-    def _sock_write_done(self, fd, fut):
-        self.remove_writer(fd)
+    def _sock_write_done(self, fd, fut, handle=None):
+        if handle is None or not handle.cancelled():
+            self.remove_writer(fd)
 
     def _sock_connect_cb(self, fut, sock, address):
         if fut.done():
@@ -533,23 +553,23 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         object usable to send and receive data on the connection, and address
         is the address bound to the socket on the other end of the connection.
         """
+        _check_ssl_socket(sock)
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
-        self._sock_accept(fut, False, sock)
+        self._sock_accept(fut, sock)
         return await fut
 
-    def _sock_accept(self, fut, registered, sock):
+    def _sock_accept(self, fut, sock):
         fd = sock.fileno()
-        if registered:
-            self.remove_reader(fd)
-        if fut.done():
-            return
         try:
             conn, address = sock.accept()
             conn.setblocking(False)
         except (BlockingIOError, InterruptedError):
-            self.add_reader(fd, self._sock_accept, fut, True, sock)
+            self._ensure_fd_no_transport(fd)
+            handle = self._add_reader(fd, self._sock_accept, fut, sock)
+            fut.add_done_callback(
+                functools.partial(self._sock_read_done, fd, handle=handle))
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:

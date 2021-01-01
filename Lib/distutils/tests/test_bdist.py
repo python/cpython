@@ -2,6 +2,7 @@
 import os
 import unittest
 from test.support import run_unittest
+import warnings
 
 from distutils.command.bdist import bdist
 from distutils.tests import support
@@ -38,7 +39,10 @@ class BuildTestCase(support.TempdirManager,
             names.append('bdist_msi')
 
         for name in names:
-            subcmd = cmd.get_finalized_command(name)
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', 'bdist_wininst command is deprecated',
+                                        DeprecationWarning)
+                subcmd = cmd.get_finalized_command(name)
             if getattr(subcmd, '_unsupported', False):
                 # command is not supported on this build
                 continue

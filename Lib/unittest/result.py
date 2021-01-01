@@ -161,7 +161,7 @@ class TestResult(object):
         """Tells whether or not this result was a success."""
         # The hasattr check is for test_result's OldResult test.  That
         # way this method works on objects that lack the attribute.
-        # (where would such result intances come from? old stored pickles?)
+        # (where would such result instances come from? old stored pickles?)
         return ((len(self.failures) == len(self.errors) == 0) and
                 (not hasattr(self, 'unexpectedSuccesses') or
                  len(self.unexpectedSuccesses) == 0))

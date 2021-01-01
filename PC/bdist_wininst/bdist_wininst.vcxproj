@@ -87,7 +87,7 @@
     </Midl>
     <ClCompile>
       <Optimization>MinSpace</Optimization>
-      <AdditionalIncludeDirectories>$(PySourcePath)Modules\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
@@ -102,15 +102,16 @@
   <ItemGroup>
     <ClCompile Include="extract.c" />
     <ClCompile Include="install.c" />
-    <ClCompile Include="..\..\Modules\zlib\adler32.c" />
-    <ClCompile Include="..\..\Modules\zlib\crc32.c" />
-    <ClCompile Include="..\..\Modules\zlib\inffast.c" />
-    <ClCompile Include="..\..\Modules\zlib\inflate.c" />
-    <ClCompile Include="..\..\Modules\zlib\inftrees.c" />
-    <ClCompile Include="..\..\Modules\zlib\zutil.c" />
+    <ClCompile Include="$(zlibDir)\adler32.c" />
+    <ClCompile Include="$(zlibDir)\crc32.c" />
+    <ClCompile Include="$(zlibDir)\inffast.c" />
+    <ClCompile Include="$(zlibDir)\inflate.c" />
+    <ClCompile Include="$(zlibDir)\inftrees.c" />
+    <ClCompile Include="$(zlibDir)\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="archive.h" />
+    <ClInclude Include="$(zlibDir)\zlib.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="install.rc" />

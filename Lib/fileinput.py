@@ -8,9 +8,9 @@ Typical use is:
 
 This iterates over the lines of all files listed in sys.argv[1:],
 defaulting to sys.stdin if the list is empty.  If a filename is '-' it
-is also replaced by sys.stdin.  To specify an alternative list of
-filenames, pass it as the argument to input().  A single file name is
-also allowed.
+is also replaced by sys.stdin and the optional arguments mode and
+openhook are ignored.  To specify an alternative list of filenames,
+pass it as the argument to input().  A single file name is also allowed.
 
 Functions filename(), lineno() return the filename and cumulative line
 number of the line that has just been read; filelineno() returns its
@@ -73,6 +73,7 @@ XXX Possible additions:
 """
 
 import sys, os
+from types import GenericAlias
 
 __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
            "fileno", "isfirstline", "isstdin", "FileInput", "hook_compressed",
@@ -390,6 +391,8 @@ class FileInput:
 
     def isstdin(self):
         return self._isstdin
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 def hook_compressed(filename, mode):

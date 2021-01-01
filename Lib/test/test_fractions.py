@@ -6,13 +6,13 @@ import math
 import numbers
 import operator
 import fractions
+import functools
 import sys
 import unittest
-import warnings
 from copy import copy, deepcopy
 from pickle import dumps, loads
 F = fractions.Fraction
-gcd = fractions.gcd
+
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
@@ -80,30 +80,6 @@ class DummyRational(object):
 
 class DummyFraction(fractions.Fraction):
     """Dummy Fraction subclass for copy and deepcopy testing."""
-
-class GcdTest(unittest.TestCase):
-
-    def testMisc(self):
-        # fractions.gcd() is deprecated
-        with self.assertWarnsRegex(DeprecationWarning, r'fractions\.gcd'):
-            gcd(1, 1)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'fractions\.gcd',
-                                    DeprecationWarning)
-            self.assertEqual(0, gcd(0, 0))
-            self.assertEqual(1, gcd(1, 0))
-            self.assertEqual(-1, gcd(-1, 0))
-            self.assertEqual(1, gcd(0, 1))
-            self.assertEqual(-1, gcd(0, -1))
-            self.assertEqual(1, gcd(7, 1))
-            self.assertEqual(-1, gcd(7, -1))
-            self.assertEqual(1, gcd(-23, 15))
-            self.assertEqual(12, gcd(120, 84))
-            self.assertEqual(-12, gcd(84, -120))
-            self.assertEqual(gcd(120.0, 84), 12.0)
-            self.assertEqual(gcd(120, 84.0), 12.0)
-            self.assertEqual(gcd(F(120), F(84)), F(12))
-            self.assertEqual(gcd(F(120, 77), F(84, 55)), F(12, 385))
 
 
 def _components(r):
@@ -302,6 +278,12 @@ class FractionTest(unittest.TestCase):
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
 
+    def test_as_integer_ratio(self):
+        self.assertEqual(F(4, 6).as_integer_ratio(), (2, 3))
+        self.assertEqual(F(-4, 6).as_integer_ratio(), (-2, 3))
+        self.assertEqual(F(4, -6).as_integer_ratio(), (-2, 3))
+        self.assertEqual(F(0, 6).as_integer_ratio(), (0, 1))
+
     def testLimitDenominator(self):
         rpi = F('3.1415926535897932')
         self.assertEqual(rpi.limit_denominator(10000), F(355, 113))
@@ -339,6 +321,42 @@ class FractionTest(unittest.TestCase):
                                float(F(int('2'*400+'7'), int('3'*400+'1'))))
 
         self.assertTypedEquals(0.1+0j, complex(F(1,10)))
+
+    def testBoolGuarateesBoolReturn(self):
+        # Ensure that __bool__ is used on numerator which guarantees a bool
+        # return.  See also bpo-39274.
+        @functools.total_ordering
+        class CustomValue:
+            denominator = 1
+
+            def __init__(self, value):
+                self.value = value
+
+            def __bool__(self):
+                return bool(self.value)
+
+            @property
+            def numerator(self):
+                # required to preserve `self` during instantiation
+                return self
+
+            def __eq__(self, other):
+                raise AssertionError("Avoid comparisons in Fraction.__bool__")
+
+            __lt__ = __eq__
+
+        # We did not implement all abstract methods, so register:
+        numbers.Rational.register(CustomValue)
+
+        numerator = CustomValue(1)
+        r = F(numerator)
+        # ensure the numerator was not lost during instantiation:
+        self.assertIs(r.numerator, numerator)
+        self.assertIs(bool(r), True)
+
+        numerator = CustomValue(0)
+        r = F(numerator)
+        self.assertIs(bool(r), False)
 
     def testRound(self):
         self.assertTypedEquals(F(-200), round(F(-150), -2))
@@ -683,6 +701,29 @@ class FractionTest(unittest.TestCase):
         # Issue 4998
         r = F(13, 7)
         self.assertRaises(AttributeError, setattr, r, 'a', 10)
+
+    def test_int_subclass(self):
+        class myint(int):
+            def __mul__(self, other):
+                return type(self)(int(self) * int(other))
+            def __floordiv__(self, other):
+                return type(self)(int(self) // int(other))
+            def __mod__(self, other):
+                x = type(self)(int(self) % int(other))
+                return x
+            @property
+            def numerator(self):
+                return type(self)(int(self))
+            @property
+            def denominator(self):
+                return type(self)(1)
+
+        f = fractions.Fraction(myint(1 * 3), myint(2 * 3))
+        self.assertEqual(f.numerator, 1)
+        self.assertEqual(f.denominator, 2)
+        self.assertEqual(type(f.numerator), myint)
+        self.assertEqual(type(f.denominator), myint)
+
 
 if __name__ == '__main__':
     unittest.main()

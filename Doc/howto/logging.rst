@@ -128,10 +128,18 @@ look at that next. Be sure to try the following in a newly-started Python
 interpreter, and don't just continue from the session described above::
 
    import logging
-   logging.basicConfig(filename='example.log',level=logging.DEBUG)
+   logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
    logging.debug('This message should go to the log file')
    logging.info('So should this')
    logging.warning('And this, too')
+   logging.error('And non-ASCII stuff, too, like Øresund and Malmö')
+
+.. versionchanged:: 3.9
+   The *encoding* argument was added. In earlier Python versions, or if not
+   specified, the encoding used is the default value used by :func:`open`. While
+   not shown in the above example, an *errors* argument can also now be passed,
+   which determines how encoding errors are handled. For available values and
+   the default, see the documentation for :func:`open`.
 
 And now if we open the file and look at what we have, we should find the log
 messages:
@@ -141,6 +149,7 @@ messages:
    DEBUG:root:This message should go to the log file
    INFO:root:So should this
    WARNING:root:And this, too
+   ERROR:root:And non-ASCII stuff, too, like Øresund and Malmö
 
 This example also shows how you can set the logging level which acts as the
 threshold for tracking. In this case, because we set the threshold to
@@ -1069,21 +1078,22 @@ need more precise control over what logging information is collected. Here's a
 list of things you can do to avoid processing during logging which you don't
 need:
 
-+-----------------------------------------------+----------------------------------------+
-| What you don't want to collect                | How to avoid collecting it             |
-+===============================================+========================================+
-| Information about where calls were made from. | Set ``logging._srcfile`` to ``None``.  |
-|                                               | This avoids calling                    |
-|                                               | :func:`sys._getframe`, which may help  |
-|                                               | to speed up your code in environments  |
-|                                               | like PyPy (which can't speed up code   |
-|                                               | that uses :func:`sys._getframe`), if   |
-|                                               | and when PyPy supports Python 3.x.     |
-+-----------------------------------------------+----------------------------------------+
-| Threading information.                        | Set ``logging.logThreads`` to ``0``.   |
-+-----------------------------------------------+----------------------------------------+
-| Process information.                          | Set ``logging.logProcesses`` to ``0``. |
-+-----------------------------------------------+----------------------------------------+
++-----------------------------------------------------+---------------------------------------------------+
+| What you don't want to collect                      | How to avoid collecting it                        |
++=====================================================+===================================================+
+| Information about where calls were made from.       | Set ``logging._srcfile`` to ``None``.             |
+|                                                     | This avoids calling :func:`sys._getframe`, which  |
+|                                                     | may help to speed up your code in environments    |
+|                                                     | like PyPy (which can't speed up code that uses    |
+|                                                     | :func:`sys._getframe`).                           |
++-----------------------------------------------------+---------------------------------------------------+
+| Threading information.                              | Set ``logging.logThreads`` to ``False``.          |
++-----------------------------------------------------+---------------------------------------------------+
+| Current process ID (:func:`os.getpid`)              | Set ``logging.logProcesses`` to ``False``.        |
++-----------------------------------------------------+---------------------------------------------------+
+| Current process name when using ``multiprocessing`` | Set ``logging.logMultiprocessing`` to ``False``.  |
+| to manage multiple processes.                       |                                                   |
++-----------------------------------------------------+---------------------------------------------------+
 
 Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't

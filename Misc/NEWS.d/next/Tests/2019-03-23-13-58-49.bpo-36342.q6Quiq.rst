@@ -1,1 +1,0 @@
-Fix test_multiprocessing in test_venv if platform lacks functioning sem_open.

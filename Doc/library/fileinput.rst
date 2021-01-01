@@ -23,8 +23,9 @@ The typical use is::
 
 This iterates over the lines of all files listed in ``sys.argv[1:]``, defaulting
 to ``sys.stdin`` if the list is empty.  If a filename is ``'-'``, it is also
-replaced by ``sys.stdin``.  To specify an alternative list of filenames, pass it
-as the first argument to :func:`.input`.  A single file name is also allowed.
+replaced by ``sys.stdin`` and the optional arguments *mode* and *openhook*
+are ignored.  To specify an alternative list of filenames, pass it as the
+first argument to :func:`.input`.  A single file name is also allowed.
 
 All files are opened in text mode by default, but you can override this by
 specifying the *mode* parameter in the call to :func:`.input` or
@@ -108,14 +109,14 @@ if there is no active state, :exc:`RuntimeError` is raised.
 
 .. function:: isfirstline()
 
-   Returns true if the line just read is the first line of its file, otherwise
-   returns false.
+   Return ``True`` if the line just read is the first line of its file, otherwise
+   return ``False``.
 
 
 .. function:: isstdin()
 
-   Returns true if the last line was read from ``sys.stdin``, otherwise returns
-   false.
+   Return ``True`` if the last line was read from ``sys.stdin``, otherwise return
+   ``False``.
 
 
 .. function:: nextfile()

@@ -55,7 +55,7 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *cons
         }
     }
     else {
-        _PyArg_BadArgument("encode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("encode", "argument 'errors'", "str or None", args[1]);
         goto exit;
     }
 skip_optional_pos:
@@ -103,7 +103,7 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&input, 'C')) {
-        _PyArg_BadArgument("decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decode", "argument 'input'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -124,7 +124,7 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *cons
         }
     }
     else {
-        _PyArg_BadArgument("decode", 2, "str or None", args[1]);
+        _PyArg_BadArgument("decode", "argument 'errors'", "str or None", args[1]);
         goto exit;
     }
 skip_optional_pos:
@@ -170,11 +170,6 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     input = args[0];
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[1]);
     if (final == -1 && PyErr_Occurred()) {
@@ -223,7 +218,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate(MultibyteIncrementalEncoder
     PyLongObject *statelong;
 
     if (!PyLong_Check(arg)) {
-        _PyArg_BadArgument("setstate", 0, "int", arg);
+        _PyArg_BadArgument("setstate", "argument", "int", arg);
         goto exit;
     }
     statelong = (PyLongObject *)arg;
@@ -282,16 +277,11 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&input, 'C')) {
-        _PyArg_BadArgument("decode", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("decode", "argument 'input'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     final = _PyLong_AsInt(args[1]);
     if (final == -1 && PyErr_Occurred()) {
@@ -345,7 +335,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate(MultibyteIncrementalDecoder
     PyObject *state;
 
     if (!PyTuple_Check(arg)) {
-        _PyArg_BadArgument("setstate", 0, "tuple", arg);
+        _PyArg_BadArgument("setstate", "argument", "tuple", arg);
         goto exit;
     }
     state = arg;
@@ -525,4 +515,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=eb95a408c4ddbfff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c0f74129db07c87 input=a9049054013a1b77]*/

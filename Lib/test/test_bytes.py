@@ -12,19 +12,23 @@ import copy
 import functools
 import pickle
 import tempfile
+import textwrap
 import unittest
 
 import test.support
+from test.support import import_helper
+from test.support import warnings_helper
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
+from test.support.script_helper import assert_python_failure
 
 
 if sys.flags.bytes_warning:
     def check_bytes_warnings(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            with test.support.check_warnings(('', BytesWarning)):
+            with warnings_helper.check_warnings(('', BytesWarning)):
                 return func(*args, **kw)
         return wrapper
 else:
@@ -315,6 +319,62 @@ class BaseBytesTest:
         # Default encoding is utf-8
         self.assertEqual(self.type2test(b'\xe2\x98\x83').decode(), '\u2603')
 
+    def test_check_encoding_errors(self):
+        # bpo-37388: bytes(str) and bytes.encode() must check encoding
+        # and errors arguments in dev mode
+        invalid = 'Boom, Shaka Laka, Boom!'
+        encodings = ('ascii', 'utf8', 'latin1')
+        code = textwrap.dedent(f'''
+            import sys
+            type2test = {self.type2test.__name__}
+            encodings = {encodings!r}
+
+            for data in ('', 'short string'):
+                try:
+                    type2test(data, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(21)
+
+                for encoding in encodings:
+                    try:
+                        type2test(data, encoding=encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(22)
+
+            for data in (b'', b'short string'):
+                data = type2test(data)
+                print(repr(data))
+                try:
+                    data.decode(encoding={invalid!r})
+                except LookupError:
+                    sys.exit(10)
+                else:
+                    sys.exit(23)
+
+                try:
+                    data.decode(errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+                for encoding in encodings:
+                    try:
+                        data.decode(encoding=encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(25)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
+
     def test_from_int(self):
         b = self.type2test(0)
         self.assertEqual(b, self.type2test())
@@ -489,9 +549,13 @@ class BaseBytesTest:
         self.assertEqual(dot_join([bytearray(b"ab"), b"cd"]), b"ab.:cd")
         self.assertEqual(dot_join([b"ab", bytearray(b"cd")]), b"ab.:cd")
         # Stress it with many items
-        seq = [b"abc"] * 1000
-        expected = b"abc" + b".:abc" * 999
+        seq = [b"abc"] * 100000
+        expected = b"abc" + b".:abc" * 99999
         self.assertEqual(dot_join(seq), expected)
+        # Stress test with empty separator
+        seq = [b"abc"] * 100000
+        expected = b"abc" * 100000
+        self.assertEqual(self.type2test(b"").join(seq), expected)
         self.assertRaises(TypeError, self.type2test(b" ").join, None)
         # Error handling and cleanup when some item in the middle of the
         # sequence has the wrong type.
@@ -904,6 +968,15 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+    def test_sq_item(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        obj = self.type2test((42,))
+        with self.assertRaises(IndexError):
+            _testcapi.sequence_getitem(obj, -2)
+        with self.assertRaises(IndexError):
+            _testcapi.sequence_getitem(obj, 1)
+        self.assertEqual(_testcapi.sequence_getitem(obj, 0), 42)
+
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
@@ -953,8 +1026,8 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 
     # Test PyBytes_FromFormat()
     def test_from_format(self):
-        ctypes = test.support.import_module('ctypes')
-        _testcapi = test.support.import_module('_testcapi')
+        ctypes = import_helper.import_module('ctypes')
+        _testcapi = import_helper.import_module('_testcapi')
         from ctypes import pythonapi, py_object
         from ctypes import (
             c_int, c_uint,
@@ -963,6 +1036,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             c_char_p)
 
         PyBytes_FromFormat = pythonapi.PyBytes_FromFormat
+        PyBytes_FromFormat.argtypes = (c_char_p,)
         PyBytes_FromFormat.restype = py_object
 
         # basic tests
@@ -1697,7 +1771,7 @@ class AssortedBytesTest(unittest.TestCase):
                          "BytesWarning is needed for this test: use -bb option")
     def test_compare(self):
         def bytes_warning():
-            return test.support.check_warnings(('', BytesWarning))
+            return warnings_helper.check_warnings(('', BytesWarning))
         with bytes_warning():
             b'' == ''
         with bytes_warning():

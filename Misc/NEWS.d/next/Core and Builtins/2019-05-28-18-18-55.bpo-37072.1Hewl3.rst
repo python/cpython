@@ -1,1 +1,0 @@
-Fix crash in PyAST_FromNodeObject() when flags is NULL.

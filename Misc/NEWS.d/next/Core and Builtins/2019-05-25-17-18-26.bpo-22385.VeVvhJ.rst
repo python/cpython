@@ -1,4 +1,0 @@
-The `bytes.hex`, `bytearray.hex`, and `memoryview.hex` methods as well as
-the `binascii.hexlify` and `b2a_hex` functions now have the ability to
-include an optional separator between hex bytes.  This functionality was
-inspired by MicroPython's hexlify implementation.

@@ -55,6 +55,7 @@ Iterator                        Arguments                       Results         
 :func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
+:func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') --> AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n
@@ -199,9 +200,9 @@ loops that truncate the stream.
 
    Return *r* length subsequences of elements from the input *iterable*.
 
-   Combinations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the combination tuples will be produced
-   in sorted order.
+   The combination tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
@@ -248,9 +249,9 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
-   Combinations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the combination tuples will be produced
-   in sorted order.
+   The combination tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, the generated combinations
@@ -475,6 +476,22 @@ loops that truncate the stream.
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
 
+.. function:: pairwise(iterable)
+
+   Return successive overlapping pairs taken from the input *iterable*.
+
+   The number of 2-tuples in the output iterator will be one fewer than the
+   number of inputs.  It will be empty if the input iterable has fewer than
+   two values.
+
+   Roughly equivalent to::
+
+        def pairwise(iterable):
+            # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+            a, b = tee(iterable)
+            next(b, None)
+            return zip(a, b)
+
 
 .. function:: permutations(iterable, r=None)
 
@@ -484,9 +501,9 @@ loops that truncate the stream.
    of the *iterable* and all possible full-length permutations
    are generated.
 
-   Permutations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the permutation tuples will be produced
-   in sorted order.
+   The permutation tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
@@ -563,6 +580,9 @@ loops that truncate the stream.
            for prod in result:
                yield tuple(prod)
 
+   Before :func:`product` runs, it completely consumes the input iterables,
+   keeping pools of values in memory to generate the products.  Accordingly,
+   it is only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
@@ -645,6 +665,10 @@ loops that truncate the stream.
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
+   ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
+   raised when using simultaneously iterators returned by the same :func:`tee`
+   call, even if the original *iterable* is threadsafe.
+
    This itertool may require significant auxiliary storage (depending on how
    much temporary data needs to be stored). In general, if one iterator uses
    most or all of the data before another iterator starts, it is faster to use
@@ -690,6 +714,12 @@ Itertools Recipes
 
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
+
+Substantially all of these recipes and many, many others can be installed from
+the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
+on the Python Package Index::
+
+    pip install more-itertools
 
 The extended tools offer the same high performance as the underlying toolset.
 The superior memory performance is kept by processing elements one at a time
@@ -742,7 +772,7 @@ which incur interpreter overhead.
        "Count how many times the predicate is true"
        return sum(map(pred, iterable))
 
-   def padnone(iterable):
+   def pad_none(iterable):
        """Returns the sequence elements and then returns None indefinitely.
 
        Useful for emulating the behavior of the built-in map() function.
@@ -756,9 +786,21 @@ which incur interpreter overhead.
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
 
-   def flatten(listOfLists):
+   def convolve(signal, kernel):
+       # See:  https://betterexplained.com/articles/intuitive-convolution/
+       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
+       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
+       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       kernel = tuple(kernel)[::-1]
+       n = len(kernel)
+       window = collections.deque([0], maxlen=n) * n
+       for x in chain(signal, repeat(0, n-1)):
+           window.append(x)
+           yield sum(map(operator.mul, kernel, window))
+
+   def flatten(list_of_lists):
        "Flatten one level of nesting"
-       return chain.from_iterable(listOfLists)
+       return chain.from_iterable(list_of_lists)
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.
@@ -768,12 +810,6 @@ which incur interpreter overhead.
        if times is None:
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
-
-   def pairwise(iterable):
-       "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-       a, b = tee(iterable)
-       next(b, None)
-       return zip(a, b)
 
    def grouper(iterable, n, fillvalue=None):
        "Collect data into fixed-length chunks or blocks"
@@ -796,7 +832,7 @@ which incur interpreter overhead.
                nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
-       'Use a predicate to partition entries into false entries and true entries'
+       "Use a predicate to partition entries into false entries and true entries"
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
@@ -868,7 +904,7 @@ which incur interpreter overhead.
    def random_product(*args, repeat=1):
        "Random selection from itertools.product(*args, **kwds)"
        pools = [tuple(pool) for pool in args] * repeat
-       return tuple(random.choice(pool) for pool in pools)
+       return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
@@ -887,11 +923,11 @@ which incur interpreter overhead.
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
        pool = tuple(iterable)
        n = len(pool)
-       indices = sorted(random.randrange(n) for i in range(r))
+       indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
 
    def nth_combination(iterable, r, index):
-       'Equivalent to list(combinations(iterable, r))[index]'
+       "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
        n = len(pool)
        if r < 0 or r > n:
@@ -913,9 +949,3 @@ which incur interpreter overhead.
            result.append(pool[-1-n])
        return tuple(result)
 
-Note, many of the above recipes can be optimized by replacing global lookups
-with local variables defined as default values.  For example, the
-*dotproduct* recipe can be written as::
-
-   def dotproduct(vec1, vec2, sum=sum, map=map, mul=operator.mul):
-       return sum(map(mul, vec1, vec2))

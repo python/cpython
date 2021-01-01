@@ -1,1 +1,0 @@
-PEP 586: Add ``Literal`` to the ``typing`` module.

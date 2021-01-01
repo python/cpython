@@ -7,6 +7,7 @@ import threading
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
+from test.support import os_helper
 import weakref
 
 
@@ -327,7 +328,7 @@ class FileContextTestCase(unittest.TestCase):
                     1 / 0
             self.assertTrue(f.closed)
         finally:
-            support.unlink(tfn)
+            os_helper.unlink(tfn)
 
 class LockContextTestCase(unittest.TestCase):
 
@@ -603,9 +604,9 @@ class TestBaseExitStack:
                 stack.callback(arg=1)
             with self.assertRaises(TypeError):
                 self.exit_stack.callback(arg=2)
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
                 stack.callback(callback=_exit, arg=3)
-        self.assertEqual(result, [((), {'arg': 3})])
+        self.assertEqual(result, [])
 
     def test_push(self):
         exc_raised = ZeroDivisionError

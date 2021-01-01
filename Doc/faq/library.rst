@@ -125,7 +125,7 @@ argument list.  It is called as ::
 
    handler(signum, frame)
 
-so it should be declared with two arguments::
+so it should be declared with two parameters::
 
    def handler(signum, frame):
        ...
@@ -159,9 +159,9 @@ The "global main logic" of your program may be as simple as ::
 
 at the bottom of the main module of your program.
 
-Once your program is organized as a tractable collection of functions and class
-behaviours you should write test functions that exercise the behaviours.  A test
-suite that automates a sequence of tests can be associated with each module.
+Once your program is organized as a tractable collection of function and class
+behaviours, you should write test functions that exercise the behaviours.  A
+test suite that automates a sequence of tests can be associated with each module.
 This sounds like a lot of work, but since Python is so terse and flexible it's
 surprisingly easy.  You can make coding much more pleasant and fun by writing
 your test functions in parallel with the "production code", since this makes it
@@ -295,7 +295,7 @@ queue as there are threads.
 How do I parcel out work among a bunch of worker threads?
 ---------------------------------------------------------
 
-The easiest way is to use the new :mod:`concurrent.futures` module,
+The easiest way is to use the :mod:`concurrent.futures` module,
 especially the :mod:`~concurrent.futures.ThreadPoolExecutor` class.
 
 Or, if you want fine control over the dispatching algorithm, you can write
@@ -679,7 +679,7 @@ How can I mimic CGI form submission (METHOD=POST)?
 I would like to retrieve web pages that are the result of POSTing a form. Is
 there existing code that would let me do this easily?
 
-Yes. Here's a simple example that uses urllib.request::
+Yes. Here's a simple example that uses :mod:`urllib.request`::
 
    #!/usr/local/bin/python
 
@@ -765,20 +765,21 @@ The :mod:`select` module is commonly used to help with asynchronous I/O on
 sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
-mode.  Then when you do the ``connect()``, you will either connect immediately
+mode.  Then when you do the :meth:`socket.connect`, you will either connect immediately
 (unlikely) or get an exception that contains the error number as ``.errno``.
 ``errno.EINPROGRESS`` indicates that the connection is in progress, but hasn't
 finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
-You can use the ``connect_ex()`` method to avoid creating an exception.  It will
-just return the errno value.  To poll, you can call ``connect_ex()`` again later
+You can use the :meth:`socket.connect_ex` method to avoid creating an exception.  It will
+just return the errno value.  To poll, you can call :meth:`socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
-socket to select to check if it's writable.
+socket to :meth:`select.select` to check if it's writable.
 
 .. note::
-   The :mod:`asyncore` module presents a framework-like approach to the problem
-   of writing non-blocking networking code.
+   The :mod:`asyncio` module provides a general purpose single-threaded and
+   concurrent asynchronous library, which can be used for writing non-blocking
+   network code.
    The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
    a popular and feature-rich alternative.
 
@@ -832,8 +833,8 @@ There are also many other specialized generators in this module, such as:
 
 Some higher-level functions operate on sequences directly, such as:
 
-* ``choice(S)`` chooses random element from a given sequence
-* ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly
+* ``choice(S)`` chooses a random element from a given sequence.
+* ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly.
 
 There's also a ``Random`` class you can instantiate to create independent
 multiple random number generators.

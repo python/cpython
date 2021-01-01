@@ -1,0 +1,3 @@
+Improve the error message for failed writes/deletes to property objects.
+When possible, the attribute name is now shown. Patch provided by
+Yurii Karabas.

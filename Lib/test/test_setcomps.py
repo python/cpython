@@ -21,6 +21,22 @@ Test nesting with the inner expression dependent on the outer
     >>> list(sorted({(i,j) for i in range(4) for j in range(i)}))
     [(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2)]
 
+Test the idiom for temporary variable assignment in comprehensions.
+
+    >>> sorted({j*j for i in range(4) for j in [i+1]})
+    [1, 4, 9, 16]
+    >>> sorted({j*k for i in range(4) for j in [i+1] for k in [j+1]})
+    [2, 6, 12, 20]
+    >>> sorted({j*k for i in range(4) for j, k in [(i+1, i+2)]})
+    [2, 6, 12, 20]
+
+Not assignment
+
+    >>> sorted({i*i for i in [*range(4)]})
+    [0, 1, 4, 9]
+    >>> sorted({i*i for i in (*range(4),)})
+    [0, 1, 4, 9]
+
 Make sure the induction variable is not exposed
 
     >>> i = 20

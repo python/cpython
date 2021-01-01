@@ -10,8 +10,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -235,7 +236,7 @@ _io__IOBase_close_impl(PyObject *self)
         Py_RETURN_NONE;
     }
 
-    res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
+    res = PyObject_CallMethodNoArgs(self, _PyIO_str_flush);
 
     PyErr_Fetch(&exc, &val, &tb);
     rc = _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
@@ -281,15 +282,13 @@ iobase_finalize(PyObject *self)
            finalization process. */
         if (_PyObject_SetAttrId(self, &PyId__finalizing, Py_True))
             PyErr_Clear();
-        res = PyObject_CallMethodObjArgs((PyObject *) self, _PyIO_str_close,
-                                          NULL);
+        res = PyObject_CallMethodNoArgs((PyObject *)self, _PyIO_str_close);
         /* Silencing I/O errors is bad, but printing spurious tracebacks is
            equally as bad, and potentially more frequent (because of
            shutdown issues). */
         if (res == NULL) {
 #ifndef Py_DEBUG
-            const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-            if (config->dev_mode) {
+            if (_Py_GetConfig()->dev_mode) {
                 PyErr_WriteUnraisable(self);
             }
             else {
@@ -351,8 +350,9 @@ iobase_dealloc(iobase *self)
     if (_PyIOBase_finalize((PyObject *) self) < 0) {
         /* When called from a heap type's dealloc, the type will be
            decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
-        if (PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE))
+        if (_PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE)) {
             Py_INCREF(Py_TYPE(self));
+        }
         return;
     }
     _PyObject_GC_UNTRACK(self);
@@ -383,7 +383,7 @@ _io__IOBase_seekable_impl(PyObject *self)
 PyObject *
 _PyIOBase_check_seekable(PyObject *self, PyObject *args)
 {
-    PyObject *res  = PyObject_CallMethodObjArgs(self, _PyIO_str_seekable, NULL);
+    PyObject *res  = PyObject_CallMethodNoArgs(self, _PyIO_str_seekable);
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
@@ -416,7 +416,7 @@ _io__IOBase_readable_impl(PyObject *self)
 PyObject *
 _PyIOBase_check_readable(PyObject *self, PyObject *args)
 {
-    PyObject *res  = PyObject_CallMethodObjArgs(self, _PyIO_str_readable, NULL);
+    PyObject *res = PyObject_CallMethodNoArgs(self, _PyIO_str_readable);
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
@@ -449,7 +449,7 @@ _io__IOBase_writable_impl(PyObject *self)
 PyObject *
 _PyIOBase_check_writable(PyObject *self, PyObject *args)
 {
-    PyObject *res  = PyObject_CallMethodObjArgs(self, _PyIO_str_writable, NULL);
+    PyObject *res = PyObject_CallMethodNoArgs(self, _PyIO_str_writable);
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
@@ -478,7 +478,7 @@ iobase_enter(PyObject *self, PyObject *args)
 static PyObject *
 iobase_exit(PyObject *self, PyObject *args)
 {
-    return PyObject_CallMethodObjArgs(self, _PyIO_str_close, NULL);
+    return PyObject_CallMethodNoArgs(self, _PyIO_str_close);
 }
 
 /* Lower-level APIs */
@@ -557,7 +557,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
         PyObject *b;
 
         if (peek != NULL) {
-            PyObject *readahead = PyObject_CallFunctionObjArgs(peek, _PyLong_One, NULL);
+            PyObject *readahead = PyObject_CallOneArg(peek, _PyLong_GetOne());
             if (readahead == NULL) {
                 /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
                    when EINTR occurs so we needn't do it ourselves. */
@@ -656,7 +656,7 @@ iobase_iter(PyObject *self)
 static PyObject *
 iobase_iternext(PyObject *self)
 {
-    PyObject *line = PyObject_CallMethodObjArgs(self, _PyIO_str_readline, NULL);
+    PyObject *line = PyObject_CallMethodNoArgs(self, _PyIO_str_readline);
 
     if (line == NULL)
         return NULL;
@@ -921,7 +921,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     if (n < 0) {
         _Py_IDENTIFIER(readall);
 
-        return _PyObject_CallMethodId(self, &PyId_readall, NULL);
+        return _PyObject_CallMethodIdNoArgs(self, &PyId_readall);
     }
 
     /* TODO: allocate a bytes object directly instead and manually construct

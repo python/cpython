@@ -35,29 +35,19 @@ _posixshmem_shm_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("shm_open", 1, "str", args[0]);
+        _PyArg_BadArgument("shm_open", "argument 'path'", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
         goto exit;
     }
     path = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flags = _PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     mode = _PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
@@ -108,7 +98,7 @@ _posixshmem_shm_unlink(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("shm_unlink", 1, "str", args[0]);
+        _PyArg_BadArgument("shm_unlink", "argument 'path'", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -130,4 +120,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=be42e23c18677c0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bca8e78d0f43ef1a input=a9049054013a1b77]*/
