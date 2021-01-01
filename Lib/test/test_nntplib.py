@@ -344,6 +344,8 @@ class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
     # 400 connections per day are accepted from each IP address."
 
     NNTP_HOST = 'nntp.aioe.org'
+    # bpo-42794: aioe.test is one of the official groups on this server
+    # used for testing: https://news.aioe.org/manual/aioe-hierarchy/
     GROUP_NAME = 'aioe.test'
     GROUP_PAT = 'aioe.*'
     DESC = 'test'
