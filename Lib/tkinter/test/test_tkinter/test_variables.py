@@ -58,21 +58,31 @@ class TestVariable(TestBase):
         del v2
         self.assertFalse(self.info_exists("name"))
 
-    def test___eq__(self):
+    def test_equality(self):
         # values doesn't matter, only class and name are checked
         v1 = Variable(self.root, name="abc")
         v2 = Variable(self.root, name="abc")
         self.assertIsNot(v1, v2)
         self.assertEqual(v1, v2)
 
-        v3 = StringVar(self.root, name="abc")
+        v3 = Variable(self.root, name="cba")
         self.assertNotEqual(v1, v3)
+
+        v4 = StringVar(self.root, name="abc")
+        self.assertEqual(str(v1), str(v4))
+        self.assertNotEqual(v1, v4)
 
         V = type('Variable', (), {})
         self.assertNotEqual(v1, V())
 
         self.assertNotEqual(v1, object())
         self.assertEqual(v1, ALWAYS_EQ)
+
+        root2 = tkinter.Tk()
+        self.addCleanup(root2.destroy)
+        v5 = Variable(root2, name="abc")
+        self.assertEqual(str(v1), str(v5))
+        self.assertNotEqual(v1, v5)
 
     def test_invalid_name(self):
         with self.assertRaises(TypeError):
