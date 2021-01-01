@@ -1,0 +1,2 @@
+Update test_nntplib to use offical group name of news.aioe.org for testing.
+Patch by Dong-hee Na.
