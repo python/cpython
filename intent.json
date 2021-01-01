@@ -1,0 +1,23 @@
+{"intents": [
+        {"tag": "selamlasma",
+         "patterns": ["Merhaba", "Nasılsın", "Orada mısın?", "Selam", "İyi günler", "Naber"],
+         "responses": ["Merhaba!", "Tekrar hoş geldin!", "Merhaba, nasıl yardımcı olabilirim?"],
+         "context_set": ""
+        },
+        {"tag": "hoşçakal",
+         "patterns": ["bye", "teşekkürler", "Hoşçakal", "görüşürüz", "iyi günler"],
+         "responses": ["Tekrar görüşmek üzere", "Hoşçakal!", "Güle güle!"],
+         "context_set": ""
+        },
+        {"tag": "isim",
+         "patterns": ["adın ne", "isim  ne", "ismin nedir?", "sana nasıl seslenmeliyim"],
+         "responses": ["Ben Gazi Üniversitesi Chatbot uygulamasıyım."],
+         "context_set": ""
+        },
+        {"tag": "hours",
+         "patterns": ["when are you guys open", "what are your hours", "hours of operation"],
+         "responses": ["We are open 7am-4pm Monday-Friday!"],
+         "context_set": ""
+        }
+   ]
+}
