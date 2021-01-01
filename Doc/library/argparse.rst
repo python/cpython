@@ -323,7 +323,7 @@ argument to :class:`ArgumentParser`::
 
    >>> parser = argparse.ArgumentParser(
    ...     description='A foo that bars',
-   ...     epilog="And that's how you'd foo a bar")
+   ...     epilog='And that's how you'd foo a bar')
    >>> parser.print_help()
    usage: argparse.py [-h]
 
@@ -836,8 +836,8 @@ how the command-line arguments should be handled. The supplied actions are:
   Example usage::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
-    >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+    >>> parser.add_argument('--foo', action='extend', nargs='+', type=str)
+    >>> parser.parse_args(['--foo', 'f1', '--foo', 'f2', 'f3', 'f4'])
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
   .. versionadded:: 3.8
@@ -862,7 +862,7 @@ An example of a custom action::
    >>> class FooAction(argparse.Action):
    ...     def __init__(self, option_strings, dest, nargs=None, **kwargs):
    ...         if nargs is not None:
-   ...             raise ValueError("nargs not allowed")
+   ...             raise ValueError('nargs not allowed')
    ...         super(FooAction, self).__init__(option_strings, dest, **kwargs)
    ...     def __call__(self, parser, namespace, values, option_string=None):
    ...         print('%r %r %r' % (namespace, values, option_string))
