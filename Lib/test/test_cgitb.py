@@ -65,6 +65,19 @@ class TestCgitb(unittest.TestCase):
         self.assertNotIn('<p>', out)
         self.assertNotIn('</p>', out)
 
+    def test_exception_in_gettattr_call(self):
+        # Issue 4643: cgitb.html fails if getattr call raises exception
+        class WeirdObject(object):
+            def __getattr__(self, attr):
+                if attr == 'a':
+                    return str(slf) # Intentional NameError
+                raise AttributeError(attr)
+        try:
+            weird = WeirdObject()
+            weird.a
+        except Exception:
+            html_bt = cgitb.html(sys.exc_info())
+
 
 if __name__ == "__main__":
     unittest.main()
