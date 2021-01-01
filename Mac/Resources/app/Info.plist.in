@@ -37,7 +37,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
-	<string>%version%, (c) 2001-2020 Python Software Foundation.</string>
+	<string>%version%, (c) 2001-2021 Python Software Foundation.</string>
 	<key>CFBundleName</key>
 	<string>Python</string>
 	<key>CFBundlePackageType</key>
