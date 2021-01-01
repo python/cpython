@@ -197,7 +197,7 @@ static void
 data_stack_dealloc(SRE_STATE* state)
 {
     if (state->data_stack) {
-        PyMem_FREE(state->data_stack);
+        PyMem_Free(state->data_stack);
         state->data_stack = NULL;
     }
     state->data_stack_size = state->data_stack_base = 0;
@@ -213,7 +213,7 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
         void* stack;
         cursize = minsize+minsize/4+1024;
         TRACE(("allocate/grow stack %zd\n", cursize));
-        stack = PyMem_REALLOC(state->data_stack, cursize);
+        stack = PyMem_Realloc(state->data_stack, cursize);
         if (!stack) {
             data_stack_dealloc(state);
             return SRE_ERROR_MEMORY;
@@ -472,7 +472,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     /* We add an explicit cast here because MSVC has a bug when
        compiling C code where it believes that `const void**` cannot be
        safely casted to `void*`, see bpo-39943 for details. */
-    PyMem_Del((void*) state->mark);
+    PyMem_Free((void*) state->mark);
     state->mark = NULL;
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
@@ -487,7 +487,7 @@ state_fini(SRE_STATE* state)
     Py_XDECREF(state->string);
     data_stack_dealloc(state);
     /* See above PyMem_Del for why we explicitly cast here. */
-    PyMem_Del((void*) state->mark);
+    PyMem_Free((void*) state->mark);
     state->mark = NULL;
 }
 
@@ -571,7 +571,7 @@ pattern_dealloc(PatternObject* self)
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
     Py_XDECREF(self->indexgroup);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -1944,7 +1944,7 @@ match_dealloc(MatchObject* self)
     Py_XDECREF(self->regs);
     Py_XDECREF(self->string);
     Py_DECREF(self->pattern);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -2450,7 +2450,7 @@ scanner_dealloc(ScannerObject* self)
 
     state_fini(&self->state);
     Py_XDECREF(self->pattern);
-    PyObject_DEL(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 

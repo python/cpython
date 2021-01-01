@@ -17,7 +17,6 @@ import unittest
 import struct
 import tty
 import fcntl
-import platform
 import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -74,18 +73,12 @@ def _readline(fd):
     return reader.readline()
 
 def expectedFailureIfStdinIsTTY(fun):
-    # avoid isatty() for now
+    # avoid isatty()
     try:
         tty.tcgetattr(pty.STDIN_FILENO)
         return unittest.expectedFailure(fun)
     except tty.error:
         pass
-    return fun
-
-def expectedFailureOnBSD(fun):
-    PLATFORM = platform.system()
-    if PLATFORM.endswith("BSD") or PLATFORM == "Darwin":
-        return unittest.expectedFailure(fun)
     return fun
 
 def _get_term_winsz(fd):
@@ -151,11 +144,16 @@ class PtyTest(unittest.TestCase):
         new_stdin_winsz = None
         if self.stdin_rows != None and self.stdin_cols != None:
             try:
+                # Modify pty.STDIN_FILENO window size; we need to
+                # check if pty.openpty() is able to set pty slave
+                # window size accordingly.
                 debug("Setting pty.STDIN_FILENO window size")
-                # Set number of columns and rows to be the
-                # floors of 1/5 of respective original values
-                target_stdin_winsz = struct.pack("HHHH", self.stdin_rows//5,
-                                                 self.stdin_cols//5, 0, 0)
+                debug(f"original size: (rows={self.stdin_rows}, cols={self.stdin_cols})")
+                target_stdin_rows = self.stdin_rows + 1
+                target_stdin_cols = self.stdin_cols + 1
+                debug(f"target size: (rows={target_stdin_rows}, cols={target_stdin_cols})")
+                target_stdin_winsz = struct.pack("HHHH", target_stdin_rows,
+                                                 target_stdin_cols, 0, 0)
                 _set_term_winsz(pty.STDIN_FILENO, target_stdin_winsz)
 
                 # Were we able to set the window size
@@ -309,7 +307,6 @@ class PtyTest(unittest.TestCase):
 
         os.close(master_fd)
 
-    @expectedFailureOnBSD
     def test_master_read(self):
         debug("Calling pty.openpty()")
         master_fd, slave_fd = pty.openpty()
@@ -319,10 +316,13 @@ class PtyTest(unittest.TestCase):
         os.close(slave_fd)
 
         debug("Reading from master_fd")
-        with self.assertRaises(OSError):
-            os.read(master_fd, 1)
+        try:
+            data = os.read(master_fd, 1)
+        except OSError: # Linux
+            data = b""
 
         os.close(master_fd)
+        self.assertEqual(data, b"")
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""

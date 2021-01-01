@@ -115,7 +115,7 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
-/* Has builtin atomics */
+/* Has builtin __atomic_load_n() and __atomic_store_n() functions */
 #undef HAVE_BUILTIN_ATOMIC
 
 /* Define to 1 if you have the 'chflags' function. */
@@ -286,6 +286,9 @@
 
 /* Define to 1 if you have the `dup3' function. */
 #undef HAVE_DUP3
+
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
 
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
@@ -786,9 +789,6 @@
 
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
-
-/* Define if you have the '_dyld_shared_cache_contains_path' function. */
-#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
 
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H

@@ -53,9 +53,8 @@ basic.events = [(0, 'call'),
 # following that clause?
 
 
-# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." are optimized
-# away.  No code # exists for them, so the line numbers skip directly from
-# "del x" to "x = 1".
+# Some constructs like "while 0:", "if 0:" or "if 1:...else:..." could be optimized
+# away.  Make sure that those lines aren't skipped.
 def arigo_example0():
     x = 1
     del x
@@ -66,6 +65,7 @@ def arigo_example0():
 arigo_example0.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (5, 'line'),
                         (5, 'return')]
 
@@ -79,6 +79,7 @@ def arigo_example1():
 arigo_example1.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (5, 'line'),
                         (5, 'return')]
 
@@ -94,6 +95,7 @@ def arigo_example2():
 arigo_example2.events = [(0, 'call'),
                         (1, 'line'),
                         (2, 'line'),
+                        (3, 'line'),
                         (4, 'line'),
                         (7, 'line'),
                         (7, 'return')]
@@ -236,9 +238,13 @@ tightloop_example.events = [(0, 'call'),
                             (1, 'line'),
                             (2, 'line'),
                             (3, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
+                            (4, 'line'),
                             (5, 'line'),
                             (5, 'exception'),
                             (6, 'line'),
@@ -628,6 +634,245 @@ class TraceTestCase(unittest.TestCase):
              (2, 'line'),
              (3, 'line'),
              (3, 'return')])
+
+    def test_try_except_no_exception(self):
+
+        def func():
+            try:
+                2
+            except:
+                4
+            finally:
+                6
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (6, 'line'),
+             (6, 'return')])
+
+    def test_nested_loops(self):
+
+        def func():
+            for i in range(2):
+                for j in range(2):
+                    a = i + j
+            return a == 1
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (2, 'line'),
+             (1, 'line'),
+             (4, 'line'),
+             (4, 'return')])
+
+    def test_if_break(self):
+
+        def func():
+            seq = [1, 0]
+            while seq:
+                n = seq.pop()
+                if n:
+                    break   # line 5
+            else:
+                n = 99
+            return n        # line 8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (8, 'line'),
+             (8, 'return')])
+
+    def test_break_through_finally(self):
+
+        def func():
+            a, c, d, i = 1, 1, 1, 99
+            try:
+                for i in range(3):
+                    try:
+                        a = 5
+                        if i > 0:
+                            break                   # line 7
+                        a = 8
+                    finally:
+                        c = 10
+            except:
+                d = 12                              # line 12
+            assert a == 5 and c == 10 and d == 1    # line 13
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (10, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (10, 'line'),
+             (13, 'line'),
+             (13, 'return')])
+
+    def test_continue_through_finally(self):
+
+        def func():
+            a, b, c, d, i = 1, 1, 1, 1, 99
+            try:
+                for i in range(2):
+                    try:
+                        a = 5
+                        if i > 0:
+                            continue                # line 7
+                        b = 8
+                    finally:
+                        c = 10
+            except:
+                d = 12                              # line 12
+            assert (a, b, c, d) == (5, 8, 10, 1)    # line 13
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (10, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (10, 'line'),
+             (3, 'line'),
+             (13, 'line'),
+             (13, 'return')])
+
+    def test_return_through_finally(self):
+
+        def func():
+            try:
+                return 2
+            finally:
+                4
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (4, 'line'),
+             (4, 'return')])
+
+    def test_try_except_with_wrong_type(self):
+
+        def func():
+            try:
+                2/0
+            except IndexError:
+                4
+            finally:
+                return 6
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'exception'),
+             (3, 'line'),
+             (6, 'line'),
+             (6, 'return')])
+
+    def test_break_to_continue1(self):
+
+        def func():
+            TRUE = 1
+            x = [1]
+            while x:
+                x.pop()
+                while TRUE:
+                    break
+                continue
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
+    def test_break_to_continue2(self):
+
+        def func():
+            TRUE = 1
+            x = [1]
+            while x:
+                x.pop()
+                while TRUE:
+                    break
+                else:
+                    continue
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
+    def test_break_to_break(self):
+
+        def func():
+            TRUE = 1
+            while TRUE:
+                while TRUE:
+                    break
+                break
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (5, 'line'),
+             (5, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):

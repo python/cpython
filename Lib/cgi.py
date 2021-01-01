@@ -194,7 +194,7 @@ def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
     value is a list of values for that field. For non-file fields, the value
     is a list of strings.
     """
-    # RFC 2026, Section 5.1 : The "multipart" boundary delimiters are always
+    # RFC 2046, Section 5.1 : The "multipart" boundary delimiters are always
     # represented as 7bit US-ASCII.
     boundary = pdict['boundary'].decode('ascii')
     ctype = "multipart/form-data; boundary={}".format(boundary)

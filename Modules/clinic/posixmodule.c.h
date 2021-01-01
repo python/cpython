@@ -5674,7 +5674,7 @@ exit:
 
 #endif /* defined(HAVE_COPY_FILE_RANGE) */
 
-#if defined(HAVE_SPLICE)
+#if ((defined(HAVE_SPLICE) && !defined(_AIX)))
 
 PyDoc_STRVAR(os_splice__doc__,
 "splice($module, /, src, dst, count, offset_src=None, offset_dst=None,\n"
@@ -5772,7 +5772,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_SPLICE) */
+#endif /* ((defined(HAVE_SPLICE) && !defined(_AIX))) */
 
 #if defined(HAVE_MKFIFO)
 
@@ -9163,4 +9163,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=8a59e91178897267 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3ec08afcd6cd8f8 input=a9049054013a1b77]*/

@@ -857,20 +857,22 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         return -1;
     }
 #endif
-    if (tstate->overflowed) {
+    if (tstate->recursion_headroom) {
         if (tstate->recursion_depth > recursion_limit + 50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
-        return 0;
     }
-    if (tstate->recursion_depth > recursion_limit) {
-        --tstate->recursion_depth;
-        tstate->overflowed = 1;
-        _PyErr_Format(tstate, PyExc_RecursionError,
-                      "maximum recursion depth exceeded%s",
-                      where);
-        return -1;
+    else {
+        if (tstate->recursion_depth > recursion_limit) {
+            tstate->recursion_headroom++;
+            _PyErr_Format(tstate, PyExc_RecursionError,
+                        "maximum recursion depth exceeded%s",
+                        where);
+            tstate->recursion_headroom--;
+            --tstate->recursion_depth;
+            return -1;
+        }
     }
     return 0;
 }
@@ -2428,6 +2430,10 @@ main_loop:
         }
 
         case TARGET(RERAISE): {
+            assert(f->f_iblock > 0);
+            if (oparg) {
+                f->f_lasti = f->f_blockstack[f->f_iblock-1].b_handler;
+            }
             PyObject *exc = POP();
             PyObject *val = POP();
             PyObject *tb = POP();
@@ -4037,7 +4043,7 @@ exception_unwind:
                 int handler = b->b_handler;
                 _PyErr_StackItem *exc_info = tstate->exc_info;
                 /* Beware, this invalidates all b->b_* fields */
-                PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
+                PyFrame_BlockSetup(f, EXCEPT_HANDLER, f->f_lasti, STACK_LEVEL());
                 PUSH(exc_info->exc_traceback);
                 PUSH(exc_info->exc_value);
                 if (exc_info->exc_type != NULL) {

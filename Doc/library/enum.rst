@@ -61,16 +61,18 @@ helper, :class:`auto`.
     the bitwise operations without losing their :class:`Flag` membership.
 
 .. function:: unique
-   :noindex:
+    :noindex:
 
     Enum class decorator that ensures only one name is bound to any one value.
 
 .. class:: auto
 
-    Instances are replaced with an appropriate value for Enum members.  By default, the initial value starts at 1.
+    Instances are replaced with an appropriate value for Enum members.
+    :class:`StrEnum` defaults to the lower-cased version of the member name,
+    while other Enums default to 1 and increase from there.
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
-
+.. versionadded:: 3.10  ``StrEnum``
 
 Creating an Enum
 ----------------
@@ -1163,6 +1165,15 @@ and raise an error if the two do not match::
 
     In Python 2 code the :attr:`_order_` attribute is necessary as definition
     order is lost before it can be recorded.
+
+
+_Private__names
+"""""""""""""""
+
+Private names are not converted to Enum members, but remain normal attributes.
+
+.. versionchanged:: 3.10
+
 
 ``Enum`` member type
 """"""""""""""""""""

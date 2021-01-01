@@ -1,2 +1,0 @@
-The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
-slot.

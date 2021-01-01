@@ -426,7 +426,6 @@ static inline void _Py_INCREF(PyObject *op)
 #endif
     op->ob_refcnt++;
 }
-
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
 static inline void _Py_DECREF(
@@ -449,7 +448,6 @@ static inline void _Py_DECREF(
         _Py_Dealloc(op);
     }
 }
-
 #ifdef Py_REF_DEBUG
 #  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
@@ -548,8 +546,8 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 // Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
 // Names overriden with macros by static inline functions for best
 // performances.
-#define Py_NewRef(obj) _Py_NewRef(obj)
-#define Py_XNewRef(obj) _Py_XNewRef(obj)
+#define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
+#define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
 
 
 /*

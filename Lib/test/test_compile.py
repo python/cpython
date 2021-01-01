@@ -156,7 +156,7 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 1)
-        self.assertEqual(list(co.co_lines()), [(0, 4, 257), (4, 8, None)])
+        self.assertEqual(list(co.co_lines()), [(0, 8, 257)])
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
@@ -728,10 +728,10 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[0].opname)
-            self.assertEqual(None, opcodes[0].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            self.assertLessEqual(len(opcodes), 3)
+            self.assertEqual('LOAD_CONST', opcodes[-2].opname)
+            self.assertEqual(None, opcodes[-2].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
     def test_false_while_loop(self):
         def break_in_while():
@@ -775,6 +775,57 @@ if 1:
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_lineno_after_implicit_return(self):
+        TRUE = True
+        # Don't use constant True or False, as compiler will remove test
+        def if1(x):
+            x()
+            if TRUE:
+                pass
+        def if2(x):
+            x()
+            if TRUE:
+                pass
+            else:
+                pass
+        def if3(x):
+            x()
+            if TRUE:
+                pass
+            else:
+                return None
+        def if4(x):
+            x()
+            if not TRUE:
+                pass
+        funcs = [ if1, if2, if3, if4]
+        lastlines = [ 3, 3, 3, 2]
+        frame = None
+        def save_caller_frame():
+            nonlocal frame
+            frame = sys._getframe(1)
+        for func, lastline in zip(funcs, lastlines, strict=True):
+            with self.subTest(func=func):
+                func(save_caller_frame)
+                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, lastline)
+
+    def test_lineno_after_no_code(self):
+        def no_code1():
+            "doc string"
+
+        def no_code2():
+            a: int
+
+        for func in (no_code1, no_code2):
+            with self.subTest(func=func):
+                code = func.__code__
+                lines = list(code.co_lines())
+                self.assertEqual(len(lines), 1)
+                start, end, line = lines[0]
+                self.assertEqual(start, 0)
+                self.assertEqual(end, len(code.co_code))
+                self.assertEqual(line, code.co_firstlineno)
+
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -785,6 +836,34 @@ if 1:
         dict_size = 0xFFFF + 1
         the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
         self.assertEqual(len(eval(the_dict)), dict_size)
+
+    def test_redundant_jump_in_if_else_break(self):
+        # Check if bytecode containing jumps that simply point to the next line
+        # is generated around if-else-break style structures. See bpo-42615.
+
+        def if_else_break():
+            val = 1
+            while True:
+                if val > 0:
+                    val -= 1
+                else:
+                    break
+                val = -1
+
+        INSTR_SIZE = 2
+        HANDLED_JUMPS = (
+            'POP_JUMP_IF_FALSE',
+            'POP_JUMP_IF_TRUE',
+            'JUMP_ABSOLUTE',
+            'JUMP_FORWARD',
+        )
+
+        for line, instr in enumerate(dis.Bytecode(if_else_break)):
+            if instr.opname == 'JUMP_FORWARD':
+                self.assertNotEqual(instr.arg, 0)
+            elif instr.opname in HANDLED_JUMPS:
+                self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

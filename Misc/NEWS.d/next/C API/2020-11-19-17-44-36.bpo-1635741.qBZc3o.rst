@@ -1,2 +1,0 @@
-Port :mod:`select` extension module to multiphase initialization
-(:pep:`489`).

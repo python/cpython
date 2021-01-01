@@ -11,7 +11,7 @@ from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
-from collections import Counter
+from collections import abc, Counter
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -162,6 +162,22 @@ class TestBasicOps:
         with self.assertWarns(DeprecationWarning):
             population = {10, 20, 30, 40, 50, 60, 70}
             self.gen.sample(population, k=5)
+
+    def test_sample_on_seqsets(self):
+        class SeqSet(abc.Sequence, abc.Set):
+            def __init__(self, items):
+                self._items = items
+
+            def __len__(self):
+                return len(self._items)
+
+            def __getitem__(self, index):
+                return self._items[index]
+
+        population = SeqSet([2, 4, 1, 3])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.gen.sample(population, k=2)
 
     def test_sample_with_counts(self):
         sample = self.gen.sample
@@ -398,6 +414,15 @@ class TestBasicOps:
             r = _random.Random()
             self.assertRaises(TypeError, pickle.dumps, r, proto)
 
+    @test.support.cpython_only
+    def test_bug_42008(self):
+        # _random.Random should call seed with first element of arg tuple
+        import _random
+        r1 = _random.Random()
+        r1.seed(8675309)
+        r2 = _random.Random(8675309)
+        self.assertEqual(r1.random(), r2.random())
+
     def test_bug_1727780(self):
         # verify that version-2-pickles can be loaded
         # fine, whether they are created on 32-bit or 64-bit
@@ -516,6 +541,26 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         # Zero and non-integer step
         raises(0, 42, 0)
         raises(0, 42, 3.14159)
+
+    def test_randrange_argument_handling(self):
+        randrange = self.gen.randrange
+        with self.assertWarns(DeprecationWarning):
+            randrange(10.0, 20, 2)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20.0, 2)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 1.0)
+        with self.assertWarns(DeprecationWarning):
+            randrange(10, 20, 2.0)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10.5)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10, 20.5)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                randrange(10, 20, 1.5)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1

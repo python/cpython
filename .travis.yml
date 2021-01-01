@@ -192,6 +192,8 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./python Tools/scripts/patchcheck.py --travis $TRAVIS_PULL_REQUEST; fi
   # Check that all symbols exported by libpython start with "Py" or "_Py"
   - make smelly
+  # Check that all symbols in the limited abi are present
+  - make check-limited-abi
   # `-r -w` implicitly provided through `make buildbottest`.
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then

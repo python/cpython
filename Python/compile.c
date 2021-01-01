@@ -228,7 +228,7 @@ static int compiler_slice(struct compiler *, expr_ty);
 
 static int inplace_binop(operator_ty);
 static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-static int expr_constant(expr_ty);
+
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
@@ -810,6 +810,28 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
     c->u->u_curblock->b_next = block;
     c->u->u_curblock = block;
     return block;
+}
+
+static basicblock *
+compiler_copy_block(struct compiler *c, basicblock *block)
+{
+    /* Cannot copy a block if it has a fallthrough, since
+     * a block can only have one fallthrough predecessor.
+     */
+    assert(block->b_nofallthrough);
+    basicblock *result = compiler_next_block(c);
+    if (result == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < block->b_iused; i++) {
+        int n = compiler_next_instr(result);
+        if (n < 0) {
+            return NULL;
+        }
+        result->b_instr[n] = block->b_instr[i];
+    }
+    result->b_exit = block->b_exit;
+    return result;
 }
 
 /* Returns the offset of the next instruction in the current block's
@@ -1410,26 +1432,30 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     return 1;
 }
 
+static int add_jump_to_block(basicblock *b, int opcode, int lineno, basicblock *target)
+{
+    assert(HAS_ARG(opcode));
+    assert(b != NULL);
+    assert(target != NULL);
+
+    int off = compiler_next_instr(b);
+    struct instr *i = &b->b_instr[off];
+    if (off < 0) {
+        return 0;
+    }
+    i->i_opcode = opcode;
+    i->i_target = target;
+    i->i_lineno = lineno;
+    return 1;
+}
+
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    struct instr *i;
-    int off;
-
     if (c->c_do_not_emit_bytecode) {
         return 1;
     }
-
-    assert(HAS_ARG(opcode));
-    assert(b != NULL);
-    off = compiler_next_instr(c->u->u_curblock);
-    if (off < 0)
-        return 0;
-    i = &c->u->u_curblock->b_instr[off];
-    i->i_opcode = opcode;
-    i->i_target = b;
-    i->i_lineno = c->u->u_lineno;
-    return 1;
+    return add_jump_to_block(c->u->u_curblock, opcode, c->u->u_lineno, b);
 }
 
 /* NEXT_BLOCK() creates an implicit jump from the current block
@@ -1548,17 +1574,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
             return 0; \
         } \
     } \
-}
-
-/* These macros allows to check only for errors and not emmit bytecode
- * while visiting nodes.
-*/
-
-#define BEGIN_DO_NOT_EMIT_BYTECODE { \
-    c->c_do_not_emit_bytecode++;
-
-#define END_DO_NOT_EMIT_BYTECODE \
-    c->c_do_not_emit_bytecode--; \
 }
 
 /* Search if variable annotations are present statically in a block. */
@@ -1684,19 +1699,22 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case FINALLY_TRY:
+            /* This POP_BLOCK gets the line number of the unwinding statement */
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
                 if (!compiler_push_fblock(c, POP_VALUE, NULL, NULL, NULL)) {
                     return 0;
                 }
             }
-            /* Emit the finally block, restoring the line number when done */
-            int saved_lineno = c->u->u_lineno;
+            /* Emit the finally block */
             VISIT_SEQ(c, stmt, info->fb_datum);
-            c->u->u_lineno = saved_lineno;
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
+            /* The finally block should appear to execute after the
+             * statement causing the unwinding, so make the unwinding
+             * instruction artificial */
+            c->u->u_lineno = -1;
             return 1;
 
         case FINALLY_END:
@@ -2682,48 +2700,28 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
-    int constant;
     assert(s->kind == If_kind);
     end = compiler_new_block(c);
-    if (end == NULL)
+    if (end == NULL) {
         return 0;
-
-    constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0"
-     * constant = 1: "if 1", "if 2", ...
-     * constant = -1: rest */
-    if (constant == 0) {
-        BEGIN_DO_NOT_EMIT_BYTECODE
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        END_DO_NOT_EMIT_BYTECODE
-        if (s->v.If.orelse) {
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-        }
-    } else if (constant == 1) {
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        if (s->v.If.orelse) {
-            BEGIN_DO_NOT_EMIT_BYTECODE
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-            END_DO_NOT_EMIT_BYTECODE
-        }
-    } else {
-        if (asdl_seq_LEN(s->v.If.orelse)) {
-            next = compiler_new_block(c);
-            if (next == NULL)
-                return 0;
-        }
-        else {
-            next = end;
-        }
-        if (!compiler_jump_if(c, s->v.If.test, next, 0)) {
+    }
+    if (asdl_seq_LEN(s->v.If.orelse)) {
+        next = compiler_new_block(c);
+        if (next == NULL) {
             return 0;
         }
-        VISIT_SEQ(c, stmt, s->v.If.body);
-        if (asdl_seq_LEN(s->v.If.orelse)) {
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
-            compiler_use_next_block(c, next);
-            VISIT_SEQ(c, stmt, s->v.If.orelse);
-        }
+    }
+    else {
+        next = end;
+    }
+    if (!compiler_jump_if(c, s->v.If.test, next, 0)) {
+        return 0;
+    }
+    VISIT_SEQ(c, stmt, s->v.If.body);
+    if (asdl_seq_LEN(s->v.If.orelse)) {
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        compiler_use_next_block(c, next);
+        VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
     compiler_use_next_block(c, end);
     return 1;
@@ -2732,12 +2730,13 @@ compiler_if(struct compiler *c, stmt_ty s)
 static int
 compiler_for(struct compiler *c, stmt_ty s)
 {
-    basicblock *start, *cleanup, *end;
+    basicblock *start, *body, *cleanup, *end;
 
     start = compiler_new_block(c);
+    body = compiler_new_block(c);
     cleanup = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (start == NULL || end == NULL || cleanup == NULL) {
+    if (start == NULL || body == NULL || end == NULL || cleanup == NULL) {
         return 0;
     }
     if (!compiler_push_fblock(c, FOR_LOOP, start, end, NULL)) {
@@ -2747,8 +2746,11 @@ compiler_for(struct compiler *c, stmt_ty s)
     ADDOP(c, GET_ITER);
     compiler_use_next_block(c, start);
     ADDOP_JUMP(c, FOR_ITER, cleanup);
+    compiler_use_next_block(c, body);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
+    /* Mark jump as artificial */
+    c->u->u_lineno = -1;
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, cleanup);
 
@@ -2816,25 +2818,6 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *body, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
-
-    if (constant == 0) {
-        BEGIN_DO_NOT_EMIT_BYTECODE
-        // Push a dummy block so the VISIT_SEQ knows that we are
-        // inside a while loop so it can correctly evaluate syntax
-        // errors.
-        if (!compiler_push_fblock(c, WHILE_LOOP, NULL, NULL, NULL)) {
-            return 0;
-        }
-        VISIT_SEQ(c, stmt, s->v.While.body);
-        // Remove the dummy block now that is not needed.
-        compiler_pop_fblock(c, WHILE_LOOP, NULL);
-        END_DO_NOT_EMIT_BYTECODE
-        if (s->v.While.orelse) {
-            VISIT_SEQ(c, stmt, s->v.While.orelse);
-        }
-        return 1;
-    }
     loop = compiler_new_block(c);
     body = compiler_new_block(c);
     anchor = compiler_new_block(c);
@@ -2846,15 +2829,16 @@ compiler_while(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, WHILE_LOOP, loop, end, NULL)) {
         return 0;
     }
-    if (constant == -1) {
-        if (!compiler_jump_if(c, s->v.While.test, anchor, 0)) {
-            return 0;
-        }
+    if (!compiler_jump_if(c, s->v.While.test, anchor, 0)) {
+        return 0;
     }
 
     compiler_use_next_block(c, body);
     VISIT_SEQ(c, stmt, s->v.While.body);
-    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop);
+    SET_LOC(c, s);
+    if (!compiler_jump_if(c, s->v.While.test, body, 1)) {
+        return 0;
+    }
 
     compiler_pop_fblock(c, WHILE_LOOP, loop);
 
@@ -2882,6 +2866,12 @@ compiler_return(struct compiler *c, stmt_ty s)
     }
     if (preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
+    } else {
+        /* Emit instruction with line number for expression */
+        if (s->v.Return.value != NULL) {
+            SET_LOC(c, s->v.Return.value);
+            ADDOP(c, NOP);
+        }
     }
     if (!compiler_unwind_fblock_stack(c, preserve_tos, NULL))
         return 0;
@@ -2889,7 +2879,7 @@ compiler_return(struct compiler *c, stmt_ty s)
         ADDOP_LOAD_CONST(c, Py_None);
     }
     else if (!preserve_tos) {
-        VISIT(c, expr, s->v.Return.value);
+        ADDOP_LOAD_CONST(c, s->v.Return.value->v.Constant.value);
     }
     ADDOP(c, RETURN_VALUE);
     NEXT_BLOCK(c);
@@ -2983,6 +2973,8 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     else {
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
+    /* Mark code as artificial */
+    c->u->u_lineno = -1;
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
@@ -2993,7 +2985,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
-    ADDOP(c, RERAISE);
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3119,7 +3111,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
 
-            ADDOP(c, RERAISE);
+            ADDOP_I(c, RERAISE, 1);
         }
         else {
             basicblock *cleanup_body;
@@ -3141,7 +3133,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         compiler_use_next_block(c, except);
     }
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
-    ADDOP(c, RERAISE);
+    /* Mark as artificial */
+    c->u->u_lineno = -1;
+    ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
     compiler_use_next_block(c, end);
@@ -4764,15 +4758,6 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-expr_constant(expr_ty e)
-{
-    if (e->kind == Constant_kind) {
-        return PyObject_IsTrue(e->v.Constant.value);
-    }
-    return -1;
-}
-
-static int
 compiler_with_except_finish(struct compiler *c) {
     basicblock *exit;
     exit = compiler_new_block(c);
@@ -4780,7 +4765,7 @@ compiler_with_except_finish(struct compiler *c) {
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
-    ADDOP(c, RERAISE);
+    ADDOP_I(c, RERAISE, 1);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
@@ -5929,8 +5914,15 @@ dump_basicblock(const basicblock *b)
 }
 #endif
 
+
+static int
+normalize_basic_block(basicblock *bb);
+
 static int
 optimize_cfg(struct assembler *a, PyObject *consts);
+
+static int
+ensure_exits_have_lineno(struct compiler *c);
 
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
@@ -5952,6 +5944,16 @@ assemble(struct compiler *c, int addNone)
         ADDOP(c, RETURN_VALUE);
     }
 
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (normalize_basic_block(b)) {
+            goto error;
+        }
+    }
+
+    if (ensure_exits_have_lineno(c)) {
+        goto error;
+    }
+
     nblocks = 0;
     entryblock = NULL;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
@@ -5966,6 +5968,7 @@ assemble(struct compiler *c, int addNone)
        else
             c->u->u_firstlineno = 1;
     }
+
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
     a.a_entry = entryblock;
@@ -6065,6 +6068,27 @@ fold_tuple_on_constants(struct instr *inst,
     }
     inst[n].i_opcode = LOAD_CONST;
     inst[n].i_oparg = (int)index;
+    return 0;
+}
+
+
+static int
+eliminate_jump_to_jump(basicblock *bb, int opcode) {
+    assert (bb->b_iused > 0);
+    struct instr *inst = &bb->b_instr[bb->b_iused-1];
+    assert (is_jump(inst));
+    assert (inst->i_target->b_iused > 0);
+    struct instr *target = &inst->i_target->b_instr[0];
+    if (inst->i_target == target->i_target) {
+        /* Nothing to do */
+        return 0;
+    }
+    int lineno = target->i_lineno;
+    if (add_jump_to_block(bb, opcode, lineno, target->i_target) == 0) {
+        return -1;
+    }
+    assert (bb->b_iused >= 2);
+    bb->b_instr[bb->b_iused-2].i_opcode = NOP;
     return 0;
 }
 
@@ -6184,22 +6208,27 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
             case JUMP_IF_FALSE_OR_POP:
                 switch(target->i_opcode) {
                     case POP_JUMP_IF_FALSE:
-                        *inst = *target;
-                        --i;
+                        if (inst->i_lineno == target->i_lineno) {
+                            *inst = *target;
+                            i--;
+                        }
                         break;
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_FALSE_OR_POP:
-                        if (inst->i_target != target->i_target) {
+                        if (inst->i_lineno == target->i_lineno &&
+                            inst->i_target != target->i_target) {
                             inst->i_target = target->i_target;
-                            --i;
+                            i--;
                         }
                         break;
                     case JUMP_IF_TRUE_OR_POP:
                         assert (inst->i_target->b_iused == 1);
-                        inst->i_opcode = POP_JUMP_IF_FALSE;
-                        inst->i_target = inst->i_target->b_next;
-                        --i;
+                        if (inst->i_lineno == target->i_lineno) {
+                            inst->i_opcode = POP_JUMP_IF_FALSE;
+                            inst->i_target = inst->i_target->b_next;
+                            --i;
+                        }
                         break;
                 }
                 break;
@@ -6207,22 +6236,27 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
             case JUMP_IF_TRUE_OR_POP:
                 switch(target->i_opcode) {
                     case POP_JUMP_IF_TRUE:
-                        *inst = *target;
-                        --i;
+                        if (inst->i_lineno == target->i_lineno) {
+                            *inst = *target;
+                            i--;
+                        }
                         break;
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
                     case JUMP_IF_TRUE_OR_POP:
-                        if (inst->i_target != target->i_target) {
+                        if (inst->i_lineno == target->i_lineno &&
+                            inst->i_target != target->i_target) {
                             inst->i_target = target->i_target;
-                            --i;
+                            i--;
                         }
                         break;
                     case JUMP_IF_FALSE_OR_POP:
                         assert (inst->i_target->b_iused == 1);
-                        inst->i_opcode = POP_JUMP_IF_TRUE;
-                        inst->i_target = inst->i_target->b_next;
-                        --i;
+                        if (inst->i_lineno == target->i_lineno) {
+                            inst->i_opcode = POP_JUMP_IF_TRUE;
+                            inst->i_target = inst->i_target->b_next;
+                            --i;
+                        }
                         break;
                 }
                 break;
@@ -6231,9 +6265,9 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        if (inst->i_target != target->i_target) {
+                        if (inst->i_lineno == target->i_lineno) {
                             inst->i_target = target->i_target;
-                            --i;
+                            i--;
                         }
                         break;
                 }
@@ -6243,9 +6277,9 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 switch(target->i_opcode) {
                     case JUMP_ABSOLUTE:
                     case JUMP_FORWARD:
-                        if (inst->i_target != target->i_target) {
+                        if (inst->i_lineno == target->i_lineno) {
                             inst->i_target = target->i_target;
-                            --i;
+                            i--;
                         }
                         break;
                 }
@@ -6256,32 +6290,30 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 assert (i == bb->b_iused-1);
                 switch(target->i_opcode) {
                     case JUMP_FORWARD:
-                        if (inst->i_target != target->i_target) {
-                            inst->i_target = target->i_target;
-                            --i;
+                        if (eliminate_jump_to_jump(bb, inst->i_opcode)) {
+                            goto error;
                         }
                         break;
+
                     case JUMP_ABSOLUTE:
-                        if (inst->i_target != target->i_target) {
-                            inst->i_target = target->i_target;
-                            inst->i_opcode = target->i_opcode;
-                            --i;
+                        if (eliminate_jump_to_jump(bb, JUMP_ABSOLUTE)) {
+                            goto error;
                         }
                         break;
-                }
-                if (inst->i_target->b_exit && inst->i_target->b_iused <= MAX_COPY_SIZE) {
-                    basicblock *to_copy = inst->i_target;
-                    *inst = to_copy->b_instr[0];
-                    for (i = 1; i < to_copy->b_iused; i++) {
-                        int index = compiler_next_instr(bb);
-                        if (index < 0) {
-                            return -1;
+                    default:
+                        if (inst->i_target->b_exit && inst->i_target->b_iused <= MAX_COPY_SIZE) {
+                            basicblock *to_copy = inst->i_target;
+                            inst->i_opcode = NOP;
+                            for (i = 0; i < to_copy->b_iused; i++) {
+                                int index = compiler_next_instr(bb);
+                                if (index < 0) {
+                                    return -1;
+                                }
+                                bb->b_instr[index] = to_copy->b_instr[i];
+                            }
+                            bb->b_exit = 1;
                         }
-                        bb->b_instr[index] = to_copy->b_instr[i];
-                    }
-                    bb->b_exit = 1;
                 }
-                break;
         }
     }
     return 0;
@@ -6338,7 +6370,6 @@ clean_basic_block(basicblock *bb) {
     bb->b_iused = dest;
 }
 
-
 static int
 normalize_basic_block(basicblock *bb) {
     /* Mark blocks as exit and/or nofallthrough.
@@ -6349,7 +6380,8 @@ normalize_basic_block(basicblock *bb) {
             case RAISE_VARARGS:
             case RERAISE:
                 bb->b_exit = 1;
-                /* fall through */
+                bb->b_nofallthrough = 1;
+                break;
             case JUMP_ABSOLUTE:
             case JUMP_FORWARD:
                 bb->b_nofallthrough = 1;
@@ -6358,15 +6390,20 @@ normalize_basic_block(basicblock *bb) {
             case POP_JUMP_IF_TRUE:
             case JUMP_IF_FALSE_OR_POP:
             case JUMP_IF_TRUE_OR_POP:
+            case FOR_ITER:
                 if (i != bb->b_iused-1) {
                     PyErr_SetString(PyExc_SystemError, "malformed control flow graph.");
                     return -1;
                 }
+                /* Skip over empty basic blocks. */
+                while (bb->b_instr[i].i_target->b_iused == 0) {
+                    bb->b_instr[i].i_target = bb->b_instr[i].i_target->b_next;
+                }
+
         }
     }
     return 0;
 }
-
 
 static int
 mark_reachable(struct assembler *a) {
@@ -6398,8 +6435,27 @@ mark_reachable(struct assembler *a) {
     return 0;
 }
 
+/* If an instruction has no line number, but it's predecessor in the BB does,
+ * then copy the line number. This reduces the size of the line number table,
+ * but has no impact on the generated line number events.
+ */
+static void
+minimize_lineno_table(struct assembler *a) {
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        int prev_lineno = -1;
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_lineno < 0) {
+                b->b_instr[i].i_lineno = prev_lineno;
+            }
+            else {
+                prev_lineno = b->b_instr[i].i_lineno;
+            }
+        }
 
-/* Perform basic peephole optimizations on a control flow graph.
+    }
+}
+
+/* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
    to be appended.
 
@@ -6411,11 +6467,6 @@ mark_reachable(struct assembler *a) {
 static int
 optimize_cfg(struct assembler *a, PyObject *consts)
 {
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        if (normalize_basic_block(b)) {
-            return -1;
-        }
-    }
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (optimize_basic_block(b, consts)) {
             return -1;
@@ -6430,10 +6481,112 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
        if (b->b_reachable == 0) {
             b->b_iused = 0;
+            b->b_nofallthrough = 0;
        }
+    }
+    /* Delete jump instructions made redundant by previous step. If a non-empty
+       block ends with a jump instruction, check if the next non-empty block
+       reached through normal flow control is the target of that jump. If it
+       is, then the jump instruction is redundant and can be deleted.
+    */
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (b->b_iused > 0) {
+            struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
+            if (b_last_instr->i_opcode == POP_JUMP_IF_FALSE ||
+                b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
+                b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+                b_last_instr->i_opcode == JUMP_FORWARD) {
+                basicblock *b_next_act = b->b_next;
+                while (b_next_act != NULL && b_next_act->b_iused == 0) {
+                    b_next_act = b_next_act->b_next;
+                }
+                if (b_last_instr->i_target == b_next_act) {
+                    b->b_nofallthrough = 0;
+                    switch(b_last_instr->i_opcode) {
+                        case POP_JUMP_IF_FALSE:
+                        case POP_JUMP_IF_TRUE:
+                            b_last_instr->i_opcode = POP_TOP;
+                            b_last_instr->i_target = NULL;
+                            b_last_instr->i_oparg = 0;
+                            break;
+                        case JUMP_ABSOLUTE:
+                        case JUMP_FORWARD:
+                            b_last_instr->i_opcode = NOP;
+                            clean_basic_block(b);
+                            break;
+                    }
+                    /* The blocks after this one are now reachable through it */
+                    b_next_act = b->b_next;
+                    while (b_next_act != NULL && b_next_act->b_iused == 0) {
+                        b_next_act->b_reachable = 1;
+                        b_next_act = b_next_act->b_next;
+                    }
+                }
+            }
+        }
+    }
+    minimize_lineno_table(a);
+    return 0;
+}
+
+static inline int
+is_exit_without_lineno(basicblock *b) {
+    return b->b_exit && b->b_instr[0].i_lineno < 0;
+}
+
+/* PEP 626 mandates that the f_lineno of a frame is correct
+ * after a frame terminates. It would be prohibitively expensive
+ * to continuously update the f_lineno field at runtime,
+ * so we make sure that all exiting instruction (raises and returns)
+ * have a valid line number, allowing us to compute f_lineno lazily.
+ * We can do this by duplicating the exit blocks without line number
+ * so that none have more than one predecessor. We can then safely
+ * copy the line number from the sole predecessor block.
+ */
+static int
+ensure_exits_have_lineno(struct compiler *c)
+{
+    basicblock *entry = NULL;
+    /* Copy all exit blocks without line number that are targets of a jump.
+     */
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
+            switch (b->b_instr[b->b_iused-1].i_opcode) {
+                /* Note: Only actual jumps, not exception handlers */
+                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
+                case SETUP_FINALLY:
+                    continue;
+            }
+            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+            if (is_exit_without_lineno(target)) {
+                basicblock *new_target = compiler_copy_block(c, target);
+                if (new_target == NULL) {
+                    return -1;
+                }
+                new_target->b_instr[0].i_lineno = b->b_instr[b->b_iused-1].i_lineno;
+                b->b_instr[b->b_iused-1].i_target = new_target;
+            }
+        }
+        entry = b;
+    }
+    assert(entry != NULL);
+    if (is_exit_without_lineno(entry)) {
+        entry->b_instr[0].i_lineno = c->u->u_firstlineno;
+    }
+    /* Any remaining reachable exit blocks without line number can only be reached by
+     * fall through, and thus can only have a single predecessor */
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        if (!b->b_nofallthrough && b->b_next && b->b_iused > 0) {
+            if (is_exit_without_lineno(b->b_next)) {
+                assert(b->b_next->b_iused > 0);
+                b->b_next->b_instr[0].i_lineno = b->b_instr[b->b_iused-1].i_lineno;
+            }
+        }
     }
     return 0;
 }
+
 
 /* Retained for API compatibility.
  * Optimization is now done in optimize_cfg */

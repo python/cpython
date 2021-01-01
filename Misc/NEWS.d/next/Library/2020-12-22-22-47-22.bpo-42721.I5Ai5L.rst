@@ -1,0 +1,9 @@
+When simple query dialogs (:mod:`tkinter.simpledialog`), message boxes
+(:mod:`tkinter.messagebox`) or color choose dialog
+(:mod:`tkinter.colorchooser`) are created without arguments *master* and
+*parent*, and the default root window is not yet created, and
+:func:`~tkinter.NoDefaultRoot` was not called, a new temporal
+hidden root window will be created automatically. It will not be set as the
+default root window and will be destroyed right after closing the dialog
+window. It will help to use these simple dialog windows in programs which
+do not need other GUI.

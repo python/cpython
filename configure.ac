@@ -1133,7 +1133,7 @@ if test $enable_shared = "yes"; then
 	      PY3LIBRARY=libpython3.so
 	  fi
           ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
@@ -2798,7 +2798,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;
+		LINKFORSHARED='-Wl,-export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -3311,10 +3311,10 @@ if test "$posix_threads" = "yes"; then
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],
       [ac_cv_pthread_system_supported=no],
@@ -4728,7 +4728,7 @@ then
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
   ]])],
   [ac_cv_wchar_t_signed=yes],
@@ -4786,12 +4786,7 @@ if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
 fi
 
 AC_SUBST(EXT_SUFFIX)
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
@@ -4850,7 +4845,7 @@ AC_CACHE_VAL(ac_cv_rshift_extends_sign, [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 ]])],
 [ac_cv_rshift_extends_sign=yes],
@@ -4997,6 +4992,7 @@ AC_MSG_CHECKING(for broken poll())
 AC_CACHE_VAL(ac_cv_broken_poll,
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {
@@ -5590,14 +5586,15 @@ if test "$have_stdatomic_h" = yes; then
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 fi
 
-# Check for GCC >= 4.7 __atomic builtins
-AC_MSG_CHECKING(for GCC >= 4.7 __atomic builtins)
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_MSG_CHECKING(for builtin __atomic_load_n and __atomic_store_n functions)
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
-    volatile int val = 1;
+    int val;
     int main() {
-      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
     }
   ]])
@@ -5606,7 +5603,7 @@ AC_LINK_IFELSE(
 AC_MSG_RESULT($have_builtin_atomic)
 
 if test "$have_builtin_atomic" = yes; then
-    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin atomics])
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 fi
 
 # ensurepip option
@@ -5837,6 +5834,20 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+AC_MSG_CHECKING(for --disable-test-modules)
+AC_ARG_ENABLE(test-modules,
+              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+    AC_MSG_RESULT(yes)
+else
+    TEST_MODULES=yes
+    AC_MSG_RESULT(no)
+fi
+AC_SUBST(TEST_MODULES)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
@@ -5863,4 +5874,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
 fi
-

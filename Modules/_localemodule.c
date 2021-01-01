@@ -370,8 +370,8 @@ _locale_strcoll_impl(PyObject *module, PyObject *os1, PyObject *os2)
     result = PyLong_FromLong(wcscoll(ws1, ws2));
   done:
     /* Deallocate everything. */
-    if (ws1) PyMem_FREE(ws1);
-    if (ws2) PyMem_FREE(ws2);
+    if (ws1) PyMem_Free(ws1);
+    if (ws2) PyMem_Free(ws2);
     return result;
 }
 #endif

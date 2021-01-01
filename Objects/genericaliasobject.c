@@ -156,13 +156,24 @@ error:
     return NULL;
 }
 
-// isinstance(obj, TypeVar) without importing typing.py.
-// Returns -1 for errors.
-static int
-is_typevar(PyObject *obj)
+/* Checks if a variable number of names are from typing.py.
+*  If any one of the names are found, return 1, else 0.
+**/
+static inline int
+is_typing_name(PyObject *obj, int num, ...)
 {
+    va_list names;
+    va_start(names, num);
+
     PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "TypeVar") != 0) {
+    int hit = 0;
+    for (int i = 0; i < num; ++i) {
+        if (!strcmp(type->tp_name, va_arg(names, const char *))) {
+            hit = 1;
+            break;
+        }
+    }
+    if (!hit) {
         return 0;
     }
     PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
@@ -172,7 +183,23 @@ is_typevar(PyObject *obj)
     int res = PyUnicode_Check(module)
         && _PyUnicode_EqualToASCIIString(module, "typing");
     Py_DECREF(module);
+    
+    va_end(names);
     return res;
+}
+
+// isinstance(obj, (TypeVar, ParamSpec)) without importing typing.py.
+// Returns -1 for errors.
+static inline int
+is_typevarlike(PyObject *obj)
+{
+    return is_typing_name(obj, 2, "TypeVar", "ParamSpec");
+}
+
+static inline int
+is_paramspec(PyObject *obj)
+{
+    return is_typing_name(obj, 1, "ParamSpec");
 }
 
 // Index of item in self[:len], or -1 if not found (self is a tuple)
@@ -209,7 +236,7 @@ make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevar(t);
+        int typevar = is_typevarlike(t);
         if (typevar < 0) {
             Py_DECREF(parameters);
             return NULL;
@@ -279,7 +306,14 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
             if (iparam >= 0) {
                 arg = argitems[iparam];
             }
-            Py_INCREF(arg);
+            // convert all the lists inside args to tuples to help
+            // with caching in other libaries
+            if (PyList_CheckExact(arg)) {
+                arg = PyList_AsTuple(arg);
+            }
+            else {
+                Py_INCREF(arg);
+            }
             PyTuple_SET_ITEM(subargs, i, arg);
         }
 
@@ -314,11 +348,19 @@ ga_getitem(PyObject *self, PyObject *item)
     int is_tuple = PyTuple_Check(item);
     Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
     PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
-    if (nitems != nparams) {
-        return PyErr_Format(PyExc_TypeError,
-                            "Too %s arguments for %R",
-                            nitems > nparams ? "many" : "few",
-                            self);
+    // A special case in PEP 612 where if X = Callable[P, int], 
+    // then X[int, str] == X[[int, str]].
+    if (nparams == 1 && nitems > 1 && is_tuple &&
+        is_paramspec(PyTuple_GET_ITEM(alias->parameters, 0))) {
+        argitems = &item;
+    }
+    else {
+        if (nitems != nparams) {
+            return PyErr_Format(PyExc_TypeError,
+                "Too %s arguments for %R",
+                nitems > nparams ? "many" : "few",
+                self);
+        }
     }
     /* Replace all type variables (specified by alias->parameters)
        with corresponding values specified by argitems.
@@ -333,7 +375,7 @@ ga_getitem(PyObject *self, PyObject *item)
     }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        int typevar = is_typevar(arg);
+        int typevar = is_typevarlike(arg);
         if (typevar < 0) {
             Py_DECREF(newargs);
             return NULL;
@@ -342,7 +384,13 @@ ga_getitem(PyObject *self, PyObject *item)
             Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
             arg = argitems[iparam];
-            Py_INCREF(arg);
+            // convert lists to tuples to help with caching in other libaries.
+            if (PyList_CheckExact(arg)) {
+                arg = PyList_AsTuple(arg);
+            }
+            else {
+                Py_INCREF(arg);
+            }
         }
         else {
             arg = subs_tvars(arg, alias->parameters, argitems);
@@ -429,8 +477,8 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (!Py_IS_TYPE(a, &Py_GenericAliasType) ||
-        !Py_IS_TYPE(b, &Py_GenericAliasType) ||
+    if (!PyObject_TypeCheck(a, &Py_GenericAliasType) ||
+        !PyObject_TypeCheck(b, &Py_GenericAliasType) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;
@@ -564,10 +612,33 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
+/* A helper function to create GenericAlias' args tuple and set its attributes.
+ * Returns 1 on success, 0 on failure. 
+ */
+static inline int
+setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
+    if (!PyTuple_Check(args)) {
+        args = PyTuple_Pack(1, args);
+        if (args == NULL) {
+            return 0;
+        }
+    }
+    else {
+        Py_INCREF(args);
+    }
+
+    Py_INCREF(origin);
+    alias->origin = origin;
+    alias->args = args;
+    alias->parameters = NULL;
+    alias->weakreflist = NULL;
+    return 1;
+}
+
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
+    if (!_PyArg_NoKeywords("GenericAlias", kwds)) {
         return NULL;
     }
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
@@ -575,7 +646,15 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
-    return Py_GenericAlias(origin, arguments);
+    gaobject *self = (gaobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (!setup_ga(self, origin, arguments)) {
+        type->tp_free((PyObject *)self);
+        return NULL;
+    }
+    return (PyObject *)self;
 }
 
 static PyNumberMethods ga_as_number = {
@@ -600,7 +679,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
     .tp_weaklistoffset = offsetof(gaobject, weakreflist),
@@ -615,27 +694,14 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    if (!PyTuple_Check(args)) {
-        args = PyTuple_Pack(1, args);
-        if (args == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        Py_INCREF(args);
-    }
-
     gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
     if (alias == NULL) {
-        Py_DECREF(args);
         return NULL;
     }
-
-    Py_INCREF(origin);
-    alias->origin = origin;
-    alias->args = args;
-    alias->parameters = NULL;
-    alias->weakreflist = NULL;
+    if (!setup_ga(alias, origin, args)) {
+        PyObject_GC_Del((PyObject *)alias);
+        return NULL;
+    }
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }

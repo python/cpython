@@ -10,6 +10,10 @@ from abc import ABCMeta, abstractmethod
 import sys
 
 GenericAlias = type(list[int])
+EllipsisType = type(...)
+def _f(): pass
+FunctionType = type(_f)
+del _f
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
@@ -409,6 +413,95 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 
+class _CallableGenericAlias(GenericAlias):
+    """ Represent `Callable[argtypes, resulttype]`.
+
+    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
+    followed by ``resulttype``.
+
+    Example: ``Callable[[int, str], float]`` sets ``__args__`` to
+    ``(int, str, float)``.
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, origin, args):
+        return cls.__create_ga(origin, args)
+
+    @classmethod
+    def __create_ga(cls, origin, args):
+        if not isinstance(args, tuple) or len(args) != 2:
+            raise TypeError(
+                "Callable must be used as Callable[[arg, ...], result].")
+        t_args, t_result = args
+        if isinstance(t_args, (list, tuple)):
+            ga_args = tuple(t_args) + (t_result,)
+        # This relaxes what t_args can be on purpose to allow things like
+        # PEP 612 ParamSpec.  Responsibility for whether a user is using
+        # Callable[...] properly is deferred to static type checkers.
+        else:
+            ga_args = args
+        return super().__new__(cls, origin, ga_args)
+
+    def __repr__(self):
+        if _has_special_args(self.__args__):
+            return super().__repr__()
+        return (f'collections.abc.Callable'
+                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{_type_repr(self.__args__[-1])}]')
+
+    def __reduce__(self):
+        args = self.__args__
+        if not _has_special_args(args):
+            args = list(args[:-1]), args[-1]
+        return _CallableGenericAlias, (Callable, args)
+
+    def __getitem__(self, item):
+        # Called during TypeVar substitution, returns the custom subclass
+        # rather than the default types.GenericAlias object.
+        ga = super().__getitem__(item)
+        args = ga.__args__
+        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
+        if not isinstance(ga.__args__[0], tuple):
+            t_result = ga.__args__[-1]
+            t_args = ga.__args__[:-1]
+            args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, args)
+
+
+def _has_special_args(args):
+    """Checks if args[0] matches either ``...``, ``ParamSpec`` or
+    ``_ConcatenateGenericAlias`` from typing.py
+    """
+    if len(args) != 2:
+        return False
+    obj = args[0]
+    if obj is Ellipsis:
+        return True
+    obj = type(obj)
+    names = ('ParamSpec', '_ConcatenateGenericAlias')
+    return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
+
+
+def _type_repr(obj):
+    """Return the repr() of an object, special-casing types (internal helper).
+
+    Copied from :mod:`typing` since collections.abc
+    shouldn't depend on that module.
+    """
+    if isinstance(obj, GenericAlias):
+        return repr(obj)
+    if isinstance(obj, type):
+        if obj.__module__ == 'builtins':
+            return obj.__qualname__
+        return f'{obj.__module__}.{obj.__qualname__}'
+    if obj is Ellipsis:
+        return '...'
+    if isinstance(obj, FunctionType):
+        return obj.__name__
+    return repr(obj)
+
+
 class Callable(metaclass=ABCMeta):
 
     __slots__ = ()
@@ -423,7 +516,7 @@ class Callable(metaclass=ABCMeta):
             return _check_methods(C, "__call__")
         return NotImplemented
 
-    __class_getitem__ = classmethod(GenericAlias)
+    __class_getitem__ = classmethod(_CallableGenericAlias)
 
 
 ### SETS ###

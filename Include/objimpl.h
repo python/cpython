@@ -38,7 +38,7 @@ Functions and macros for modules that implement new object types.
    object with room for n items.  In addition to the refcount and type pointer
    fields, this also fills in the ob_size field.
 
- - PyObject_Del(op) releases the memory allocated for an object.  It does not
+ - PyObject_Free(op) releases the memory allocated for an object.  It does not
    run a destructor -- it only frees the memory.  PyObject_Free is identical.
 
  - PyObject_Init(op, typeobj) and PyObject_InitVar(op, typeobj, n) don't
@@ -102,7 +102,9 @@ PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
 
 
-/* Macros */
+// Deprecated aliases only kept for backward compatibility.
+// PyObject_Del and PyObject_DEL are defined with no parameter to be able to
+// use them as function pointers (ex: tp_free = PyObject_Del).
 #define PyObject_MALLOC         PyObject_Malloc
 #define PyObject_REALLOC        PyObject_Realloc
 #define PyObject_FREE           PyObject_Free
@@ -138,8 +140,8 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
-// Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
-// PyObject_MALLOC() with _PyObject_VAR_SIZE().
+// Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
+// directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
 #define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
 
 

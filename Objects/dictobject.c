@@ -269,7 +269,7 @@ _PyDict_ClearFreeList(PyThreadState *tstate)
         PyObject_GC_Del(op);
     }
     while (state->keys_numfree) {
-        PyObject_FREE(state->keys_free_list[--state->keys_numfree]);
+        PyObject_Free(state->keys_free_list[--state->keys_numfree]);
     }
 }
 
@@ -597,7 +597,7 @@ new_keys_object(Py_ssize_t size)
     }
     else
     {
-        dk = PyObject_MALLOC(sizeof(PyDictKeysObject)
+        dk = PyObject_Malloc(sizeof(PyDictKeysObject)
                              + es * size
                              + sizeof(PyDictKeyEntry) * usable);
         if (dk == NULL) {
@@ -636,11 +636,11 @@ free_keys_object(PyDictKeysObject *keys)
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
-    PyObject_FREE(keys);
+    PyObject_Free(keys);
 }
 
 #define new_values(size) PyMem_NEW(PyObject *, size)
-#define free_values(values) PyMem_FREE(values)
+#define free_values(values) PyMem_Free(values)
 
 /* Consumes a reference to the keys object */
 static PyObject *
@@ -1303,7 +1303,7 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
             state->keys_free_list[state->keys_numfree++] = oldkeys;
         }
         else {
-            PyObject_FREE(oldkeys);
+            PyObject_Free(oldkeys);
         }
     }
 
@@ -3989,6 +3989,11 @@ dictiter_iternextitem(dictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(oldkey);
         Py_DECREF(oldvalue);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     }
     else {
         result = PyTuple_New(2);
@@ -4104,6 +4109,11 @@ dictreviter_iternext(dictiterobject *di)
             Py_INCREF(result);
             Py_DECREF(oldkey);
             Py_DECREF(oldvalue);
+            // bpo-42536: The GC may have untracked this result tuple. Since
+            // we're recycling it, make sure it's tracked again:
+            if (!_PyObject_GC_IS_TRACKED(result)) {
+                _PyObject_GC_TRACK(result);
+            }
         }
         else {
             result = PyTuple_New(2);

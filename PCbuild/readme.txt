@@ -125,6 +125,9 @@ python3dll
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c
+xxlimited_35
+    ditto for testing the Python 3.5 stable ABI, see
+    Modules\xxlimited_35.c
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to

@@ -51,34 +51,65 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    # NOTE: When modifying "purelib" scheme, update site._get_path() too.
-    'nt_user': {
-        'stdlib': '{userbase}/Python{py_version_nodot_plat}',
-        'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
-        'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-        'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-        'include': '{userbase}/Python{py_version_nodot_plat}/Include',
-        'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
-        'data': '{userbase}',
-        },
-    'posix_user': {
-        'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
-        'include': '{userbase}/include/python{py_version_short}',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
-    'osx_framework_user': {
-        'stdlib': '{userbase}/lib/python',
-        'platstdlib': '{userbase}/lib/python',
-        'purelib': '{userbase}/lib/python/site-packages',
-        'platlib': '{userbase}/lib/python/site-packages',
-        'include': '{userbase}/include',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
+    }
+
+
+# NOTE: site.py has copy of this function.
+# Sync it when modify this function.
+def _getuserbase():
+    env_base = os.environ.get("PYTHONUSERBASE", None)
+    if env_base:
+        return env_base
+
+    # VxWorks has no home directories
+    if sys.platform == "vxworks":
+        return None
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or "~"
+        return joinuser(base, "Python")
+
+    if sys.platform == "darwin" and sys._framework:
+        return joinuser("~", "Library", sys._framework,
+                        "%d.%d" % sys.version_info[:2])
+
+    return joinuser("~", ".local")
+
+_HAS_USER_BASE = (_getuserbase() is not None)
+
+if _HAS_USER_BASE:
+    _INSTALL_SCHEMES |= {
+        # NOTE: When modifying "purelib" scheme, update site._get_path() too.
+        'nt_user': {
+            'stdlib': '{userbase}/Python{py_version_nodot_plat}',
+            'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
+            'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+            'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+            'include': '{userbase}/Python{py_version_nodot_plat}/Include',
+            'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
+            'data': '{userbase}',
+            },
+        'posix_user': {
+            'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+            'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+            'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
+            'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
+            'include': '{userbase}/include/python{py_version_short}',
+            'scripts': '{userbase}/bin',
+            'data': '{userbase}',
+            },
+        'osx_framework_user': {
+            'stdlib': '{userbase}/lib/python',
+            'platstdlib': '{userbase}/lib/python',
+            'purelib': '{userbase}/lib/python/site-packages',
+            'platlib': '{userbase}/lib/python/site-packages',
+            'include': '{userbase}/include',
+            'scripts': '{userbase}/bin',
+            'data': '{userbase}',
+            },
     }
 
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
@@ -183,25 +214,6 @@ def _get_default_scheme():
     return os.name
 
 
-# NOTE: site.py has copy of this function.
-# Sync it when modify this function.
-def _getuserbase():
-    env_base = os.environ.get("PYTHONUSERBASE", None)
-    if env_base:
-        return env_base
-
-    def joinuser(*args):
-        return os.path.expanduser(os.path.join(*args))
-
-    if os.name == "nt":
-        base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
-
-    if sys.platform == "darwin" and sys._framework:
-        return joinuser("~", "Library", sys._framework,
-                        "%d.%d" % sys.version_info[:2])
-
-    return joinuser("~", ".local")
 
 
 def _parse_makefile(filename, vars=None):
@@ -424,10 +436,11 @@ def _init_posix(vars):
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
+    import _imp
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    vars['EXT_SUFFIX'] = '.pyd'
+    vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
@@ -557,10 +570,11 @@ def get_config_vars(*args):
         SO = _CONFIG_VARS.get('EXT_SUFFIX')
         if SO is not None:
             _CONFIG_VARS['SO'] = SO
-        # Setting 'userbase' is done below the call to the
-        # init function to enable using 'get_config_var' in
-        # the init-function.
-        _CONFIG_VARS['userbase'] = _getuserbase()
+        if _HAS_USER_BASE:
+            # Setting 'userbase' is done below the call to the
+            # init function to enable using 'get_config_var' in
+            # the init-function.
+            _CONFIG_VARS['userbase'] = _getuserbase()
 
         # Always convert srcdir to an absolute path
         srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)

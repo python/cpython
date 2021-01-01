@@ -22,7 +22,7 @@ import unittest
 from unittest import mock
 import weakref
 
-if sys.platform != 'win32':
+if sys.platform not in ('win32', 'vxworks'):
     import tty
 
 import asyncio
@@ -294,11 +294,8 @@ class EventLoopTestsMixin:
             self.loop.stop()
 
         self.loop.call_later(0.1, callback, 'hello world')
-        t0 = time.monotonic()
         self.loop.run_forever()
-        t1 = time.monotonic()
         self.assertEqual(results, ['hello world'])
-        self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
 
     def test_call_soon(self):
         results = []
@@ -468,6 +465,8 @@ class EventLoopTestsMixin:
         self.assertFalse(self.loop.remove_signal_handler(signal.SIGINT))
 
     @unittest.skipUnless(hasattr(signal, 'SIGALRM'), 'No SIGALRM')
+    @unittest.skipUnless(hasattr(signal, 'setitimer'),
+                         'need signal.setitimer()')
     def test_signal_handling_while_selecting(self):
         # Test with a signal actually arriving during a select() call.
         caught = 0
@@ -485,6 +484,8 @@ class EventLoopTestsMixin:
         self.assertEqual(caught, 1)
 
     @unittest.skipUnless(hasattr(signal, 'SIGALRM'), 'No SIGALRM')
+    @unittest.skipUnless(hasattr(signal, 'setitimer'),
+                         'need signal.setitimer()')
     def test_signal_handling_args(self):
         some_args = (42,)
         caught = 0
@@ -1374,6 +1375,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
+    @unittest.skipUnless(hasattr(os, 'openpty'), 'need os.openpty()')
     def test_read_pty_output(self):
         proto = MyReadPipeProto(loop=self.loop)
 
@@ -1471,6 +1473,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
+    @unittest.skipUnless(hasattr(os, 'openpty'), 'need os.openpty()')
     # select, poll and kqueue don't support character devices (PTY) on Mac OS X
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)
@@ -1515,6 +1518,7 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
+    @unittest.skipUnless(hasattr(os, 'openpty'), 'need os.openpty()')
     # select, poll and kqueue don't support character devices (PTY) on Mac OS X
     # older than 10.6 (Snow Leopard)
     @support.requires_mac_ver(10, 6)

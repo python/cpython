@@ -689,7 +689,7 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
     if (wo->win != stdscr) delwin(wo->win);
     if (wo->encoding != NULL)
         PyMem_Free(wo->encoding);
-    PyObject_DEL(wo);
+    PyObject_Free(wo);
 }
 
 /* Addch, Addstr, Addnstr */

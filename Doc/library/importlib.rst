@@ -1138,7 +1138,7 @@ find and load modules.
       directory for ``''`` (i.e. the empty string).
 
 
-.. class:: FileFinder(path, \*loader_details)
+.. class:: FileFinder(path, *loader_details)
 
    A concrete implementation of :class:`importlib.abc.PathEntryFinder` which
    caches results from the file system.
@@ -1181,7 +1181,7 @@ find and load modules.
 
       Clear out the internal cache.
 
-   .. classmethod:: path_hook(\*loader_details)
+   .. classmethod:: path_hook(*loader_details)
 
       A class method which returns a closure for use on :attr:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the

@@ -757,7 +757,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            self.interp.restart_subprocess()
+            self.restart_subprocess()
         self.checklinecache()
         debugger = self.debugger
         try:
@@ -1061,8 +1061,10 @@ class PyShell(OutputWindow):
                    (sys.version, sys.platform, self.COPYRIGHT, nosub))
         self.text.focus_force()
         self.showprompt()
+        # User code should use separate default Tk root window
         import tkinter
-        tkinter._default_root = None # 03Jan04 KBK What's this?
+        tkinter._support_default_root = True
+        tkinter._default_root = None
         return True
 
     def stop_readline(self):

@@ -55,7 +55,6 @@ static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
 static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
-static void call_py_exitfuncs(PyThreadState *tstate);
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -96,14 +95,6 @@ _Py_IsFinalizing(void)
 /* Hack to force loading of object files */
 int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
     PyOS_mystrnicmp; /* Python/pystrcmp.o */
-
-/* PyModule_GetWarningsModule is no longer necessary as of 2.6
-since _warnings is builtin.  This API should not be used. */
-PyObject *
-PyModule_GetWarningsModule(void)
-{
-    return PyImport_ImportModule("warnings");
-}
 
 
 /* APIs to access the initialization flags
@@ -698,6 +689,12 @@ pycore_init_types(PyThreadState *tstate)
     if (_PyWarnings_InitState(tstate) < 0) {
         return _PyStatus_ERR("can't initialize warnings");
     }
+
+    status = _PyAtExit_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1576,6 +1573,9 @@ finalize_interp_types(PyThreadState *tstate)
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
+    _PyType_Fini(tstate);
+    // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
+    // a dict internally.
     _PyUnicode_ClearInterned(tstate);
 
     _PyDict_Fini(tstate);
@@ -1663,7 +1663,7 @@ Py_FinalizeEx(void)
      * the threads created via Threading.
      */
 
-    call_py_exitfuncs(tstate);
+    _PyAtExit_Call(tstate);
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -1751,9 +1751,6 @@ Py_FinalizeEx(void)
 
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
     _PyImport_Fini();
-
-    /* Cleanup typeobject.c's internal caches. */
-    _PyType_Fini();
 
     /* unload faulthandler module */
     _PyFaulthandler_Fini();
@@ -1954,7 +1951,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    call_py_exitfuncs(tstate);
+    _PyAtExit_Call(tstate);
 
     if (tstate != interp->tstate_head || tstate->next != NULL) {
         Py_FatalError("not the last thread");
@@ -2640,30 +2637,6 @@ Py_ExitStatusException(PyStatus status)
     }
 }
 
-/* Clean up and exit */
-
-/* For the atexit module. */
-void _Py_PyAtExit(void (*func)(PyObject *), PyObject *module)
-{
-    PyInterpreterState *is = _PyInterpreterState_GET();
-
-    /* Guard against API misuse (see bpo-17852) */
-    assert(is->pyexitfunc == NULL || is->pyexitfunc == func);
-
-    is->pyexitfunc = func;
-    is->pyexitmodule = module;
-}
-
-static void
-call_py_exitfuncs(PyThreadState *tstate)
-{
-    PyInterpreterState *interp = tstate->interp;
-    if (interp->pyexitfunc == NULL)
-        return;
-
-    (*interp->pyexitfunc)(interp->pyexitmodule);
-    _PyErr_Clear(tstate);
-}
 
 /* Wait until threading._shutdown completes, provided
    the threading module was imported in the first place.
@@ -2744,6 +2717,21 @@ Py_FdIsInteractive(FILE *fp, const char *filename)
     return (filename == NULL) ||
            (strcmp(filename, "<stdin>") == 0) ||
            (strcmp(filename, "???") == 0);
+}
+
+
+int
+_Py_FdIsInteractive(FILE *fp, PyObject *filename)
+{
+    if (isatty((int)fileno(fp))) {
+        return 1;
+    }
+    if (!Py_InteractiveFlag) {
+        return 0;
+    }
+    return (filename == NULL) ||
+           (PyUnicode_CompareWithASCIIString(filename, "<stdin>") == 0) ||
+           (PyUnicode_CompareWithASCIIString(filename, "???") == 0);
 }
 
 
