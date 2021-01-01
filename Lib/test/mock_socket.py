@@ -159,3 +159,6 @@ AF_UNIX = socket_module.AF_UNIX
 SOCK_STREAM = socket_module.SOCK_STREAM
 SOL_SOCKET = None
 SO_REUSEADDR = None
+
+if hasattr(socket_module, 'AF_UNIX'):
+    AF_UNIX = socket_module.AF_UNIX
