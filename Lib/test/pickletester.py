@@ -1501,16 +1501,18 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(expected, got)
 
     def test_recursive_list(self):
+        # List containing itself.
         l = []
         l.append(l)
         for proto in protocols:
             s = self.dumps(l, proto)
-            x = self.loads(s)
+            x = self.loads(s)[0]
             self.assertIsInstance(x, list)
             self.assertEqual(len(x), 1)
             self.assertIs(x[0], x)
 
     def test_recursive_tuple_and_list(self):
+        # Tuple containing a list containing an original tuple.
         t = ([],)
         t[0].append(t)
         for proto in protocols:
@@ -1533,6 +1535,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[0][0], x)
 
     def test_recursive_dict(self):
+        # Dict containing itself.
         d = {}
         d[1] = d
         for proto in protocols:
@@ -1543,6 +1546,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[1], x)
 
     def test_recursive_tuple_and_dict(self):
+        # Tuple containing a dict containing an original tuple.
         t = ({},)
         t[0][1] = t
         for proto in protocols:
@@ -1565,6 +1569,8 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[0][1], x)
 
     def test_recursive_dict_key(self):
+        # Dict containing an immutable object (as key) containing an original
+        # dict.
         d = {}
         d[K(d)] = 1
         for proto in protocols:
@@ -1576,6 +1582,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(list(x.keys())[0].value, x)
 
     def test_recursive_tuple_and_dict_key(self):
+        # Tuple containing an immutable object containing an original tuple.
         t = ({},)
         t[0][K(t)] = 1
         for proto in protocols:
@@ -1600,6 +1607,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(list(x[0].keys())[0].value, x)
 
     def test_recursive_set(self):
+        # Set containing an immutable object containing an original set.
         y = set()
         y.add(K(y))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -1611,6 +1619,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(list(x)[0].value, x)
 
     def test_recursive_list_subclass(self):
+        # List subclass object containing itself.
         y = MyList()
         y.append(y)
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
@@ -1621,6 +1630,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[0], x)
 
     def test_recursive_dict_subclass(self):
+        # Dict subclass object containing itself.
         d = MyDict()
         d[1] = d
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
@@ -1631,6 +1641,8 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[1], x)
 
     def test_recursive_dict_subclass_key(self):
+        # Dict subclass object containing an immutable object (as key)
+        # containing an original dict.
         d = MyDict()
         d[K(d)] = 1
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
@@ -1642,6 +1654,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(list(x.keys())[0].value, x)
 
     def test_recursive_inst(self):
+        # Python object containing itself.
         i = C()
         i.attr = i
         for proto in protocols:
@@ -1667,6 +1680,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertTrue(x[0].attr[1] is x)
 
     def check_recursive_collection_and_inst(self, factory):
+        # Python object containing a collection containing an original object.
         h = H()
         y = factory([h])
         h.attr = y
@@ -1720,6 +1734,7 @@ class AbstractPickleTests(unittest.TestCase):
         self.check_recursive_collection_and_inst(MyFrozenSet)
 
     def test_recursive_list_like(self):
+        # List-like object containing itself.
         y = REX_six()
         y.append(y)
         for proto in protocols:
@@ -1730,6 +1745,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x.items[0], x)
 
     def test_recursive_tuple_and_list_like(self):
+        # Tuple containing a list-like object containing an original tuple.
         t = (REX_six(),)
         t[0].append(t)
         for proto in protocols:
@@ -1752,6 +1768,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[0].items[0], x)
 
     def test_recursive_dict_like(self):
+        # Dict-like object containing itself.
         y = REX_seven()
         y[1] = y
         for proto in protocols:
@@ -1762,6 +1779,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x.table[1], x)
 
     def test_recursive_tuple_and_dict_like(self):
+        # Tuple containing a dict-like object containing an original tuple.
         t = (REX_seven(),)
         t[0][1] = t
         for proto in protocols:
@@ -1784,6 +1802,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x[0].table[1], x)
 
     def test_recursive_inst_state(self):
+        # Mutable object containing itself.
         y = REX_state()
         y.state = y
         for proto in protocols:
@@ -1793,6 +1812,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIs(x.state, x)
 
     def test_recursive_tuple_and_inst_state(self):
+        # Tuple containing a mutable object containing an original tuple.
         t = (REX_state(),)
         t[0].state = t
         for proto in protocols:
