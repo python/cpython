@@ -1,0 +1,3 @@
+Raise :exc:`OverflowError` instead of silent truncation in :meth:`socket.ntohs`
+and :meth:`socket.htons`.  Silent truncation was deprecated in Python 3.7.
+Patch by Erlend E. Aasland

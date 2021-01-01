@@ -28,7 +28,7 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
-          if [ -z "GITHUB_BASE_REF" ]; then
+          if [ -z "$GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
@@ -99,6 +99,8 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
     - uses: actions/checkout@v2
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
     - name: Display build info

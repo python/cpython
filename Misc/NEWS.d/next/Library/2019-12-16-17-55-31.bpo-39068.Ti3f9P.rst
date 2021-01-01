@@ -1,0 +1,2 @@
+Fix initialization race condition in :func:`a85encode` and :func:`b85encode`
+in :mod:`base64`. Patch by Brandon Stansbury.
