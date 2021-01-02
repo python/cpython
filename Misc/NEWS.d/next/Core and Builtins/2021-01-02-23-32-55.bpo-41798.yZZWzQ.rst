@@ -1,0 +1,3 @@
+Allocate the ``expat_CAPI`` on the heap memory to avoid more module instances
+hold a single ``expat_CAPI`` object after pyexpat ported to multiphase
+initialization (:pep:`489`).
