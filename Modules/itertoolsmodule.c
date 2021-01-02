@@ -18,6 +18,8 @@ typedef struct {
     PyTypeObject *dropwhile_type;
     PyTypeObject *takewhile_type;
     PyTypeObject *starmap_type;
+    PyTypeObject *combinations_type;
+    PyTypeObject *cwr_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -49,8 +51,8 @@ class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_ty
 class itertools.takewhile "takewhileobject *" "clinic_find_state()->takewhile_type"
 class itertools.starmap "starmapobject *" "clinic_find_state()->starmap_type"
 class itertools.chain "chainobject *" "&chain_type"
-class itertools.combinations "combinationsobject *" "&combinations_type"
-class itertools.combinations_with_replacement "cwr_object *" "&cwr_type"
+class itertools.combinations "combinationsobject *" "clinic_find_state()->combinations_type"
+class itertools.combinations_with_replacement "cwr_object *" "clinic_find_state()->cwr_type"
 class itertools.permutations "permutationsobject *" "&permutations_type"
 class itertools.accumulate "accumulateobject *" "&accumulate_type"
 class itertools.compress "compressobject *" "&compress_type"
@@ -58,12 +60,10 @@ class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2378e41d4bd2ac8d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=84842f360226c940]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
-static PyTypeObject combinations_type;
-static PyTypeObject cwr_type;
 static PyTypeObject permutations_type;
 static PyTypeObject accumulate_type;
 static PyTypeObject compress_type;
@@ -2532,12 +2532,14 @@ error:
 static void
 combinations_dealloc(combinationsobject *co)
 {
+    PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
     Py_XDECREF(co->pool);
     Py_XDECREF(co->result);
     if (co->indices != NULL)
         PyMem_Free(co->indices);
-    Py_TYPE(co)->tp_free(co);
+    tp->tp_free(co);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2724,48 +2726,24 @@ static PyMethodDef combinations_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject combinations_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.combinations",           /* tp_name */
-    sizeof(combinationsobject),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)combinations_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_combinations__doc__,      /* tp_doc */
-    (traverseproc)combinations_traverse,/* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)combinations_next,    /* tp_iternext */
-    combinations_methods,               /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_combinations,             /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot combinations_slots[] = {
+    {Py_tp_dealloc, combinations_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_combinations__doc__},
+    {Py_tp_traverse, combinations_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, combinations_next},
+    {Py_tp_methods, combinations_methods},
+    {Py_tp_new, itertools_combinations},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec combinations_spec = {
+    .name = "itertools.combinations",
+    .basicsize = sizeof(combinationsobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = combinations_slots,
 };
 
 
@@ -2869,12 +2847,14 @@ error:
 static void
 cwr_dealloc(cwrobject *co)
 {
+    PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
     Py_XDECREF(co->pool);
     Py_XDECREF(co->result);
     if (co->indices != NULL)
         PyMem_Free(co->indices);
-    Py_TYPE(co)->tp_free(co);
+    tp->tp_free(co);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -3051,48 +3031,24 @@ static PyMethodDef cwr_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject cwr_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.combinations_with_replacement",          /* tp_name */
-    sizeof(cwrobject),                                  /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    /* methods */
-    (destructor)cwr_dealloc,                            /* tp_dealloc */
-    0,                                                  /* tp_vectorcall_offset */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_as_async */
-    0,                                                  /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    PyObject_GenericGetAttr,                            /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,                            /* tp_flags */
-    itertools_combinations_with_replacement__doc__,     /* tp_doc */
-    (traverseproc)cwr_traverse,                         /* tp_traverse */
-    0,                                                  /* tp_clear */
-    0,                                                  /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                                  /* tp_iter */
-    (iternextfunc)cwr_next,                             /* tp_iternext */
-    cwr_methods,                                        /* tp_methods */
-    0,                                                  /* tp_members */
-    0,                                                  /* tp_getset */
-    0,                                                  /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    0,                                                  /* tp_init */
-    0,                                                  /* tp_alloc */
-    itertools_combinations_with_replacement,            /* tp_new */
-    PyObject_GC_Del,                                    /* tp_free */
+static PyType_Slot cwr_slots[] = {
+    {Py_tp_dealloc, cwr_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_combinations_with_replacement__doc__},
+    {Py_tp_traverse, cwr_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, cwr_next},
+    {Py_tp_methods, cwr_methods},
+    {Py_tp_new, itertools_combinations_with_replacement},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec cwr_spec = {
+    .name = "itertools.combinations_with_replacement",
+    .basicsize = sizeof(cwrobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = cwr_slots,
 };
 
 
@@ -4736,6 +4692,8 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->dropwhile_type);
     Py_VISIT(state->takewhile_type);
     Py_VISIT(state->starmap_type);
+    Py_VISIT(state->combinations_type);
+    Py_VISIT(state->cwr_type);
     return 0;
 }
 
@@ -4749,6 +4707,8 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->dropwhile_type);
     Py_CLEAR(state->takewhile_type);
     Py_CLEAR(state->starmap_type);
+    Py_CLEAR(state->combinations_type);
+    Py_CLEAR(state->cwr_type);
     return 0;
 }
 
@@ -4779,11 +4739,11 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->dropwhile_type, &dropwhile_spec);
     ADD_TYPE(m, state->takewhile_type, &takewhile_spec);
     ADD_TYPE(m, state->starmap_type, &starmap_spec);
+    ADD_TYPE(m, state->combinations_type, &combinations_spec);
+    ADD_TYPE(m, state->cwr_type, &cwr_spec);
 
     PyTypeObject *typelist[] = {
         &accumulate_type,
-        &combinations_type,
-        &cwr_type,
         &islice_type,
         &chain_type,
         &compress_type,
