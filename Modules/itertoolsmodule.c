@@ -3424,8 +3424,6 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
         PyObject *it;
 
         assert(lz->total == NULL);
-        if (PyType_Ready(state->chain_type) < 0)
-            return NULL;
         it = PyObject_CallFunction((PyObject *)state->chain_type, "(O)O",
                                    lz->initial, lz->it);
         if (it == NULL)
@@ -3436,10 +3434,6 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
     if (lz->total == Py_None) {
         PyObject *it;
 
-        if (PyType_Ready(state->chain_type) < 0)
-            return NULL;
-        if (PyType_Ready(state->islice_type) < 0)
-            return NULL;
         it = PyObject_CallFunction((PyObject *)state->chain_type, "(O)O",
                                    lz->total, lz->it);
         if (it == NULL)
