@@ -544,8 +544,9 @@ def TypeAlias(self, parameters):
 
 @_SpecialForm
 def Concatenate(self, parameters):
-    """Used in conjunction with ParamSpec and Callable to represent a higher
-    order function which adds, removes or transforms parameters of a Callable.
+    """Used in conjunction with ``ParamSpec`` and ``Callable`` to represent a
+    higher order function which adds, removes or transforms parameters of a
+    callable.
 
     For example::
 
@@ -735,11 +736,11 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
 
     Parameter specification variables exist primarily for the benefit of static
     type checkers.  They are used to forward the parameter types of one
-    Callable to another Callable, a pattern commonly found in higher order
-    functions and decorators.  They are only valid when used in Concatenate, or
-    as the first argument to Callable, or as parameters for user-defined Generics.
-    See class Generic for more information on generic types.  An example for
-    annotating a decorator::
+    callable to another callable, a pattern commonly found in higher order
+    functions and decorators.  They are only valid when used in ``Concatenate``,
+    or s the first argument to ``Callable``, or as parameters for user-defined
+    Generics.  See class Generic for more information on generic types.  An
+    example for annotating a decorator::
 
        T = TypeVar('T')
        P = ParamSpec('P')
