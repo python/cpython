@@ -1681,6 +1681,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIsInstance(list(x)[0], K)
             self.assertIs(list(x)[0].value, x)
 
+        # Immutable object containing a set containing the original object.
         y, = y
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(y, proto)
