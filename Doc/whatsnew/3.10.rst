@@ -144,6 +144,28 @@ See :pep:`604` for more details.
 
 (Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
+PEP 612: Parameter Specification Variables
+------------------------------------------
+
+Two new options to improve the information provided to static type checkers for
+:pep:`484`\ 's ``Callable`` have been added to the :mod:`typing` module.
+
+The first is the parameter specification variable.  They are used to forward the
+parameter types of one callable to another callable -- a pattern commonly
+found in higher order functions and decorators.  Examples of usage can be found
+in :class:`typing.ParamSpec`. Previously, there was no easy way to type annotate
+dependency of parameter types in such a precise manner.
+
+The second option is the new ``Concatenate`` operator. It's used in conjunction
+with parameter specification variables to type annotate a higher order callable
+which adds or removes parameters of another callable.  Examples of usage can
+be found in :class:`typing.Concatenate`.
+
+See :class:`typing.Callable`, :class:`typing.ParamSpec`,
+:class:`typing.Concatenate` and :pep:`612` for more details.
+
+(Contributed by Ken Jin in :issue:`41559`.)
+
 Other Language Changes
 ======================
 
