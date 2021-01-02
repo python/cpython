@@ -2897,9 +2897,7 @@ type_vectorcall(PyObject *metatype, PyObject *const *args,
         if (!_PyArg_NoKwnames("type", kwnames)) {
             return NULL;
         }
-        PyObject *tp = (PyObject *)Py_TYPE(args[0]);
-        Py_INCREF(tp);
-        return tp;
+        return Py_NewRef(Py_TYPE(args[0]));
     }
     /* In other (much less common) cases, fall back to
        more flexible calling conventions. */
