@@ -28,6 +28,7 @@ typedef struct {
     PyTypeObject *pairwise_type;
     PyTypeObject *ziplongest_type;
     PyTypeObject *product_type;
+    PyTypeObject *repeat_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -4071,8 +4072,6 @@ typedef struct {
     Py_ssize_t cnt;
 } repeatobject;
 
-static PyTypeObject repeat_type;
-
 static PyObject *
 repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -4103,9 +4102,11 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 repeat_dealloc(repeatobject *ro)
 {
+    PyTypeObject *tp = Py_TYPE(ro);
     PyObject_GC_UnTrack(ro);
     Py_XDECREF(ro->element);
-    Py_TYPE(ro)->tp_free(ro);
+    tp->tp_free(ro);
+    Py_DECREF(tp);
 }
 
 static int
@@ -4173,48 +4174,25 @@ PyDoc_STRVAR(repeat_doc,
 for the specified number of times.  If not specified, returns the object\n\
 endlessly.");
 
-static PyTypeObject repeat_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.repeat",                 /* tp_name */
-    sizeof(repeatobject),               /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)repeat_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    (reprfunc)repeat_repr,              /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    repeat_doc,                         /* tp_doc */
-    (traverseproc)repeat_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)repeat_next,          /* tp_iternext */
-    repeat_methods,                     /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    repeat_new,                         /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot repeat_slots[] = {
+    {Py_tp_dealloc, repeat_dealloc},
+    {Py_tp_repr, repeat_repr},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)repeat_doc},
+    {Py_tp_traverse, repeat_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, repeat_next},
+    {Py_tp_methods, repeat_methods},
+    {Py_tp_new, repeat_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec repeat_spec = {
+    .name = "itertools.repeat",
+    .basicsize = sizeof(repeatobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = repeat_slots,
 };
 
 
@@ -4525,6 +4503,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->pairwise_type);
     Py_VISIT(state->ziplongest_type);
     Py_VISIT(state->product_type);
+    Py_VISIT(state->repeat_type);
     return 0;
 }
 
@@ -4548,6 +4527,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->pairwise_type);
     Py_CLEAR(state->ziplongest_type);
     Py_CLEAR(state->product_type);
+    Py_CLEAR(state->repeat_type);
     return 0;
 }
 
@@ -4588,11 +4568,11 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->pairwise_type, &pairwise_spec);
     ADD_TYPE(m, state->ziplongest_type, &ziplongest_spec);
     ADD_TYPE(m, state->product_type, &product_spec);
+    ADD_TYPE(m, state->repeat_type, &repeat_spec);
 
     PyTypeObject *typelist[] = {
         &islice_type,
         &chain_type,
-        &repeat_type,
         &tee_type,
         &teedataobject_type
     };
