@@ -4946,6 +4946,13 @@ All parameterized generics implement special read-only attributes.
       >>> dict[str, list[int]].__args__
       (<class 'str'>, list[int])
 
+   .. versionchanged:: 3.9.2
+      ``__args__`` will convert all lists passed to the generic alias to tuples.
+      This aligns with the :mod:`typing` module which tries to ensure that
+      most types will be hashable for caching purposes.  Passing a list is valid
+      in certain scenarios from Python 3.10 and higher due to :pep:`612`.  An
+      exception to this behavior is the generic alias for
+      ``collections.abc.Callable``.
 
 .. attribute:: genericalias.__parameters__
 
