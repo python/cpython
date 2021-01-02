@@ -13,27 +13,27 @@
 */
 
 typedef struct {
-    PyTypeObject *groupby_type;
     PyTypeObject *_grouper_type;
+    PyTypeObject *accumulate_type;
+    PyTypeObject *chain_type;
+    PyTypeObject *combinations_type;
+    PyTypeObject *compress_type;
+    PyTypeObject *count_type;
+    PyTypeObject *cwr_type;
     PyTypeObject *cycle_type;
     PyTypeObject *dropwhile_type;
-    PyTypeObject *takewhile_type;
-    PyTypeObject *starmap_type;
-    PyTypeObject *combinations_type;
-    PyTypeObject *cwr_type;
-    PyTypeObject *permutations_type;
-    PyTypeObject *accumulate_type;
-    PyTypeObject *compress_type;
     PyTypeObject *filterfalse_type;
-    PyTypeObject *count_type;
+    PyTypeObject *groupby_type;
+    PyTypeObject *islice_type;
     PyTypeObject *pairwise_type;
-    PyTypeObject *ziplongest_type;
+    PyTypeObject *permutations_type;
     PyTypeObject *product_type;
     PyTypeObject *repeat_type;
-    PyTypeObject *islice_type;
-    PyTypeObject *chain_type;
+    PyTypeObject *starmap_type;
+    PyTypeObject *takewhile_type;
     PyTypeObject *tee_type;
     PyTypeObject *teedataobject_type;
+    PyTypeObject *ziplongest_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -56,23 +56,23 @@ itertoolsmodule_find_state_by_type(PyTypeObject *tp)
 
 /*[clinic input]
 module itertools
-class itertools.groupby "groupbyobject *" "clinic_find_state()->groupby_type"
 class itertools._grouper "_grouperobject *" "clinic_find_state()->_grouper_type"
-class itertools.teedataobject "teedataobject *" "clinic_find_state()->teedataobject_type"
 class itertools._tee "teeobject *" "clinic_find_state()->tee_type"
-class itertools.cycle "cycleobject *" "clinic_find_state()->cycle_type"
-class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_type"
-class itertools.takewhile "takewhileobject *" "clinic_find_state()->takewhile_type"
-class itertools.starmap "starmapobject *" "clinic_find_state()->starmap_type"
+class itertools.accumulate "accumulateobject *" "clinic_find_state()->accumulate_type"
 class itertools.chain "chainobject *" "clinic_find_state->chain_type"
 class itertools.combinations "combinationsobject *" "clinic_find_state()->combinations_type"
 class itertools.combinations_with_replacement "cwr_object *" "clinic_find_state()->cwr_type"
-class itertools.permutations "permutationsobject *" "clinic_find_state()->permutations_type"
-class itertools.accumulate "accumulateobject *" "clinic_find_state()->accumulate_type"
 class itertools.compress "compressobject *" "clinic_find_state()->compress_type"
-class itertools.filterfalse "filterfalseobject *" "clinic_find_state()->filterfalse_type"
 class itertools.count "countobject *" "clinic_find_state()->count_type"
+class itertools.cycle "cycleobject *" "clinic_find_state()->cycle_type"
+class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_type"
+class itertools.filterfalse "filterfalseobject *" "clinic_find_state()->filterfalse_type"
+class itertools.groupby "groupbyobject *" "clinic_find_state()->groupby_type"
 class itertools.pairwise "pairwiseobject *" "clinic_find_state()->pairwise_type"
+class itertools.permutations "permutationsobject *" "clinic_find_state()->permutations_type"
+class itertools.starmap "starmapobject *" "clinic_find_state()->starmap_type"
+class itertools.takewhile "takewhileobject *" "clinic_find_state()->takewhile_type"
+class itertools.teedataobject "teedataobject *" "clinic_find_state()->teedataobject_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=453c9bd09dcd8039]*/
 
@@ -4410,27 +4410,27 @@ static int
 itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
 {
     itertoolsmodule_state *state = itertoolsmodule_get_state(m);
-    Py_VISIT(state->groupby_type);
     Py_VISIT(state->_grouper_type);
+    Py_VISIT(state->accumulate_type);
+    Py_VISIT(state->chain_type);
+    Py_VISIT(state->combinations_type);
+    Py_VISIT(state->compress_type);
+    Py_VISIT(state->count_type);
+    Py_VISIT(state->cwr_type);
     Py_VISIT(state->cycle_type);
     Py_VISIT(state->dropwhile_type);
-    Py_VISIT(state->takewhile_type);
-    Py_VISIT(state->starmap_type);
-    Py_VISIT(state->combinations_type);
-    Py_VISIT(state->cwr_type);
-    Py_VISIT(state->permutations_type);
-    Py_VISIT(state->accumulate_type);
-    Py_VISIT(state->compress_type);
     Py_VISIT(state->filterfalse_type);
-    Py_VISIT(state->count_type);
+    Py_VISIT(state->groupby_type);
+    Py_VISIT(state->islice_type);
     Py_VISIT(state->pairwise_type);
-    Py_VISIT(state->ziplongest_type);
+    Py_VISIT(state->permutations_type);
     Py_VISIT(state->product_type);
     Py_VISIT(state->repeat_type);
-    Py_VISIT(state->islice_type);
-    Py_VISIT(state->chain_type);
+    Py_VISIT(state->starmap_type);
+    Py_VISIT(state->takewhile_type);
     Py_VISIT(state->tee_type);
     Py_VISIT(state->teedataobject_type);
+    Py_VISIT(state->ziplongest_type);
     return 0;
 }
 
@@ -4438,27 +4438,27 @@ static int
 itertoolsmodule_clear(PyObject *m)
 {
     itertoolsmodule_state *state = itertoolsmodule_get_state(m);
-    Py_CLEAR(state->groupby_type);
     Py_CLEAR(state->_grouper_type);
+    Py_CLEAR(state->accumulate_type);
+    Py_CLEAR(state->chain_type);
+    Py_CLEAR(state->combinations_type);
+    Py_CLEAR(state->compress_type);
+    Py_CLEAR(state->count_type);
+    Py_CLEAR(state->cwr_type);
     Py_CLEAR(state->cycle_type);
     Py_CLEAR(state->dropwhile_type);
-    Py_CLEAR(state->takewhile_type);
-    Py_CLEAR(state->starmap_type);
-    Py_CLEAR(state->combinations_type);
-    Py_CLEAR(state->cwr_type);
-    Py_CLEAR(state->permutations_type);
-    Py_CLEAR(state->accumulate_type);
-    Py_CLEAR(state->compress_type);
     Py_CLEAR(state->filterfalse_type);
-    Py_CLEAR(state->count_type);
+    Py_CLEAR(state->groupby_type);
+    Py_CLEAR(state->islice_type);
     Py_CLEAR(state->pairwise_type);
-    Py_CLEAR(state->ziplongest_type);
+    Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->product_type);
     Py_CLEAR(state->repeat_type);
-    Py_CLEAR(state->islice_type);
-    Py_CLEAR(state->chain_type);
+    Py_CLEAR(state->starmap_type);
+    Py_CLEAR(state->takewhile_type);
     Py_CLEAR(state->tee_type);
     Py_CLEAR(state->teedataobject_type);
+    Py_CLEAR(state->ziplongest_type);
     return 0;
 }
 
@@ -4484,27 +4484,27 @@ itertoolsmodule_exec(PyObject *m)
 {
     itertoolsmodule_state *state = itertoolsmodule_get_state(m);
 
-    ADD_TYPE(m, state->groupby_type, &groupby_spec);
     ADD_TYPE(m, state->_grouper_type, &_grouper_spec);
+    ADD_TYPE(m, state->accumulate_type, &accumulate_spec);
+    ADD_TYPE(m, state->chain_type, &chain_spec);
+    ADD_TYPE(m, state->combinations_type, &combinations_spec);
+    ADD_TYPE(m, state->compress_type, &compress_spec);
+    ADD_TYPE(m, state->count_type, &count_spec);
+    ADD_TYPE(m, state->cwr_type, &cwr_spec);
     ADD_TYPE(m, state->cycle_type, &cycle_spec);
     ADD_TYPE(m, state->dropwhile_type, &dropwhile_spec);
-    ADD_TYPE(m, state->takewhile_type, &takewhile_spec);
-    ADD_TYPE(m, state->starmap_type, &starmap_spec);
-    ADD_TYPE(m, state->combinations_type, &combinations_spec);
-    ADD_TYPE(m, state->cwr_type, &cwr_spec);
-    ADD_TYPE(m, state->permutations_type, &permutations_spec);
-    ADD_TYPE(m, state->accumulate_type, &accumulate_spec);
-    ADD_TYPE(m, state->compress_type, &compress_spec);
     ADD_TYPE(m, state->filterfalse_type, &filterfalse_spec);
-    ADD_TYPE(m, state->count_type, &count_spec);
+    ADD_TYPE(m, state->groupby_type, &groupby_spec);
+    ADD_TYPE(m, state->islice_type, &islice_spec);
     ADD_TYPE(m, state->pairwise_type, &pairwise_spec);
-    ADD_TYPE(m, state->ziplongest_type, &ziplongest_spec);
+    ADD_TYPE(m, state->permutations_type, &permutations_spec);
     ADD_TYPE(m, state->product_type, &product_spec);
     ADD_TYPE(m, state->repeat_type, &repeat_spec);
-    ADD_TYPE(m, state->islice_type, &islice_spec);
-    ADD_TYPE(m, state->chain_type, &chain_spec);
+    ADD_TYPE(m, state->starmap_type, &starmap_spec);
+    ADD_TYPE(m, state->takewhile_type, &takewhile_spec);
     ADD_TYPE(m, state->tee_type, &tee_spec);
     ADD_TYPE(m, state->teedataobject_type, &teedataobject_spec);
+    ADD_TYPE(m, state->ziplongest_type, &ziplongest_spec);
     Py_SET_TYPE(state->teedataobject_type, &PyType_Type);
 
     return 0;
