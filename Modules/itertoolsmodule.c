@@ -22,6 +22,7 @@ typedef struct {
     PyTypeObject *cwr_type;
     PyTypeObject *permutations_type;
     PyTypeObject *accumulate_type;
+    PyTypeObject *compress_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -57,16 +58,15 @@ class itertools.combinations "combinationsobject *" "clinic_find_state()->combin
 class itertools.combinations_with_replacement "cwr_object *" "clinic_find_state()->cwr_type"
 class itertools.permutations "permutationsobject *" "clinic_find_state()->permutations_type"
 class itertools.accumulate "accumulateobject *" "clinic_find_state()->accumulate_type"
-class itertools.compress "compressobject *" "&compress_type"
+class itertools.compress "compressobject *" "clinic_find_state()->compress_type"
 class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d745b73d7b6fa4c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdc7eab4ea99a6af]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
-static PyTypeObject compress_type;
 static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
@@ -3663,10 +3663,12 @@ fail:
 static void
 compress_dealloc(compressobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->data);
     Py_XDECREF(lz->selectors);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
@@ -3726,48 +3728,24 @@ static PyMethodDef compress_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject compress_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.compress",               /* tp_name */
-    sizeof(compressobject),             /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)compress_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_compress__doc__,          /* tp_doc */
-    (traverseproc)compress_traverse,    /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)compress_next,        /* tp_iternext */
-    compress_methods,                   /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_compress,                 /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot compress_slots[] = {
+    {Py_tp_dealloc, compress_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_compress__doc__},
+    {Py_tp_traverse, compress_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, compress_next},
+    {Py_tp_methods, compress_methods},
+    {Py_tp_new, itertools_compress},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec compress_spec = {
+    .name = "itertools.compress",
+    .basicsize = sizeof(compressobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = compress_slots,
 };
 
 
@@ -4652,6 +4630,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->cwr_type);
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->accumulate_type);
+    Py_VISIT(state->compress_type);
     return 0;
 }
 
@@ -4669,6 +4648,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->cwr_type);
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->accumulate_type);
+    Py_CLEAR(state->compress_type);
     return 0;
 }
 
@@ -4703,11 +4683,11 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->cwr_type, &cwr_spec);
     ADD_TYPE(m, state->permutations_type, &permutations_spec);
     ADD_TYPE(m, state->accumulate_type, &accumulate_spec);
+    ADD_TYPE(m, state->compress_type, &compress_spec);
 
     PyTypeObject *typelist[] = {
         &islice_type,
         &chain_type,
-        &compress_type,
         &filterfalse_type,
         &count_type,
         &ziplongest_type,
