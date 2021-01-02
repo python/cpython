@@ -23,6 +23,7 @@ typedef struct {
     PyTypeObject *permutations_type;
     PyTypeObject *accumulate_type;
     PyTypeObject *compress_type;
+    PyTypeObject *filterfalse_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -59,15 +60,14 @@ class itertools.combinations_with_replacement "cwr_object *" "clinic_find_state(
 class itertools.permutations "permutationsobject *" "clinic_find_state()->permutations_type"
 class itertools.accumulate "accumulateobject *" "clinic_find_state()->accumulate_type"
 class itertools.compress "compressobject *" "clinic_find_state()->compress_type"
-class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
+class itertools.filterfalse "filterfalseobject *" "clinic_find_state()->filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdc7eab4ea99a6af]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fe1234706efeb497]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
-static PyTypeObject filterfalse_type;
 static PyTypeObject count_type;
 static PyTypeObject pairwise_type;
 
@@ -3796,10 +3796,12 @@ itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 static void
 filterfalse_dealloc(filterfalseobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
-    Py_TYPE(lz)->tp_free(lz);
+    lz->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
@@ -3856,48 +3858,24 @@ static PyMethodDef filterfalse_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject filterfalse_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.filterfalse",            /* tp_name */
-    sizeof(filterfalseobject),          /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)filterfalse_dealloc,    /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_filterfalse__doc__,       /* tp_doc */
-    (traverseproc)filterfalse_traverse, /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)filterfalse_next,     /* tp_iternext */
-    filterfalse_methods,                /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_filterfalse,              /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot filterfalse_slots[] = {
+    {Py_tp_dealloc, filterfalse_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_filterfalse__doc__},
+    {Py_tp_traverse, filterfalse_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, filterfalse_next},
+    {Py_tp_methods, filterfalse_methods},
+    {Py_tp_new, itertools_filterfalse},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec filterfalse_spec = {
+    .name = "itertools.filterfalse",
+    .basicsize = sizeof(filterfalseobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = filterfalse_slots,
 };
 
 
@@ -4631,6 +4609,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->accumulate_type);
     Py_VISIT(state->compress_type);
+    Py_VISIT(state->filterfalse_type);
     return 0;
 }
 
@@ -4649,6 +4628,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->accumulate_type);
     Py_CLEAR(state->compress_type);
+    Py_CLEAR(state->filterfalse_type);
     return 0;
 }
 
@@ -4684,11 +4664,11 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->permutations_type, &permutations_spec);
     ADD_TYPE(m, state->accumulate_type, &accumulate_spec);
     ADD_TYPE(m, state->compress_type, &compress_spec);
+    ADD_TYPE(m, state->filterfalse_type, &filterfalse_spec);
 
     PyTypeObject *typelist[] = {
         &islice_type,
         &chain_type,
-        &filterfalse_type,
         &count_type,
         &ziplongest_type,
         &pairwise_type,
