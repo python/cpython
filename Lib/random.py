@@ -96,6 +96,7 @@ LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
+_ONE = 1
 
 
 class Random(_random.Random):
@@ -288,7 +289,7 @@ class Random(_random.Random):
 
     ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1):
+    def randrange(self, start, stop=None, step=_ONE):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -311,7 +312,12 @@ class Random(_random.Random):
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer arg 1 for randrange()")
+
         if stop is None:
+            # We don't check for "step != 1" because it hasn't been
+            # type checked and converted to an integer yet.
+            if step is not _ONE:
+                raise TypeError('Missing a non-None stop argument')
             if istart > 0:
                 return self._randbelow(istart)
             raise ValueError("empty range for randrange()")
