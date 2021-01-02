@@ -737,6 +737,16 @@ class TypesTests(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError):
             list[int] | list[bt]
 
+        union_ga = (int | list[str], int | collections.abc.Callable[..., str],
+                    int | d)
+        # Raise error when isinstance(type, type | genericalias)
+        for type_ in union_ga:
+            with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
+                with self.assertRaises(TypeError):
+                    isinstance(list, type_)
+                with self.assertRaises(TypeError):
+                    issubclass(list, type_)
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 
