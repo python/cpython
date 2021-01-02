@@ -562,6 +562,14 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
             with self.assertRaises(ValueError):
                 randrange(10, 20, 1.5)
 
+    def test_randrange_step(self):
+        # bpo-42772: When stop is None, the step argument was being ignored.
+        randrange = self.gen.randrange
+        with self.assertRaises(TypeError):
+            randrange(1000, step=100)
+        with self.assertRaises(TypeError):
+            randrange(1000, None, step=100)
+
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
         # show that: k = int(1.001 + _log(n, 2))
