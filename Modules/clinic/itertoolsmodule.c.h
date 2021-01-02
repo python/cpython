@@ -89,15 +89,15 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *parent;
     PyObject *tgtkey;
 
-    if ((type == &_grouper_type) &&
+    if ((type == clinic_find_state()->_grouper_type) &&
         !_PyArg_NoKeywords("_grouper", kwargs)) {
         goto exit;
     }
     if (!_PyArg_CheckPositional("_grouper", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), &groupby_type)) {
-        _PyArg_BadArgument("_grouper", "argument 1", (&groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
+    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_find_state()->groupby_type)) {
+        _PyArg_BadArgument("_grouper", "argument 1", (clinic_find_state()->groupby_type)->tp_name, PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     parent = PyTuple_GET_ITEM(args, 0);
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=889c4afc3b13574f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b59160678baa177a input=a9049054013a1b77]*/
