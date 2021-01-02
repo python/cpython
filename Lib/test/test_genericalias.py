@@ -391,5 +391,23 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(repr(C1), "collections.abc.Callable"
                                        "[typing.Concatenate[int, ~P], int]")
 
+    def test_tupleify(self):
+        # Converts all lists inside __args__ to tuple.
+        # For consistency with typing module which ensures
+        # most types are hashable.  Required since PEP 612
+        # introduces lists during substitution.
+
+        self.assertEqual(tuple[[]], tuple[(),])
+        self.assertEqual(tuple[int, [str, dict]], tuple[int, (str, dict)])
+        self.assertEqual(list[int, [str, [str, dict]]], list[int, (str, (str, dict))])
+        # Most likely to refleak due to nested list inside tuple.
+        self.assertEqual(list[int, (str, [str, dict])], list[int, (str, (str, dict))])
+
+        x = (int, str, [int, list])
+        self.assertEqual(list[x], list[int, str, (int, list)])
+        # Make sure the original tuple wasn't modified.
+        self.assertEqual(x, (int, str, [int, list]))
+
+
 if __name__ == "__main__":
     unittest.main()

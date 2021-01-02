@@ -4,6 +4,7 @@
 #include "pycore_object.h"
 #include "pycore_unionobject.h"   // _Py_union_as_number
 #include "structmember.h"         // PyMemberDef
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 typedef struct {
     PyObject_HEAD
@@ -225,6 +226,36 @@ tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
     return 0;
 }
 
+// Makes a deep copy of a tuple
+static inline PyObject *
+tuple_copy(PyObject *obj) {
+    return _PyTuple_FromArray(((PyTupleObject *)obj)->ob_item, Py_SIZE(obj));
+}
+
+// This converts all nested lists in args to a tuple (args should be a tuple).
+// Usually needed to help caching in other libraries.
+// Must be called on a copy of a tuple object, where the only reference is
+// owned by the caller.
+static inline void
+tupleify_lists(PyObject *args) {
+    Py_ssize_t len = PyTuple_GET_SIZE(args);
+    for (Py_ssize_t i = 0; i < len; ++i) {
+        PyObject *arg = PyTuple_GET_ITEM(args, i);
+        if (PyList_CheckExact(arg)) {
+            PyObject *new_arg = PyList_AsTuple(arg);
+            tupleify_lists(new_arg);
+            PyTuple_SET_ITEM(args, i, new_arg);
+            Py_DECREF(arg);
+        }
+        else if (PyTuple_CheckExact(arg)) {
+            // In case there are lists nested inside tuples.
+            // This works despite interned tuples because tuples containing
+            // lists aren't interned.
+            tupleify_lists(arg);
+        }
+    }
+}
+
 static PyObject *
 make_parameters(PyObject *args)
 {
@@ -306,14 +337,7 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
             if (iparam >= 0) {
                 arg = argitems[iparam];
             }
-            // convert all the lists inside args to tuples to help
-            // with caching in other libaries
-            if (PyList_CheckExact(arg)) {
-                arg = PyList_AsTuple(arg);
-            }
-            else {
-                Py_INCREF(arg);
-            }
+            Py_INCREF(arg);
             PyTuple_SET_ITEM(subargs, i, arg);
         }
 
@@ -384,13 +408,7 @@ ga_getitem(PyObject *self, PyObject *item)
             Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
             arg = argitems[iparam];
-            // convert lists to tuples to help with caching in other libaries.
-            if (PyList_CheckExact(arg)) {
-                arg = PyList_AsTuple(arg);
-            }
-            else {
-                Py_INCREF(arg);
-            }
+            Py_INCREF(arg);
         }
         else {
             arg = subs_tvars(arg, alias->parameters, argitems);
@@ -626,10 +644,13 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     else {
         Py_INCREF(args);
     }
+    PyObject *new_args = tuple_copy(args);
+    tupleify_lists(new_args);
+    Py_DECREF(args);
 
     Py_INCREF(origin);
     alias->origin = origin;
-    alias->args = args;
+    alias->args = new_args;
     alias->parameters = NULL;
     alias->weakreflist = NULL;
     return 1;
