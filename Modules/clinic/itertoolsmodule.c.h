@@ -267,7 +267,7 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &dropwhile_type) &&
+    if ((type == clinic_find_state()->dropwhile_type) &&
         !_PyArg_NoKeywords("dropwhile", kwargs)) {
         goto exit;
     }
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dbdd07daaf144abb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e5302266479d8b0 input=a9049054013a1b77]*/
