@@ -351,9 +351,9 @@ class Random(_random.Random):
                       DeprecationWarning, 2)
                 raise ValueError("non-integer step for randrange()")
         width = istop - istart
-        if istep == 1 and width > 0:
-            return istart + self._randbelow(width)
         if istep == 1:
+            if width > 0:
+                return istart + self._randbelow(width)
             raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
@@ -363,10 +363,8 @@ class Random(_random.Random):
             n = (width + istep + 1) // istep
         else:
             raise ValueError("zero step for randrange()")
-
         if n <= 0:
             raise ValueError("empty range for randrange()")
-
         return istart + istep * self._randbelow(n)
 
     def randint(self, a, b):
