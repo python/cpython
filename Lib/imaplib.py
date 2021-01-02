@@ -618,12 +618,7 @@ class IMAP4:
             raise self.error(dat[-1])
         self.state = 'AUTH'
 
-        typ, dat = self.capability()
-        if typ != 'OK':
-            raise self.error(dat[-1])
-        capas = dat[0].decode()
-        self._features_available = AvailableCapabilities._make(
-            ['MOVE' in capas, 'UIDPLUS' in capas])
+        self._get_capabilities()
 
         return typ, dat
 
@@ -1106,6 +1101,8 @@ class IMAP4:
 
     def _get_capabilities(self):
         typ, dat = self.capability()
+        if typ != 'OK':
+            raise self.error(dat[-1])
         if dat == [None]:
             raise self.error('no CAPABILITY response from server')
         dat = str(dat[-1], self._encoding)
