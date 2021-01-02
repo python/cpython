@@ -82,7 +82,7 @@ class NetworkedNNTPTestsMixin:
         desc = self.server.description(self.GROUP_NAME)
         _check_desc(desc)
         # Another sanity check
-        self.assertIn("Python", desc)
+        self.assertIn(self.DESC, desc)
         # With a pattern
         desc = self.server.description(self.GROUP_PAT)
         _check_desc(desc)
@@ -309,6 +309,7 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     NNTP_HOST = 'news.trigofacile.com'
     GROUP_NAME = 'fr.comp.lang.python'
     GROUP_PAT = 'fr.comp.lang.*'
+    DESC = 'Python'
 
     NNTP_CLASS = NNTP
 
@@ -343,8 +344,11 @@ class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
     # 400 connections per day are accepted from each IP address."
 
     NNTP_HOST = 'nntp.aioe.org'
-    GROUP_NAME = 'comp.lang.python'
-    GROUP_PAT = 'comp.lang.*'
+    # bpo-42794: aioe.test is one of the official groups on this server
+    # used for testing: https://news.aioe.org/manual/aioe-hierarchy/
+    GROUP_NAME = 'aioe.test'
+    GROUP_PAT = 'aioe.*'
+    DESC = 'test'
 
     NNTP_CLASS = getattr(nntplib, 'NNTP_SSL', None)
 

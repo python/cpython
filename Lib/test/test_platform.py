@@ -1,4 +1,6 @@
 import os
+import copy
+import pickle
 import platform
 import subprocess
 import sys
@@ -233,6 +235,38 @@ class PlatformTest(unittest.TestCase):
             res.processor,
         )
         self.assertEqual(tuple(res), expected)
+
+    def test_uname_replace(self):
+        res = platform.uname()
+        new = res._replace(
+            system='system', node='node', release='release',
+            version='version', machine='machine')
+        self.assertEqual(new.system, 'system')
+        self.assertEqual(new.node, 'node')
+        self.assertEqual(new.release, 'release')
+        self.assertEqual(new.version, 'version')
+        self.assertEqual(new.machine, 'machine')
+        # processor cannot be replaced
+        self.assertEqual(new.processor, res.processor)
+
+    def test_uname_copy(self):
+        uname = platform.uname()
+        self.assertEqual(copy.copy(uname), uname)
+        self.assertEqual(copy.deepcopy(uname), uname)
+
+    def test_uname_pickle(self):
+        orig = platform.uname()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled = pickle.dumps(orig, proto)
+                restored = pickle.loads(pickled)
+                self.assertEqual(restored, orig)
+
+    def test_uname_slices(self):
+        res = platform.uname()
+        expected = tuple(res)
+        self.assertEqual(res[:], expected)
+        self.assertEqual(res[:5], expected[:5])
 
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     def test_uname_processor(self):
