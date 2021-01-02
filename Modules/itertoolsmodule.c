@@ -16,6 +16,7 @@ typedef struct {
     PyTypeObject *_grouper_type;
     PyTypeObject *cycle_type;
     PyTypeObject *dropwhile_type;
+    PyTypeObject *takewhile_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -44,7 +45,7 @@ class itertools.teedataobject "teedataobject *" "&teedataobject_type"
 class itertools._tee "teeobject *" "&tee_type"
 class itertools.cycle "cycleobject *" "clinic_find_state()->cycle_type"
 class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_type"
-class itertools.takewhile "takewhileobject *" "&takewhile_type"
+class itertools.takewhile "takewhileobject *" "clinic_find_state()->takewhile_type"
 class itertools.starmap "starmapobject *" "&starmap_type"
 class itertools.chain "chainobject *" "&chain_type"
 class itertools.combinations "combinationsobject *" "&combinations_type"
@@ -56,11 +57,10 @@ class itertools.filterfalse "filterfalseobject *" "&filterfalse_type"
 class itertools.count "countobject *" "&count_type"
 class itertools.pairwise "pairwiseobject *" "&pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8e072dc5246cec5d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=355860e69ec3091a]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
-static PyTypeObject takewhile_type;
 static PyTypeObject starmap_type;
 static PyTypeObject combinations_type;
 static PyTypeObject cwr_type;
@@ -1410,10 +1410,12 @@ itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 static void
 takewhile_dealloc(takewhileobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1478,48 +1480,24 @@ static PyMethodDef takewhile_reduce_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static PyTypeObject takewhile_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.takewhile",              /* tp_name */
-    sizeof(takewhileobject),            /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)takewhile_dealloc,      /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    itertools_takewhile__doc__,         /* tp_doc */
-    (traverseproc)takewhile_traverse,   /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)takewhile_next,       /* tp_iternext */
-    takewhile_reduce_methods,           /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools_takewhile,                /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot takewhile_slots[] = {
+    {Py_tp_dealloc, takewhile_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_takewhile__doc__},
+    {Py_tp_traverse, takewhile_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, takewhile_next},
+    {Py_tp_methods, takewhile_reduce_methods},
+    {Py_tp_new, itertools_takewhile},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec takewhile_spec = {
+    .name = "itertools.takewhile",
+    .basicsize = sizeof(takewhileobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = takewhile_slots,
 };
 
 
@@ -4778,6 +4756,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->_grouper_type);
     Py_VISIT(state->cycle_type);
     Py_VISIT(state->dropwhile_type);
+    Py_VISIT(state->takewhile_type);
     return 0;
 }
 
@@ -4789,6 +4768,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->_grouper_type);
     Py_CLEAR(state->cycle_type);
     Py_CLEAR(state->dropwhile_type);
+    Py_CLEAR(state->takewhile_type);
     return 0;
 }
 
@@ -4817,12 +4797,12 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->_grouper_type, &_grouper_spec);
     ADD_TYPE(m, state->cycle_type, &cycle_spec);
     ADD_TYPE(m, state->dropwhile_type, &dropwhile_spec);
+    ADD_TYPE(m, state->takewhile_type, &takewhile_spec);
 
     PyTypeObject *typelist[] = {
         &accumulate_type,
         &combinations_type,
         &cwr_type,
-        &takewhile_type,
         &islice_type,
         &starmap_type,
         &chain_type,

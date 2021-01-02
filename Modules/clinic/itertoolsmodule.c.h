@@ -298,7 +298,7 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &takewhile_type) &&
+    if ((type == clinic_find_state()->takewhile_type) &&
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1e5302266479d8b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d06bbc3a16f0bed input=a9049054013a1b77]*/
