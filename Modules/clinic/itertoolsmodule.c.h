@@ -235,7 +235,7 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *iterable;
 
-    if ((type == &cycle_type) &&
+    if ((type == clinic_find_state()->cycle_type) &&
         !_PyArg_NoKeywords("cycle", kwargs)) {
         goto exit;
     }
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b59160678baa177a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbdd07daaf144abb input=a9049054013a1b77]*/
