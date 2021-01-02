@@ -1,0 +1,4 @@
+Make module `asyncio.__main__` importable, adding function
+`main(preamble=())` for easy customization of the async REPL. The preamble
+specifies the lines of code that will be executed at the start of the async
+REPL.
