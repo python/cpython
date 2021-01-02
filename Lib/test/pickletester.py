@@ -1685,16 +1685,15 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertIsInstance(list(x)[0], K)
             self.assertIs(list(x)[0].value, x)
 
+        # Immutable object containing a set containing the original object.
         y, = y
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(y, proto)
             x = self.loads(s)
             self.assertIsInstance(x, K)
             self.assertIsInstance(x.value, set)
-            x = x.value
-            self.assertEqual(len(x), 1)
-            self.assertIsInstance(list(x)[0], K)
-            self.assertIs(list(x)[0].value, x)
+            self.assertEqual(len(x.value), 1)
+            self.assertIs(list(x.value)[0], x)
 
     def test_recursive_inst(self):
         # Mutable object containing itself.
@@ -1720,7 +1719,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
             self.assertEqual(list(x[0].attr.keys()), [1])
-            self.assertTrue(x[0].attr[1] is x)
+            self.assertIs(x[0].attr[1], x)
 
     def _test_recursive_collection_and_inst(self, factory):
         # Mutable object containing a collection containing the original
@@ -1730,11 +1729,11 @@ class AbstractPickleTests(unittest.TestCase):
         t = type(o.attr)
         for proto in protocols:
             s = self.dumps(o, proto)
-            x = self.loads(s).attr
-            self.assertIsInstance(x, t)
-            self.assertEqual(len(x), 1)
-            self.assertIsInstance(list(x)[0], Object)
-            self.assertIs(list(x)[0].attr, x)
+            x = self.loads(s)
+            self.assertIsInstance(x.attr, t)
+            self.assertEqual(len(x.attr), 1)
+            self.assertIsInstance(list(x.attr)[0], Object)
+            self.assertIs(list(x.attr)[0], x)
 
         # Collection containing a mutable object containing the original
         # collection.
