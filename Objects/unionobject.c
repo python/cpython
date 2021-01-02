@@ -34,7 +34,7 @@ is_generic_alias_in_args(PyObject *args) {
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (Py_TYPE(arg) == &Py_GenericAliasType) {
+        if (PyObject_TypeCheck(arg, &Py_GenericAliasType)) {
             return 0;
         }
     }
