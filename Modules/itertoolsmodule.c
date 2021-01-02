@@ -4505,7 +4505,6 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->tee_type, &tee_spec);
     ADD_TYPE(m, state->teedataobject_type, &teedataobject_spec);
     ADD_TYPE(m, state->ziplongest_type, &ziplongest_spec);
-    Py_SET_TYPE(state->teedataobject_type, &PyType_Type);
 
     return 0;
 }
