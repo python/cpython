@@ -29,6 +29,7 @@ typedef struct {
     PyTypeObject *ziplongest_type;
     PyTypeObject *product_type;
     PyTypeObject *repeat_type;
+    PyTypeObject *islice_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -1493,8 +1494,6 @@ typedef struct {
     Py_ssize_t cnt;
 } isliceobject;
 
-static PyTypeObject islice_type;
-
 static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1504,7 +1503,8 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t numargs;
     isliceobject *lz;
 
-    if (type == &islice_type && !_PyArg_NoKeywords("islice", kwds))
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(type);
+    if (type == state->islice_type && !_PyArg_NoKeywords("islice", kwds))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -1582,9 +1582,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 islice_dealloc(isliceobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1696,48 +1698,24 @@ specified as another value, step determines how many values are\n\
 skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
 
-static PyTypeObject islice_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.islice",                 /* tp_name */
-    sizeof(isliceobject),               /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)islice_dealloc,         /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    islice_doc,                         /* tp_doc */
-    (traverseproc)islice_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)islice_next,          /* tp_iternext */
-    islice_methods,                     /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    islice_new,                         /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot islice_slots[] = {
+    {Py_tp_dealloc, islice_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)islice_doc},
+    {Py_tp_traverse, islice_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, islice_next},
+    {Py_tp_methods, islice_methods},
+    {Py_tp_new, islice_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec islice_spec = {
+    .name = "itertools.islice",
+    .basicsize = sizeof(isliceobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = islice_slots,
 };
 
 
@@ -3509,7 +3487,8 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 
         if (PyType_Ready(&chain_type) < 0)
             return NULL;
-        if (PyType_Ready(&islice_type) < 0)
+        itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(lz));
+        if (PyType_Ready(state->islice_type) < 0)
             return NULL;
         it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
                                    lz->total, lz->it);
@@ -3519,7 +3498,7 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
                                    it, lz->binop ? lz->binop : Py_None);
         if (it == NULL)
             return NULL;
-        return Py_BuildValue("O(NiO)", &islice_type, it, 1, Py_None);
+        return Py_BuildValue("O(NiO)", state->islice_type, it, 1, Py_None);
     }
     return Py_BuildValue("O(OO)O", Py_TYPE(lz),
                             lz->it, lz->binop?lz->binop:Py_None,
@@ -4504,6 +4483,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->ziplongest_type);
     Py_VISIT(state->product_type);
     Py_VISIT(state->repeat_type);
+    Py_VISIT(state->islice_type);
     return 0;
 }
 
@@ -4528,6 +4508,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->ziplongest_type);
     Py_CLEAR(state->product_type);
     Py_CLEAR(state->repeat_type);
+    Py_CLEAR(state->islice_type);
     return 0;
 }
 
@@ -4569,9 +4550,9 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->ziplongest_type, &ziplongest_spec);
     ADD_TYPE(m, state->product_type, &product_spec);
     ADD_TYPE(m, state->repeat_type, &repeat_spec);
+    ADD_TYPE(m, state->islice_type, &islice_spec);
 
     PyTypeObject *typelist[] = {
-        &islice_type,
         &chain_type,
         &tee_type,
         &teedataobject_type
