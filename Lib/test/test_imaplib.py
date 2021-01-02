@@ -558,36 +558,38 @@ class NewIMAPTestsMixin():
                 self._send_tagged(tag, 'OK', 'okay')
 
             def cmd_CREATE(self, tag, args):
-                print(f'args = {args}')
                 self._send_textline('* CREATE ' + args[0])
                 self._send_tagged(tag, 'OK', 'okay')
 
+            def cmd_MOVE(self, tag, args):
+                self._send_textline('* MOVE ' + args[0])
+                self._send_tagged(tag, 'OK', 'okay')
+
+            def cmd_SELECT(self, tag, args):
+                self.server.is_selected = True
+                self._send_textline('* 2 EXISTS')
+                self._send_tagged(tag, 'OK', '[READ-WRITE] SELECT completed.')
+
         client, _ = self._setup(MoveServer)
         typ, data = client.login('user', 'pass')
-        self.assertEqual(len(client._features_available), 2)
         typ, data = client.create('source')
-        self.assertEqual(typ, 'OK')
         typ, data = client.create('target')
-        self.assertEqual(typ, 'OK')
+        typ, data = client.select('source')
 
         msg = EmailMessage()
-        msg.set_content('This is a testing message')
         msg['Subject'] = 'Test message'
         msg['From'] = 'test@example.com'
         msg['To'] = 'testee@example.com'
-        # typ, data = client.append('source', None, None, msg.as_bytes())
-        # self.assertEqual(typ, 'OK')
-        # typ, data = client.select('source')
-        # self.assertEqual(typ, 'OK')
-        # self.assertEqual(int(data[0]), 1)
-        # typ, data = client.search(None, 'source')
-        # self.assertEqual(typ, 'OK')
-        # msg_id =
-        # typ, data = client.move_messages()
-        # self.assertEqual(typ, 'OK')
-        # typ, data = client.search(None, 'target')
-        # self.assertEqual(typ, 'OK')
-        # self.assertEqual(int(data[0]), 1)
+        msg.set_content('This is a testing message')
+        print(f'=========================\nmsg:\n{msg}=============')
+        typ, data = client.append('source', None, None, msg.as_bytes())
+
+        typ, data = client.search(None, 'ALL')
+        typ, data = client.move_messages('target', data[0])
+        self.assertEqual(typ, 'OK')
+        typ, data = client.search(None, 'target', 'ALL')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(int(data[0]), 1)
 
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
