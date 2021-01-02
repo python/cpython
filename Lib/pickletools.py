@@ -2555,67 +2555,55 @@ _dis_test = r"""
 >>> import pickle
 >>> x = [1, 2, (3, 4), {b'abc': "def"}]
 >>> pkl0 = pickle.dumps(x, 0)
->>> dis(pkl0)
+>>> dis(optimize(pkl0))
     0: (    MARK
     1: l        LIST       (MARK at 0)
-    2: p    PUT        0
-    5: I    INT        1
-    8: a    APPEND
-    9: I    INT        2
-   12: a    APPEND
-   13: (    MARK
-   14: I        INT        3
-   17: I        INT        4
-   20: t        TUPLE      (MARK at 13)
-   21: p    PUT        1
-   24: a    APPEND
-   25: (    MARK
-   26: d        DICT       (MARK at 25)
-   27: p    PUT        2
-   30: c    GLOBAL     '_codecs encode'
-   46: p    PUT        3
-   49: (    MARK
-   50: V        UNICODE    'abc'
-   55: V        UNICODE    'latin1'
-   63: p        PUT        4
-   66: t        TUPLE      (MARK at 49)
-   67: R    REDUCE
-   68: p    PUT        5
-   71: V    UNICODE    'def'
-   76: p    PUT        6
-   79: s    SETITEM
-   80: a    APPEND
-   81: .    STOP
+    2: I    INT        1
+    5: a    APPEND
+    6: I    INT        2
+    9: a    APPEND
+   10: (    MARK
+   11: I        INT        3
+   14: I        INT        4
+   17: t        TUPLE      (MARK at 10)
+   18: a    APPEND
+   19: (    MARK
+   20: d        DICT       (MARK at 19)
+   21: c    GLOBAL     '_codecs encode'
+   37: (    MARK
+   38: V        UNICODE    'abc'
+   43: V        UNICODE    'latin1'
+   51: t        TUPLE      (MARK at 37)
+   52: R    REDUCE
+   53: V    UNICODE    'def'
+   58: s    SETITEM
+   59: a    APPEND
+   60: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
 
 >>> pkl1 = pickle.dumps(x, 1)
->>> dis(pkl1)
+>>> dis(optimize(pkl1))
     0: ]    EMPTY_LIST
-    1: q    BINPUT     0
-    3: (    MARK
-    4: K        BININT1    1
-    6: K        BININT1    2
-    8: (        MARK
-    9: K            BININT1    3
-   11: K            BININT1    4
-   13: t            TUPLE      (MARK at 8)
-   14: }        EMPTY_DICT
-   15: q        BINPUT     1
-   17: c        GLOBAL     '_codecs encode'
-   33: q        BINPUT     2
-   35: (        MARK
-   36: X            BINUNICODE 'abc'
-   44: X            BINUNICODE 'latin1'
-   55: q            BINPUT     3
-   57: t            TUPLE      (MARK at 35)
-   58: R        REDUCE
-   59: X        BINUNICODE 'def'
-   67: q        BINPUT     4
-   69: s        SETITEM
-   70: e        APPENDS    (MARK at 3)
-   71: .    STOP
+    1: (    MARK
+    2: K        BININT1    1
+    4: K        BININT1    2
+    6: (        MARK
+    7: K            BININT1    3
+    9: K            BININT1    4
+   11: t            TUPLE      (MARK at 6)
+   12: }        EMPTY_DICT
+   13: c        GLOBAL     '_codecs encode'
+   29: (        MARK
+   30: X            BINUNICODE 'abc'
+   38: X            BINUNICODE 'latin1'
+   49: t            TUPLE      (MARK at 29)
+   50: R        REDUCE
+   51: X        BINUNICODE 'def'
+   59: s        SETITEM
+   60: e        APPENDS    (MARK at 1)
+   61: .    STOP
 highest protocol among opcodes = 1
 
 Exercise the INST/OBJ/BUILD family.
@@ -2629,60 +2617,48 @@ highest protocol among opcodes = 0
 
 >>> from pickletools import _Example
 >>> x = [_Example(42)] * 2
->>> dis(pickle.dumps(x, 0))
+>>> dis(optimize(pickle.dumps(x, 0)))
     0: (    MARK
     1: l        LIST       (MARK at 0)
-    2: p    PUT        0
-    5: c    GLOBAL     'copy_reg _reconstructor'
-   30: p    PUT        1
-   33: (    MARK
-   34: c        GLOBAL     'pickletools _Example'
-   56: p        PUT        2
-   59: c        GLOBAL     '__builtin__ object'
-   79: p        PUT        3
-   82: N        NONE
-   83: t        TUPLE      (MARK at 33)
-   84: R    REDUCE
-   85: p    PUT        4
-   88: (    MARK
-   89: d        DICT       (MARK at 88)
-   90: p    PUT        5
-   93: V    UNICODE    'value'
-  100: p    PUT        6
-  103: I    INT        42
-  107: s    SETITEM
-  108: b    BUILD
-  109: a    APPEND
-  110: g    GET        4
-  113: a    APPEND
-  114: .    STOP
+    2: c    GLOBAL     'copy_reg _reconstructor'
+   27: (    MARK
+   28: c        GLOBAL     'pickletools _Example'
+   50: c        GLOBAL     '__builtin__ object'
+   70: N        NONE
+   71: t        TUPLE      (MARK at 27)
+   72: R    REDUCE
+   73: p    PUT        0
+   76: (    MARK
+   77: d        DICT       (MARK at 76)
+   78: V    UNICODE    'value'
+   85: I    INT        42
+   89: s    SETITEM
+   90: b    BUILD
+   91: a    APPEND
+   92: g    GET        0
+   95: a    APPEND
+   96: .    STOP
 highest protocol among opcodes = 0
 
->>> dis(pickle.dumps(x, 1))
+>>> dis(optimize(pickle.dumps(x, 1)))
     0: ]    EMPTY_LIST
-    1: q    BINPUT     0
-    3: (    MARK
-    4: c        GLOBAL     'copy_reg _reconstructor'
-   29: q        BINPUT     1
-   31: (        MARK
-   32: c            GLOBAL     'pickletools _Example'
-   54: q            BINPUT     2
-   56: c            GLOBAL     '__builtin__ object'
-   76: q            BINPUT     3
-   78: N            NONE
-   79: t            TUPLE      (MARK at 31)
-   80: R        REDUCE
-   81: q        BINPUT     4
-   83: }        EMPTY_DICT
-   84: q        BINPUT     5
-   86: X        BINUNICODE 'value'
-   96: q        BINPUT     6
-   98: K        BININT1    42
-  100: s        SETITEM
-  101: b        BUILD
-  102: h        BINGET     4
-  104: e        APPENDS    (MARK at 3)
-  105: .    STOP
+    1: (    MARK
+    2: c        GLOBAL     'copy_reg _reconstructor'
+   27: (        MARK
+   28: c            GLOBAL     'pickletools _Example'
+   50: c            GLOBAL     '__builtin__ object'
+   70: N            NONE
+   71: t            TUPLE      (MARK at 27)
+   72: R        REDUCE
+   73: q        BINPUT     0
+   75: }        EMPTY_DICT
+   76: X        BINUNICODE 'value'
+   86: K        BININT1    42
+   88: s        SETITEM
+   89: b        BUILD
+   90: h        BINGET     0
+   92: e        APPENDS    (MARK at 1)
+   93: .    STOP
 highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.
