@@ -5,6 +5,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
 /* Itertools module written and maintained
@@ -31,6 +32,7 @@ typedef struct {
     PyTypeObject *repeat_type;
     PyTypeObject *islice_type;
     PyTypeObject *chain_type;
+    PyTypeObject *tee_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -56,7 +58,7 @@ module itertools
 class itertools.groupby "groupbyobject *" "clinic_find_state()->groupby_type"
 class itertools._grouper "_grouperobject *" "clinic_find_state()->_grouper_type"
 class itertools.teedataobject "teedataobject *" "&teedataobject_type"
-class itertools._tee "teeobject *" "&tee_type"
+class itertools._tee "teeobject *" "clinic_find_state()->tee_type"
 class itertools.cycle "cycleobject *" "clinic_find_state()->cycle_type"
 class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_type"
 class itertools.takewhile "takewhileobject *" "clinic_find_state()->takewhile_type"
@@ -71,10 +73,9 @@ class itertools.filterfalse "filterfalseobject *" "clinic_find_state()->filterfa
 class itertools.count "countobject *" "clinic_find_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_find_state()->pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3b76dfd5ef27d0a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7da21a588c1fd9e3]*/
 
 static PyTypeObject teedataobject_type;
-static PyTypeObject tee_type;
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -805,7 +806,8 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
     teeobject *newto;
 
-    newto = PyObject_GC_New(teeobject, &tee_type);
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(to));
+    newto = PyObject_GC_New(teeobject, state->tee_type);
     if (newto == NULL)
         return NULL;
     Py_INCREF(to->dataobj);
@@ -819,7 +821,7 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(teecopy_doc, "Returns an independent iterator.");
 
 static PyObject *
-tee_fromiterable(PyObject *iterable)
+tee_fromiterable(PyObject *iterable, itertoolsmodule_state *state)
 {
     teeobject *to;
     PyObject *it = NULL;
@@ -827,12 +829,12 @@ tee_fromiterable(PyObject *iterable)
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
-    if (PyObject_TypeCheck(it, &tee_type)) {
+    if (PyObject_TypeCheck(it, state->tee_type)) {
         to = (teeobject *)tee_copy((teeobject *)it, NULL);
         goto done;
     }
 
-    to = PyObject_GC_New(teeobject, &tee_type);
+    to = PyObject_GC_New(teeobject, state->tee_type);
     if (to == NULL)
         goto done;
     to->dataobj = (teedataobject *)teedataobject_newinternal(it);
@@ -862,7 +864,8 @@ static PyObject *
 itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
 /*[clinic end generated code: output=b02d3fd26c810c3f input=adc0779d2afe37a2]*/
 {
-    return tee_fromiterable(iterable);
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(type);
+    return tee_fromiterable(iterable, state);
 }
 
 static int
@@ -877,9 +880,11 @@ tee_clear(teeobject *to)
 static void
 tee_dealloc(teeobject *to)
 {
+    PyTypeObject *tp = Py_TYPE(to);
     PyObject_GC_UnTrack(to);
     tee_clear(to);
     PyObject_GC_Del(to);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -917,47 +922,30 @@ static PyMethodDef tee_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject tee_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools._tee",                   /* tp_name */
-    sizeof(teeobject),                  /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)tee_dealloc,            /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    itertools__tee__doc__,              /* tp_doc */
-    (traverseproc)tee_traverse,         /* tp_traverse */
-    (inquiry)tee_clear,                 /* tp_clear */
-    0,                                  /* tp_richcompare */
-    offsetof(teeobject, weakreflist),   /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)tee_next,             /* tp_iternext */
-    tee_methods,                        /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itertools__tee,                     /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyMemberDef tee_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(teeobject, weakreflist), READONLY},
+    {NULL},
+};
+
+static PyType_Slot tee_slots[] = {
+    {Py_tp_dealloc, tee_dealloc},
+    {Py_tp_doc, (void *)itertools__tee__doc__},
+    {Py_tp_traverse, tee_traverse},
+    {Py_tp_clear, tee_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, tee_next},
+    {Py_tp_methods, tee_methods},
+    {Py_tp_members, tee_members},
+    {Py_tp_new, itertools__tee},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec tee_spec = {
+    .name = "itertools._tee",
+    .basicsize = sizeof(teeobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = tee_slots,
 };
 
 /*[clinic input]
@@ -1000,7 +988,8 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         copyable = it;
     }
     else {
-        copyable = tee_fromiterable(it);
+        itertoolsmodule_state *state = itertoolsmodule_get_state(module);
+        copyable = tee_fromiterable(it, state);
         Py_DECREF(it);
         if (copyable == NULL) {
             Py_DECREF(result);
@@ -4464,6 +4453,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->repeat_type);
     Py_VISIT(state->islice_type);
     Py_VISIT(state->chain_type);
+    Py_VISIT(state->tee_type);
     return 0;
 }
 
@@ -4490,6 +4480,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->repeat_type);
     Py_CLEAR(state->islice_type);
     Py_CLEAR(state->chain_type);
+    Py_CLEAR(state->tee_type);
     return 0;
 }
 
@@ -4533,9 +4524,9 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->repeat_type, &repeat_spec);
     ADD_TYPE(m, state->islice_type, &islice_spec);
     ADD_TYPE(m, state->chain_type, &chain_spec);
+    ADD_TYPE(m, state->tee_type, &tee_spec);
 
     PyTypeObject *typelist[] = {
-        &tee_type,
         &teedataobject_type
     };
 
