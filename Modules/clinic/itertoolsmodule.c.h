@@ -19,7 +19,7 @@ pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *iterable;
 
-    if ((type == &pairwise_type) &&
+    if ((type == clinic_find_state()->pairwise_type) &&
         !_PyArg_NoKeywords("pairwise", kwargs)) {
         goto exit;
     }
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c0f8df85f3e8ebf2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6779256f3e84094b input=a9049054013a1b77]*/
