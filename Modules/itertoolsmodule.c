@@ -33,6 +33,7 @@ typedef struct {
     PyTypeObject *islice_type;
     PyTypeObject *chain_type;
     PyTypeObject *tee_type;
+    PyTypeObject *teedataobject_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -57,7 +58,7 @@ itertoolsmodule_find_state_by_type(PyTypeObject *tp)
 module itertools
 class itertools.groupby "groupbyobject *" "clinic_find_state()->groupby_type"
 class itertools._grouper "_grouperobject *" "clinic_find_state()->_grouper_type"
-class itertools.teedataobject "teedataobject *" "&teedataobject_type"
+class itertools.teedataobject "teedataobject *" "clinic_find_state()->teedataobject_type"
 class itertools._tee "teeobject *" "clinic_find_state()->tee_type"
 class itertools.cycle "cycleobject *" "clinic_find_state()->cycle_type"
 class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_type"
@@ -73,9 +74,7 @@ class itertools.filterfalse "filterfalseobject *" "clinic_find_state()->filterfa
 class itertools.count "countobject *" "clinic_find_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_find_state()->pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7da21a588c1fd9e3]*/
-
-static PyTypeObject teedataobject_type;
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=453c9bd09dcd8039]*/
 
 #include "clinic/itertoolsmodule.c.h"
 
@@ -551,11 +550,11 @@ typedef struct {
 } teeobject;
 
 static PyObject *
-teedataobject_newinternal(PyObject *it)
+teedataobject_newinternal(PyObject *it, itertoolsmodule_state *state)
 {
     teedataobject *tdo;
 
-    tdo = PyObject_GC_New(teedataobject, &teedataobject_type);
+    tdo = PyObject_GC_New(teedataobject, state->teedataobject_type);
     if (tdo == NULL)
         return NULL;
 
@@ -571,8 +570,10 @@ teedataobject_newinternal(PyObject *it)
 static PyObject *
 teedataobject_jumplink(teedataobject *tdo)
 {
-    if (tdo->nextlink == NULL)
-        tdo->nextlink = teedataobject_newinternal(tdo->it);
+    if (tdo->nextlink == NULL) {
+        itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(tdo));
+        tdo->nextlink = teedataobject_newinternal(tdo->it, state);
+    }
     Py_XINCREF(tdo->nextlink);
     return tdo->nextlink;
 }
@@ -618,9 +619,9 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 }
 
 static void
-teedataobject_safe_decref(PyObject *obj)
+teedataobject_safe_decref(PyObject *obj, PyTypeObject *tdo_type)
 {
-    while (obj && Py_IS_TYPE(obj, &teedataobject_type) &&
+    while (obj && Py_IS_TYPE(obj, tdo_type) &&
            Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
@@ -641,16 +642,19 @@ teedataobject_clear(teedataobject *tdo)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
-    teedataobject_safe_decref(tmp);
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(tdo));
+    teedataobject_safe_decref(tmp, state->teedataobject_type);
     return 0;
 }
 
 static void
 teedataobject_dealloc(teedataobject *tdo)
 {
+    PyTypeObject *tp = Py_TYPE(tdo);
     PyObject_GC_UnTrack(tdo);
     teedataobject_clear(tdo);
     PyObject_GC_Del(tdo);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -689,9 +693,10 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
     teedataobject *tdo;
     Py_ssize_t i, len;
 
-    assert(type == &teedataobject_type);
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(type);
+    assert(type == state->teedataobject_type);
 
-    tdo = (teedataobject *)teedataobject_newinternal(it);
+    tdo = (teedataobject *)teedataobject_newinternal(it, state);
     if (!tdo)
         return NULL;
 
@@ -707,7 +712,7 @@ itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
 
     if (len == LINKCELLS) {
         if (next != Py_None) {
-            if (!Py_IS_TYPE(next, &teedataobject_type))
+            if (!Py_IS_TYPE(next, state->teedataobject_type))
                 goto err;
             assert(tdo->nextlink == NULL);
             Py_INCREF(next);
@@ -731,47 +736,23 @@ static PyMethodDef teedataobject_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject teedataobject_type = {
-    PyVarObject_HEAD_INIT(0, 0)                 /* Must fill in type value later */
-    "itertools._tee_dataobject",                /* tp_name */
-    sizeof(teedataobject),                      /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    /* methods */
-    (destructor)teedataobject_dealloc,          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    itertools_teedataobject__doc__,             /* tp_doc */
-    (traverseproc)teedataobject_traverse,       /* tp_traverse */
-    (inquiry)teedataobject_clear,               /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    teedataobject_methods,                      /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    itertools_teedataobject,                    /* tp_new */
-    PyObject_GC_Del,                            /* tp_free */
+static PyType_Slot teedataobject_slots[] = {
+    {Py_tp_dealloc, teedataobject_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_teedataobject__doc__},
+    {Py_tp_traverse, teedataobject_traverse},
+    {Py_tp_clear, teedataobject_clear},
+    {Py_tp_methods, teedataobject_methods},
+    {Py_tp_new, itertools_teedataobject},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec teedataobject_spec = {
+    .name = "itertools._tee_dataobject",
+    .basicsize = sizeof(teedataobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = teedataobject_slots,
 };
 
 
@@ -837,7 +818,7 @@ tee_fromiterable(PyObject *iterable, itertoolsmodule_state *state)
     to = PyObject_GC_New(teeobject, state->tee_type);
     if (to == NULL)
         goto done;
-    to->dataobj = (teedataobject *)teedataobject_newinternal(it);
+    to->dataobj = (teedataobject *)teedataobject_newinternal(it, state);
     if (!to->dataobj) {
         PyObject_GC_Del(to);
         to = NULL;
@@ -902,7 +883,8 @@ tee_setstate(teeobject *to, PyObject *state)
         PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(state, "O!i", &teedataobject_type, &tdo, &index)) {
+    itertoolsmodule_state *m_state = itertoolsmodule_find_state_by_type(Py_TYPE(to));
+    if (!PyArg_ParseTuple(state, "O!i", m_state->teedataobject_type, &tdo, &index)) {
         return NULL;
     }
     if (index < 0 || index > LINKCELLS) {
@@ -4454,6 +4436,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->islice_type);
     Py_VISIT(state->chain_type);
     Py_VISIT(state->tee_type);
+    Py_VISIT(state->teedataobject_type);
     return 0;
 }
 
@@ -4481,6 +4464,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->islice_type);
     Py_CLEAR(state->chain_type);
     Py_CLEAR(state->tee_type);
+    Py_CLEAR(state->teedataobject_type);
     return 0;
 }
 
@@ -4505,6 +4489,7 @@ static int
 itertoolsmodule_exec(PyObject *m)
 {
     itertoolsmodule_state *state = itertoolsmodule_get_state(m);
+
     ADD_TYPE(m, state->groupby_type, &groupby_spec);
     ADD_TYPE(m, state->_grouper_type, &_grouper_spec);
     ADD_TYPE(m, state->cycle_type, &cycle_spec);
@@ -4525,18 +4510,8 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->islice_type, &islice_spec);
     ADD_TYPE(m, state->chain_type, &chain_spec);
     ADD_TYPE(m, state->tee_type, &tee_spec);
-
-    PyTypeObject *typelist[] = {
-        &teedataobject_type
-    };
-
-    Py_SET_TYPE(&teedataobject_type, &PyType_Type);
-
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
-        if (PyModule_AddType(m, typelist[i]) < 0) {
-            return -1;
-        }
-    }
+    ADD_TYPE(m, state->teedataobject_type, &teedataobject_spec);
+    Py_SET_TYPE(state->teedataobject_type, &PyType_Type);
 
     return 0;
 }

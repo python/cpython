@@ -126,7 +126,7 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *values;
     PyObject *next;
 
-    if ((type == &teedataobject_type) &&
+    if ((type == clinic_find_state()->teedataobject_type) &&
         !_PyArg_NoKeywords("teedataobject", kwargs)) {
         goto exit;
     }
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20efa4310a6252fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5964987035397973 input=a9049054013a1b77]*/
