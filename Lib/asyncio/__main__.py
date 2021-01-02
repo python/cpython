@@ -13,10 +13,11 @@ from . import futures
 
 class AsyncIOInteractiveConsole(code.InteractiveConsole):
 
-    def __init__(self, locals, loop):
+    def __init__(self, locals, loop=None):
         super().__init__(locals)
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
-
+        if not loop:
+            loop = asyncio.get_event_loop()
         self.loop = loop
 
     def runcode(self, code):
@@ -52,7 +53,7 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        self.loop.call_soon_threadsafe(callback)
 
         try:
             return future.result()
@@ -67,17 +68,29 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
 
 class REPLThread(threading.Thread):
 
+    def __init__(self, console, preamble=(), loop=None):
+        super().__init__()
+        self.console = console
+        self.preamble = list(preamble)
+        if not loop:
+            loop = asyncio.get_event_loop()
+        self.loop = loop
+
     def run(self):
         try:
+            prompt = getattr(sys, 'ps1', '>>> ')
+            input_lines = ''.join([f'\n{prompt}{line}' for line in self.preamble])
             banner = (
                 f'asyncio REPL {sys.version} on {sys.platform}\n'
                 f'Use "await" directly instead of "asyncio.run()".\n'
                 f'Type "help", "copyright", "credits" or "license" '
                 f'for more information.\n'
-                f'{getattr(sys, "ps1", ">>> ")}import asyncio'
-            )
+                f'{prompt}import asyncio'
+                f'{input_lines}')
 
-            console.interact(
+            for line in self.preamble:
+                self.console.push(line)  # NB: line will not appear in history
+            self.console.interact(
                 banner=banner,
                 exitmsg='exiting asyncio REPL...')
         finally:
@@ -86,19 +99,24 @@ class REPLThread(threading.Thread):
                 message=r'^coroutine .* was never awaited$',
                 category=RuntimeWarning)
 
-            loop.call_soon_threadsafe(loop.stop)
+            self.loop.call_soon_threadsafe(self.loop.stop)
 
 
-if __name__ == '__main__':
+def main(preamble=()):
+    global repl_future_interrupted
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    repl_locals = {'asyncio': asyncio}
+    caller_locals = inspect.currentframe().f_back.f_locals
+    repl_locals = {}
     for key in {'__name__', '__package__',
                 '__loader__', '__spec__',
                 '__builtins__', '__file__'}:
-        repl_locals[key] = locals()[key]
+        if key in caller_locals:
+            repl_locals[key] = caller_locals[key]
 
+    repl_locals['asyncio'] = asyncio
     console = AsyncIOInteractiveConsole(repl_locals, loop)
 
     repl_future = None
@@ -109,7 +127,7 @@ if __name__ == '__main__':
     except ImportError:
         pass
 
-    repl_thread = REPLThread()
+    repl_thread = REPLThread(console, preamble, loop)
     repl_thread.daemon = True
     repl_thread.start()
 
@@ -123,3 +141,7 @@ if __name__ == '__main__':
             continue
         else:
             break
+
+
+if __name__ == '__main__':
+    main()
