@@ -323,7 +323,7 @@ argument to :class:`ArgumentParser`::
 
    >>> parser = argparse.ArgumentParser(
    ...     description='A foo that bars',
-   ...     epilog='And that's how you'd foo a bar')
+   ...     epilog="And that's how you'd foo a bar")
    >>> parser.print_help()
    usage: argparse.py [-h]
 
