@@ -30,6 +30,7 @@ typedef struct {
     PyTypeObject *product_type;
     PyTypeObject *repeat_type;
     PyTypeObject *islice_type;
+    PyTypeObject *chain_type;
 } itertoolsmodule_state;
 
 static itertoolsmodule_state *
@@ -60,7 +61,7 @@ class itertools.cycle "cycleobject *" "clinic_find_state()->cycle_type"
 class itertools.dropwhile "dropwhileobject *" "clinic_find_state()->dropwhile_type"
 class itertools.takewhile "takewhileobject *" "clinic_find_state()->takewhile_type"
 class itertools.starmap "starmapobject *" "clinic_find_state()->starmap_type"
-class itertools.chain "chainobject *" "&chain_type"
+class itertools.chain "chainobject *" "clinic_find_state->chain_type"
 class itertools.combinations "combinationsobject *" "clinic_find_state()->combinations_type"
 class itertools.combinations_with_replacement "cwr_object *" "clinic_find_state()->cwr_type"
 class itertools.permutations "permutationsobject *" "clinic_find_state()->permutations_type"
@@ -70,7 +71,7 @@ class itertools.filterfalse "filterfalseobject *" "clinic_find_state()->filterfa
 class itertools.count "countobject *" "clinic_find_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_find_state()->pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=87b5761911a9e0b6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3b76dfd5ef27d0a]*/
 
 static PyTypeObject teedataobject_type;
 static PyTypeObject tee_type;
@@ -1844,8 +1845,6 @@ typedef struct {
     PyObject *active;                   /* Currently running input iterator */
 } chainobject;
 
-static PyTypeObject chain_type;
-
 static PyObject *
 chain_new_internal(PyTypeObject *type, PyObject *source)
 {
@@ -1867,7 +1866,8 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *source;
 
-    if (type == &chain_type && !_PyArg_NoKeywords("chain", kwds))
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(type);
+    if (type == state->chain_type && !_PyArg_NoKeywords("chain", kwds))
         return NULL;
 
     source = PyObject_GetIter(args);
@@ -1901,10 +1901,12 @@ itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
 static void
 chain_dealloc(chainobject *lz)
 {
+    PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->active);
     Py_XDECREF(lz->source);
-    Py_TYPE(lz)->tp_free(lz);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
 }
 
 static int
@@ -2014,48 +2016,24 @@ static PyMethodDef chain_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject chain_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.chain",                  /* tp_name */
-    sizeof(chainobject),                /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)chain_dealloc,          /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    chain_doc,                          /* tp_doc */
-    (traverseproc)chain_traverse,       /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)chain_next,           /* tp_iternext */
-    chain_methods,                      /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    chain_new,                          /* tp_new */
-    PyObject_GC_Del,                    /* tp_free */
+static PyType_Slot chain_slots[] = {
+    {Py_tp_dealloc, chain_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)chain_doc},
+    {Py_tp_traverse, chain_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, chain_next},
+    {Py_tp_methods, chain_methods},
+    {Py_tp_new, chain_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec chain_spec = {
+    .name = "itertools.chain",
+    .basicsize = sizeof(chainobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = chain_slots,
 };
 
 
@@ -3469,13 +3447,15 @@ accumulate_next(accumulateobject *lz)
 static PyObject *
 accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
 {
+    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(lz));
+
     if (lz->initial != Py_None) {
         PyObject *it;
 
         assert(lz->total == NULL);
-        if (PyType_Ready(&chain_type) < 0)
+        if (PyType_Ready(state->chain_type) < 0)
             return NULL;
-        it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
+        it = PyObject_CallFunction((PyObject *)state->chain_type, "(O)O",
                                    lz->initial, lz->it);
         if (it == NULL)
             return NULL;
@@ -3485,12 +3465,11 @@ accumulate_reduce(accumulateobject *lz, PyObject *Py_UNUSED(ignored))
     if (lz->total == Py_None) {
         PyObject *it;
 
-        if (PyType_Ready(&chain_type) < 0)
+        if (PyType_Ready(state->chain_type) < 0)
             return NULL;
-        itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(lz));
         if (PyType_Ready(state->islice_type) < 0)
             return NULL;
-        it = PyObject_CallFunction((PyObject *)&chain_type, "(O)O",
+        it = PyObject_CallFunction((PyObject *)state->chain_type, "(O)O",
                                    lz->total, lz->it);
         if (it == NULL)
             return NULL;
@@ -4484,6 +4463,7 @@ itertoolsmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->product_type);
     Py_VISIT(state->repeat_type);
     Py_VISIT(state->islice_type);
+    Py_VISIT(state->chain_type);
     return 0;
 }
 
@@ -4509,6 +4489,7 @@ itertoolsmodule_clear(PyObject *m)
     Py_CLEAR(state->product_type);
     Py_CLEAR(state->repeat_type);
     Py_CLEAR(state->islice_type);
+    Py_CLEAR(state->chain_type);
     return 0;
 }
 
@@ -4551,9 +4532,9 @@ itertoolsmodule_exec(PyObject *m)
     ADD_TYPE(m, state->product_type, &product_spec);
     ADD_TYPE(m, state->repeat_type, &repeat_spec);
     ADD_TYPE(m, state->islice_type, &islice_spec);
+    ADD_TYPE(m, state->chain_type, &chain_spec);
 
     PyTypeObject *typelist[] = {
-        &chain_type,
         &tee_type,
         &teedataobject_type
     };
