@@ -2977,6 +2977,30 @@ static PyType_Spec arrayiter_spec = {
 
 /*********************** Install Module **************************/
 
+static int
+array_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    array_state *state = get_array_state(m);
+    Py_VISIT(state->ArrayType);
+    Py_VISIT(state->ArrayIterType);
+    return 0;
+}
+
+static int
+array_clear(PyObject *m)
+{
+    array_state *state = get_array_state(m);
+    Py_CLEAR(state->ArrayType);
+    Py_CLEAR(state->ArrayIterType);
+    return 0;
+}
+
+static void
+array_free(void *m)
+{
+    array_clear((PyObject *)m);
+}
+
 /* No functions in array module. */
 static PyMethodDef a_methods[] = {
     ARRAY__ARRAY_RECONSTRUCTOR_METHODDEF
@@ -3059,6 +3083,9 @@ static struct PyModuleDef arraymodule = {
     .m_doc = module_doc,
     .m_methods = a_methods,
     .m_slots = arrayslots,
+    .m_traverse = array_traverse,
+    .m_clear = array_clear,
+    .m_free = array_free,
 };
 
 
