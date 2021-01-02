@@ -329,7 +329,7 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *func;
     PyObject *seq;
 
-    if ((type == &starmap_type) &&
+    if ((type == clinic_find_state()->starmap_type) &&
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
@@ -658,4 +658,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d06bbc3a16f0bed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41d6bc523590b967 input=a9049054013a1b77]*/
