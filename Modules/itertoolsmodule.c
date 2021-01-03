@@ -787,8 +787,7 @@ tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
 {
     teeobject *newto;
 
-    itertoolsmodule_state *state = itertoolsmodule_find_state_by_type(Py_TYPE(to));
-    newto = PyObject_GC_New(teeobject, state->tee_type);
+    newto = PyObject_GC_New(teeobject, Py_TYPE(to));
     if (newto == NULL)
         return NULL;
     Py_INCREF(to->dataobj);
