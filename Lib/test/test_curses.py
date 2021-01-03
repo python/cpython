@@ -379,13 +379,8 @@ class TestCurses(unittest.TestCase):
     @requires_colors
     def test_init_pair(self):
         old = curses.pair_content(1)
-        if verbose:
-            print(f'pair #1: {old}', file=sys.stderr, flush=True)
         curses.init_pair(1, *old)
         self.addCleanup(curses.init_pair, 1, *old)
-        old = curses.pair_content(curses.COLOR_PAIRS - 1)
-        curses.init_pair(1, *old)
-        self.addCleanup(curses.init_pair, curses.COLOR_PAIRS - 1, *old)
 
         curses.init_pair(1, 0, 0)
         self.assertEqual(curses.pair_content(1), (0, 0))

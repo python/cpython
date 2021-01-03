@@ -411,8 +411,8 @@ color_allow_default_converter(PyObject *arg, void *ptr)
 
     if (overflow > 0 || color_number >= COLORS) {
         PyErr_Format(PyExc_ValueError,
-                     "Color number %R is greater than COLORS-1 (%d).",
-                     arg, COLORS - 1);
+                     "Color number is greater than COLORS-1 (%d).",
+                     COLORS - 1);
         return 0;
     }
     else if (overflow < 0 || color_number < 0) {
