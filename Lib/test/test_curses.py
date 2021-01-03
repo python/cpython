@@ -57,6 +57,7 @@ class TestCurses(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        print(f'TERM={term}', file=sys.stdout, flush=True)
         # testing setupterm() inside initscr/endwin
         # causes terminal breakage
         stdout_fd = sys.__stdout__.fileno()
@@ -376,9 +377,12 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_init_pair(self):
-        self.addCleanup(curses.init_pair, 1, *curses.pair_content(1))
-        self.addCleanup(curses.init_pair, curses.COLOR_PAIRS - 1,
-                        *curses.pair_content(curses.COLOR_PAIRS - 1))
+        old = curses.pair_content(1)
+        curses.init_pair(1, *old)
+        self.addCleanup(curses.init_pair, 1, *old)
+        old = curses.pair_content(curses.COLOR_PAIRS - 1)
+        curses.init_pair(1, *old)
+        self.addCleanup(curses.init_pair, curses.COLOR_PAIRS - 1, *old)
 
         curses.init_pair(1, 0, 0)
         self.assertEqual(curses.pair_content(1), (0, 0))
