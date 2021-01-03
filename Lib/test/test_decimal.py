@@ -32,6 +32,7 @@ import pickle, copy
 import unittest
 import numbers
 import locale
+import contextvars
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
                           requires_legacy_unicode_capi)
@@ -1618,8 +1619,8 @@ class ThreadingTest(unittest.TestCase):
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
-        th1 = threading.Thread(target=thfunc1, args=(self,))
-        th2 = threading.Thread(target=thfunc2, args=(self,))
+        th1 = threading.Thread(target=thfunc1, args=(self,), context=contextvars.Context())
+        th2 = threading.Thread(target=thfunc2, args=(self,), context=contextvars.Context())
 
         th1.start()
         th2.start()
