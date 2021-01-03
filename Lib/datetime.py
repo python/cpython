@@ -576,7 +576,7 @@ class timedelta:
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)
         hh, mm = divmod(mm, 60)
-        s = "%d:%02d:%02d" % (hh, mm, ss)
+        s = "%02d:%02d:%02d" % (hh, mm, ss)
         if self._days:
             def plural(n):
                 return n, abs(n) != 1 and "s" or ""
