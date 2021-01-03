@@ -339,14 +339,20 @@ class TestCurses(unittest.TestCase):
         if not curses.can_change_color:
             self.skipTest('cannot change color')
 
-        self.addCleanup(curses.init_color, 0, *curses.color_content(0))
-        self.addCleanup(curses.init_color, curses.COLORS - 1,
-                        *curses.color_content(curses.COLORS - 1))
-
+        old = curses.color_content(0)
+        try:
+            curses.init_color(0, *old)
+        except curses.error:
+            self.skipTest('cannot change color (init_color() failed)')
+        self.addCleanup(curses.init_color, 0, *old)
         curses.init_color(0, 0, 0, 0)
         self.assertEqual(curses.color_content(0), (0, 0, 0))
         curses.init_color(0, 1000, 1000, 1000)
         self.assertEqual(curses.color_content(0), (1000, 1000, 1000))
+
+        old = curses.color_content(curses.COLORS - 1)
+        curses.init_color(curses.COLORS - 1, *old)
+        self.addCleanup(curses.init_color, curses.COLORS - 1, *old)
         curses.init_color(curses.COLORS - 1, 0, 500, 1000)
         self.assertEqual(curses.color_content(curses.COLORS - 1), (0, 500, 1000))
 
