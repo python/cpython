@@ -4,8 +4,7 @@
 # This script doesn't actually display anything very coherent. but it
 # does call (nearly) every method and function.
 #
-# Functions not tested: {def,reset}_{shell,prog}_mode, getch(), getstr(),
-# init_color()
+# Functions not tested: {def,reset}_{shell,prog}_mode, getch(), getstr()
 # Only called, not tested: getmouse(), ungetmouse()
 #
 
@@ -13,6 +12,7 @@ import os
 import string
 import sys
 import tempfile
+import functools
 import unittest
 
 from test.support import requires, verbose, SaveSignals
@@ -37,6 +37,15 @@ def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
                                'requires curses.%s' % name)
 
+def requires_colors(test):
+    @functools.wraps(test)
+    def wrapped(self, *args, **kwargs):
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        test(self, *args, **kwargs)
+    return wrapped
+
 term = os.environ.get('TERM')
 
 # If newterm was supported we could use it instead of initscr and not exit
@@ -48,6 +57,8 @@ class TestCurses(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        if verbose:
+            print(f'TERM={term}', file=sys.stderr, flush=True)
         # testing setupterm() inside initscr/endwin
         # causes terminal breakage
         stdout_fd = sys.__stdout__.fileno()
@@ -306,31 +317,101 @@ class TestCurses(unittest.TestCase):
             curses.use_env(1)
 
     # Functions only available on a few platforms
-    def test_colors_funcs(self):
-        if not curses.has_colors():
-            self.skipTest('requires colors support')
-        curses.start_color()
-        curses.init_pair(2, 1,1)
-        curses.color_content(1)
-        curses.color_pair(2)
+
+    def bad_colors(self):
+        return (-1, curses.COLORS, -2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
+
+    def bad_colors2(self):
+        return (curses.COLORS, 2**31, 2**63, 2**64)
+
+    def bad_pairs(self):
+        return (-1, -2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
+
+    @requires_colors
+    def test_color_content(self):
+        self.assertEqual(curses.color_content(curses.COLOR_BLACK), (0, 0, 0))
+        curses.color_content(0)
+        curses.color_content(curses.COLORS - 1)
+
+        for color in self.bad_colors():
+            self.assertRaises(ValueError, curses.color_content, color)
+
+    @requires_colors
+    def test_init_color(self):
+        if not curses.can_change_color:
+            self.skipTest('cannot change color')
+
+        old = curses.color_content(0)
+        try:
+            curses.init_color(0, *old)
+        except curses.error:
+            self.skipTest('cannot change color (init_color() failed)')
+        self.addCleanup(curses.init_color, 0, *old)
+        curses.init_color(0, 0, 0, 0)
+        self.assertEqual(curses.color_content(0), (0, 0, 0))
+        curses.init_color(0, 1000, 1000, 1000)
+        self.assertEqual(curses.color_content(0), (1000, 1000, 1000))
+
+        old = curses.color_content(curses.COLORS - 1)
+        curses.init_color(curses.COLORS - 1, *old)
+        self.addCleanup(curses.init_color, curses.COLORS - 1, *old)
+        curses.init_color(curses.COLORS - 1, 0, 500, 1000)
+        self.assertEqual(curses.color_content(curses.COLORS - 1), (0, 500, 1000))
+
+        for color in self.bad_colors():
+            self.assertRaises(ValueError, curses.init_color, color, 0, 0, 0)
+        for comp in (-1, 1001):
+            self.assertRaises(ValueError, curses.init_color, 0, comp, 0, 0)
+            self.assertRaises(ValueError, curses.init_color, 0, 0, comp, 0)
+            self.assertRaises(ValueError, curses.init_color, 0, 0, 0, comp)
+
+    @requires_colors
+    def test_pair_content(self):
+        if not hasattr(curses, 'use_default_colors'):
+            self.assertEqual(curses.pair_content(0),
+                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
+        curses.pair_content(0)
         curses.pair_content(curses.COLOR_PAIRS - 1)
-        curses.pair_number(0)
 
-        if hasattr(curses, 'use_default_colors'):
-            curses.use_default_colors()
+        for pair in self.bad_pairs():
+            self.assertRaises(ValueError, curses.pair_content, pair)
 
-        self.assertRaises(ValueError, curses.color_content, -1)
-        self.assertRaises(ValueError, curses.color_content, curses.COLORS + 1)
-        self.assertRaises(ValueError, curses.color_content, -2**31 - 1)
-        self.assertRaises(ValueError, curses.color_content, 2**31)
-        self.assertRaises(ValueError, curses.color_content, -2**63 - 1)
-        self.assertRaises(ValueError, curses.color_content, 2**63 - 1)
-        self.assertRaises(ValueError, curses.pair_content, -1)
-        self.assertRaises(ValueError, curses.pair_content, curses.COLOR_PAIRS)
-        self.assertRaises(ValueError, curses.pair_content, -2**31 - 1)
-        self.assertRaises(ValueError, curses.pair_content, 2**31)
-        self.assertRaises(ValueError, curses.pair_content, -2**63 - 1)
-        self.assertRaises(ValueError, curses.pair_content, 2**63 - 1)
+    @requires_colors
+    def test_init_pair(self):
+        old = curses.pair_content(1)
+        curses.init_pair(1, *old)
+        self.addCleanup(curses.init_pair, 1, *old)
+
+        curses.init_pair(1, 0, 0)
+        self.assertEqual(curses.pair_content(1), (0, 0))
+        curses.init_pair(1, curses.COLORS - 1, curses.COLORS - 1)
+        self.assertEqual(curses.pair_content(1),
+                         (curses.COLORS - 1, curses.COLORS - 1))
+        curses.init_pair(curses.COLOR_PAIRS - 1, 2, 3)
+        self.assertEqual(curses.pair_content(curses.COLOR_PAIRS - 1), (2, 3))
+
+        for pair in self.bad_pairs():
+            self.assertRaises(ValueError, curses.init_pair, pair, 0, 0)
+        for color in self.bad_colors2():
+            self.assertRaises(ValueError, curses.init_pair, 1, color, 0)
+            self.assertRaises(ValueError, curses.init_pair, 1, 0, color)
+
+    @requires_colors
+    def test_color_attrs(self):
+        for pair in 0, 1, 255:
+            attr = curses.color_pair(pair)
+            self.assertEqual(curses.pair_number(attr), pair, attr)
+            self.assertEqual(curses.pair_number(attr | curses.A_BOLD), pair)
+        self.assertEqual(curses.color_pair(0), 0)
+        self.assertEqual(curses.pair_number(0), 0)
+
+    @requires_curses_func('use_default_colors')
+    @requires_colors
+    def test_use_default_colors(self):
+        self.assertIn(curses.pair_content(0),
+                      ((curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1)))
+        curses.use_default_colors()
+        self.assertEqual(curses.pair_content(0), (-1, -1))
 
     @requires_curses_func('keyname')
     def test_keyname(self):
