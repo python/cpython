@@ -198,7 +198,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.6
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: 3.10
       Added support for *weights*.
 
 .. function:: median(data)
