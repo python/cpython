@@ -332,6 +332,59 @@ non-important content
         self.assertEqual(binop.left.col_offset, 4)
         self.assertEqual(binop.right.col_offset, 7)
 
+    def test_ast_line_numbers_with_parentheses(self):
+        expr = """
+x = (
+    f" {test(t)}"
+)"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # check the test(t) location
+        call = t.body[0].value.values[1].value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 3)
+        self.assertEqual(call.end_lineno, 3)
+        self.assertEqual(call.col_offset, 8)
+        self.assertEqual(call.end_col_offset, 15)
+
+        expr = """
+x = (
+        'PERL_MM_OPT', (
+            f'wat'
+            f'some_string={f(x)} '
+            f'wat'
+        ),
+)
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # check the fstring
+        fstring = t.body[0].value.elts[1]
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 3)
+        wat1, middle, wat2 = fstring.values
+        # check the first wat
+        self.assertEqual(type(wat1), ast.Constant)
+        self.assertEqual(wat1.lineno, 4)
+        self.assertEqual(wat1.end_lineno, 6)
+        self.assertEqual(wat1.col_offset, 12)
+        self.assertEqual(wat1.end_col_offset, 18)
+        # check the call
+        call = middle.value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 5)
+        self.assertEqual(call.end_lineno, 5)
+        self.assertEqual(call.col_offset, 27)
+        self.assertEqual(call.end_col_offset, 31)
+        # check the second wat
+        self.assertEqual(type(wat2), ast.Constant)
+        self.assertEqual(wat2.lineno, 4)
+        self.assertEqual(wat2.end_lineno, 6)
+        self.assertEqual(wat2.col_offset, 12)
+        self.assertEqual(wat2.end_col_offset, 18)
+
     def test_docstring(self):
         def f():
             f'''Not a docstring'''
