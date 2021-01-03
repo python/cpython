@@ -339,6 +339,10 @@ class TestCurses(unittest.TestCase):
         if not curses.can_change_color:
             self.skipTest('cannot change color')
 
+        self.addCleanup(curses.init_color, 0, *curses.color_content(0))
+        self.addCleanup(curses.init_color, curses.COLORS - 1,
+                        *curses.color_content(curses.COLORS - 1))
+
         curses.init_color(0, 0, 0, 0)
         self.assertEqual(curses.color_content(0), (0, 0, 0))
         curses.init_color(0, 1000, 1000, 1000)
@@ -355,8 +359,10 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_pair_content(self):
-        self.assertEqual(curses.pair_content(0),
-                         (curses.COLOR_WHITE, curses.COLOR_BLACK))
+        if not hasattr(curses, 'use_default_colors'):
+            self.assertEqual(curses.pair_content(0),
+                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
+        curses.pair_content(0)
         curses.pair_content(curses.COLOR_PAIRS - 1)
 
         for pair in self.bad_pairs():
@@ -364,6 +370,10 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_init_pair(self):
+        self.addCleanup(curses.init_pair, 1, *curses.pair_content(1))
+        self.addCleanup(curses.init_pair, curses.COLOR_PAIRS - 1,
+                        *curses.pair_content(curses.COLOR_PAIRS - 1))
+
         curses.init_pair(1, 0, 0)
         self.assertEqual(curses.pair_content(1), (0, 0))
         curses.init_pair(1, curses.COLORS - 1, curses.COLORS - 1)
@@ -390,6 +400,8 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('use_default_colors')
     @requires_colors
     def test_use_default_colors(self):
+        self.assertIn(curses.pair_content(0),
+                      ((curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1)))
         curses.use_default_colors()
         self.assertEqual(curses.pair_content(0), (-1, -1))
 
