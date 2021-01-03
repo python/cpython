@@ -144,6 +144,28 @@ See :pep:`604` for more details.
 
 (Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
+PEP 612: Parameter Specification Variables
+------------------------------------------
+
+Two new options to improve the information provided to static type checkers for
+:pep:`484`\ 's ``Callable`` have been added to the :mod:`typing` module.
+
+The first is the parameter specification variable.  They are used to forward the
+parameter types of one callable to another callable -- a pattern commonly
+found in higher order functions and decorators.  Examples of usage can be found
+in :class:`typing.ParamSpec`. Previously, there was no easy way to type annotate
+dependency of parameter types in such a precise manner.
+
+The second option is the new ``Concatenate`` operator. It's used in conjunction
+with parameter specification variables to type annotate a higher order callable
+which adds or removes parameters of another callable.  Examples of usage can
+be found in :class:`typing.Concatenate`.
+
+See :class:`typing.Callable`, :class:`typing.ParamSpec`,
+:class:`typing.Concatenate` and :pep:`612` for more details.
+
+(Contributed by Ken Jin in :issue:`41559`.)
+
 Other Language Changes
 ======================
 
@@ -237,6 +259,11 @@ inspect
 
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
+
+Added *globalns* and *localns* parameters in :func:`~inspect.signature` and
+:meth:`inspect.Signature.from_callable` to retrieve the annotations in given
+local and global namespaces.
+(Contributed by Batuhan Taskaya in :issue:`41960`.)
 
 linecache
 ---------
@@ -399,9 +426,11 @@ Optimizations
   average.
   (Contributed by Victor Stinner in :issue:`41006`.)
 
-* The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
-  It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
-  in :issue:`42093`, based on ideas implemented originally in PyPy and MicroPython.)
+* The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.  It
+  is about 36% faster now. This makes optimized ``LOAD_ATTR`` instructions the
+  current most performance attribute access method (faster than slots).
+  (Contributed by Pablo Galindo and Yury Selivanov in :issue:`42093`, based on
+  ideas implemented originally in PyPy and MicroPython.)
 
 * When building Python with ``--enable-optimizations`` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.
@@ -532,6 +561,12 @@ Changes in the Python API
   silently in Python 3.9.
   (Contributed by Ken Jin in :issue:`42195`.)
 
+* :meth:`socket.htons` and :meth:`socket.ntohs` now raise :exc:`OverflowError`
+  instead of :exc:`DeprecationWarning` if the given parameter will not fit in
+  a 16-bit unsigned integer.
+  (Contributed by Erlend E. Aasland in :issue:`42393`.)
+
+
 CPython bytecode changes
 ========================
 
@@ -552,6 +587,10 @@ Build Changes
 
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
+
+* Added ``--disable-test-modules`` option to the ``configure`` script:
+  don't build nor install test modules.
+  (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
 
 C API Changes

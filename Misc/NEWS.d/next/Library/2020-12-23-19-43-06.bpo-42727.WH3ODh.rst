@@ -1,0 +1,2 @@
+``EnumMeta.__prepare__`` now accepts ``**kwds`` to properly support
+``__init_subclass__``

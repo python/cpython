@@ -57,6 +57,24 @@ pysqlite_connection_close(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored
     return pysqlite_connection_close_impl(self);
 }
 
+PyDoc_STRVAR(pysqlite_connection_commit__doc__,
+"commit($self, /)\n"
+"--\n"
+"\n"
+"Commit the current transaction.");
+
+#define PYSQLITE_CONNECTION_COMMIT_METHODDEF    \
+    {"commit", (PyCFunction)pysqlite_connection_commit, METH_NOARGS, pysqlite_connection_commit__doc__},
+
+static PyObject *
+pysqlite_connection_commit_impl(pysqlite_Connection *self);
+
+static PyObject *
+pysqlite_connection_commit(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored))
+{
+    return pysqlite_connection_commit_impl(self);
+}
+
 PyDoc_STRVAR(pysqlite_connection_rollback__doc__,
 "rollback($self, /)\n"
 "--\n"
@@ -373,6 +391,95 @@ exit:
 
 #endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
+PyDoc_STRVAR(pysqlite_connection_execute__doc__,
+"execute($self, sql, parameters=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Executes a SQL statement. Non-standard.");
+
+#define PYSQLITE_CONNECTION_EXECUTE_METHODDEF    \
+    {"execute", (PyCFunction)(void(*)(void))pysqlite_connection_execute, METH_FASTCALL, pysqlite_connection_execute__doc__},
+
+static PyObject *
+pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
+                                 PyObject *parameters);
+
+static PyObject *
+pysqlite_connection_execute(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sql;
+    PyObject *parameters = NULL;
+
+    if (!_PyArg_CheckPositional("execute", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("execute", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    sql = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    parameters = args[1];
+skip_optional:
+    return_value = pysqlite_connection_execute_impl(self, sql, parameters);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(pysqlite_connection_executemany__doc__,
+"executemany($self, sql, parameters, /)\n"
+"--\n"
+"\n"
+"Repeatedly executes a SQL statement. Non-standard.");
+
+#define PYSQLITE_CONNECTION_EXECUTEMANY_METHODDEF    \
+    {"executemany", (PyCFunction)(void(*)(void))pysqlite_connection_executemany, METH_FASTCALL, pysqlite_connection_executemany__doc__},
+
+static PyObject *
+pysqlite_connection_executemany_impl(pysqlite_Connection *self,
+                                     PyObject *sql, PyObject *parameters);
+
+static PyObject *
+pysqlite_connection_executemany(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sql;
+    PyObject *parameters;
+
+    if (!_PyArg_CheckPositional("executemany", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("executemany", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[0]) == -1) {
+        goto exit;
+    }
+    sql = args[0];
+    parameters = args[1];
+    return_value = pysqlite_connection_executemany_impl(self, sql, parameters);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
+"executescript($self, sql_script, /)\n"
+"--\n"
+"\n"
+"Executes a multiple SQL statements at once. Non-standard.");
+
+#define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
+    {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
+
 PyDoc_STRVAR(pysqlite_connection_interrupt__doc__,
 "interrupt($self, /)\n"
 "--\n"
@@ -409,6 +516,107 @@ static PyObject *
 pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_connection_iterdump_impl(self);
+}
+
+PyDoc_STRVAR(pysqlite_connection_backup__doc__,
+"backup($self, /, target=<unrepresentable>, *, pages=-1, progress=None,\n"
+"       name=\'main\', sleep=0.25)\n"
+"--\n"
+"\n"
+"Makes a backup of the database. Non-standard.");
+
+#define PYSQLITE_CONNECTION_BACKUP_METHODDEF    \
+    {"backup", (PyCFunction)(void(*)(void))pysqlite_connection_backup, METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_backup__doc__},
+
+static PyObject *
+pysqlite_connection_backup_impl(pysqlite_Connection *self,
+                                pysqlite_Connection *target, int pages,
+                                PyObject *progress, const char *name,
+                                double sleep);
+
+static PyObject *
+pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "backup", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    pysqlite_Connection *target = NULL;
+    int pages = -1;
+    PyObject *progress = Py_None;
+    const char *name = "main";
+    double sleep = 0.25;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        if (!PyObject_TypeCheck(args[0], pysqlite_ConnectionType)) {
+            _PyArg_BadArgument("backup", "argument 'target'", (pysqlite_ConnectionType)->tp_name, args[0]);
+            goto exit;
+        }
+        target = (pysqlite_Connection *)args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        pages = _PyLong_AsInt(args[1]);
+        if (pages == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        progress = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        if (!PyUnicode_Check(args[3])) {
+            _PyArg_BadArgument("backup", "argument 'name'", "str", args[3]);
+            goto exit;
+        }
+        Py_ssize_t name_length;
+        name = PyUnicode_AsUTF8AndSize(args[3], &name_length);
+        if (name == NULL) {
+            goto exit;
+        }
+        if (strlen(name) != (size_t)name_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_CheckExact(args[4])) {
+        sleep = PyFloat_AS_DOUBLE(args[4]);
+    }
+    else
+    {
+        sleep = PyFloat_AsDouble(args[4]);
+        if (sleep == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+skip_optional_kwonly:
+    return_value = pysqlite_connection_backup_impl(self, target, pages, progress, name, sleep);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_connection_create_collation__doc__,
@@ -511,4 +719,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=eb14a52e4c682f3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7cb13d491a5970aa input=a9049054013a1b77]*/

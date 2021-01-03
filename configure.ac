@@ -5586,14 +5586,15 @@ if test "$have_stdatomic_h" = yes; then
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 fi
 
-# Check for GCC >= 4.7 __atomic builtins
-AC_MSG_CHECKING(for GCC >= 4.7 __atomic builtins)
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_MSG_CHECKING(for builtin __atomic_load_n and __atomic_store_n functions)
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
-    volatile int val = 1;
+    int val;
     int main() {
-      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
     }
   ]])
@@ -5602,7 +5603,7 @@ AC_LINK_IFELSE(
 AC_MSG_RESULT($have_builtin_atomic)
 
 if test "$have_builtin_atomic" = yes; then
-    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin atomics])
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 fi
 
 # ensurepip option
@@ -5833,6 +5834,20 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+AC_MSG_CHECKING(for --disable-test-modules)
+AC_ARG_ENABLE(test-modules,
+              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+    AC_MSG_RESULT(yes)
+else
+    TEST_MODULES=yes
+    AC_MSG_RESULT(no)
+fi
+AC_SUBST(TEST_MODULES)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
@@ -5859,4 +5874,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
 fi
-
