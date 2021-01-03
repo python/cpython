@@ -403,10 +403,10 @@ class BaseTest(unittest.TestCase):
         # Most likely to refleak due to nested list inside tuple.
         self.assertEqual(list[int, (str, [str, dict])], list[int, (str, (str, dict))])
 
-        x = (int, str, [int, list])
-        self.assertEqual(list[x], list[int, str, (int, list)])
-        # Make sure the original tuple wasn't modified.
-        self.assertEqual(x, (int, str, [int, list]))
+        x = (int, (int, [dict, float]))
+        self.assertEqual(list[x], list[int, (int, (dict, float))])
+        # Make sure the original tuple's list wasn't modified.
+        self.assertEqual(x, (int, (int, [dict, float])))
 
 
 if __name__ == "__main__":

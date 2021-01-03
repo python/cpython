@@ -226,7 +226,7 @@ tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
     return 0;
 }
 
-// Makes a deep copy of a tuple
+// Makes a shallow copy of a tuple
 static inline PyObject *
 tuple_copy(PyObject *obj) {
     return _PyTuple_FromArray(((PyTupleObject *)obj)->ob_item, Py_SIZE(obj));
@@ -241,17 +241,14 @@ tupleify_lists(PyObject *args) {
     Py_ssize_t len = PyTuple_GET_SIZE(args);
     for (Py_ssize_t i = 0; i < len; ++i) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
-        if (PyList_CheckExact(arg)) {
-            PyObject *new_arg = PyList_AsTuple(arg);
+        int is_list = PyList_CheckExact(arg);
+        int is_tuple = PyTuple_CheckExact(arg);
+        if (is_list || is_tuple) {
+            // In case there are lists nested inside tuples.
+            PyObject *new_arg = is_list ? PyList_AsTuple(arg) : tuple_copy(arg);
             tupleify_lists(new_arg);
             PyTuple_SET_ITEM(args, i, new_arg);
             Py_DECREF(arg);
-        }
-        else if (PyTuple_CheckExact(arg)) {
-            // In case there are lists nested inside tuples.
-            // This works despite interned tuples because tuples containing
-            // lists aren't interned.
-            tupleify_lists(arg);
         }
     }
 }
