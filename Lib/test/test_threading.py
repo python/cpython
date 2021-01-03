@@ -8,6 +8,7 @@ from test.support import verbose, cpython_only
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
+import contextvars
 import random
 import sys
 import _thread
@@ -854,6 +855,31 @@ class ThreadTests(BaseTestCase):
             atexit = Atexit()
         """)
         self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
+
+    def test_contextvars(self):
+        context_var = contextvars.ContextVar("context_var")
+        context_var.set("default")
+
+        result = None
+
+        def target():
+            nonlocal result
+            result = context_var.get()
+
+        t = threading.Thread(target=target)
+        t.start()
+        t.join()
+
+        self.assertEqual(result, "default")
+
+        custom_ctx = contextvars.Context()
+        custom_ctx.run(lambda: context_var.set("custom"))
+
+        t = threading.Thread(target=target, context=custom_ctx)
+        t.start()
+        t.join()
+
+        self.assertEqual(result, "custom")
 
 
 class ThreadJoinOnShutdown(BaseTestCase):

@@ -8,6 +8,7 @@ import functools
 from time import monotonic as _time
 from _weakrefset import WeakSet
 from itertools import islice as _islice, count as _count
+from contextvars import copy_context as _copy_context
 try:
     from _collections import deque as _deque
 except ImportError:
@@ -782,7 +783,7 @@ class Thread:
     _initialized = False
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None):
+                 args=(), kwargs=None, *, daemon=None, context=None):
         """This constructor should always be called with keyword arguments. Arguments are:
 
         *group* should be None; reserved for future extension when a ThreadGroup
@@ -827,6 +828,10 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
+        if context is not None:
+            self._context = context
+        else:
+            self._context = _copy_context()
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
         self._tstate_lock = None
@@ -907,7 +912,7 @@ class Thread:
         """
         try:
             if self._target:
-                self._target(*self._args, **self._kwargs)
+                self._context.run(self._target, *self._args, **self._kwargs)
         finally:
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.

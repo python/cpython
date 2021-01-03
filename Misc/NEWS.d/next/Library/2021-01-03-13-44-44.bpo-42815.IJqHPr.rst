@@ -1,0 +1,2 @@
+Fix issue when new thread doesn't copy context of a parent thread. Patch
+provided by Yurii Karabas.
