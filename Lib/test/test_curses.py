@@ -323,7 +323,7 @@ class TestCurses(unittest.TestCase):
         return (curses.COLORS, 2**31, 2**63, 2**64)
 
     def bad_pairs(self):
-        return (-1, curses.COLOR_PAIRS, -2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
+        return (-1, -2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
 
     @requires_colors
     def test_color_content(self):

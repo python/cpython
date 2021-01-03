@@ -463,12 +463,21 @@ pair_converter(PyObject *arg, void *ptr)
     if (pair_number == -1 && PyErr_Occurred())
         return 0;
 
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+    if (overflow > 0 || pair_number > INT_MAX) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color pair is greater than maximum (%d).",
+                     INT_MAX);
+        return 0;
+    }
+#else
     if (overflow > 0 || pair_number >= COLOR_PAIRS) {
         PyErr_Format(PyExc_ValueError,
                      "Color pair is greater than COLOR_PAIRS-1 (%d).",
                      COLOR_PAIRS - 1);
         return 0;
     }
+#endif
     else if (overflow < 0 || pair_number < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "Color pair is less than 0.");
