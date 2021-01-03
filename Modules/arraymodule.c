@@ -2977,18 +2977,42 @@ static PyType_Spec arrayiter_spec = {
 
 /*********************** Install Module **************************/
 
+static int
+array_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    array_state *state = get_array_state(module);
+    Py_VISIT(state->ArrayType);
+    Py_VISIT(state->ArrayIterType);
+    return 0;
+}
+
+static int
+array_clear(PyObject *module)
+{
+    array_state *state = get_array_state(module);
+    Py_CLEAR(state->ArrayType);
+    Py_CLEAR(state->ArrayIterType);
+    return 0;
+}
+
+static void
+array_free(void *module)
+{
+    array_clear((PyObject *)module);
+}
+
 /* No functions in array module. */
 static PyMethodDef a_methods[] = {
     ARRAY__ARRAY_RECONSTRUCTOR_METHODDEF
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
-#define CREATE_TYPE(module, type, spec)                             \
-do {                                                                \
-    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, spec, NULL); \
-    if (type == NULL) {                                             \
-        return -1;                                                  \
-    }                                                               \
+#define CREATE_TYPE(module, type, spec)                                  \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
+    if (type == NULL) {                                                  \
+        return -1;                                                       \
+    }                                                                    \
 } while (0)
 
 static int
@@ -3059,6 +3083,9 @@ static struct PyModuleDef arraymodule = {
     .m_doc = module_doc,
     .m_methods = a_methods,
     .m_slots = arrayslots,
+    .m_traverse = array_traverse,
+    .m_clear = array_clear,
+    .m_free = array_free,
 };
 
 
