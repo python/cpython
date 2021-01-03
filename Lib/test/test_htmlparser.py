@@ -483,6 +483,18 @@ text
                                 [('action', '/xxx.php?a=1&b=2&'),
                                  (',', None), ('method', 'post')])])
 
+    def test_comma_between_unquoted_attributes(self):
+        # bpo 41748
+        self._run_check('<div class=bar,baz=asd>',
+                        [('starttag', 'div', [('class', 'bar,baz=asd')])])
+
+    def test_comma_with_space_between_unquoted_attributes(self):
+        # bpo 41748
+        self._run_check('<div class=bar ,baz=asd>',
+                        [('starttag', 'div', [
+                            ('class', 'bar'),
+                            (',baz', 'asd')])])
+
     def test_weird_chars_in_unquoted_attribute_values(self):
         self._run_check('<form action=bogus|&#()value>', [
                             ('starttag', 'form',
