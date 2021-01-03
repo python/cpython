@@ -155,10 +155,8 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define _CURSES_PAIR_NUMBER_FUNC        pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
-#define _CURSES_FUNC_NAME_STR(s)        #s
-
-#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
-#define _CURSES_INIT_PAIR_FUNC_NAME     _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
+#define _CURSES_INIT_COLOR_FUNC_NAME    Py_STRINGIFY(_CURSES_INIT_COLOR_FUNC)
+#define _CURSES_INIT_PAIR_FUNC_NAME     Py_STRINGIFY(_CURSES_INIT_PAIR_FUNC)
 
 /*[clinic input]
 module _curses
