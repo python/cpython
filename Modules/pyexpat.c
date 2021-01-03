@@ -1840,9 +1840,7 @@ static void
 pyexpat_destructor(PyObject *op)
 {
     void *p = PyCapsule_GetPointer(op, PyExpat_CAPSULE_NAME);
-    if (p != NULL) {
-        PyMem_Free(p);
-    }
+    PyMem_Free(p);
 }
 
 static int
@@ -1931,6 +1929,10 @@ pyexpat_exec(PyObject *mod)
 #undef MYCONST
 
     struct PyExpat_CAPI *capi = PyMem_Calloc(1, sizeof(struct PyExpat_CAPI));
+    if (capi == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     /* initialize pyexpat dispatch table */
     capi->size = sizeof(*capi);
     capi->magic = PyExpat_CAPI_MAGIC;
