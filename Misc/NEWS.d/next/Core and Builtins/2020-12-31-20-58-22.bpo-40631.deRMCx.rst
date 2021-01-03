@@ -1,0 +1,2 @@
+Fix regression where a single parenthesized starred expression was a valid
+assignment target.
