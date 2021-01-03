@@ -1836,6 +1836,13 @@ error:
 }
 #endif
 
+static void
+pyexpat_destructor(PyObject *op)
+{
+    void *p = PyCapsule_GetPointer(op, PyExpat_CAPSULE_NAME);
+    PyMem_Free(p);
+}
+
 static int
 pyexpat_exec(PyObject *mod)
 {
@@ -1921,40 +1928,46 @@ pyexpat_exec(PyObject *mod)
     MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
 #undef MYCONST
 
-    static struct PyExpat_CAPI capi;
+    struct PyExpat_CAPI *capi = PyMem_Calloc(1, sizeof(struct PyExpat_CAPI));
+    if (capi == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     /* initialize pyexpat dispatch table */
-    capi.size = sizeof(capi);
-    capi.magic = PyExpat_CAPI_MAGIC;
-    capi.MAJOR_VERSION = XML_MAJOR_VERSION;
-    capi.MINOR_VERSION = XML_MINOR_VERSION;
-    capi.MICRO_VERSION = XML_MICRO_VERSION;
-    capi.ErrorString = XML_ErrorString;
-    capi.GetErrorCode = XML_GetErrorCode;
-    capi.GetErrorColumnNumber = XML_GetErrorColumnNumber;
-    capi.GetErrorLineNumber = XML_GetErrorLineNumber;
-    capi.Parse = XML_Parse;
-    capi.ParserCreate_MM = XML_ParserCreate_MM;
-    capi.ParserFree = XML_ParserFree;
-    capi.SetCharacterDataHandler = XML_SetCharacterDataHandler;
-    capi.SetCommentHandler = XML_SetCommentHandler;
-    capi.SetDefaultHandlerExpand = XML_SetDefaultHandlerExpand;
-    capi.SetElementHandler = XML_SetElementHandler;
-    capi.SetNamespaceDeclHandler = XML_SetNamespaceDeclHandler;
-    capi.SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
-    capi.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
-    capi.SetUserData = XML_SetUserData;
-    capi.SetStartDoctypeDeclHandler = XML_SetStartDoctypeDeclHandler;
-    capi.SetEncoding = XML_SetEncoding;
-    capi.DefaultUnknownEncodingHandler = PyUnknownEncodingHandler;
+    capi->size = sizeof(*capi);
+    capi->magic = PyExpat_CAPI_MAGIC;
+    capi->MAJOR_VERSION = XML_MAJOR_VERSION;
+    capi->MINOR_VERSION = XML_MINOR_VERSION;
+    capi->MICRO_VERSION = XML_MICRO_VERSION;
+    capi->ErrorString = XML_ErrorString;
+    capi->GetErrorCode = XML_GetErrorCode;
+    capi->GetErrorColumnNumber = XML_GetErrorColumnNumber;
+    capi->GetErrorLineNumber = XML_GetErrorLineNumber;
+    capi->Parse = XML_Parse;
+    capi->ParserCreate_MM = XML_ParserCreate_MM;
+    capi->ParserFree = XML_ParserFree;
+    capi->SetCharacterDataHandler = XML_SetCharacterDataHandler;
+    capi->SetCommentHandler = XML_SetCommentHandler;
+    capi->SetDefaultHandlerExpand = XML_SetDefaultHandlerExpand;
+    capi->SetElementHandler = XML_SetElementHandler;
+    capi->SetNamespaceDeclHandler = XML_SetNamespaceDeclHandler;
+    capi->SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
+    capi->SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
+    capi->SetUserData = XML_SetUserData;
+    capi->SetStartDoctypeDeclHandler = XML_SetStartDoctypeDeclHandler;
+    capi->SetEncoding = XML_SetEncoding;
+    capi->DefaultUnknownEncodingHandler = PyUnknownEncodingHandler;
 #if XML_COMBINED_VERSION >= 20100
-    capi.SetHashSalt = XML_SetHashSalt;
+    capi->SetHashSalt = XML_SetHashSalt;
 #else
-    capi.SetHashSalt = NULL;
+    capi->SetHashSalt = NULL;
 #endif
 
     /* export using capsule */
-    PyObject *capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
+    PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
+                                          pyexpat_destructor);
     if (capi_object == NULL) {
+        PyMem_Free(capi);
         return -1;
     }
 
