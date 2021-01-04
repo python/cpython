@@ -6473,30 +6473,49 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-/* C API.  Clients get at this via PyDateTime_IMPORT, defined in
- * datetime.h.
+/* Get a new C API by calling this function.
+ * Clients get at C API via PyDateTime_IMPORT, defined in datetime.h.
  */
-static PyDateTime_CAPI CAPI = {
-    &PyDateTime_DateType,
-    &PyDateTime_DateTimeType,
-    &PyDateTime_TimeType,
-    &PyDateTime_DeltaType,
-    &PyDateTime_TZInfoType,
-    NULL,                       // PyDatetime_TimeZone_UTC not initialized yet
-    new_date_ex,
-    new_datetime_ex,
-    new_time_ex,
-    new_delta_ex,
-    new_timezone,
-    datetime_fromtimestamp,
-    datetime_date_fromtimestamp_capi,
-    new_datetime_ex2,
-    new_time_ex2
-};
+static inline PyDateTime_CAPI *
+get_datetime_capi()
+{
+    PyDateTime_CAPI *capi = PyMem_Calloc(1, sizeof(PyDateTime_CAPI));
+    if (capi == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    capi->DateType = &PyDateTime_DateType;
+    capi->DateTimeType = &PyDateTime_DateTimeType;
+    capi->TimeType = &PyDateTime_TimeType;
+    capi->DeltaType = &PyDateTime_DeltaType;
+    capi->TZInfoType = &PyDateTime_TZInfoType;
+    capi->Date_FromDate = new_date_ex;
+    capi->DateTime_FromDateAndTime = new_datetime_ex;
+    capi->Time_FromTime = new_time_ex;
+    capi->Delta_FromDelta = new_delta_ex;
+    capi->TimeZone_FromTimeZone = new_timezone;
+    capi->DateTime_FromTimestamp = datetime_fromtimestamp;
+    capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
+    capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
+    capi->Time_FromTimeAndFold = new_time_ex2;
+    return capi;
+}
+
+static void
+datetime_destructor(PyObject *op)
+{
+    void *p = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
+    PyMem_Free(p);
+}
 
 static int
 _datetime_exec(PyObject *module)
 {
+    PyDateTime_CAPI *CAPI = get_datetime_capi();
+    if (CAPI == NULL) {
+        return -1;
+    }
+
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -6581,7 +6600,7 @@ _datetime_exec(PyObject *module)
     }
 
     PyDateTime_TimeZone_UTC = x;
-    CAPI.TimeZone_UTC = PyDateTime_TimeZone_UTC;
+    CAPI->TimeZone_UTC = PyDateTime_TimeZone_UTC;
 
     /* bpo-37642: These attributes are rounded to the nearest minute for backwards
      * compatibility, even though the constructor will accept a wider range of
@@ -6619,8 +6638,9 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    x = PyCapsule_New(&CAPI, PyDateTime_CAPSULE_NAME, NULL);
+    x = PyCapsule_New(CAPI, PyDateTime_CAPSULE_NAME, datetime_destructor);
     if (x == NULL) {
+        PyMem_Free(CAPI);
         return -1;
     }
 
