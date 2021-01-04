@@ -1535,6 +1535,9 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
         return 0; \
 }
 
+/* Add a jump with no line number.
+ * Used for artificial jumps that have no corresponding
+ * token in the source code. */
 #define ADDOP_JUMP_NOLINE(C, OP, O) { \
     if (!compiler_addop_j_noline((C), (OP), (O))) \
         return 0; \
