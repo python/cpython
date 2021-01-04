@@ -2031,6 +2031,9 @@ _multibytecodec_exec(PyObject *mod)
     return 0;
 }
 
+#undef CREATE_TYPE
+#undef ADD_TYPE
+
 static struct PyMethodDef __methods[] = {
     _MULTIBYTECODEC___CREATE_CODEC_METHODDEF
     {NULL, NULL},
