@@ -1967,56 +1967,91 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
     return (PyObject *)self;
 }
 
-static struct PyMethodDef __methods[] = {
-    _MULTIBYTECODEC___CREATE_CODEC_METHODDEF
-    {NULL, NULL},
-};
+static int
+_multibytecodec_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    Py_VISIT(state->multibytecodec_type);
+    Py_VISIT(state->encoder_type);
+    Py_VISIT(state->decoder_type);
+    Py_VISIT(state->reader_type);
+    Py_VISIT(state->writer_type);
+    return 0;
+}
 
+static int
+_multibytecodec_clear(PyObject *mod)
+{
+    _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    Py_CLEAR(state->multibytecodec_type);
+    Py_CLEAR(state->encoder_type);
+    Py_CLEAR(state->decoder_type);
+    Py_CLEAR(state->reader_type);
+    Py_CLEAR(state->writer_type);
+    return 0;
+}
 
-static struct PyModuleDef _multibytecodecmodule = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_multibytecodec",
-    .m_size = sizeof(_multibytecodec_state),
-    .m_methods = __methods,
-};
+static void
+_multibytecodec_free(void *m)
+{
+    _multibytecodec_clear((PyObject *)m);
+}
 
 #define CREATE_TYPE(module, type, spec)                                  \
 do {                                                                     \
     type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
     if (!type) {                                                         \
-        goto error;                                                      \
+        return -1;                                                       \
     }                                                                    \
 } while (0)
 
 #define ADD_TYPE(module, type)                \
 do {                                          \
     if (PyModule_AddType(module, type) < 0) { \
-        goto error;                           \
+        return -1;                            \
     }                                         \
 } while (0)
+
+static int
+_multibytecodec_exec(PyObject *mod)
+{
+    _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    CREATE_TYPE(mod, state->multibytecodec_type, &multibytecodec_spec);
+    CREATE_TYPE(mod, state->encoder_type, &encoder_spec);
+    CREATE_TYPE(mod, state->decoder_type, &decoder_spec);
+    CREATE_TYPE(mod, state->reader_type, &reader_spec);
+    CREATE_TYPE(mod, state->writer_type, &writer_spec);
+
+    ADD_TYPE(mod, state->encoder_type);
+    ADD_TYPE(mod, state->decoder_type);
+    ADD_TYPE(mod, state->reader_type);
+    ADD_TYPE(mod, state->writer_type);
+    return 0;
+}
+
+static struct PyMethodDef __methods[] = {
+    _MULTIBYTECODEC___CREATE_CODEC_METHODDEF
+    {NULL, NULL},
+};
+
+static PyModuleDef_Slot _multibytecodec_slots[] = {
+    {Py_mod_exec, _multibytecodec_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _multibytecodecmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_multibytecodec",
+    .m_size = sizeof(_multibytecodec_state),
+    .m_methods = __methods,
+    .m_slots = _multibytecodec_slots,
+    .m_traverse = _multibytecodec_traverse,
+    .m_clear = _multibytecodec_clear,
+    .m_free = _multibytecodec_free,
+};
 
 PyMODINIT_FUNC
 PyInit__multibytecodec(void)
 {
-    PyObject *m = PyModule_Create(&_multibytecodecmodule);
-    if (m == NULL)
-        goto error;
-
-    _multibytecodec_state *state = _multibytecodec_get_state(m);
-    CREATE_TYPE(m, state->multibytecodec_type, &multibytecodec_spec);
-    CREATE_TYPE(m, state->encoder_type, &encoder_spec);
-    CREATE_TYPE(m, state->decoder_type, &decoder_spec);
-    CREATE_TYPE(m, state->reader_type, &reader_spec);
-    CREATE_TYPE(m, state->writer_type, &writer_spec);
-
-    ADD_TYPE(m, state->encoder_type);
-    ADD_TYPE(m, state->decoder_type);
-    ADD_TYPE(m, state->reader_type);
-    ADD_TYPE(m, state->writer_type);
-
-    return m;
-
-error:
-    Py_XDECREF(m);
-    return NULL;
+    return PyModuleDef_Init(&_multibytecodecmodule);
 }
