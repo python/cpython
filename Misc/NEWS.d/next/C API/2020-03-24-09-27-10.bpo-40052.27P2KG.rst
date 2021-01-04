@@ -1,2 +1,0 @@
-Fix an alignment build warning/error in function ``PyVectorcall_Function()``.
-Patch by Andreas Schneider, Antoine Pitrou and Petr Viktorin.
