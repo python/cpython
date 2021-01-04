@@ -10,6 +10,8 @@
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
 
+#define MODULE_NAME "_multibytecodec"
+
 typedef struct {
     PyTypeObject *encoder_type;
     PyTypeObject *decoder_type;
@@ -730,7 +732,7 @@ static PyType_Slot multibytecodec_slots[] = {
 };
 
 static PyType_Spec multibytecodec_spec = {
-    .name = "_multibytecodec.MultibyteCodec",
+    .name = MODULE_NAME ".MultibyteCodec",
     .basicsize = sizeof(MultibyteCodecObject),
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = multibytecodec_slots,
@@ -1097,7 +1099,7 @@ static PyType_Slot encoder_slots[] = {
 };
 
 static PyType_Spec encoder_spec = {
-    .name = "_multibytecodec.MultibyteIncrementalEncoder",
+    .name = MODULE_NAME ".MultibyteIncrementalEncoder",
     .basicsize = sizeof(MultibyteIncrementalEncoderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = encoder_slots,
@@ -1375,7 +1377,7 @@ static PyType_Slot decoder_slots[] = {
 };
 
 static PyType_Spec decoder_spec = {
-    .name = "_multibytecodec.MultibyteIncrementalDecoder",
+    .name = MODULE_NAME ".MultibyteIncrementalDecoder",
     .basicsize = sizeof(MultibyteIncrementalDecoderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = decoder_slots,
@@ -1702,7 +1704,7 @@ static PyType_Slot reader_slots[] = {
 };
 
 static PyType_Spec reader_spec = {
-    .name = "_multibytecodec.MultibyteStreamReader",
+    .name = MODULE_NAME ".MultibyteStreamReader",
     .basicsize = sizeof(MultibyteStreamReaderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = reader_slots,
@@ -1928,7 +1930,7 @@ static PyType_Slot writer_slots[] = {
 };
 
 static PyType_Spec writer_spec = {
-    .name = "_multibytecodec.MultibyteStreamWriter",
+    .name = MODULE_NAME ".MultibyteStreamWriter",
     .basicsize = sizeof(MultibyteStreamWriterObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = writer_slots,
