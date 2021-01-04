@@ -1,1 +1,0 @@
-Handle empty string in variable executable in platform.libc_ver()
