@@ -13,6 +13,8 @@
 typedef struct {
     PyTypeObject *encoder_type;
     PyTypeObject *decoder_type;
+    PyTypeObject *reader_type;
+    PyTypeObject *writer_type;
 } _multibytecodec_state;
 
 static _multibytecodec_state *
@@ -1386,9 +1388,9 @@ static PyType_Spec decoder_spec = {
 
 
 /*[clinic input]
- class _multibytecodec.MultibyteStreamReader "MultibyteStreamReaderObject *" "MultibyteStreamReader_Type"
+ class _multibytecodec.MultibyteStreamReader "MultibyteStreamReaderObject *" "clinic_get_state()->reader_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d323634b74976f09]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8d4b82105d531fce]*/
 
 static PyObject *
 mbstreamreader_iread(MultibyteStreamReaderObject *self,
@@ -1682,60 +1684,38 @@ mbstreamreader_traverse(MultibyteStreamReaderObject *self,
 static void
 mbstreamreader_dealloc(MultibyteStreamReaderObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
     Py_XDECREF(self->stream);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
-static PyTypeObject MultibyteStreamReader_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MultibyteStreamReader",            /* tp_name */
-    sizeof(MultibyteStreamReaderObject), /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /*  methods  */
-    (destructor)mbstreamreader_dealloc, /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
-        | Py_TPFLAGS_BASETYPE,          /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)mbstreamreader_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iterext */
-    mbstreamreader_methods,             /* tp_methods */
-    mbstreamreader_members,             /* tp_members */
-    codecctx_getsets,                   /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    mbstreamreader_init,                /* tp_init */
-    0,                                  /* tp_alloc */
-    mbstreamreader_new,                 /* tp_new */
+static PyType_Slot reader_slots[] = {
+    {Py_tp_dealloc, mbstreamreader_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, mbstreamreader_traverse},
+    {Py_tp_methods, mbstreamreader_methods},
+    {Py_tp_members, mbstreamreader_members},
+    {Py_tp_getset, codecctx_getsets},
+    {Py_tp_init, mbstreamreader_init},
+    {Py_tp_new, mbstreamreader_new},
+    {0, NULL},
+};
+
+static PyType_Spec reader_spec = {
+    .name = "MultibyteStreamReader",
+    .basicsize = sizeof(MultibyteStreamReaderObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = reader_slots,
 };
 
 
 /*[clinic input]
- class _multibytecodec.MultibyteStreamWriter "MultibyteStreamWriterObject *" "&MultibyteStreamWriter_Type"
+ class _multibytecodec.MultibyteStreamWriter "MultibyteStreamWriterObject *" "clinic_get_state()->writer_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cde22780a215d6ac]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2f5c85659ad82e8c]*/
 
 static int
 mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
@@ -1914,10 +1894,12 @@ mbstreamwriter_traverse(MultibyteStreamWriterObject *self,
 static void
 mbstreamwriter_dealloc(MultibyteStreamWriterObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
     Py_XDECREF(self->stream);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static struct PyMethodDef mbstreamwriter_methods[] = {
@@ -1934,47 +1916,23 @@ static PyMemberDef mbstreamwriter_members[] = {
     {NULL,}
 };
 
-static PyTypeObject MultibyteStreamWriter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MultibyteStreamWriter",            /* tp_name */
-    sizeof(MultibyteStreamWriterObject), /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /*  methods  */
-    (destructor)mbstreamwriter_dealloc, /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
-        | Py_TPFLAGS_BASETYPE,          /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)mbstreamwriter_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iterext */
-    mbstreamwriter_methods,             /* tp_methods */
-    mbstreamwriter_members,             /* tp_members */
-    codecctx_getsets,                   /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    mbstreamwriter_init,                /* tp_init */
-    0,                                  /* tp_alloc */
-    mbstreamwriter_new,                 /* tp_new */
+static PyType_Slot writer_slots[] = {
+    {Py_tp_dealloc, mbstreamwriter_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, mbstreamwriter_traverse},
+    {Py_tp_methods, mbstreamwriter_methods},
+    {Py_tp_members, mbstreamwriter_members},
+    {Py_tp_getset, codecctx_getsets},
+    {Py_tp_init, mbstreamwriter_init},
+    {Py_tp_new, mbstreamwriter_new},
+    {0, NULL},
+};
+
+static PyType_Spec writer_spec = {
+    .name = "MultibyteStreamWriter",
+    .basicsize = sizeof(MultibyteStreamWriterObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = writer_slots,
 };
 
 
@@ -2041,10 +1999,6 @@ PyMODINIT_FUNC
 PyInit__multibytecodec(void)
 {
     PyObject *m = NULL;
-    PyTypeObject *typelist[] = {
-        &MultibyteStreamReader_Type,
-        &MultibyteStreamWriter_Type
-    };
 
     if (PyType_Ready(&MultibyteCodec_Type) < 0)
         goto error;
@@ -2056,15 +2010,13 @@ PyInit__multibytecodec(void)
     _multibytecodec_state *state = _multibytecodec_get_state(m);
     CREATE_TYPE(m, state->encoder_type, &encoder_spec);
     CREATE_TYPE(m, state->decoder_type, &decoder_spec);
+    CREATE_TYPE(m, state->reader_type, &reader_spec);
+    CREATE_TYPE(m, state->writer_type, &writer_spec);
 
     ADD_TYPE(m, state->encoder_type);
     ADD_TYPE(m, state->decoder_type);
-
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
-        if (PyModule_AddType(m, typelist[i]) < 0) {
-            goto error;
-        }
-    }
+    ADD_TYPE(m, state->reader_type);
+    ADD_TYPE(m, state->writer_type);
 
     return m;
 
