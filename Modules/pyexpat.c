@@ -47,7 +47,18 @@ enum HandlerTypes {
     _DummyDecl
 };
 
-static PyObject *ErrorObject;
+typedef struct {
+    PyTypeObject *xml_parse_type;
+    PyObject *error;
+} pyexpat_state;
+
+static inline pyexpat_state*
+pyexpat_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (pyexpat_state *)state;
+}
 
 /* ----------------------------------------------------- */
 
@@ -72,8 +83,6 @@ typedef struct {
 #include "clinic/pyexpat.c.h"
 
 #define CHARACTER_DATA_BUFFER_SIZE 8192
-
-static PyTypeObject Xmlparsetype;
 
 typedef void (*xmlhandlersetter)(XML_Parser self, void *meth);
 typedef void* xmlhandler;
@@ -107,7 +116,7 @@ set_error_attr(PyObject *err, const char *name, int value)
  * information.  Always returns NULL.
  */
 static PyObject *
-set_error(xmlparseobject *self, enum XML_Error code)
+set_error(pyexpat_state *state, xmlparseobject *self, enum XML_Error code)
 {
     PyObject *err;
     PyObject *buffer;
@@ -119,13 +128,13 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = PyObject_CallOneArg(ErrorObject, buffer);
+    err = PyObject_CallOneArg(state->error, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
           && set_error_attr(err, "offset", column)
           && set_error_attr(err, "lineno", lineno)) {
-        PyErr_SetObject(ErrorObject, err);
+        PyErr_SetObject(state->error, err);
     }
     Py_XDECREF(err);
     return NULL;
@@ -680,13 +689,13 @@ class pyexpat.xmlparser "xmlparseobject *" "&Xmlparsetype"
 
 
 static PyObject *
-get_parse_result(xmlparseobject *self, int rv)
+get_parse_result(pyexpat_state *state, xmlparseobject *self, int rv)
 {
     if (PyErr_Occurred()) {
         return NULL;
     }
     if (rv == 0) {
-        return set_error(self, XML_GetErrorCode(self->itself));
+        return set_error(state, self, XML_GetErrorCode(self->itself));
     }
     if (flush_character_buffer(self) < 0) {
         return NULL;
@@ -699,6 +708,7 @@ get_parse_result(xmlparseobject *self, int rv)
 /*[clinic input]
 pyexpat.xmlparser.Parse
 
+    cls: defining_class
     data: object
     isfinal: bool(accept={int}) = False
     /
@@ -709,14 +719,15 @@ Parse XML data.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
-                             int isfinal)
-/*[clinic end generated code: output=f4db843dd1f4ed4b input=eb616027bfa9847f]*/
+pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
+                             PyObject *data, int isfinal)
+/*[clinic end generated code: output=8faffe07fe1f862a input=fc97f833558ca715]*/
 {
     const char *s;
     Py_ssize_t slen;
     Py_buffer view;
     int rc;
+    pyexpat_state *state = PyType_GetModuleState(cls);
 
     if (PyUnicode_Check(data)) {
         view.buf = NULL;
@@ -745,9 +756,10 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
     rc = XML_Parse(self->itself, s, (int)slen, isfinal);
 
 done:
-    if (view.buf != NULL)
+    if (view.buf != NULL) {
         PyBuffer_Release(&view);
-    return get_parse_result(self, rc);
+    }
+    return get_parse_result(state, self, rc);
 }
 
 /* File reading copied from cPickle */
@@ -796,6 +808,7 @@ error:
 /*[clinic input]
 pyexpat.xmlparser.ParseFile
 
+    cls: defining_class
     file: object
     /
 
@@ -803,12 +816,15 @@ Parse XML data from file-like object.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyObject *file)
-/*[clinic end generated code: output=2adc6a13100cc42b input=fbb5a12b6038d735]*/
+pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
+                                 PyObject *file)
+/*[clinic end generated code: output=34780a094c8ca3ae input=ba4bc9c541684793]*/
 {
     int rv = 1;
     PyObject *readmethod = NULL;
     _Py_IDENTIFIER(read);
+
+    pyexpat_state *state = PyType_GetModuleState(cls);
 
     if (_PyObject_LookupAttrId(file, &PyId_read, &readmethod) < 0) {
         return NULL;
@@ -823,7 +839,7 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyObject *file)
         void *buf = XML_GetBuffer(self->itself, BUF_SIZE);
         if (buf == NULL) {
             Py_XDECREF(readmethod);
-            return get_parse_result(self, 0);
+            return get_parse_result(state, self, 0);
         }
 
         bytes_read = readinst(buf, BUF_SIZE, readmethod);
@@ -841,7 +857,7 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyObject *file)
             break;
     }
     Py_XDECREF(readmethod);
-    return get_parse_result(self, rv);
+    return get_parse_result(state, self, rv);
 }
 
 /*[clinic input]
@@ -907,6 +923,7 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
 /*[clinic input]
 pyexpat.xmlparser.ExternalEntityParserCreate
 
+    cls: defining_class
     context: str(accept={str, NoneType})
     encoding: str = NULL
     /
@@ -916,16 +933,21 @@ Create a parser for parsing an external entity based on the information passed t
 
 static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
+                                                  PyTypeObject *cls,
                                                   const char *context,
                                                   const char *encoding)
-/*[clinic end generated code: output=535cda9d7a0fbcd6 input=b906714cc122c322]*/
+/*[clinic end generated code: output=01d4472b49cb3f92 input=ec70c6b9e6e9619a]*/
 {
     xmlparseobject *new_parser;
     int i;
 
-    new_parser = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
-    if (new_parser == NULL)
+    pyexpat_state *state = PyType_GetModuleState(cls);
+
+    new_parser = PyObject_GC_New(xmlparseobject, state->xml_parse_type);
+    if (new_parser == NULL) {
         return NULL;
+    }
+
     new_parser->buffer_size = self->buffer_size;
     new_parser->buffer_used = 0;
     new_parser->buffer = NULL;
@@ -1006,6 +1028,7 @@ pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag)
 /*[clinic input]
 pyexpat.xmlparser.UseForeignDTD
 
+    cls: defining_class
     flag: bool = True
     /
 
@@ -1017,14 +1040,16 @@ information to the parser. 'flag' defaults to True if not provided.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, int flag)
-/*[clinic end generated code: output=cfaa9aa50bb0f65c input=78144c519d116a6e]*/
+pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
+                                     int flag)
+/*[clinic end generated code: output=d7d98252bd25a20f input=23440ecb0573fb29]*/
 {
+    pyexpat_state *state = PyType_GetModuleState(cls);
     enum XML_Error rc;
 
     rc = XML_UseForeignDTD(self->itself, flag ? XML_TRUE : XML_FALSE);
     if (rc != XML_ERROR_NONE) {
-        return set_error(self, rc);
+        return set_error(state, self, rc);
     }
     Py_RETURN_NONE;
 }
@@ -1104,12 +1129,13 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 
 
 static PyObject *
-newxmlparseobject(const char *encoding, const char *namespace_separator, PyObject *intern)
+newxmlparseobject(pyexpat_state *state, const char *encoding,
+                  const char *namespace_separator, PyObject *intern)
 {
     int i;
     xmlparseobject *self;
 
-    self = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
+    self = PyObject_GC_New(xmlparseobject, state->xml_parse_type);
     if (self == NULL)
         return NULL;
 
@@ -1177,7 +1203,9 @@ xmlparse_dealloc(xmlparseobject *self)
         self->buffer = NULL;
     }
     Py_XDECREF(self->intern);
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_Del(self);
+    Py_DECREF(tp);
 }
 
 
@@ -1464,38 +1492,22 @@ xmlparse_clear(xmlparseobject *op)
 
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 
-static PyTypeObject Xmlparsetype = {
-        PyVarObject_HEAD_INIT(NULL, 0)
-        "pyexpat.xmlparser",            /*tp_name*/
-        sizeof(xmlparseobject),         /*tp_basicsize*/
-        0,                              /*tp_itemsize*/
-        /* methods */
-        (destructor)xmlparse_dealloc,   /*tp_dealloc*/
-        0,                              /*tp_vectorcall_offset*/
-        0,                      /*tp_getattr*/
-        0,  /*tp_setattr*/
-        0,                      /*tp_as_async*/
-        (reprfunc)0,            /*tp_repr*/
-        0,                      /*tp_as_number*/
-        0,              /*tp_as_sequence*/
-        0,              /*tp_as_mapping*/
-        (hashfunc)0,            /*tp_hash*/
-        (ternaryfunc)0,         /*tp_call*/
-        (reprfunc)0,            /*tp_str*/
-        (getattrofunc)0,                /* tp_getattro */
-        (setattrofunc)0,                /* tp_setattro */
-        0,              /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-        Xmlparsetype__doc__, /* tp_doc - Documentation string */
-        (traverseproc)xmlparse_traverse,        /* tp_traverse */
-        (inquiry)xmlparse_clear,                /* tp_clear */
-        0,                              /* tp_richcompare */
-        0,                              /* tp_weaklistoffset */
-        0,                              /* tp_iter */
-        0,                              /* tp_iternext */
-        xmlparse_methods,               /* tp_methods */
-        xmlparse_members,               /* tp_members */
-        xmlparse_getsetlist,            /* tp_getset */
+static PyType_Slot _xml_parse_type_spec_slots[] = {
+    {Py_tp_dealloc, xmlparse_dealloc},
+    {Py_tp_doc, (void *)Xmlparsetype__doc__},
+    {Py_tp_traverse, xmlparse_traverse},
+    {Py_tp_clear, xmlparse_clear},
+    {Py_tp_methods, xmlparse_methods},
+    {Py_tp_members, xmlparse_members},
+    {Py_tp_getset, xmlparse_getsetlist},
+    {0, 0}
+};
+
+static PyType_Spec _xml_parse_type_spec = {
+    .name = "pyexpat.xmlparser",
+    .basicsize = sizeof(xmlparseobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = _xml_parse_type_spec_slots,
 };
 
 /* End of code for xmlparser objects */
@@ -1541,7 +1553,8 @@ pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
         return NULL;
     }
 
-    result = newxmlparseobject(encoding, namespace_separator, intern);
+    pyexpat_state *state = pyexpat_get_state(module);
+    result = newxmlparseobject(state, encoding, namespace_separator, intern);
     if (intern_decref) {
         Py_DECREF(intern);
     }
@@ -1583,14 +1596,10 @@ PyDoc_STRVAR(pyexpat_module_documentation,
 #define MODULE_NAME "pyexpat"
 #endif
 
-#ifndef MODULE_INITFUNC
-#define MODULE_INITFUNC PyInit_pyexpat
-#endif
-
-static int init_handler_descrs(void)
+static int init_handler_descrs(pyexpat_state *state)
 {
     int i;
-    assert(!PyType_HasFeature(&Xmlparsetype, Py_TPFLAGS_VALID_VERSION_TAG));
+    assert(!PyType_HasFeature(state->xml_parse_type, Py_TPFLAGS_VALID_VERSION_TAG));
     for (i = 0; handler_info[i].name != NULL; i++) {
         struct HandlerInfo *hi = &handler_info[i];
         hi->getset.name = hi->name;
@@ -1598,11 +1607,11 @@ static int init_handler_descrs(void)
         hi->getset.set = (setter)xmlparse_handler_setter;
         hi->getset.closure = &handler_info[i];
 
-        PyObject *descr = PyDescr_NewGetSet(&Xmlparsetype, &hi->getset);
+        PyObject *descr = PyDescr_NewGetSet(state->xml_parse_type, &hi->getset);
         if (descr == NULL)
             return -1;
 
-        if (PyDict_SetDefault(Xmlparsetype.tp_dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefault(state->xml_parse_type->tp_dict, PyDescr_NAME(descr), descr) == NULL) {
             Py_DECREF(descr);
             return -1;
         }
@@ -1846,37 +1855,35 @@ pyexpat_destructor(PyObject *op)
 static int
 pyexpat_exec(PyObject *mod)
 {
-    if (PyType_Ready(&Xmlparsetype) < 0) {
+    pyexpat_state *state = pyexpat_get_state(mod);
+    state->xml_parse_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        mod, &_xml_parse_type_spec, NULL);
+
+    if (state->xml_parse_type == NULL) {
         return -1;
     }
 
-    if (init_handler_descrs() < 0) {
+    if (init_handler_descrs(state) < 0) {
+        return -1;
+    }
+    state->error = PyErr_NewException("xml.parsers.expat.ExpatError",
+                                      NULL, NULL);
+    if (state->error == NULL) {
         return -1;
     }
 
     /* Add some symbolic constants to the module */
-    if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
-                                         NULL, NULL);
-    }
-    if (ErrorObject == NULL) {
+
+    if (PyModule_AddObjectRef(mod, "error", state->error) < 0) {
         return -1;
     }
 
-    Py_INCREF(ErrorObject);
-    if (PyModule_AddObject(mod, "error", ErrorObject) < 0) {
-        Py_DECREF(ErrorObject);
+    if (PyModule_AddObjectRef(mod, "ExpatError", state->error) < 0) {
         return -1;
     }
-    Py_INCREF(ErrorObject);
-    if (PyModule_AddObject(mod, "ExpatError", ErrorObject) < 0) {
-        Py_DECREF(ErrorObject);
-        return -1;
-    }
-    Py_INCREF(&Xmlparsetype);
-    if (PyModule_AddObject(mod, "XMLParserType",
-                           (PyObject *) &Xmlparsetype) < 0) {
-        Py_DECREF(&Xmlparsetype);
+
+    if (PyModule_AddObjectRef(mod, "XMLParserType",
+                           (PyObject *) state->xml_parse_type) < 0) {
         return -1;
     }
 
@@ -1979,26 +1986,51 @@ pyexpat_exec(PyObject *mod)
     return 0;
 }
 
+static int
+pyexpat_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    pyexpat_state *state = pyexpat_get_state(module);
+    Py_VISIT(state->xml_parse_type);
+    Py_VISIT(state->error);
+    return 0;
+}
+
+static int
+pyexpat_clear(PyObject *module)
+{
+    pyexpat_state *state = pyexpat_get_state(module);
+    Py_CLEAR(state->xml_parse_type);
+    Py_CLEAR(state->error);
+    return 0;
+}
+
+static void
+pyexpat_free(void *module)
+{
+    pyexpat_clear((PyObject *)module);
+}
+
+static PyModuleDef_Slot pyexpat_slots[] = {
+    {Py_mod_exec, pyexpat_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef pyexpatmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = MODULE_NAME,
     .m_doc = pyexpat_module_documentation,
-    .m_size = -1,
+    .m_size = sizeof(pyexpat_state),
     .m_methods = pyexpat_methods,
+    .m_slots = pyexpat_slots,
+    .m_traverse = pyexpat_traverse,
+    .m_clear = pyexpat_clear,
+    .m_free = pyexpat_free
 };
 
 PyMODINIT_FUNC
 PyInit_pyexpat(void)
 {
-    PyObject *mod = PyModule_Create(&pyexpatmodule);
-    if (mod == NULL)
-        return NULL;
-
-    if (pyexpat_exec(mod) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
+    return PyModuleDef_Init(&pyexpatmodule);
 }
 
 static void
