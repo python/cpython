@@ -357,9 +357,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.33.0",
-              url="https://sqlite.org/2020/sqlite-autoconf-3330000.tar.gz",
-              checksum='842a8a100d7b01b09e543deb2b7951dd',
+              name="SQLite 3.34.0",
+              url="https://sqlite.org/2020/sqlite-autoconf-3340000.tar.gz",
+              checksum='7f33c9db7b713957fcb9271fe9049fef',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1615,7 +1615,7 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
-    # We used to use the deployment target as the last characters of the 
+    # We used to use the deployment target as the last characters of the
     # installer file name. With the introduction of weaklinked installer
     # variants, we may have two variants with the same file name, i.e.
     # both ending in '10.9'.  To avoid this, we now use the major/minor
