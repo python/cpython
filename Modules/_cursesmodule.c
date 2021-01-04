@@ -135,7 +135,7 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-#if defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)
+#if NCURSES_EXT_COLORS+0 && NCURSES_EXT_FUNCS+0
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
@@ -3866,14 +3866,12 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
     if (_CURSES_PAIR_CONTENT_FUNC(pair_number, &f, &b) == ERR) {
         if (pair_number >= COLOR_PAIRS) {
             PyErr_Format(PyExc_ValueError,
-                         "Color pair %d is greater than COLOR_PAIRS-1 (%d).",
-                         pair_number,
+                         "Color pair is greater than COLOR_PAIRS-1 (%d).",
                          COLOR_PAIRS - 1);
         }
         else {
-            PyErr_Format(PyCursesError, "%s() returned ERR for color pair %d",
-                         Py_STRINGIFY(_CURSES_PAIR_CONTENT_FUNC),
-                         pair_number);
+            PyErr_Format(PyCursesError, "%s() returned ERR",
+                         Py_STRINGIFY(_CURSES_PAIR_CONTENT_FUNC));
         }
         return NULL;
     }

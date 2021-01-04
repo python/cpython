@@ -47,6 +47,7 @@ def requires_colors(test):
     return wrapped
 
 term = os.environ.get('TERM')
+SHORT_MAX = 0x7fff
 
 # If newterm was supported we could use it instead of initscr and not exit
 @unittest.skipIf(not term or term == 'unknown',
@@ -382,16 +383,10 @@ class TestCurses(unittest.TestCase):
                              (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
         maxpair = curses.COLOR_PAIRS - 1
-        err = None
-        while maxpair > 0:
-            try:
-                curses.pair_content(maxpair)
-                break
-            except curses.error as e:
-                err = e
-                maxpair -= 1
-        if err is not None:
-            raise err
+        if (not curses.has_extended_color_support()
+                or (6,) <= getattr(curses, 'ncurses_version', ()) < (6, 2)):
+            maxpair = min(maxpair, SHORT_MAX - 1)
+        curses.pair_content(maxpair)
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.pair_content, pair)
@@ -410,6 +405,9 @@ class TestCurses(unittest.TestCase):
         curses.init_pair(1, 0, maxcolor)
         self.assertEqual(curses.pair_content(1), (0, maxcolor))
         maxpair = curses.COLOR_PAIRS - 1
+        if (not curses.has_extended_color_support()
+                or (6,) <= getattr(curses, 'ncurses_version', ()) < (6, 2)):
+            maxpair = min(maxpair, SHORT_MAX - 1)
         if maxpair > 1:
             curses.init_pair(maxpair, 0, 0)
             self.assertEqual(curses.pair_content(maxpair), (0, 0))
