@@ -606,6 +606,8 @@ class MiscTests(unittest.TestCase):
     @requires_curses_func('ncurses_version')
     def test_ncurses_version(self):
         v = curses.ncurses_version
+        if verbose:
+            print(f'ncurses_version = {curses.ncurses_version}', flush=True)
         self.assertIsInstance(v[:], tuple)
         self.assertEqual(len(v), 3)
         self.assertIsInstance(v[0], int)
