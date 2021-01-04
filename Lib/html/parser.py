@@ -46,7 +46,7 @@ locatestarttagend_tolerant = re.compile(r"""
           |"[^"]*"                   # LIT-enclosed value
           |(?!['"])[^>\s]*           # bare value
          )
-         (?:\s*)*                    # handling spaces only
+        \s*                          # handling spaces only
        )?(?:\s|/(?!>))*
      )*
    )?
