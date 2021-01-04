@@ -10,6 +10,9 @@
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
 
+typedef struct {
+} _multibytecodec_state;
+
 /*[clinic input]
 module _multibytecodec
 class _multibytecodec.MultibyteCodec "MultibyteCodecObject *" "&MultibyteCodec_Type"
@@ -2045,15 +2048,10 @@ static struct PyMethodDef __methods[] = {
 
 
 static struct PyModuleDef _multibytecodecmodule = {
-    PyModuleDef_HEAD_INIT,
-    "_multibytecodec",
-    NULL,
-    -1,
-    __methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_multibytecodec",
+    .m_size = sizeof(_multibytecodec_state),
+    .m_methods = __methods,
 };
 
 PyMODINIT_FUNC
