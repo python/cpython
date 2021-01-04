@@ -193,12 +193,6 @@ struct compiler {
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
-    int c_do_not_emit_bytecode;  /* The compiler won't emit any bytecode
-                                    if this value is different from zero.
-                                    This can be used to temporarily visit
-                                    nodes without emitting bytecode to
-                                    check only errors. */
-
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
     struct compiler_unit *u; /* compiler state for current block */
@@ -379,7 +373,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
-    c.c_do_not_emit_bytecode = 0;
 
     _PyASTOptimizeState state;
     state.optimize = c.c_optimize;
@@ -1181,9 +1174,6 @@ compiler_addop(struct compiler *c, int opcode)
     struct instr *i;
     int off;
     assert(!HAS_ARG(opcode));
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
     off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
@@ -1337,10 +1327,6 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 0;
-    }
-
     PyObject *key = merge_consts_recursive(c, o);
     if (key == NULL) {
         return -1;
@@ -1354,10 +1340,6 @@ compiler_add_const(struct compiler *c, PyObject *o)
 static int
 compiler_addop_load_const(struct compiler *c, PyObject *o)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
-
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
@@ -1368,10 +1350,6 @@ static int
 compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
                      PyObject *o)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
-
     Py_ssize_t arg = compiler_add_o(dict, o);
     if (arg < 0)
         return 0;
@@ -1383,10 +1361,6 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
                     PyObject *o)
 {
     Py_ssize_t arg;
-
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
 
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
@@ -1407,10 +1381,6 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 {
     struct instr *i;
     int off;
-
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
 
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1452,9 +1422,6 @@ static int add_jump_to_block(basicblock *b, int opcode, int lineno, basicblock *
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
     return add_jump_to_block(c->u->u_curblock, opcode, c->u->u_lineno, b);
 }
 
