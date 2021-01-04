@@ -213,6 +213,7 @@ static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *);
+static int compiler_addop_j_noline(struct compiler *, int, basicblock *);
 static int compiler_error(struct compiler *, const char *);
 static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
@@ -1458,6 +1459,12 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
     return add_jump_to_block(c->u->u_curblock, opcode, c->u->u_lineno, b);
 }
 
+static int
+compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
+{
+    return add_jump_to_block(c->u->u_curblock, opcode, -1, b);
+}
+
 /* NEXT_BLOCK() creates an implicit jump from the current block
    to the new block.
 
@@ -1525,6 +1532,11 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 
 #define ADDOP_JUMP(C, OP, O) { \
     if (!compiler_addop_j((C), (OP), (O))) \
+        return 0; \
+}
+
+#define ADDOP_JUMP_NOLINE(C, OP, O) { \
+    if (!compiler_addop_j_noline((C), (OP), (O))) \
         return 0; \
 }
 
@@ -2560,7 +2572,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             return 0;
         if (!compiler_jump_if(c, e->v.IfExp.body, next, cond))
             return 0;
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next2);
         if (!compiler_jump_if(c, e->v.IfExp.orelse, next, cond))
             return 0;
@@ -2593,11 +2605,11 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
+            ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
             compiler_use_next_block(c, cleanup);
             ADDOP(c, POP_TOP);
             if (!cond) {
-                ADDOP_JUMP(c, JUMP_FORWARD, next);
+                ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, next);
             }
             compiler_use_next_block(c, end);
             return 1;
@@ -2632,7 +2644,7 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     if (!compiler_jump_if(c, e->v.IfExp.test, next, 0))
         return 0;
     VISIT(c, expr, e->v.IfExp.body);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, next);
     VISIT(c, expr, e->v.IfExp.orelse);
     compiler_use_next_block(c, end);
@@ -2719,7 +2731,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     }
     VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
         VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
@@ -2978,7 +2990,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP_JUMP(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
     /* `finally` block */
     compiler_use_next_block(c, end);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
@@ -3127,6 +3139,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                 return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
+            /* name = None; del name; # Mark as artificial */
+            c->u->u_lineno = -1;
             ADDOP(c, POP_EXCEPT);
             ADDOP_JUMP(c, JUMP_FORWARD, end);
         }
@@ -3940,7 +3954,7 @@ compiler_compare(struct compiler *c, expr_ty e)
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, cleanup);
         ADDOP(c, ROT_TWO);
         ADDOP(c, POP_TOP);

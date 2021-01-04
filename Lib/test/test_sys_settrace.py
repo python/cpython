@@ -874,6 +874,48 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (5, 'return')])
 
+    def test_nested_ifs(self):
+
+        def func():
+            a = b = 1
+            if a == 1:
+                if b == 1:
+                    x = 4
+                else:
+                    y = 6
+            else:
+                z = 8
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (4, 'line'),
+             (4, 'return')])
+
+    def test_nested_try_if(self):
+
+        def func():
+            x = "hello"
+            try:
+                3/0
+            except ZeroDivisionError:
+                if x == 'raise':
+                    raise ValueError()   # line 6
+            f = 7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (5, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
