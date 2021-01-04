@@ -1999,20 +1999,20 @@ _multibytecodec_free(void *mod)
     _multibytecodec_clear((PyObject *)mod);
 }
 
-#define CREATE_TYPE(module, type, spec)                                  \
-do {                                                                     \
-    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
-    if (!type) {                                                         \
-        return -1;                                                       \
-    }                                                                    \
-} while (0)
+#define CREATE_TYPE(module, type, spec)                                      \
+    do {                                                                     \
+        type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
+        if (!type) {                                                         \
+            return -1;                                                       \
+        }                                                                    \
+    } while (0)
 
-#define ADD_TYPE(module, type)                \
-do {                                          \
-    if (PyModule_AddType(module, type) < 0) { \
-        return -1;                            \
-    }                                         \
-} while (0)
+#define ADD_TYPE(module, type)                    \
+    do {                                          \
+        if (PyModule_AddType(module, type) < 0) { \
+            return -1;                            \
+        }                                         \
+    } while (0)
 
 static int
 _multibytecodec_exec(PyObject *mod)
