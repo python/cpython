@@ -1,0 +1,2 @@
+Convert :mod:`multibytecodec` to multi-phase init and module state. Patch by
+Erlend E. Aasland.
