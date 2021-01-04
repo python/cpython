@@ -1,2 +1,0 @@
-Enhance ``test_select.test_select()``: it now takes 500 ms rather than 10
-seconds. Use Python rather than a shell to make the test more portable.
