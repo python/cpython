@@ -85,7 +85,7 @@ class TestCurses(unittest.TestCase):
             else:
                 try:
                     # Try to open the terminal device.
-                    tmp = open('/xdev/tty', 'wb', buffering=0)
+                    tmp = open('/dev/tty', 'wb', buffering=0)
                 except OSError:
                     # As a fallback, use regular file to write control codes.
                     # Some functions (like savetty) will not work, but at
