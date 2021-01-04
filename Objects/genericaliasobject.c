@@ -174,6 +174,7 @@ is_typing_name(PyObject *obj, int num, ...)
             break;
         }
     }
+    va_end(names);
     if (!hit) {
         return 0;
     }
@@ -185,7 +186,6 @@ is_typing_name(PyObject *obj, int num, ...)
         && _PyUnicode_EqualToASCIIString(module, "typing");
     Py_DECREF(module);
     
-    va_end(names);
     return res;
 }
 
