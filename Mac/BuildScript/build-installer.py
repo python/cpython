@@ -260,10 +260,10 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.10'
-            tcl_checksum='97c55573f8520bcab74e21bfd8d0aadc'
+            tcl_tk_ver='8.6.11'
+            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
 
-            tk_checksum='602a47ad9ecac7bf655ada729d140a94'
+            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
             tk_patches = [ ]
 
 
