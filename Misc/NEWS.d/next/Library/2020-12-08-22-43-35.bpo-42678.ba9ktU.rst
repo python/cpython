@@ -1,1 +1,0 @@
-``Enum``: call ``__init_subclass__`` after members have been added
