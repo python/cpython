@@ -327,11 +327,20 @@ class TestCurses(unittest.TestCase):
     def bad_pairs(self):
         return (-1, -2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
 
+    def test_start_color(self):
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        if verbose:
+            print(f'COLORS = {curses.COLORS}', file=sys.stderr)
+            print(f'COLOR_PAIRS = {curses.COLOR_PAIRS}', file=sys.stderr)
+
     @requires_colors
     def test_color_content(self):
         self.assertEqual(curses.color_content(curses.COLOR_BLACK), (0, 0, 0))
         curses.color_content(0)
-        curses.color_content(curses.COLORS - 1)
+        maxcolor = curses.COLORS - 1
+        curses.color_content(maxcolor)
 
         for color in self.bad_colors():
             self.assertRaises(ValueError, curses.color_content, color)
@@ -352,11 +361,12 @@ class TestCurses(unittest.TestCase):
         curses.init_color(0, 1000, 1000, 1000)
         self.assertEqual(curses.color_content(0), (1000, 1000, 1000))
 
-        old = curses.color_content(curses.COLORS - 1)
-        curses.init_color(curses.COLORS - 1, *old)
-        self.addCleanup(curses.init_color, curses.COLORS - 1, *old)
-        curses.init_color(curses.COLORS - 1, 0, 500, 1000)
-        self.assertEqual(curses.color_content(curses.COLORS - 1), (0, 500, 1000))
+        maxcolor = curses.COLORS - 1
+        old = curses.color_content(maxcolor)
+        curses.init_color(maxcolor, *old)
+        self.addCleanup(curses.init_color, maxcolor, *old)
+        curses.init_color(maxcolor, 0, 500, 1000)
+        self.assertEqual(curses.color_content(maxcolor), (0, 500, 1000))
 
         for color in self.bad_colors():
             self.assertRaises(ValueError, curses.init_color, color, 0, 0, 0)
@@ -371,7 +381,9 @@ class TestCurses(unittest.TestCase):
             self.assertEqual(curses.pair_content(0),
                              (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
-        curses.pair_content(curses.COLOR_PAIRS - 1)
+        maxpair = curses.COLOR_PAIRS - 1
+        if maxpair > 0:
+            curses.pair_content(maxpair)
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.pair_content, pair)
@@ -384,11 +396,15 @@ class TestCurses(unittest.TestCase):
 
         curses.init_pair(1, 0, 0)
         self.assertEqual(curses.pair_content(1), (0, 0))
-        curses.init_pair(1, curses.COLORS - 1, curses.COLORS - 1)
-        self.assertEqual(curses.pair_content(1),
-                         (curses.COLORS - 1, curses.COLORS - 1))
-        curses.init_pair(curses.COLOR_PAIRS - 1, 2, 3)
-        self.assertEqual(curses.pair_content(curses.COLOR_PAIRS - 1), (2, 3))
+        maxcolor = curses.COLORS - 1
+        curses.init_pair(1, maxcolor, 0)
+        self.assertEqual(curses.pair_content(1), (maxcolor, 0))
+        curses.init_pair(1, 0, maxcolor)
+        self.assertEqual(curses.pair_content(1), (0, maxcolor))
+        maxpair = curses.COLOR_PAIRS - 1
+        if maxpair > 1:
+            curses.init_pair(maxpair, 0, 0)
+            self.assertEqual(curses.pair_content(maxpair), (0, 0))
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.init_pair, pair, 0, 0)
