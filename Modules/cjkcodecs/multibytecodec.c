@@ -2017,7 +2017,7 @@ _multibytecodec_exec(PyObject *mod)
 #undef CREATE_TYPE
 #undef ADD_TYPE
 
-static struct PyMethodDef __methods[] = {
+static struct PyMethodDef _multibytecodec_methods[] = {
     _MULTIBYTECODEC___CREATE_CODEC_METHODDEF
     {NULL, NULL},
 };
