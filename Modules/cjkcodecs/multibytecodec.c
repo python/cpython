@@ -730,7 +730,7 @@ static PyType_Slot multibytecodec_slots[] = {
 };
 
 static PyType_Spec multibytecodec_spec = {
-    .name = "MultibyteCodec",
+    .name = "_multibytecodec.MultibyteCodec",
     .basicsize = sizeof(MultibyteCodecObject),
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = multibytecodec_slots,
@@ -1097,7 +1097,7 @@ static PyType_Slot encoder_slots[] = {
 };
 
 static PyType_Spec encoder_spec = {
-    .name = "MultibyteIncrementalEncoder",
+    .name = "_multibytecodec.MultibyteIncrementalEncoder",
     .basicsize = sizeof(MultibyteIncrementalEncoderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = encoder_slots,
@@ -1375,7 +1375,7 @@ static PyType_Slot decoder_slots[] = {
 };
 
 static PyType_Spec decoder_spec = {
-    .name = "MultibyteIncrementalDecoder",
+    .name = "_multibytecodec.MultibyteIncrementalDecoder",
     .basicsize = sizeof(MultibyteIncrementalDecoderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = decoder_slots,
@@ -1702,7 +1702,7 @@ static PyType_Slot reader_slots[] = {
 };
 
 static PyType_Spec reader_spec = {
-    .name = "MultibyteStreamReader",
+    .name = "_multibytecodec.MultibyteStreamReader",
     .basicsize = sizeof(MultibyteStreamReaderObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = reader_slots,
@@ -1928,7 +1928,7 @@ static PyType_Slot writer_slots[] = {
 };
 
 static PyType_Spec writer_spec = {
-    .name = "MultibyteStreamWriter",
+    .name = "_multibytecodec.MultibyteStreamWriter",
     .basicsize = sizeof(MultibyteStreamWriterObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = writer_slots,
