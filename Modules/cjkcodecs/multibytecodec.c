@@ -11,7 +11,21 @@
 #include "clinic/multibytecodec.c.h"
 
 typedef struct {
+    PyTypeObject *encoder_type;
+    PyTypeObject *decoder_type;
 } _multibytecodec_state;
+
+static _multibytecodec_state *
+_multibytecodec_get_state(PyObject *module)
+{
+    _multibytecodec_state *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return state;
+}
+
+static struct PyModuleDef _multibytecodecmodule;
+#define clinic_get_state() \
+    (_multibytecodec_get_state(_PyType_GetModuleByDef(type, &_multibytecodecmodule)))
 
 /*[clinic input]
 module _multibytecodec
@@ -872,9 +886,9 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
 
 
 /*[clinic input]
- class _multibytecodec.MultibyteIncrementalEncoder "MultibyteIncrementalEncoderObject *" "&MultibyteIncrementalEncoder_Type"
+ class _multibytecodec.MultibyteIncrementalEncoder "MultibyteIncrementalEncoderObject *" "clinic_get_state()->encoder_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3be82909cd08924d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fce269303b813c06]*/
 
 /*[clinic input]
 _multibytecodec.MultibyteIncrementalEncoder.encode
@@ -1068,60 +1082,37 @@ mbiencoder_traverse(MultibyteIncrementalEncoderObject *self,
 static void
 mbiencoder_dealloc(MultibyteIncrementalEncoderObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
     Py_CLEAR(self->pending);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
-static PyTypeObject MultibyteIncrementalEncoder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MultibyteIncrementalEncoder",      /* tp_name */
-    sizeof(MultibyteIncrementalEncoderObject), /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /*  methods  */
-    (destructor)mbiencoder_dealloc, /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
-        | Py_TPFLAGS_BASETYPE,          /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)mbiencoder_traverse,          /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iterext */
-    mbiencoder_methods,                 /* tp_methods */
-    0,                                  /* tp_members */
-    codecctx_getsets,                   /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    mbiencoder_init,                    /* tp_init */
-    0,                                  /* tp_alloc */
-    mbiencoder_new,                     /* tp_new */
+static PyType_Slot encoder_slots[] = {
+    {Py_tp_dealloc, mbiencoder_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, mbiencoder_traverse},
+    {Py_tp_methods, mbiencoder_methods},
+    {Py_tp_getset, codecctx_getsets},
+    {Py_tp_init, mbiencoder_init},
+    {Py_tp_new, mbiencoder_new},
+    {0, NULL},
+};
+
+static PyType_Spec encoder_spec = {
+    .name = "MultibyteIncrementalEncoder",
+    .basicsize = sizeof(MultibyteIncrementalEncoderObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = encoder_slots,
 };
 
 
 /*[clinic input]
- class _multibytecodec.MultibyteIncrementalDecoder "MultibyteIncrementalDecoderObject *" "&MultibyteIncrementalDecoder_Type"
+ class _multibytecodec.MultibyteIncrementalDecoder "MultibyteIncrementalDecoderObject *" "clinic_get_state()->decoder_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f6003faaf2cea692]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a237fd1042be76c8]*/
 
 /*[clinic input]
 _multibytecodec.MultibyteIncrementalDecoder.decode
@@ -1368,52 +1359,29 @@ mbidecoder_traverse(MultibyteIncrementalDecoderObject *self,
 static void
 mbidecoder_dealloc(MultibyteIncrementalDecoderObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
-static PyTypeObject MultibyteIncrementalDecoder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MultibyteIncrementalDecoder",      /* tp_name */
-    sizeof(MultibyteIncrementalDecoderObject), /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /*  methods  */
-    (destructor)mbidecoder_dealloc, /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    0,                                  /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
-        | Py_TPFLAGS_BASETYPE,          /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)mbidecoder_traverse,          /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iterext */
-    mbidecoder_methods,                 /* tp_methods */
-    0,                                  /* tp_members */
-    codecctx_getsets,                   /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    mbidecoder_init,                    /* tp_init */
-    0,                                  /* tp_alloc */
-    mbidecoder_new,                     /* tp_new */
+static PyType_Slot decoder_slots[] = {
+    {Py_tp_dealloc, mbidecoder_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, mbidecoder_traverse},
+    {Py_tp_methods, mbidecoder_methods},
+    {Py_tp_getset, codecctx_getsets},
+    {Py_tp_init, mbidecoder_init},
+    {Py_tp_new, mbidecoder_new},
+    {0, NULL},
+};
+
+static PyType_Spec decoder_spec = {
+    .name = "MultibyteIncrementalDecoder",
+    .basicsize = sizeof(MultibyteIncrementalDecoderObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .slots = decoder_slots,
 };
 
 
@@ -2054,33 +2022,53 @@ static struct PyModuleDef _multibytecodecmodule = {
     .m_methods = __methods,
 };
 
+#define CREATE_TYPE(module, type, spec)                                  \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
+    if (!type) {                                                         \
+        goto error;                                                      \
+    }                                                                    \
+} while (0)
+
+#define ADD_TYPE(module, type)                \
+do {                                          \
+    if (PyModule_AddType(module, type) < 0) { \
+        goto error;                           \
+    }                                         \
+} while (0)
+
 PyMODINIT_FUNC
 PyInit__multibytecodec(void)
 {
-    PyObject *m;
+    PyObject *m = NULL;
     PyTypeObject *typelist[] = {
-        &MultibyteIncrementalEncoder_Type,
-        &MultibyteIncrementalDecoder_Type,
         &MultibyteStreamReader_Type,
         &MultibyteStreamWriter_Type
     };
 
     if (PyType_Ready(&MultibyteCodec_Type) < 0)
-        return NULL;
+        goto error;
 
     m = PyModule_Create(&_multibytecodecmodule);
     if (m == NULL)
-        return NULL;
+        goto error;
+
+    _multibytecodec_state *state = _multibytecodec_get_state(m);
+    CREATE_TYPE(m, state->encoder_type, &encoder_spec);
+    CREATE_TYPE(m, state->decoder_type, &decoder_spec);
+
+    ADD_TYPE(m, state->encoder_type);
+    ADD_TYPE(m, state->decoder_type);
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
         if (PyModule_AddType(m, typelist[i]) < 0) {
-            return NULL;
+            goto error;
         }
     }
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(m);
-        m = NULL;
-    }
     return m;
+
+error:
+    Py_XDECREF(m);
+    return NULL;
 }
