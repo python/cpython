@@ -1,0 +1,2 @@
+Port the :mod:`pyexpat` extension module to multi-phase initialization
+(:pep:`489`).
