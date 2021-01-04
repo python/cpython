@@ -86,8 +86,8 @@ register_adapters_and_converters()
 
 # bpo-24464: enable_shared_cache was deprecated in Python 3.10.  It's
 # scheduled for removal in Python 3.12.
-from _sqlite3 import enable_shared_cache as _old_enable_shared_cache
 def enable_shared_cache(enable):
+    from _sqlite3 import enable_shared_cache as _old_enable_shared_cache
     import warnings
     msg = (
         "enable_shared_cache is deprecated and will be removed in Python 3.12. "
