@@ -36,13 +36,18 @@ _multibyte_codec_find_state_by_type(PyTypeObject *type)
     assert(module != NULL);
     return _multibytecodec_get_state(module);
 }
-#define clinic_get_state() _multibyte_codec_find_state_by_type(type)
 
+#define clinic_get_state() _multibyte_codec_find_state_by_type(type)
 /*[clinic input]
 module _multibytecodec
 class _multibytecodec.MultibyteCodec "MultibyteCodecObject *" "clinic_get_state()->multibytecodec_type"
+class _multibytecodec.MultibyteIncrementalEncoder "MultibyteIncrementalEncoderObject *" "clinic_get_state()->encoder_type"
+class _multibytecodec.MultibyteIncrementalDecoder "MultibyteIncrementalDecoderObject *" "clinic_get_state()->decoder_type"
+class _multibytecodec.MultibyteStreamReader "MultibyteStreamReaderObject *" "clinic_get_state()->reader_type"
+class _multibytecodec.MultibyteStreamWriter "MultibyteStreamWriterObject *" "clinic_get_state()->writer_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=10de8b4f74379258]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=305a76dfdd24b99c]*/
+#undef clinic_get_state
 
 typedef struct {
     PyObject            *inobj;
@@ -881,11 +886,6 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
 
 
 /*[clinic input]
- class _multibytecodec.MultibyteIncrementalEncoder "MultibyteIncrementalEncoderObject *" "clinic_get_state()->encoder_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fce269303b813c06]*/
-
-/*[clinic input]
 _multibytecodec.MultibyteIncrementalEncoder.encode
 
     input: object
@@ -1105,11 +1105,6 @@ static PyType_Spec encoder_spec = {
     .slots = encoder_slots,
 };
 
-
-/*[clinic input]
- class _multibytecodec.MultibyteIncrementalDecoder "MultibyteIncrementalDecoderObject *" "clinic_get_state()->decoder_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a237fd1042be76c8]*/
 
 /*[clinic input]
 _multibytecodec.MultibyteIncrementalDecoder.decode
@@ -1382,12 +1377,6 @@ static PyType_Spec decoder_spec = {
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = decoder_slots,
 };
-
-
-/*[clinic input]
- class _multibytecodec.MultibyteStreamReader "MultibyteStreamReaderObject *" "clinic_get_state()->reader_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8d4b82105d531fce]*/
 
 static PyObject *
 mbstreamreader_iread(MultibyteStreamReaderObject *self,
@@ -1709,12 +1698,6 @@ static PyType_Spec reader_spec = {
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = reader_slots,
 };
-
-
-/*[clinic input]
- class _multibytecodec.MultibyteStreamWriter "MultibyteStreamWriterObject *" "clinic_get_state()->writer_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2f5c85659ad82e8c]*/
 
 static int
 mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
