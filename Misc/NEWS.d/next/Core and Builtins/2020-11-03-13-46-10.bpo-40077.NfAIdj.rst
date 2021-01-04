@@ -1,1 +1,0 @@
-Convert :mod:`array` to use heap types, and establish module state for these.
