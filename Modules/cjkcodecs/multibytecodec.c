@@ -1992,9 +1992,9 @@ _multibytecodec_clear(PyObject *mod)
 }
 
 static void
-_multibytecodec_free(void *m)
+_multibytecodec_free(void *mod)
 {
-    _multibytecodec_clear((PyObject *)m);
+    _multibytecodec_clear((PyObject *)mod);
 }
 
 #define CREATE_TYPE(module, type, spec)                                  \
