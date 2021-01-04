@@ -7,7 +7,6 @@ import re
 import sys
 import traceback
 import warnings
-from contextlib import suppress
 
 
 def normalize_text(text):
@@ -239,10 +238,8 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
-        "BAUDRATE",
         "CC",
         "CFLAGS",
-        "COLORFGBG",
         "COLUMNS",
         "COMPUTERNAME",
         "COMSPEC",
@@ -259,8 +256,6 @@ def collect_os(info_add):
         "HOMEPATH",
         "IDLESTARTUP",
         "LANG",
-        "LC_ALL",
-        "LC_CTYPE",
         "LDFLAGS",
         "LDSHARED",
         "LD_LIBRARY_PATH",
@@ -269,14 +264,7 @@ def collect_os(info_add):
         "MAILCAPS",
         "MAKEFLAGS",
         "MIXERDEV",
-        "MOUSE_BUTTONS_123",
         "MSSDK",
-        "NCURSES_ASSUMED_COLORS",
-        "NCURSES_CONSOLE2",
-        "NCURSES_GPM_TERMS",
-        "NCURSES_NO_HARD_TABS",
-        "NCURSES_NO_MAGIC_COOKIE",
-        "NCURSES_NO_PADDING",
         "PATH",
         "PATHEXT",
         "PIP_CONFIG_FILE",
@@ -293,9 +281,6 @@ def collect_os(info_add):
         "SYSTEMROOT",
         "TEMP",
         "TERM",
-        "TERMCAP",
-        "TERMINFO",
-        "TERMPATH",
         "TILE_LIBRARY",
         "TIX_LIBRARY",
         "TMP",
@@ -306,7 +291,6 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
-        "XTERM_PROG",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
@@ -755,36 +739,6 @@ def collect_fips(info_add):
         pass
 
 
-def collect_curses(info_add):
-    try:
-        import curses
-    except ImportError:
-        return
-    copy_attr(info_add, 'curses.ncurses_version', curses, 'ncurses_version')
-    call_func(info_add, 'curses.has_extended_color_support', curses, 'has_extended_color_support')
-
-    try:
-        stdscr = curses.initscr()
-    except curses.error:
-        return
-    try:
-        copy_attr(info_add, 'curses.COLS', curses, 'COLS')
-        copy_attr(info_add, 'curses.LINES', curses, 'LINES')
-        call_func(info_add, 'curses.has_colors', curses, 'has_colors')
-        call_func(info_add, 'curses.can_change_color', curses, 'can_change_color')
-        call_func(info_add, 'curses.termname', curses, 'termname', formatter=repr)
-        call_func(info_add, 'curses.longname', curses, 'longname', formatter=repr)
-        call_func(info_add, 'curses.termattrs', curses, 'termattrs', formatter=hex)
-        if curses.has_colors():
-            with suppress(curses.error):
-                curses.start_color()
-                copy_attr(info_add, 'curses.COLORS', curses, 'COLORS')
-                copy_attr(info_add, 'curses.COLOR_PAIRS', curses, 'COLOR_PAIRS')
-    finally:
-        with suppress(curses.error):
-            curses.endwin()
-
-
 def collect_info(info):
     error = False
     info_add = info.add
@@ -797,7 +751,6 @@ def collect_info(info):
 
         collect_builtins,
         collect_cc,
-        collect_curses,
         collect_datetime,
         collect_decimal,
         collect_expat,
