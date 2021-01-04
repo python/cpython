@@ -1,0 +1,2 @@
+Updated importlib.utils.resolve_name doc to use __spec__ instead of
+__package__
