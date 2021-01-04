@@ -382,8 +382,16 @@ class TestCurses(unittest.TestCase):
                              (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
         maxpair = curses.COLOR_PAIRS - 1
-        if maxpair > 0:
-            curses.pair_content(maxpair)
+        err = None
+        while maxpair > 0:
+            try:
+                curses.pair_content(maxpair)
+                break
+            except curses.error as e:
+                err = e
+                maxpair -= 1
+        if err is not None:
+            raise err
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.pair_content, pair)

@@ -3866,7 +3866,8 @@ _curses_pair_content_impl(PyObject *module, int pair_number)
     if (_CURSES_PAIR_CONTENT_FUNC(pair_number, &f, &b) == ERR) {
         if (pair_number >= COLOR_PAIRS) {
             PyErr_Format(PyExc_ValueError,
-                         "Color pair is greater than COLOR_PAIRS-1 (%d).",
+                         "Color pair %d is greater than COLOR_PAIRS-1 (%d).",
+                         pair_number,
                          COLOR_PAIRS - 1);
         }
         else {
