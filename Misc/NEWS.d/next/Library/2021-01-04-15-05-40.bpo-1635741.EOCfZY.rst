@@ -1,2 +1,2 @@
-Convert :mod:`multibytecodec` to multi-phase init and module state. Patch by
-Erlend E. Aasland.
+Convert :mod:`multibytecodec` to multi-phase initialization (:pep:`489`).
+Patch by Erlend E. Aasland.
