@@ -376,17 +376,25 @@ class TestCurses(unittest.TestCase):
             self.assertRaises(ValueError, curses.init_color, 0, 0, comp, 0)
             self.assertRaises(ValueError, curses.init_color, 0, 0, 0, comp)
 
+    def get_pair_limit(self):
+        pair_limit = curses.COLOR_PAIRS
+        if hasattr(curses, 'ncurses_version'):
+            if curses.has_extended_color_support():
+                pair_limit += 2*curses.COLORS + 1
+            if (not curses.has_extended_color_support()
+                    or (6, 1) <= curses.ncurses_version < (6, 2)):
+                pair_limit = min(pair_limit, SHORT_MAX)
+        return pair_limit
+
     @requires_colors
     def test_pair_content(self):
         if not hasattr(curses, 'use_default_colors'):
             self.assertEqual(curses.pair_content(0),
                              (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
-        maxpair = curses.COLOR_PAIRS - 1
-        if (not curses.has_extended_color_support()
-                or (6,) <= getattr(curses, 'ncurses_version', ()) < (6, 2)):
-            maxpair = min(maxpair, SHORT_MAX - 1)
-        curses.pair_content(maxpair)
+        maxpair = self.get_pair_limit() - 1
+        if maxpair > 0:
+            curses.pair_content(maxpair)
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.pair_content, pair)
@@ -404,10 +412,7 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.pair_content(1), (maxcolor, 0))
         curses.init_pair(1, 0, maxcolor)
         self.assertEqual(curses.pair_content(1), (0, maxcolor))
-        maxpair = curses.COLOR_PAIRS - 1
-        if (not curses.has_extended_color_support()
-                or (6,) <= getattr(curses, 'ncurses_version', ()) < (6, 2)):
-            maxpair = min(maxpair, SHORT_MAX - 1)
+        maxpair = self.get_pair_limit() - 1
         if maxpair > 1:
             curses.init_pair(maxpair, 0, 0)
             self.assertEqual(curses.pair_content(maxpair), (0, 0))
