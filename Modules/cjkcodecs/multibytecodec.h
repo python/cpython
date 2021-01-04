@@ -65,7 +65,7 @@ typedef struct {
     MultibyteCodec *codec;
 } MultibyteCodecObject;
 
-#define MultibyteCodec_Check(op) Py_IS_TYPE((op), &MultibyteCodec_Type)
+#define MultibyteCodec_Check(state, op) Py_IS_TYPE((op), state->multibytecodec_type)
 
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
