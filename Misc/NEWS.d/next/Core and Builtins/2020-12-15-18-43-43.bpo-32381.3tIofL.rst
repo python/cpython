@@ -1,2 +1,0 @@
-The coding cookie (ex: ``# coding: latin1``) is now ignored in the command
-passed to the :option:`-c` command line option. Patch by Victor Stinner.
