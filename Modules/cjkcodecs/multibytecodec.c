@@ -40,7 +40,7 @@ _multibyte_codec_find_state_by_type(PyTypeObject *type)
 
 /*[clinic input]
 module _multibytecodec
-class _multibytecodec.MultibyteCodec "MultibyteCodecObject *" "clinic_get_state->multibytecodec_type"
+class _multibytecodec.MultibyteCodec "MultibyteCodecObject *" "clinic_get_state()->multibytecodec_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=10de8b4f74379258]*/
 
