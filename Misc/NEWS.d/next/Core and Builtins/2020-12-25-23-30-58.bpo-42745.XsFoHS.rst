@@ -1,1 +1,0 @@
-Make the type attribute lookup cache per-interpreter. Patch by Victor Stinner.
