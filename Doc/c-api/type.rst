@@ -97,7 +97,7 @@ Type Objects
 
 .. c:function:: const char* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name. This function can accept heap or static types.
+   Return the type's name.
 
    .. versionadded:: 3.10
 
