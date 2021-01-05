@@ -263,8 +263,7 @@ The special characters are:
    right. When one pattern completely matches, that branch is accepted. This means
    that once *A* matches, *B* will not be tested further, even if it would
    produce a longer overall match.  In other words, the ``'|'`` operator is never
-   greedy.  To match a literal ``'|'``, use ``\|``, or enclose it inside a
-   character class, as in ``[|]``.
+   greedy.  To match a literal ``'|'``, use ``\|``.
 
 .. index::
    single: () (parentheses); in regular expressions
@@ -274,7 +273,7 @@ The special characters are:
    start and end of a group; the contents of a group can be retrieved after a match
    has been performed, and can be matched later in the string with the ``\number``
    special sequence, described below.  To match the literals ``'('`` or ``')'``,
-   use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``.
+   use ``\(`` or ``\)``.
 
 .. index:: single: (?; in regular expressions
 
