@@ -6653,7 +6653,6 @@ _datetime_exec(PyObject *module)
 
     if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
         Py_DECREF(x);
-        PyMem_Free(capi);
         return -1;
     }
 
@@ -6681,7 +6680,6 @@ _datetime_exec(PyObject *module)
     seconds_per_day = PyLong_FromLong(24 * 3600);
     if (us_per_ms == NULL || us_per_second == NULL ||
         us_per_minute == NULL || seconds_per_day == NULL) {
-        PyMem_Free(capi);
         return -1;
     }
 
@@ -6692,7 +6690,6 @@ _datetime_exec(PyObject *module)
     us_per_day = PyLong_FromDouble(86400000000.0);
     us_per_week = PyLong_FromDouble(604800000000.0);
     if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL) {
-        PyMem_Free(capi);
         return -1;
     }
     return 0;
