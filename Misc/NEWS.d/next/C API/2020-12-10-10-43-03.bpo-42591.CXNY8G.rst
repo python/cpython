@@ -1,3 +1,0 @@
-Export the :c:func:`Py_FrozenMain` function: fix a Python 3.9.0 regression.
-Python 3.9 uses ``-fvisibility=hidden`` and the function was not exported
-explicitly and so not exported.

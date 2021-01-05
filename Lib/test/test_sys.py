@@ -1329,7 +1329,7 @@ class SizeofTest(unittest.TestCase):
             def setx(self, value): self.__x = value
             def delx(self): del self.__x
             x = property(getx, setx, delx, "")
-            check(x, size('4Pi'))
+            check(x, size('5Pi'))
         # PyCapsule
         # XXX
         # rangeiterator

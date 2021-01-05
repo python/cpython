@@ -63,7 +63,7 @@ PyVectorcall_Function(PyObject *callable)
 {
     PyTypeObject *tp;
     Py_ssize_t offset;
-    vectorcallfunc *ptr;
+    vectorcallfunc ptr;
 
     assert(callable != NULL);
     tp = Py_TYPE(callable);
@@ -73,8 +73,8 @@ PyVectorcall_Function(PyObject *callable)
     assert(PyCallable_Check(callable));
     offset = tp->tp_vectorcall_offset;
     assert(offset > 0);
-    ptr = (vectorcallfunc *)(((char *)callable) + offset);
-    return *ptr;
+    memcpy(&ptr, (char *) callable + offset, sizeof(ptr));
+    return ptr;
 }
 
 /* Call the callable object 'callable' with the "vectorcall" calling

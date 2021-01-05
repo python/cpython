@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import re
 import json
 import pickle
@@ -14,10 +12,14 @@ except ImportError:
 
 from . import fixtures
 from importlib.metadata import (
-    Distribution, EntryPoint,
-    PackageNotFoundError, distributions,
-    entry_points, metadata, version,
-    )
+    Distribution,
+    EntryPoint,
+    PackageNotFoundError,
+    distributions,
+    entry_points,
+    metadata,
+    version,
+)
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -70,12 +72,11 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
             name='ep',
             value='importlib.metadata',
             group='grp',
-            )
+        )
         assert ep.load() is importlib.metadata
 
 
-class NameNormalizationTests(
-        fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
     @staticmethod
     def pkg_with_dashes(site_dir):
         """
@@ -144,11 +145,15 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
         with metadata.open('w', encoding='utf-8') as fp:
-            fp.write(textwrap.dedent("""
+            fp.write(
+                textwrap.dedent(
+                    """
                 Name: portend
 
                 pôrˈtend
-                """).lstrip())
+                """
+                ).lstrip()
+            )
         return 'portend'
 
     def test_metadata_loads(self):
@@ -162,24 +167,12 @@ class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
         assert meta.get_payload() == 'pôrˈtend\n'
 
 
-class DiscoveryTests(fixtures.EggInfoPkg,
-                     fixtures.DistInfoPkg,
-                     unittest.TestCase):
-
+class DiscoveryTests(fixtures.EggInfoPkg, fixtures.DistInfoPkg, unittest.TestCase):
     def test_package_discovery(self):
         dists = list(distributions())
-        assert all(
-            isinstance(dist, Distribution)
-            for dist in dists
-            )
-        assert any(
-            dist.metadata['Name'] == 'egginfo-pkg'
-            for dist in dists
-            )
-        assert any(
-            dist.metadata['Name'] == 'distinfo-pkg'
-            for dist in dists
-            )
+        assert all(isinstance(dist, Distribution) for dist in dists)
+        assert any(dist.metadata['Name'] == 'egginfo-pkg' for dist in dists)
+        assert any(dist.metadata['Name'] == 'distinfo-pkg' for dist in dists)
 
     def test_invalid_usage(self):
         with self.assertRaises(ValueError):
@@ -265,10 +258,21 @@ class TestEntryPoints(unittest.TestCase):
     def test_attr(self):
         assert self.ep.attr is None
 
+    def test_sortable(self):
+        """
+        EntryPoint objects are sortable, but result is undefined.
+        """
+        sorted(
+            [
+                EntryPoint('b', 'val', 'group'),
+                EntryPoint('a', 'val', 'group'),
+            ]
+        )
+
 
 class FileSystem(
-        fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder,
-        unittest.TestCase):
+    fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder, unittest.TestCase
+):
     def test_unicode_dir_on_sys_path(self):
         """
         Ensure a Unicode subdirectory of a directory on sys.path
@@ -277,5 +281,5 @@ class FileSystem(
         fixtures.build_files(
             {self.unicode_filename(): {}},
             prefix=self.site_dir,
-            )
+        )
         list(distributions())

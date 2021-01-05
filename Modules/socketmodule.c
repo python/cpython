@@ -6102,13 +6102,10 @@ socket_ntohs(PyObject *self, PyObject *args)
         return NULL;
     }
     if (x > 0xffff) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "ntohs: Python int too large to convert to C "
-                         "16-bit unsigned integer (The silent truncation "
-                         "is deprecated)",
-                         1)) {
-            return NULL;
-        }
+        PyErr_SetString(PyExc_OverflowError,
+                        "ntohs: Python int too large to convert to C "
+                        "16-bit unsigned integer");
+        return NULL;
     }
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
@@ -6116,12 +6113,7 @@ socket_ntohs(PyObject *self, PyObject *args)
 PyDoc_STRVAR(ntohs_doc,
 "ntohs(integer) -> integer\n\
 \n\
-Convert a 16-bit unsigned integer from network to host byte order.\n\
-Note that in case the received integer does not fit in 16-bit unsigned\n\
-integer, but does fit in a positive C int, it is silently truncated to\n\
-16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an\n\
-exception in future versions of Python.");
+Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -6173,13 +6165,10 @@ socket_htons(PyObject *self, PyObject *args)
         return NULL;
     }
     if (x > 0xffff) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "htons: Python int too large to convert to C "
-                         "16-bit unsigned integer (The silent truncation "
-                         "is deprecated)",
-                         1)) {
-            return NULL;
-        }
+        PyErr_SetString(PyExc_OverflowError,
+                        "htons: Python int too large to convert to C "
+                        "16-bit unsigned integer");
+        return NULL;
     }
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
@@ -6187,12 +6176,7 @@ socket_htons(PyObject *self, PyObject *args)
 PyDoc_STRVAR(htons_doc,
 "htons(integer) -> integer\n\
 \n\
-Convert a 16-bit unsigned integer from host to network byte order.\n\
-Note that in case the received integer does not fit in 16-bit unsigned\n\
-integer, but does fit in a positive C int, it is silently truncated to\n\
-16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an\n\
-exception in future versions of Python.");
+Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
