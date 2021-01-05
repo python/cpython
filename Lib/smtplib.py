@@ -248,6 +248,7 @@ class SMTP:
         self.esmtp_features = {}
         self.command_encoding = 'ascii'
         self.source_address = source_address
+        self._auth_challenge_count = 0
 
         if host:
             (code, msg) = self.connect(host, port)
@@ -633,10 +634,13 @@ class SMTP:
         if initial_response is not None:
             response = encode_base64(initial_response.encode('ascii'), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
+            self._auth_challenge_count = 1
         else:
             (code, resp) = self.docmd("AUTH", mechanism)
+            self._auth_challenge_count = 0
         # If server responds with a challenge, send the response.
-        if code == 334:
+        while code == 334:
+            self._auth_challenge_count += 1
             challenge = base64.decodebytes(resp)
             response = encode_base64(
                 authobject(challenge).encode('ascii'), eol='')
@@ -662,7 +666,7 @@ class SMTP:
     def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
         self.password to be set."""
-        if challenge is None:
+        if challenge is None or self._auth_challenge_count < 2:
             return self.user
         else:
             return self.password
