@@ -1,6 +1,7 @@
 """Example extension, also used for testing.
 
 See extend.txt for more details on creating an extension.
+See config-extension.def for configuring an extension.
 """
 
 from idlelib.config import idleConf

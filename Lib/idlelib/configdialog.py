@@ -2319,10 +2319,11 @@ of output to automatically "squeeze".
 ''',
     'Extensions': '''
 ZzDummy: This extension is provided as an example for how to create and
-use an extension.  Enable indicates whether the extension is active or not;
-likewise enable_editor and enable_shell indicate which windows it will
-be active on.  For this extension, z-text is the text that will be inserted
-at or removed from the beginning of the lines of selected text.
+use an extension.  Enable indicates whether the extension is active or
+not; likewise enable_editor and enable_shell indicate which windows it
+will be active on.  For this extension, z-text is the text that will be
+inserted at or removed from the beginning of the lines of selected text,
+or the current line if no selection.
 ''',
 }
 
