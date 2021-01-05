@@ -35,9 +35,6 @@ get_json_state(PyObject *module)
     return (_jsonmodulestate *)state;
 }
 
-// Forward decl
-static struct PyModuleDef jsonmodule;
-
 static inline _jsonmodulestate *
 get_json_state_by_type(PyTypeObject *type)
 {
