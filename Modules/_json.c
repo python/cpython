@@ -41,7 +41,7 @@ static struct PyModuleDef jsonmodule;
 static inline _jsonmodulestate *
 get_json_state_by_type(PyTypeObject *type)
 {
-    PyObject *module = _PyType_GetModuleByDef(type, &jsonmodule);
+    PyObject *module = PyType_GetModule(type);
     if (module == NULL) {
         return NULL;
     }
@@ -341,6 +341,18 @@ static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end, _jsonmodulestate *state)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
+    if (state->JSONDecodeError == NULL) {
+        PyObject *decoder = PyImport_ImportModule("json.decoder");
+        if (decoder == NULL) {
+            return;
+        }
+        state->JSONDecodeError = PyObject_GetAttrString(decoder, "JSONDecodeError");
+        Py_DECREF(decoder);
+        if (state->JSONDecodeError == NULL) {
+            return;
+        }
+        Py_INCREF(state->JSONDecodeError);
+    }
     PyObject *exc;
     exc = PyObject_CallFunction(state->JSONDecodeError, "zOn", msg, s, end);
     if (exc) {
@@ -587,7 +599,10 @@ py_scanstring(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "On|i:scanstring", &pystr, &end, &strict)) {
         return NULL;
     }
-    _jsonmodulestate *state = get_json_state_by_type(Py_TYPE(self));
+    _jsonmodulestate *state = PyModule_GetState(self);
+    if (state == NULL) {
+        return NULL;
+    }
     if (PyUnicode_Check(pystr)) {
         rval = scanstring_unicode(pystr, end, strict, &next_end, state);
     }
@@ -1162,6 +1177,9 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:scan_once", kwlist, &pystr, &idx))
         return NULL;
     _jsonmodulestate *state = get_json_state_by_type(Py_TYPE(self));
+    if (state == NULL) {
+        return NULL;
+    }
     if (PyUnicode_Check(pystr)) {
         rval = scan_once_unicode(self, pystr, idx, &next_idx, state);
     }
@@ -1317,6 +1335,9 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
     if (_PyAccu_Init(&acc))
         return NULL;
     _jsonmodulestate *state = get_json_state_by_type(Py_TYPE(self));
+    if (state == NULL) {
+        return NULL;
+    }
     if (encoder_listencode_obj(self, &acc, obj, indent_level, state)) {
         _PyAccu_Destroy(&acc);
         return NULL;
@@ -1329,12 +1350,15 @@ _encoded_const(PyObject *obj, _jsonmodulestate *state)
 {
     /* Return the JSON string representation of None, True, False */
     if (obj == Py_None) {
+        Py_INCREF(state->s_null);
         return state->s_null;
     }
     else if (obj == Py_True) {
+        Py_INCREF(state->s_true);
         return state->s_true;
     }
     else if (obj == Py_False) {
+        Py_INCREF(state->s_false);
         return state->s_false;
     }
     else {
@@ -1811,7 +1835,7 @@ _json_exec(PyObject *module)
 {
     _jsonmodulestate *state = get_json_state(module);
 
-    state->PyScannerType = PyType_FromSpec(&PyScannerType_spec);
+    state->PyScannerType = PyType_FromModuleAndSpec(module, &PyScannerType_spec, NULL);
     if (state->PyScannerType == NULL) {
         return -1;
     }
@@ -1821,7 +1845,7 @@ _json_exec(PyObject *module)
         return -1;
     }
 
-    state->PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
+    state->PyEncoderType = PyType_FromModuleAndSpec(module, &PyEncoderType_spec, NULL);
     if (state->PyEncoderType == NULL) {
         return -1;
     }
@@ -1831,16 +1855,8 @@ _json_exec(PyObject *module)
         return -1;
     }
 
-    PyObject *decoder = PyImport_ImportModule("json.decoder");
-    if (decoder == NULL) {
-        return -1;
-    }
-    state->JSONDecodeError = PyObject_GetAttrString(decoder, "JSONDecodeError");
-    Py_DECREF(decoder);
-    if (state->JSONDecodeError == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->JSONDecodeError);
+    // equivalent to the one in json.decoder
+    state->JSONDecodeError = NULL;
 
     state->s_null = PyUnicode_InternFromString("null");
     if (state->s_null == NULL) {
