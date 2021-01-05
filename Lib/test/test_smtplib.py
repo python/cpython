@@ -785,7 +785,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             except ResponseException as e:
                 self.smtp_state = self.COMMAND
                 self.push('%s %s' % (e.smtp_code, e.smtp_error))
-                return
+            return
         super().found_terminator()
 
 
@@ -1068,6 +1068,24 @@ class SMTPSimTests(unittest.TestCase):
         resp = smtp.login(sim_auth[0], sim_auth[1])
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
+
+    def testAUTH_LOGIN_initial_response_ok(self):
+        self.serv.add_feature("AUTH LOGIN")
+        with smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+            smtp.user, smtp.password = sim_auth
+            smtp.ehlo("test_auth_login")
+            resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=True)
+            self.assertEqual(resp, (235, b'Authentication Succeeded'))
+
+    def testAUTH_LOGIN_initial_response_notok(self):
+        self.serv.add_feature("AUTH LOGIN")
+        with smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+            smtp.user, smtp.password = sim_auth
+            smtp.ehlo("test_auth_login")
+            resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=False)
+            self.assertEqual(resp, (235, b'Authentication Succeeded'))
 
     @hashlib_helper.requires_hashdigest('md5')
     def testAUTH_CRAM_MD5(self):
