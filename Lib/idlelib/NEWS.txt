@@ -3,6 +3,9 @@ Released on 2021-10-04?
 ======================================
 
 
+bpo-32631: Finish zzdummy example extension module: make menu entries
+work; add docstrings and tests with 100% coverage.
+
 bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
 that prevented running files with shortcuts when using new universal2
 installers built on macOS 11.

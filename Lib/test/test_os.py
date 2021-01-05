@@ -991,6 +991,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     # Bug 1110478
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
     def test_update2(self):
         os.environ.clear()
         os.environ.update(HELLO="World")
@@ -1000,6 +1001,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
     def test_os_popen_iter(self):
         with os.popen("%s -c 'echo \"line1\nline2\nline3\"'"
                       % unix_shell) as popen:

@@ -159,7 +159,7 @@ implementation used by the asyncio event loop:
 
 .. class:: AbstractChildWatcher
 
-   .. method:: add_child_handler(pid, callback, \*args)
+   .. method:: add_child_handler(pid, callback, *args)
 
       Register a new child handler.
 

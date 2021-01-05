@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -852,6 +853,7 @@ with_openssl
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
+enable_test_modules
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1503,6 +1505,7 @@ Optional Features:
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
                           (default is system-dependent)]
+  --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5937,7 +5940,7 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 	      PY3LIBRARY=libpython3.so
 	  fi
           ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
@@ -9721,7 +9724,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;
+		LINKFORSHARED='-Wl,-export-dynamic';;
 	esac
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINKFORSHARED" >&5
@@ -11108,10 +11111,10 @@ else
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -15130,7 +15133,7 @@ else
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
 
 _ACEOF
@@ -15430,12 +15433,7 @@ _ACEOF
 fi
 
 
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDVERSION" >&5
 $as_echo_n "checking LDVERSION... " >&6; }
@@ -15511,7 +15509,7 @@ else
 
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 
 _ACEOF
@@ -15981,6 +15979,7 @@ else
 /* end confdefs.h.  */
 
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {
@@ -17100,16 +17099,17 @@ $as_echo "#define HAVE_STD_ATOMIC 1" >>confdefs.h
 
 fi
 
-# Check for GCC >= 4.7 __atomic builtins
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GCC >= 4.7 __atomic builtins" >&5
-$as_echo_n "checking for GCC >= 4.7 __atomic builtins... " >&6; }
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for builtin __atomic_load_n and __atomic_store_n functions" >&5
+$as_echo_n "checking for builtin __atomic_load_n and __atomic_store_n functions... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-    volatile int val = 1;
+    int val;
     int main() {
-      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
     }
 
@@ -17724,6 +17724,26 @@ $as_echo "no" >&6; };
 fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
+$as_echo_n "checking for --disable-test-modules... " >&6; }
+# Check whether --enable-test-modules was given.
+if test "${enable_test_modules+set}" = set; then :
+  enableval=$enable_test_modules;
+fi
+
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+    TEST_MODULES=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
@@ -19054,4 +19074,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&6
     echo "" >&6
 fi
-

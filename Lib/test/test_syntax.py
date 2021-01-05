@@ -802,6 +802,13 @@ class SyntaxTestCase(unittest.TestCase):
         else:
             self.fail("compile() did not raise SyntaxError")
 
+    def test_expression_with_assignment(self):
+        self._check_error(
+            "print(end1 + end2 = ' ')",
+            'expression cannot contain assignment, perhaps you meant "=="?',
+            offset=19
+        )
+
     def test_curly_brace_after_primary_raises_immediately(self):
         self._check_error("f{", "invalid syntax", mode="single")
 

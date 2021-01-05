@@ -135,6 +135,15 @@ Functions for integers
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
+   .. deprecated:: 3.10
+      The automatic conversion of non-integer types to equivalent integers is
+      deprecated.  Currently ``randrange(10.0)`` is losslessly converted to
+      ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
+
+   .. deprecated:: 3.10
+      The exception raised for non-integral values such as ``range(10.5)``
+      will be changed from :exc:`ValueError` to :exc:`TypeError`.
+
 .. function:: randint(a, b)
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for
@@ -142,10 +151,11 @@ Functions for integers
 
 .. function:: getrandbits(k)
 
-   Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
-   as an optional part of the API. When available, :meth:`getrandbits` enables
-   :meth:`randrange` to handle arbitrarily large ranges.
+   Returns a non-negative Python integer with *k* random bits. This method
+   is supplied with the MersenneTwister generator and some other generators
+   may also provide it as an optional part of the API. When available,
+   :meth:`getrandbits` enables :meth:`randrange` to handle arbitrarily large
+   ranges.
 
    .. versionchanged:: 3.9
       This method now accepts zero for *k*.

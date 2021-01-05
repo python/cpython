@@ -31,6 +31,7 @@ EXCLUDED_HEADERS = {
     "ucnhash.h",
 }
 
+MACOS = (sys.platform == "darwin")
 
 def get_exported_symbols(library, dynamic=False):
     # Only look at dynamic symbols
@@ -57,7 +58,10 @@ def get_exported_symbols(library, dynamic=False):
             continue
 
         symbol = parts[-1]
-        yield symbol
+        if MACOS and symbol.startswith("_"):
+            yield symbol[1:]
+        else:
+            yield symbol
 
 
 def check_library(stable_abi_file, library, abi_funcs, dynamic=False):
