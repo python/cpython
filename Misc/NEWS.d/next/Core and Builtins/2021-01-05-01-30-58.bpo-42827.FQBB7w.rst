@@ -1,0 +1,2 @@
+Fix a crash when determining the error location of some multiline
+expressions. Patch by Pablo Galindo.

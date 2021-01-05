@@ -365,8 +365,19 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
     if (t->col_offset == -1) {
-        col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
-                                      intptr_t, int);
+        const char *c = p->tok->end;
+        int current_line = 1;
+        if (p->tok->input != NULL) {
+            while (*c != '\0' && current_line < t->lineno) {
+                if (*c == '\n') {
+                    current_line++;
+                }
+                c++;
+            }
+        } else {
+            c = p->tok->buf;
+        }
+        col_offset = Py_SAFE_DOWNCAST(p->tok->cur - c, intptr_t, int);
     } else {
         col_offset = t->col_offset + 1;
     }
@@ -416,8 +427,30 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        Py_ssize_t size = p->tok->inp - p->tok->buf;
-        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        const char *buffer = p->tok->end;
+        const char *start = NULL;
+        const char *end = p->tok->inp;
+        int current_line = 0;
+        if (p->tok->input != NULL) {
+            for (size_t i = 0; i < strlen(buffer); i++){
+                if (buffer[i] != '\n') {
+                    continue;
+                }
+                current_line++;
+                if (start == NULL && current_line == lineno - 1) {
+                    start = buffer + i + 1;
+                }
+                if (current_line == lineno) {
+                    end = buffer + i + 1;
+                    break;
+                }
+            }
+        }
+        if (start == NULL) {
+            start = p->tok->input ? p->tok->end : p->tok->buf;
+        }
+        Py_ssize_t size = end - start;
+        error_line = PyUnicode_DecodeUTF8(start, size, "replace");
         if (!error_line) {
             goto error;
         }
