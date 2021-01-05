@@ -2302,7 +2302,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unicode_ids *ids = &interp->unicode.ids;
 
-    int index = _Py_atomic_size_get(&id->index);
+    Py_ssize_t index = _Py_atomic_size_get(&id->index);
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_ids;
 

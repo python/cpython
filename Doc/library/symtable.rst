@@ -160,6 +160,8 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is annotated.
 
+      .. versionadded:: 3.6
+
    .. method:: is_free()
 
       Return ``True`` if the symbol is referenced in its block, but not assigned
