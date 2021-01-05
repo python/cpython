@@ -5000,8 +5000,11 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     */
     int lastline = bounds->ar_line;
     int line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
-    if (frame->f_lasti < *instr_prev || (line != lastline && frame->f_lasti == bounds->ar_start)) {
-        if (line != -1 && frame->f_trace_lines) {
+    if (line != -1 && frame->f_trace_lines) {
+        /* Trace backward edges or first instruction of a new line */
+        if (frame->f_lasti < *instr_prev ||
+            (line != lastline && frame->f_lasti == bounds->ar_start))
+        {
             frame->f_lineno = line;
             result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
             frame->f_lineno = 0;
