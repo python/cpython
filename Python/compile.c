@@ -6558,6 +6558,12 @@ ensure_exits_have_lineno(struct compiler *c)
     if (is_exit_without_lineno(entry)) {
         entry->b_instr[0].i_lineno = c->u->u_firstlineno;
     }
+    /* Eliminate empty blocks */
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        while (b->b_next && b->b_next->b_iused == 0) {
+            b->b_next = b->b_next->b_next;
+        }
+    }
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {

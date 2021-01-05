@@ -4993,27 +4993,28 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
                       PyCodeAddressRange *bounds, int *instr_prev)
 {
     int result = 0;
-    int line = frame->f_lineno;
 
-    /* If the last instruction executed isn't in the current
-       instruction window, reset the window.
-    */
-    line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
     /* If the last instruction falls at the start of a line or if it
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    if ((line != frame->f_lineno || frame->f_lasti < *instr_prev)) {
-        if (line != -1) {
+    int lastline = bounds->ar_line;
+    int line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
+    if (line != -1 && frame->f_trace_lines) {
+        /* Trace backward edges or first instruction of a new line */
+        if (frame->f_lasti < *instr_prev ||
+            (line != lastline && frame->f_lasti == bounds->ar_start))
+        {
             frame->f_lineno = line;
-            if (frame->f_trace_lines) {
-                result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
-            }
+            result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
+            frame->f_lineno = 0;
         }
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
     if (frame->f_trace_opcodes) {
+        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
         result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
+        frame->f_lineno = 0;
     }
     *instr_prev = frame->f_lasti;
     return result;
