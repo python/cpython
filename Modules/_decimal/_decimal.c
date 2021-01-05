@@ -5713,7 +5713,7 @@ destroy_api(PyObject *obj)
 static PyObject *
 init_api(void)
 {
-    void **_decimal_api = PyMem_Malloc(CPYTHON_DECIMAL_MAX_API * sizeof(void *));
+    void **_decimal_api = PyMem_Calloc(CPYTHON_DECIMAL_MAX_API, sizeof(void *));
     if (_decimal_api == NULL) {
         PyErr_NoMemory();
         return NULL;
