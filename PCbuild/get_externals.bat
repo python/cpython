@@ -77,13 +77,8 @@ echo.Fetching external binaries...
 
 set binaries=
 if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi
-<<<<<<< HEAD
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1g
-if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.9.0
-=======
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1i
-if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.10.0
->>>>>>> afb7144378... bpo-41837: Updated Windows installer to include OpenSSL 1.1.1i (GH-24125)
+if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.9.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 
 for %%b in (%binaries%) do (
