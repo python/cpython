@@ -5698,9 +5698,9 @@ PyDec_GetConst(const PyObject *v)
 }
 
 static void
-destroy_api(PyObject *obj)
+destroy_api(PyObject *capsule)
 {
-    void *capi = PyCapsule_GetPointer(obj, PyDec_CAPSULE_NAME);
+    void *capi = PyCapsule_GetPointer(capsule, PyDec_CAPSULE_NAME);
     PyMem_Free(capi);
 }
 
