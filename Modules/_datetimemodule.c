@@ -6477,9 +6477,9 @@ static PyMethodDef module_methods[] = {
  * Clients get at C API via PyDateTime_IMPORT, defined in datetime.h.
  */
 static inline PyDateTime_CAPI *
-get_datetime_capi()
+get_datetime_capi(void)
 {
-    PyDateTime_CAPI *capi = PyMem_Calloc(1, sizeof(PyDateTime_CAPI));
+    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(PyDateTime_CAPI));
     if (capi == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -6498,6 +6498,10 @@ get_datetime_capi()
     capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
     capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
     capi->Time_FromTimeAndFold = new_time_ex2;
+    // Make sure this function is called after PyDateTime_TimeZone_UTC has
+    // been initialized.
+    assert(PyDateTime_TimeZone_UTC != NULL);
+    capi->TimeZone_UTC = PyDateTime_TimeZone_UTC; // borrowed ref
     return capi;
 }
 
@@ -6511,11 +6515,6 @@ datetime_destructor(PyObject *op)
 static int
 _datetime_exec(PyObject *module)
 {
-    PyDateTime_CAPI *CAPI = get_datetime_capi();
-    if (CAPI == NULL) {
-        return -1;
-    }
-
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -6600,13 +6599,17 @@ _datetime_exec(PyObject *module)
     }
 
     PyDateTime_TimeZone_UTC = x;
-    CAPI->TimeZone_UTC = PyDateTime_TimeZone_UTC;
+    PyDateTime_CAPI *capi = get_datetime_capi();
+    if (capi == NULL) {
+        return -1;
+    }
 
     /* bpo-37642: These attributes are rounded to the nearest minute for backwards
      * compatibility, even though the constructor will accept a wider range of
      * values. This may change in the future.*/
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL) {
+        PyMem_Free(capi);
         return -1;
     }
 
@@ -6616,6 +6619,7 @@ _datetime_exec(PyObject *module)
 
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
     if (delta == NULL) {
+        PyMem_Free(capi);
         return -1;
     }
 
@@ -6627,25 +6631,29 @@ _datetime_exec(PyObject *module)
     PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
                                     PyDateTime_TimeZone_UTC, 0);
     if (PyDateTime_Epoch == NULL) {
+        PyMem_Free(capi);
         return -1;
     }
 
     /* module initialization */
     if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
+        PyMem_Free(capi);
         return -1;
     }
     if (PyModule_AddIntMacro(module, MAXYEAR) < 0) {
+        PyMem_Free(capi);
         return -1;
     }
 
-    x = PyCapsule_New(CAPI, PyDateTime_CAPSULE_NAME, datetime_destructor);
+    x = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, datetime_destructor);
     if (x == NULL) {
-        PyMem_Free(CAPI);
+        PyMem_Free(capi);
         return -1;
     }
 
     if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
         Py_DECREF(x);
+        PyMem_Free(capi);
         return -1;
     }
 
@@ -6673,6 +6681,7 @@ _datetime_exec(PyObject *module)
     seconds_per_day = PyLong_FromLong(24 * 3600);
     if (us_per_ms == NULL || us_per_second == NULL ||
         us_per_minute == NULL || seconds_per_day == NULL) {
+        PyMem_Free(capi);
         return -1;
     }
 
@@ -6683,6 +6692,7 @@ _datetime_exec(PyObject *module)
     us_per_day = PyLong_FromDouble(86400000000.0);
     us_per_week = PyLong_FromDouble(604800000000.0);
     if (us_per_hour == NULL || us_per_day == NULL || us_per_week == NULL) {
+        PyMem_Free(capi);
         return -1;
     }
     return 0;
