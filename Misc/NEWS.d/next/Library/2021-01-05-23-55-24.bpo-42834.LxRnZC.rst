@@ -1,0 +1,2 @@
+Convert internal caches in the ``_json.c`` module from static variables to
+heap variables.
