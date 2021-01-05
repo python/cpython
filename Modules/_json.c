@@ -343,14 +343,12 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end, _jsonmodulestate *sta
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     if (state->JSONDecodeError == NULL) {
         PyObject *decoder = PyImport_ImportModule("json.decoder");
-        if (decoder == NULL) {
+        if (decoder == NULL)
             return;
-        }
         state->JSONDecodeError = PyObject_GetAttrString(decoder, "JSONDecodeError");
         Py_DECREF(decoder);
-        if (state->JSONDecodeError == NULL) {
+        if (state->JSONDecodeError == NULL)
             return;
-        }
         Py_INCREF(state->JSONDecodeError);
     }
     PyObject *exc;
