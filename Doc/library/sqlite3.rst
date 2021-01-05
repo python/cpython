@@ -1093,4 +1093,5 @@ committed:
    default, because some platforms (notably Mac OS X) have SQLite
    libraries which are compiled without this feature. To get loadable extension
    support, your Python must be compiled with
-   ``-–enable-loadable-sqlite-extensions`` option in ``PYTHON_CONFIGURE_OPTS``.
+   ``-–enable-loadable-sqlite-extensions`` option which is passed to
+   `configure <https://github.com/python/cpython#build-instructions>`_ script.
