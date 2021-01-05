@@ -5703,11 +5703,10 @@ free_api(void *capi)
     PyMem_Free(capi);
 }
 
-#define CAPSULE_NAME "_decimal._API"
 static void
 destroy_api(PyObject *obj)
 {
-    void *capi = PyCapsule_GetPointer(obj, CAPSULE_NAME);
+    void *capi = PyCapsule_GetPointer(obj, PyDec_CAPSULE_NAME);
     free_api(capi);
 }
 
@@ -5734,13 +5733,12 @@ init_api(void)
     _decimal_api[PyDec_Get_INDEX] = (void *)PyDec_Get;
     _decimal_api[PyDec_GetConst_INDEX] = (void *)PyDec_GetConst;
 
-    PyObject *capsule = PyCapsule_New(_decimal_api, CAPSULE_NAME, destroy_api);
+    PyObject *capsule = PyCapsule_New(_decimal_api, PyDec_CAPSULE_NAME, destroy_api);
     if (!capsule) {
         free_api(_decimal_api);
     }
     return capsule;
 }
-#undef CAPSULE_NAME
 
 
 /****************************************************************************/
