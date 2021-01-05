@@ -2,7 +2,7 @@
 import io
 import struct
 from test import support
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 import types
 import unittest
 

@@ -182,8 +182,8 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
 
    Similar to :c:func:`PyErr_SetFromErrnoWithFilenameObject`, but the filename
-   is given as a C string.  *filename* is decoded from the filesystem encoding
-   (:func:`os.fsdecode`).
+   is given as a C string.  *filename* is decoded from the :term:`filesystem
+   encoding and error handler`.
 
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
@@ -266,7 +266,7 @@ For convenience, some of these functions will always return a
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
-   decoded from the filesystem encoding (:func:`os.fsdecode`).
+   decoded from the :term:`filesystem encoding and error handler`.
 
    .. versionadded:: 3.2
 
@@ -343,7 +343,7 @@ an error value).
 
    Similar to :c:func:`PyErr_WarnExplicitObject` except that *message* and
    *module* are UTF-8 encoded strings, and *filename* is decoded from the
-   filesystem encoding (:func:`os.fsdecode`).
+   :term:`filesystem encoding and error handler`.
 
 
 .. c:function:: int PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level, const char *format, ...)
@@ -637,10 +637,20 @@ The following functions are used to create and modify Unicode exceptions from C.
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
 
+   .. deprecated:: 3.3 3.11
+
+      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
+      ``PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", ...)``.
+
 .. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeTranslateError` object with the attributes *object*,
    *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
+
+   .. deprecated:: 3.3 3.11
+
+      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
+      ``PyObject_CallFunction(PyExc_UnicodeTranslateError, "Onns", ...)``.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
@@ -773,7 +783,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject\*`; they are all class objects.  For completeness, here are all
+:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -993,7 +1003,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+:c:type:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::

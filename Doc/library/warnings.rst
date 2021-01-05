@@ -491,7 +491,7 @@ Available Functions
 Available Context Managers
 --------------------------
 
-.. class:: catch_warnings(\*, record=False, module=None)
+.. class:: catch_warnings(*, record=False, module=None)
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.

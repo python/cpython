@@ -22,7 +22,8 @@ class _NodeInfo:
 
 
 class CycleError(ValueError):
-    """Subclass of ValueError raised by TopologicalSorterif cycles exist in the graph
+    """Subclass of ValueError raised by TopologicalSorter.prepare if cycles
+    exist in the working graph.
 
     If multiple cycles exist, only one undefined choice among them will be reported
     and included in the exception. The detected cycle can be accessed via the second
@@ -129,7 +130,7 @@ class TopologicalSorter:
         return result
 
     def is_active(self):
-        """Return True if more progress can be made and ``False`` otherwise.
+        """Return ``True`` if more progress can be made and ``False`` otherwise.
 
         Progress can be made if cycles do not block the resolution and either there
         are still nodes ready that haven't yet been returned by "get_ready" or the
@@ -149,7 +150,7 @@ class TopologicalSorter:
         """Marks a set of nodes returned by "get_ready" as processed.
 
         This method unblocks any successor of each node in *nodes* for being returned
-        in the future by a a call to "get_ready"
+        in the future by a call to "get_ready".
 
         Raises :exec:`ValueError` if any node in *nodes* has already been marked as
         processed by a previous call to this method, if a node was not added to the

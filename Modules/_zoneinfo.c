@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "structmember.h"
 
 #include <ctype.h>
@@ -171,7 +172,7 @@ static void
 update_strong_cache(const PyTypeObject *const type, PyObject *key,
                     PyObject *zone);
 static PyObject *
-zone_from_strong_cache(const PyTypeObject *const type, PyObject *key);
+zone_from_strong_cache(const PyTypeObject *const type, PyObject *const key);
 
 static PyObject *
 zoneinfo_new_instance(PyTypeObject *type, PyObject *key)
@@ -224,8 +225,14 @@ error:
     self = NULL;
 cleanup:
     if (file_obj != NULL) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        Py_DECREF(tmp);
+        _PyErr_ChainExceptions(exc, val, tb);
+        if (tmp == NULL) {
+            Py_CLEAR(self);
+        }
+        Py_XDECREF(tmp);
         Py_DECREF(file_obj);
     }
     Py_DECREF(file_path);
@@ -278,13 +285,11 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
-        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
-
         Py_DECREF(tmp);
-
         if (instance == NULL) {
             return NULL;
         }
+        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(type, key, instance);
@@ -408,7 +413,6 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
         }
 
         clear_strong_cache(type);
-        ZONEINFO_STRONG_CACHE = NULL;
     }
     else {
         PyObject *item = NULL;
@@ -481,9 +485,7 @@ zoneinfo_tzname(PyObject *self, PyObject *dt)
     return tti->tzname;
 }
 
-#define HASTZINFO(p) (((_PyDateTime_BaseTZInfo *)(p))->hastzinfo)
-#define GET_DT_TZINFO(p) \
-    (HASTZINFO(p) ? ((PyDateTime_DateTime *)(p))->tzinfo : Py_None)
+#define GET_DT_TZINFO PyDateTime_DATE_GET_TZINFO
 
 static PyObject *
 zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
@@ -584,7 +586,7 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
             }
 
             dt = NULL;
-            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_One)) {
+            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_GetOne())) {
                 dt = PyObject_Call(replace, args, kwargs);
             }
 
@@ -721,17 +723,16 @@ zoneinfo__unpickle(PyTypeObject *cls, PyObject *args)
 static PyObject *
 load_timedelta(long seconds)
 {
-    PyObject *rv = NULL;
+    PyObject *rv;
     PyObject *pyoffset = PyLong_FromLong(seconds);
     if (pyoffset == NULL) {
         return NULL;
     }
-    int contains = PyDict_Contains(TIMEDELTA_CACHE, pyoffset);
-    if (contains == -1) {
-        goto error;
-    }
-
-    if (!contains) {
+    rv = PyDict_GetItemWithError(TIMEDELTA_CACHE, pyoffset);
+    if (rv == NULL) {
+        if (PyErr_Occurred()) {
+            goto error;
+        }
         PyObject *tmp = PyDateTimeAPI->Delta_FromDelta(
             0, seconds, 0, 1, PyDateTimeAPI->DeltaType);
 
@@ -742,12 +743,9 @@ load_timedelta(long seconds)
         rv = PyDict_SetDefault(TIMEDELTA_CACHE, pyoffset, tmp);
         Py_DECREF(tmp);
     }
-    else {
-        rv = PyDict_GetItem(TIMEDELTA_CACHE, pyoffset);
-    }
 
+    Py_XINCREF(rv);
     Py_DECREF(pyoffset);
-    Py_INCREF(rv);
     return rv;
 error:
     Py_DECREF(pyoffset);
@@ -1216,15 +1214,9 @@ calendarrule_new(uint8_t month, uint8_t week, uint8_t day, int8_t hour,
         return -1;
     }
 
-    // day is an unsigned integer, so day < 0 should always return false, but
-    // if day's type changes to a signed integer *without* changing this value,
-    // it may create a bug. Considering that the compiler should be able to
-    // optimize out the first comparison if day is an unsigned integer anyway,
-    // we will leave this comparison in place and disable the compiler warning.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
-    if (day < 0 || day > 6) {
-#pragma GCC diagnostic pop
+    // If the 'day' parameter type is changed to a signed type,
+    // "day < 0" check must be added.
+    if (/* day < 0 || */ day > 6) {
         PyErr_Format(PyExc_ValueError, "Day must be in [0, 6]");
         return -1;
     }
@@ -1622,7 +1614,7 @@ parse_abbr(const char *const p, PyObject **abbr)
     }
 
     *abbr = PyUnicode_FromStringAndSize(str_start, str_end - str_start);
-    if (abbr == NULL) {
+    if (*abbr == NULL) {
         return -1;
     }
 
@@ -2467,10 +2459,11 @@ clear_strong_cache(const PyTypeObject *const type)
     }
 
     strong_cache_free(ZONEINFO_STRONG_CACHE);
+    ZONEINFO_STRONG_CACHE = NULL;
 }
 
 static PyObject *
-new_weak_cache()
+new_weak_cache(void)
 {
     PyObject *weakref_module = PyImport_ImportModule("weakref");
     if (weakref_module == NULL) {
@@ -2484,7 +2477,7 @@ new_weak_cache()
 }
 
 static int
-initialize_caches()
+initialize_caches(void)
 {
     // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
     if (TIMEDELTA_CACHE == NULL) {
@@ -2521,6 +2514,7 @@ zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
     }
 
     PyObject_SetAttrString((PyObject *)cls, "_weak_cache", weak_cache);
+    Py_DECREF(weak_cache);
     Py_RETURN_NONE;
 }
 
@@ -2553,7 +2547,7 @@ static PyMethodDef zoneinfo_methods[] = {
     {"_unpickle", (PyCFunction)zoneinfo__unpickle, METH_VARARGS | METH_CLASS,
      PyDoc_STR("Private method used in unpickling.")},
     {"__init_subclass__", (PyCFunction)(void (*)(void))zoneinfo_init_subclass,
-     METH_VARARGS | METH_KEYWORDS,
+     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
     {NULL} /* Sentinel */
 };
@@ -2612,8 +2606,7 @@ module_free()
         Py_CLEAR(ZONEINFO_WEAK_CACHE);
     }
 
-    strong_cache_free(ZONEINFO_STRONG_CACHE);
-    ZONEINFO_STRONG_CACHE = NULL;
+    clear_strong_cache(&PyZoneInfo_ZoneInfoType);
 }
 
 static int

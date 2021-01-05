@@ -69,9 +69,6 @@ PyAPI_FUNC(int) _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
-/* bpo-35053: Expose _Py_tracemalloc_config for _Py_NewReference()
-   which access directly _Py_tracemalloc_config.tracing for best
-   performances. */
 struct _PyTraceMalloc_Config {
     /* Module initialized?
        Variable protected by the GIL */

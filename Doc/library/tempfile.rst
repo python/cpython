@@ -31,7 +31,7 @@ is recommended to use keyword arguments for clarity.
 
 The module defines the following user-callable items:
 
-.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. function:: TemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    Return a :term:`file-like object` that can be used as a temporary storage area.
    The file is created securely, using the same rules as :func:`mkstemp`. It will be destroyed as soon
@@ -72,7 +72,7 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None)
+.. function:: NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -93,7 +93,7 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
@@ -175,9 +175,8 @@ The module defines the following user-callable items:
    If you want to force a bytes return value with otherwise default behavior,
    pass ``suffix=b''``.
 
-   If *text* is specified, it indicates whether to open the file in binary
-   mode (the default) or text mode.  On some platforms, this makes no
-   difference.
+   If *text* is specified and true, the file is opened in text mode.
+   Otherwise, (the default) the file is opened in binary mode.
 
    :func:`mkstemp` returns a tuple containing an OS-level handle to an open
    file (as would be returned by :func:`os.open`) and the absolute pathname

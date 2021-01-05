@@ -14,9 +14,9 @@ import shutil
 import threading
 import unittest
 from unittest import mock
-from test.support import (
-    verbose, run_unittest, TESTFN,
-    forget, unlink, rmtree)
+from test.support import (verbose, run_unittest)
+from test.support.import_helper import forget
+from test.support.os_helper import (TESTFN, unlink, rmtree)
 from test.support import threading_helper
 
 def task(N, done, done_tasks, errors):

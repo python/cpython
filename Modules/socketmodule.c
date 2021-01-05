@@ -324,7 +324,7 @@ static FlagRuntimeInfo win_runtime_flags[] = {
     {14393, "TCP_FASTOPEN"}
 };
 
-static void
+static int
 remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
@@ -333,7 +333,7 @@ remove_unusable_flags(PyObject *m)
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
-        return;
+        return -1;
     }
 
     /* set to Windows 10, except BuildNumber. */
@@ -359,19 +359,19 @@ remove_unusable_flags(PyObject *m)
             break;
         }
         else {
-            if (PyDict_GetItemString(
-                    dict,
-                    win_runtime_flags[i].flag_name) != NULL)
-            {
-                if (PyDict_DelItemString(
-                        dict,
-                        win_runtime_flags[i].flag_name))
-                {
-                    PyErr_Clear();
-                }
+            PyObject *flag_name = PyUnicode_FromString(win_runtime_flags[i].flag_name);
+            if (flag_name == NULL) {
+                return -1;
             }
+            PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
+            Py_DECREF(flag_name);
+            if (v == NULL) {
+                return -1;
+            }
+            Py_DECREF(v);
         }
     }
+    return 0;
 }
 
 #endif
@@ -436,13 +436,12 @@ remove_unusable_flags(PyObject *m)
 #endif
 
 #ifdef MS_WIN32
-#undef EAFNOSUPPORT
-#define EAFNOSUPPORT WSAEAFNOSUPPORT
-#define snprintf _snprintf
+#  undef EAFNOSUPPORT
+#  define EAFNOSUPPORT WSAEAFNOSUPPORT
 #endif
 
 #ifndef SOCKETCLOSE
-#define SOCKETCLOSE close
+#  define SOCKETCLOSE close
 #endif
 
 #if (defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H)) && !defined(__NetBSD__) && !defined(__DragonFly__)
@@ -515,7 +514,6 @@ remove_unusable_flags(PyObject *m)
    by this module (but not argument type or memory errors, etc.). */
 static PyObject *socket_herror;
 static PyObject *socket_gaierror;
-static PyObject *socket_timeout;
 
 /* A forward reference to the socket type object.
    The sock_type variable contains pointers to various functions,
@@ -887,7 +885,7 @@ sock_call_ex(PySocketSockObject *s,
                 if (err)
                     *err = SOCK_TIMEOUT_ERR;
                 else
-                    PyErr_SetString(socket_timeout, "timed out");
+                    PyErr_SetString(PyExc_TimeoutError, "timed out");
                 return -1;
             }
 
@@ -2881,7 +2879,7 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
     /* Blocking mode for a Python socket object means that operations
        like :meth:`recv` or :meth:`sendall` will block the execution of
        the current thread until they are complete or aborted with a
-       `socket.timeout` or `socket.error` errors.  When timeout is `None`,
+       `TimeoutError` or `socket.error` errors.  When timeout is `None`,
        the underlying FD is in a blocking mode.  When timeout is a positive
        number, the FD is in a non-blocking mode, and socket ops are
        implemented with a `select()` call.
@@ -3367,8 +3365,9 @@ sock_getsockname(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(getsockname_doc,
 "getsockname() -> address info\n\
 \n\
-Return the address of the local endpoint.  For IP sockets, the address\n\
-info is a pair (hostaddr, port).");
+Return the address of the local endpoint. The format depends on the\n\
+address family. For IPv4 sockets, the address info is a pair\n\
+(hostaddr, port).");
 
 
 #ifdef HAVE_GETPEERNAME         /* Cray APP doesn't have this :-( */
@@ -4207,7 +4206,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
             }
 
             if (interval <= 0) {
-                PyErr_SetString(socket_timeout, "timed out");
+                PyErr_SetString(PyExc_TimeoutError, "timed out");
                 goto done;
             }
         }
@@ -6103,13 +6102,10 @@ socket_ntohs(PyObject *self, PyObject *args)
         return NULL;
     }
     if (x > 0xffff) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "ntohs: Python int too large to convert to C "
-                         "16-bit unsigned integer (The silent truncation "
-                         "is deprecated)",
-                         1)) {
-            return NULL;
-        }
+        PyErr_SetString(PyExc_OverflowError,
+                        "ntohs: Python int too large to convert to C "
+                        "16-bit unsigned integer");
+        return NULL;
     }
     return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
 }
@@ -6117,12 +6113,7 @@ socket_ntohs(PyObject *self, PyObject *args)
 PyDoc_STRVAR(ntohs_doc,
 "ntohs(integer) -> integer\n\
 \n\
-Convert a 16-bit unsigned integer from network to host byte order.\n\
-Note that in case the received integer does not fit in 16-bit unsigned\n\
-integer, but does fit in a positive C int, it is silently truncated to\n\
-16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an\n\
-exception in future versions of Python.");
+Convert a 16-bit unsigned integer from network to host byte order.");
 
 
 static PyObject *
@@ -6174,13 +6165,10 @@ socket_htons(PyObject *self, PyObject *args)
         return NULL;
     }
     if (x > 0xffff) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "htons: Python int too large to convert to C "
-                         "16-bit unsigned integer (The silent truncation "
-                         "is deprecated)",
-                         1)) {
-            return NULL;
-        }
+        PyErr_SetString(PyExc_OverflowError,
+                        "htons: Python int too large to convert to C "
+                        "16-bit unsigned integer");
+        return NULL;
     }
     return PyLong_FromUnsignedLong(htons((unsigned short)x));
 }
@@ -6188,12 +6176,7 @@ socket_htons(PyObject *self, PyObject *args)
 PyDoc_STRVAR(htons_doc,
 "htons(integer) -> integer\n\
 \n\
-Convert a 16-bit unsigned integer from host to network byte order.\n\
-Note that in case the received integer does not fit in 16-bit unsigned\n\
-integer, but does fit in a positive C int, it is silently truncated to\n\
-16-bit unsigned integer.\n\
-However, this silent truncation feature is deprecated, and will raise an\n\
-exception in future versions of Python.");
+Convert a 16-bit unsigned integer from host to network byte order.");
 
 
 static PyObject *
@@ -7124,13 +7107,10 @@ PyInit__socket(void)
         return NULL;
     Py_INCREF(socket_gaierror);
     PyModule_AddObject(m, "gaierror", socket_gaierror);
-    socket_timeout = PyErr_NewException("socket.timeout",
-                                        PyExc_OSError, NULL);
-    if (socket_timeout == NULL)
-        return NULL;
-    PySocketModuleAPI.timeout_error = socket_timeout;
-    Py_INCREF(socket_timeout);
-    PyModule_AddObject(m, "timeout", socket_timeout);
+
+    PySocketModuleAPI.timeout_error = PyExc_TimeoutError;
+    PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
+
     Py_INCREF((PyObject *)&sock_type);
     if (PyModule_AddObject(m, "SocketType",
                            (PyObject *)&sock_type) != 0)
@@ -8383,7 +8363,10 @@ PyInit__socket(void)
 
 #ifdef MS_WINDOWS
     /* remove some flags on older version Windows during run-time */
-    remove_unusable_flags(m);
+    if (remove_unusable_flags(m) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
 #endif
 
     return m;

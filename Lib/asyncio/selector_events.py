@@ -133,14 +133,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # a socket is closed, send() raises OSError (with errno set to
         # EBADF, but let's not rely on the exact error code).
         csock = self._csock
-        if csock is not None:
-            try:
-                csock.send(b'\0')
-            except OSError:
-                if self._debug:
-                    logger.debug("Fail to write a null byte into the "
-                                 "self-pipe socket",
-                                 exc_info=True)
+        if csock is None:
+            return
+
+        try:
+            csock.send(b'\0')
+        except OSError:
+            if self._debug:
+                logger.debug("Fail to write a null byte into the "
+                             "self-pipe socket",
+                             exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,
@@ -555,20 +557,19 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
-        self._sock_accept(fut, False, sock)
+        self._sock_accept(fut, sock)
         return await fut
 
-    def _sock_accept(self, fut, registered, sock):
+    def _sock_accept(self, fut, sock):
         fd = sock.fileno()
-        if registered:
-            self.remove_reader(fd)
-        if fut.done():
-            return
         try:
             conn, address = sock.accept()
             conn.setblocking(False)
         except (BlockingIOError, InterruptedError):
-            self.add_reader(fd, self._sock_accept, fut, True, sock)
+            self._ensure_fd_no_transport(fd)
+            handle = self._add_reader(fd, self._sock_accept, fut, sock)
+            fut.add_done_callback(
+                functools.partial(self._sock_read_done, fd, handle=handle))
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:

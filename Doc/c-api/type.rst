@@ -105,9 +105,11 @@ Type Objects
 
    See :c:member:`PyType_Slot.slot` for possible values of the *slot* argument.
 
-   An exception is raised if *type* is not a heap type.
-
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.10
+      :c:func:`PyType_GetSlot` can now accept all types.
+      Previously, it was limited to heap types.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -116,6 +118,13 @@ Type Objects
 
    If no module is associated with the given type, sets :py:class:`TypeError`
    and returns ``NULL``.
+
+   This function is usually used to get the module in which a method is defined.
+   Note that in such a method, ``PyType_GetModule(Py_TYPE(self))``
+   may not return the intended result.
+   ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
+   are not necessarily defined in the same module as their superclass.
+   See :c:type:`PyCMethod` to get the class that defines the method.
 
    .. versionadded:: 3.9
 
@@ -145,19 +154,27 @@ The following functions and structs are used to create
    Creates and returns a heap type object from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
 
-   If *bases* is a tuple, the created heap type contains all types contained
-   in it as base types.
-
-   If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
+   The *bases* argument can be used to specify base classes; it can either
+   be only one class or a tuple of classes.
+   If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
+   If that also is ``NULL``, the *Py_tp_base* slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
-   The *module* must be a module object or ``NULL``.
+   The *module* argument can be used to record the module in which the new
+   class is defined. It must be a module object or ``NULL``.
    If not ``NULL``, the module is associated with the new type and can later be
    retreived with :c:func:`PyType_GetModule`.
+   The associated module is not inherited by subclasses; it must be specified
+   for each class individually.
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.10
+
+      The function now accepts a single class as the *bases* argument and
+      ``NULL`` as the ``tp_doc`` slot.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -215,7 +232,8 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set using :c:type:`PyType_Spec` and :c:type:`PyType_Slot`:
+      The following fields cannot be set at all using :c:type:`PyType_Spec` and
+      :c:type:`PyType_Slot`:
 
       * :c:member:`~PyTypeObject.tp_dict`
       * :c:member:`~PyTypeObject.tp_mro`
@@ -229,16 +247,25 @@ The following functions and structs are used to create
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
         (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+
+      The following fields cannot be set using :c:type:`PyType_Spec` and
+      :c:type:`PyType_Slot` under the limited API:
+
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 
-      Setting :c:data:`Py_tp_bases` may be problematic on some platforms.
+      Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
+      problematic on some platforms.
       To avoid issues, use the *bases* argument of
       :py:func:`PyType_FromSpecWithBases` instead.
+
+     .. versionchanged:: 3.9
+
+        Slots in :c:type:`PyBufferProcs` in may be set in the unlimited API.
 
    .. c:member:: void *PyType_Slot.pfunc
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      May not be ``NULL``.
+      Slots other than ``Py_tp_doc`` may not be ``NULL``.

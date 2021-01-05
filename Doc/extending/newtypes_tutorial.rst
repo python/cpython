@@ -416,7 +416,7 @@ But this would be risky.  Our type doesn't restrict the type of the
 ``first`` member, so it could be any kind of object.  It could have a
 destructor that causes code to be executed that tries to access the
 ``first`` member; or that destructor could release the
-:term:`Global interpreter Lock` and let arbitrary code run in other
+:term:`Global interpreter Lock <GIL>` and let arbitrary code run in other
 threads that accesses and modifies our object.
 
 To be paranoid and protect ourselves against this possibility, we almost

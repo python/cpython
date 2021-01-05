@@ -1,10 +1,10 @@
 /* List object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_object.h"
-#include "pycore_tupleobject.h"
-#include "pycore_accu.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_interp.h"        // PyInterpreterState.list
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -18,6 +18,15 @@ class list "PyListObject *" "&PyList_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=f9b222678f9f71e0]*/
 
 #include "clinic/listobject.c.h"
+
+
+static struct _Py_list_state *
+get_list_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->list;
+}
+
 
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
@@ -60,7 +69,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
      *       is PY_SSIZE_T_MAX * (9 / 8) + 6 which always fits in a size_t.
      */
     new_allocated = ((size_t)newsize + (newsize >> 3) + 6) & ~(size_t)3;
-    /* Do not overallocate if the new size is closer to overalocated size
+    /* Do not overallocate if the new size is closer to overallocated size
      * than to the old size.
      */
     if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize))
@@ -121,8 +130,7 @@ _PyList_Fini(PyThreadState *tstate)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_list_state *state = &interp->list;
+    struct _Py_list_state *state = get_list_state();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                            state->numfree, sizeof(PyListObject));
@@ -136,8 +144,7 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_list_state *state = &interp->list;
+    struct _Py_list_state *state = get_list_state();
     PyListObject *op;
 #ifdef Py_DEBUG
     // PyList_New() must not be called after _PyList_Fini()
@@ -334,10 +341,9 @@ list_dealloc(PyListObject *op)
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
-        PyMem_FREE(op->ob_item);
+        PyMem_Free(op->ob_item);
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_list_state *state = &interp->list;
+    struct _Py_list_state *state = get_list_state();
 #ifdef Py_DEBUG
     // list_dealloc() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
@@ -586,7 +592,7 @@ _list_clear(PyListObject *a)
         while (--i >= 0) {
             Py_XDECREF(item[i]);
         }
-        PyMem_FREE(item);
+        PyMem_Free(item);
     }
     /* Never fails; the return value can be ignored.
        Note that there is no guarantee that the list is actually empty
@@ -662,7 +668,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     /* If norig == 0, item might be NULL, in which case we may not memcpy from it. */
     if (s) {
         if (s > sizeof(recycle_on_stack)) {
-            recycle = (PyObject **)PyMem_MALLOC(s);
+            recycle = (PyObject **)PyMem_Malloc(s);
             if (recycle == NULL) {
                 PyErr_NoMemory();
                 goto Error;
@@ -700,7 +706,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     result = 0;
  Error:
     if (recycle != recycle_on_stack)
-        PyMem_FREE(recycle);
+        PyMem_Free(recycle);
     Py_XDECREF(v_as_SF);
     return result;
 #undef b
@@ -2224,7 +2230,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             /* Leverage stack space we allocated but won't otherwise use */
             keys = &ms.temparray[saved_ob_size+1];
         else {
-            keys = PyMem_MALLOC(sizeof(PyObject *) * saved_ob_size);
+            keys = PyMem_Malloc(sizeof(PyObject *) * saved_ob_size);
             if (keys == NULL) {
                 PyErr_NoMemory();
                 goto keyfunc_fail;
@@ -2237,7 +2243,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 for (i=i-1 ; i>=0 ; i--)
                     Py_DECREF(keys[i]);
                 if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
-                    PyMem_FREE(keys);
+                    PyMem_Free(keys);
                 goto keyfunc_fail;
             }
         }
@@ -2408,7 +2414,7 @@ fail:
         for (i = 0; i < saved_ob_size; i++)
             Py_DECREF(keys[i]);
         if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
-            PyMem_FREE(keys);
+            PyMem_Free(keys);
     }
 
     if (self->allocated != -1 && result != NULL) {
@@ -2436,7 +2442,7 @@ keyfunc_fail:
         while (--i >= 0) {
             Py_XDECREF(final_ob_item[i]);
         }
-        PyMem_FREE(final_ob_item);
+        PyMem_Free(final_ob_item);
     }
     Py_XINCREF(result);
     return result;
@@ -2902,7 +2908,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             }
 
             garbage = (PyObject**)
-                PyMem_MALLOC(slicelength*sizeof(PyObject*));
+                PyMem_Malloc(slicelength*sizeof(PyObject*));
             if (!garbage) {
                 PyErr_NoMemory();
                 return -1;
@@ -2943,7 +2949,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             for (i = 0; i < slicelength; i++) {
                 Py_DECREF(garbage[i]);
             }
-            PyMem_FREE(garbage);
+            PyMem_Free(garbage);
 
             return res;
         }
@@ -2984,7 +2990,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             }
 
             garbage = (PyObject**)
-                PyMem_MALLOC(slicelength*sizeof(PyObject*));
+                PyMem_Malloc(slicelength*sizeof(PyObject*));
             if (!garbage) {
                 Py_DECREF(seq);
                 PyErr_NoMemory();
@@ -3005,7 +3011,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
                 Py_DECREF(garbage[i]);
             }
 
-            PyMem_FREE(garbage);
+            PyMem_Free(garbage);
             Py_DECREF(seq);
 
             return 0;

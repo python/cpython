@@ -1112,8 +1112,11 @@ static int test_open_code_hook(void)
     return result;
 }
 
+static int _audit_hook_clear_count = 0;
+
 static int _audit_hook(const char *event, PyObject *args, void *userdata)
 {
+    assert(args && PyTuple_CheckExact(args));
     if (strcmp(event, "_testembed.raise") == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Intentional error");
         return -1;
@@ -1122,6 +1125,8 @@ static int _audit_hook(const char *event, PyObject *args, void *userdata)
             return -1;
         }
         return 0;
+    } else if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
+        _audit_hook_clear_count += 1;
     }
     return 0;
 }
@@ -1167,6 +1172,9 @@ static int test_audit(void)
 {
     int result = _test_audit(42);
     Py_Finalize();
+    if (_audit_hook_clear_count != 1) {
+        return 0x1000 | _audit_hook_clear_count;
+    }
     return result;
 }
 
@@ -1518,6 +1526,55 @@ static int test_init_warnoptions(void)
 }
 
 
+static int tune_config(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        PyErr_Print();
+        return -1;
+    }
+
+    config.bytes_warning = 2;
+
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        PyConfig_Clear(&config);
+        return -1;
+    }
+    PyConfig_Clear(&config);
+    return 0;
+}
+
+
+static int test_init_set_config(void)
+{
+    // Initialize core
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    config_set_string(&config, &config.program_name, PROGRAM_NAME);
+    config._init_main = 0;
+    config.bytes_warning = 0;
+    init_from_config_clear(&config);
+
+    // Tune the configuration using _PyInterpreterState_SetConfig()
+    if (tune_config() < 0) {
+        PyErr_Print();
+        return 1;
+    }
+
+    // Finish initialization: main part
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -1685,6 +1742,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_init_warnoptions", test_init_warnoptions},
+    {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
     {"test_get_argc_argv", test_get_argc_argv},
 

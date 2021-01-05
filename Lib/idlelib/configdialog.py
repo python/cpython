@@ -67,7 +67,6 @@ class ConfigDialog(Toplevel):
         if not _utest:
             self.withdraw()
 
-        self.configure(borderwidth=5)
         self.title(title or 'IDLE Preferences')
         x = parent.winfo_rootx() + 20
         y = parent.winfo_rooty() + (30 if not _htest else 150)
@@ -97,6 +96,7 @@ class ConfigDialog(Toplevel):
         """Create and place widgets for tabbed dialog.
 
         Widgets Bound to self:
+            frame: encloses all other widgets
             note: Notebook
             highpage: HighPage
             fontpage: FontPage
@@ -109,7 +109,9 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.note = note = Notebook(self)
+        self.frame = frame = Frame(self, padding="5px")
+        self.frame.grid(sticky="nwes")
+        self.note = note = Notebook(frame)
         self.highpage = HighPage(note)
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
@@ -148,7 +150,7 @@ class ConfigDialog(Toplevel):
             padding_args = {}
         else:
             padding_args = {'padding': (6, 3)}
-        outer = Frame(self, padding=2)
+        outer = Frame(self.frame, padding=2)
         buttons_frame = Frame(outer, padding=2)
         self.buttons = {}
         for txt, cmd in (
@@ -687,7 +689,7 @@ class HighPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
-        self.cd = master.master
+        self.cd = master.winfo_toplevel()
         self.style = Style(master)
         self.create_page_highlight()
         self.load_theme_cfg()
@@ -1346,7 +1348,7 @@ class KeysPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
-        self.cd = master.master
+        self.cd = master.winfo_toplevel()
         self.create_page_keys()
         self.load_key_cfg()
 

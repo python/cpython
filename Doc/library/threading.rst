@@ -71,6 +71,13 @@ This module defines the following functions:
 
    .. versionadded:: 3.8
 
+.. data:: __excepthook__
+
+   Holds the original value of :func:`threading.excepthook`. It is saved so that the
+   original value can be restored in case they happen to get replaced with
+   broken or alternative objects.
+
+   .. versionadded:: 3.10
 
 .. function:: get_ident()
 
@@ -121,6 +128,17 @@ This module defines the following functions:
    :meth:`~Thread.run` method is called.
 
 
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. versionadded:: 3.10
+
+
 .. function:: setprofile(func)
 
    .. index:: single: profile function
@@ -128,6 +146,15 @@ This module defines the following functions:
    Set a profile function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
+
+
+.. function:: getprofile()
+
+   .. index:: single: profile function
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 3.10
 
 
 .. function:: stack_size([size])
@@ -264,8 +291,10 @@ since it is impossible to detect the termination of alien threads.
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
 
-   *name* is the thread name.  By default, a unique name is constructed of the
-   form "Thread-*N*" where *N* is a small decimal number.
+   *name* is the thread name. By default, a unique name is constructed
+   of the form "Thread-*N*" where *N* is a small decimal number,
+   or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
+   *target* argument is specified.
 
    *args* is the argument tuple for the target invocation.  Defaults to ``()``.
 
@@ -279,6 +308,9 @@ since it is impossible to detect the termination of alien threads.
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
+
+   .. versionchanged:: 3.10
+      Use the *target* name if *name* argument is omitted.
 
    .. versionchanged:: 3.3
       Added the *daemon* argument.
@@ -394,7 +426,8 @@ since it is impossible to detect the termination of alien threads.
 
 .. impl-detail::
 
-   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
    can execute Python code at once (even though certain performance-oriented
    libraries might overcome this limitation).
    If you want your application to make better use of the computational

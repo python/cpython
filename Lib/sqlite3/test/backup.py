@@ -2,7 +2,6 @@ import sqlite3 as sqlite
 import unittest
 
 
-@unittest.skipIf(sqlite.sqlite_version_info < (3, 6, 11), "Backup API not supported")
 class BackupTests(unittest.TestCase):
     def setUp(self):
         cx = self.cx = sqlite.connect(":memory:")
@@ -35,6 +34,13 @@ class BackupTests(unittest.TestCase):
         bck.close()
         with self.assertRaises(sqlite.ProgrammingError):
             self.cx.backup(bck)
+
+    def test_bad_source_closed_connection(self):
+        bck = sqlite.connect(':memory:')
+        source = sqlite.connect(":memory:")
+        source.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            source.backup(bck)
 
     def test_bad_target_in_transaction(self):
         bck = sqlite.connect(':memory:')

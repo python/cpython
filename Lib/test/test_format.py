@@ -1,6 +1,7 @@
 from test.support import verbose, TestFailed
 import locale
 import sys
+import re
 import test.support as support
 import unittest
 
@@ -274,9 +275,9 @@ class FormatTest(unittest.TestCase):
         test_exc_common('% %s', 1, ValueError,
                         "unsupported format character '%' (0x25) at index 2")
         test_exc_common('%d', '1', TypeError,
-                        "%d format: a number is required, not str")
+                        "%d format: a real number is required, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "%d format: a number is required, not bytes")
+                        "%d format: a real number is required, not bytes")
         test_exc_common('%x', '1', TypeError,
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
@@ -427,13 +428,16 @@ class FormatTest(unittest.TestCase):
             localeconv = locale.localeconv()
             sep = localeconv['thousands_sep']
             point = localeconv['decimal_point']
+            grouping = localeconv['grouping']
 
             text = format(123456789, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertEqual(text.replace(sep, ''), '123456789')
 
             text = format(1234.5, "n")
-            self.assertIn(sep, text)
+            if grouping:
+                self.assertIn(sep, text)
             self.assertIn(point, text)
             self.assertEqual(text.replace(sep, ''), '1234' + point + '5')
         finally:
@@ -495,6 +499,25 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(12300050.0, ".6g"), "1.23e+07")
         self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
 
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify ',' with ','.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:,,}'.format(1)
+
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:__}'.format(1)
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:,_}'.format(1)
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:_,}'.format(1)
 
 if __name__ == "__main__":
     unittest.main()

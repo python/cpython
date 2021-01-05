@@ -402,8 +402,48 @@ class GeneratedParser(Parser):
 
     @memoize
     def named_item(self) -> Optional[NamedItem]:
-        # named_item: NAME '=' ~ item | item | lookahead
+        # named_item: NAME '[' NAME '*' ']' '=' ~ item | NAME '[' NAME ']' '=' ~ item | NAME '=' ~ item | item | lookahead
         mark = self.mark()
+        cut = False
+        if (
+            (name := self.name())
+            and
+            (literal := self.expect('['))
+            and
+            (type := self.name())
+            and
+            (literal_1 := self.expect('*'))
+            and
+            (literal_2 := self.expect(']'))
+            and
+            (literal_3 := self.expect('='))
+            and
+            (cut := True)
+            and
+            (item := self.item())
+        ):
+            return NamedItem ( name . string , item , f"{type.string}*" )
+        self.reset(mark)
+        if cut: return None
+        cut = False
+        if (
+            (name := self.name())
+            and
+            (literal := self.expect('['))
+            and
+            (type := self.name())
+            and
+            (literal_1 := self.expect(']'))
+            and
+            (literal_2 := self.expect('='))
+            and
+            (cut := True)
+            and
+            (item := self.item())
+        ):
+            return NamedItem ( name . string , item , type . string )
+        self.reset(mark)
+        if cut: return None
         cut = False
         if (
             (name := self.name())

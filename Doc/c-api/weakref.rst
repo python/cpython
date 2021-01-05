@@ -57,10 +57,10 @@ as much as it can.
 
    .. note::
 
-      This function returns a **borrowed reference** to the referenced object.
+      This function returns a :term:`borrowed reference` to the referenced object.
       This means that you should always call :c:func:`Py_INCREF` on the object
-      except if you know that it cannot be destroyed while you are still
-      using it.
+      except when it cannot be destroyed before the last usage of the borrowed
+      reference.
 
 
 .. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
