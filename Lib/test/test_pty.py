@@ -176,53 +176,54 @@ class PtyTest(unittest.TestCase):
             # " An optional feature could not be imported " ... ?
             raise unittest.SkipTest("Pseudo-terminals (seemingly) not functional.")
 
-        self.assertTrue(os.isatty(slave_fd), "slave_fd is not a tty")
-
-        if mode:
-            self.assertEqual(tty.tcgetattr(slave_fd), mode,
-                             "openpty() failed to set slave termios")
-        if new_stdin_winsz:
-            self.assertEqual(_get_term_winsz(slave_fd), new_stdin_winsz,
-                             "openpty() failed to set slave window size")
-
-        # Solaris requires reading the fd before anything is returned.
-        # My guess is that since we open and close the slave fd
-        # in master_open(), we need to read the EOF.
-        #
-        # NOTE: the above comment is from an older version of the test;
-        # master_open() is not being used anymore.
-
-        # Ensure the fd is non-blocking in case there's nothing to read.
-        blocking = os.get_blocking(master_fd)
         try:
-            os.set_blocking(master_fd, False)
+            self.assertTrue(os.isatty(slave_fd), "slave_fd is not a tty")
+
+            if mode:
+                self.assertEqual(tty.tcgetattr(slave_fd), mode,
+                                "openpty() failed to set slave termios")
+            if new_stdin_winsz:
+                self.assertEqual(_get_term_winsz(slave_fd), new_stdin_winsz,
+                                "openpty() failed to set slave window size")
+
+            # Solaris requires reading the fd before anything is returned.
+            # My guess is that since we open and close the slave fd
+            # in master_open(), we need to read the EOF.
+            #
+            # NOTE: the above comment is from an older version of the test;
+            # master_open() is not being used anymore.
+
+            # Ensure the fd is non-blocking in case there's nothing to read.
+            blocking = os.get_blocking(master_fd)
             try:
-                s1 = os.read(master_fd, 1024)
-                self.assertEqual(b'', s1)
-            except OSError as e:
-                if e.errno != errno.EAGAIN:
-                    raise
+                os.set_blocking(master_fd, False)
+                try:
+                    s1 = os.read(master_fd, 1024)
+                    self.assertEqual(b'', s1)
+                except OSError as e:
+                    if e.errno != errno.EAGAIN:
+                        raise
+            finally:
+                # Restore the original flags.
+                os.set_blocking(master_fd, blocking)
+
+            debug("Writing to slave_fd")
+            os.write(slave_fd, TEST_STRING_1)
+            s1 = _readline(master_fd)
+            self.assertEqual(b'I wish to buy a fish license.\n',
+                            normalize_output(s1))
+
+            debug("Writing chunked output")
+            os.write(slave_fd, TEST_STRING_2[:5])
+            os.write(slave_fd, TEST_STRING_2[5:])
+            s2 = _readline(master_fd)
+            self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
         finally:
-            # Restore the original flags.
-            os.set_blocking(master_fd, blocking)
-
-        debug("Writing to slave_fd")
-        os.write(slave_fd, TEST_STRING_1)
-        s1 = _readline(master_fd)
-        self.assertEqual(b'I wish to buy a fish license.\n',
-                         normalize_output(s1))
-
-        debug("Writing chunked output")
-        os.write(slave_fd, TEST_STRING_2[:5])
-        os.write(slave_fd, TEST_STRING_2[5:])
-        s2 = _readline(master_fd)
-        self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
-
-        os.close(slave_fd)
-        # closing master_fd can raise a SIGHUP if the process is
-        # the session leader: we installed a SIGHUP signal handler
-        # to ignore this signal.
-        os.close(master_fd)
+            os.close(slave_fd)
+            # closing master_fd can raise a SIGHUP if the process is
+            # the session leader: we installed a SIGHUP signal handler
+            # to ignore this signal.
+            os.close(master_fd)
 
     def test_fork(self):
         debug("calling pty.fork()")
