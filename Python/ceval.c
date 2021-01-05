@@ -4995,8 +4995,8 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     int result = 0;
 
     /* If the last instruction falls at the start of a line or if it
-    represents a jump backwards, update the frame's line number and
-    then call the trace function if we're tracing source lines.
+       represents a jump backwards, update the frame's line number and
+       then call the trace function if we're tracing source lines.
     */
     int lastline = bounds->ar_line;
     int line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
