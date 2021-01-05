@@ -212,6 +212,9 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
         errno = rl_read_init_file(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
+    if (!using_libedit_emulation) {
+        rl_variable_bind ("enable-bracketed-paste", "off");
+    }
     Py_RETURN_NONE;
 }
 
@@ -1240,6 +1243,10 @@ setup_readline(readlinestate *mod_state)
         rl_read_init_file(NULL);
     else
         rl_initialize();
+
+    if (!using_libedit_emulation) {
+        rl_variable_bind ("enable-bracketed-paste", "off");
+    }
 
     RESTORE_LOCALE(saved_locale)
     return 0;

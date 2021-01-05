@@ -1,0 +1,3 @@
+Prevents bracketed paste from being enabled in the interactive interpreter,
+even if it's set in the inputrc or is enabled by default (eg GNU Readline
+8.1). Patch by Dustin Rodrigues.
