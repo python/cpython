@@ -1855,7 +1855,11 @@ _json_exec(PyObject *module)
         return -1;
     }
 
-    // equivalent to the one in json.decoder
+    /* Special cookie: can't be created *now* because historically it imports the
+     * Python version at json.decoder.JSONDecoderError and this will cause a
+     * circular import. Has to be imported after module has initialized when it's
+     * needed by a function.
+     */ 
     state->JSONDecodeError = NULL;
 
     state->s_null = PyUnicode_InternFromString("null");
