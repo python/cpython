@@ -1261,7 +1261,8 @@ PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRang
     range->lo_next = linetable;
     range->ar_start = -1;
     range->ar_end = 0;
-    range->ar_computed_line = range->ar_line = firstlineno;
+    range->ar_computed_line = firstlineno;
+    range->ar_line = -1;
 }
 
 int
