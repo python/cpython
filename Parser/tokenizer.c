@@ -77,6 +77,7 @@ tok_new(void)
     tok->enc = NULL;
     tok->encoding = NULL;
     tok->cont_line = 0;
+    tok->previous_line = NULL;
     tok->filename = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
@@ -738,6 +739,10 @@ PyTokenizer_FromString(const char *str, int exec_input)
 
     tok->buf = tok->cur = tok->inp = decoded;
     tok->end = decoded;
+    if ((tok->previous_line = (char*)PyMem_Malloc(BUFSIZ)) == NULL) {
+        PyTokenizer_Free(tok);
+        return NULL;
+    }
     return tok;
 }
 
@@ -766,6 +771,10 @@ PyTokenizer_FromUTF8(const char *str, int exec_input)
 
     tok->buf = tok->cur = tok->inp = translated;
     tok->end = translated;
+    if ((tok->previous_line = (char*)PyMem_Malloc(BUFSIZ)) == NULL) {
+        PyTokenizer_Free(tok);
+        return NULL;
+    }
     return tok;
 }
 
@@ -779,6 +788,10 @@ PyTokenizer_FromFile(FILE *fp, const char* enc,
     if (tok == NULL)
         return NULL;
     if ((tok->buf = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
+        PyTokenizer_Free(tok);
+        return NULL;
+    }
+    if ((tok->previous_line = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
         PyTokenizer_Free(tok);
         return NULL;
     }
@@ -814,6 +827,8 @@ PyTokenizer_Free(struct tok_state *tok)
     Py_XDECREF(tok->filename);
     if (tok->fp != NULL && tok->buf != NULL)
         PyMem_Free(tok->buf);
+    if (tok->previous_line != NULL)
+        PyMem_Free(tok->previous_line);
     if (tok->input)
         PyMem_Free(tok->input);
     PyMem_Free(tok);
@@ -841,8 +856,11 @@ tok_nextc(struct tok_state *tok)
                     return EOF;
                 }
             }
-            if (tok->start == NULL)
+            if (tok->start == NULL) {
+                strncpy(tok->previous_line, tok->buf, tok->cur - tok->buf);
+                tok->previous_line[tok->cur - tok->buf] = 0;
                 tok->buf = tok->cur;
+            }
             tok->line_start = tok->cur;
             tok->lineno++;
             tok->inp = end;
@@ -913,8 +931,10 @@ tok_nextc(struct tok_state *tok)
             }
             else {
                 tok->lineno++;
-                if (tok->buf != NULL)
+                if (tok->buf != NULL) {
+                    strcpy(tok->previous_line, tok->buf);
                     PyMem_Free(tok->buf);
+                }
                 tok->buf = newtok;
                 tok->cur = tok->buf;
                 tok->line_start = tok->buf;

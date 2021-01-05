@@ -416,8 +416,14 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        Py_ssize_t size = p->tok->inp - p->tok->buf;
-        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        if (p->tok->lineno == lineno) {
+            Py_ssize_t size = p->tok->inp - p->tok->buf;
+            error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        }
+        else {
+            assert(p->tok->lineno == lineno + 1);
+            error_line = PyUnicode_DecodeUTF8(p->tok->previous_line, strlen(p->tok->previous_line), "replace");
+        }
         if (!error_line) {
             goto error;
         }

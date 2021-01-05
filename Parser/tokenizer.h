@@ -53,6 +53,8 @@ struct tok_state {
     int read_coding_spec;       /* whether 'coding:...' has been read  */
     char *encoding;         /* Source encoding. */
     int cont_line;          /* whether we are in a continuation line. */
+    char *previous_line;  /* previous line of input, needed by the parser
+                             in order to be able to correctly point to errors */
     const char* line_start;     /* pointer to start of current line */
     const char* multi_line_start; /* pointer to start of first line of
                                      a single line or multi line string
