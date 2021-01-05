@@ -5697,17 +5697,11 @@ PyDec_GetConst(const PyObject *v)
     return MPD(v);
 }
 
-static void 
-free_api(void *capi)
-{
-    PyMem_Free(capi);
-}
-
 static void
 destroy_api(PyObject *obj)
 {
     void *capi = PyCapsule_GetPointer(obj, PyDec_CAPSULE_NAME);
-    free_api(capi);
+    PyMem_Free(capi);
 }
 
 static PyObject *
@@ -5735,7 +5729,7 @@ init_api(void)
 
     PyObject *capsule = PyCapsule_New(_decimal_api, PyDec_CAPSULE_NAME, destroy_api);
     if (!capsule) {
-        free_api(_decimal_api);
+        PyMem_Free(_decimal_api);
     }
     return capsule;
 }
