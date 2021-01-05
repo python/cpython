@@ -319,11 +319,20 @@ class TestCurses(unittest.TestCase):
     def bad_pairs(self):
         return (-2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
 
+    def test_start_color(self):
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        if verbose:
+            print(f'COLORS = {curses.COLORS}', file=sys.stderr)
+            print(f'COLOR_PAIRS = {curses.COLOR_PAIRS}', file=sys.stderr)
+
     @requires_colors
     def test_color_content(self):
         self.assertEqual(curses.color_content(curses.COLOR_BLACK), (0, 0, 0))
         curses.color_content(0)
-        curses.color_content(min(curses.COLORS - 1, SHORT_MAX))
+        maxcolor = min(curses.COLORS - 1, SHORT_MAX)
+        curses.color_content(maxcolor)
 
         for color in self.bad_colors():
             self.assertRaises(OverflowError, curses.color_content, color)
@@ -364,13 +373,18 @@ class TestCurses(unittest.TestCase):
             self.assertRaises(curses.error, curses.init_color, 0, 0, comp, 0)
             self.assertRaises(curses.error, curses.init_color, 0, 0, 0, comp)
 
+    def get_pair_limit(self):
+        return min(curses.COLOR_PAIRS, SHORT_MAX)
+
     @requires_colors
     def test_pair_content(self):
         if not hasattr(curses, 'use_default_colors'):
             self.assertEqual(curses.pair_content(0),
                              (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
-        curses.pair_content(min(curses.COLOR_PAIRS - 1, SHORT_MAX))
+        maxpair = self.get_pair_limit() - 1
+        if maxpair > 0:
+            curses.pair_content(maxpair)
 
         for pair in self.bad_pairs():
             self.assertRaises(OverflowError, curses.pair_content, pair)
@@ -385,11 +399,14 @@ class TestCurses(unittest.TestCase):
         curses.init_pair(1, 0, 0)
         self.assertEqual(curses.pair_content(1), (0, 0))
         maxcolor = min(curses.COLORS - 1, SHORT_MAX)
-        curses.init_pair(1, maxcolor, maxcolor)
-        self.assertEqual(curses.pair_content(1), (maxcolor, maxcolor))
-        maxpair = min(curses.COLOR_PAIRS - 1, SHORT_MAX)
-        curses.init_pair(maxpair, 2, 3)
-        self.assertEqual(curses.pair_content(maxpair), (2, 3))
+        curses.init_pair(1, maxcolor, 0)
+        self.assertEqual(curses.pair_content(1), (maxcolor, 0))
+        curses.init_pair(1, 0, maxcolor)
+        self.assertEqual(curses.pair_content(1), (0, maxcolor))
+        maxpair = self.get_pair_limit() - 1
+        if maxpair > 1:
+            curses.init_pair(maxpair, 0, 0)
+            self.assertEqual(curses.pair_content(maxpair), (0, 0))
 
         for pair in self.bad_pairs():
             self.assertRaises(OverflowError, curses.init_pair, pair, 0, 0)
@@ -587,6 +604,8 @@ class MiscTests(unittest.TestCase):
     @requires_curses_func('ncurses_version')
     def test_ncurses_version(self):
         v = curses.ncurses_version
+        if verbose:
+            print(f'ncurses_version = {curses.ncurses_version}', flush=True)
         self.assertIsInstance(v[:], tuple)
         self.assertEqual(len(v), 3)
         self.assertIsInstance(v[0], int)

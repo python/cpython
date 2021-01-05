@@ -2592,13 +2592,18 @@ _curses_color_content_impl(PyObject *module, short color_number)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (color_content(color_number, &r, &g, &b) != ERR)
-        return Py_BuildValue("(iii)", r, g, b);
-    else {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. Check value of COLORS.");
+    if (color_content(color_number, &r, &g, &b) == ERR) {
+        if (color_number >= COLORS) {
+            PyErr_SetString(PyCursesError,
+                            "Argument 1 was out of range. Check value of COLORS.");
+        }
+        else {
+            PyErr_SetString(PyCursesError, "color_content() returned ERR");
+        }
         return NULL;
     }
+
+    return Py_BuildValue("(iii)", r, g, b);
 }
 
 /*[clinic input]
@@ -3617,9 +3622,14 @@ _curses_pair_content_impl(PyObject *module, short pair_number)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (pair_content(pair_number, &f, &b)==ERR) {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. (0..COLOR_PAIRS-1)");
+    if (pair_content(pair_number, &f, &b) == ERR) {
+        if (pair_number >= COLOR_PAIRS) {
+            PyErr_SetString(PyCursesError,
+                            "Argument 1 was out of range. (0..COLOR_PAIRS-1)");
+        }
+        else {
+            PyErr_SetString(PyCursesError, "pair_content() returned ERR");
+        }
         return NULL;
     }
 
