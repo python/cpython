@@ -233,7 +233,7 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
 
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {
-        SQLITE3_CLOSE(self->db);
+        sqlite3_close_v2(self->db);
     }
 
     Py_XDECREF(self->isolation_level);
@@ -338,7 +338,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
     pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
 
     if (self->db) {
-        rc = SQLITE3_CLOSE(self->db);
+        rc = sqlite3_close_v2(self->db);
 
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db, NULL);
@@ -1687,33 +1687,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
         if (rc == SQLITE_NOMEM) {
             (void)PyErr_NoMemory();
         } else {
-#if SQLITE_VERSION_NUMBER > 3007015
             PyErr_SetString(pysqlite_OperationalError, sqlite3_errstr(rc));
-#else
-            switch (rc) {
-                case SQLITE_ERROR:
-                    /* Description of SQLITE_ERROR in SQLite 3.7.14 and older
-                       releases. */
-                    PyErr_SetString(pysqlite_OperationalError,
-                                    "SQL logic error or missing database");
-                    break;
-                case SQLITE_READONLY:
-                    PyErr_SetString(pysqlite_OperationalError,
-                                    "attempt to write a readonly database");
-                    break;
-                case SQLITE_BUSY:
-                    PyErr_SetString(pysqlite_OperationalError, "database is locked");
-                    break;
-                case SQLITE_LOCKED:
-                    PyErr_SetString(pysqlite_OperationalError,
-                                    "database table is locked");
-                    break;
-                default:
-                    PyErr_Format(pysqlite_OperationalError,
-                                 "unrecognized error code: %d", rc);
-                    break;
-            }
-#endif
         }
     }
 
