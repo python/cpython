@@ -92,9 +92,3 @@ no longer available.
 .. c:function:: PyObject* PyMethod_GET_SELF(PyObject *meth)
 
    Macro version of :c:func:`PyMethod_Self` which avoids error checking.
-
-
-.. c:function:: int PyMethod_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-

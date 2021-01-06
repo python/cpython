@@ -68,7 +68,7 @@ class RegressionTests(unittest.TestCase):
     def CheckColumnNameWithSpaces(self):
         cur = self.con.cursor()
         cur.execute('select 1 as "foo bar [datetime]"')
-        self.assertEqual(cur.description[0][0], "foo bar")
+        self.assertEqual(cur.description[0][0], "foo bar [datetime]")
 
         cur.execute('select 1 as "foo baz"')
         self.assertEqual(cur.description[0][0], "foo baz")
@@ -87,7 +87,6 @@ class RegressionTests(unittest.TestCase):
             cur.execute("select 1 x union select " + str(i))
         con.close()
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2), 'needs sqlite 3.2.2 or newer')
     def CheckOnConflictRollback(self):
         con = sqlite.connect(":memory:")
         con.execute("create table foo(x, unique(x) on conflict rollback)")
@@ -132,6 +131,19 @@ class RegressionTests(unittest.TestCase):
         con.execute("create table foo(bar integer)")
         con.execute("insert into foo(bar) values (5)")
         con.execute(SELECT)
+
+    def CheckBindMutatingList(self):
+        # Issue41662: Crash when mutate a list of parameters during iteration.
+        class X:
+            def __conform__(self, protocol):
+                parameters.clear()
+                return "..."
+        parameters = [X(), 0]
+        con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
+        con.execute("create table foo(bar X, baz integer)")
+        # Should not crash
+        with self.assertRaises(IndexError):
+            con.execute("insert into foo(bar, baz) values (?, ?)", parameters)
 
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about

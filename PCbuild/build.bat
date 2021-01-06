@@ -27,6 +27,8 @@ echo.      building externals.
 echo.  -m  Enable parallel build (enabled by default)
 echo.  -M  Disable parallel build
 echo.  -v  Increased output messages
+echo.  -vv Verbose output messages
+echo.  -q  Quiet output messages (errors and warnings only)
 echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
@@ -44,7 +46,7 @@ echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
 echo.  -p x64 ^| Win32 ^| ARM ^| ARM64
-echo.     Set the platform (default: Win32)
+echo.     Set the platform (default: x64)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
 echo.  --pgo-job  The job to use for PGO training; implies --pgo
@@ -53,7 +55,7 @@ exit /b 127
 
 :Run
 setlocal
-set platf=Win32
+set platf=x64
 set conf=Release
 set target=Build
 set dir=%~dp0
@@ -73,6 +75,8 @@ if "%~1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 if "%~1"=="-m" (set parallel=/m) & shift & goto CheckOpts
 if "%~1"=="-M" (set parallel=) & shift & goto CheckOpts
 if "%~1"=="-v" (set verbose=/v:n) & shift & goto CheckOpts
+if "%~1"=="-vv" (set verbose=/v:d /ds) & shift & goto CheckOpts
+if "%~1"=="-q" (set verbose=/v:q /nologo /clp:summary) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts

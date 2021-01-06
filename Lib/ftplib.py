@@ -75,13 +75,14 @@ class FTP:
     '''An FTP client class.
 
     To create a connection, call the class using these arguments:
-            host, user, passwd, acct, timeout
+            host, user, passwd, acct, timeout, source_address, encoding
 
     The first four arguments are all strings, and have default value ''.
-    timeout must be numeric and defaults to None if not passed,
-    meaning that no timeout will be set on any ftp socket(s)
+    The parameter ´timeout´ must be numeric and defaults to None if not
+    passed, meaning that no timeout will be set on any ftp socket(s).
     If a timeout is passed, then this is now the default timeout for all ftp
     socket operations for this instance.
+    The last parameter is the encoding of filenames, which defaults to utf-8.
 
     Then use self.connect() with optional host and port argument.
 
@@ -102,15 +103,16 @@ class FTP:
     file = None
     welcome = None
     passiveserver = 1
-    encoding = "latin-1"
 
     def __init__(self, host='', user='', passwd='', acct='',
-                 timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+                 timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
+                 encoding='utf-8'):
         """Initialization method (called by class instantiation).
         Initialize host to localhost, port to standard ftp port.
         Optional arguments are host (for connect()),
         and user, passwd, acct (for login()).
         """
+        self.encoding = encoding
         self.source_address = source_address
         self.timeout = timeout
         if host:
@@ -706,9 +708,10 @@ else:
         '''
         ssl_version = ssl.PROTOCOL_TLS_CLIENT
 
-        def __init__(self, host='', user='', passwd='', acct='', keyfile=None,
-                     certfile=None, context=None,
-                     timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+        def __init__(self, host='', user='', passwd='', acct='',
+                     keyfile=None, certfile=None, context=None,
+                     timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
+                     encoding='utf-8'):
             if context is not None and keyfile is not None:
                 raise ValueError("context and keyfile arguments are mutually "
                                  "exclusive")
@@ -727,7 +730,8 @@ else:
                                                      keyfile=keyfile)
             self.context = context
             self._prot_p = False
-            super().__init__(host, user, passwd, acct, timeout, source_address)
+            super().__init__(host, user, passwd, acct,
+                             timeout, source_address, encoding=encoding)
 
         def login(self, user='', passwd='', acct='', secure=True):
             if secure and not isinstance(self.sock, ssl.SSLSocket):

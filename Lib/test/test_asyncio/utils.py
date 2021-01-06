@@ -34,6 +34,7 @@ from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
+from test.support import threading_helper
 
 
 def data_file(filename):
@@ -540,17 +541,10 @@ class TestCase(unittest.TestCase):
         self.set_event_loop(loop)
         return loop
 
-    def unpatch_get_running_loop(self):
-        events._get_running_loop = self._get_running_loop
-
     def setUp(self):
-        self._get_running_loop = events._get_running_loop
-        events._get_running_loop = lambda: None
-        self._thread_cleanup = support.threading_setup()
+        self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):
-        self.unpatch_get_running_loop()
-
         events.set_event_loop(None)
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
@@ -558,7 +552,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(sys.exc_info(), (None, None, None))
 
         self.doCleanups()
-        support.threading_cleanup(*self._thread_cleanup)
+        threading_helper.threading_cleanup(*self._thread_cleanup)
         support.reap_children()
 
 

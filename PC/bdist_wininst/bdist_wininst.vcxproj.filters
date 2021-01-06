@@ -16,45 +16,51 @@
       <UniqueIdentifier>{0c77c1cf-3f87-4f87-bd86-b425211c2181}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
+    <Filter Include="Header Files\zlib">
+      <UniqueIdentifier>{d10220c7-69e3-47c5-8d82-c8e0d4d2ac88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\bdist_wininst\extract.c">
+    <ClCompile Include="extract.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\PC\bdist_wininst\install.c">
+    <ClCompile Include="install.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\adler32.c">
+    <ClCompile Include="$(zlibDir)\adler32.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\crc32.c">
+    <ClCompile Include="$(zlibDir)\crc32.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inffast.c">
+    <ClCompile Include="$(zlibDir)\inffast.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inflate.c">
+    <ClCompile Include="$(zlibDir)\inflate.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\inftrees.c">
+    <ClCompile Include="$(zlibDir)\inftrees.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\zlib\zutil.c">
+    <ClCompile Include="$(zlibDir)\zutil.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PC\bdist_wininst\archive.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\PC\bdist_wininst\install.rc">
+    <ResourceCompile Include="install.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\bdist_wininst\PythonPowered.bmp">
+    <ClInclude Include="archive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(zlibDir)\zlib.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PythonPowered.bmp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

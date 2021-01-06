@@ -112,6 +112,10 @@ The mathematical and bitwise operations are the most numerous:
 
    Return *a* converted to an integer.  Equivalent to ``a.__index__()``.
 
+   .. versionchanged:: 3.10
+      The result always has exact type :class:`int`.  Previously, the result
+      could have been an instance of a subclass of ``int``.
+
 
 .. function:: inv(obj)
               invert(obj)

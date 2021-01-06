@@ -1,9 +1,9 @@
 import unittest
-from test import support
 import base64
 import binascii
 import os
 from array import array
+from test.support import os_helper
 from test.support import script_helper
 
 
@@ -17,14 +17,6 @@ class LegacyBase64TestCase(unittest.TestCase):
         self.assertRaises(TypeError, f, multidimensional)
         int_data = memoryview(b"1234").cast('I')
         self.assertRaises(TypeError, f, int_data)
-
-    def test_encodestring_warns(self):
-        with self.assertWarns(DeprecationWarning):
-            base64.encodestring(b"www.python.org")
-
-    def test_decodestring_warns(self):
-        with self.assertWarns(DeprecationWarning):
-            base64.decodestring(b"d3d3LnB5dGhvbi5vcmc=\n")
 
     def test_encodebytes(self):
         eq = self.assertEqual
@@ -359,6 +351,76 @@ class BaseXYTestCase(unittest.TestCase):
                 with self.assertRaises(binascii.Error):
                     base64.b32decode(data.decode('ascii'))
 
+    def test_b32hexencode(self):
+        test_cases = [
+            # to_encode, expected
+            (b'',      b''),
+            (b'\x00',  b'00======'),
+            (b'a',     b'C4======'),
+            (b'ab',    b'C5H0===='),
+            (b'abc',   b'C5H66==='),
+            (b'abcd',  b'C5H66P0='),
+            (b'abcde', b'C5H66P35'),
+        ]
+        for to_encode, expected in test_cases:
+            with self.subTest(to_decode=to_encode):
+                self.assertEqual(base64.b32hexencode(to_encode), expected)
+
+    def test_b32hexencode_other_types(self):
+        self.check_other_types(base64.b32hexencode, b'abcd', b'C5H66P0=')
+        self.check_encode_type_errors(base64.b32hexencode)
+
+    def test_b32hexdecode(self):
+        test_cases = [
+            # to_decode, expected, casefold
+            (b'',         b'',      False),
+            (b'00======', b'\x00',  False),
+            (b'C4======', b'a',     False),
+            (b'C5H0====', b'ab',    False),
+            (b'C5H66===', b'abc',   False),
+            (b'C5H66P0=', b'abcd',  False),
+            (b'C5H66P35', b'abcde', False),
+            (b'',         b'',      True),
+            (b'00======', b'\x00',  True),
+            (b'C4======', b'a',     True),
+            (b'C5H0====', b'ab',    True),
+            (b'C5H66===', b'abc',   True),
+            (b'C5H66P0=', b'abcd',  True),
+            (b'C5H66P35', b'abcde', True),
+            (b'c4======', b'a',     True),
+            (b'c5h0====', b'ab',    True),
+            (b'c5h66===', b'abc',   True),
+            (b'c5h66p0=', b'abcd',  True),
+            (b'c5h66p35', b'abcde', True),
+        ]
+        for to_decode, expected, casefold in test_cases:
+            with self.subTest(to_decode=to_decode, casefold=casefold):
+                self.assertEqual(base64.b32hexdecode(to_decode, casefold),
+                                 expected)
+                self.assertEqual(base64.b32hexdecode(to_decode.decode('ascii'),
+                                 casefold), expected)
+
+    def test_b32hexdecode_other_types(self):
+        self.check_other_types(base64.b32hexdecode, b'C5H66===', b'abc')
+        self.check_decode_type_errors(base64.b32hexdecode)
+
+    def test_b32hexdecode_error(self):
+        tests = [b'abc', b'ABCDEF==', b'==ABCDEF', b'c4======']
+        prefixes = [b'M', b'ME', b'MFRA', b'MFRGG', b'MFRGGZA', b'MFRGGZDF']
+        for i in range(0, 17):
+            if i:
+                tests.append(b'='*i)
+            for prefix in prefixes:
+                if len(prefix) + i != 8:
+                    tests.append(prefix + b'='*i)
+        for data in tests:
+            with self.subTest(to_decode=data):
+                with self.assertRaises(binascii.Error):
+                    base64.b32hexdecode(data)
+                with self.assertRaises(binascii.Error):
+                    base64.b32hexdecode(data.decode('ascii'))
+
+
     def test_b16encode(self):
         eq = self.assertEqual
         eq(base64.b16encode(b'\x01\x02\xab\xcd\xef'), b'0102ABCDEF')
@@ -655,8 +717,8 @@ class BaseXYTestCase(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def tearDown(self):
-        if os.path.exists(support.TESTFN):
-            os.unlink(support.TESTFN)
+        if os.path.exists(os_helper.TESTFN):
+            os.unlink(os_helper.TESTFN)
 
     def get_output(self, *args):
         return script_helper.assert_python_ok('-m', 'base64', *args).out
@@ -670,9 +732,9 @@ class TestMain(unittest.TestCase):
         ))
 
     def test_encode_file(self):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'a\xffb\n')
-        output = self.get_output('-e', support.TESTFN)
+        output = self.get_output('-e', os_helper.TESTFN)
         self.assertEqual(output.rstrip(), b'Yf9iCg==')
 
     def test_encode_from_stdin(self):
@@ -682,9 +744,9 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(err)
 
     def test_decode(self):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'Yf9iCg==')
-        output = self.get_output('-d', support.TESTFN)
+        output = self.get_output('-d', os_helper.TESTFN)
         self.assertEqual(output.rstrip(), b'a\xffb')
 
 if __name__ == '__main__':

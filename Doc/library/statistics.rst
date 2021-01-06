@@ -156,10 +156,11 @@ However, for reading convenience, most of the examples show sorted sequences.
    .. versionadded:: 3.8
 
 
-.. function:: harmonic_mean(data)
+.. function:: harmonic_mean(data, weights=None)
 
    Return the harmonic mean of *data*, a sequence or iterable of
-   real-valued numbers.
+   real-valued numbers.  If *weights* is omitted or *None*, then
+   equal weighting is assumed.
 
    The harmonic mean, sometimes called the subcontrary mean, is the
    reciprocal of the arithmetic :func:`mean` of the reciprocals of the
@@ -179,17 +180,17 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> harmonic_mean([40, 60])
       48.0
 
-   Suppose an investor purchases an equal value of shares in each of
-   three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
-   What is the average P/E ratio for the investor's portfolio?
+   Suppose a car travels 40 km/hr for 5 km, and when traffic clears,
+   speeds-up to 60 km/hr for the remaining 30 km of the journey. What
+   is the average speed?
 
    .. doctest::
 
-      >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
-      3.6
+      >>> harmonic_mean([40, 60], weights=[5, 30])
+      56.0
 
-   :exc:`StatisticsError` is raised if *data* is empty, or any element
-   is less than zero.
+   :exc:`StatisticsError` is raised if *data* is empty, any element
+   is less than zero, or if the weighted sum isn't positive.
 
    The current algorithm has an early-out when it encounters a zero
    in the input.  This means that the subsequent inputs are not tested
@@ -197,6 +198,8 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.6
 
+   .. versionchanged:: 3.10
+      Added support for *weights*.
 
 .. function:: median(data)
 
@@ -696,6 +699,16 @@ of applications in statistics.
         Set *n* to 100 for percentiles which gives the 99 cuts points that
         separate the normal distribution into 100 equal sized groups.
 
+    .. method:: NormalDist.zscore(x)
+
+        Compute the
+        `Standard Score <https://www.statisticshowto.com/probability-and-statistics/z-score/>`_
+        describing *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution:
+        ``(x - mean) / stdev``.
+
+        .. versionadded:: 3.9
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
@@ -734,10 +747,10 @@ of applications in statistics.
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
-<https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
-are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with test scores between 1100 and
-1200, after rounding to the nearest whole number:
+<https://nces.ed.gov/programs/digest/d17/tables/dt17_226.40.asp>`_ showing
+that scores are normally distributed with a mean of 1060 and a standard
+deviation of 195, determine the percentage of students with test scores
+between 1100 and 1200, after rounding to the nearest whole number:
 
 .. doctest::
 
@@ -771,6 +784,42 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
+
+Normal distributions can be used to approximate `Binomial
+distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+when the sample size is large and when the probability of a successful
+trial is near 50%.
+
+For example, an open source conference has 750 attendees and two rooms with a
+500 person capacity.  There is a talk about Python and another about Ruby.
+In previous conferences, 65% of the attendees preferred to listen to Python
+talks.  Assuming the population preferences haven't changed, what is the
+probability that the Python room will stay within its capacity limits?
+
+.. doctest::
+
+    >>> n = 750             # Sample size
+    >>> p = 0.65            # Preference for Python
+    >>> q = 1.0 - p         # Preference for Ruby
+    >>> k = 500             # Room capacity
+
+    >>> # Approximation using the cumulative normal distribution
+    >>> from math import sqrt
+    >>> round(NormalDist(mu=n*p, sigma=sqrt(n*p*q)).cdf(k + 0.5), 4)
+    0.8402
+
+    >>> # Solution using the cumulative binomial distribution
+    >>> from math import comb, fsum
+    >>> round(fsum(comb(n, r) * p**r * q**(n-r) for r in range(k+1)), 4)
+    0.8402
+
+    >>> # Approximation using a simulation
+    >>> from random import seed, choices
+    >>> seed(8675309)
+    >>> def trial():
+    ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    >>> mean(trial() <= k for i in range(10_000))
+    0.8398
 
 Normal distributions commonly arise in machine learning problems.
 

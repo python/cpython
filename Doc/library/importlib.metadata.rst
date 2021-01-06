@@ -77,7 +77,9 @@ Entry points
 The ``entry_points()`` function returns a dictionary of all entry points,
 keyed by group.  Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
-a ``.load()`` method to resolve the value.
+a ``.load()`` method to resolve the value.  There are also ``.module``,
+``.attr``, and ``.extras`` attributes for getting the components of the
+``.value`` attribute::
 
     >>> eps = entry_points()  # doctest: +SKIP
     >>> list(eps)  # doctest: +SKIP
@@ -86,6 +88,12 @@ a ``.load()`` method to resolve the value.
     >>> wheel = [ep for ep in scripts if ep.name == 'wheel'][0]  # doctest: +SKIP
     >>> wheel  # doctest: +SKIP
     EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')
+    >>> wheel.module  # doctest: +SKIP
+    'wheel.cli'
+    >>> wheel.attr  # doctest: +SKIP
+    'main'
+    >>> wheel.extras  # doctest: +SKIP
+    []
     >>> main = wheel.load()  # doctest: +SKIP
     >>> main  # doctest: +SKIP
     <function main at 0x103528488>
@@ -94,7 +102,7 @@ The ``group`` and ``name`` are arbitrary values defined by the package author
 and usually a client will wish to resolve all entry points for a particular
 group.  Read `the setuptools docs
 <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
-for more information on entrypoints, their definition, and usage.
+for more information on entry points, their definition, and usage.
 
 
 .. _metadata:
@@ -107,8 +115,9 @@ Every distribution includes some metadata, which you can extract using the
 
     >>> wheel_metadata = metadata('wheel')  # doctest: +SKIP
 
-The keys of the returned data structure [#f1]_ name the metadata keywords, and
-their values are returned unparsed from the distribution metadata::
+The keys of the returned data structure, a ``PackageMetadata``,
+name the metadata keywords, and
+the values are returned unparsed from the distribution metadata::
 
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
@@ -198,9 +207,9 @@ Thus, an alternative way to get the version number is through the
 There are all kinds of additional metadata available on the ``Distribution``
 instance::
 
-    >>> d.metadata['Requires-Python']  # doctest: +SKIP
+    >>> dist.metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
-    >>> d.metadata['License']  # doctest: +SKIP
+    >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
 The full set of available metadata is not described here.  See :pep:`566`
@@ -235,7 +244,7 @@ method::
         """
 
 The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
-properties indicating the path to search and names to match and may
+properties indicating the path to search and name to match and may
 supply other relevant context.
 
 What this means in practice is that to support finding distribution package
@@ -251,9 +260,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 
 
 .. rubric:: Footnotes
-
-.. [#f1] Technically, the returned distribution metadata object is an
-         :class:`email.message.EmailMessage`
-         instance, but this is an implementation detail, and not part of the
-         stable API.  You should only use dictionary-like methods and syntax
-         to access the metadata contents.

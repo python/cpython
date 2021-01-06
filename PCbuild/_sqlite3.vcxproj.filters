@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{814b187d-44ad-4f2b-baa7-18ca8a8a6a77}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{225f58de-2bad-4e4d-bc0b-fe74ed6bf5f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_sqlite\cache.h">
@@ -65,5 +68,10 @@
     <ClCompile Include="..\Modules\_sqlite\util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

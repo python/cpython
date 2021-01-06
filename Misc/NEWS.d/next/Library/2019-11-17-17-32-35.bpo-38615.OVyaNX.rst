@@ -1,5 +1,0 @@
-:class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now have an 
-optional *timeout* parameter for their constructors. 
-Also, the :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
-with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
-:class:`~imaplib.IMAP4_stream` were applied to this change. Patch by Dong-hee Na.

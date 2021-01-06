@@ -21,8 +21,7 @@ try:
 except ImportError:
     pass
 
-cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is',
-        'is not', 'exception match', 'BAD')
+cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hasconst = []
 hasname = []
@@ -84,7 +83,6 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
-def_op('RERAISE', 48)
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
 def_op('GET_ANEXT', 51)
@@ -118,6 +116,7 @@ def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
 
+def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
@@ -159,6 +158,11 @@ jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
+def_op('IS_OP', 117)
+def_op('CONTAINS_OP', 118)
+def_op('RERAISE', 119)
+
+jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 jrel_op('SETUP_FINALLY', 122)   # Distance to target address
 
 def_op('LOAD_FAST', 124)        # Local variable number
@@ -196,20 +200,18 @@ hasfree.append(148)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 
-def_op('BUILD_LIST_UNPACK', 149)
-def_op('BUILD_MAP_UNPACK', 150)
-def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
-def_op('BUILD_TUPLE_UNPACK', 152)
-def_op('BUILD_SET_UNPACK', 153)
-
 jrel_op('SETUP_ASYNC_WITH', 154)
 
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
-def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
+
+def_op('LIST_EXTEND', 162)
+def_op('SET_UPDATE', 163)
+def_op('DICT_MERGE', 164)
+def_op('DICT_UPDATE', 165)
 
 del def_op, name_op, jrel_op, jabs_op
