@@ -510,16 +510,25 @@ remove_unusable_flags(PyObject *m)
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
-/* Global variable holding the exception type for errors detected
-   by this module (but not argument type or memory errors, etc.). */
-static PyObject *socket_herror;
-static PyObject *socket_gaierror;
+typedef struct {
+    /* Variable holding the exception type for errors detected
+       by this module (but not argument type or memory errors, etc.). */
+    PyObject *socket_herror;
+    PyObject *socket_gaierror;
 
-/* A forward reference to the socket type object.
-   The sock_type variable contains pointers to various functions,
-   some of which call new_sockobject(), which uses sock_type, so
-   there has to be a circular reference. */
-static PyTypeObject *sock_type;
+    /* The sock_type variable contains pointers to various functions,
+       some of which call new_sockobject(), which uses sock_type, so
+       there has to be a circular reference. */
+    PyTypeObject *sock_type;
+} socket_state;
+
+static socket_state global_state;
+
+socket_state *
+socket_get_state(void)
+{
+    return &global_state;
+}
 
 #if defined(HAVE_POLL_H)
 #include <poll.h>
@@ -619,7 +628,8 @@ set_herror(int h_error)
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
     if (v != NULL) {
-        PyErr_SetObject(socket_herror, v);
+        socket_state *state = socket_get_state();
+        PyErr_SetObject(state->socket_herror, v);
         Py_DECREF(v);
     }
 
@@ -644,7 +654,8 @@ set_gaierror(int error)
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
     if (v != NULL) {
-        PyErr_SetObject(socket_gaierror, v);
+        socket_state *state = socket_get_state();
+        PyErr_SetObject(state->socket_gaierror, v);
         Py_DECREF(v);
     }
 
@@ -1008,8 +1019,9 @@ static PySocketSockObject *
 new_sockobject(SOCKET_T fd, int family, int type, int proto)
 {
     PySocketSockObject *s;
+    socket_state *state = socket_get_state();
     s = (PySocketSockObject *)
-        PyType_GenericNew(sock_type, NULL, NULL);
+        PyType_GenericNew(state->sock_type, NULL, NULL);
     if (s == NULL)
         return NULL;
     if (init_sockobject(s, fd, family, type, proto) == -1) {
@@ -5340,8 +5352,6 @@ static PyType_Spec sock_spec = {
     .slots = sock_slots,
 };
 
-static PyTypeObject *sock_type;
-
 
 /* Python interface to gethostname(). */
 
@@ -7034,7 +7044,8 @@ sock_get_api(void)
         return NULL;
     }
 
-    capi->Sock_Type = (PyTypeObject *)Py_NewRef(sock_type);
+    socket_state *state = socket_get_state();
+    capi->Sock_Type = (PyTypeObject *)Py_NewRef(state->sock_type);
     capi->error = Py_NewRef(PyExc_OSError);
     capi->timeout_error = Py_NewRef(PyExc_TimeoutError);
     return capi;
@@ -7086,36 +7097,37 @@ PyInit__socket(void)
     if (m == NULL)
         return NULL;
 
-    sock_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &sock_spec, NULL);
-    if (!sock_type) {
+    socket_state *state = socket_get_state();
+    state->sock_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &sock_spec, NULL);
+    if (!state->sock_type) {
         Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
-    socket_herror = PyErr_NewException("socket.herror",
+    state->socket_herror = PyErr_NewException("socket.herror",
                                        PyExc_OSError, NULL);
-    if (socket_herror == NULL)
+    if (state->socket_herror == NULL)
         return NULL;
-    Py_INCREF(socket_herror);
-    PyModule_AddObject(m, "herror", socket_herror);
-    socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
+    Py_INCREF(state->socket_herror);
+    PyModule_AddObject(m, "herror", state->socket_herror);
+    state->socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
         NULL);
-    if (socket_gaierror == NULL)
+    if (state->socket_gaierror == NULL)
         return NULL;
-    Py_INCREF(socket_gaierror);
-    PyModule_AddObject(m, "gaierror", socket_gaierror);
+    Py_INCREF(state->socket_gaierror);
+    PyModule_AddObject(m, "gaierror", state->socket_gaierror);
     PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
 
-    Py_INCREF(sock_type);
-    if (PyModule_AddObject(m, "SocketType", (PyObject *)sock_type) < 0) {
-        Py_CLEAR(sock_type);
+    Py_INCREF(state->sock_type);
+    if (PyModule_AddObject(m, "SocketType", (PyObject *)state->sock_type) < 0) {
+        Py_CLEAR(state->sock_type);
         return NULL;
     }
-    Py_INCREF((PyObject *)sock_type);
-    if (PyModule_AddObject(m, "socket", (PyObject *)sock_type) < 0) {
-        Py_CLEAR(sock_type);
+    Py_INCREF((PyObject *)state->sock_type);
+    if (PyModule_AddObject(m, "socket", (PyObject *)state->sock_type) < 0) {
+        Py_CLEAR(state->sock_type);
         return NULL;
     }
 
