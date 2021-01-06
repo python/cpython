@@ -176,18 +176,6 @@ static char *screen_encoding = NULL;
 
 /* Utility Functions */
 
-static inline int
-color_pair_to_attr(short color_number)
-{
-    return ((int)color_number << 8);
-}
-
-static inline short
-attr_to_color_pair(int attr)
-{
-    return (short)((attr & A_COLOR) >> 8);
-}
-
 /*
  * Check the return code from a curses function and return None
  * or raise an exception as appropriate.  These are exported using the
@@ -618,7 +606,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 2) {
         funcname = "add_wch";
         wstr[1] = L'\0';
-        setcchar(&wcval, wstr, attr, attr_to_color_pair(attr), NULL);
+        setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
         if (coordinates_group)
             rtn = mvwadd_wch(self->win,y,x, &wcval);
         else {
@@ -2586,7 +2574,7 @@ NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 _curses.color_content
 
     color_number: short
-        The number of the color (0 - COLORS).
+        The number of the color (0 - (COLORS-1)).
     /
 
 Return the red, green, and blue (RGB) components of the specified color.
@@ -2597,27 +2585,32 @@ which will be between 0 (no component) and 1000 (maximum amount of component).
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=cb15cf3120d4bfc1 input=5555abb1c11e11b7]*/
+/*[clinic end generated code: output=cb15cf3120d4bfc1 input=630f6737514db6ad]*/
 {
     short r,g,b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (color_content(color_number, &r, &g, &b) != ERR)
-        return Py_BuildValue("(iii)", r, g, b);
-    else {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. Check value of COLORS.");
+    if (color_content(color_number, &r, &g, &b) == ERR) {
+        if (color_number >= COLORS) {
+            PyErr_SetString(PyCursesError,
+                            "Argument 1 was out of range. Check value of COLORS.");
+        }
+        else {
+            PyErr_SetString(PyCursesError, "color_content() returned ERR");
+        }
         return NULL;
     }
+
+    return Py_BuildValue("(iii)", r, g, b);
 }
 
 /*[clinic input]
 _curses.color_pair
 
-    color_number: short
-        The number of the color (0 - COLORS).
+    pair_number: short
+        The number of the color pair.
     /
 
 Return the attribute value for displaying text in the specified color.
@@ -2627,13 +2620,13 @@ other A_* attributes.  pair_number() is the counterpart to this function.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=6a84cb6b29ecaf9a input=a9d3eb6f50e4dc12]*/
+_curses_color_pair_impl(PyObject *module, short pair_number)
+/*[clinic end generated code: output=ce609d238b70dc11 input=8dd0d5da94cb15b5]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return  PyLong_FromLong(color_pair_to_attr(color_number));
+    return  PyLong_FromLong(COLOR_PAIR(pair_number));
 }
 
 /*[clinic input]
@@ -3028,7 +3021,7 @@ _curses_has_key_impl(PyObject *module, int key)
 _curses.init_color
 
     color_number: short
-        The number of the color to be changed (0 - COLORS).
+        The number of the color to be changed (0 - (COLORS-1)).
     r: short
         Red component (0 - 1000).
     g: short
@@ -3041,13 +3034,13 @@ Change the definition of a color.
 
 When init_color() is used, all occurrences of that color on the screen
 immediately change to the new definition.  This function is a no-op on
-most terminals; it is active only if can_change_color() returns 1.
+most terminals; it is active only if can_change_color() returns true.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_init_color_impl(PyObject *module, short color_number, short r,
                         short g, short b)
-/*[clinic end generated code: output=280236f5efe9776a input=f3a05bd38f619175]*/
+/*[clinic end generated code: output=280236f5efe9776a input=128601b5dc76d548]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
@@ -3061,9 +3054,9 @@ _curses.init_pair
     pair_number: short
         The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).
     fg: short
-        Foreground color number (0 - COLORS).
+        Foreground color number (-1 - (COLORS-1)).
     bg: short
-        Background color number (0 - COLORS).
+        Background color number (-1 - (COLORS-1)).
     /
 
 Change the definition of a color-pair.
@@ -3075,7 +3068,7 @@ all occurrences of that color-pair are changed to the new definition.
 static PyObject *
 _curses_init_pair_impl(PyObject *module, short pair_number, short fg,
                        short bg)
-/*[clinic end generated code: output=9c2ce39c22f376b6 input=c9f0b11b17a2ac6d]*/
+/*[clinic end generated code: output=9c2ce39c22f376b6 input=12c320ec14396ea2]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
@@ -3713,9 +3706,14 @@ _curses_pair_content_impl(PyObject *module, short pair_number)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (pair_content(pair_number, &f, &b)==ERR) {
-        PyErr_SetString(PyCursesError,
-                        "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
+    if (pair_content(pair_number, &f, &b) == ERR) {
+        if (pair_number >= COLOR_PAIRS) {
+            PyErr_SetString(PyCursesError,
+                            "Argument 1 was out of range. (0..COLOR_PAIRS-1)");
+        }
+        else {
+            PyErr_SetString(PyCursesError, "pair_content() returned ERR");
+        }
         return NULL;
     }
 
@@ -3740,7 +3738,7 @@ _curses_pair_number_impl(PyObject *module, int attr)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyLong_FromLong(attr_to_color_pair(attr));
+    return PyLong_FromLong(PAIR_NUMBER(attr));
 }
 
 /*[clinic input]

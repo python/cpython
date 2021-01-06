@@ -210,7 +210,7 @@ is :meth:`loop.run_in_executor`.
 Running an asyncio Program
 ==========================
 
-.. function:: run(coro, \*, debug=False)
+.. function:: run(coro, *, debug=False)
 
     Execute the :term:`coroutine` *coro* and return the result.
 
@@ -247,7 +247,7 @@ Running an asyncio Program
 Creating Tasks
 ==============
 
-.. function:: create_task(coro, \*, name=None)
+.. function:: create_task(coro, *, name=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
@@ -283,7 +283,7 @@ Creating Tasks
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
+.. coroutinefunction:: sleep(delay, result=None, *, loop=None)
 
    Block for *delay* seconds.
 
@@ -319,7 +319,7 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. awaitablefunction:: gather(\*aws, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(*aws, loop=None, return_exceptions=False)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence *concurrently*.
@@ -403,7 +403,7 @@ Running Tasks Concurrently
 Shielding From Cancellation
 ===========================
 
-.. awaitablefunction:: shield(aw, \*, loop=None)
+.. awaitablefunction:: shield(aw, *, loop=None)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
@@ -443,7 +443,7 @@ Shielding From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: wait_for(aw, timeout, \*, loop=None)
+.. coroutinefunction:: wait_for(aw, timeout, *, loop=None)
 
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
@@ -500,14 +500,14 @@ Timeouts
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, \*, loop=None, timeout=None,\
+.. coroutinefunction:: wait(aws, *, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently and block until the condition specified
+   iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* set must not be empty.
+   The *aws* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -590,12 +590,12 @@ Waiting Primitives
       deprecated.
 
 
-.. function:: as_completed(aws, \*, loop=None, timeout=None)
+.. function:: as_completed(aws, *, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of coroutines.
+   iterable concurrently.  Return an iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
-   result from the set of the remaining awaitables.
+   result from the iterable of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -613,12 +613,12 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, \*args, \*\*kwargs)
+.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
 
    Asynchronously run function *func* in a separate thread.
 
    Any \*args and \*\*kwargs supplied for this function are directly passed
-   to *func*. Also, the current :class:`contextvars.Context` is propogated,
+   to *func*. Also, the current :class:`contextvars.Context` is propagated,
    allowing context variables from the event loop thread to be accessed in the
    separate thread.
 
@@ -743,7 +743,7 @@ Introspection
 Task Object
 ===========
 
-.. class:: Task(coro, \*, loop=None, name=None)
+.. class:: Task(coro, *, loop=None, name=None)
 
    A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
@@ -909,7 +909,7 @@ Task Object
       See the documentation of :meth:`Future.remove_done_callback`
       for more details.
 
-   .. method:: get_stack(\*, limit=None)
+   .. method:: get_stack(*, limit=None)
 
       Return the list of stack frames for this Task.
 
@@ -930,7 +930,7 @@ Task Object
       stack are returned, but the oldest frames of a traceback are
       returned.  (This matches the behavior of the traceback module.)
 
-   .. method:: print_stack(\*, limit=None, file=None)
+   .. method:: print_stack(*, limit=None, file=None)
 
       Print the stack or traceback for this Task.
 

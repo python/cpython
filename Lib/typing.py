@@ -118,6 +118,15 @@ __all__ = [
 # legitimate imports of those modules.
 
 
+def _type_convert(arg):
+    """For converting None to type(None), and strings to ForwardRef."""
+    if arg is None:
+        return type(None)
+    if isinstance(arg, str):
+        return ForwardRef(arg)
+    return arg
+
+
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
 
@@ -134,10 +143,7 @@ def _type_check(arg, msg, is_argument=True):
     if is_argument:
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
-    if arg is None:
-        return type(None)
-    if isinstance(arg, str):
-        return ForwardRef(arg)
+    arg = _type_convert(arg)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -160,6 +166,8 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
+    if isinstance(obj, types.GenericAlias):
+        return repr(obj)
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
@@ -198,6 +206,20 @@ def _check_generic(cls, parameters, elen):
                         f" actual {alen}, expected {elen}")
 
 
+def _deduplicate(params):
+    # Weed out strict duplicates, preserving the first of each occurrence.
+    all_params = set(params)
+    if len(all_params) < len(params):
+        new_params = []
+        for t in params:
+            if t in all_params:
+                new_params.append(t)
+                all_params.remove(t)
+        params = new_params
+        assert not all_params, all_params
+    return params
+
+
 def _remove_dups_flatten(parameters):
     """An internal helper for Union creation and substitution: flatten Unions
     among parameters, then remove duplicates.
@@ -211,38 +233,45 @@ def _remove_dups_flatten(parameters):
             params.extend(p[1:])
         else:
             params.append(p)
-    # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
+
+    return tuple(_deduplicate(params))
+
+
+def _flatten_literal_params(parameters):
+    """An internal helper for Literal creation: flatten Literals among parameters"""
+    params = []
+    for p in parameters:
+        if isinstance(p, _LiteralGenericAlias):
+            params.extend(p.__args__)
+        else:
+            params.append(p)
     return tuple(params)
 
 
 _cleanups = []
 
 
-def _tp_cache(func):
+def _tp_cache(func=None, /, *, typed=False):
     """Internal wrapper caching __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
-    cached = functools.lru_cache()(func)
-    _cleanups.append(cached.cache_clear)
+    def decorator(func):
+        cached = functools.lru_cache(typed=typed)(func)
+        _cleanups.append(cached.cache_clear)
 
-    @functools.wraps(func)
-    def inner(*args, **kwds):
-        try:
-            return cached(*args, **kwds)
-        except TypeError:
-            pass  # All real errors (not unhashable args) are raised below.
-        return func(*args, **kwds)
-    return inner
+        @functools.wraps(func)
+        def inner(*args, **kwds):
+            try:
+                return cached(*args, **kwds)
+            except TypeError:
+                pass  # All real errors (not unhashable args) are raised below.
+            return func(*args, **kwds)
+        return inner
 
+    if func is not None:
+        return decorator(func)
+
+    return decorator
 
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
@@ -314,6 +343,13 @@ class _SpecialForm(_Final, _root=True):
     @_tp_cache
     def __getitem__(self, parameters):
         return self._getitem(self, parameters)
+
+
+class _LiteralSpecialForm(_SpecialForm, _root=True):
+    @_tp_cache(typed=True)
+    def __getitem__(self, parameters):
+        return self._getitem(self, parameters)
+
 
 @_SpecialForm
 def Any(self, parameters):
@@ -432,7 +468,7 @@ def Optional(self, parameters):
     arg = _type_check(parameters, f"{self} requires a single type.")
     return Union[arg, type(None)]
 
-@_SpecialForm
+@_LiteralSpecialForm
 def Literal(self, parameters):
     """Special typing form to define literal types (a.k.a. value types).
 
@@ -456,7 +492,17 @@ def Literal(self, parameters):
     """
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
-    return _GenericAlias(self, parameters)
+    if not isinstance(parameters, tuple):
+        parameters = (parameters,)
+
+    parameters = _flatten_literal_params(parameters)
+
+    try:
+        parameters = tuple(p for p, _ in _deduplicate(list(_value_and_type_iter(parameters))))
+    except TypeError:  # unhashable parameters
+        pass
+
+    return _LiteralGenericAlias(self, parameters)
 
 
 class ForwardRef(_Final, _root=True):
@@ -819,13 +865,13 @@ class _CallableType(_SpecialGenericAlias, _root=True):
             raise TypeError("Callable must be used as "
                             "Callable[[arg, ...], result].")
         args, result = params
-        if args is Ellipsis:
-            params = (Ellipsis, result)
-        else:
-            if not isinstance(args, list):
-                raise TypeError(f"Callable[args, result]: args must be a list."
-                                f" Got {args}")
+        # This relaxes what args can be on purpose to allow things like
+        # PEP 612 ParamSpec.  Responsibility for whether a user is using
+        # Callable[...] properly is deferred to static type checkers.
+        if isinstance(args, list):
             params = (tuple(args), result)
+        else:
+            params = (args, result)
         return self.__getitem_inner__(params)
 
     @_tp_cache
@@ -835,8 +881,9 @@ class _CallableType(_SpecialGenericAlias, _root=True):
         result = _type_check(result, msg)
         if args is Ellipsis:
             return self.copy_with((_TypingEllipsis, result))
-        msg = "Callable[[arg, ...], result]: each arg must be a type."
-        args = tuple(_type_check(arg, msg) for arg in args)
+        if not isinstance(args, tuple):
+            args = (args,)
+        args = tuple(_type_convert(arg) for arg in args)
         params = args + (result,)
         return self.copy_with(params)
 
@@ -877,6 +924,22 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
             elif args[1] is type(None):
                 return f'typing.Optional[{_type_repr(args[0])}]'
         return super().__repr__()
+
+
+def _value_and_type_iter(parameters):
+    return ((p, type(p)) for p in parameters)
+
+
+class _LiteralGenericAlias(_GenericAlias, _root=True):
+
+    def __eq__(self, other):
+        if not isinstance(other, _LiteralGenericAlias):
+            return NotImplemented
+
+        return set(_value_and_type_iter(self.__args__)) == set(_value_and_type_iter(other.__args__))
+
+    def __hash__(self):
+        return hash(frozenset(_value_and_type_iter(self.__args__)))
 
 
 class Generic:
@@ -1444,13 +1507,11 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, _GenericAlias):
+    if isinstance(tp, (_GenericAlias, GenericAlias)):
         res = tp.__args__
         if tp.__origin__ is collections.abc.Callable and res[0] is not Ellipsis:
             res = (list(res[:-1]), res[-1])
         return res
-    if isinstance(tp, GenericAlias):
-        return tp.__args__
     return ()
 
 
@@ -1924,14 +1985,14 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
 
-    ns = {'__annotations__': dict(fields), '__total__': total}
+    ns = {'__annotations__': dict(fields)}
     try:
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
         pass
 
-    return _TypedDictMeta(typename, (), ns)
+    return _TypedDictMeta(typename, (), ns, total=total)
 
 _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)

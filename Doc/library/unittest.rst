@@ -593,8 +593,9 @@ The following decorators and exception implement test skipping and expected fail
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails it will be
-   considered a success.  If the test passes, it will be considered a failure.
+   Mark the test as an expected failure or error.  If the test fails or errors
+   it will be considered a success.  If the test passes, it will be considered
+   a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -896,8 +897,7 @@ Test cases
    .. method:: assertIs(first, second, msg=None)
                assertIsNot(first, second, msg=None)
 
-      Test that *first* and *second* evaluate (or don't evaluate) to the
-      same object.
+      Test that *first* and *second* are (or are not) the same object.
 
       .. versionadded:: 3.1
 
@@ -1946,7 +1946,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks.  Each tuple represents an expected failure
-      of the test case.
+      or error of the test case.
 
    .. attribute:: unexpectedSuccesses
 
@@ -2072,8 +2072,8 @@ Loading and running tests
 
    .. method:: addExpectedFailure(test, err)
 
-      Called when the test case *test* fails, but was marked with the
-      :func:`expectedFailure` decorator.
+      Called when the test case *test* fails or errors, but was marked with
+      the :func:`expectedFailure` decorator.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`expectedFailures` attribute, where *formatted_err*

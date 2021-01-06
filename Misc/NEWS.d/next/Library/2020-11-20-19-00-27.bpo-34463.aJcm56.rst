@@ -1,0 +1,1 @@
+Fixed discrepancy between :mod:`traceback` and the interpreter in formatting of SyntaxError with lineno not set (:mod:`traceback` was changed to match interpreter).

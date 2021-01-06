@@ -196,6 +196,28 @@ class ProcessTestCase(BaseTestCase):
                 input=b'pear')
         self.assertIn(b'PEAR', output)
 
+    def test_check_output_input_none(self):
+        """input=None has a legacy meaning of input='' on check_output."""
+        output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; print('XX' if sys.stdin.read() else '')"],
+                input=None)
+        self.assertNotIn(b'XX', output)
+
+    def test_check_output_input_none_text(self):
+        output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; print('XX' if sys.stdin.read() else '')"],
+                input=None, text=True)
+        self.assertNotIn('XX', output)
+
+    def test_check_output_input_none_universal_newlines(self):
+        output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; print('XX' if sys.stdin.read() else '')"],
+                input=None, universal_newlines=True)
+        self.assertNotIn('XX', output)
+
     def test_check_output_stdout_arg(self):
         # check_output() refuses to accept 'stdout' argument
         with self.assertRaises(ValueError) as c:
@@ -3159,6 +3181,19 @@ class POSIXProcessTestCase(BaseTestCase):
         # Don't check the returncode value: the test reads the exit status,
         # so Popen failed to read it and uses a default returncode instead.
         self.assertIsNotNone(proc.returncode)
+
+    def test_send_signal_race2(self):
+        # bpo-40550: the process might exist between the returncode check and
+        # the kill operation
+        p = subprocess.Popen([sys.executable, '-c', 'exit(1)'])
+
+        # wait for process to exit
+        while not p.returncode:
+            p.poll()
+
+        with mock.patch.object(p, 'poll', new=lambda: None):
+            p.returncode = None
+            p.send_signal(signal.SIGTERM)
 
     def test_communicate_repeated_call_after_stdout_close(self):
         proc = subprocess.Popen([sys.executable, '-c',

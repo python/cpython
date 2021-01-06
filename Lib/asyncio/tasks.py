@@ -373,7 +373,7 @@ ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures and coroutines given by fs to complete.
 
-    The sequence futures must not be empty.
+    The fs iterable must not be empty.
 
     Coroutines will be wrapped in Tasks.
 
@@ -400,13 +400,15 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
                       "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
-    if any(coroutines.iscoroutine(f) for f in set(fs)):
+    fs = set(fs)
+
+    if any(coroutines.iscoroutine(f) for f in fs):
         warnings.warn("The explicit passing of coroutine objects to "
                       "asyncio.wait() is deprecated since Python 3.8, and "
                       "scheduled for removal in Python 3.11.",
                       DeprecationWarning, stacklevel=2)
 
-    fs = {ensure_future(f, loop=loop) for f in set(fs)}
+    fs = {ensure_future(f, loop=loop) for f in fs}
 
     return await _wait(fs, timeout, return_when, loop)
 
@@ -469,7 +471,10 @@ async def wait_for(fut, timeout, *, loop=None):
                 return fut.result()
             else:
                 fut.remove_done_callback(cb)
-                fut.cancel()
+                # We must ensure that the task is not running
+                # after wait_for() returns.
+                # See https://bugs.python.org/issue32751
+                await _cancel_and_wait(fut, loop=loop)
                 raise
 
         if fut.done():
@@ -573,7 +578,7 @@ def as_completed(fs, *, loop=None, timeout=None):
     Note: The futures 'f' are not necessarily members of fs.
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
+        raise TypeError(f"expect an iterable of futures, not {type(fs).__name__}")
 
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue(loop=loop)

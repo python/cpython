@@ -1,0 +1,150 @@
+.. bpo: 42576
+.. date: 2020-12-05-22-34-47
+.. nonce: lEeEl7
+.. release date: 2020-12-07
+.. section: Core and Builtins
+
+``types.GenericAlias`` will now raise a ``TypeError`` when attempting to
+initialize with a keyword argument.  Previously, this would cause the
+interpreter to crash if the interpreter was compiled with debug symbols.
+This does not affect interpreters compiled for release.  Patch by Ken Jin.
+
+..
+
+.. bpo: 5054
+.. date: 2020-12-04-03-51-12
+.. nonce: 53StYZ
+.. section: Library
+
+CGIHTTPRequestHandler.run_cgi() HTTP_ACCEPT improperly parsed. Replace the
+special purpose getallmatchingheaders with generic get_all method and add
+relevant tests.
+
+Original Patch by Martin Panter. Modified by Senthil Kumaran.
+
+..
+
+.. bpo: 17735
+.. date: 2020-12-03-22-22-24
+.. nonce: Qsaaue
+.. section: Library
+
+:func:`inspect.findsource` now raises :exc:`OSError` instead of
+:exc:`IndexError` when :attr:`co_lineno` of a code object is greater than
+the file length. This can happen, for example, when a file is edited after
+it was imported.  PR by Irit Katriel.
+
+..
+
+.. bpo: 42116
+.. date: 2020-12-03-15-42-32
+.. nonce: yIwroP
+.. section: Library
+
+Fix handling of trailing comments by :func:`inspect.getsource`.
+
+..
+
+.. bpo: 42487
+.. date: 2020-11-28-04-31-20
+.. nonce: iqtC4L
+.. section: Library
+
+ChainMap.__iter__ no longer calls __getitem__ on underlying maps
+
+..
+
+.. bpo: 42482
+.. date: 2020-11-27-16-46-58
+.. nonce: EJC3sd
+.. section: Library
+
+:class:`~traceback.TracebackException` no longer holds a reference to the
+exception's traceback object. Consequently, instances of TracebackException
+for equivalent but non-equal exceptions now compare as equal.
+
+..
+
+.. bpo: 42406
+.. date: 2020-11-19-10-44-41
+.. nonce: r9rNCj
+.. section: Library
+
+We fixed an issue in `pickle.whichmodule` in which importing
+`multiprocessing` could change the how pickle identifies which module an
+object belongs to, potentially breaking the unpickling of those objects.
+
+..
+
+.. bpo: 34215
+.. date: 2020-08-19-20-17-51
+.. nonce: _Cv8c-
+.. section: Library
+
+Clarify the error message for :exc:`asyncio.IncompleteReadError` when
+``expected`` is ``None``.
+
+..
+
+.. bpo: 12800
+.. date: 2020-07-09-11-32-28
+.. nonce: fNgWwx
+.. section: Library
+
+Extracting a symlink from a tarball should succeed and overwrite the symlink
+if it already exists. The fix is to remove the existing file or symlink
+before extraction. Based on patch by Chris AtLee, Jeffrey Kintscher, and
+Senthil Kumaran.
+
+..
+
+.. bpo: 41473
+.. date: 2020-12-04-11-47-09
+.. nonce: W_updK
+.. section: Tests
+
+Reenable test_gdb on gdb 9.2 and newer:
+https://bugzilla.redhat.com/show_bug.cgi?id=1866884 bug is fixed in gdb
+10.1.
+
+..
+
+.. bpo: 42553
+.. date: 2020-12-03-13-32-44
+.. nonce: 2TRE2N
+.. section: Tests
+
+Fix ``test_asyncio.test_call_later()`` race condition: don't measure asyncio
+performance in the ``call_later()`` unit test. The test failed randomly on
+the CI.
+
+..
+
+.. bpo: 41116
+.. date: 2020-12-04-23-09-11
+.. nonce: mSbXyV
+.. section: macOS
+
+If no explicit macOS SDK was specified, setup.py should check for Tcl and TK
+frameworks in /Library/Frameworks; the previous commit inadvertently broke
+that test.
+
+..
+
+.. bpo: 42504
+.. date: 2020-12-02-15-48-40
+.. nonce: RQmMOR
+.. section: macOS
+
+Fix build on macOS Big Sur when MACOSX_DEPLOYMENT_TARGET=11
+
+..
+
+.. bpo: 42508
+.. date: 2020-11-30-19-46-05
+.. nonce: fE7w4M
+.. section: IDLE
+
+Keep IDLE running on macOS.  Remove obsolete workaround that prevented
+running files with shortcuts when using new universal2 installers built on
+macOS 11.

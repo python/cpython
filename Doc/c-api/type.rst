@@ -23,12 +23,14 @@ Type Objects
 
    Return non-zero if the object *o* is a type object, including instances of
    types derived from the standard type object.  Return 0 in all other cases.
+   This function always succeeds.
 
 
 .. c:function:: int PyType_CheckExact(PyObject *o)
 
-   Return non-zero if the object *o* is a type object, but not a subtype of the
-   standard type object.  Return 0 in all other cases.
+   Return non-zero if the object *o* is a type object, but not a subtype of
+   the standard type object.  Return 0 in all other cases.  This function
+   always succeeds.
 
 
 .. c:function:: unsigned int PyType_ClearCache()
@@ -155,7 +157,8 @@ The following functions and structs are used to create
    If *bases* is a tuple, the created heap type contains all types contained
    in it as base types.
 
-   If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
+   If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
+   If that also is ``NULL``, the *Py_tp_base* slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
    The *module* argument can be used to record the module in which the new
@@ -247,7 +250,8 @@ The following functions and structs are used to create
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 
-      Setting :c:data:`Py_tp_bases` may be problematic on some platforms.
+      Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
+      problematic on some platforms.
       To avoid issues, use the *bases* argument of
       :py:func:`PyType_FromSpecWithBases` instead.
 

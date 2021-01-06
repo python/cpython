@@ -3,6 +3,18 @@ Released on 2020-12-07?
 ======================================
 
 
+bpo-32631: Finish zzdummy example extension module: make menu entries
+work; add docstrings and tests with 100% coverage.
+
+bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
+that prevented running files with shortcuts when using new universal2
+installers built on macOS 11.
+
+bpo-42426: Fix reporting offset of the RE error in searchengine.
+
+bpo-42416: Get docstrings for IDLE calltips more often
+by using inspect.getdoc.
+
 bpo-33987: Mostly finish using ttk widgets, mainly for editor,
 settings, and searches.  Some patches by Mark Roseman.
 

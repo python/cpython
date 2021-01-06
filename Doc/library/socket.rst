@@ -56,12 +56,12 @@ created.  Socket addresses are represented as follows:
   bytes-like object can be used for either type of address when
   passing it as an argument.
 
-   .. versionchanged:: 3.3
-      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
-      encoding.
+  .. versionchanged:: 3.3
+     Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+     encoding.
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+  .. versionchanged:: 3.5
+     Writable :term:`bytes-like object` is now accepted.
 
 .. _host_port:
 

@@ -67,7 +67,7 @@ The command, if run with ``-h``, will show the available options::
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
 
-.. versionchanged:: 3.8
+.. versionchanged:: 3.9
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
 
 .. versionchanged:: 3.4

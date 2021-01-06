@@ -1123,12 +1123,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         referer = self.headers.get('referer')
         if referer:
             env['HTTP_REFERER'] = referer
-        accept = []
-        for line in self.headers.getallmatchingheaders('accept'):
-            if line[:1] in "\t\n\r ":
-                accept.append(line.strip())
-            else:
-                accept = accept + line[7:].split(',')
+        accept = self.headers.get_all('accept', ())
         env['HTTP_ACCEPT'] = ','.join(accept)
         ua = self.headers.get('user-agent')
         if ua:

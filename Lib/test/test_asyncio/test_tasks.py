@@ -1548,6 +1548,30 @@ class BaseTaskTests:
         loop.advance_time(10)
         loop.run_until_complete(asyncio.wait([a, b]))
 
+    def test_wait_with_iterator_of_tasks(self):
+
+        def gen():
+            when = yield
+            self.assertAlmostEqual(0.1, when)
+            when = yield 0
+            self.assertAlmostEqual(0.15, when)
+            yield 0.15
+
+        loop = self.new_test_loop(gen)
+
+        a = self.new_task(loop, asyncio.sleep(0.1))
+        b = self.new_task(loop, asyncio.sleep(0.15))
+
+        async def foo():
+            done, pending = await asyncio.wait(iter([b, a]))
+            self.assertEqual(done, set([a, b]))
+            self.assertEqual(pending, set())
+            return 42
+
+        res = loop.run_until_complete(self.new_task(loop, foo()))
+        self.assertEqual(res, 42)
+        self.assertAlmostEqual(0.15, loop.time())
+
     def test_as_completed(self):
 
         def gen():

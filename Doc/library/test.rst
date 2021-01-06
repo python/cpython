@@ -546,7 +546,7 @@ The :mod:`test.support` module defines the following functions:
    Define match test with regular expression *patterns*.
 
 
-.. function:: run_unittest(\*classes)
+.. function:: run_unittest(*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
    function scans the classes for methods starting with the prefix ``test_``

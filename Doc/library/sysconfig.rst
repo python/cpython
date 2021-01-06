@@ -32,7 +32,7 @@ can be accessed using :func:`get_config_vars` or :func:`get_config_var`.
 
 Notice that on Windows, it's a much smaller set.
 
-.. function:: get_config_vars(\*args)
+.. function:: get_config_vars(*args)
 
    With no arguments, return a dictionary of all configuration variables
    relevant for the current platform.

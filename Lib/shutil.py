@@ -711,7 +711,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
         try:
             fd = os.open(path, os.O_RDONLY)
         except Exception:
-            onerror(os.lstat, path, sys.exc_info())
+            onerror(os.open, path, sys.exc_info())
             return
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):

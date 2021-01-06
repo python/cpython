@@ -74,6 +74,9 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         return NULL;
     }
     p = buf = PyBytes_AsString(u);
+    if (p == NULL) {
+        return NULL;
+    }
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
@@ -407,7 +410,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
                                      NULL, p->arena);
     p2->starting_lineno = t->lineno + lines - 1;
-    p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno ? t->col_offset + cols : cols;
+    p2->starting_col_offset = t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
 

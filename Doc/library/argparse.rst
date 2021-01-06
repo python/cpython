@@ -696,7 +696,7 @@ The add_argument() method
    * const_ - A constant value required by some action_ and nargs_ selections.
 
    * default_ - The value produced if the argument is absent from the
-     command line.
+     command line and if it is absent from the namespace object.
 
    * type_ - The type to which the command-line argument should be converted.
 
@@ -1006,6 +1006,14 @@ was not present at the command line::
    >>> parser.parse_args([])
    Namespace(foo=42)
 
+If the target namespace already has an attribute set, the action *default*
+will not over write it::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo', default=42)
+   >>> parser.parse_args([], namespace=argparse.Namespace(foo=101))
+   Namespace(foo=101)
+
 If the ``default`` value is a string, the parser parses the value as if it
 were a command-line argument.  In particular, the parser applies any type_
 conversion argument, if provided, before setting the attribute on the
@@ -1042,63 +1050,70 @@ command-line argument was not present::
 type
 ^^^^
 
-By default, :class:`ArgumentParser` objects read command-line arguments in as simple
+By default, the parser reads command-line arguments in as simple
 strings. However, quite often the command-line string should instead be
-interpreted as another type, like a :class:`float` or :class:`int`.  The
-``type`` keyword argument of :meth:`~ArgumentParser.add_argument` allows any
-necessary type-checking and type conversions to be performed.  Common built-in
-types and functions can be used directly as the value of the ``type`` argument::
+interpreted as another type, such as a :class:`float` or :class:`int`.  The
+``type`` keyword for :meth:`~ArgumentParser.add_argument` allows any
+necessary type-checking and type conversions to be performed.
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('foo', type=int)
-   >>> parser.add_argument('bar', type=open)
-   >>> parser.parse_args('2 temp.txt'.split())
-   Namespace(bar=<_io.TextIOWrapper name='temp.txt' encoding='UTF-8'>, foo=2)
+If the type_ keyword is used with the default_ keyword, the type converter
+is only applied if the default is a string.
 
-See the section on the default_ keyword argument for information on when the
-``type`` argument is applied to default arguments.
+The argument to ``type`` can be any callable that accepts a single string.
+If the function raises :exc:`ArgumentTypeError`, :exc:`TypeError`, or
+:exc:`ValueError`, the exception is caught and a nicely formatted error
+message is displayed.  No other exception types are handled.
 
-To ease the use of various types of files, the argparse module provides the
-factory FileType which takes the ``mode=``, ``bufsize=``, ``encoding=`` and
-``errors=`` arguments of the :func:`open` function.  For example,
-``FileType('w')`` can be used to create a writable file::
+Common built-in types and functions can be used as type converters:
 
-   >>> parser = argparse.ArgumentParser()
-   >>> parser.add_argument('bar', type=argparse.FileType('w'))
-   >>> parser.parse_args(['out.txt'])
-   Namespace(bar=<_io.TextIOWrapper name='out.txt' encoding='UTF-8'>)
+.. testcode::
 
-``type=`` can take any callable that takes a single string argument and returns
-the converted value::
+   import argparse
+   import pathlib
 
-   >>> def perfect_square(string):
-   ...     value = int(string)
-   ...     sqrt = math.sqrt(value)
-   ...     if sqrt != int(sqrt):
-   ...         msg = "%r is not a perfect square" % string
-   ...         raise argparse.ArgumentTypeError(msg)
-   ...     return value
+   parser = argparse.ArgumentParser()
+   parser.add_argument('count', type=int)
+   parser.add_argument('distance', type=float)
+   parser.add_argument('street', type=ascii)
+   parser.add_argument('code_point', type=ord)
+   parser.add_argument('source_file', type=open)
+   parser.add_argument('dest_file', type=argparse.FileType('w', encoding='latin-1'))
+   parser.add_argument('datapath', type=pathlib.Path)
+
+User defined functions can be used as well:
+
+.. doctest::
+
+   >>> def hyphenated(string):
+   ...     return '-'.join([word[:4] for word in string.casefold().split()])
    ...
-   >>> parser = argparse.ArgumentParser(prog='PROG')
-   >>> parser.add_argument('foo', type=perfect_square)
-   >>> parser.parse_args(['9'])
-   Namespace(foo=9)
-   >>> parser.parse_args(['7'])
-   usage: PROG [-h] foo
-   PROG: error: argument foo: '7' is not a perfect square
+   >>> parser = argparse.ArgumentParser()
+   >>> _ = parser.add_argument('short_title', type=hyphenated)
+   >>> parser.parse_args(['"The Tale of Two Cities"'])
+   Namespace(short_title='"the-tale-of-two-citi')
 
-The choices_ keyword argument may be more convenient for type checkers that
-simply check against a range of values::
+The :func:`bool` function is not recommended as a type converter.  All it does
+is convert empty strings to ``False`` and non-empty strings to ``True``.
+This is usually not what is desired.
 
-   >>> parser = argparse.ArgumentParser(prog='PROG')
-   >>> parser.add_argument('foo', type=int, choices=range(5, 10))
-   >>> parser.parse_args(['7'])
-   Namespace(foo=7)
-   >>> parser.parse_args(['11'])
-   usage: PROG [-h] {5,6,7,8,9}
-   PROG: error: argument foo: invalid choice: 11 (choose from 5, 6, 7, 8, 9)
+In general, the ``type`` keyword is a convenience that should only be used for
+simple conversions that can only raise one of the three supported exceptions.
+Anything with more interesting error-handling or resource management should be
+done downstream after the arguments are parsed.
 
-See the choices_ section for more details.
+For example, JSON or YAML conversions have complex error cases that require
+better reporting than can be given by the ``type`` keyword.  An
+:exc:`~json.JSONDecodeError` would not be well formatted and a
+:exc:`FileNotFound` exception would not be handled at all.
+
+Even :class:`~argparse.FileType` has its limitations for use with the ``type``
+keyword.  If one argument uses *FileType* and then a subsequent argument fails,
+an error is reported but the file is not automatically closed.  In this case, it
+would be better to wait until after the parser has run and then use the
+:keyword:`with`-statement to manage the files.
+
+For type checkers that simply check against a fixed set of values, consider
+using the choices_ keyword instead.
 
 
 choices
@@ -1133,20 +1148,14 @@ container should match the type_ specified::
 
 Any container can be passed as the *choices* value, so :class:`list` objects,
 :class:`set` objects, and custom containers are all supported.
-This includes :class:`enum.Enum`, which could be used to restrain
-argument's choices; if we reuse previous rock/paper/scissors game example,
-this could be as follows::
 
-   >>> from enum import Enum
-   >>> class GameMove(Enum):
-   ...     ROCK = 'rock'
-   ...     PAPER = 'paper'
-   ...     SCISSORS = 'scissors'
-   ...
-   >>> parser = argparse.ArgumentParser(prog='game.py')
-   >>> parser.add_argument('move', type=GameMove, choices=GameMove)
-   >>> parser.parse_args(['rock'])
-   Namespace(move=<GameMove.ROCK: 'rock'>)
+Use of :class:`enum.Enum` is not recommended because it is difficult to
+control its appearance in usage, help, and error messages.
+
+Formatted choices overrides the default *metavar* which is normally derived
+from *dest*.  This is usually what you want because the user never sees the
+*dest* parameter.  If this display isn't desirable (perhaps because there are
+many choices), just specify an explicit metavar_.
 
 
 required

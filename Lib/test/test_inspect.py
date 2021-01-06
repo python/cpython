@@ -388,6 +388,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
                           ('Tit', mod.MalodorousPervert),
+                          ('WhichComments', mod.WhichComments),
                          ])
         tree = inspect.getclasstree([cls[1] for cls in classes])
         self.assertEqual(tree,
@@ -401,7 +402,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
@@ -413,7 +415,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
 
@@ -644,6 +647,18 @@ class TestOneliners(GetSourceBase):
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
 
+class TestBlockComments(GetSourceBase):
+    fodderModule = mod
+
+    def test_toplevel_class(self):
+        self.assertSourceEqual(mod.WhichComments, 96, 114)
+
+    def test_class_method(self):
+        self.assertSourceEqual(mod.WhichComments.f, 99, 104)
+
+    def test_class_async_method(self):
+        self.assertSourceEqual(mod.WhichComments.asyncf, 109, 112)
+
 class TestBuggyCases(GetSourceBase):
     fodderModule = mod2
 
@@ -694,6 +709,17 @@ class TestBuggyCases(GetSourceBase):
             co = compile('x=1', fname, "exec")
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
+
+    def test_findsource_with_out_of_bounds_lineno(self):
+        mod_len = len(inspect.getsource(mod))
+        src = '\n' * 2* mod_len + "def f(): pass"
+        co = compile(src, mod.__file__, "exec")
+        g, l = {}, {}
+        eval(co, g, l)
+        func = l['f']
+        self.assertEqual(func.__code__.co_firstlineno, 1+2*mod_len)
+        with self.assertRaisesRegex(IOError, "lineno is out of bounds"):
+            inspect.findsource(func)
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
@@ -4016,8 +4042,8 @@ def foo():
 
 def test_main():
     run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
-        TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
+        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
+        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,

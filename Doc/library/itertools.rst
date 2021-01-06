@@ -565,7 +565,7 @@ loops that truncate the stream.
 
    Before :func:`product` runs, it completely consumes the input iterables,
    keeping pools of values in memory to generate the products.  Accordingly,
-   it only useful with finite inputs.
+   it is only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
@@ -755,7 +755,7 @@ which incur interpreter overhead.
        "Count how many times the predicate is true"
        return sum(map(pred, iterable))
 
-   def padnone(iterable):
+   def pad_none(iterable):
        """Returns the sequence elements and then returns None indefinitely.
 
        Useful for emulating the behavior of the built-in map() function.
@@ -768,6 +768,18 @@ which incur interpreter overhead.
 
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
+
+   def convolve(signal, kernel):
+       # See:  https://betterexplained.com/articles/intuitive-convolution/
+       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
+       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
+       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       kernel = list(reversed(kernel))
+       n = len(kernel)
+       window = collections.deque([0] * n, maxlen=n)
+       for x in chain(signal, repeat(0, n-1)):
+           window.append(x)
+           yield sum(map(operator.mul, kernel, window))
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -809,7 +821,7 @@ which incur interpreter overhead.
                nexts = cycle(islice(nexts, num_active))
 
    def partition(pred, iterable):
-       'Use a predicate to partition entries into false entries and true entries'
+       "Use a predicate to partition entries into false entries and true entries"
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
@@ -881,7 +893,7 @@ which incur interpreter overhead.
    def random_product(*args, repeat=1):
        "Random selection from itertools.product(*args, **kwds)"
        pools = [tuple(pool) for pool in args] * repeat
-       return tuple(random.choice(pool) for pool in pools)
+       return tuple(map(random.choice, pools))
 
    def random_permutation(iterable, r=None):
        "Random selection from itertools.permutations(iterable, r)"
@@ -900,11 +912,11 @@ which incur interpreter overhead.
        "Random selection from itertools.combinations_with_replacement(iterable, r)"
        pool = tuple(iterable)
        n = len(pool)
-       indices = sorted(random.randrange(n) for i in range(r))
+       indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
 
    def nth_combination(iterable, r, index):
-       'Equivalent to list(combinations(iterable, r))[index]'
+       "Equivalent to list(combinations(iterable, r))[index]"
        pool = tuple(iterable)
        n = len(pool)
        if r < 0 or r > n:

@@ -846,7 +846,7 @@ class HTTPConnection:
         the endpoint passed to `set_tunnel`. This done by sending an HTTP
         CONNECT request to the proxy server when the connection is established.
 
-        This method must be called before the HTML connection has been
+        This method must be called before the HTTP connection has been
         established.
 
         The headers argument should be a mapping of extra HTTP headers to send

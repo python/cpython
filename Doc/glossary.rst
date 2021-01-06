@@ -483,6 +483,13 @@ Glossary
       See also the :term:`single dispatch` glossary entry, the
       :func:`functools.singledispatch` decorator, and :pep:`443`.
 
+   generic type
+      A :term:`type` that can be parameterized; typically a container like
+      :class:`list`. Used for :term:`type hints <type hint>` and
+      :term:`annotations <annotation>`.
+
+      See :pep:`483` for more details, and :mod:`typing` or
+      :ref:`generic alias type <types-genericalias>` for its uses.
 
    GIL
       See :term:`global interpreter lock`.

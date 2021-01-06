@@ -48,7 +48,7 @@ The following top-level asyncio functions can be used to create
 and work with streams:
 
 
-.. coroutinefunction:: open_connection(host=None, port=None, \*, \
+.. coroutinefunction:: open_connection(host=None, port=None, *, \
                           loop=None, limit=None, ssl=None, family=0, \
                           proto=0, flags=0, sock=None, local_addr=None, \
                           server_hostname=None, ssl_handshake_timeout=None)
@@ -74,7 +74,7 @@ and work with streams:
       The *ssl_handshake_timeout* parameter.
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
-                          port=None, \*, loop=None, limit=None, \
+                          port=None, *, loop=None, limit=None, \
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
@@ -109,7 +109,7 @@ and work with streams:
 
 .. rubric:: Unix Sockets
 
-.. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, \
+.. coroutinefunction:: open_unix_connection(path=None, *, loop=None, \
                         limit=None, ssl=None, sock=None, \
                         server_hostname=None, ssl_handshake_timeout=None)
 
@@ -132,7 +132,7 @@ and work with streams:
 
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
-                          \*, loop=None, limit=None, sock=None, \
+                          *, loop=None, limit=None, sock=None, \
                           backlog=100, ssl=None, ssl_handshake_timeout=None, \
                           start_serving=True)
 

@@ -195,6 +195,22 @@ class TestChainMap(unittest.TestCase):
              ('e', 55), ('f', 666), ('g', 777), ('h', 88888),
              ('i', 9999), ('j', 0)])
 
+    def test_iter_not_calling_getitem_on_maps(self):
+        class DictWithGetItem(UserDict):
+            def __init__(self, *args, **kwds):
+                self.called = False
+                UserDict.__init__(self, *args, **kwds)
+            def __getitem__(self, item):
+                self.called = True
+                UserDict.__getitem__(self, item)
+
+        d = DictWithGetItem(a=1)
+        c = ChainMap(d)
+        d.called = False
+
+        set(c)  # iterate over chain map
+        self.assertFalse(d.called, '__getitem__ was called')
+
     def test_dict_coercion(self):
         d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
         self.assertEqual(dict(d), dict(a=1, b=2, c=30))
@@ -1557,6 +1573,62 @@ class TestCollectionABCs(ABCTestCase):
     def assertSameSet(self, s1, s2):
         # coerce both to a real set then check equality
         self.assertSetEqual(set(s1), set(s2))
+
+    def test_Set_from_iterable(self):
+        """Verify _from_iterable overriden to an instance method works."""
+        class SetUsingInstanceFromIterable(MutableSet):
+            def __init__(self, values, created_by):
+                if not created_by:
+                    raise ValueError(f'created_by must be specified')
+                self.created_by = created_by
+                self._values = set(values)
+
+            def _from_iterable(self, values):
+                return type(self)(values, 'from_iterable')
+
+            def __contains__(self, value):
+                return value in self._values
+
+            def __iter__(self):
+                yield from self._values
+
+            def __len__(self):
+                return len(self._values)
+
+            def add(self, value):
+                self._values.add(value)
+
+            def discard(self, value):
+                self._values.discard(value)
+
+        impl = SetUsingInstanceFromIterable([1, 2, 3], 'test')
+
+        actual = impl - {1}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({2, 3}, actual)
+
+        actual = impl | {4}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({1, 2, 3, 4}, actual)
+
+        actual = impl & {2}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({2}, actual)
+
+        actual = impl ^ {3, 4}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({1, 2, 4}, actual)
+
+        # NOTE: ixor'ing with a list is important here: internally, __ixor__
+        # only calls _from_iterable if the other value isn't already a Set.
+        impl ^= [3, 4]
+        self.assertIsInstance(impl, SetUsingInstanceFromIterable)
+        self.assertEqual('test', impl.created_by)
+        self.assertEqual({1, 2, 4}, impl)
 
     def test_Set_interoperability_with_real_sets(self):
         # Issue: 8743

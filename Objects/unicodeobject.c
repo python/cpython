@@ -847,7 +847,11 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
-        str += sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
+        size = sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
+        if (size < 0) {
+            return NULL;
+        }
+        str += size;
     }
     return str;
 }
@@ -1882,7 +1886,7 @@ _PyUnicode_Ready(PyObject *unicode)
         _PyUnicode_WSTR_LENGTH(unicode) = 0;
 #endif
     }
-    /* maxchar exeeds 16 bit, wee need 4 bytes for unicode characters */
+    /* maxchar exceeds 16 bit, wee need 4 bytes for unicode characters */
     else {
 #if SIZEOF_WCHAR_T == 2
         /* in case the native representation is 2-bytes, we need to allocate a
