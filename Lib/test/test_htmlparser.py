@@ -756,9 +756,12 @@ class AttributesTestCase(TestCaseBase):
 
     def test_comma_between_attributes(self):
         # see bpo 41478
+        # HTMLParser preserves duplicate attributes, leaving the task of
+        # removing duplicate attributes to a conformant html tree builder
         html = ('<div class=bar,baz=asd>'        # between attrs (unquoted)
                 '<div class="bar",baz="asd">'    # between attrs (quoted)
                 '<div class=bar, baz=asd,>'      # after values (unquoted)
+                '<div class="bar", baz="asd",>'  # after values (quoted)
                 '<div class="bar",>'             # one comma values (quoted)
                 '<div class=,bar baz=,asd>'      # before values (unquoted)
                 '<div class=,"bar" baz=,"asd">'  # before values (quoted)
@@ -769,6 +772,8 @@ class AttributesTestCase(TestCaseBase):
             ('starttag', 'div', [('class', 'bar,baz=asd'),]),
             ('starttag', 'div', [('class', 'bar'), (',baz', 'asd')]),
             ('starttag', 'div', [('class', 'bar,'), ('baz', 'asd,')]),
+            ('starttag', 'div', [('class', 'bar'), (',', None),
+                                 ('baz', 'asd'), (',', None)]),
             ('starttag', 'div', [('class', 'bar'), (',', None)]),
             ('starttag', 'div', [('class', ',bar'), ('baz', ',asd')]),
             ('starttag', 'div', [('class', ',"bar"'), ('baz', ',"asd"')]),
