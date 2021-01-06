@@ -7061,7 +7061,6 @@ sock_get_api(void)
     capi->Sock_Type = (PyTypeObject *)Py_NewRef(&sock_type);
     capi->error = Py_NewRef(PyExc_OSError);
     capi->timeout_error = Py_NewRef(PyExc_TimeoutError);
-
     return capi;
 }
 
