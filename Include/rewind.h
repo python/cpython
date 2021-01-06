@@ -16,6 +16,8 @@ void Rewind_ListExtend(PyObject *list, PyObject *iterable);
 
 void Rewind_ListAppend(PyObject *list, PyObject *value);
 
+void Rewind_SetAdd(PyObject *set, PyObject *value);
+
 void Rewind_LoadMethod(PyObject *obj, PyObject *name, PyObject *method);
 
 void Rewind_CallMethod(PyObject *method, PyObject **stack_pointer, int level);

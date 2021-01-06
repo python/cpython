@@ -16,7 +16,7 @@ main(int argc, char **argv)
     Rewind_Initialize2();
     
     //PyRun_SimpleStringFlags("print('hello world')", NULL);
-    char filename[] = "test.py";
+    char filename[] = "two_sum.py";
     FILE *file = fopen(filename, "r");
     PyRun_SimpleFileExFlags(file, filename, 0, NULL);
     fclose(file);

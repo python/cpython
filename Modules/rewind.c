@@ -40,6 +40,8 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
     PyObject_Print(code->co_filename, rewindLog, Py_PRINT_RAW);
     fprintf(rewindLog, ", name: ");
     PyObject_Print(code->co_name, rewindLog, Py_PRINT_RAW);
+    fprintf(rewindLog, ", varnames: ");
+    PyObject_Print(code->co_varnames, rewindLog, 0);
     fprintf(rewindLog, ", locals: (");
     PyObject **valuestack = frame->f_valuestack;
     for (PyObject **p = frame->f_localsplus; p < valuestack; p++) {
@@ -202,16 +204,18 @@ void Rewind_CallMethod(PyObject *method, PyObject **stack_pointer, int level) {
 
 void Rewind_CallFunction(PyObject **sp, int oparg) {
     if (!rewindInitialized) return;
-
+    
     PyObject *func = *(sp - oparg - 1);
-    PyObject *name = PyObject_GetAttr(func, 
-        PyUnicode_FromString("__qualname__"));
-    PyObject *type = PyObject_Type(func);
-    PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__name__"));
-    if (equalstr(typeName, "builtin_function_or_method")) {
-        fprintf(rewindLog, "CALL_BUILT_IN_FUNCTION(");
-        PyObject_Print(name, rewindLog, 0);
-        fprintf(rewindLog, ")\n");
+    PyObject *qualNameStr = PyUnicode_FromString("__qualname__");
+    if (PyObject_HasAttr(func, qualNameStr)) {
+        PyObject *name = PyObject_GetAttr(func, qualNameStr);
+        PyObject *type = PyObject_Type(func);
+        PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__name__"));
+        if (equalstr(typeName, "builtin_function_or_method")) {
+            fprintf(rewindLog, "CALL_BUILT_IN_FUNCTION(");
+            PyObject_Print(name, rewindLog, 0);
+            fprintf(rewindLog, ")\n");
+        }
     }
 }
 
@@ -315,10 +319,11 @@ void Rewind_TrackObject(PyObject *obj) {
         PyObject_Print(obj, rewindLog, 0);
         fprintf(rewindLog, ")\n");
     } else if (Py_IS_TYPE(obj, &PyDict_Type)) {
-        PyObject *items = PyDict_Items(obj);
+        PySet_Add(knownObjectIds, id);
+        Py_DECREF(id);
 
+        PyObject *items = PyDict_Items(obj);
         PyObject *iterator = PySequence_Fast(items, "argument must be iterable");
-        
         Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
         PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
         for (int i = 0; i < n; i++) {
@@ -349,6 +354,9 @@ void Rewind_TrackObject(PyObject *obj) {
         Py_DECREF(items);
         fprintf(rewindLog, ")\n");
     } else if (Py_IS_TYPE(obj, &PySet_Type)) {
+        PySet_Add(knownObjectIds, id);
+        Py_DECREF(id);
+
         PyObject *iterator = PySequence_Fast(obj, "argument must be iterable");
         Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
         PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
@@ -371,6 +379,9 @@ void Rewind_TrackObject(PyObject *obj) {
         }
         fprintf(rewindLog, ")\n");
     } else {
+        PySet_Add(knownObjectIds, id);
+        Py_DECREF(id);
+
         fprintf(rewindLog, "NEW_OBJECT(%lu, ", (unsigned long)obj);
         PyObject *type = PyObject_Type(obj);
         PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__qualname__"));
@@ -432,7 +443,7 @@ void printObject(FILE *file, PyObject *obj) {
 }
 
 void printStack(FILE *file, PyObject **stack_pointer, int level) {
-    fprintf(file, "  Stack(%d): [", level);
+    fprintf(file, "-- Stack(%d): [", level);
     for (int i = 1; i <= level; i++) {
         PyObject *obj = stack_pointer[-i];
         if (i != 1) {
@@ -455,6 +466,6 @@ void logOp(char *label, PyObject **stack_pointer, int level, PyFrameObject *fram
         }
         lastLine = lineNo;
     }
-    printStack(rewindLog, stack_pointer, level);
-    fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
+    // printStack(rewindLog, stack_pointer, level);
+    // fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
 }

@@ -1,8 +1,22 @@
-# Events/Instructions To Track
+## rewind_recreate.py Tasks
 
+* STORE_FAST
+* RETURN_VALUE
+* NEW_OBJECT
+* CALL_BUILT_IN_FUNCTION
+* NEW_LIST
+* NEW_STRING
+* STORE_ATTR
+* STORE_NAME (scoped)
+
+## Events/Instructions To Track
+
+* maybe retry intercepting data structure mutations from inside so
+that mutations from extensions will be tracked
 * recursively track a dict
 * recursively track a set
 * test on some solved leetcode problems
+* built-in function calls
 * log parameters to built-in function calls (print)
 * list.sort
 * dict.popitem

@@ -74,6 +74,7 @@ pymain_init(const _PyArgv *args)
 
 done:
     PyConfig_Clear(&config);
+    Rewind_Initialize2();
     return status;
 }
 
