@@ -1,0 +1,2 @@
+The symbol table now understands that 'yield' in an annotation is deferred
+and does not make the enclosing scope a generator.

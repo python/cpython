@@ -77,6 +77,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_varkeywords = 0;
     ste->ste_opt_lineno = 0;
     ste->ste_opt_col_offset = 0;
+    ste->ste_in_annotation = 0;
     ste->ste_lineno = lineno;
     ste->ste_col_offset = col_offset;
 
@@ -1265,7 +1266,14 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         else {
             VISIT(st, expr, s->v.AnnAssign.target);
         }
-        VISIT(st, expr, s->v.AnnAssign.annotation);
+        if (st->st_cur->ste_symbols == st->st_global) {
+            st->st_cur->ste_in_annotation++;
+            VISIT(st, expr, s->v.AnnAssign.annotation);
+            st->st_cur->ste_in_annotation--;
+        }
+        else {
+            VISIT(st, expr, s->v.AnnAssign.annotation);
+        }
         if (s->v.AnnAssign.value) {
             VISIT(st, expr, s->v.AnnAssign.value);
         }
@@ -1598,15 +1606,21 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Yield_kind:
         if (e->v.Yield.value)
             VISIT(st, expr, e->v.Yield.value);
-        st->st_cur->ste_generator = 1;
+        if (st->st_cur->ste_in_annotation == 0) {
+            st->st_cur->ste_generator = 1;
+        }
         break;
     case YieldFrom_kind:
         VISIT(st, expr, e->v.YieldFrom.value);
-        st->st_cur->ste_generator = 1;
+        if (st->st_cur->ste_in_annotation == 0) {
+            st->st_cur->ste_generator = 1;
+        }
         break;
     case Await_kind:
         VISIT(st, expr, e->v.Await.value);
-        st->st_cur->ste_coroutine = 1;
+        if (st->st_cur->ste_in_annotation == 0) {
+            st->st_cur->ste_coroutine = 1;
+        }
         break;
     case Compare_kind:
         VISIT(st, expr, e->v.Compare.left);
@@ -1709,19 +1723,20 @@ symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 
     if (!args)
         return -1;
-
+    st->st_cur->ste_in_annotation++;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
         if (arg->annotation)
             VISIT(st, expr, arg->annotation);
     }
-
+    st->st_cur->ste_in_annotation--;
     return 1;
 }
 
 static int
 symtable_visit_annotations(struct symtable *st, arguments_ty a, expr_ty returns)
 {
+    st->st_cur->ste_in_annotation++;
     if (a->posonlyargs && !symtable_visit_argannotations(st, a->posonlyargs))
         return 0;
     if (a->args && !symtable_visit_argannotations(st, a->args))
@@ -1734,6 +1749,7 @@ symtable_visit_annotations(struct symtable *st, arguments_ty a, expr_ty returns)
         return 0;
     if (returns)
         VISIT(st, expr, returns);
+    st->st_cur->ste_in_annotation--;
     return 1;
 }
 

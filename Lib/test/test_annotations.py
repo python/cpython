@@ -223,6 +223,12 @@ class PostponedAnnotationsTestCase(unittest.TestCase):
         self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
         self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
 
+    def test_yield_in_local_annotation(self):
+        def f():
+            x: (yield None)
+        def g():
+            yield
+        self.assertIs(type(f()), type(g()))
 
 if __name__ == "__main__":
     unittest.main()
