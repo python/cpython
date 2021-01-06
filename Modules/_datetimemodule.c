@@ -6508,8 +6508,8 @@ get_datetime_capi(void)
 static void
 datetime_destructor(PyObject *op)
 {
-    void *p = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
-    PyMem_Free(p);
+    void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
+    PyMem_Free(ptr);
 }
 
 static int
@@ -6599,17 +6599,12 @@ _datetime_exec(PyObject *module)
     }
 
     PyDateTime_TimeZone_UTC = x;
-    PyDateTime_CAPI *capi = get_datetime_capi();
-    if (capi == NULL) {
-        return -1;
-    }
 
     /* bpo-37642: These attributes are rounded to the nearest minute for backwards
      * compatibility, even though the constructor will accept a wider range of
      * values. This may change in the future.*/
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL) {
-        PyMem_Free(capi);
         return -1;
     }
 
@@ -6619,7 +6614,6 @@ _datetime_exec(PyObject *module)
 
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
     if (delta == NULL) {
-        PyMem_Free(capi);
         return -1;
     }
 
@@ -6631,20 +6625,21 @@ _datetime_exec(PyObject *module)
     PyDateTime_Epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0,
                                     PyDateTime_TimeZone_UTC, 0);
     if (PyDateTime_Epoch == NULL) {
-        PyMem_Free(capi);
         return -1;
     }
 
     /* module initialization */
     if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
-        PyMem_Free(capi);
         return -1;
     }
     if (PyModule_AddIntMacro(module, MAXYEAR) < 0) {
-        PyMem_Free(capi);
         return -1;
     }
 
+    PyDateTime_CAPI *capi = get_datetime_capi();
+    if (capi == NULL) {
+        return -1;
+    }
     x = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, datetime_destructor);
     if (x == NULL) {
         PyMem_Free(capi);
