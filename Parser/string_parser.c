@@ -69,6 +69,9 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         return NULL;
     }
     p = buf = PyBytes_AsString(u);
+    if (p == NULL) {
+        return NULL;
+    }
     end = s + len;
     while (s < end) {
         if (*s == '\\') {
@@ -381,7 +384,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     int lines, cols;
     if (!fstring_find_expr_location(t, str, &lines, &cols)) {
-        PyMem_FREE(str);
+        PyMem_Free(str);
         return NULL;
     }
 
@@ -402,7 +405,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     Parser *p2 = _PyPegen_Parser_New(tok, Py_fstring_input, p->flags, p->feature_version,
                                      NULL, p->arena);
     p2->starting_lineno = t->lineno + lines - 1;
-    p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno ? t->col_offset + cols : cols;
+    p2->starting_col_offset = t->col_offset + cols;
 
     expr = _PyPegen_run_parser(p2);
 
@@ -970,15 +973,15 @@ ExprList_Dealloc(ExprList *l)
     l->size = -1;
 }
 
-static asdl_seq *
+static asdl_expr_seq *
 ExprList_Finish(ExprList *l, PyArena *arena)
 {
-    asdl_seq *seq;
+    asdl_expr_seq *seq;
 
     ExprList_check_invariants(l);
 
     /* Allocate the asdl_seq and copy the expressions in to it. */
-    seq = _Py_asdl_seq_new(l->size, arena);
+    seq = _Py_asdl_expr_seq_new(l->size, arena);
     if (seq) {
         Py_ssize_t i;
         for (i = 0; i < l->size; i++) {
@@ -1167,7 +1170,7 @@ expr_ty
 _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_token,
                      Token *last_token)
 {
-    asdl_seq *seq;
+    asdl_expr_seq *seq;
 
     FstringParser_check_invariants(state);
 

@@ -870,8 +870,18 @@ clipboard.  Converting strings from Tcl to Python and back now never fails.
 (Many people worked on this for eight years but the problem was finally
 solved by Serhiy Storchaka in :issue:`13153`.)
 
+New in 3.8.1:
+
+Add option to toggle cursor blink off.  (Contributed by Zackery Spytz
+in :issue:`4603`.)
+
+Escape key now closes IDLE completion windows.  (Contributed by Johnny
+Najera in :issue:`38944`.)
+
 The changes above have been backported to 3.7 maintenance releases.
 
+Add keywords to module name completion list.  (Contributed by Terry J.
+Reedy in :issue:`37765`.)
 
 inspect
 -------
@@ -2102,9 +2112,6 @@ Changes in the C API
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
-
-* The :c:func:`PyCode_New` has a new parameter in the second position (*posonlyargcount*)
-  to support :pep:`570`, indicating the number of positional-only arguments.
 
 * The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.

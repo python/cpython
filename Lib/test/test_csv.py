@@ -202,6 +202,20 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting = csv.QUOTE_NONE)
         self._write_test(['a',1,'p,q'], 'a,1,p\\,q',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
+        self._write_test(['\\', 'a'], '\\\\,a',
+                         escapechar='\\', quoting=csv.QUOTE_NONE)
+        self._write_test(['\\', 'a'], '\\\\,a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['\\', 'a'], '"\\\\","a"',
+                         escapechar='\\', quoting=csv.QUOTE_ALL)
+        self._write_test(['\\ ', 'a'], '\\\\ ,a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['\\,', 'a'], '\\\\\\,,a',
+                         escapechar='\\', quoting=csv.QUOTE_NONE)
+        self._write_test([',\\', 'a'], '",\\\\",a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')

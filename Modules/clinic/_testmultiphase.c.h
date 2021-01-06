@@ -6,7 +6,10 @@ PyDoc_STRVAR(_testmultiphase_StateAccessType_get_defining_module__doc__,
 "get_defining_module($self, /)\n"
 "--\n"
 "\n"
-"Return the module of the defining class.");
+"Return the module of the defining class.\n"
+"\n"
+"Also tests that result of _PyType_GetModuleByDef matches defining_class\'s\n"
+"module.");
 
 #define _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF    \
     {"get_defining_module", (PyCFunction)(void(*)(void))_testmultiphase_StateAccessType_get_defining_module, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testmultiphase_StateAccessType_get_defining_module__doc__},
@@ -98,4 +101,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=39eea487e94e7f5d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f01137bb3b373e14 input=a9049054013a1b77]*/

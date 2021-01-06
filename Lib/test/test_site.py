@@ -36,6 +36,7 @@ if sys.flags.no_site:
 import site
 
 
+HAS_USER_SITE = (site.USER_SITE is not None)
 OLD_SYS_PATH = None
 
 
@@ -161,6 +162,12 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
+    def test_addpackage_empty_lines(self):
+        # Issue 33689
+        pth_dir, pth_fn = self.make_pth("\n\n  \n\n")
+        known_paths = site.addpackage(pth_dir, pth_fn, set())
+        self.assertEqual(known_paths, set())
+
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
@@ -189,6 +196,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def test__getuserbase(self):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_get_path(self):
         if sys.platform == 'darwin' and sys._framework:
             scheme = 'osx_framework_user'
@@ -238,6 +246,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(rc, 1,
                         "User base not set by PYTHONUSERBASE")
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getuserbase(self):
         site.USER_BASE = None
         user_base = site.getuserbase()
@@ -255,6 +264,7 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertTrue(site.getuserbase().startswith('xoxo'),
                             site.getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getusersitepackages(self):
         site.USER_SITE = None
         site.USER_BASE = None
@@ -289,6 +299,7 @@ class HelperFunctionsTests(unittest.TestCase):
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEqual(dirs[1], wanted)
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_no_home_directory(self):
         # bpo-10496: getuserbase() and getusersitepackages() must not fail if
         # the current user has no home directory (if expanduser() returns the
@@ -510,8 +521,6 @@ class ImportSideEffectTests(unittest.TestCase):
 
     @test.support.requires_resource('network')
     @test.support.system_must_validate_cert
-    @unittest.skipUnless(sys.version_info[3] == 'final',
-                         'only for released versions')
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
     def test_license_exists_at_url(self):
@@ -519,6 +528,8 @@ class ImportSideEffectTests(unittest.TestCase):
         # string displayed by license in the absence of a LICENSE file.
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
+        # Reset global urllib.request._opener
+        self.addCleanup(urllib.request.urlcleanup)
         try:
             with socket_helper.transient_internet(url):
                 with urllib.request.urlopen(req) as data:
@@ -594,7 +605,6 @@ class StartupImportTests(unittest.TestCase):
         r = subprocess.Popen([sys.executable, '-I', '-c',
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
-
 
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):

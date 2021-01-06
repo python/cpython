@@ -133,14 +133,16 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # a socket is closed, send() raises OSError (with errno set to
         # EBADF, but let's not rely on the exact error code).
         csock = self._csock
-        if csock is not None:
-            try:
-                csock.send(b'\0')
-            except OSError:
-                if self._debug:
-                    logger.debug("Fail to write a null byte into the "
-                                 "self-pipe socket",
-                                 exc_info=True)
+        if csock is None:
+            return
+
+        try:
+            csock.send(b'\0')
+        except OSError:
+            if self._debug:
+                logger.debug("Fail to write a null byte into the "
+                             "self-pipe socket",
+                             exc_info=True)
 
     def _start_serving(self, protocol_factory, sock,
                        sslcontext=None, server=None, backlog=100,

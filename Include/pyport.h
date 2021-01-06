@@ -841,12 +841,16 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif
 
 #if defined(__ANDROID__) || defined(__VXWORKS__)
-   /* Ignore the locale encoding: force UTF-8 */
+   // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
+   // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()
+   // and PyUnicode_EncodeLocale().
 #  define _Py_FORCE_UTF8_LOCALE
 #endif
 
 #if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
-   /* Use UTF-8 as filesystem encoding */
+   // Use UTF-8 as the filesystem encoding.
+   // See PyUnicode_DecodeFSDefaultAndSize(), PyUnicode_EncodeFSDefault(),
+   // Py_DecodeLocale() and Py_EncodeLocale().
 #  define _Py_FORCE_UTF8_FS_ENCODING
 #endif
 
@@ -864,5 +868,17 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #else
 #  define _Py_NO_RETURN
 #endif
+
+
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
 
 #endif /* Py_PYPORT_H */

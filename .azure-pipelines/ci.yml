@@ -104,7 +104,7 @@ jobs:
     matrix:
       win32:
         arch: win32
-        buildOpt:
+        buildOpt: '-p Win32'
         testRunTitle: '$(Build.SourceBranchName)-win32'
         testRunPlatform: win32
       win64:

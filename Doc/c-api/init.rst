@@ -151,8 +151,9 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
-   If the flag is non-zero, use the ``mbcs`` encoding instead of the UTF-8
-   encoding for the filesystem encoding.
+   If the flag is non-zero, use the ``mbcs`` encoding with ``replace`` error
+   handler, instead of the UTF-8 encoding with ``surrogatepass`` error handler,
+   for the :term:`filesystem encoding and error handler`.
 
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment
    variable is set to a non-empty string.
@@ -375,6 +376,12 @@ Process-wide parameters
    The returned string points into static storage; the caller should not modify its
    value.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
 
 .. c:function:: wchar_t* Py_GetPrefix()
 
@@ -387,6 +394,12 @@ Process-wide parameters
    :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -423,6 +436,12 @@ Process-wide parameters
    while having :file:`/usr/local/plat` be a different filesystem for each
    platform.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
+
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
@@ -435,6 +454,12 @@ Process-wide parameters
    (set by :c:func:`Py_SetProgramName` above). The returned string points into
    static storage; the caller should not modify its value.  The value is available
    to Python code as ``sys.executable``.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -454,7 +479,13 @@ Process-wide parameters
    can be (and usually is) modified later to change the search path for loading
    modules.
 
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
    .. XXX should give the exact rules
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. c:function::  void Py_SetPath(const wchar_t *)
@@ -636,6 +667,12 @@ Process-wide parameters
    Return the default "home", that is, the value set by a previous call to
    :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
    environment variable if it is set.
+
+   This function should not be called before :c:func:`Py_Initialize`, otherwise
+   it returns ``NULL``.
+
+   .. versionchanged:: 3.10
+      It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
 
 .. _threads:
@@ -1076,7 +1113,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Get the current frame of the Python thread state *tstate*.
 
-   Return a strong reference. Return ``NULL`` if no frame is currently
+   Return a :term:`strong reference`. Return ``NULL`` if no frame is currently
    executing.
 
    See also :c:func:`PyEval_GetFrame`.

@@ -164,22 +164,6 @@ PyAPI_FUNC(_PyTime_t) _PyTime_MulDiv(_PyTime_t ticks,
     _PyTime_t mul,
     _PyTime_t div);
 
-/* Get the current time from the system clock.
-
-   The function cannot fail. _PyTime_Init() ensures that the system clock
-   works. */
-PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock(void);
-
-/* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
-   The clock is not affected by system clock updates. The reference point of
-   the returned value is undefined, so that only the difference between the
-   results of consecutive calls is valid.
-
-   The function cannot fail. _PyTime_Init() ensures that a monotonic clock
-   is available and works. */
-PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
-
-
 /* Structure used by time.get_clock_info() */
 typedef struct {
     const char *implementation;
@@ -189,12 +173,33 @@ typedef struct {
 } _Py_clock_info_t;
 
 /* Get the current time from the system clock.
- * Fill clock information if info is not NULL.
- * Raise an exception and return -1 on error, return 0 on success.
+
+   If the internal clock fails, silently ignore the error and return 0.
+   On integer overflow, silently ignore the overflow and truncated the clock to
+   _PyTime_MIN or _PyTime_MAX.
+
+   Use _PyTime_GetSystemClockWithInfo() to check for failure. */
+PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock(void);
+
+/* Get the current time from the system clock.
+ * On success, set *t and *info (if not NULL), and return 0.
+ * On error, raise an exception and return -1.
  */
 PyAPI_FUNC(int) _PyTime_GetSystemClockWithInfo(
     _PyTime_t *t,
     _Py_clock_info_t *info);
+
+/* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
+   The clock is not affected by system clock updates. The reference point of
+   the returned value is undefined, so that only the difference between the
+   results of consecutive calls is valid.
+
+   If the internal clock fails, silently ignore the error and return 0.
+   On integer overflow, silently ignore the overflow and truncated the clock to
+   _PyTime_MIN or _PyTime_MAX.
+
+   Use _PyTime_GetMonotonicClockWithInfo() to check for failure. */
+PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
 
 /* Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
    The clock is not affected by system clock updates. The reference point of
@@ -209,10 +214,6 @@ PyAPI_FUNC(int) _PyTime_GetMonotonicClockWithInfo(
     _Py_clock_info_t *info);
 
 
-/* Initialize time.
-   Return 0 on success, raise an exception and return -1 on error. */
-PyAPI_FUNC(int) _PyTime_Init(void);
-
 /* Converts a timestamp to the Gregorian time, using the local time zone.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
@@ -224,8 +225,11 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 /* Get the performance counter: clock with the highest available resolution to
    measure a short duration.
 
-   The function cannot fail. _PyTime_Init() ensures that the system clock
-   works. */
+   If the internal clock fails, silently ignore the error and return 0.
+   On integer overflow, silently ignore the overflow and truncated the clock to
+   _PyTime_MIN or _PyTime_MAX.
+
+   Use _PyTime_GetPerfCounterWithInfo() to check for failure. */
 PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
 
 /* Get the performance counter: clock with the highest available resolution to

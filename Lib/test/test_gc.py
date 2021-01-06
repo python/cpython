@@ -582,9 +582,9 @@ class GCTests(unittest.TestCase):
         self.assertTrue(gc.is_tracked(UserInt()))
         self.assertTrue(gc.is_tracked([]))
         self.assertTrue(gc.is_tracked(set()))
-        self.assertFalse(gc.is_tracked(UserClassSlots()))
-        self.assertFalse(gc.is_tracked(UserFloatSlots()))
-        self.assertFalse(gc.is_tracked(UserIntSlots()))
+        self.assertTrue(gc.is_tracked(UserClassSlots()))
+        self.assertTrue(gc.is_tracked(UserFloatSlots()))
+        self.assertTrue(gc.is_tracked(UserIntSlots()))
 
     def test_is_finalized(self):
         # Objects not tracked by the always gc return false

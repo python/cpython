@@ -277,7 +277,7 @@ class OtherNetworkTests(unittest.TestCase):
                                  ioerror_peer_reset:
                                 buf = f.read()
                                 debug("read %d bytes" % len(buf))
-                        except socket.timeout:
+                        except TimeoutError:
                             print("<timeout: %s>" % url, file=sys.stderr)
                         f.close()
                 time.sleep(0.1)

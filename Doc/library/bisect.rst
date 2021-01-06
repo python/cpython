@@ -21,7 +21,7 @@ example of the algorithm (the boundary conditions are already right!).
 The following functions are provided:
 
 
-.. function:: bisect_left(a, x, lo=0, hi=len(a))
+.. function:: bisect_left(a, x, lo=0, hi=len(a), *, key=None)
 
    Locate the insertion point for *x* in *a* to maintain sorted order.
    The parameters *lo* and *hi* may be used to specify a subset of the list
@@ -31,39 +31,106 @@ The following functions are provided:
    parameter to ``list.insert()`` assuming that *a* is already sorted.
 
    The returned insertion point *i* partitions the array *a* into two halves so
-   that ``all(val < x for val in a[lo:i])`` for the left side and
-   ``all(val >= x for val in a[i:hi])`` for the right side.
+   that ``all(val < x for val in a[lo : i])`` for the left side and
+   ``all(val >= x for val in a[i : hi])`` for the right side.
 
-.. function:: bisect_right(a, x, lo=0, hi=len(a))
+   *key* specifies a :term:`key function` of one argument that is used to
+   extract a comparison key from each input element.  The default value is
+   ``None`` (compare the elements directly).
+
+   .. versionchanged:: 3.10
+      Added the *key* parameter.
+
+
+.. function:: bisect_right(a, x, lo=0, hi=len(a), *, key=None)
               bisect(a, x, lo=0, hi=len(a))
 
    Similar to :func:`bisect_left`, but returns an insertion point which comes
    after (to the right of) any existing entries of *x* in *a*.
 
    The returned insertion point *i* partitions the array *a* into two halves so
-   that ``all(val <= x for val in a[lo:i])`` for the left side and
-   ``all(val > x for val in a[i:hi])`` for the right side.
+   that ``all(val <= x for val in a[lo : i])`` for the left side and
+   ``all(val > x for val in a[i : hi])`` for the right side.
 
-.. function:: insort_left(a, x, lo=0, hi=len(a))
+   *key* specifies a :term:`key function` of one argument that is used to
+   extract a comparison key from each input element.  The default value is
+   ``None`` (compare the elements directly).
 
-   Insert *x* in *a* in sorted order.  This is equivalent to
-   ``a.insert(bisect.bisect_left(a, x, lo, hi), x)`` assuming that *a* is
-   already sorted.  Keep in mind that the O(log n) search is dominated by
-   the slow O(n) insertion step.
+   .. versionchanged:: 3.10
+      Added the *key* parameter.
 
-.. function:: insort_right(a, x, lo=0, hi=len(a))
+
+.. function:: insort_left(a, x, lo=0, hi=len(a), *, key=None)
+
+   Insert *x* in *a* in sorted order.
+
+   *key* specifies a :term:`key function` of one argument that is used to
+   extract a comparison key from each input element.  The default value is
+   ``None`` (compare the elements directly).
+
+   This function first runs :func:`bisect_left` to locate an insertion point.
+   Next, it runs the :meth:`insert` method on *a* to insert *x* at the
+   appropriate position to maintain sort order.
+
+   Keep in mind that the ``O(log n)`` search is dominated by the slow O(n)
+   insertion step.
+
+   .. versionchanged:: 3.10
+      Added the *key* parameter.
+
+
+.. function:: insort_right(a, x, lo=0, hi=len(a), *, key=None)
               insort(a, x, lo=0, hi=len(a))
 
    Similar to :func:`insort_left`, but inserting *x* in *a* after any existing
    entries of *x*.
 
+   *key* specifies a :term:`key function` of one argument that is used to
+   extract a comparison key from each input element.  The default value is
+   ``None`` (compare the elements directly).
+
+   This function first runs :func:`bisect_right` to locate an insertion point.
+   Next, it runs the :meth:`insert` method on *a* to insert *x* at the
+   appropriate position to maintain sort order.
+
+   Keep in mind that the ``O(log n)`` search is dominated by the slow O(n)
+   insertion step.
+
+   .. versionchanged:: 3.10
+      Added the *key* parameter.
+
+
+Performance Notes
+-----------------
+
+When writing time sensitive code using *bisect()* and *insort()*, keep these
+thoughts in mind:
+
+* Bisection is effective for searching ranges of values.
+  For locating specific values, dictionaries are more performant.
+
+* The *insort()* functions are ``O(n)`` because the logarithmic search step
+  is dominated by the linear time insertion step.
+
+* The search functions are stateless and discard key function results after
+  they are used.  Consequently, if the search functions are used in a loop,
+  the key function may be called again and again on the same array elements.
+  If the key function isn't fast, consider wrapping it with
+  :func:`functools.cache` to avoid duplicate computations.  Alternatively,
+  consider searching an array of precomputed keys to locate the insertion
+  point (as shown in the examples section below).
+
 .. seealso::
 
-   `SortedCollection recipe
-   <https://code.activestate.com/recipes/577197-sortedcollection/>`_ that uses
-   bisect to build a full-featured collection class with straight-forward search
-   methods and support for a key-function.  The keys are precomputed to save
-   unnecessary calls to the key function during searches.
+   * `Sorted Collections
+     <http://www.grantjenks.com/docs/sortedcollections/>`_ is a high performance
+     module that uses *bisect* to managed sorted collections of data.
+
+   * The `SortedCollection recipe
+     <https://code.activestate.com/recipes/577197-sortedcollection/>`_ uses
+     bisect to build a full-featured collection class with straight-forward search
+     methods and support for a key-function.  The keys are precomputed to save
+     unnecessary calls to the key function during searches.
 
 
 Searching Sorted Lists
@@ -110,8 +177,8 @@ lists::
         raise ValueError
 
 
-Other Examples
---------------
+Examples
+--------
 
 .. _bisect-example:
 
@@ -127,17 +194,12 @@ a 'B', and so on::
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
    ['F', 'A', 'C', 'C', 'B', 'A', 'A']
 
-Unlike the :func:`sorted` function, it does not make sense for the :func:`bisect`
-functions to have *key* or *reversed* arguments because that would lead to an
-inefficient design (successive calls to bisect functions would not "remember"
-all of the previous key lookups).
-
-Instead, it is better to search a list of precomputed keys to find the index
-of the record in question::
+One technique to avoid repeated calls to a key function is to search a list of
+precomputed keys to find the index of a record::
 
     >>> data = [('red', 5), ('blue', 1), ('yellow', 8), ('black', 0)]
-    >>> data.sort(key=lambda r: r[1])
-    >>> keys = [r[1] for r in data]         # precomputed list of keys
+    >>> data.sort(key=lambda r: r[1])       # Or use operator.itemgetter(1).
+    >>> keys = [r[1] for r in data]         # Precompute a list of keys.
     >>> data[bisect_left(keys, 0)]
     ('black', 0)
     >>> data[bisect_left(keys, 1)]
