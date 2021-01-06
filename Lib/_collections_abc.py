@@ -762,6 +762,15 @@ class Mapping(Collection):
     def __getitem__(self, key):
         raise KeyError
 
+    @classmethod
+    def _from_mapping(cls, mapping):
+        '''Construct an instance of the class from any mapping input.
+
+        Must override this method if the class constructor signature
+        does not accept an mapping for an input.
+        '''
+        return cls(mapping)
+
     def get(self, key, default=None):
         'D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.'
         try:
@@ -776,6 +785,12 @@ class Mapping(Collection):
             return False
         else:
             return True
+
+    def __or__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+
+        return self._from_mapping({**self, **other})
 
     def keys(self):
         "D.keys() -> a set-like object providing a view on D's keys"
@@ -958,6 +973,10 @@ class MutableMapping(Mapping):
         except KeyError:
             self[key] = default
         return default
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
 
 
 MutableMapping.register(dict)

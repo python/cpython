@@ -1799,12 +1799,51 @@ class TestCollectionABCs(ABCTestCase):
         self.validate_comparison(MyMapping())
         self.assertRaises(TypeError, reversed, MyMapping())
 
+    def test_Mapping_bitwise_or(self):
+        class MyMapping(Mapping):
+            def __init__(self, data=None):
+                self.data = data or {}
+            def __getitem__(self, key):
+                return self.data[key]
+            def __len__(self):
+                return len(self.data)
+            def __iter__(self):
+                return iter(self.data)
+
+        result = MyMapping({1: 2}) | {3: 4}
+        self.assertIsInstance(result, MyMapping)
+        self.assertEqual(result, {1: 2, 3: 4})
+
     def test_MutableMapping(self):
         for sample in [dict]:
             self.assertIsInstance(sample(), MutableMapping)
             self.assertTrue(issubclass(sample, MutableMapping))
         self.validate_abstract_methods(MutableMapping, '__contains__', '__iter__', '__len__',
             '__getitem__', '__setitem__', '__delitem__')
+
+    def test_MutableMapping_bitwise_or(self):
+        class MyMutableMapping(MutableMapping):
+            def __init__(self, *args, **kwargs):
+                self.data = {}
+                self.update(*args, **kwargs)
+            def __setitem__(self, key, value):
+                self.data[key] = value
+            def __delitem__(self, key):
+                del self.data[key]
+            def __getitem__(self, key):
+                return self.data[key]
+            def __len__(self):
+                return len(self.data)
+            def __iter__(self):
+                return iter(self.data)
+
+        result = MyMutableMapping({1: 2}) | {3: 4}
+        self.assertIsInstance(result, MyMutableMapping)
+        self.assertEqual(result, {1: 2, 3: 4})
+
+        result |= {5: 6}
+        self.assertIsInstance(result, MyMutableMapping)
+        self.assertEqual(result, {1: 2, 3: 4, 5: 6})
 
     def test_MutableMapping_subclass(self):
         # Test issue 9214
