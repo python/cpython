@@ -496,12 +496,11 @@ class AuthorizerLargeIntegerTests(AuthorizerTests):
 def suite():
     tests = [
         AggregateTests,
-        AuthorizerTests,
-        FunctionTests,
-
         AuthorizerIllegalTypeTests,
         AuthorizerLargeIntegerTests,
         AuthorizerRaiseExceptionTests,
+        AuthorizerTests,
+        FunctionTests,
     ]
     return unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
