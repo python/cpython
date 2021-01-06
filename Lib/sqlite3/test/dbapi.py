@@ -83,6 +83,13 @@ class ModuleTests(unittest.TestCase):
                                    sqlite.DatabaseError),
                         "NotSupportedError is not a subclass of DatabaseError")
 
+    def CheckSharedCacheDeprecated(self):
+        for enable in (True, False):
+            with self.assertWarns(DeprecationWarning) as cm:
+                sqlite.enable_shared_cache(enable)
+            self.assertIn("dbapi.py", cm.filename)
+
+
 class ConnectionTests(unittest.TestCase):
 
     def setUp(self):
@@ -172,10 +179,6 @@ class ConnectionTests(unittest.TestCase):
             cx.execute('create table test(id integer)')
 
     def CheckOpenUri(self):
-        if sqlite.sqlite_version_info < (3, 7, 7):
-            with self.assertRaises(sqlite.NotSupportedError):
-                sqlite.connect(':memory:', uri=True)
-            return
         self.addCleanup(unlink, TESTFN)
         with sqlite.connect(TESTFN) as cx:
             cx.execute('create table test(id integer)')

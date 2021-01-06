@@ -47,6 +47,7 @@ def requires_colors(test):
     return wrapped
 
 term = os.environ.get('TERM')
+SHORT_MAX = 0x7fff
 
 # If newterm was supported we could use it instead of initscr and not exit
 @unittest.skipIf(not term or term == 'unknown',
@@ -85,7 +86,7 @@ class TestCurses(unittest.TestCase):
             else:
                 try:
                     # Try to open the terminal device.
-                    tmp = open('/xdev/tty', 'wb', buffering=0)
+                    tmp = open('/dev/tty', 'wb', buffering=0)
                 except OSError:
                     # As a fallback, use regular file to write control codes.
                     # Some functions (like savetty) will not work, but at
@@ -327,11 +328,20 @@ class TestCurses(unittest.TestCase):
     def bad_pairs(self):
         return (-1, -2**31 - 1, 2**31, -2**63 - 1, 2**63, 2**64)
 
+    def test_start_color(self):
+        if not curses.has_colors():
+            self.skipTest('requires colors support')
+        curses.start_color()
+        if verbose:
+            print(f'COLORS = {curses.COLORS}', file=sys.stderr)
+            print(f'COLOR_PAIRS = {curses.COLOR_PAIRS}', file=sys.stderr)
+
     @requires_colors
     def test_color_content(self):
         self.assertEqual(curses.color_content(curses.COLOR_BLACK), (0, 0, 0))
         curses.color_content(0)
-        curses.color_content(curses.COLORS - 1)
+        maxcolor = curses.COLORS - 1
+        curses.color_content(maxcolor)
 
         for color in self.bad_colors():
             self.assertRaises(ValueError, curses.color_content, color)
@@ -352,11 +362,12 @@ class TestCurses(unittest.TestCase):
         curses.init_color(0, 1000, 1000, 1000)
         self.assertEqual(curses.color_content(0), (1000, 1000, 1000))
 
-        old = curses.color_content(curses.COLORS - 1)
-        curses.init_color(curses.COLORS - 1, *old)
-        self.addCleanup(curses.init_color, curses.COLORS - 1, *old)
-        curses.init_color(curses.COLORS - 1, 0, 500, 1000)
-        self.assertEqual(curses.color_content(curses.COLORS - 1), (0, 500, 1000))
+        maxcolor = curses.COLORS - 1
+        old = curses.color_content(maxcolor)
+        curses.init_color(maxcolor, *old)
+        self.addCleanup(curses.init_color, maxcolor, *old)
+        curses.init_color(maxcolor, 0, 500, 1000)
+        self.assertEqual(curses.color_content(maxcolor), (0, 500, 1000))
 
         for color in self.bad_colors():
             self.assertRaises(ValueError, curses.init_color, color, 0, 0, 0)
@@ -365,13 +376,25 @@ class TestCurses(unittest.TestCase):
             self.assertRaises(ValueError, curses.init_color, 0, 0, comp, 0)
             self.assertRaises(ValueError, curses.init_color, 0, 0, 0, comp)
 
+    def get_pair_limit(self):
+        pair_limit = curses.COLOR_PAIRS
+        if hasattr(curses, 'ncurses_version'):
+            if curses.has_extended_color_support():
+                pair_limit += 2*curses.COLORS + 1
+            if (not curses.has_extended_color_support()
+                    or (6, 1) <= curses.ncurses_version < (6, 2)):
+                pair_limit = min(pair_limit, SHORT_MAX)
+        return pair_limit
+
     @requires_colors
     def test_pair_content(self):
         if not hasattr(curses, 'use_default_colors'):
             self.assertEqual(curses.pair_content(0),
                              (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
-        curses.pair_content(curses.COLOR_PAIRS - 1)
+        maxpair = self.get_pair_limit() - 1
+        if maxpair > 0:
+            curses.pair_content(maxpair)
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.pair_content, pair)
@@ -384,11 +407,15 @@ class TestCurses(unittest.TestCase):
 
         curses.init_pair(1, 0, 0)
         self.assertEqual(curses.pair_content(1), (0, 0))
-        curses.init_pair(1, curses.COLORS - 1, curses.COLORS - 1)
-        self.assertEqual(curses.pair_content(1),
-                         (curses.COLORS - 1, curses.COLORS - 1))
-        curses.init_pair(curses.COLOR_PAIRS - 1, 2, 3)
-        self.assertEqual(curses.pair_content(curses.COLOR_PAIRS - 1), (2, 3))
+        maxcolor = curses.COLORS - 1
+        curses.init_pair(1, maxcolor, 0)
+        self.assertEqual(curses.pair_content(1), (maxcolor, 0))
+        curses.init_pair(1, 0, maxcolor)
+        self.assertEqual(curses.pair_content(1), (0, maxcolor))
+        maxpair = self.get_pair_limit() - 1
+        if maxpair > 1:
+            curses.init_pair(maxpair, 0, 0)
+            self.assertEqual(curses.pair_content(maxpair), (0, 0))
 
         for pair in self.bad_pairs():
             self.assertRaises(ValueError, curses.init_pair, pair, 0, 0)
@@ -582,6 +609,8 @@ class MiscTests(unittest.TestCase):
     @requires_curses_func('ncurses_version')
     def test_ncurses_version(self):
         v = curses.ncurses_version
+        if verbose:
+            print(f'ncurses_version = {curses.ncurses_version}', flush=True)
         self.assertIsInstance(v[:], tuple)
         self.assertEqual(len(v), 3)
         self.assertIsInstance(v[0], int)

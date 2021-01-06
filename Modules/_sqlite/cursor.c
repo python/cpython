@@ -24,20 +24,31 @@
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
+#include "clinic/cursor.c.h"
+
+/*[clinic input]
+module _sqlite3
+class _sqlite3.Cursor "pysqlite_Cursor *" "pysqlite_CursorType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2072d8db95411d5]*/
 
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
-static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
+/*[clinic input]
+_sqlite3.Cursor.__init__ as pysqlite_cursor_init
+
+    connection: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
+    /
+
+[clinic start generated code]*/
+
+static int
+pysqlite_cursor_init_impl(pysqlite_Cursor *self,
+                          pysqlite_Connection *connection)
+/*[clinic end generated code: output=ac59dce49a809ca8 input=a8a4f75ac90999b2]*/
 {
-    pysqlite_Connection* connection;
-
-    if (!PyArg_ParseTuple(args, "O!", pysqlite_ConnectionType, &connection))
-    {
-        return -1;
-    }
-
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);
     Py_CLEAR(self->statement);
@@ -367,9 +378,8 @@ static int check_cursor(pysqlite_Cursor* cur)
 }
 
 static PyObject *
-_pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
+_pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
 {
-    PyObject* operation;
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
     PyObject* parameters = NULL;
@@ -380,7 +390,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
     int numcols;
     PyObject* descriptor;
     PyObject* column_name;
-    PyObject* second_argument = NULL;
     sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
@@ -393,11 +402,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
     Py_CLEAR(self->next_row);
 
     if (multiple) {
-        /* executemany() */
-        if (!PyArg_ParseTuple(args, "UO", &operation, &second_argument)) {
-            goto error;
-        }
-
         if (PyIter_Check(second_argument)) {
             /* iterator */
             parameters_iter = Py_NewRef(second_argument);
@@ -409,11 +413,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
             }
         }
     } else {
-        /* execute() */
-        if (!PyArg_ParseTuple(args, "U|O", &operation, &second_argument)) {
-            goto error;
-        }
-
         parameters_list = PyList_New(0);
         if (!parameters_list) {
             goto error;
@@ -610,29 +609,60 @@ error:
     }
 }
 
-PyObject* pysqlite_cursor_execute(pysqlite_Cursor* self, PyObject* args)
-{
-    return _pysqlite_query_execute(self, 0, args);
-}
+/*[clinic input]
+_sqlite3.Cursor.execute as pysqlite_cursor_execute
 
-PyObject* pysqlite_cursor_executemany(pysqlite_Cursor* self, PyObject* args)
-{
-    return _pysqlite_query_execute(self, 1, args);
-}
+    sql: unicode
+    parameters: object(c_default = 'NULL') = ()
+    /
+
+Executes a SQL statement.
+[clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
+pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
+                             PyObject *parameters)
+/*[clinic end generated code: output=d81b4655c7c0bbad input=91d7bb36f127f597]*/
+{
+    return _pysqlite_query_execute(self, 0, sql, parameters);
+}
+
+/*[clinic input]
+_sqlite3.Cursor.executemany as pysqlite_cursor_executemany
+
+    sql: unicode
+    seq_of_parameters: object
+    /
+
+Repeatedly executes a SQL statement.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
+                                 PyObject *seq_of_parameters)
+/*[clinic end generated code: output=2c65a3c4733fb5d8 input=440707b7af87fba8]*/
+{
+    return _pysqlite_query_execute(self, 1, sql, seq_of_parameters);
+}
+
+/*[clinic input]
+_sqlite3.Cursor.executescript as pysqlite_cursor_executescript
+
+    sql_script as script_obj: object
+    /
+
+Executes a multiple SQL statements at once. Non-standard.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
+/*[clinic end generated code: output=115a8132b0f200fe input=38c6fa6de570bb9b]*/
 {
     _Py_IDENTIFIER(commit);
-    PyObject* script_obj;
     const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
     PyObject* result;
-
-    if (!PyArg_ParseTuple(args, "O", &script_obj)) {
-        return NULL;
-    }
 
     if (!check_cursor(self)) {
         return NULL;
@@ -769,7 +799,15 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
     return next_row;
 }
 
-PyObject* pysqlite_cursor_fetchone(pysqlite_Cursor* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Cursor.fetchone as pysqlite_cursor_fetchone
+
+Fetches one row from the resultset.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
+/*[clinic end generated code: output=4bd2eabf5baaddb0 input=e78294ec5980fdba]*/
 {
     PyObject* row;
 
@@ -781,18 +819,21 @@ PyObject* pysqlite_cursor_fetchone(pysqlite_Cursor* self, PyObject* args)
     return row;
 }
 
-PyObject* pysqlite_cursor_fetchmany(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
-{
-    static char *kwlist[] = {"size", NULL};
+/*[clinic input]
+_sqlite3.Cursor.fetchmany as pysqlite_cursor_fetchmany
 
+    size as maxrows: int(c_default='self->arraysize') = cursor.arraysize
+
+Fetches several rows from the resultset.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
+/*[clinic end generated code: output=a8ef31fea64d0906 input=d80ff999a7701ffb]*/
+{
     PyObject* row;
     PyObject* list;
-    int maxrows = self->arraysize;
     int counter = 0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:fetchmany", kwlist, &maxrows)) {
-        return NULL;
-    }
 
     list = PyList_New(0);
     if (!list) {
@@ -816,7 +857,15 @@ PyObject* pysqlite_cursor_fetchmany(pysqlite_Cursor* self, PyObject* args, PyObj
     }
 }
 
-PyObject* pysqlite_cursor_fetchall(pysqlite_Cursor* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Cursor.fetchall as pysqlite_cursor_fetchall
+
+Fetches all rows from the resultset.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self)
+/*[clinic end generated code: output=d5da12aca2da4b27 input=f5d401086a8df25a]*/
 {
     PyObject* row;
     PyObject* list;
@@ -839,13 +888,49 @@ PyObject* pysqlite_cursor_fetchall(pysqlite_Cursor* self, PyObject* args)
     }
 }
 
-PyObject* pysqlite_noop(pysqlite_Connection* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Cursor.setinputsizes as pysqlite_cursor_setinputsizes
+
+    sizes: object
+    /
+
+Required by DB-API. Does nothing in pysqlite.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
+/*[clinic end generated code: output=893c817afe9d08ad input=7cffbb168663bc69]*/
 {
-    /* don't care, return None */
     Py_RETURN_NONE;
 }
 
-PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Cursor.setoutputsize as pysqlite_cursor_setoutputsize
+
+    size: object
+    column: object = None
+    /
+
+Required by DB-API. Does nothing in pysqlite.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_setoutputsize_impl(pysqlite_Cursor *self, PyObject *size,
+                                   PyObject *column)
+/*[clinic end generated code: output=018d7e9129d45efe input=077b017da58b9389]*/
+{
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_sqlite3.Cursor.close as pysqlite_cursor_close
+
+Closes the cursor.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_close_impl(pysqlite_Cursor *self)
+/*[clinic end generated code: output=b6055e4ec6fe63b6 input=08b36552dbb9a986]*/
 {
     if (!self->connection) {
         PyErr_SetString(pysqlite_ProgrammingError,
@@ -867,24 +952,15 @@ PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 }
 
 static PyMethodDef cursor_methods[] = {
-    {"execute", (PyCFunction)pysqlite_cursor_execute, METH_VARARGS,
-        PyDoc_STR("Executes a SQL statement.")},
-    {"executemany", (PyCFunction)pysqlite_cursor_executemany, METH_VARARGS,
-        PyDoc_STR("Repeatedly executes a SQL statement.")},
-    {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_VARARGS,
-        PyDoc_STR("Executes a multiple SQL statements at once. Non-standard.")},
-    {"fetchone", (PyCFunction)pysqlite_cursor_fetchone, METH_NOARGS,
-        PyDoc_STR("Fetches one row from the resultset.")},
-    {"fetchmany", (PyCFunction)(void(*)(void))pysqlite_cursor_fetchmany, METH_VARARGS|METH_KEYWORDS,
-        PyDoc_STR("Fetches several rows from the resultset.")},
-    {"fetchall", (PyCFunction)pysqlite_cursor_fetchall, METH_NOARGS,
-        PyDoc_STR("Fetches all rows from the resultset.")},
-    {"close", (PyCFunction)pysqlite_cursor_close, METH_NOARGS,
-        PyDoc_STR("Closes the cursor.")},
-    {"setinputsizes", (PyCFunction)pysqlite_noop, METH_VARARGS,
-        PyDoc_STR("Required by DB-API. Does nothing in pysqlite.")},
-    {"setoutputsize", (PyCFunction)pysqlite_noop, METH_VARARGS,
-        PyDoc_STR("Required by DB-API. Does nothing in pysqlite.")},
+    PYSQLITE_CURSOR_CLOSE_METHODDEF
+    PYSQLITE_CURSOR_EXECUTEMANY_METHODDEF
+    PYSQLITE_CURSOR_EXECUTESCRIPT_METHODDEF
+    PYSQLITE_CURSOR_EXECUTE_METHODDEF
+    PYSQLITE_CURSOR_FETCHALL_METHODDEF
+    PYSQLITE_CURSOR_FETCHMANY_METHODDEF
+    PYSQLITE_CURSOR_FETCHONE_METHODDEF
+    PYSQLITE_CURSOR_SETINPUTSIZES_METHODDEF
+    PYSQLITE_CURSOR_SETOUTPUTSIZE_METHODDEF
     {NULL, NULL}
 };
 

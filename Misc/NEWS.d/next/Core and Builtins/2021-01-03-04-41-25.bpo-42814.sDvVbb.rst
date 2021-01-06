@@ -1,1 +1,0 @@
-Fix undefined behavior in ``Objects/genericaliasobject.c``.
