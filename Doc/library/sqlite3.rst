@@ -1092,6 +1092,5 @@ committed:
 .. [#f1] The sqlite3 module is not built with loadable extension support by
    default, because some platforms (notably Mac OS X) have SQLite
    libraries which are compiled without this feature. To get loadable
-   extension support, your Python must be compiled with
-   ``-–enable-loadable-sqlite-extensions`` option which is passed to
-   `configure <https://github.com/python/cpython#build-instructions>`_ script.
+   extension support, you must pass --enable-loadable-sqlite-extensions to
+   configure.
