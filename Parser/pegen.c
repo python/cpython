@@ -380,7 +380,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     return NULL;
 }
 
-PyObject *
+static PyObject *
 get_error_line(Parser *p, int lineno)
 {
     char *cur_line = p->tok->fp == NULL ? p->tok->str : p->tok->stdin_content;
