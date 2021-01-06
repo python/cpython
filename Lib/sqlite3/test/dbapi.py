@@ -172,10 +172,6 @@ class ConnectionTests(unittest.TestCase):
             cx.execute('create table test(id integer)')
 
     def CheckOpenUri(self):
-        if sqlite.sqlite_version_info < (3, 7, 7):
-            with self.assertRaises(sqlite.NotSupportedError):
-                sqlite.connect(':memory:', uri=True)
-            return
         self.addCleanup(unlink, TESTFN)
         with sqlite.connect(TESTFN) as cx:
             cx.execute('create table test(id integer)')
