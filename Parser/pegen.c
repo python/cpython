@@ -380,6 +380,21 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     return NULL;
 }
 
+PyObject *
+get_error_line(Parser *p, int lineno)
+{
+    char *cur_line = p->tok->fp == NULL ? p->tok->str : p->tok->stdin_content;
+    for (int i = 0; i < lineno - 1; i++) {
+        cur_line = strchr(cur_line, '\n') + 1;
+    }
+
+    char *next_newline;
+    if ((next_newline = strchr(cur_line, '\n')) == NULL) { // This is the last line
+        return PyUnicode_DecodeUTF8(cur_line, strlen(cur_line), "replace");
+    }
+    return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
+}
+
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -416,8 +431,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        Py_ssize_t size = p->tok->inp - p->tok->buf;
-        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        if (p->tok->lineno == lineno) {
+            Py_ssize_t size = p->tok->inp - p->tok->buf;
+            error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        }
+        else {
+            error_line = get_error_line(p, lineno);
+        }
         if (!error_line) {
             goto error;
         }

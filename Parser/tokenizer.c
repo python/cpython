@@ -81,6 +81,7 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
     tok->type_comments = 0;
+    tok->stdin_content = NULL;
 
     tok->async_hacks = 0;
     tok->async_def = 0;
@@ -856,6 +857,25 @@ tok_nextc(struct tok_state *tok)
                 if (translated == NULL)
                     return EOF;
                 newtok = translated;
+                if (tok->stdin_content == NULL) {
+                    tok->stdin_content = PyMem_Malloc(strlen(translated) + 1);
+                    if (tok->stdin_content == NULL) {
+                        tok->done = E_NOMEM;
+                        return EOF;
+                    }
+                    strcpy(tok->stdin_content, translated);
+                    tok->stdin_content[strlen(translated)] = 0;
+                }
+                else {
+                    char *new_str = PyMem_Malloc(strlen(tok->stdin_content) + strlen(translated) + 1);
+                    if (new_str == NULL) {
+                        tok->done = E_NOMEM;
+                        return EOF;
+                    }
+                    sprintf(new_str, "%s%s", tok->stdin_content, translated);
+                    PyMem_Free(tok->stdin_content);
+                    tok->stdin_content = new_str;
+                }
             }
             if (tok->encoding && newtok && *newtok) {
                 /* Recode to UTF-8 */
