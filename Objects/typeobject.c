@@ -3157,10 +3157,10 @@ PyType_GetName(PyTypeObject *type)
 {
     assert(PyType_Check(type));
     if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        return PyUnicode_AsUTF8(((PyHeapTypeObject *)type)->ht_name);
-    } else {
-        return type->tp_name;
+        PyTypeObject ht_type = ((PyHeapTypeObject *)type)->ht_type;
+        return ht_type.tp_name;
     }
+    return type->tp_name;
 }
 
 void *

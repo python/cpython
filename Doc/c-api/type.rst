@@ -97,7 +97,9 @@ Type Objects
 
 .. c:function:: const char* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name.
+   Return the type's name. The returned pointer includes the module name
+   if type's name have a prefix of module name.
+   Callers can hold this pointer until the type has been deallocated.
 
    .. versionadded:: 3.10
 
