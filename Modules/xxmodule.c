@@ -354,7 +354,7 @@ xx_exec(PyObject *m)
        behavior.
     */
     Null_Type.tp_base = &PyBaseObject_Type;
-    Str_Type.tp_base = &PyUnicode_Type;
+    Str_Type.tp_base = _Py_GetUnicodeType();
 
     /* Finalize the type object including setting type of the new type
      * object; doing it here is required for portability, too. */

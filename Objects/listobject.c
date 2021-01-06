@@ -28,6 +28,14 @@ get_list_state(void)
 }
 
 
+int
+_PyList_CheckExact(PyObject *op)
+{
+    struct _Py_list_state *state = get_list_state();
+    return Py_IS_TYPE(op, state->type);
+}
+
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -2064,8 +2072,8 @@ unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
     int res;
 
     /* Modified from Objects/unicodeobject.c:unicode_compare, assuming: */
-    assert(Py_IS_TYPE(v, &PyUnicode_Type));
-    assert(Py_IS_TYPE(w, &PyUnicode_Type));
+    assert(PyUnicode_CheckExact(v));
+    assert(PyUnicode_CheckExact(w));
     assert(PyUnicode_KIND(v) == PyUnicode_KIND(w));
     assert(PyUnicode_KIND(v) == PyUnicode_1BYTE_KIND);
 
@@ -2087,8 +2095,8 @@ unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
     PyLongObject *vl, *wl; sdigit v0, w0; int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
-    assert(Py_IS_TYPE(v, &PyLong_Type));
-    assert(Py_IS_TYPE(w, &PyLong_Type));
+    assert(PyLong_CheckExact(v));
+    assert(PyLong_CheckExact(w));
     assert(Py_ABS(Py_SIZE(v)) <= 1);
     assert(Py_ABS(Py_SIZE(w)) <= 1);
 
@@ -2297,13 +2305,13 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             }
 
             if (keys_are_all_same_type) {
-                if (key_type == &PyLong_Type &&
+                if (PyLong_CheckExact(key_type) &&
                     ints_are_bounded &&
                     Py_ABS(Py_SIZE(key)) > 1) {
 
                     ints_are_bounded = 0;
                 }
-                else if (key_type == &PyUnicode_Type &&
+                else if (key_type == _Py_GetUnicodeType() &&
                          strings_are_latin &&
                          PyUnicode_KIND(key) != PyUnicode_1BYTE_KIND) {
 
@@ -2315,10 +2323,10 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         /* Choose the best compare, given what we now know about the keys. */
         if (keys_are_all_same_type) {
 
-            if (key_type == &PyUnicode_Type && strings_are_latin) {
+            if (key_type == _Py_GetUnicodeType() && strings_are_latin) {
                 ms.key_compare = unsafe_latin_compare;
             }
-            else if (key_type == &PyLong_Type && ints_are_bounded) {
+            else if (PyLong_CheckExact(key_type) && ints_are_bounded) {
                 ms.key_compare = unsafe_long_compare;
             }
             else if (key_type == &PyFloat_Type) {

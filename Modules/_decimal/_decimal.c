@@ -5857,13 +5857,14 @@ PyInit__decimal(void)
     }
 
     /* Init external C-API functions */
-    _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
-    _py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
-    _py_long_power = PyLong_Type.tp_as_number->nb_power;
+    PyTypeObject *long_type = _Py_GetLongType();
+    _py_long_multiply = long_type->tp_as_number->nb_multiply;
+    _py_long_floor_divide = long_type->tp_as_number->nb_floor_divide;
+    _py_long_power = long_type->tp_as_number->nb_power;
     _py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
     ASSIGN_PTR(_py_float_as_integer_ratio, cfunc_noargs(&PyFloat_Type,
                                                         "as_integer_ratio"));
-    ASSIGN_PTR(_py_long_bit_length, cfunc_noargs(&PyLong_Type, "bit_length"));
+    ASSIGN_PTR(_py_long_bit_length, cfunc_noargs(long_type, "bit_length"));
 
 
     /* Init types */

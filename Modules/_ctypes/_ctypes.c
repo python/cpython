@@ -2866,7 +2866,7 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     PyObject *dict, *mydict;
     CDataObject *self = (CDataObject *)myself;
     if (!PyArg_ParseTuple(args, "O!s#",
-                          &PyDict_Type, &dict, &data, &len))
+                          _Py_GetDictType(), &dict, &data, &len))
     {
         return NULL;
     }
@@ -5701,8 +5701,8 @@ _ctypes_add_types(PyObject *mod)
     TYPE_READY(&PyCArg_Type);
     TYPE_READY(&PyCThunk_Type);
     TYPE_READY(&PyCData_Type);
-    /* StgDict is derived from PyDict_Type */
-    TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
+    /* StgDict is derived from dict */
+    TYPE_READY_BASE(&PyCStgDict_Type, _Py_GetDictType());
 
     /*************************************************
      *

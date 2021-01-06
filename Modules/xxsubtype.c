@@ -179,7 +179,7 @@ static PyMethodDef spamdict_methods[] = {
 static int
 spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)
 {
-    if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
+    if (_Py_GetDictType()->tp_init((PyObject *)self, args, kwds) < 0)
         return -1;
     self->state = 0;
     return 0;
@@ -222,7 +222,7 @@ static PyTypeObject spamdict_type = {
     spamdict_methods,                           /* tp_methods */
     spamdict_members,                           /* tp_members */
     0,                                          /* tp_getset */
-    DEFERRED_ADDRESS(&PyDict_Type),             /* tp_base */
+    0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -264,7 +264,7 @@ xxsubtype_exec(PyObject* m)
        PyType_Ready() is called.  Note that PyType_Ready() automatically
        initializes the ob.ob_type field to &PyType_Type if it's NULL,
        so it's not necessary to fill in ob_type first. */
-    spamdict_type.tp_base = &PyDict_Type;
+    spamdict_type.tp_base = _Py_GetDictType();
     if (PyType_Ready(&spamdict_type) < 0)
         return -1;
 

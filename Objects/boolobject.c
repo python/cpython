@@ -85,7 +85,7 @@ static PyObject *
 bool_and(PyObject *a, PyObject *b)
 {
     if (!PyBool_Check(a) || !PyBool_Check(b))
-        return PyLong_Type.tp_as_number->nb_and(a, b);
+        return _Py_GetLongType()->tp_as_number->nb_and(a, b);
     return PyBool_FromLong((a == Py_True) & (b == Py_True));
 }
 
@@ -93,7 +93,7 @@ static PyObject *
 bool_or(PyObject *a, PyObject *b)
 {
     if (!PyBool_Check(a) || !PyBool_Check(b))
-        return PyLong_Type.tp_as_number->nb_or(a, b);
+        return _Py_GetLongType()->tp_as_number->nb_or(a, b);
     return PyBool_FromLong((a == Py_True) | (b == Py_True));
 }
 
@@ -101,7 +101,7 @@ static PyObject *
 bool_xor(PyObject *a, PyObject *b)
 {
     if (!PyBool_Check(a) || !PyBool_Check(b))
-        return PyLong_Type.tp_as_number->nb_xor(a, b);
+        return _Py_GetLongType()->tp_as_number->nb_xor(a, b);
     return PyBool_FromLong((a == Py_True) ^ (b == Py_True));
 }
 
@@ -186,7 +186,7 @@ PyTypeObject PyBool_Type = {
     0,                                          /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
-    &PyLong_Type,                               /* tp_base */
+    0, /* _PyTypes_Init() sets it to &PyLong_Type: tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */

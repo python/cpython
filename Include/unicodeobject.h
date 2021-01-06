@@ -110,10 +110,14 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyUnicode_Type;
 PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyTypeObject*) _Py_GetUnicodeType(void);
+#endif
 
 #define PyUnicode_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
+PyAPI_FUNC(int) _PyUnicode_CheckExact(PyObject *op);
+#define PyUnicode_CheckExact(op) _PyUnicode_CheckExact(_PyObject_CAST(op))
 
 /* --- Constants ---------------------------------------------------------- */
 

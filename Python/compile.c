@@ -3927,7 +3927,7 @@ infer_type(expr_ty e)
         return &PyList_Type;
     case Dict_kind:
     case DictComp_kind:
-        return &PyDict_Type;
+        return _Py_GetDictType();
     case Set_kind:
     case SetComp_kind:
         return &PySet_Type;
@@ -3937,7 +3937,7 @@ infer_type(expr_ty e)
         return &PyFunction_Type;
     case JoinedStr_kind:
     case FormattedValue_kind:
-        return &PyUnicode_Type;
+        return _Py_GetUnicodeType();
     case Constant_kind:
         return Py_TYPE(e->v.Constant.value);
     default:

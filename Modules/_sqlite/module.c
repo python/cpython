@@ -172,8 +172,8 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 
     /* a basic type is adapted; there's a performance optimization if that's not the case
      * (99 % of all usages) */
-    if (type == &PyLong_Type || type == &PyFloat_Type
-            || type == &PyUnicode_Type || type == &PyByteArray_Type) {
+    if (type == _Py_GetLongType() || type == &PyFloat_Type
+            || type == _Py_GetUnicodeType() || type == &PyByteArray_Type) {
         pysqlite_BaseTypeAdapted = 1;
     }
 

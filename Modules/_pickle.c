@@ -4273,8 +4273,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             return status;
     }
 
-    type = Py_TYPE(obj);
-
     /* The old cPickle had an optimization that used switch-case statement
        dispatching on the first letter of the type name.  This has was removed
        since benchmarks shown that this optimization was actually slowing
@@ -4285,13 +4283,13 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     if (obj == Py_None) {
         return save_none(self, obj);
     }
-    else if (obj == Py_False || obj == Py_True) {
+    else if (PyBool_Check(obj)) {
         return save_bool(self, obj);
     }
-    else if (type == &PyLong_Type) {
+    else if (PyLong_CheckExact(obj)) {
         return save_long(self, obj);
     }
-    else if (type == &PyFloat_Type) {
+    else if (PyFloat_CheckExact(obj)) {
         return save_float(self, obj);
     }
 
@@ -4302,10 +4300,10 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         return memo_get(self, obj);
     }
 
-    if (type == &PyBytes_Type) {
+    if (PyBytes_CheckExact(obj)) {
         return save_bytes(self, obj);
     }
-    else if (type == &PyUnicode_Type) {
+    else if (PyUnicode_CheckExact(obj)) {
         return save_unicode(self, obj);
     }
 
@@ -4315,7 +4313,8 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         return -1;
     }
 
-    if (type == &PyDict_Type) {
+    type = Py_TYPE(obj);
+    if (PyDict_CheckExact(obj)) {
         status = save_dict(self, obj);
         goto done;
     }
@@ -4323,19 +4322,19 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         status = save_set(self, obj);
         goto done;
     }
-    else if (type == &PyFrozenSet_Type) {
+    else if (PyFrozenSet_CheckExact(obj)) {
         status = save_frozenset(self, obj);
         goto done;
     }
-    else if (type == &PyList_Type) {
+    else if (PyList_CheckExact(obj)) {
         status = save_list(self, obj);
         goto done;
     }
-    else if (type == &PyTuple_Type) {
+    else if (PyTuple_CheckExact(obj)) {
         status = save_tuple(self, obj);
         goto done;
     }
-    else if (type == &PyByteArray_Type) {
+    else if (PyByteArray_CheckExact(obj)) {
         status = save_bytearray(self, obj);
         goto done;
     }
@@ -4869,8 +4868,7 @@ _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
         return NULL;
     }
     PyTuple_SET_ITEM(dict_args, 0, contents);
-    Py_INCREF((PyObject *)&PyDict_Type);
-    PyTuple_SET_ITEM(reduce_value, 0, (PyObject *)&PyDict_Type);
+    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef((PyObject *)_Py_GetDictType()));
     PyTuple_SET_ITEM(reduce_value, 1, dict_args);
     return reduce_value;
 }
@@ -7381,8 +7379,7 @@ _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
         return NULL;
     }
     PyTuple_SET_ITEM(constructor_args, 0, contents);
-    Py_INCREF((PyObject *)&PyDict_Type);
-    PyTuple_SET_ITEM(reduce_value, 0, (PyObject *)&PyDict_Type);
+    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef((PyObject *)_Py_GetDictType()));
     PyTuple_SET_ITEM(reduce_value, 1, constructor_args);
     return reduce_value;
 }

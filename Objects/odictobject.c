@@ -527,6 +527,15 @@ struct _odictnode {
 
 _Py_IDENTIFIER(items);
 
+
+static PyTypeObject*
+get_dict_type(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return interp->dict_state.type;
+}
+
+
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
 _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
@@ -1412,7 +1421,7 @@ odict_dealloc(PyODictObject *self)
         PyObject_ClearWeakRefs((PyObject *)self);
 
     _odict_clear_nodes(self);
-    PyDict_Type.tp_dealloc((PyObject *)self);
+    get_dict_type()->tp_dealloc((PyObject *)self);
 
     Py_TRASHCAN_END
 }
@@ -1504,7 +1513,7 @@ odict_traverse(PyODictObject *od, visitproc visit, void *arg)
     _odict_FOREACH(od, node) {
         Py_VISIT(_odictnode_KEY(node));
     }
-    return PyDict_Type.tp_traverse((PyObject *)od, visit, arg);
+    return get_dict_type()->tp_traverse((PyObject *)od, visit, arg);
 }
 
 /* tp_clear */
@@ -1531,7 +1540,7 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
         PyObject *res, *cmp;
         int eq;
 
-        cmp = PyDict_Type.tp_richcompare(v, w, op);
+        cmp = get_dict_type()->tp_richcompare(v, w, op);
         if (cmp == NULL)
             return NULL;
         if (!PyODict_Check(w))
@@ -1622,7 +1631,7 @@ PyTypeObject PyODict_Type = {
     odict_methods,                              /* tp_methods */
     0,                                          /* tp_members */
     odict_getset,                               /* tp_getset */
-    &PyDict_Type,                               /* tp_base */
+    0, /* _PyTypes_Init() sets it to &PyDict_Type: tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -1641,7 +1650,7 @@ PyTypeObject PyODict_Type = {
 PyObject *
 PyODict_New(void)
 {
-    return PyDict_Type.tp_new(&PyODict_Type, NULL, NULL);
+    return get_dict_type()->tp_new(&PyODict_Type, NULL, NULL);
 }
 
 static int

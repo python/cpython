@@ -20,7 +20,7 @@ static inline PyObject* __PyLong_GetSmallInt_internal(int value)
 #endif
     assert(-_PY_NSMALLNEGINTS <= value && value < _PY_NSMALLPOSINTS);
     size_t index = _PY_NSMALLNEGINTS + value;
-    PyObject *obj = (PyObject*)tstate->interp->small_ints[index];
+    PyObject *obj = (PyObject*)tstate->interp->long_state.small_ints[index];
     // _PyLong_GetZero() and _PyLong_GetOne() must not be called
     // before _PyLong_Init() nor after _PyLong_Fini()
     assert(obj != NULL);

@@ -259,6 +259,22 @@ get_dict_state(void)
 }
 
 
+PyTypeObject*
+_Py_GetDictType(void)
+{
+    struct _Py_dict_state *state = get_dict_state();
+    return state->type;
+}
+
+
+int
+_PyDict_CheckExact(PyObject *op)
+{
+    struct _Py_dict_state *state = get_dict_state();
+    return Py_IS_TYPE(op, state->type);
+}
+
+
 void
 _PyDict_ClearFreeList(PyThreadState *tstate)
 {
@@ -656,11 +672,11 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     if (state->numfree) {
         mp = state->free_list[--state->numfree];
         assert (mp != NULL);
-        assert (Py_IS_TYPE(mp, &PyDict_Type));
+        assert (Py_IS_TYPE(mp, state->type));
         _Py_NewReference((PyObject *)mp);
     }
     else {
-        mp = PyObject_GC_New(PyDictObject, &PyDict_Type);
+        mp = PyObject_GC_New(PyDictObject, state->type);
         if (mp == NULL) {
             dictkeys_decref(keys);
             if (values != empty_values) {
@@ -2107,7 +2123,7 @@ dict_dealloc(PyDictObject *mp)
     // new_dict() must not be called after _PyDict_Fini()
     assert(state->numfree != -1);
 #endif
-    if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
+    if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, state->type)) {
         state->free_list[state->numfree++] = mp;
     }
     else {
@@ -2797,7 +2813,8 @@ PyDict_Copy(PyObject *o)
         newvalues = new_values(size);
         if (newvalues == NULL)
             return PyErr_NoMemory();
-        split_copy = PyObject_GC_New(PyDictObject, &PyDict_Type);
+        struct _Py_dict_state *state = get_dict_state();
+        split_copy = PyObject_GC_New(PyDictObject, state->type);
         if (split_copy == NULL) {
             free_values(newvalues);
             return NULL;
@@ -3487,7 +3504,8 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d = (PyDictObject *)self;
 
     /* The object has been implicitly tracked by tp_alloc */
-    if (type == &PyDict_Type) {
+    struct _Py_dict_state *state = get_dict_state();
+    if (type == state->type) {
         _PyObject_GC_UNTRACK(d);
     }
 

@@ -1250,7 +1250,7 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     unsigned char statebytes[8];
 
     if (!PyArg_ParseTuple(state, "SO!;setstate(): illegal state argument",
-                          &buffer, &PyLong_Type, &statelong))
+                          &buffer, _Py_GetLongType(), &statelong))
     {
         return NULL;
     }

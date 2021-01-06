@@ -625,6 +625,12 @@ pycore_init_types(PyThreadState *tstate)
 {
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate);
+    PyInterpreterState *interp = tstate->interp;
+
+    interp->long_state.type = &PyLong_Type;
+    interp->list.type = &PyList_Type;
+    interp->dict_state.type = &PyDict_Type;
+    interp->unicode.type = &PyUnicode_Type;
 
     status = _PyGC_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {

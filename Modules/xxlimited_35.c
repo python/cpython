@@ -236,7 +236,7 @@ xx_modexec(PyObject *m)
      * C++. */
     Null_Type_slots[0].pfunc = &PyBaseObject_Type;
     Null_Type_slots[1].pfunc = PyType_GenericNew;
-    Str_Type_slots[0].pfunc = &PyUnicode_Type;
+    Str_Type_slots[0].pfunc = _Py_GetUnicodeType();
 
     Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
     if (Xxo_Type == NULL)

@@ -1893,7 +1893,7 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     }
 
     // int
-    if (_register_xidata(xidregistry, &PyLong_Type, _long_shared) != 0) {
+    if (_register_xidata(xidregistry, _Py_GetLongType(), _long_shared) != 0) {
         Py_FatalError("could not register int for cross-interpreter sharing");
     }
 
@@ -1903,7 +1903,7 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     }
 
     // str
-    if (_register_xidata(xidregistry, &PyUnicode_Type, _str_shared) != 0) {
+    if (_register_xidata(xidregistry, _Py_GetUnicodeType(), _str_shared) != 0) {
         Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }

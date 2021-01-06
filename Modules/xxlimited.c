@@ -318,7 +318,7 @@ xx_modexec(PyObject *m)
     // It does not inherit from "object" (PyObject_Type), but from "str"
     // (PyUnincode_Type).
     PyObject *Str_Type = PyType_FromModuleAndSpec(
-        m, &Str_Type_spec, (PyObject *)&PyUnicode_Type);
+        m, &Str_Type_spec, (PyObject *)_Py_GetUnicodeType());
     if (Str_Type == NULL) {
         return -1;
     }

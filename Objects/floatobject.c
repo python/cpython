@@ -1542,7 +1542,7 @@ float_as_integer_ratio_impl(PyObject *self)
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
     PyObject *result_pair = NULL;
-    PyNumberMethods *long_methods = PyLong_Type.tp_as_number;
+    PyNumberMethods *long_methods = _Py_GetLongType()->tp_as_number;
 
     CONVERT_TO_DOUBLE(self, self_double);
 

@@ -1021,43 +1021,44 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    newfunc tp_new = PyType_GetSlot(&PyLong_Type, Py_tp_new);
-    if (PyLong_Type.tp_new != tp_new) {
+    PyTypeObject *long_type = _Py_GetLongType();
+    newfunc tp_new = PyType_GetSlot(long_type, Py_tp_new);
+    if (long_type->tp_new != tp_new) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: tp_new of long");
         return NULL;
     }
 
-    reprfunc tp_repr = PyType_GetSlot(&PyLong_Type, Py_tp_repr);
-    if (PyLong_Type.tp_repr != tp_repr) {
+    reprfunc tp_repr = PyType_GetSlot(long_type, Py_tp_repr);
+    if (long_type->tp_repr != tp_repr) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: tp_repr of long");
         return NULL;
     }
 
-    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type, Py_tp_call);
+    ternaryfunc tp_call = PyType_GetSlot(long_type, Py_tp_call);
     if (tp_call != NULL) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: tp_call of long");
         return NULL;
     }
 
-    binaryfunc nb_add = PyType_GetSlot(&PyLong_Type, Py_nb_add);
-    if (PyLong_Type.tp_as_number->nb_add != nb_add) {
+    binaryfunc nb_add = PyType_GetSlot(long_type, Py_nb_add);
+    if (long_type->tp_as_number->nb_add != nb_add) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: nb_add of long");
         return NULL;
     }
 
-    lenfunc mp_length = PyType_GetSlot(&PyLong_Type, Py_mp_length);
+    lenfunc mp_length = PyType_GetSlot(long_type, Py_mp_length);
     if (mp_length != NULL) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: mp_length of long");
         return NULL;
     }
 
-    void *over_value = PyType_GetSlot(&PyLong_Type, Py_bf_releasebuffer + 1);
+    void *over_value = PyType_GetSlot(long_type, Py_bf_releasebuffer + 1);
     if (over_value != NULL) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: max+1 of long");
         return NULL;
     }
 
-    tp_new = PyType_GetSlot(&PyLong_Type, 0);
+    tp_new = PyType_GetSlot(long_type, 0);
     if (tp_new != NULL) {
         PyErr_SetString(PyExc_AssertionError, "mismatch: slot 0 of long");
         return NULL;
@@ -5090,7 +5091,7 @@ dict_get_version(PyObject *self, PyObject *args)
     PyDictObject *dict;
     uint64_t version;
 
-    if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
+    if (!PyArg_ParseTuple(args, "O!", _Py_GetDictType(), &dict))
         return NULL;
 
     version = dict->ma_version_tag;
@@ -5591,7 +5592,7 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     if (pyargs == NULL) {
         return NULL;
     }
-    PyObject *pykwargs = PyObject_Vectorcall((PyObject*)&PyDict_Type,
+    PyObject *pykwargs = PyObject_Vectorcall((PyObject*)_Py_GetDictType(),
                                               args + nargs, 0, kwargs);
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }

@@ -215,6 +215,21 @@ get_unicode_state(void)
 }
 
 
+PyTypeObject*
+_Py_GetUnicodeType(void)
+{
+    struct _Py_unicode_state *state = get_unicode_state();
+    return state->type;
+}
+
+
+int
+_PyUnicode_CheckExact(PyObject *op)
+{
+    return Py_IS_TYPE(op, _Py_GetUnicodeType());
+}
+
+
 // Return a borrowed reference to the empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
@@ -230,8 +245,7 @@ static inline PyObject* unicode_get_empty(void)
 static inline PyObject* unicode_new_empty(void)
 {
     PyObject *empty = unicode_get_empty();
-    Py_INCREF(empty);
-    return empty;
+    return Py_NewRef(empty);
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -1225,7 +1239,8 @@ _PyUnicode_New(Py_ssize_t length)
         return NULL;
     }
 
-    unicode = PyObject_New(PyUnicodeObject, &PyUnicode_Type);
+    struct _Py_unicode_state *state = get_unicode_state();
+    unicode = PyObject_New(PyUnicodeObject, state->type);
     if (unicode == NULL)
         return NULL;
     new_size = sizeof(Py_UNICODE) * ((size_t)length + 1);
@@ -1443,7 +1458,8 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     if (obj == NULL) {
         return PyErr_NoMemory();
     }
-    _PyObject_Init(obj, &PyUnicode_Type);
+    struct _Py_unicode_state *state = get_unicode_state();
+    _PyObject_Init(obj, state->type);
 
     unicode = (PyCompactUnicodeObject *)obj;
     if (is_ascii)
@@ -15495,7 +15511,8 @@ PyUnicode_Format(PyObject *format, PyObject *args)
 }
 
 static PyObject *
-unicode_subtype_new(PyTypeObject *type, PyObject *unicode);
+unicode_subtype_new(struct _Py_unicode_state *state, PyTypeObject *type,
+                    PyObject *unicode);
 
 /*[clinic input]
 @classmethod
@@ -15523,14 +15540,16 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
         unicode = PyUnicode_FromEncodedObject(x, encoding, errors);
     }
 
-    if (unicode != NULL && type != &PyUnicode_Type) {
-        Py_SETREF(unicode, unicode_subtype_new(type, unicode));
+    struct _Py_unicode_state *state = get_unicode_state();
+    if (unicode != NULL && type != state->type) {
+        Py_SETREF(unicode, unicode_subtype_new(state, type, unicode));
     }
     return unicode;
 }
 
 static PyObject *
-unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
+unicode_subtype_new(struct _Py_unicode_state *state, PyTypeObject *type,
+                    PyObject *unicode)
 {
     PyObject *self;
     Py_ssize_t length, char_size;
@@ -15538,7 +15557,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
     unsigned int kind;
     void *data;
 
-    assert(PyType_IsSubtype(type, &PyUnicode_Type));
+    assert(PyType_IsSubtype(type, state->type));
     assert(_PyUnicode_CHECK(unicode));
     if (PyUnicode_READY(unicode) == -1) {
         return NULL;

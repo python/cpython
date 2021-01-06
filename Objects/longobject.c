@@ -26,6 +26,31 @@ class int "PyObject *" "&PyLong_Type"
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
 
+
+static struct _Py_long_state *
+get_long_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->long_state;
+}
+
+
+PyTypeObject*
+_Py_GetLongType(void)
+{
+    struct _Py_long_state *state = get_long_state();
+    return state->type;
+}
+
+
+int
+_PyLong_CheckExact(PyObject *op)
+{
+    struct _Py_long_state *state = get_long_state();
+    return Py_IS_TYPE(op, state->type);
+}
+
+
 /* convert a PyLong of size 1, 0 or -1 to an sdigit */
 #define MEDIUM_VALUE(x) (assert(-1 <= Py_SIZE(x) && Py_SIZE(x) <= 1),   \
          Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :   \
@@ -120,7 +145,6 @@ long_normalize(PyLongObject *v)
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
-    PyLongObject *result;
     /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
        sizeof(digit)*size.  Previous incarnations of this code used
        sizeof(PyVarObject) instead of the offsetof, but this risks being
@@ -131,13 +155,15 @@ _PyLong_New(Py_ssize_t size)
                         "too many digits in integer");
         return NULL;
     }
-    result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
-                             size*sizeof(digit));
+
+    PyLongObject *result = PyObject_Malloc(offsetof(PyLongObject, ob_digit) +
+                                           size * sizeof(digit));
     if (!result) {
         PyErr_NoMemory();
         return NULL;
     }
-    _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
+    struct _Py_long_state *state = get_long_state();
+    _PyObject_InitVar((PyVarObject*)result, state->type, size);
     return result;
 }
 
@@ -4917,7 +4943,8 @@ long_float(PyObject *v)
 }
 
 static PyObject *
-long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase);
+long_subtype_new(struct _Py_long_state *state, PyTypeObject *type,
+                 PyObject *x, PyObject *obase);
 
 /*[clinic input]
 @classmethod
@@ -4931,10 +4958,11 @@ static PyObject *
 long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
 /*[clinic end generated code: output=e47cfe777ab0f24c input=81c98f418af9eb6f]*/
 {
-    Py_ssize_t base;
+    struct _Py_long_state *state = get_long_state();
+    if (type != state->type) {
+        return long_subtype_new(state, type, x, obase); /* Wimp out */
+    }
 
-    if (type != &PyLong_Type)
-        return long_subtype_new(type, x, obase); /* Wimp out */
     if (x == NULL) {
         if (obase != NULL) {
             PyErr_SetString(PyExc_TypeError,
@@ -4943,10 +4971,12 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
         }
         return PyLong_FromLong(0L);
     }
-    if (obase == NULL)
-        return PyNumber_Long(x);
 
-    base = PyNumber_AsSsize_t(obase, NULL);
+    if (obase == NULL) {
+        return PyNumber_Long(x);
+    }
+
+    Py_ssize_t base = PyNumber_AsSsize_t(obase, NULL);
     if (base == -1 && PyErr_Occurred())
         return NULL;
     if ((base != 0 && base < 2) || base > 36) {
@@ -4978,13 +5008,14 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
    the regular int.  The regular int is then thrown away.
 */
 static PyObject *
-long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
+long_subtype_new(struct _Py_long_state *state, PyTypeObject *type,
+                 PyObject *x, PyObject *obase)
 {
     PyLongObject *tmp, *newobj;
     Py_ssize_t i, n;
 
-    assert(PyType_IsSubtype(type, &PyLong_Type));
-    tmp = (PyLongObject *)long_new_impl(&PyLong_Type, x, obase);
+    assert(PyType_IsSubtype(type, state->type));
+    tmp = (PyLongObject *)long_new_impl(state->type, x, obase);
     if (tmp == NULL)
         return NULL;
     assert(PyLong_Check(tmp));
@@ -5511,7 +5542,8 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         little_endian, is_signed);
     Py_DECREF(bytes);
 
-    if (long_obj != NULL && type != &PyLong_Type) {
+    struct _Py_long_state *state = get_long_state();
+    if (long_obj != NULL && type != state->type) {
         Py_SETREF(long_obj, PyObject_CallOneArg((PyObject *)type, long_obj));
     }
 
@@ -5704,6 +5736,7 @@ PyLong_GetInfo(void)
 int
 _PyLong_Init(PyThreadState *tstate)
 {
+    struct _Py_long_state *state = &tstate->interp->long_state;
     for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         sdigit ival = (sdigit)i - NSMALLNEGINTS;
         int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
@@ -5716,7 +5749,7 @@ _PyLong_Init(PyThreadState *tstate)
         Py_SET_SIZE(v, size);
         v->ob_digit[0] = (digit)abs(ival);
 
-        tstate->interp->small_ints[i] = v;
+        state->small_ints[i] = v;
     }
 
     if (_Py_IsMainInterpreter(tstate)) {
@@ -5734,7 +5767,8 @@ _PyLong_Init(PyThreadState *tstate)
 void
 _PyLong_Fini(PyThreadState *tstate)
 {
+    struct _Py_long_state *state = &tstate->interp->long_state;
     for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        Py_CLEAR(tstate->interp->small_ints[i]);
+        Py_CLEAR(state->small_ints[i]);
     }
 }

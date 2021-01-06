@@ -13,10 +13,14 @@ extern "C" {
 */
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyTypeObject*) _Py_GetDictType(void);
+#endif
 
 #define PyDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
-#define PyDict_CheckExact(op) Py_IS_TYPE(op, &PyDict_Type)
+PyAPI_FUNC(int) _PyDict_CheckExact(PyObject *op);
+#define PyDict_CheckExact(op) _PyDict_CheckExact(_PyObject_CAST(op))
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);
 PyAPI_FUNC(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);

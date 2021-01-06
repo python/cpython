@@ -292,7 +292,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             } else if (coltype == SQLITE_TEXT) {
                 val_str = (const char*)sqlite3_column_text(self->statement->st, i);
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
-                if (self->connection->text_factory == (PyObject*)&PyUnicode_Type) {
+                if (self->connection->text_factory == (PyObject*)_Py_GetUnicodeType()) {
                     converted = PyUnicode_FromStringAndSize(val_str, nbytes);
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();

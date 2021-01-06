@@ -4656,11 +4656,12 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    PyTypeObject *long_type = _Py_GetLongType();
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "|O$O!y*O!i:sendmsg_afalg", keywords,
                                      &data_arg,
-                                     &PyLong_Type, &opobj, &iv,
-                                     &PyLong_Type, &assoclenobj, &flags)) {
+                                     long_type, &opobj, &iv,
+                                     long_type, &assoclenobj, &flags)) {
         return NULL;
     }
 

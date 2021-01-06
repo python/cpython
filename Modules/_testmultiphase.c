@@ -357,7 +357,7 @@ static int execfunc(PyObject *m)
     /* Due to cross platform compiler issues the slots must be filled
      * here. It's required for portability to Windows without requiring
      * C++. */
-    Str_Type_slots[0].pfunc = &PyUnicode_Type;
+    Str_Type_slots[0].pfunc = _Py_GetUnicodeType();
 
     /* Add a custom type */
     temp = PyType_FromSpec(&Example_Type_spec);

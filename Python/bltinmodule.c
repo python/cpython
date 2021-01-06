@@ -2896,13 +2896,13 @@ _PyBuiltin_Init(PyThreadState *tstate)
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);
     SETBUILTIN("complex",               &PyComplex_Type);
-    SETBUILTIN("dict",                  &PyDict_Type);
+    SETBUILTIN("dict",                  _Py_GetDictType());
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
     SETBUILTIN("float",                 &PyFloat_Type);
     SETBUILTIN("frozenset",             &PyFrozenSet_Type);
     SETBUILTIN("property",              &PyProperty_Type);
-    SETBUILTIN("int",                   &PyLong_Type);
+    SETBUILTIN("int",                   _Py_GetLongType());
     SETBUILTIN("list",                  &PyList_Type);
     SETBUILTIN("map",                   &PyMap_Type);
     SETBUILTIN("object",                &PyBaseObject_Type);
@@ -2911,7 +2911,7 @@ _PyBuiltin_Init(PyThreadState *tstate)
     SETBUILTIN("set",                   &PySet_Type);
     SETBUILTIN("slice",                 &PySlice_Type);
     SETBUILTIN("staticmethod",          &PyStaticMethod_Type);
-    SETBUILTIN("str",                   &PyUnicode_Type);
+    SETBUILTIN("str",                   _Py_GetUnicodeType());
     SETBUILTIN("super",                 &PySuper_Type);
     SETBUILTIN("tuple",                 &PyTuple_Type);
     SETBUILTIN("type",                  &PyType_Type);

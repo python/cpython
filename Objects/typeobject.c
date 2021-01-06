@@ -2416,7 +2416,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     /* Check arguments: (name, bases, dict) */
     if (!PyArg_ParseTuple(args, "UO!O!:type.__new__", &name, &PyTuple_Type,
-                          &bases, &PyDict_Type, &orig_dict))
+                          &bases, _Py_GetDictType(), &orig_dict))
         return NULL;
 
     /* Adjust for empty tuple bases */
@@ -5231,17 +5231,17 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyType_Type))
         type->tp_flags |= Py_TPFLAGS_TYPE_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyLong_Type))
+    else if (PyType_IsSubtype(base, _Py_GetLongType()))
         type->tp_flags |= Py_TPFLAGS_LONG_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyBytes_Type))
         type->tp_flags |= Py_TPFLAGS_BYTES_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyUnicode_Type))
+    else if (PyType_IsSubtype(base, _Py_GetUnicodeType()))
         type->tp_flags |= Py_TPFLAGS_UNICODE_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyTuple_Type))
         type->tp_flags |= Py_TPFLAGS_TUPLE_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyList_Type))
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyDict_Type))
+    else if (PyType_IsSubtype(base, _Py_GetDictType()))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 }
 
@@ -6787,7 +6787,7 @@ slot_tp_hash(PyObject *self)
            use any sufficiently bit-mixing transformation;
            long.__hash__ will do nicely. */
         PyErr_Clear();
-        h = PyLong_Type.tp_hash(res);
+        h = _Py_GetLongType()->tp_hash(res);
     }
     /* -1 is reserved for errors. */
     if (h == -1)

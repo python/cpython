@@ -981,7 +981,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
     if (is_float && s->parse_float != (PyObject *)&PyFloat_Type)
         custom_func = s->parse_float;
-    else if (!is_float && s->parse_int != (PyObject *) &PyLong_Type)
+    else if (!is_float && s->parse_int != (PyObject *)_Py_GetLongType())
         custom_func = s->parse_int;
     else
         custom_func = NULL;
@@ -1414,7 +1414,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyLong_Type.tp_repr(obj);
+        PyObject *encoded = _Py_GetLongType()->tp_repr(obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
@@ -1578,7 +1578,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                 goto bail;
         }
         else if (PyLong_Check(key)) {
-            kstr = PyLong_Type.tp_repr(key);
+            kstr = _Py_GetLongType()->tp_repr(key);
             if (kstr == NULL) {
                 goto bail;
             }

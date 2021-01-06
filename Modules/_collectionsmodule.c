@@ -1946,6 +1946,13 @@ static PyTypeObject dequereviter_type = {
 
 /* defaultdict type *********************************************************/
 
+static PyTypeObject*
+get_dict_type(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return interp->dict_state.type;
+}
+
 typedef struct {
     PyDictObject dict;
     PyObject *default_factory;
@@ -2086,7 +2093,7 @@ defdict_dealloc(defdictobject *dd)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(dd);
     Py_CLEAR(dd->default_factory);
-    PyDict_Type.tp_dealloc((PyObject *)dd);
+    get_dict_type()->tp_dealloc((PyObject *)dd);
 }
 
 static PyObject *
@@ -2095,7 +2102,7 @@ defdict_repr(defdictobject *dd)
     PyObject *baserepr;
     PyObject *defrepr;
     PyObject *result;
-    baserepr = PyDict_Type.tp_repr((PyObject *)dd);
+    baserepr = get_dict_type()->tp_repr((PyObject *)dd);
     if (baserepr == NULL)
         return NULL;
     if (dd->default_factory == NULL)
@@ -2162,14 +2169,14 @@ static int
 defdict_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(((defdictobject *)self)->default_factory);
-    return PyDict_Type.tp_traverse(self, visit, arg);
+    return get_dict_type()->tp_traverse(self, visit, arg);
 }
 
 static int
 defdict_tp_clear(defdictobject *dd)
 {
     Py_CLEAR(dd->default_factory);
-    return PyDict_Type.tp_clear((PyObject *)dd);
+    return get_dict_type()->tp_clear((PyObject *)dd);
 }
 
 static int
@@ -2198,7 +2205,7 @@ defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     Py_XINCREF(newdefault);
     dd->default_factory = newdefault;
-    result = PyDict_Type.tp_init(self, newargs, kwds);
+    result = get_dict_type()->tp_init(self, newargs, kwds);
     Py_DECREF(newargs);
     Py_XDECREF(olddefault);
     return result;
@@ -2250,7 +2257,7 @@ static PyTypeObject defdict_type = {
     defdict_methods,                    /* tp_methods */
     defdict_members,                    /* tp_members */
     0,                                  /* tp_getset */
-    DEFERRED_ADDRESS(&PyDict_Type),     /* tp_base */
+    0,                                  /* tp_base */
     0,                                  /* tp_dict */
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
@@ -2298,9 +2305,9 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
      * have not been overridden.
      */
     mapping_get = _PyType_LookupId(Py_TYPE(mapping), &PyId_get);
-    dict_get = _PyType_LookupId(&PyDict_Type, &PyId_get);
+    dict_get = _PyType_LookupId(get_dict_type(), &PyId_get);
     mapping_setitem = _PyType_LookupId(Py_TYPE(mapping), &PyId___setitem__);
-    dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__);
+    dict_setitem = _PyType_LookupId(get_dict_type(), &PyId___setitem__);
 
     if (mapping_get != NULL && mapping_get == dict_get &&
         mapping_setitem != NULL && mapping_setitem == dict_setitem &&
@@ -2575,7 +2582,7 @@ collections_exec(PyObject *module) {
         &tuplegetter_type
     };
 
-    defdict_type.tp_base = &PyDict_Type;
+    defdict_type.tp_base = get_dict_type();
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
         if (PyModule_AddType(module, typelist[i]) < 0) {

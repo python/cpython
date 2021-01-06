@@ -50,6 +50,25 @@ struct _ceval_state {
 #endif
 };
 
+#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLNEGINTS           5
+
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
+
+struct _Py_long_state {
+    PyTypeObject *type;  // borrowed reference
+    /* Small integers are preallocated in this array so that they
+       can be shared.
+       The integers that are preallocated are those in the range
+       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+    */
+    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+
+};
+
 /* fs_codec.encoding is initialized to NULL.
    Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
 struct _Py_unicode_fs_codec {
@@ -70,6 +89,8 @@ struct _Py_unicode_ids {
 };
 
 struct _Py_unicode_state {
+    // Borrowed reference
+    PyTypeObject *type;
     // The empty Unicode object is a singleton to improve performance.
     PyObject *empty_string;
     /* Single character Unicode strings in the Latin-1 range are being
@@ -125,6 +146,7 @@ struct _Py_tuple_state {
 #endif
 
 struct _Py_list_state {
+    PyTypeObject *type;  // borrowed reference
     PyListObject *free_list[PyList_MAXFREELIST];
     int numfree;
 };
@@ -134,6 +156,7 @@ struct _Py_list_state {
 #endif
 
 struct _Py_dict_state {
+    PyTypeObject *type;  // borrowed reference
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
     int numfree;
@@ -214,14 +237,6 @@ struct type_cache {
 
 /* interpreter state */
 
-#define _PY_NSMALLPOSINTS           257
-#define _PY_NSMALLNEGINTS           5
-
-// _PyLong_GetZero() and _PyLong_GetOne() must always be available
-#if _PY_NSMALLPOSINTS < 2
-#  error "_PY_NSMALLPOSINTS must be greater than 1"
-#endif
-
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
@@ -294,12 +309,7 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    /* Small integers are preallocated in this array so that they
-       can be shared.
-       The integers that are preallocated are those in the range
-       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
-    */
-    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+    struct _Py_long_state long_state;
     struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;

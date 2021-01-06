@@ -394,7 +394,7 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *attrib = NULL;
     ElementObject *self_elem;
 
-    if (!PyArg_ParseTuple(args, "O|O!:Element", &tag, &PyDict_Type, &attrib))
+    if (!PyArg_ParseTuple(args, "O|O!:Element", &tag, _Py_GetDictType(), &attrib))
         return -1;
 
     if (attrib) {
@@ -595,7 +595,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject* attrib = NULL;
     if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
                           &Element_Type, &parent, &tag,
-                          &PyDict_Type, &attrib)) {
+                          _Py_GetDictType(), &attrib)) {
         return NULL;
     }
 

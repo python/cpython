@@ -1741,6 +1741,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&_PyWeakref_CallableProxyType, "callable weakref proxy");
     INIT_TYPE(&_PyWeakref_ProxyType, "weakref proxy");
     INIT_TYPE(&PyLong_Type, "int");
+    PyBool_Type.tp_base = _Py_GetLongType();
     INIT_TYPE(&PyBool_Type, "bool");
     INIT_TYPE(&PyByteArray_Type, "bytearray");
     INIT_TYPE(&PyBytes_Type, "str");
@@ -1757,6 +1758,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyDictRevIterKey_Type, "reversed dict keys");
     INIT_TYPE(&PyDictRevIterValue_Type, "reversed dict values");
     INIT_TYPE(&PyDictRevIterItem_Type, "reversed dict items");
+    PyODict_Type.tp_base = _Py_GetDictType();
     INIT_TYPE(&PyODict_Type, "OrderedDict");
     INIT_TYPE(&PyODictKeys_Type, "odict_keys");
     INIT_TYPE(&PyODictItems_Type, "odict_items");

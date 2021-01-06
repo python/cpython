@@ -98,8 +98,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_INCREF(Py_None);
     Py_XSETREF(self->row_factory, Py_None);
 
-    Py_INCREF(&PyUnicode_Type);
-    Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
+    Py_XSETREF(self->text_factory, Py_NewRef((PyObject*)_Py_GetUnicodeType()));
 
 #ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
@@ -1259,7 +1258,7 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
         }
 
         uppercase_level = _PyObject_CallMethodIdOneArg(
-                        (PyObject *)&PyUnicode_Type, &PyId_upper,
+                        (PyObject *)_Py_GetUnicodeType(), &PyId_upper,
                         isolation_level);
         if (!uppercase_level) {
             return -1;
@@ -1751,7 +1750,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
         goto finally;
     }
 
-    uppercase_name = _PyObject_CallMethodIdOneArg((PyObject *)&PyUnicode_Type,
+    uppercase_name = _PyObject_CallMethodIdOneArg((PyObject *)_Py_GetUnicodeType(),
                                                   &PyId_upper, name);
     if (!uppercase_name) {
         goto finally;
