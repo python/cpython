@@ -303,12 +303,17 @@ register_maps(PyObject *module)
 
     for (h = mapping_list; h->charset[0] != '\0'; h++) {
         char mhname[256] = "__map_";
-        int r;
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
-        r = PyModule_AddObject(module, mhname,
-                        PyCapsule_New((void *)h, PyMultibyteCodec_CAPSULE_NAME, NULL));
-        if (r == -1)
+
+        PyObject *capsule = PyCapsule_New((void *)h,
+                                          PyMultibyteCodec_CAPSULE_NAME, NULL);
+        if (capsule == NULL) {
             return -1;
+        }
+        if (PyModule_AddObject(module, mhname, capsule) < 0) {
+            Py_DECREF(capsule);
+            return -1;
+        }
     }
     return 0;
 }
