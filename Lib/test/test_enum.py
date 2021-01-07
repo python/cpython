@@ -2119,52 +2119,7 @@ class TestEnum(unittest.TestCase):
                 one = '1'
                 two = b'2', 'ascii', 9
                 
-    def test_init_subclass_calling(self):
-        class MyEnum(Enum):
-            def __init_subclass__(cls, **kwds):
-                super(MyEnum, cls).__init_subclass__(**kwds)
-                self.assertFalse(cls.__dict__.get('_test', False))
-                cls._test1 = 'MyEnum'
-        #
-        class TheirEnum(MyEnum):
-            def __init_subclass__(cls, **kwds):
-                super().__init_subclass__(**kwds)
-                cls._test2 = 'TheirEnum'
-        class WhoseEnum(TheirEnum):
-            def __init_subclass__(cls, **kwds):
-                pass
-        class NoEnum(WhoseEnum):
-            ONE = 1
-        self.assertEqual(TheirEnum.__dict__['_test1'], 'MyEnum')
-        self.assertEqual(WhoseEnum.__dict__['_test1'], 'MyEnum')
-        self.assertEqual(WhoseEnum.__dict__['_test2'], 'TheirEnum')
-        self.assertFalse(NoEnum.__dict__.get('_test1', False))
-        self.assertFalse(NoEnum.__dict__.get('_test2', False))
-        #
-        class OurEnum(MyEnum):
-            def __init_subclass__(cls, **kwds):
-                cls._test2 = 'OurEnum'
-        class WhereEnum(OurEnum):
-            def __init_subclass__(cls, **kwds):
-                pass
-        class NeverEnum(WhereEnum):
-            ONE = 'one'
-        self.assertEqual(OurEnum.__dict__['_test1'], 'MyEnum')
-        self.assertFalse(WhereEnum.__dict__.get('_test1', False))
-        self.assertEqual(WhereEnum.__dict__['_test2'], 'OurEnum')
-        self.assertFalse(NeverEnum.__dict__.get('_test1', False))
-        self.assertFalse(NeverEnum.__dict__.get('_test2', False))
 
-    def test_init_subclass_parameter(self):
-        class multiEnum(Enum):
-            def __init_subclass__(cls, multi):
-                for member in cls:
-                    member._as_parameter_ = multi * member.value
-        class E(multiEnum, multi=3):
-            A = 1
-            B = 2
-        self.assertEqual(E.A._as_parameter_, 3)
-        self.assertEqual(E.B._as_parameter_, 6)
 
     @unittest.skipUnless(
             sys.version_info[:2] == (3, 9),
