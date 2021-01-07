@@ -1663,5 +1663,17 @@ class MinidomTest(unittest.TestCase):
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
+    def test_toxml(self):
+        # simple test
+        xml_str = '<div>text</div>'
+        root = parseString(xml_str)
+        self.assertEqual(root.toxml(), '<?xml version="1.0" ?><div>text</div>')
+        self.assertEqual(
+            root.toxml(standalone=True),
+            '<?xml version="1.0" standalone="yes"?><div>text</div>')
+        self.assertEqual(
+            root.toxml(standalone=False),
+            '<?xml version="1.0" standalone="no"?><div>text</div>')
+
 if __name__ == "__main__":
     unittest.main()
