@@ -4838,6 +4838,22 @@ else
 fi
 AC_SUBST(LIBPL)
 
+# Check for --with-wheel-pkg-dir=PATH
+AC_SUBST(WHEEL_PKG_DIR)
+WHEEL_PKG_DIR=""
+AC_MSG_CHECKING(for --with-wheel-pkg-dir)
+AC_ARG_WITH(wheel-pkg-dir,
+            AS_HELP_STRING([--with-wheel-pkg-dir=PATH],
+            [Directory of wheel packages used by ensurepip (default: none)]),
+[
+if test -n "$withval"; then
+  AC_MSG_RESULT(yes)
+  WHEEL_PKG_DIR="$withval"
+else
+  AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
 AC_MSG_CHECKING(whether right shift extends the sign bit)
