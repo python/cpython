@@ -626,14 +626,6 @@ class MinidomTest(unittest.TestCase):
 
     def testFirstChild(self): pass
 
-    def testHasChildNodes(self):
-        dom = parseString("<doc><foo/></doc>")
-        doc = dom.documentElement
-        self.assertTrue(doc.hasChildNodes())
-        dom2 = parseString("<doc/>")
-        doc2 = dom2.documentElement
-        self.assertFalse(doc2.hasChildNodes())
-
     def _testCloneElementCopiesAttributes(self, e1, e2, test):
         attrs1 = e1.attributes
         attrs2 = e2.attributes
@@ -1679,5 +1671,13 @@ class MinidomTest(unittest.TestCase):
             root.toxml(encoding="utf-8"),
             b'<?xml version="1.0" encoding="utf-8"?><div>text</div>')
 
+    def test_hasChildNodes(self):
+        """Test if a node has children."""
+        dom = parseString("<doc><foo/></doc>")
+        doc = dom.documentElement
+        self.assertTrue(doc.hasChildNodes())
+        dom2 = parseString("<doc/>")
+        doc2 = dom2.documentElement
+        self.assertFalse(doc2.hasChildNodes())
 if __name__ == "__main__":
     unittest.main()
