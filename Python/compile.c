@@ -7435,6 +7435,24 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
     }
 }
 
+static void
+offset_derefs(struct assembler *a, int nlocals)
+{
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *inst = &b->b_instr[i];
+            switch(inst->i_opcode) {
+                case LOAD_DEREF:
+                case STORE_DEREF:
+                case DELETE_DEREF:
+                case LOAD_CLASSDEREF:
+                case LOAD_CLOSURE:
+                    inst->i_oparg += nlocals;
+            }
+        }
+    }
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -7498,6 +7516,8 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
+
+    offset_derefs(&a, (int)PyDict_GET_SIZE(c->u->u_varnames));
 
     int maxdepth = stackdepth(c);
     if (maxdepth < 0) {

@@ -1547,8 +1547,6 @@ error:
 code._varname_from_oparg
 
     oparg: int
-    *
-    cell: bool = False
 
 (internal-only) Return the local variable name for the given oparg.
 
@@ -1559,9 +1557,6 @@ static PyObject *
 code__varname_from_oparg_impl(PyCodeObject *self, int oparg, int cell)
 /*[clinic end generated code: output=c7d39c9723692c8f input=2945bb291d3a3118]*/
 {
-    if (cell) {
-        oparg += self->co_nlocals;
-    }
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {
         return NULL;
