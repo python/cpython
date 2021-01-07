@@ -484,36 +484,6 @@ class TracebackException:
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
-        # Gracefully handle (the way Python 2.4 and earlier did) the case of
-        # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
-            and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            cause = None
-        if (exc_value and exc_value.__context__ is not None
-            and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            context = None
-        self.__cause__ = cause
-        self.__context__ = context
-        self.__suppress_context__ = \
-            exc_value.__suppress_context__ if exc_value else False
         # TODO: locals.
         self.stack = StackSummary.extract(
             walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
@@ -532,6 +502,36 @@ class TracebackException:
             self.msg = exc_value.msg
         if lookup_lines:
             self._load_lines()
+        self.__suppress_context__ = \
+            exc_value.__suppress_context__ if exc_value else False
+        # Gracefully handle (the way Python 2.4 and earlier did) the case of
+        # being called with no type or value (None, None, None).
+        if (exc_value and exc_value.__cause__ is not None
+            and id(exc_value.__cause__) not in _seen):
+            cause = TracebackException(
+                type(exc_value.__cause__),
+                exc_value.__cause__,
+                exc_value.__cause__.__traceback__,
+                limit=limit,
+                lookup_lines=lookup_lines,
+                capture_locals=capture_locals,
+                _seen=_seen)
+        else:
+            cause = None
+        if (exc_value and exc_value.__context__ is not None
+            and id(exc_value.__context__) not in _seen):
+            context = TracebackException(
+                type(exc_value.__context__),
+                exc_value.__context__,
+                exc_value.__context__.__traceback__,
+                limit=limit,
+                lookup_lines=lookup_lines,
+                capture_locals=capture_locals,
+                _seen=_seen)
+        else:
+            context = None
+        self.__cause__ = cause
+        self.__context__ = context
 
     @classmethod
     def from_exception(cls, exc, *args, **kwargs):
@@ -542,10 +542,6 @@ class TracebackException:
         """Private API. force all lines in the stack to be loaded."""
         for frame in self.stack:
             frame.line
-        if self.__context__:
-            self.__context__._load_lines()
-        if self.__cause__:
-            self.__cause__._load_lines()
 
     def __eq__(self, other):
         if isinstance(other, TracebackException):
