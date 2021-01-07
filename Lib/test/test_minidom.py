@@ -1675,6 +1675,9 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(
             root.toxml(standalone=False),
             '<?xml version="1.0" standalone="no"?><div>text</div>')
+        self.assertEqual(
+            root.toxml(encoding="utf-8"),
+            b'<?xml version="1.0" encoding="utf-8"?><div>text</div>')
 
 if __name__ == "__main__":
     unittest.main()
