@@ -6,8 +6,10 @@ import pickle
 from test import support
 import unittest
 
+from xml.dom.minicompat import NodeList
 import xml.dom.minidom
 from xml.dom.minidom import Document
+from xml.dom.minidom import Element
 from xml.dom.minidom import getDOMImplementation
 from xml.dom.minidom import Node
 from xml.dom.minidom import parse
@@ -621,8 +623,6 @@ class MinidomTest(unittest.TestCase):
     def testParseAttributeNamespaces(self): pass
 
     def testParseProcessingInstructions(self): pass
-
-    def testChildNodes(self): pass
 
     def testFirstChild(self): pass
 
@@ -1679,5 +1679,14 @@ class MinidomTest(unittest.TestCase):
         dom2 = parseString("<doc/>")
         doc2 = dom2.documentElement
         self.assertFalse(doc2.hasChildNodes())
+
+    def test_childNodes(self):
+        """Test the list of children Nodes of a DOM Element."""
+        dom = parseString('<div><img/><hr/></div>')
+        doc = dom.documentElement
+        self.assertEqual(len(doc.childNodes), 2)
+        self.assertIsInstance(doc.childNodes[0], Element)
+        self.assertIsInstance(doc.childNodes, NodeList)
+
 if __name__ == "__main__":
     unittest.main()
