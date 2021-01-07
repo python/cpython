@@ -817,6 +817,8 @@ PyTokenizer_Free(struct tok_state *tok)
         PyMem_Free(tok->buf);
     if (tok->input)
         PyMem_Free(tok->input);
+    if (tok->stdin_content)
+        PyMem_Free(tok->stdin_content);
     PyMem_Free(tok);
 }
 
