@@ -381,7 +381,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 }
 
 static PyObject *
-get_error_line(Parser *p, int lineno)
+get_error_line(Parser *p, Py_ssize_t lineno)
 {
     char *cur_line = p->tok->fp == NULL ? p->tok->str : p->tok->stdin_content;
     for (int i = 0; i < lineno - 1; i++) {
