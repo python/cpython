@@ -1148,7 +1148,6 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
 
-    @unittest.skip("failing")
     def test_long_context_chain(self):
         def f():
             try:
@@ -1164,6 +1163,8 @@ class TestTracebackException(unittest.TestCase):
             self.fail("Exception not raised")
 
         te = traceback.TracebackException(*exc_info)
+
+        return # format() is still recursive
         res = list(te.format())
 
     def test_no_refs_to_exception_and_traceback_objects(self):

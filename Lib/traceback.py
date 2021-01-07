@@ -481,6 +481,7 @@ class TracebackException:
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
+        _is_chained = _seen is not None
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
@@ -504,34 +505,45 @@ class TracebackException:
             self._load_lines()
         self.__suppress_context__ = \
             exc_value.__suppress_context__ if exc_value else False
-        # Gracefully handle (the way Python 2.4 and earlier did) the case of
-        # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
-            and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=lookup_lines,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            cause = None
-        if (exc_value and exc_value.__context__ is not None
-            and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=lookup_lines,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            context = None
-        self.__cause__ = cause
-        self.__context__ = context
+
+        # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
+        # queue to avoid recursion
+        if not _is_chained:
+            queue = [(self, exc_value)]
+            while queue:
+                te, e = queue.pop()
+                # Gracefully handle (the way Python 2.4 and earlier did) the
+                # case of being called with no type or value (None, None, None)
+                if (e and e.__cause__ is not None
+                    and id(e.__cause__) not in _seen):
+                    cause = TracebackException(
+                        type(e.__cause__),
+                        e.__cause__,
+                        e.__cause__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        _seen=_seen)
+                else:
+                    cause = None
+                if (e and e.__context__ is not None
+                    and id(e.__context__) not in _seen):
+                    context = TracebackException(
+                        type(e.__context__),
+                        e.__context__,
+                        e.__context__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        _seen=_seen)
+                else:
+                    context = None
+                te.__cause__ = cause
+                te.__context__ = context
+                if cause:
+                    queue.append((te.__cause__, e.__cause__))
+                if context:
+                    queue.append((te.__context__, e.__context__))
 
     @classmethod
     def from_exception(cls, exc, *args, **kwargs):
