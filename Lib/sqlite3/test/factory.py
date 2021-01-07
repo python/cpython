@@ -1,7 +1,6 @@
-#-*- coding: iso-8859-1 -*-
 # pysqlite2/test/factory.py: tests for the various factories in pysqlite
 #
-# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2005-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -235,20 +234,20 @@ class TextFactoryTests(unittest.TestCase):
         self.con = sqlite.connect(":memory:")
 
     def test_unicode(self):
-        austria = "Österreich"
+        austria = "Ã–sterreich"
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
 
     def test_string(self):
         self.con.text_factory = bytes
-        austria = "Österreich"
+        austria = "Ã–sterreich"
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertEqual(type(row[0]), bytes, "type of row[0] must be bytes")
         self.assertEqual(row[0], austria.encode("utf-8"), "column must equal original data in UTF-8")
 
     def test_custom(self):
         self.con.text_factory = lambda x: str(x, "utf-8", "ignore")
-        austria = "Österreich"
+        austria = "Ã–sterreich"
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
         self.assertTrue(row[0].endswith("reich"), "column must contain original data")
@@ -258,7 +257,7 @@ class TextFactoryTests(unittest.TestCase):
         with self.assertWarns(DeprecationWarning) as cm:
             self.con.text_factory = sqlite.OptimizedUnicode
         self.assertIn("factory.py", cm.filename)
-        austria = "Österreich"
+        austria = "Ã–sterreich"
         germany = "Deutchland"
         a_row = self.con.execute("select ?", (austria,)).fetchone()
         d_row = self.con.execute("select ?", (germany,)).fetchone()
