@@ -95,6 +95,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             files = _read_directory(path)
             _zip_directory_cache[path] = files
         self._files = files
+        self._archive_mtime = st.st_mtime
         self.archive = path
         # a prefix directory following the ZIP file path.
         self.prefix = _bootstrap_external._path_join(*prefix[::-1])
@@ -205,7 +206,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             key = pathname[len(self.archive + path_sep):]
 
         try:
-            toc_entry = self._files[key]
+            toc_entry = self.get_files()[key]
         except KeyError:
             raise OSError(0, '', key)
         return _get_data(self.archive, toc_entry)
@@ -242,7 +243,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
             fullpath = f'{path}.py'
 
         try:
-            toc_entry = self._files[fullpath]
+            toc_entry = self.get_files()[fullpath]
         except KeyError:
             # we have the module, but no source
             return None
@@ -320,6 +321,25 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         from importlib.readers import ZipReader
         return ZipReader(self, fullname)
 
+    def get_files(self):
+        """Return the files within the archive path."""
+        try:
+            mtime = _bootstrap_external._path_stat(self.archive).st_mtime
+        except OSError:
+            mtime = -1
+        if mtime != self._archive_mtime:
+            _zip_directory_cache[self.archive] = _read_directory(self.archive)
+            self._archive_mtime = mtime
+
+        try:
+            files = _zip_directory_cache[self.archive]
+        except KeyError:
+            files = _read_directory(self.archive)
+            _zip_directory_cache[self.archive] = files
+            self._archive_mtime = mtime
+
+        self._files = files
+        return self._files
 
     def __repr__(self):
         return f'<zipimporter object "{self.archive}{path_sep}{self.prefix}">'
@@ -348,15 +368,15 @@ def _is_dir(self, path):
     # of a namespace package. We test by seeing if the name, with an
     # appended path separator, exists.
     dirpath = path + path_sep
-    # If dirpath is present in self._files, we have a directory.
-    return dirpath in self._files
+    # If dirpath is present in self.get_files(), we have a directory.
+    return dirpath in self.get_files()
 
 # Return some information about a module.
 def _get_module_info(self, fullname):
     path = _get_module_path(self, fullname)
     for suffix, isbytecode, ispackage in _zip_searchorder:
         fullpath = path + suffix
-        if fullpath in self._files:
+        if fullpath in self.get_files():
             return ispackage
     return None
 
@@ -692,7 +712,7 @@ def _get_mtime_and_size_of_source(self, path):
         # strip 'c' or 'o' from *.py[co]
         assert path[-1:] in ('c', 'o')
         path = path[:-1]
-        toc_entry = self._files[path]
+        toc_entry = self.get_files()[path]
         # fetch the time stamp of the .py file for comparison
         # with an embedded pyc time stamp
         time = toc_entry[5]
@@ -712,7 +732,7 @@ def _get_pyc_source(self, path):
     path = path[:-1]
 
     try:
-        toc_entry = self._files[path]
+        toc_entry = self.get_files()[path]
     except KeyError:
         return None
     else:
@@ -728,7 +748,7 @@ def _get_module_code(self, fullname):
         fullpath = path + suffix
         _bootstrap._verbose_message('trying {}{}{}', self.archive, path_sep, fullpath, verbosity=2)
         try:
-            toc_entry = self._files[fullpath]
+            toc_entry = self.get_files()[fullpath]
         except KeyError:
             pass
         else:
