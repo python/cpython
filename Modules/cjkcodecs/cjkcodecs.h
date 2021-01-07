@@ -410,7 +410,6 @@ static PyModuleDef_Slot _cjk_slots[] = {
     static struct PyModuleDef _cjk_module = {                           \
         PyModuleDef_HEAD_INIT,                                          \
         .m_name = "_codecs_"#loc,                                       \
-        NULL,                                                           \
         .m_size = 0,                                                    \
         .m_methods = _cjk_methods,                                      \
         .m_slots = _cjk_slots,                                          \
