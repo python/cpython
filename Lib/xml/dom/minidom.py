@@ -32,6 +32,7 @@ _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
 
 
 class Node(xml.dom.Node):
+    """Define properties accessible on a DOM node."""
     namespaceURI = None # this is non-null only for elements and attributes
     parentNode = None
     ownerDocument = None
@@ -44,6 +45,7 @@ class Node(xml.dom.Node):
         return True
 
     def toxml(self, encoding=None, standalone=None):
+        """Generate a string representation of a DOM."""
         return self.toprettyxml("", "", encoding, standalone)
 
     def toprettyxml(self, indent="\t", newl="\n", encoding=None,
@@ -66,6 +68,7 @@ class Node(xml.dom.Node):
             return writer.detach().getvalue()
 
     def hasChildNodes(self):
+        """Return True if the node has children, False else."""
         return bool(self.childNodes)
 
     def _get_childNodes(self):
@@ -864,7 +867,7 @@ class Element(Node):
             self, namespaceURI, localName, NodeList())
 
     def __repr__(self):
-        return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
+        return f"<DOM Element: {self.tagName}>"
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         """Write an XML element to a file-like object
