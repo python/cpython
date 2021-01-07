@@ -624,8 +624,6 @@ class MinidomTest(unittest.TestCase):
 
     def testParseProcessingInstructions(self): pass
 
-    def testFirstChild(self): pass
-
     def _testCloneElementCopiesAttributes(self, e1, e2, test):
         attrs1 = e1.attributes
         attrs2 = e2.attributes
@@ -1687,6 +1685,20 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(len(doc.childNodes), 2)
         self.assertIsInstance(doc.childNodes[0], Element)
         self.assertIsInstance(doc.childNodes, NodeList)
+
+    def test_firstChild(self):
+        """Test access to the first child of a DOM Element."""
+        dom = parseString('<div><img/><hr/></div>')
+        doc = dom.documentElement
+        self.assertEqual(doc.firstChild.toxml(), '<img/>')
+        self.assertIsInstance(doc.firstChild, Element)
+
+    def test_lastChild(self):
+        """Test access to the last child of a DOM Element."""
+        dom = parseString('<div><img/><hr/></div>')
+        doc = dom.documentElement
+        self.assertEqual(doc.lastChild.toxml(), '<hr/>')
+        self.assertIsInstance(doc.lastChild, Element)
 
 if __name__ == "__main__":
     unittest.main()
