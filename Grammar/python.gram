@@ -696,11 +696,17 @@ invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
-    | param_no_default* (slash_with_default | param_with_default+) param_no_default {
+    | param_no_default* invalid_parameters_helper param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_parameters_helper: # This is only there to avoid type errors
+    | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
+    | param_with_default+
 invalid_lambda_parameters:
-    | lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) lambda_param_no_default {
+    | lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_lambda_parameters_helper:
+    | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
+    | lambda_param_with_default+
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
     | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
