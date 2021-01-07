@@ -245,15 +245,13 @@ static const struct dbcs_map *mapping_list;
 static PyObject *
 getmultibytecodec(void)
 {
-    static PyObject *cofunc = NULL;
-
-    if (cofunc == NULL) {
-        PyObject *mod = PyImport_ImportModuleNoBlock("_multibytecodec");
-        if (mod == NULL)
-            return NULL;
-        cofunc = PyObject_GetAttrString(mod, "__create_codec");
-        Py_DECREF(mod);
+    PyObject *mod = PyImport_ImportModuleNoBlock("_multibytecodec");
+    if (mod == NULL) {
+        return NULL;
     }
+
+    PyObject *cofunc = PyObject_GetAttrString(mod, "__create_codec");
+    Py_DECREF(mod);
     return cofunc;
 }
 
@@ -297,10 +295,6 @@ getcodec(PyObject *self, PyObject *encoding)
     return r;
 }
 
-static struct PyMethodDef __methods[] = {
-    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
-    {NULL, NULL},
-};
 
 static int
 register_maps(PyObject *module)
@@ -395,25 +389,37 @@ errorexit:
 }
 #endif
 
+static int
+_cjk_exec(PyObject *module)
+{
+    return register_maps(module);
+}
+
+
+static struct PyMethodDef _cjk_methods[] = {
+    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
+    {NULL, NULL},
+};
+
+static PyModuleDef_Slot _cjk_slots[] = {
+    {Py_mod_exec, _cjk_exec},
+    {0, NULL}
+};
+
 #define I_AM_A_MODULE_FOR(loc)                                          \
-    static struct PyModuleDef __module = {                              \
+    static struct PyModuleDef _cjk_module = {                           \
         PyModuleDef_HEAD_INIT,                                          \
-        "_codecs_"#loc,                                                 \
+        .m_name = "_codecs_"#loc,                                       \
         NULL,                                                           \
-        0,                                                              \
-        __methods,                                                      \
-        NULL,                                                           \
-        NULL,                                                           \
-        NULL,                                                           \
-        NULL                                                            \
+        .m_size = 0,                                                    \
+        .m_methods = _cjk_methods,                                      \
+        .m_slots = _cjk_slots,                                          \
     };                                                                  \
+                                                                        \
     PyMODINIT_FUNC                                                      \
     PyInit__codecs_##loc(void)                                          \
     {                                                                   \
-        PyObject *m = PyModule_Create(&__module);                       \
-        if (m != NULL)                                                  \
-            (void)register_maps(m);                                     \
-        return m;                                                       \
+        return PyModuleDef_Init(&_cjk_module);                          \
     }
 
 #endif
