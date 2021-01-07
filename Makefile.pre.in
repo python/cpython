@@ -146,6 +146,8 @@ CONFINCLUDEDIR=	$(exec_prefix)/include
 PLATLIBDIR=	@PLATLIBDIR@
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
 ABIFLAGS=	@ABIFLAGS@
+# Variable used by ensurepip
+WHEEL_PKG_DIR=	@WHEEL_PKG_DIR@
 
 # Detailed destination directories
 BINLIBDEST=	@BINLIBDEST@
