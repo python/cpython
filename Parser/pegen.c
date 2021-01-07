@@ -383,6 +383,10 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 static PyObject *
 get_error_line(Parser *p, Py_ssize_t lineno)
 {
+    // If p->tok->fp == NULL, the we're parsing from a string, which means that
+    // the whole source is stored in p->tok->str. If not, then we're parsing
+    // from the REPL, so the source lines of the current (multi-line) statement
+    // are stored in p->tok->stdin_content
     char *cur_line = p->tok->fp == NULL ? p->tok->str : p->tok->stdin_content;
     for (int i = 0; i < lineno - 1; i++) {
         cur_line = strchr(cur_line, '\n') + 1;
@@ -390,7 +394,7 @@ get_error_line(Parser *p, Py_ssize_t lineno)
 
     char *next_newline;
     if ((next_newline = strchr(cur_line, '\n')) == NULL) { // This is the last line
-        return PyUnicode_DecodeUTF8(cur_line, strlen(cur_line), "replace");
+        next_newline = cur_line + strlen(cur_line);
     }
     return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
 }
@@ -431,6 +435,8 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
+        // PyErr_ProgramTextObject returned NULL, so we're not parsing from a file
+        assert(p->tok->fp == NULL || p->tok->fp == stdin);
         if (p->tok->lineno == lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");

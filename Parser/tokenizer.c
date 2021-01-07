@@ -865,8 +865,7 @@ tok_nextc(struct tok_state *tok)
                         tok->done = E_NOMEM;
                         return EOF;
                     }
-                    strcpy(tok->stdin_content, translated);
-                    tok->stdin_content[strlen(translated)] = 0;
+                    sprintf(tok->stdin_content, "%s", translated);
                 }
                 else {
                     char *new_str = PyMem_Malloc(strlen(tok->stdin_content) + strlen(translated) + 1);
