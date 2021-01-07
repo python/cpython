@@ -1,4 +1,4 @@
-# test for xml.dom.minidom
+"""Tests for xml.dom.minidom."""
 
 import copy
 import pickle
