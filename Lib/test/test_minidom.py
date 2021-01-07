@@ -1,16 +1,17 @@
 """Tests for xml.dom.minidom."""
 
 import copy
-import pickle
 import io
+import pickle
 from test import support
 import unittest
 
 import xml.dom.minidom
-
-from xml.dom.minidom import parse, Node, Document, parseString
+from xml.dom.minidom import Document
 from xml.dom.minidom import getDOMImplementation
-
+from xml.dom.minidom import Node
+from xml.dom.minidom import parse
+from xml.dom.minidom import parseString
 
 tstfile = support.findfile("test.xml", subdir="xmltestdata")
 sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"
