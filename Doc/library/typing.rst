@@ -707,7 +707,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
           global my_lock
-          def inner(*args: P.args, **kwargs: P.kwargs) -> T:
+          def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
               return f(my_lock, *args, **kwargs)
           return inner
