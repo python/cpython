@@ -174,6 +174,8 @@ The mathematical and bitwise operations are the most numerous:
 
    Return ``a ** b``, for *a* and *b* numbers.
 
+   Consider using :func:`pow`.
+
 
 .. function:: rshift(a, b)
               __rshift__(a, b)
