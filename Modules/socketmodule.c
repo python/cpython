@@ -7079,13 +7079,56 @@ static struct PyModuleDef socketmodule = {
     NULL
 };
 
+static void
+socket_free_state(PyObject *Py_UNUSED(module))
+{
+    socket_state *state = socket_get_state();
+    Py_CLEAR(state->sock_type);
+    Py_CLEAR(state->socket_herror);
+    Py_CLEAR(state->socket_gaierror);
+}
+
+static int
+socket_init_state(PyObject *module)
+{
+    socket_state *state = socket_get_state();
+    state->sock_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &sock_spec, NULL);
+    if (state->sock_type == NULL) {
+        goto error;
+    }
+
+    state->socket_herror = PyErr_NewException("socket.herror", PyExc_OSError, NULL);
+    if (state->socket_herror == NULL) {
+        goto error;
+    }
+
+    state->socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError, NULL);
+    if (state->socket_gaierror == NULL) {
+        goto error;
+    }
+
+    return 0;
+
+error:
+    socket_free_state(module);
+    return -1;
+}
+
+#define ADD_OBJ_REF(module, name, obj)                      \
+    do {                                                    \
+        if (PyModule_AddObjectRef(module, name, obj) < 0) { \
+            goto error;                                     \
+        }                                                   \
+    } while (0)
+
 PyMODINIT_FUNC
 PyInit__socket(void)
 {
-    PyObject *m, *has_ipv6;
+    PyObject *m = NULL, *has_ipv6;
 
-    if (!os_init())
-        return NULL;
+    if (!os_init()) {
+        goto error;
+    }
 
 #ifdef MS_WINDOWS
     if (support_wsa_no_inherit == -1) {
@@ -7094,42 +7137,21 @@ PyInit__socket(void)
 #endif
 
     m = PyModule_Create(&socketmodule);
-    if (m == NULL)
-        return NULL;
+    if (m == NULL) {
+        goto error;
+    }
+
+    if (socket_init_state(m)) {
+        goto error;
+    }
 
     socket_state *state = socket_get_state();
-    state->sock_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &sock_spec, NULL);
-    if (!state->sock_type) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    Py_INCREF(PyExc_OSError);
-    PyModule_AddObject(m, "error", PyExc_OSError);
-    state->socket_herror = PyErr_NewException("socket.herror",
-                                       PyExc_OSError, NULL);
-    if (state->socket_herror == NULL)
-        return NULL;
-    Py_INCREF(state->socket_herror);
-    PyModule_AddObject(m, "herror", state->socket_herror);
-    state->socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
-        NULL);
-    if (state->socket_gaierror == NULL)
-        return NULL;
-    Py_INCREF(state->socket_gaierror);
-    PyModule_AddObject(m, "gaierror", state->socket_gaierror);
-    PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
-
-    Py_INCREF(state->sock_type);
-    if (PyModule_AddObject(m, "SocketType", (PyObject *)state->sock_type) < 0) {
-        Py_CLEAR(state->sock_type);
-        return NULL;
-    }
-    Py_INCREF((PyObject *)state->sock_type);
-    if (PyModule_AddObject(m, "socket", (PyObject *)state->sock_type) < 0) {
-        Py_CLEAR(state->sock_type);
-        return NULL;
-    }
+    ADD_OBJ_REF(m, "SocketType", (PyObject *)state->sock_type);
+    ADD_OBJ_REF(m, "socket", (PyObject *)state->sock_type);
+    ADD_OBJ_REF(m, "herror", (PyObject *)state->socket_herror);
+    ADD_OBJ_REF(m, "gaierror", (PyObject *)state->socket_gaierror);
+    ADD_OBJ_REF(m, "error", PyExc_OSError);
+    ADD_OBJ_REF(m, "timeout", PyExc_TimeoutError);
 
 #ifdef ENABLE_IPV6
     has_ipv6 = Py_True;
@@ -8395,4 +8417,10 @@ PyInit__socket(void)
 #endif
 
     return m;
+
+error:
+    socket_free_state(m);
+    Py_XDECREF(m);
+    return NULL;
 }
+#undef ADD_OBJ_REF
