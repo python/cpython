@@ -1163,9 +1163,15 @@ class TestTracebackException(unittest.TestCase):
             self.fail("Exception not raised")
 
         te = traceback.TracebackException(*exc_info)
-
-        return # format() is still recursive
         res = list(te.format())
+
+        # many ZeroDiv errors followed by the RecursionError
+        self.assertGreater(len(res), sys.getrecursionlimit())
+        self.assertGreater(
+            len([l for l in res if 'ZeroDivisionError:' in l]),
+            sys.getrecursionlimit() * 0.5)
+        self.assertIn(
+            "RecursionError: maximum recursion depth exceeded", res[-1])
 
     def test_no_refs_to_exception_and_traceback_objects(self):
         try:
