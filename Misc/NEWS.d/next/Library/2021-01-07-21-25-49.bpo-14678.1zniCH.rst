@@ -1,0 +1,2 @@
+Add an invalidate_caches() method to the zipimport.zipimporter class to
+support importlib.invalidate_caches().
