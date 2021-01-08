@@ -9,14 +9,6 @@ __all__ = [
         ]
 
 
-class _NoInitSubclass:
-    """
-    temporary base class to suppress calling __init_subclass__
-    """
-    @classmethod
-    def __init_subclass__(cls, **kwds):
-        pass
-
 def _is_descriptor(obj):
     """
     Returns True if obj is a descriptor, False otherwise.
@@ -227,22 +219,7 @@ class EnumMeta(type):
         if '__doc__' not in classdict:
             classdict['__doc__'] = 'An enumeration.'
 
-        # postpone calling __init_subclass__
-        if '__init_subclass__' in classdict and classdict['__init_subclass__'] is None:
-            raise TypeError('%s.__init_subclass__ cannot be None')
-        # remove current __init_subclass__ so previous one can be found with getattr
-        new_init_subclass = classdict.pop('__init_subclass__', None)
-        # create our new Enum type
-        if bases:
-            bases = (_NoInitSubclass, ) + bases
-            enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
-            enum_class.__bases__ = enum_class.__bases__[1:] #or (object, )
-        else:
-            enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
-        old_init_subclass = getattr(enum_class, '__init_subclass__', None)
-        # and restore the new one (if there was one)
-        if new_init_subclass is not None:
-            enum_class.__init_subclass__ = classmethod(new_init_subclass)
+        enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
         enum_class._member_names_ = []               # names in definition order
         enum_class._member_map_ = {}                 # name->value map
         enum_class._member_type_ = member_type
@@ -354,9 +331,6 @@ class EnumMeta(type):
             if _order_ != enum_class._member_names_:
                 raise TypeError('member order does not match _order_')
 
-        # finally, call parents' __init_subclass__
-        if Enum is not None and old_init_subclass is not None:
-            old_init_subclass(**kwds)
         return enum_class
 
     def __bool__(self):
@@ -733,9 +707,6 @@ class Enum(metaclass=EnumMeta):
                 pass
         else:
             return start
-
-    def __init_subclass__(cls, **kwds):
-        super().__init_subclass__(**kwds)
 
     @classmethod
     def _missing_(cls, value):

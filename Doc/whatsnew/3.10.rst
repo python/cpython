@@ -486,6 +486,14 @@ Deprecated
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
 
+* The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
+  deprecated, scheduled for removal in Python 3.12.  Its use is strongly
+  discouraged by the SQLite3 documentation.  See `the SQLite3 docs
+  <https://sqlite.org/c3ref/enable_shared_cache.html/>`_ for more details.
+  If shared cache must be used, open the database in URI mode using the
+  ``cache=shared`` query parameter.
+  (Contributed by Erlend E. Aasland in :issue:`24464`.)
+
 
 Removed
 =======
@@ -577,13 +585,12 @@ CPython bytecode changes
 Build Changes
 =============
 
-
 * The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
   to build Python.
   (Contributed by Victor Stinner in :issue:`36020`.)
 
-* :mod:`sqlite3` requires SQLite 3.7.3 or higher.
-  (Contributed by Sergey Fedoseev and Erlend E. Aasland :issue:`40744`.)
+* :mod:`sqlite3` requires SQLite 3.7.15 or higher. (Contributed by Sergey Fedoseev
+  and Erlend E. Aasland :issue:`40744` and :issue:`40810`.)
 
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)

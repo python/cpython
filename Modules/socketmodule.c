@@ -7033,16 +7033,36 @@ os_init(void)
 }
 #endif
 
-
-/* C API table - always add new things to the end for binary
-   compatibility. */
-static
-PySocketModule_APIObject PySocketModuleAPI =
+static void
+sock_free_api(PySocketModule_APIObject *capi)
 {
-    &sock_type,
-    NULL,
-    NULL
-};
+    Py_DECREF(capi->Sock_Type);
+    Py_DECREF(capi->error);
+    Py_DECREF(capi->timeout_error);
+    PyMem_Free(capi);
+}
+
+static void
+sock_destroy_api(PyObject *capsule)
+{
+    void *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    sock_free_api(capi);
+}
+
+static PySocketModule_APIObject *
+sock_get_api(void)
+{
+    PySocketModule_APIObject *capi = PyMem_Malloc(sizeof(PySocketModule_APIObject));
+    if (capi == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    capi->Sock_Type = (PyTypeObject *)Py_NewRef(&sock_type);
+    capi->error = Py_NewRef(PyExc_OSError);
+    capi->timeout_error = Py_NewRef(PyExc_TimeoutError);
+    return capi;
+}
 
 
 /* Initialize the _socket module.
@@ -7092,8 +7112,6 @@ PyInit__socket(void)
         return NULL;
 
     Py_INCREF(PyExc_OSError);
-    PySocketModuleAPI.error = PyExc_OSError;
-    Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
     socket_herror = PyErr_NewException("socket.herror",
                                        PyExc_OSError, NULL);
@@ -7107,8 +7125,6 @@ PyInit__socket(void)
         return NULL;
     Py_INCREF(socket_gaierror);
     PyModule_AddObject(m, "gaierror", socket_gaierror);
-
-    PySocketModuleAPI.timeout_error = PyExc_TimeoutError;
     PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
 
     Py_INCREF((PyObject *)&sock_type);
@@ -7129,10 +7145,24 @@ PyInit__socket(void)
     PyModule_AddObject(m, "has_ipv6", has_ipv6);
 
     /* Export C API */
-    if (PyModule_AddObject(m, PySocket_CAPI_NAME,
-           PyCapsule_New(&PySocketModuleAPI, PySocket_CAPSULE_NAME, NULL)
-                             ) != 0)
+    PySocketModule_APIObject *capi = sock_get_api();
+    if (capi == NULL) {
+        Py_DECREF(m);
         return NULL;
+    }
+    PyObject *capsule = PyCapsule_New(capi,
+                                      PySocket_CAPSULE_NAME,
+                                      sock_destroy_api);
+    if (capsule == NULL) {
+        sock_free_api(capi);
+        Py_DECREF(m);
+        return NULL;
+    }
+    if (PyModule_AddObject(m, PySocket_CAPI_NAME, capsule) < 0) {
+        Py_DECREF(capsule);
+        Py_DECREF(m);
+        return NULL;
+    }
 
     /* Address families (we only support AF_INET and AF_UNIX) */
 #ifdef AF_UNSPEC

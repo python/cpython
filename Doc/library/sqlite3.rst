@@ -19,7 +19,7 @@ PostgreSQL or Oracle.
 
 The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.7.3 or newer.
+requires SQLite 3.7.15 or newer.
 
 To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
@@ -1088,19 +1088,6 @@ committed:
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
-
-Common issues
--------------
-
-Multithreading
-^^^^^^^^^^^^^^
-
-Older SQLite versions had issues with sharing connections between threads.
-That's why the Python module disallows sharing connections and cursors between
-threads. If you still try to do so, you will get an exception at runtime.
-
-The only exception is calling the :meth:`~Connection.interrupt` method, which
-only makes sense to call from a different thread.
 
 .. rubric:: Footnotes
 

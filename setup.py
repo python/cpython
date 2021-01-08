@@ -1444,8 +1444,7 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        # We need to find >= sqlite version 3.7.3, for sqlite3_create_function_v2()
-        MIN_SQLITE_VERSION_NUMBER = (3, 7, 3)
+        MIN_SQLITE_VERSION_NUMBER = (3, 7, 15)  # Issue 40810
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
