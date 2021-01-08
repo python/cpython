@@ -383,7 +383,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 static PyObject *
 get_error_line(Parser *p, Py_ssize_t lineno)
 {
-    // If p->tok->fp == NULL, the we're parsing from a string, which means that
+    // If p->tok->fp == NULL, then we're parsing from a string, which means that
     // the whole source is stored in p->tok->str. If not, then we're parsing
     // from the REPL, so the source lines of the current (multi-line) statement
     // are stored in p->tok->stdin_content
