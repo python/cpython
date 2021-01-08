@@ -236,6 +236,14 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
 
+distutils
+---------
+
+The ``bdist_wininst`` command deprecated in Python 3.8 has been removed.
+The ``bidst_wheel`` command is now recommended to distribute binary packages
+on Windows.
+(Contributed by Victor Stinner in :issue:`42802`.)
+
 doctest
 -------
 
