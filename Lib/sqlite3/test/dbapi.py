@@ -85,7 +85,12 @@ class ModuleTests(unittest.TestCase):
     def test_shared_cache_deprecated(self):
         for enable in (True, False):
             with self.assertWarns(DeprecationWarning) as cm:
-                sqlite.enable_shared_cache(enable)
+                try:
+                    sqlite.enable_shared_cache(enable)
+                except sqlite.OperationalError as err:
+                    # See issue 24464 and https://sqlite.org/c3ref/enable_shared_cache.html
+                    import sys
+                    self.assertEqual(sys.platform, 'darwin')
             self.assertIn("dbapi.py", cm.filename)
 
 
