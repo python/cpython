@@ -293,6 +293,7 @@ getcodec(PyObject *self, PyObject *encoding)
 
     r = PyObject_CallFunctionObjArgs(cofunc, codecobj, NULL);
     Py_DECREF(codecobj);
+    Py_DECREF(cofunc);
 
     return r;
 }
