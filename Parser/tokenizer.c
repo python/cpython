@@ -64,7 +64,6 @@ tok_new(void)
     tok->tabsize = TABSIZE;
     tok->indent = 0;
     tok->indstack[0] = 0;
-
     tok->atbol = 1;
     tok->pendin = 0;
     tok->prompt = tok->nextprompt = NULL;
@@ -1396,6 +1395,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
 
     /* Check for EOF and errors now */
     if (c == EOF) {
+        if (tok->level) {
+            return ERRORTOKEN;
+        }
         return tok->done == E_EOF ? ENDMARKER : ERRORTOKEN;
     }
 
@@ -1818,6 +1820,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
+        tok->parencolstack[tok->level] = tok->start - tok->line_start;
         tok->level++;
         break;
     case ')':
