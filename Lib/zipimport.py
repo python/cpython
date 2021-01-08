@@ -341,6 +341,10 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         self._files = files
         return self._files
 
+    def invalidate_caches(self):
+        """Invalidate the mtime of the ZIP archive."""
+        self._archive_mtime = -1
+
     def __repr__(self):
         return f'<zipimporter object "{self.archive}{path_sep}{self.prefix}">'
 

@@ -526,6 +526,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
 
+        # test invalidate_caches() method
+        zi._archive_mtime = 42
+        zi.invalidate_caches()
+        self.assertEqual(zi._archive_mtime, -1)
+
+
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
         packdir2 = packdir + TESTPACK2 + os.sep
