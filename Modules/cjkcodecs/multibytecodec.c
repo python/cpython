@@ -731,6 +731,7 @@ multibytecodec_traverse(PyObject *self, visitproc visit, void *arg)
 static void
 multibytecodec_dealloc(MultibyteCodecObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1957,6 +1958,7 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
         return NULL;
     self->codec = codec;
 
+    PyObject_GC_Track(self);
     return (PyObject *)self;
 }
 
