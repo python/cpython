@@ -506,8 +506,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi2.archive, TEMP_ZIP)
         self.assertEqual(zi2.prefix, TESTPACK + os.sep)
 
-        # test get_files() method
-        self.assertEqual(zi.get_files().keys(), files.keys())
+        # test _get_files() method
+        self.assertEqual(zi._get_files().keys(), files.keys())
         # Add a new file to the ZIP archive
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -518,10 +518,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 zinfo.comment = b"spam"
                 z.writestr(zinfo, data)
         # Tweak the mtime of the ZIP archive to check that
-        # get_files() reloads the file information
+        # _get_files() reloads the file information
         s = os.stat(TEMP_ZIP)
         os.utime(TEMP_ZIP, (s.st_atime, s.st_mtime-100000000))
-        self.assertEqual(zi.get_files().keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         spec = zi.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
@@ -541,7 +541,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # invalidate_caches() to update the cache
         os.utime(TEMP_ZIP, (s.st_atime, zi._archive_mtime))
         zi.invalidate_caches()
-        self.assertEqual(zi.get_files().keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         spec = zi.find_spec('spam3')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
