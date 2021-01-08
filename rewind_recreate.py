@@ -1,10 +1,10 @@
 # Todo
 
-# Trim initialization code execution
 # lists
 # dicts
 # sets
 
+# Trim initialization code execution (done)
 # STORE_NAME (done)
 # Track return value of functions (done)
 # Solve the object ID reused problem (done)
@@ -197,6 +197,7 @@ def recreate_past(conn):
     NEW_LIST_REGEX = re.compile(r'NEW_LIST\(((?:[*0-9]+, )+(?:[*0-9]+)?)\)')
     STORE_FAST_REGEX = re.compile(r'STORE_FAST\(([0-9]+), (.*)\)')
     STORE_NAME_REGEX = re.compile(r'STORE_NAME\((.*), (.*)\)')
+    begin = False
     
     next_snapshot_id = 1
     next_fun_call_id = 1
@@ -213,24 +214,16 @@ def recreate_past(conn):
     
     file = open("rewind.log", "r")
     for line in file:
-        print(line)
-        m = VISIT_REGEX.match(line)
-        if m:
-            line_no = int(m.group(1))
-            cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?)", (
-                new_snapshot_id(), 
-                stack and stack.frame.fun_call.id, 
-                stack.id, 
-                heap.id,
-                None,
-                line_no
-            ))
-            conn.commit()
-            continue
+        # print(line)
         m = PUSH_FRAME_REGEX.match(line)
         if m:
             filename = m.group(1)
             name = m.group(2)
+            if name == "<module>":
+                begin = True
+            else:
+                if not begin:
+                    continue
             varnames = parse_varnames(m.group(3))
             locals = parse_locals(m.group(4))
             parent_id = None
@@ -267,6 +260,21 @@ def recreate_past(conn):
                 parent_id,
             ))
 
+            conn.commit()
+            continue
+        if not begin:
+            continue
+        m = VISIT_REGEX.match(line)
+        if m:
+            line_no = int(m.group(1))
+            cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?)", (
+                new_snapshot_id(), 
+                stack and stack.frame.fun_call.id, 
+                stack.id, 
+                heap.id,
+                None,
+                line_no
+            ))
             conn.commit()
             continue
         m = STORE_NAME_REGEX.match(line)
@@ -383,7 +391,8 @@ def parse_locals(locals):
     return locals
 
 def main():
-    os.remove("rewind.sqlite")
+    if os.path.isfile("rewind.sqlite"):
+        os.remove("rewind.sqlite")
     conn = sqlite3.connect('rewind.sqlite')
     define_schema(conn)
     recreate_past(conn)
