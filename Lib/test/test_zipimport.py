@@ -526,11 +526,29 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
 
-        # test invalidate_caches() method
+        # Test invalidate_caches() method.
+        # Add a new file to the ZIP archive
+        newfile = {"spam3" + pyc_ext: (NOW, test_pyc)}
+        files.update(newfile)
+        with ZipFile(TEMP_ZIP, "a") as z:
+            for name, (mtime, data) in newfile.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
+                z.writestr(zinfo, data)
+        # Tweak the mtime of the ZIP archive to be that same
+        # as the previously recorded mtime, so we have to call
+        # invalidate_caches() to update the cache
+        os.utime(TEMP_ZIP, (s.st_atime, zi._archive_mtime))
+        zi.invalidate_caches()
+        self.assertEqual(zi.get_files().keys(), files.keys())
+        spec = zi.find_spec('spam3')
+        self.assertIsNotNone(spec)
+        self.assertIsInstance(spec.loader, zipimport.zipimporter)
+
         zi._archive_mtime = 42
         zi.invalidate_caches()
         self.assertEqual(zi._archive_mtime, -1)
-
 
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
