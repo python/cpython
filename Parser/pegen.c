@@ -435,8 +435,8 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        // PyErr_ProgramTextObject returned NULL, so we're not parsing from a file
-        assert(p->tok->fp == NULL || p->tok->fp == stdin);
+        // PyErr_ProgramTextObject returned NULL, so it either failed or we're
+        // not parsing from a file
         if (p->tok->lineno == lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
