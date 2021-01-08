@@ -1,10 +1,14 @@
 # Todo
 
-# Solve the object ID reused problem
-# Track return value of functions
 # Trim initialization code execution
-# Store Fast (done)
+# lists
+# dicts
+# sets
 
+# STORE_NAME (done)
+# Track return value of functions (done)
+# Solve the object ID reused problem (done)
+# Store Fast (done)
 
 import sqlite3
 import os
@@ -56,6 +60,25 @@ def define_schema(conn):
 
     conn.commit()
 
+def serialize_value(value):
+    if isinstance(value, bool):
+        if value:
+            return "true"
+        else:
+            return "false"
+    if isinstance(value, int):
+        return str(value)
+    elif value is None:
+        return "null"
+    else:
+        if isinstance(value, HeapRef):
+            # TODO: support heap refs
+            return "null"
+        elif hasattr(value, "id"):
+            return "*" + str(value.id)
+        else:
+            raise Exception("Don't know how to serialize value " + value)
+
 class HeapRef(object):
     def __init__(self, id):
         self.id = id
@@ -74,112 +97,107 @@ class FunCall(object):
         return "<" + str(self.id) + ">" + self.name + "(" + str(self.varnames) + ")"
 
 class StackFrame(object):
-    def __init__(self, fun_call, locals):
+    def __init__(self, id, fun_call, frame_vars):
+        self.id = id
         self.fun_call = fun_call
-        self.locals = locals
-        self.init_vars_dict()
-    
-    def init_vars_dict(self):
+        self.frame_vars = frame_vars
+
+    def serialize(self):
+        return '{ "funCall": ' + str(self.fun_call.id) + ', "variables": *' + str(self.frame_vars.id) + '}'
+
+class StackFrameVars(object):
+    def __init__(self, id, stack_locals, varnames, extra_vars = None):
+        self.id = id
+        self.varnames = varnames
+        self.stack_locals = stack_locals
+        self.init_vars_dict(stack_locals)
+        if extra_vars:
+            self.vars_dict.update(extra_vars)
+
+    def init_vars_dict(self, stack_locals):
         self.vars_dict = {}
-        for i in range(len(self.fun_call.varnames)):
-            varname = self.fun_call.varnames[i]
-            value = self.locals[i]
+        for i in range(len(self.varnames)):
+            varname = self.varnames[i]
+            value = stack_locals[i]
             self.vars_dict[varname] = value
-
-    def update_local(self, idx, value):
-        new_locals = self.locals.copy()
-        new_locals[idx] = value
-        return StackFrame(self.fun_call, new_locals)
-
-class ObjectTracker(object):
-    def __init__(self, db_conn, db_cursor):
-        self.next_object_id = 1
-        self.dict = {}
-        self.db_conn = db_conn
-        self.db_cursor = db_cursor
-        self.objects = []
     
-    def get_id(self, obj):
-        return self.dict.get(id(obj))
+    def update_local(self, id, idx, value):
+        new_stack_locals = self.stack_locals.copy()
+        new_stack_locals[idx] = value
+        return StackFrameVars(id, new_stack_locals, self.varnames)
+    
+    def update_by_name(self, id, varname, value):
+        return StackFrameVars(id, self.stack_locals, self.varnames, { **self.vars_dict, varname: value })
 
-    def assign_id(self):
-        object_id = self.next_object_id
-        self.next_object_id += 1
-        return object_id
+    def serialize(self):
+        output = "{"
+        items = list(self.vars_dict.items())
+        for i in range(len(items)):
+            item = items[i]
+            if i != 0:
+                output += ", "
+            key = item[0]
+            value = item[1]
+            output += '"' + key + '": '
+            output += serialize_value(value)
+        output += "}"
+        return output
 
-    def track(self, obj):
-        self.objects.append(obj)
-        if obj is None:
-            return
-        if id(obj) in self.dict:
-            return
-        object_id = self.assign_id()
-        self.dict[id(obj)] = object_id
-        # print("inserting object", object_id, self.serialize(obj))
-        self.db_cursor.execute("INSERT INTO Object VALUES (?, ?)", (
-            object_id,
-            self.serialize(obj)
-        ))
-        self.db_conn.commit()
+class StackNode(object):
+    def __init__(self, id, frame, parent):
+        self.id = id
+        self.frame = frame
+        self.parent = parent
 
-    def serialize_item(self, item):
-        if isinstance(item, int):
-            return str(item)
-        elif isinstance(item, bool):
-            if item:
-                return "true"
-            else:
-                return "false"
-        elif item is None:
-            return "null"
+    def serialize(self):
+        if self.parent:
+            return "[ *" + str(self.frame.id) + ", *" + str(self.parent.id) + " ]"
         else:
-            if id(item) not in self.dict:
-                print("Item is not found in tracker: ", item, type(item))
-                return "null"
-            else:
-                item_id = self.dict[id(item)]
-                return "*" + str(item_id)
+            return "[ *" + str(self.frame.id) + ", null ]"
 
-    def serialize(self, obj):
-        if isinstance(obj, list):
-            output = "["
-            for i in range(len(obj)):
-                item = obj[i]
-                if i != 0:
-                    output += ", "
-                output += self.serialize_item(item)
-            output += "]"
-            return output
-        elif isinstance(obj, dict):
-            output = "{"
-            items = list(obj.items())
-            for i in range(len(items)):
-                item = items[i]
-                if i != 0:
-                    output += ", "
-                key = item[0]
-                value = item[1]
-                output += '"' + key + '": '
-                output += self.serialize_item(value)
-            output += "}"
-            return output
-        elif isinstance(obj, StackFrame):
-            fun_call = obj.fun_call.id
-            vars_dict_id = self.get_id(obj.vars_dict)
-            return '{ "funCall": ' + str(fun_call) + ', "variables": *' + str(vars_dict_id) + '}'
-        else:
-            raise Exception("Unsupported type")
+class Heap(object):
+    def __init__(self, id):
+        self.id = id
+        self.dict = {}
+    
+    def serialize(self):
+        return "{}"
 
 def recreate_past(conn):
+    def new_obj_id():
+        nonlocal next_object_id
+        id = next_object_id
+        next_object_id += 1
+        return id
+
+    def new_snapshot_id():
+        nonlocal next_snapshot_id
+        snapshot_id = next_snapshot_id
+        next_snapshot_id += 1
+        return snapshot_id
+
+    def new_fun_call_id():
+        nonlocal next_fun_call_id
+        fun_call_id = next_fun_call_id
+        next_fun_call_id += 1
+        return fun_call_id
+
+    def save_object(obj):
+        cursor.execute("INSERT INTO Object VALUES (?, ?)", (
+            obj.id,
+            obj.serialize()
+        ))
+        conn.commit()
+
     cursor = conn.cursor()
     VISIT_REGEX = re.compile(r'VISIT #([0-9]+)')
     PUSH_FRAME_REGEX = re.compile(r'PUSH_FRAME\(filename: (.*), name: (.*), varnames: \((.*)\), locals: (.*)\)')
     RETURN_VALUE_REGEX = re.compile(r'RETURN_VALUE\((.*)\)')
+    DEALLOC_OBJECT_REGEX = re.compile(r'DEALLOC_OBJECT\((.*)\)')
     NEW_LIST_REGEX = re.compile(r'NEW_LIST\(((?:[*0-9]+, )+(?:[*0-9]+)?)\)')
     STORE_FAST_REGEX = re.compile(r'STORE_FAST\(([0-9]+), (.*)\)')
-    object_tracker = ObjectTracker(conn, cursor)
-    heap = {}
-
+    STORE_NAME_REGEX = re.compile(r'STORE_NAME\((.*), (.*)\)')
+    
     next_snapshot_id = 1
     next_fun_call_id = 1
     next_object_id = 1
@@ -189,26 +207,23 @@ def recreate_past(conn):
     heap_id_to_id_dict = {}
     object_dict = {}
 
-    object_tracker.track(heap)
-    object_tracker.track(stack)
+    heap = Heap(new_obj_id())
+    save_object(heap)
+    line_no = None
     
     file = open("rewind.log", "r")
     for line in file:
         print(line)
         m = VISIT_REGEX.match(line)
         if m:
-            line = m.group(1)
-            snapshot_id = next_snapshot_id
-            next_snapshot_id += 1
-            stack_id = object_tracker.get_id(stack)
-            heap_id = object_tracker.get_id(heap)
+            line_no = int(m.group(1))
             cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?)", (
-                snapshot_id, 
-                stack and stack[0].fun_call.id, 
-                stack_id, 
-                heap_id,
+                new_snapshot_id(), 
+                stack and stack.frame.fun_call.id, 
+                stack.id, 
+                heap.id,
                 None,
-                int(line)
+                line_no
             ))
             conn.commit()
             continue
@@ -218,11 +233,9 @@ def recreate_past(conn):
             name = m.group(2)
             varnames = parse_varnames(m.group(3))
             locals = parse_locals(m.group(4))
-            fun_call_id = next_fun_call_id
-            next_fun_call_id += 1
             parent_id = None
             if stack is not None:
-                parent_id = stack[0].fun_call.id
+                parent_id = stack.frame.fun_call.id
             
             if filename not in source_code_files and os.path.isfile(filename):
                 the_file = open(filename, "r")
@@ -239,26 +252,37 @@ def recreate_past(conn):
                 source_code_files.add(filename)
             # print(f"Push Frame: filename: {filename}, name: {name}, varnames: {varnames}, locals: {locals}")
             
-            
-            fun_call = FunCall(fun_call_id, filename, name, varnames, locals)
-            print("push frame found:", fun_call)
-            stack_frame_id = next_object_id
-            next_object_id += 1
-            frame = StackFrame(fun_call, locals)
-            object_tracker.track(frame.vars_dict)
-            object_tracker.track(frame)
-            stack = [frame, stack]
-            object_tracker.track(stack)
+            fun_call = FunCall(new_fun_call_id(), filename, name, varnames, locals)
+            frame_vars = StackFrameVars(new_obj_id(), locals, varnames)
+            save_object(frame_vars)
+            frame = StackFrame(new_obj_id(), fun_call, frame_vars)
+            save_object(frame)
+            stack = StackNode(new_obj_id(), frame, stack)
+            save_object(stack)
 
-            parameters_id = object_tracker.get_id(frame.vars_dict)
             cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?)", (
-                fun_call_id,
+                fun_call.id,
                 name,
-                parameters_id,
+                frame_vars.id,
                 parent_id,
             ))
 
             conn.commit()
+            continue
+        m = STORE_NAME_REGEX.match(line)
+        if m:
+            name = eval(m.group(1))
+            value = m.group(2)
+            if value[0] == "*":
+                value = HeapRef(value[1:])
+            else:
+                value = eval(value)
+            new_frame_vars = stack.frame.frame_vars.update_by_name(new_obj_id(), name, value)
+            save_object(new_frame_vars)
+            new_frame = StackFrame(new_obj_id(), stack.frame.fun_call, new_frame_vars)
+            save_object(new_frame)
+            stack = StackNode(new_obj_id(), new_frame, stack.parent)
+            save_object(stack)
             continue
         m = STORE_FAST_REGEX.match(line)
         if m:
@@ -269,18 +293,47 @@ def recreate_past(conn):
             else:
                 value = int(value)
             assert stack is not None
-            frame = stack[0].update_local(index, value)
-            stack = [
-                frame,
-                stack[1]
-            ]
-            object_tracker.track(frame.vars_dict)
-            object_tracker.track(frame)
-            object_tracker.track(stack)
+            new_frame_vars = stack.frame.frame_vars.update_local(new_obj_id(), index, value)
+            save_object(new_frame_vars)
+            new_frame = StackFrame(new_obj_id(), stack.frame.fun_call, new_frame_vars)
+            save_object(new_frame)
+            stack = StackNode(new_obj_id(), new_frame, stack.parent)
+            save_object(stack)
             continue
+        # m = DEALLOC_OBJECT_REGEX.match(line)
+        # if m:
+        #     print("Dealloc object:", m.group(1))
+        #     object_ids = map(int, m.group(1).split(", "))
+        #     for oid in object_ids:
+        #         object_tracker.untrack(oid)
+        #     continue
         m = RETURN_VALUE_REGEX.match(line)
         if m:
-            stack = stack[1]
+            ret_val = m.group(1)
+            if ret_val[0] == "*":
+                ret_val = None
+            else:
+                ret_val = eval(ret_val)
+            new_frame_vars = stack.frame.frame_vars.update_by_name(new_obj_id(), "<ret val>", ret_val)
+            save_object(new_frame_vars)
+            new_frame = StackFrame(new_obj_id(), stack.frame.fun_call, new_frame_vars)
+            save_object(new_frame)
+            stack = StackNode(new_obj_id(), new_frame, stack.parent)
+            save_object(stack)
+
+            cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?)", (
+                new_snapshot_id(), 
+                stack and stack.frame.fun_call.id, 
+                stack.id, 
+                heap.id,
+                None,
+                line_no
+            ))
+            conn.commit()
+
+            stack = stack.parent
+            ret_val = m.group(1)
+            
             continue
         # m = NEW_LIST_REGEX.match(line)
         # if m:

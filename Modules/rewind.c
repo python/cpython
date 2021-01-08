@@ -6,6 +6,7 @@ static FILE *rewindLog;
 static char rewindInitialized = 0;
 static int lastLine = -1;
 static PyObject *knownObjectIds;
+static PyObject *deallocatedObjectIds;
 static PyObject *currentMethodName;
 static PyObject *currentMethodSelf;
 static PyObject *currentMethodObject;
@@ -20,6 +21,7 @@ void Rewind_Initialize() {
 
 void Rewind_Initialize2() {
     knownObjectIds = PySet_New(NULL);
+    deallocatedObjectIds = PySet_New(NULL);
     rewindInitialized = 1;
 }
 
@@ -283,6 +285,7 @@ void Rewind_SetAttr(PyObject *obj, PyObject *attr, PyObject *value) {
 }
 
 void Rewind_TrackObject(PyObject *obj) {
+    //Rewind_FlushDeallocatedIds();
     if (Rewind_isSimpleType(obj)) {
         return;
     }
@@ -413,6 +416,33 @@ void Rewind_Dealloc(PyObject *obj) {
     if (PySet_Contains(knownObjectIds, id)) {
         PySet_Discard(knownObjectIds, id);
     }
+    PySet_Add(deallocatedObjectIds, id);
+}
+
+void Rewind_FlushDeallocatedIds() {
+    if (!rewindInitialized) return;
+
+    Py_ssize_t size = PySet_Size(deallocatedObjectIds);
+    if (size == 0) {
+        return;
+    }
+    fprintf(rewindLog, "DEALLOC_OBJECT(");
+    PyObject *deallocatedObjectIdsList = PyList_New(0);
+    _PyList_Extend(deallocatedObjectIdsList, deallocatedObjectIds);
+    PyObject *iterator = PySequence_Fast(deallocatedObjectIdsList, "argument must be iterable");
+    Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
+    PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
+    for (int i = 0; i < n; i++) {
+        PyObject *id = iteratorItems[i];
+        if (i != 0) {
+            fprintf(rewindLog, ", ");
+        }
+        PyObject_Print(id, rewindLog, Py_PRINT_RAW);
+    }
+    fprintf(rewindLog, ")\n");
+    Py_DECREF(iterator);
+    Py_DECREF(deallocatedObjectIdsList);
+    PySet_Clear(deallocatedObjectIds);
 }
 
 void printObject(FILE *file, PyObject *obj) {

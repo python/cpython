@@ -38,6 +38,8 @@ void Rewind_SetAttr(PyObject *obj, PyObject *attr, PyObject *value);
 
 void Rewind_Dealloc(PyObject *obj);
 
+void Rewind_FlushDeallocatedIds(void);
+
 void Rewind_TrackObject(PyObject *obj);
 
 void Rewind_serializeObject(FILE *file, PyObject *obj);
