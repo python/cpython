@@ -2757,6 +2757,49 @@ class TestSlots(unittest.TestCase):
         # We can add a new field to the derived instance.
         d.z = 10
 
+    def test_generated_slots(self):
+        @dataclass(slots=True)
+        class C:
+            x: int
+            y: int
+
+        c = C(1, 2)
+        self.assertEqual((c.x, c.y), (1, 2))
+
+        c.x = 3
+        c.y = 4
+        self.assertEqual((c.x, c.y), (3, 4))
+
+        with self.assertRaisesRegex(AttributeError, "'C' object has no attribute 'z'"):
+            c.z = 5
+
+    def test_add_slots_when_slots_exists(self):
+        with self.assertRaisesRegex(TypeError, '^C already specifies __slots__$'):
+            @dataclass(slots=True)
+            class C:
+                __slots__ = ('x',)
+                x: int
+
+    def test_generated_slots_value(self):
+        @dataclass(slots=True)
+        class Base:
+            x: int
+
+        self.assertEqual(Base.__slots__, ('x',))
+
+        @dataclass(slots=True)
+        class Delivered(Base):
+            y: int
+
+        self.assertEqual(Delivered.__slots__, ('x', 'y'))
+
+        @dataclass
+        class AnotherDelivered(Base):
+            z: int
+
+        self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
+
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.

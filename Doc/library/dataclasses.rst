@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module-level decorators, classes, and functions
 -----------------------------------------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, slots=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,7 +79,7 @@ Module-level decorators, classes, and functions
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, slots=False)
      class C:
         ...
 
@@ -160,6 +160,10 @@ Module-level decorators, classes, and functions
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
+
+   - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
+     will be generated. If :attr:`__slots__` is defined in the class, then
+     :exc:`TypeError` is raised.
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
