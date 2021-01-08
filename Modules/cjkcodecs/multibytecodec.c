@@ -721,11 +721,19 @@ static struct PyMethodDef multibytecodec_methods[] = {
     {NULL, NULL},
 };
 
+static int
+multibytecodec_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 multibytecodec_dealloc(MultibyteCodecObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -733,13 +741,14 @@ static PyType_Slot multibytecodec_slots[] = {
     {Py_tp_dealloc, multibytecodec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, multibytecodec_methods},
+    {Py_tp_traverse, multibytecodec_traverse},
     {0, NULL},
 };
 
 static PyType_Spec multibytecodec_spec = {
     .name = MODULE_NAME ".MultibyteCodec",
     .basicsize = sizeof(MultibyteCodecObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = multibytecodec_slots,
 };
 
@@ -1944,11 +1953,12 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
         return NULL;
 
     _multibytecodec_state *state = _multibytecodec_get_state(module);
-    self = PyObject_New(MultibyteCodecObject, state->multibytecodec_type);
+    self = PyObject_GC_New(MultibyteCodecObject, state->multibytecodec_type);
     if (self == NULL)
         return NULL;
     self->codec = codec;
 
+    PyObject_GC_Track(self);
     return (PyObject *)self;
 }
 
