@@ -408,6 +408,10 @@ class BaseTest(unittest.TestCase):
         # Make sure the original tuple's list wasn't modified.
         self.assertEqual(x, (int, (int, [dict, float])))
 
+        y = [int, str]
+        self.assertEqual(list[y], list[[int, str]])
+        self.assertEqual(y, [int, str])
+
 
 if __name__ == "__main__":
     unittest.main()

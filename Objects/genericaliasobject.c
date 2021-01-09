@@ -228,29 +228,49 @@ tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
 
 // Makes a shallow copy of a tuple
 static inline PyObject *
-tuple_copy(PyObject *obj) {
+tuple_copy(PyObject *obj)
+{
     return _PyTuple_FromArray(((PyTupleObject *)obj)->ob_item, Py_SIZE(obj));
 }
 
 // This converts all nested lists in args to a tuple (args should be a tuple).
 // Usually needed to help caching in other libraries.
-// Must be called on a copy of a tuple object, where the only reference is
-// owned by the caller.
-static inline void
+static inline PyObject *
 tupleify_lists(PyObject *args) {
     Py_ssize_t len = PyTuple_GET_SIZE(args);
+    PyObject *result = tuple_copy(args);
+    if (result == NULL) {
+        return NULL;
+    }
     for (Py_ssize_t i = 0; i < len; ++i) {
-        PyObject *arg = PyTuple_GET_ITEM(args, i);
+        PyObject *arg = PyTuple_GET_ITEM(result, i);
         int is_list = PyList_CheckExact(arg);
         int is_tuple = PyTuple_CheckExact(arg);
         if (is_list || is_tuple) {
             // In case there are lists nested inside tuples.
-            PyObject *new_arg = is_list ? PyList_AsTuple(arg) : tuple_copy(arg);
-            tupleify_lists(new_arg);
-            PyTuple_SET_ITEM(args, i, new_arg);
-            Py_DECREF(arg);
+            PyObject *new_arg = is_list ? PyList_AsTuple(arg) : arg;
+            if (new_arg == NULL) {
+                goto error;
+            }
+            PyObject *new_arg_tupled = tupleify_lists(new_arg);
+            if (new_arg_tupled == NULL) {
+                Py_DECREF(new_arg);
+                goto error;
+            }
+            Py_DECREF(new_arg);
+            PyTuple_SET_ITEM(result, i, new_arg_tupled);
+            // PyTuple_SET_ITEM doesn't DECREF existing item automatically.
+            if (is_list) {
+                Py_DECREF(arg);
+            }
+            continue;
+
+        error:
+            Py_DECREF(result);
+            return NULL;
         }
     }
+    return result;
 }
 
 static PyObject *
@@ -641,9 +661,11 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     else {
         Py_INCREF(args);
     }
-    PyObject *new_args = tuple_copy(args);
-    tupleify_lists(new_args);
+    PyObject *new_args = tupleify_lists(args);
     Py_DECREF(args);
+    if (new_args == NULL) {
+        return 0;
+    }
 
     Py_INCREF(origin);
     alias->origin = origin;
