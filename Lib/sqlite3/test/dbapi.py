@@ -23,7 +23,7 @@
 import threading
 import unittest
 import sqlite3 as sqlite
-import sys  # For test_shared_cache_deprecated
+import sys
 
 from test.support.os_helper import TESTFN, unlink
 
@@ -83,9 +83,10 @@ class ModuleTests(unittest.TestCase):
                                    sqlite.DatabaseError),
                         "NotSupportedError is not a subclass of DatabaseError")
 
-    @unittest.skipIf(sys.platform == 'darwin', 'shared cache is deprecated on macOS')
+    # sqlite3_enable_shared_cache() is deprecated on macOS and calling it may raise
+    # OperationalError on some buildbots.
+    @unittest.skipIf(sys.platform == "darwin", "shared cache is deprecated on macOS")
     def test_shared_cache_deprecated(self):
-    # See issue 24464: sqlite3_enable_shared_cache is deprecated on macOS
         for enable in (True, False):
             with self.assertWarns(DeprecationWarning) as cm:
                 sqlite.enable_shared_cache(enable)
