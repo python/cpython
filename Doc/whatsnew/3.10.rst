@@ -273,6 +273,13 @@ Added *globalns* and *localns* parameters in :func:`~inspect.signature` and
 local and global namespaces.
 (Contributed by Batuhan Taskaya in :issue:`41960`.)
 
+ipaddress
+---------
+
+XXX Add :func:`_BaseNetwork.next_network` to support finding the next closest
+network.
+(Contributed by Faisal Mahmood in :issue:`42861`.)
+
 linecache
 ---------
 
