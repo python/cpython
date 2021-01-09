@@ -1000,7 +1000,7 @@ These are not used in annotations. They are building blocks for creating generic
     for the type variable must be a subclass of the boundary type,
     see :pep:`484`.
 
-.. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
+.. class:: ParamSpec(name, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
    :class:`type variables <TypeVar>`.
