@@ -1,0 +1,3 @@
+Fixed 2 bugs in urllib.request.HTTPPasswordMgr.is_suburi, added some tests
+for it. :func:`urllib.request.HTTPPasswordMgr.is_suburi`. Patch by Yair
+Frid.`
