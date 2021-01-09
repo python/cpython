@@ -321,9 +321,9 @@ expect a function argument.
 
       >>> itemgetter(1)('ABCDEFG')
       'B'
-      >>> itemgetter(1,3,5)('ABCDEFG')
+      >>> itemgetter(1, 3, 5)('ABCDEFG')
       ('B', 'D', 'F')
-      >>> itemgetter(slice(2,None))('ABCDEFG')
+      >>> itemgetter(slice(2, None))('ABCDEFG')
       'CDEFG'
       >>> soldier = dict(rank='captain', name='dotterbart')
       >>> itemgetter('rank')(soldier)
