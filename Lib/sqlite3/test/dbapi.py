@@ -88,6 +88,7 @@ class ModuleTests(unittest.TestCase):
     # See issue 24464: sqlite3_enable_shared_cache is deprecated on macOS
         for enable in (True, False):
             with self.assertWarns(DeprecationWarning) as cm:
+                sqlite.enable_shared_cache(enable)
             self.assertIn("dbapi.py", cm.filename)
 
 
