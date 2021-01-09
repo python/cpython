@@ -215,8 +215,9 @@ class RequestHdrsTests(unittest.TestCase):
 
         # is_suburi
 
-        self.assertTrue(is_suburi(reduce_uri('http://example.com/'), reduce_uri('http://example.com/sub_dir')))
+        self.assertTrue(is_suburi(reduce_uri('http://example.com'), reduce_uri('http://example.com/sub_dir')))
         self.assertTrue(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://example.com/sub_dir/sub_dir')))
+        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir/sub_dir'), reduce_uri('http://example.com/sub_dir')))
         self.assertFalse(is_suburi(reduce_uri('http://example.com/second_dir'), reduce_uri('http://example.com/first_dir/second_dir')))
         self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://example.com/sub')))
         self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://exmaple.com/sub_dir_diff')))
