@@ -252,6 +252,9 @@ tupleify_lists(PyObject *args) {
             if (new_arg == NULL) {
                 goto error;
             }
+            if (is_list) {
+                Py_DECREF(arg);
+            }
             PyObject *new_arg_tupled = tupleify_lists(new_arg);
             if (new_arg_tupled == NULL) {
                 Py_DECREF(new_arg);
@@ -259,10 +262,6 @@ tupleify_lists(PyObject *args) {
             }
             Py_DECREF(new_arg);
             PyTuple_SET_ITEM(result, i, new_arg_tupled);
-            // PyTuple_SET_ITEM doesn't DECREF existing item automatically.
-            if (is_list) {
-                Py_DECREF(arg);
-            }
             continue;
 
         error:
