@@ -853,7 +853,6 @@ class HTTPPasswordMgr:
             reduced_authuri = self.reduce_uri(authuri, default_port)
             for uris, authinfo in domains.items():
                 for uri in uris:
-                    print(uri, reduced_authuri)
                     if self.is_suburi(uri, reduced_authuri):
                         return authinfo
         return None, None
