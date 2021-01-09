@@ -1719,7 +1719,8 @@ are always available.  They are listed here in alphabetical order.
    See also :ref:`bltin-type-objects`.
 
    Keyword arguments provided to the three argument form are passed to the
-   appropriate metaclass machinery in the same way that keywords in a class
+   appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
+   in the same way that keywords in a class
    definition (besides *metaclass*) would.
 
    See also :ref:`class-customization`.
