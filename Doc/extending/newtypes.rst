@@ -287,11 +287,8 @@ combined using bitwise-OR.
 +===========================+==============================================+
 | :const:`READONLY`         | Never writable.                              |
 +---------------------------+----------------------------------------------+
-| :const:`READ_RESTRICTED`  | Not readable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`WRITE_RESTRICTED` | Not writable in restricted mode.             |
-+---------------------------+----------------------------------------------+
-| :const:`RESTRICTED`       | Not readable or writable in restricted mode. |
+| :const:`AUDIT_READ`       | Emit a :pep:`578` ``object.__getattr__``     |
+|                           | audit event before read.                     |
 +---------------------------+----------------------------------------------+
 
 .. index::
