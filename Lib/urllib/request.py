@@ -889,7 +889,7 @@ class HTTPPasswordMgr:
             return True
         if base[0] != test[0]:
             return False
-        common = posixpath.commonprefix((base[1], test[1]))
+        common = posixpath.commonpath((base[1], test[1]))
         if len(common) == len(base[1]):
             return True
         return False
