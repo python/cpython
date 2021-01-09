@@ -881,13 +881,13 @@ class HTTPPasswordMgr:
         return authority, path
 
     def is_suburi(self, base, test):
-        """Check if test is below base in a URI tree
+        """Check if test is below base in a URI tree (inclusive)
 
         Both args must be URIs in reduced form.
         """
         if base == test:
             return True
-        if base[0] != test[0]:
+        if base[0] != test[0] or len(test) > len(base):
             return False
         common = posixpath.commonpath((base[1], test[1]))
         if len(common) == len(base[1]):

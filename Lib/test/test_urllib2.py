@@ -145,6 +145,8 @@ class RequestHdrsTests(unittest.TestCase):
         mgr = urllib.request.HTTPPasswordMgr()
         add = mgr.add_password
         find_user_pass = mgr.find_user_password
+        is_suburi = mgr.is_suburi
+        reduce_uri = mgr.reduce_uri
 
         add("Some Realm", "http://example.com/", "joe", "password")
         add("Some Realm", "http://example.com/ni", "ni", "ni")
@@ -210,6 +212,15 @@ class RequestHdrsTests(unittest.TestCase):
                          ('4', 'd'))
         self.assertEqual(find_user_pass("Some Realm", "e.example.com:3128"),
                          ('5', 'e'))
+
+        # is_suburi
+
+        self.assertTrue(is_suburi(reduce_uri('http://example.com/'), reduce_uri('http://example.com/sub_dir')))
+        self.assertTrue(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://example.com/sub_dir/sub_dir')))
+        self.assertFalse(is_suburi(reduce_uri('http://example.com/second_dir'), reduce_uri('http://example.com/first_dir/second_dir')))
+        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://example.com/sub')))
+        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir'), reduce_uri('http://exmaple.com/sub_dir_diff')))
+        self.assertFalse(is_suburi(reduce_uri('http://example.com/sub_dir_diff'), reduce_uri('http://exmaple.com/sub_dir_second_diff')))
 
     def test_password_manager_default_port(self):
         """
