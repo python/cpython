@@ -24,6 +24,8 @@ get_json_state(PyObject *module)
     assert(state != NULL);
     return (_jsonmodulestate *)state;
 }
+
+
 typedef struct _PyScannerObject {
     PyObject_HEAD
     signed char strict;
@@ -70,7 +72,9 @@ static PyMemberDef encoder_members[] = {
     {"skipkeys", T_BOOL, offsetof(PyEncoderObject, skipkeys), READONLY, "skipkeys"},
     {NULL}
 };
+
 /* Forward decls */
+
 static PyObject *
 ascii_escape_unicode(PyObject *pystr);
 static PyObject *
