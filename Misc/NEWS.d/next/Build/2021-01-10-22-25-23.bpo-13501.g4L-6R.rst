@@ -1,0 +1,2 @@
+The configure script can now use *libedit* instead of *readline* with the
+command line option ``--with-readline=editline``.

@@ -26,10 +26,14 @@
 #  define RESTORE_LOCALE(sl)
 #endif
 
+#ifdef WITH_EDITLINE
+#  include <editline/readline.h>
+#else
 /* GNU readline definitions */
-#undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
-#include <readline/readline.h>
-#include <readline/history.h>
+#  undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
+#  include <readline/readline.h>
+#  include <readline/history.h>
+#endif
 
 #ifdef HAVE_RL_COMPLETION_MATCHES
 #define completion_matches(x, y) \
