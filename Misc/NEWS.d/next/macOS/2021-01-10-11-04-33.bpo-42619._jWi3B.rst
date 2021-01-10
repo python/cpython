@@ -1,0 +1,3 @@
+Detect if the compiler supports building for arm64 when running on macOS
+10.15. This enables building "universal2" extensions on macOS 10.15 when
+Xcode 12.2 is installed.
