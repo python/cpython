@@ -296,7 +296,7 @@ Sleeping
    Setting the delay to 0 provides an optimized path to allow other
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
-   
+
    .. deprecated-removed:: 3.8 3.10
       The *loop* parameter.
 
