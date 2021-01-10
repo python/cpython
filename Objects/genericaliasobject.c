@@ -253,9 +253,15 @@ tupleify_lists(PyObject *args) {
                 goto error;
             }
             if (is_list) {
+                // Discard old arg since AsTuple gives a new reference.
                 Py_DECREF(arg);
             }
+            if (Py_EnterRecursiveCall(" while converting lists to tuples in "
+                "GenericAlias' __args__")) {
+                goto error;
+            }
             PyObject *new_arg_tupled = tupleify_lists(new_arg);
+            Py_LeaveRecursiveCall();
             if (new_arg_tupled == NULL) {
                 Py_DECREF(new_arg);
                 goto error;
