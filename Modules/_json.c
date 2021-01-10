@@ -15,7 +15,6 @@
 typedef struct {
     PyObject *PyScannerType;
     PyObject *PyEncoderType;
-    PyObject *JSONDecodeError;
 } _jsonmodulestate;
 
 static inline _jsonmodulestate*
@@ -24,16 +23,6 @@ get_json_state(PyObject *module)
     void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (_jsonmodulestate *)state;
-}
-
-static inline _jsonmodulestate *
-get_json_state_by_type(PyTypeObject *type)
-{
-    PyObject *module = PyType_GetModule(type);
-    if (module == NULL) {
-        return NULL;
-    }
-    return get_json_state(module);
 }
 
 typedef struct _PyScannerObject {
@@ -90,7 +79,7 @@ static PyObject *
 py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr, _jsonmodulestate *state);
+    Py_ssize_t *next_idx_ptr);
 static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx);
 static PyObject *
@@ -117,7 +106,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc, PyObject *dct,
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
-raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end, _jsonmodulestate *state);
+raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end);
 static PyObject *
 encoder_encode_string(PyEncoderObject *s, PyObject *obj);
 static PyObject *
@@ -326,23 +315,27 @@ escape_unicode(PyObject *pystr)
 }
 
 static void
-raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end, _jsonmodulestate *state)
+raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
-    if (state->JSONDecodeError == NULL) {
-        PyObject *decoder = PyImport_ImportModule("json.decoder");
-        if (decoder == NULL)
-            return;
-        state->JSONDecodeError = PyObject_GetAttrString(decoder, "JSONDecodeError");
-        Py_DECREF(decoder);
-        if (state->JSONDecodeError == NULL)
-            return;
-        Py_INCREF(state->JSONDecodeError);
+    _Py_static_string(PyId_decoder, "json.decoder");
+    PyObject *decoder = _PyImport_GetModuleId(&PyId_decoder);
+    if (decoder == NULL) {
+        return;
     }
+    
+    _Py_IDENTIFIER(JSONDecodeError);
+    PyObject *JSONDecodeError = _PyObject_GetAttrId(decoder, &PyId_JSONDecodeError);
+    Py_DECREF(decoder);
+    if (JSONDecodeError == NULL) {
+        return;
+    }
+
     PyObject *exc;
-    exc = PyObject_CallFunction(state->JSONDecodeError, "zOn", msg, s, end);
+    exc = PyObject_CallFunction(JSONDecodeError, "zOn", msg, s, end);
+    Py_DECREF(JSONDecodeError);
     if (exc) {
-        PyErr_SetObject(state->JSONDecodeError, exc);
+        PyErr_SetObject(JSONDecodeError, exc);
         Py_DECREF(exc);
     }
 }
@@ -385,8 +378,7 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
 }
 
 static PyObject *
-scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next_end_ptr, 
-    _jsonmodulestate *state)
+scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next_end_ptr)
 {
     /* Read the JSON string from PyUnicode pystr.
     end is the index of the first character after the quote.
@@ -430,7 +422,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                     break;
                 }
                 if (d <= 0x1f && strict) {
-                    raise_errmsg("Invalid control character at", pystr, next, state);
+                    raise_errmsg("Invalid control character at", pystr, next);
                     goto bail;
                 }
             }
@@ -449,7 +441,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             }
         }
         else if (c != '\\') {
-            raise_errmsg("Unterminated string starting at", pystr, begin, state);
+            raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
         }
 
@@ -465,7 +457,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             break;
         }
         if (next == len) {
-            raise_errmsg("Unterminated string starting at", pystr, begin, state);
+            raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
         }
         c = PyUnicode_READ(kind, buf, next);
@@ -484,7 +476,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 default: c = 0;
             }
             if (c == 0) {
-                raise_errmsg("Invalid \\escape", pystr, end - 2, state);
+                raise_errmsg("Invalid \\escape", pystr, end - 2);
                 goto bail;
             }
         }
@@ -493,7 +485,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             next++;
             end = next + 4;
             if (end >= len) {
-                raise_errmsg("Invalid \\uXXXX escape", pystr, next - 1, state);
+                raise_errmsg("Invalid \\uXXXX escape", pystr, next - 1);
                 goto bail;
             }
             /* Decode 4 hex digits */
@@ -511,7 +503,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                     case 'F':
                         c |= (digit - 'A' + 10); break;
                     default:
-                        raise_errmsg("Invalid \\uXXXX escape", pystr, end - 5, state);
+                        raise_errmsg("Invalid \\uXXXX escape", pystr, end - 5);
                         goto bail;
                 }
             }
@@ -536,7 +528,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                         case 'F':
                             c2 |= (digit - 'A' + 10); break;
                         default:
-                            raise_errmsg("Invalid \\uXXXX escape", pystr, end - 5, state);
+                            raise_errmsg("Invalid \\uXXXX escape", pystr, end - 5);
                             goto bail;
                     }
                 }
@@ -585,12 +577,8 @@ py_scanstring(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "On|i:scanstring", &pystr, &end, &strict)) {
         return NULL;
     }
-    _jsonmodulestate *state = PyModule_GetState(self);
-    if (state == NULL) {
-        return NULL;
-    }
     if (PyUnicode_Check(pystr)) {
-        rval = scanstring_unicode(pystr, end, strict, &next_end, state);
+        rval = scanstring_unicode(pystr, end, strict, &next_end);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -688,7 +676,7 @@ scanner_clear(PyScannerObject *self)
 
 static PyObject *
 _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr, _jsonmodulestate *state)
+    Py_ssize_t *next_idx_ptr)
 {
     /* Read a JSON object from PyUnicode pystr.
     idx is the index of the first character after the opening curly brace.
@@ -731,10 +719,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
             /* read key */
             if (idx > end_idx || PyUnicode_READ(kind, str, idx) != '"') {
                 raise_errmsg("Expecting property name enclosed in double quotes",
-                    pystr, idx, state);
+                    pystr, idx);
                 goto bail;
             }
-            key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx, state);
+            key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
             memokey = PyDict_SetDefault(s->memo, key, key);
@@ -749,14 +737,14 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
             if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ':') {
-                raise_errmsg("Expecting ':' delimiter", pystr, idx, state);
+                raise_errmsg("Expecting ':' delimiter", pystr, idx);
                 goto bail;
             }
             idx++;
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
             /* read any JSON term */
-            val = scan_once_unicode(s, pystr, idx, &next_idx, state);
+            val = scan_once_unicode(s, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
@@ -787,7 +775,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
             if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == '}')
                 break;
             if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ',') {
-                raise_errmsg("Expecting ',' delimiter", pystr, idx, state);
+                raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
             idx++;
@@ -821,7 +809,7 @@ bail:
 
 static PyObject *
 _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr, _jsonmodulestate *state) {
+    Py_ssize_t *next_idx_ptr) {
     /* Read a JSON array from PyUnicode pystr.
     idx is the index of the first character after the opening brace.
     *next_idx_ptr is a return-by-reference index to the first character after
@@ -855,7 +843,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
         while (1) {
 
             /* read any JSON term  */
-            val = scan_once_unicode(s, pystr, idx, &next_idx, state);
+            val = scan_once_unicode(s, pystr, idx, &next_idx);
             if (val == NULL)
                 goto bail;
 
@@ -872,7 +860,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
             if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == ']')
                 break;
             if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ',') {
-                raise_errmsg("Expecting ',' delimiter", pystr, idx, state);
+                raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
             idx++;
@@ -884,7 +872,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
 
     /* verify that idx < end_idx, PyUnicode_READ(kind, str, idx) should be ']' */
     if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ']') {
-        raise_errmsg("Expecting value", pystr, end_idx, state);
+        raise_errmsg("Expecting value", pystr, end_idx);
         goto bail;
     }
     *next_idx_ptr = idx + 1;
@@ -1040,7 +1028,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr, _jsonmodulestate *state)
+    Py_ssize_t *next_idx_ptr)
 {
     /* Read one JSON term (of any kind) from PyUnicode pystr.
     idx is the index of the first character of the term
@@ -1073,13 +1061,13 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
     switch (PyUnicode_READ(kind, str, idx)) {
         case '"':
             /* string */
-            return scanstring_unicode(pystr, idx + 1, s->strict, next_idx_ptr, state);
+            return scanstring_unicode(pystr, idx + 1, s->strict, next_idx_ptr);
         case '{':
             /* object */
             if (Py_EnterRecursiveCall(" while decoding a JSON object "
                                       "from a unicode string"))
                 return NULL;
-            res = _parse_object_unicode(s, pystr, idx + 1, next_idx_ptr, state);
+            res = _parse_object_unicode(s, pystr, idx + 1, next_idx_ptr);
             Py_LeaveRecursiveCall();
             return res;
         case '[':
@@ -1087,7 +1075,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
             if (Py_EnterRecursiveCall(" while decoding a JSON array "
                                       "from a unicode string"))
                 return NULL;
-            res = _parse_array_unicode(s, pystr, idx + 1, next_idx_ptr, state);
+            res = _parse_array_unicode(s, pystr, idx + 1, next_idx_ptr);
             Py_LeaveRecursiveCall();
             return res;
         case 'n':
@@ -1162,12 +1150,8 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"string", "idx", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:scan_once", kwlist, &pystr, &idx))
         return NULL;
-    _jsonmodulestate *state = get_json_state_by_type(Py_TYPE(self));
-    if (state == NULL) {
-        return NULL;
-    }
     if (PyUnicode_Check(pystr)) {
-        rval = scan_once_unicode(self, pystr, idx, &next_idx, state);
+        rval = scan_once_unicode(self, pystr, idx, &next_idx);
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -1320,10 +1304,6 @@ encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     if (_PyAccu_Init(&acc))
         return NULL;
-    _jsonmodulestate *state = get_json_state_by_type(Py_TYPE(self));
-    if (state == NULL) {
-        return NULL;
-    }
     if (encoder_listencode_obj(self, &acc, obj, indent_level)) {
         _PyAccu_Destroy(&acc);
         return NULL;
@@ -1865,13 +1845,6 @@ _json_exec(PyObject *module)
         return -1;
     }
 
-    /* Special cookie: can't be created *now* because historically it imports the
-     * Python version at json.decoder.JSONDecoderError and this will cause a
-     * circular import. Has to be imported after module has initialized when it's
-     * needed by a function.
-     */ 
-    state->JSONDecodeError = NULL;
-
     return 0;
 }
 
@@ -1890,7 +1863,6 @@ _jsonmodule_clear(PyObject *module)
     _jsonmodulestate *state = get_json_state(module);
     Py_CLEAR(state->PyScannerType);
     Py_CLEAR(state->PyEncoderType);
-    Py_CLEAR(state->JSONDecodeError);
     return 0;
 }
 
