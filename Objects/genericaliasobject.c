@@ -262,11 +262,10 @@ tupleify_lists(PyObject *args) {
             }
             PyObject *new_arg_tupled = tupleify_lists(new_arg);
             Py_LeaveRecursiveCall();
+            Py_DECREF(new_arg);
             if (new_arg_tupled == NULL) {
-                Py_DECREF(new_arg);
                 goto error;
             }
-            Py_DECREF(new_arg);
             PyTuple_SET_ITEM(result, i, new_arg_tupled);
             continue;
 
