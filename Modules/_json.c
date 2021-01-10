@@ -24,7 +24,6 @@ get_json_state(PyObject *module)
     assert(state != NULL);
     return (_jsonmodulestate *)state;
 }
-
 typedef struct _PyScannerObject {
     PyObject_HEAD
     signed char strict;
@@ -71,7 +70,6 @@ static PyMemberDef encoder_members[] = {
     {"skipkeys", T_BOOL, offsetof(PyEncoderObject, skipkeys), READONLY, "skipkeys"},
     {NULL}
 };
-
 /* Forward decls */
 static PyObject *
 ascii_escape_unicode(PyObject *pystr);
@@ -563,7 +561,7 @@ PyDoc_STRVAR(pydoc_scanstring,
 );
 
 static PyObject *
-py_scanstring(PyObject* self, PyObject *args)
+py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
 {
     PyObject *pystr;
     PyObject *rval;
@@ -671,8 +669,7 @@ scanner_clear(PyScannerObject *self)
 }
 
 static PyObject *
-_parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr)
+_parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr)
 {
     /* Read a JSON object from PyUnicode pystr.
     idx is the index of the first character after the opening curly brace.
@@ -714,8 +711,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
 
             /* read key */
             if (idx > end_idx || PyUnicode_READ(kind, str, idx) != '"') {
-                raise_errmsg("Expecting property name enclosed in double quotes",
-                    pystr, idx);
+                raise_errmsg("Expecting property name enclosed in double quotes", pystr, idx);
                 goto bail;
             }
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
@@ -804,8 +800,7 @@ bail:
 }
 
 static PyObject *
-_parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr) {
+_parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr) {
     /* Read a JSON array from PyUnicode pystr.
     idx is the index of the first character after the opening brace.
     *next_idx_ptr is a return-by-reference index to the first character after
@@ -1023,8 +1018,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
 }
 
 static PyObject *
-scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx,
-    Py_ssize_t *next_idx_ptr)
+scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr)
 {
     /* Read one JSON term (of any kind) from PyUnicode pystr.
     idx is the index of the first character of the term
@@ -1821,7 +1815,7 @@ _json_exec(PyObject *module)
 {
     _jsonmodulestate *state = get_json_state(module);
 
-    state->PyScannerType = PyType_FromModuleAndSpec(module, &PyScannerType_spec, NULL);
+    state->PyScannerType = PyType_FromSpec(&PyScannerType_spec);
     if (state->PyScannerType == NULL) {
         return -1;
     }
@@ -1831,7 +1825,7 @@ _json_exec(PyObject *module)
         return -1;
     }
 
-    state->PyEncoderType = PyType_FromModuleAndSpec(module, &PyEncoderType_spec, NULL);
+    state->PyEncoderType = PyType_FromSpec(&PyEncoderType_spec);
     if (state->PyEncoderType == NULL) {
         return -1;
     }
