@@ -185,14 +185,60 @@ def _supports_universal_builds():
     osx_version = _get_system_version_tuple()
     return bool(osx_version >= (10, 4)) if osx_version else False
 
+_cache_supports_arm64_builds = None
 def _supports_arm64_builds():
     """Returns True if arm64 builds are supported on this system"""
     # There are two sets of systems supporting macOS/arm64 builds:
     # 1. macOS 11 and later, unconditionally
     # 2. macOS 10.15 with Xcode 12.2 or later
-    # For now the second category is ignored.
+    global _cache_supports_arm64_builds
+    if _cache_supports_arm64_builds is not None:
+        return _cache_supports_arm64_builds
+
     osx_version = _get_system_version_tuple()
-    return osx_version >= (11, 0) if osx_version else False
+    if not osx_version:
+        _cache_supports_arm64_builds = False
+        return False
+
+    if osx_version >= (11, 0): 
+        # Xcode on macOS 11 supports arm64
+        _cache_supports_arm64_builds = True
+
+    elif osx_version < (10, 15):
+        # Xcode on 10.14 or earlier does not support
+        # arm64
+        _cache_supports_arm64_builds = False
+
+    else:
+        # We're on macOS 10.15, building for arm64 is possible
+        # only if Xcode 12 is present.
+
+        # NOTE: Due to bootstrapping issues we cannot use
+        # subprocess or os.popen here. Tempfile is also not
+        # present during bootstrap
+        import contextlib
+        try:
+            import tempfile
+            fp = tempfile.NamedTemporaryFile(suffix=".c")
+        except ImportError:
+            fp = open("/tmp/_osx_support_%s.c"%(
+                os.getpid(),), "w+b")
+
+        with contextlib.closing(fp):
+            fp.write(b"#include <stdlib.h>\n")
+            fp.write(b"int main(void) { exit(42); }\n")
+            fp.flush()
+
+            status = os.system("cc -arch arm64 -o '%s' '%s'"%(fp.name[:-2], fp.name))
+            try:
+                os.unlink(fp.name[:-2])
+            except os.error:
+                pass
+
+        _cache_supports_arm64_builds = (status == 0)
+
+    assert _cache_supports_arm64_builds is not None
+    return _cache_supports_arm64_builds
 
 
 def _find_appropriate_compiler(_config_vars):
