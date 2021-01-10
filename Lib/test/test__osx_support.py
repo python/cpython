@@ -7,6 +7,7 @@ import platform
 import stat
 import sys
 import unittest
+import unittest.mock
 
 from test.support import os_helper
 
@@ -322,6 +323,36 @@ class Test_OSXSupport(unittest.TestCase):
         }
         result = _osx_support.get_platform_osx(config_vars, ' ', ' ', ' ')
         self.assertEqual(('macosx', '10.6', 'fat'), result)
+
+    def test__supports_arm64_builds(self):
+        _osx_support._cache_supports_arm64_builds = None
+        with self.subTest("macOS 10.14 or earlier"):
+            with unittest.mock.patch("_osx_support._get_system_version_tuple", return_value=(10, 14)):
+                self.assertFalse(_osx_support._supports_arm64_builds())
+
+        _osx_support._cache_supports_arm64_builds = None
+        with self.subTest("macOS 11 or later"):
+            with unittest.mock.patch("_osx_support._get_system_version_tuple", return_value=(11, 0)):
+                self.assertTrue(_osx_support._supports_arm64_builds())
+
+        _osx_support._cache_supports_arm64_builds = None
+        with self.subTest("macOS 10.15, recent SDK"): 
+            with unittest.mock.patch("_osx_support._get_system_version_tuple", return_value=(10, 15)):
+                with unittest.mock.patch("os.system", return_value=0):
+                    self.assertTrue(_osx_support._supports_arm64_builds())
+
+        _osx_support._cache_supports_arm64_builds = None
+        with self.subTest("macOS 10.15, old SDK"): 
+            with unittest.mock.patch("_osx_support._get_system_version_tuple", return_value=(10, 15)):
+                with unittest.mock.patch("os.system", return_value=240):
+                    self.assertFalse(_osx_support._supports_arm64_builds())
+
+        if _osx_support._get_system_version_tuple() >= (11, 0):
+            # Compiler is known to support arm64, mock the system version to ensure that
+            # the compiler probe is used
+            _osx_support._cache_supports_arm64_builds = None
+            with unittest.mock.patch("_osx_support._get_system_version_tuple", return_value=(10, 15)):
+                self.assertTrue(_osx_support._supports_arm64_builds())
 
 if __name__ == "__main__":
     unittest.main()
