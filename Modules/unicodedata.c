@@ -1502,8 +1502,9 @@ unicodedata_exec(PyObject *module)
         PyMem_Free(capi);
         return -1;
     }
-    if (PyModule_AddObject(module, "_ucnhash_CAPI", capsule) < 0) {
-        Py_DECREF(capsule);
+    int rc = PyModule_AddObjectRef(module, "_ucnhash_CAPI", capsule);
+    Py_DECREF(capsule);
+    if (rc < 0) {
         return -1;
     }
     return 0;
