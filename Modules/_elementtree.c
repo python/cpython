@@ -633,6 +633,7 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
 static int
 element_gc_traverse(ElementObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->tag);
     Py_VISIT(JOIN_OBJ(self->text));
     Py_VISIT(JOIN_OBJ(self->tail));
@@ -2096,7 +2097,7 @@ elementiter_dealloc(ElementIterObject *it)
     Py_XDECREF(it->sought_tag);
     Py_XDECREF(it->root_element);
 
-    PyObject_GC_Del(it);
+    tp->tp_free(it);
     Py_DECREF(tp);
 }
 
@@ -2109,6 +2110,7 @@ elementiter_traverse(ElementIterObject *it, visitproc visit, void *arg)
 
     Py_VISIT(it->root_element);
     Py_VISIT(it->sought_tag);
+    Py_VISIT(Py_TYPE(it));
     return 0;
 }
 
@@ -2422,6 +2424,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 static int
 treebuilder_gc_traverse(TreeBuilderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pi_event_obj);
     Py_VISIT(self->comment_event_obj);
     Py_VISIT(self->end_ns_event_obj);
@@ -3736,6 +3739,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
 static int
 xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->handle_close);
     Py_VISIT(self->handle_pi);
     Py_VISIT(self->handle_comment);
