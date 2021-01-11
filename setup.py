@@ -740,7 +740,7 @@ class PyBuildExt(build_ext):
             os.unlink(tmpfile)
 
         if VXWORKS:
-            add_wrcc_search_dirs()
+            self.add_wrcc_search_dirs()
 
     def add_ldflags_cppflags(self):
         # Add paths specified in the environment variables LDFLAGS and
