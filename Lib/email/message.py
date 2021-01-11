@@ -975,7 +975,10 @@ class MIMEPart(Message):
         return False if c_d is None else c_d.content_disposition == 'attachment'
 
     def _find_body(self, part, preferencelist):
-        if part.is_attachment():
+        try:
+            if part.is_attachment():
+                return
+        except AttributeError:
             return
         maintype, subtype = part.get_content_type().split('/')
         if maintype == 'text':
