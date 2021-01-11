@@ -630,29 +630,32 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
-        def queue_entry_for_exc(exc):
-            context = exc.__context__ if not exc.__suppress_context__ else None
-            return [exc.__cause__, context, exc.stack, exc]
 
-        queue = [queue_entry_for_exc(self)]
-        while queue:
-            next = queue.pop()
-            if isinstance(next, str):
-                yield next
+        stack = []
+        exc = self
+        while exc:
+            if chain:
+                if exc.__cause__:
+                    chained_msg = _cause_message
+                    chained_exc = exc.__cause__
+                elif exc.__context__ and not exc.__suppress_context__:
+                    chained_msg = _context_message
+                    chained_exc = exc.__context__
+                else:
+                    chained_msg = None
+                    chained_exc = None
+
+                stack.append((chained_msg, exc))
+                exc = chained_exc
             else:
-                cause, context, stack, exc = next
-                if chain:
-                    if cause is not None:
-                        queue.append([None, context, stack, exc])
-                        queue.append(_cause_message)
-                        queue.append(queue_entry_for_exc(cause))
-                        continue
-                    elif context is not None:
-                        queue.append([None, None, stack, exc])
-                        queue.append(_context_message)
-                        queue.append(queue_entry_for_exc(context))
-                        continue
-                if stack:
-                    yield 'Traceback (most recent call last):\n'
-                    yield from stack.format()
-                yield from exc.format_exception_only()
+                stack.append((None, exc))
+                exc = None
+
+        while stack:
+            msg, exc = stack.pop()
+            if msg is not None:
+                yield msg
+            if exc.stack:
+                yield 'Traceback (most recent call last):\n'
+                yield from exc.stack.format()
+            yield from exc.format_exception_only()
