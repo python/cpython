@@ -1498,7 +1498,7 @@ Test cases
       after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
 
       It is responsible for calling all the cleanup functions added by
-      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      :meth:`addClassCleanup`. If you need cleanup functions to be called
       *prior* to :meth:`tearDownClass` then you can call
       :meth:`doCleanupsClass` yourself.
 
