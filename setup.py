@@ -671,6 +671,41 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
+    def add_wrcc_search_dirs(self):
+        # add library search path by wr-cc, the compiler wrapper
+
+        def convert_mixed_path(path):
+            # convert path like C:\folder1\folder2/folder3/folder4
+            # to msys style /c/folder1/folder2/folder3/folder4
+            drive = path[0].lower()
+            left = path[2:].replace("\\", "/")
+            return "/" + drive + left
+
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = os.path.join(self.build_temp, 'wrccpaths')
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+        ret = os.system('%s --print-search-dirs >%s' % (cc, tmpfile))
+        try:
+            if ret >> 8 == 0:
+                with open(tmpfile) as fp:
+                    for line in fp.readlines():
+                        if line.startswith("libraries"):
+                            # On Windows building machine, VxWorks does
+                            # cross builds under msys2 environment.
+                            sep=";" if sys.platform == "msys" else ":"
+                            for d in line.strip().split("=")[1].split(sep):
+                                d = d.strip()
+                                if sys.platform == "msys":
+                                    # On Windows building machine, compiler
+                                    # returns mixed style path like:
+                                    # C:\folder1\folder2/folder3/folder4
+                                    d = convert_mixed_path(d)
+                                d = os.path.normpath(d)
+                                add_dir_to_list(self.compiler.library_dirs, d)
+        finally:
+            os.unlink(tmpfile)
+
     def add_cross_compiling_paths(self):
         cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
@@ -703,6 +738,9 @@ class PyBuildExt(build_ext):
                                             line.strip())
         finally:
             os.unlink(tmpfile)
+
+        if VXWORKS:
+            add_wrcc_search_dirs()
 
     def add_ldflags_cppflags(self):
         # Add paths specified in the environment variables LDFLAGS and
