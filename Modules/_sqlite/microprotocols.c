@@ -35,7 +35,7 @@ static PyObject *psyco_adapters = NULL;
 
 /* pysqlite_microprotocols_init - initialize the adapters dictionary */
 
-int
+extern int
 pysqlite_microprotocols_init(PyObject *module)
 {
     /* create adapters dictionary and put it in module namespace */
@@ -52,7 +52,7 @@ pysqlite_microprotocols_init(PyObject *module)
 
 /* pysqlite_microprotocols_add - add a reverse type-caster to the dictionary */
 
-int
+extern int
 pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 {
     PyObject* key;
@@ -73,7 +73,7 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 
 /* pysqlite_microprotocols_adapt - adapt an object to the built-in protocol */
 
-PyObject *
+extern PyObject *
 pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 {
     _Py_IDENTIFIER(__adapt__);

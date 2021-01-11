@@ -32,8 +32,6 @@ class _sqlite3.Cursor "pysqlite_Cursor *" "pysqlite_CursorType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2072d8db95411d5]*/
 
-PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
-
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
 /*[clinic input]
@@ -83,7 +81,8 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     return 0;
 }
 
-static void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
+static void
+pysqlite_cursor_dealloc(pysqlite_Cursor *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -133,7 +132,7 @@ _pysqlite_get_converter(const char *keystr, Py_ssize_t keylen)
 }
 
 static int
-pysqlite_build_row_cast_map(pysqlite_Cursor* self)
+pysqlite_build_row_cast_map(pysqlite_Cursor *self)
 {
     int i;
     const char* pos;
@@ -240,7 +239,7 @@ _pysqlite_build_column_name(pysqlite_Cursor *self, const char *colname)
  * - sqlite3_step() has been called before and it returned SQLITE_ROW.
  */
 static PyObject *
-_pysqlite_fetch_one_row(pysqlite_Cursor* self)
+_pysqlite_fetch_one_row(pysqlite_Cursor *self)
 {
     int i, numcols;
     PyObject* row;
@@ -366,7 +365,8 @@ error:
  *
  * 0 => error; 1 => ok
  */
-static int check_cursor(pysqlite_Cursor* cur)
+static int
+check_cursor(pysqlite_Cursor *cur)
 {
     if (!cur->initialized) {
         PyErr_SetString(pysqlite_ProgrammingError, "Base Cursor.__init__ not called.");
@@ -387,7 +387,8 @@ static int check_cursor(pysqlite_Cursor* cur)
 }
 
 static PyObject *
-_pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation, PyObject* second_argument)
+_pysqlite_query_execute(pysqlite_Cursor *self, int multiple,
+                        PyObject *operation, PyObject *second_argument)
 {
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
@@ -746,7 +747,8 @@ error:
     }
 }
 
-PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
+static PyObject *
+pysqlite_cursor_iternext(pysqlite_Cursor *self)
 {
     PyObject* next_row_tuple;
     PyObject* next_row;
@@ -1018,7 +1020,8 @@ static PyType_Spec cursor_spec = {
 
 PyTypeObject *pysqlite_CursorType = NULL;
 
-extern int pysqlite_cursor_setup_types(PyObject *module)
+extern int
+pysqlite_cursor_setup_types(PyObject *module)
 {
     pysqlite_CursorType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &cursor_spec, NULL);
     if (pysqlite_CursorType == NULL) {
