@@ -4,7 +4,10 @@
 <div id="outdated-warning" style="padding: .5em; text-align: center; background-color: #FFBABA; color: #6A0E0E;">
     {% trans %}This document is for an old version of Python that is {% endtrans %}<a href="https://devguide.python.org/devcycle/#end-of-life-branches">{% trans %}no longer supported{% endtrans %}</a>.
     {% trans %}You should upgrade and read the {% endtrans %}
-    <a href="https://docs.python.org/{{ language + '/' if language and language != 'en' else '' }}3/{{ pagename }}{{ file_suffix }}">{% trans %} Python documentation for the current stable release{% endtrans %}</a>.
+    {% set new_link = moved_files.get(pagename, pagename) %}
+    {% set new_pagename, new_fragment = (new_link, None) if (new_link is string or new_link is none) else new_link %}
+    {% set new_pagename = new_pagename if new_pagename else 'index' %}
+    <a href="https://docs.python.org/{{ language + '/' if language and language != 'en' else '' }}3/{{ new_pagename }}{{ file_suffix }}{{ '#' + new_fragment if new_fragment else '' }}">{% trans %} Python documentation for the current stable release{% endtrans %}</a>.
 </div>
 {%- endif %}
 {% endblock %}
