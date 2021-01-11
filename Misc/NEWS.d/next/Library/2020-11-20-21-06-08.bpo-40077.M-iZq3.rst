@@ -1,1 +1,1 @@
-Convert `_elementtree` type to heap types. Patch by Erlend E. Aasland
+Convert :mod:`elementtree` types to heap types. Patch by Erlend E. Aasland.
