@@ -1,4 +1,4 @@
-from test.support import swap_attr
+import io
 import unittest
 
 from importlib import resources
@@ -13,6 +13,8 @@ class CommonTests(util.CommonResourceTests, unittest.TestCase):
 
 
 class PathTests:
+    UTF_8_FILE_CONTENTS = b'Hello, UTF-8 world!\n'
+
     def test_reading(self):
         # Path should be readable.
         # Test also implicitly verifies the returned object is a pathlib.Path
@@ -21,22 +23,21 @@ class PathTests:
             # pathlib.Path.read_text() was introduced in Python 3.5.
             with path.open('r', encoding='utf-8') as file:
                 text = file.read()
-            self.assertEqual('Hello, UTF-8 world!\n', text)
+            self.assertEqual(self.UTF_8_FILE_CONTENTS.decode(), text)
 
 
 class PathDiskTests(PathTests, unittest.TestCase):
     data = data01
 
-    def test_package_spec_origin_is_None(self):
-        import pydoc_data
-        spec = pydoc_data.__spec__
-        # Emulate importing from non-file source by setting spec.origin = None.
-        # Barge past path's sanity checks by ensuring spec.loader.is_resource
-        # returns False.
-        with swap_attr(spec, "origin", None), \
-            swap_attr(spec.loader, "is_resource", lambda *args: False), \
-            resources.path(pydoc_data, '_pydoc.css') as p:
-            pass
+
+class PathMemoryTests(PathTests, unittest.TestCase):
+    def setUp(self):
+        file = io.BytesIO(self.UTF_8_FILE_CONTENTS)
+        self.addCleanup(file.close)
+        self.data = util.create_package(
+            file=file, path=FileNotFoundError("package exists only in memory"))
+        self.data.__spec__.origin = None
+        self.data.__spec__.has_location = False
 
 
 class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):
