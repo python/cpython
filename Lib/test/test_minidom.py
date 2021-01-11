@@ -9,6 +9,7 @@ import unittest
 from xml.dom.minicompat import NodeList
 import xml.dom.minidom
 from xml.dom.minidom import Document
+from xml.dom.minidom import DocumentFragment
 from xml.dom.minidom import Element
 from xml.dom.minidom import getDOMImplementation
 from xml.dom.minidom import Node
@@ -82,49 +83,6 @@ class MinidomTest(unittest.TestCase):
         dom = parse(tstfile)
         self.confirm(dom.getElementsByTagName("LI") == \
                 dom.documentElement.getElementsByTagName("LI"))
-        dom.unlink()
-
-    def testInsertBefore(self):
-        dom = parseString("<doc><foo/></doc>")
-        root = dom.documentElement
-        elem = root.childNodes[0]
-        nelem = dom.createElement("element")
-        root.insertBefore(nelem, elem)
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2
-                and root.childNodes[0] is nelem
-                and root.childNodes.item(0) is nelem
-                and root.childNodes[1] is elem
-                and root.childNodes.item(1) is elem
-                and root.firstChild is nelem
-                and root.lastChild is elem
-                and root.toxml() == "<doc><element/><foo/></doc>"
-                , "testInsertBefore -- node properly placed in tree")
-        nelem = dom.createElement("element")
-        root.insertBefore(nelem, None)
-        self.confirm(len(root.childNodes) == 3
-                and root.childNodes.length == 3
-                and root.childNodes[1] is elem
-                and root.childNodes.item(1) is elem
-                and root.childNodes[2] is nelem
-                and root.childNodes.item(2) is nelem
-                and root.lastChild is nelem
-                and nelem.previousSibling is elem
-                and root.toxml() == "<doc><element/><foo/><element/></doc>"
-                , "testInsertBefore -- node properly placed in tree")
-        nelem2 = dom.createElement("bar")
-        root.insertBefore(nelem2, nelem)
-        self.confirm(len(root.childNodes) == 4
-                and root.childNodes.length == 4
-                and root.childNodes[2] is nelem2
-                and root.childNodes.item(2) is nelem2
-                and root.childNodes[3] is nelem
-                and root.childNodes.item(3) is nelem
-                and nelem2.nextSibling is nelem
-                and nelem.previousSibling is nelem2
-                and root.toxml() ==
-                "<doc><element/><foo/><bar/><element/></doc>"
-                , "testInsertBefore -- node properly placed in tree")
         dom.unlink()
 
     def _create_fragment_test_nodes(self):
@@ -1699,6 +1657,24 @@ class MinidomTest(unittest.TestCase):
         doc = dom.documentElement
         self.assertEqual(doc.lastChild.toxml(), '<hr/>')
         self.assertIsInstance(doc.lastChild, Element)
+
+    def test_insertBefore_with_document_fragment_node(self):
+        """Test insertBefore for DOCUMENT_FRAGMENT_NODE."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        newNode = dom.createElement('new')
+        fragment = DocumentFragment()
+        fragment.appendChild(newNode)
+        # insertBefore with document fragment
+        parentNode.insertBefore(fragment, existingNode)
+        self.assertEqual(parentNode.toxml(),
+                         '<parent><new/><existing/></parent>')
+        self.assertIs(parentNode.firstChild, newNode)
+        self.assertEqual(parentNode.childNodes.length, 2)
+        # after the insert the fragment is empty
+        self.assertEqual(fragment.childNodes.length, 0)
 
 if __name__ == "__main__":
     unittest.main()

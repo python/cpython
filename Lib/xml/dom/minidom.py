@@ -83,10 +83,17 @@ class Node(xml.dom.Node):
             return self.childNodes[-1]
 
     def insertBefore(self, newChild, refChild):
+        """Insert a new DOM Node before an existing Node.
+
+        https://dom.spec.whatwg.org/#dom-node-insertbefore
+        The insertBefore(node, child) method, when invoked,
+        must return the result of pre-inserting node into
+        this before child.
+        See also https://dom.spec.whatwg.org/#concept-node-pre-insert
+        """
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             for c in tuple(newChild.childNodes):
                 self.insertBefore(c, refChild)
-            ### The DOM does not clearly specify what to return in this case
             return newChild
         if newChild.nodeType not in self._child_node_types:
             raise xml.dom.HierarchyRequestErr(
