@@ -1,2 +1,2 @@
-Convert internal caches in the ``_json.c`` module from static variables to
-heap variables.
+Convert static internal caches in the ``_json.c`` module to work with
+subinterpreters.
