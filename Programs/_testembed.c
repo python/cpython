@@ -1686,6 +1686,42 @@ static int test_get_argc_argv(void)
 }
 
 
+static int test_unicode_id_init(void)
+{
+    // bpo-42882: Test that _PyUnicode_FromId() works
+    // when Python is initialized multiples times.
+    _Py_IDENTIFIER(test_unicode_id_init);
+
+    // Initialize Python once without using the identifier
+    _testembed_Py_Initialize();
+    Py_Finalize();
+
+    // Now initialize Python multiple times and use the identifier.
+    // The first _PyUnicode_FromId() call initializes the identifier index.
+    for (int i=0; i<3; i++) {
+        _testembed_Py_Initialize();
+
+        PyObject *str1, *str2;
+
+        str1 = _PyUnicode_FromId(&PyId_test_unicode_id_init);
+        assert(str1 != NULL);
+        assert(Py_REFCNT(str1) == 1);
+
+        str2 = PyUnicode_FromString("test_unicode_id_init");
+        assert(str2 != NULL);
+
+        assert(PyUnicode_Compare(str1, str2) == 0);
+
+        // str1 is a borrowed reference
+        Py_DECREF(str2);
+
+        Py_Finalize();
+    }
+    return 0;
+}
+
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -1754,6 +1790,8 @@ static struct TestCase TestCases[] = {
     {"test_audit_run_interactivehook", test_audit_run_interactivehook},
     {"test_audit_run_startup", test_audit_run_startup},
     {"test_audit_run_stdin", test_audit_run_stdin},
+
+    {"test_unicode_id_init", test_unicode_id_init},
     {NULL, NULL}
 };
 
