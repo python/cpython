@@ -1169,7 +1169,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 */
 
 static int
-compiler_addop(struct compiler *c, int opcode)
+compiler_addop_line(struct compiler *c, int opcode, int line)
 {
     basicblock *b;
     struct instr *i;
@@ -1184,9 +1184,22 @@ compiler_addop(struct compiler *c, int opcode)
     i->i_oparg = 0;
     if (opcode == RETURN_VALUE)
         b->b_return = 1;
-    i->i_lineno = c->u->u_lineno;
+    i->i_lineno = line;
     return 1;
 }
+
+static int
+compiler_addop(struct compiler *c, int opcode)
+{
+    return compiler_addop_line(c, opcode, c->u->u_lineno);
+}
+
+static int
+compiler_addop_noline(struct compiler *c, int opcode)
+{
+    return compiler_addop_line(c, opcode, -1);
+}
+
 
 static Py_ssize_t
 compiler_add_o(PyObject *dict, PyObject *o)
@@ -1445,6 +1458,11 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 
 #define ADDOP(C, OP) { \
     if (!compiler_addop((C), (OP))) \
+        return 0; \
+}
+
+#define ADDOP_NOLINE(C, OP) { \
+    if (!compiler_addop_noline((C), (OP))) \
         return 0; \
 }
 
@@ -2955,9 +2973,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     else {
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
-    /* Mark code as artificial */
-    c->u->u_lineno = -1;
-    ADDOP(c, POP_BLOCK);
+    ADDOP_NOLINE(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
@@ -3019,9 +3035,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
-    ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
-    ADDOP_JUMP(c, JUMP_FORWARD, orelse);
+    ADDOP_NOLINE(c, POP_BLOCK);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
     /* Runtime will push a block here, so we need to account for that */
