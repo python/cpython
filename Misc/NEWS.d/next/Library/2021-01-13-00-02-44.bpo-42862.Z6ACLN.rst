@@ -1,0 +1,4 @@
+:mod:`sqlite3` now utilizes :meth:`functools.lru_cache` to implement the
+connection statement cache. The statement cache can be accessed via the new
+method :meth:`sqlite3.Connection.statement_cache`. Patch by Erlend E.
+Aasland.
