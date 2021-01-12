@@ -189,6 +189,12 @@ New Modules
 Improved Modules
 ================
 
+argparse
+--------
+
+Misleading phrase "optional arguments" was replaced with "options" in argparse help. Some tests might require adaptation if they rely on exact output match.
+(Contributed by Raymond Hettinger in :issue:`9694`.)
+
 base64
 ------
 
