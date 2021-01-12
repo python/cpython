@@ -6470,11 +6470,14 @@ eliminate_empty_basic_blocks(basicblock *entry) {
 
 
 /* If an instruction has no line number, but it's predecessor in the BB does,
- * then copy the line number. This reduces the size of the line number table,
+ * then copy the line number. If a successor block has no line number, and only
+ * one predecessor, then inherit the line number.
+ * This ensures that all exit blocks (with one predecessor) receive a line number.
+ * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
 static void
-minimize_lineno_table(struct assembler *a) {
+propogate_line_numbers(struct assembler *a) {
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused == 0) {
             continue;
@@ -6579,7 +6582,7 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     if (maybe_empty_blocks) {
         eliminate_empty_basic_blocks(a->a_entry);
     }
-    minimize_lineno_table(a);
+    propogate_line_numbers(a);
     return 0;
 }
 
