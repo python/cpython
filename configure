@@ -10252,7 +10252,7 @@ validate_tzpath() {
     fi
 
     # Bad paths are those that don't start with /
-        if ( echo $1 | grep -qE '(^|:)([^/]|$)' ); then
+        if ( echo $1 | grep '\(^\|:\)\([^/]\|$\)' > /dev/null); then
         as_fn_error $? "--with-tzpath must contain only absolute paths, not $1" "$LINENO" 5
         return 1;
     fi

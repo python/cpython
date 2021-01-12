@@ -1,0 +1,3 @@
+Removed the grep -q and -E flags in the tzpath validation section of the
+configure script to better accomodate users of some platforms (specifically
+Solaris 10).
