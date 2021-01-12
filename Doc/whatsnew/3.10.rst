@@ -550,6 +550,10 @@ Removed
   now due to the _warnings module was converted to a builtin module in 2.6.
   (Contributed by Hai Shi in :issue:`42599`.)
 
+* Remove deprecated aliases to :ref:`collections-abstract-base-classes` from
+  the :mod:`collections` module.
+  (Contributed by Victor Stinner in :issue:`37324`.)
+
 
 Porting to Python 3.10
 ======================
