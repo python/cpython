@@ -91,7 +91,6 @@ def _set_term_winsz(fd, winsz):
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
-# XXX(nnorwitz):  these tests leak fds when there is an error.
 class PtyTest(unittest.TestCase):
     def setUp(self):
         old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
@@ -227,6 +226,7 @@ class PtyTest(unittest.TestCase):
     def test_fork(self):
         debug("calling pty.fork()")
         pid, master_fd = pty.fork()
+        self.addCleanup(os.close, master_fd)
         if pid == pty.CHILD:
             # stdout should be connected to a tty.
             if not os.isatty(1):
@@ -305,12 +305,13 @@ class PtyTest(unittest.TestCase):
             ##else:
             ##    raise TestFailed("Read from master_fd did not raise exception")
 
-        os.close(master_fd)
-
     def test_master_read(self):
+        # XXX(nnorwitz):  this test leaks fds when there is an error.
         debug("Calling pty.openpty()")
         master_fd, slave_fd = pty.openpty()
         debug(f"Got master_fd '{master_fd}', slave_fd '{slave_fd}'")
+
+        self.addCleanup(os.close, master_fd)
 
         debug("Closing slave_fd")
         os.close(slave_fd)
@@ -321,7 +322,6 @@ class PtyTest(unittest.TestCase):
         except OSError: # Linux
             data = b""
 
-        os.close(master_fd)
         self.assertEqual(data, b"")
 
 class SmallPtyTests(unittest.TestCase):
