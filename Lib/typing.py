@@ -1593,12 +1593,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
-                # This is surprising, but required.  Before Python 3.10,
-                # get_type_hints only evaluated the globalns of
-                # a class.  To maintain backwards compatibility, we reverse
-                # the globalns and localns order so that eval() looks into
-                # *base_globals* first rather than *base_locals*.
-                base_globals, base_locals = base_locals, base_globals
+                if localns is None and globalns is None:
+                    # This is surprising, but required.  Before Python 3.10,
+                    # get_type_hints only evaluated the globalns of
+                    # a class.  To maintain backwards compatibility, we reverse
+                    # the globalns and localns order so that eval() looks into
+                    # *base_globals* first rather than *base_locals*.
+                    base_globals, base_locals = base_locals, base_globals
                 value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
