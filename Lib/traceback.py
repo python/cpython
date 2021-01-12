@@ -481,7 +481,7 @@ class TracebackException:
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
-        _is_chained = _seen is not None
+        is_recursive_call = _seen is not None
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
@@ -506,14 +506,12 @@ class TracebackException:
         self.__suppress_context__ = \
             exc_value.__suppress_context__ if exc_value else False
 
-        # Convert __cause__ and __context__ to TracebackExceptions, use a
-        # queue to avoid recursion
-        if not _is_chained:
+        # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
+        # queue to avoid recursion (only the top-level call gets _seen == None)
+        if not is_recursive_call:
             queue = [(self, exc_value)]
             while queue:
                 te, e = queue.pop()
-                # Gracefully handle (the way Python 2.4 and earlier did) the
-                # case of being called with no type or value (None, None, None)
                 if (e and e.__cause__ is not None
                     and id(e.__cause__) not in _seen):
                     cause = TracebackException(
@@ -631,28 +629,28 @@ class TracebackException:
         string in the output.
         """
 
-        stack = []
+        output = []
         exc = self
         while exc:
             if chain:
-                if exc.__cause__:
+                if exc.__cause__ is not None:
                     chained_msg = _cause_message
                     chained_exc = exc.__cause__
-                elif exc.__context__ and not exc.__suppress_context__:
+                elif (exc.__context__  is not None and
+                      not exc.__suppress_context__):
                     chained_msg = _context_message
                     chained_exc = exc.__context__
                 else:
                     chained_msg = None
                     chained_exc = None
 
-                stack.append((chained_msg, exc))
+                output.append((chained_msg, exc))
                 exc = chained_exc
             else:
-                stack.append((None, exc))
+                output.append((None, exc))
                 exc = None
 
-        while stack:
-            msg, exc = stack.pop()
+        for msg, exc in reversed(output):
             if msg is not None:
                 yield msg
             if exc.stack:
