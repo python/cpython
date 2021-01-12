@@ -506,7 +506,7 @@ class TracebackException:
         self.__suppress_context__ = \
             exc_value.__suppress_context__ if exc_value else False
 
-        # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
+        # Convert __cause__ and __context__ to TracebackExceptions, use a
         # queue to avoid recursion
         if not _is_chained:
             queue = [(self, exc_value)]
