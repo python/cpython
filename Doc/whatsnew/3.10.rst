@@ -1237,6 +1237,12 @@ Add audit events for :func:`~sqlite3.connect/handle`,
 :meth:`~sqlite3.Connection.load_extension`.
 (Contributed by Erlend E. Aasland in :issue:`43762`.)
 
+
+:mod:`sqlite3` now utilizes :meth:`functools.lru_cache` to implement the
+connection statement cache. The statement cache can be accessed via the new
+method :meth:`sqlite3.Connection.statement_cache`.
+(Contributed by Erlend E. Aasland in :issue:`42862`.)
+
 sys
 ---
 
