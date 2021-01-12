@@ -1276,6 +1276,56 @@ class TestLRU:
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
 
+    def test_lru_func_no_args(self):
+        @self.module.lru_cache(0)
+        def f():
+            nonlocal f_cnt
+            f_cnt += 1
+            return 20
+
+        f_cnt = 0
+        for _ in range(5):
+            self.assertEqual(f(), 20)
+        self.assertEqual(f_cnt, 5)
+        hits, misses, maxsize, currsize = f.cache_info()
+        self.assertEqual(hits, 0)
+        self.assertEqual(misses, 5)
+        self.assertEqual(maxsize, 0)
+        self.assertEqual(currsize, 0)
+
+        for maxsize in (None, 1, 128):
+            @self.module.lru_cache(maxsize)
+            def f():
+                nonlocal f_cnt
+                f_cnt += 1
+                return 20
+
+            f_cnt = 0
+            for _ in range(5):
+                self.assertEqual(f(), 20)
+            self.assertEqual(f_cnt, 1)
+            hits, misses, _, currsize = f.cache_info()
+            self.assertEqual(hits, 4)
+            self.assertEqual(misses, 1)
+            self.assertEqual(currsize, 1)
+
+            f.cache_clear()
+            hits, misses, _, currsize = f.cache_info()
+            self.assertEqual(hits, 0)
+            self.assertEqual(misses, 0)
+            self.assertEqual(currsize, 0)
+
+            for _ in range(5):
+                self.assertEqual(f(), 20)
+            self.assertEqual(f_cnt, 2)
+            hits, misses, _, currsize = f.cache_info()
+            self.assertEqual(hits, 4)
+            self.assertEqual(misses, 1)
+            self.assertEqual(currsize, 1)
+
+            self.assertRaises(TypeError, f, 1)
+            self.assertRaises(TypeError, f, kwarg=1)
+
     def test_lru_no_args(self):
         @self.module.lru_cache
         def square(x):

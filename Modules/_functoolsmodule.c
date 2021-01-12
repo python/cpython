@@ -858,12 +858,27 @@ lru_cache_make_key(_functools_state *state, PyObject *args,
 static PyObject *
 uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *result;
-
     self->misses++;
-    result = PyObject_Call(self->func, args, kwds);
-    if (!result)
+    return PyObject_Call(self->func, args, kwds);
+}
+
+static PyObject *
+single_entry_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *result = self->cache;
+    if (PyTuple_GET_SIZE(args) || (kwds && PyDict_GET_SIZE(kwds))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "function does not expect any arguments");
         return NULL;
+    }
+    if (result) {
+        self->hits++;
+        Py_INCREF(result);
+        return result;
+    }
+    self->misses++;
+    result = self->cache = _PyObject_CallNoArg(self->func);
+    Py_XINCREF(result);
     return result;
 }
 
@@ -1184,8 +1199,20 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         PyErr_SetString(PyExc_TypeError, "maxsize should be integer or None");
         return NULL;
     }
+    /* if func is a python function with no arguments, there is only one return
+       value, so cache it directly */
+    if (maxsize != 0 && PyFunction_Check(func)) {
+        PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(func);
+        if (code->co_argcount == 0 && code->co_kwonlyargcount == 0 &&
+            (code->co_flags & (CO_VARARGS|CO_VARKEYWORDS)) == 0) {
+            wrapper = single_entry_cache_wrapper;
+            maxsize = -2;
+        }
+    }
 
-    if (!(cachedict = PyDict_New()))
+    if (maxsize == -2)
+        cachedict = NULL;
+    else if (!(cachedict = PyDict_New()))
         return NULL;
 
     obj = (lru_cache_object *)type->tp_alloc(type, 0);
@@ -1278,14 +1305,22 @@ lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 static PyObject *
 lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
 {
+    Py_ssize_t maxsize, size;
+
     if (self->maxsize == -1) {
         return PyObject_CallFunction(self->cache_info_type, "nnOn",
                                      self->hits, self->misses, Py_None,
                                      PyDict_GET_SIZE(self->cache));
     }
+    if (self->maxsize != -2) {
+        maxsize = self->maxsize;
+        size = PyDict_GET_SIZE(self->cache);
+    } else {
+        maxsize = 1;
+        size = self->cache ? 1 : 0;
+    }
     return PyObject_CallFunction(self->cache_info_type, "nnnn",
-                                 self->hits, self->misses, self->maxsize,
-                                 PyDict_GET_SIZE(self->cache));
+                                 self->hits, self->misses, maxsize, size);
 }
 
 static PyObject *
@@ -1293,7 +1328,11 @@ lru_cache_cache_clear(lru_cache_object *self, PyObject *unused)
 {
     lru_list_elem *list = lru_cache_unlink_list(self);
     self->hits = self->misses = 0;
-    PyDict_Clear(self->cache);
+    if (self->maxsize != -2) {
+        PyDict_Clear(self->cache);
+    } else {
+        Py_CLEAR(self->cache);
+    }
     lru_cache_clear_list(list);
     Py_RETURN_NONE;
 }

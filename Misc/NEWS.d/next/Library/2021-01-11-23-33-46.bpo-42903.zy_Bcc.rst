@@ -1,0 +1,1 @@
+Optimize lru_cache for functions with no arguments.
