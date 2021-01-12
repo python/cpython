@@ -6495,6 +6495,13 @@ minimize_lineno_table(struct assembler *a) {
             }
         }
         if (is_jump(&b->b_instr[b->b_iused-1])) {
+            switch (b->b_instr[b->b_iused-1].i_opcode) {
+                /* Note: Only actual jumps, not exception handlers */
+                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
+                case SETUP_FINALLY:
+                    continue;
+            }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
             if (target->b_predecessors == 1) {
                 if (target->b_instr[0].i_lineno < 0) {
@@ -6548,8 +6555,8 @@ optimize_cfg(struct assembler *a, PyObject *consts)
                 b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
                 b_last_instr->i_opcode == JUMP_ABSOLUTE ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
-                assert(b->b_next == NULL || b->b_next->b_iused);
                 if (b_last_instr->i_target == b->b_next) {
+                    assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
                     switch(b_last_instr->i_opcode) {
                         case POP_JUMP_IF_FALSE:
