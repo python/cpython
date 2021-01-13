@@ -321,7 +321,7 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
     PyByteArrayObject *result;
     Py_ssize_t mysize;
     Py_ssize_t size;
-    char *buf;
+    const char *buf;
 
     if (count < 0)
         count = 0;
