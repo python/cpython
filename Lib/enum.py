@@ -1,5 +1,7 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
+from operator import or_ as _or_, and_ as _and_, xor as _xor_, inv as _inv_
+from functools import reduce
 from builtins import property as _bltin_property
 
 
@@ -8,8 +10,14 @@ __all__ = [
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
         'auto', 'unique',
         'property',
+        'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT',
         ]
 
+
+# Dummy value for Enum and Flag as there are explicit checks for them
+# before they have been created.
+# This is also why there are checks in EnumMeta like `if Enum is not None`
+Enum = Flag = EJECT = None
 
 def _is_descriptor(obj):
     """
@@ -55,6 +63,75 @@ def _is_private(cls_name, name):
         return True
     else:
         return False
+
+def _bits(num):
+    # return str(num) if num<=1 else bin(num>>1) + str(num&1)
+    if num in (0, 1):
+        return str(num)
+    negative = False
+    if num < 0:
+        negative = True
+        num = ~num
+    result = _bits(num>>1) + str(num&1)
+    if negative:
+        result = '1' + ''.join(['10'[d=='1'] for d in result])
+    return result
+
+
+def _bit_count(num):
+    """
+    return number of set bits
+
+    Counting bits set, Brian Kernighan's way*
+
+        unsigned int v;          // count the number of bits set in v
+        unsigned int c;          // c accumulates the total bits set in v
+        for (c = 0; v; c++)
+        {   v &= v - 1;  }       //clear the least significant bit set
+
+    This method goes through as many iterations as there are set bits. So if we
+    have a 32-bit word with only the high bit set, then it will only go once
+    through the loop.
+
+    * The C Programming Language 2nd Ed., Kernighan & Ritchie, 1988.
+
+    This works because each subtraction "borrows" from the lowest 1-bit. For example:
+
+          loop pass 1     loop pass 2
+          -----------     -----------
+               101000          100000
+             -      1        -      1
+             = 100111        = 011111
+             & 101000        & 100000
+             = 100000        =      0
+
+    It is an excellent technique for Python, since the size of the integer need not
+    be determined beforehand.
+
+    (from https://wiki.python.org/moin/BitManipulation)
+    """
+    count = 0
+    while(num):
+        num &= num - 1
+        count += 1
+    return(count)
+
+def _bit_len(num):
+    """
+    return number of bits required to represent num
+    """
+    length = 0
+    while num:
+        length += 1
+        num >>= 1
+    return length
+
+def _is_single_bit(num):
+    """
+    True if only one bit set in num (should be an int)
+    """
+    num &= num - 1
+    return num == 0
 
 def _make_class_unpicklable(obj):
     """
@@ -160,8 +237,14 @@ class _proto_member:
                 enum_member = canonical_member
                 break
         else:
-            # no other instances found, record this member in _member_names_
-            enum_class._member_names_.append(member_name)
+            # this could still be an alias if the value is multi-bit and the class
+            # is a flag class
+            if Flag is None or not issubclass(enum_class, Flag):
+                # no other instances found, record this member in _member_names_
+                enum_class._member_names_.append(member_name)
+            elif Flag is not None and issubclass(enum_class, Flag) and _is_single_bit(value):
+                # no other instances found, record this member in _member_names_
+                enum_class._member_names_.append(member_name)
         # get redirect in place before adding to _member_map_
         # but check for other instances in parent classes first
         need_override = False
@@ -193,7 +276,7 @@ class _proto_member:
             # This may fail if value is not hashable. We can't add the value
             # to the map, and by-value lookups for this value will be
             # linear.
-            enum_class._value2member_map_[value] = enum_member
+            enum_class._value2member_map_.setdefault(value, enum_member)
         except TypeError:
             pass
 
@@ -287,11 +370,6 @@ class _EnumDict(dict):
             self[name] = value
 
 
-# Dummy value for Enum as EnumMeta explicitly checks for it, but of course
-# until EnumMeta finishes running the first time the Enum class doesn't exist.
-# This is also why there are checks in EnumMeta like `if Enum is not None`
-Enum = None
-
 class EnumMeta(type):
     """
     Metaclass for Enum
@@ -311,7 +389,7 @@ class EnumMeta(type):
                     )
         return enum_dict
 
-    def __new__(metacls, cls, bases, classdict, **kwds):
+    def __new__(metacls, cls, bases, classdict, boundary=None, **kwds):
         # an Enum class is final once enumeration items have been defined; it
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
@@ -346,14 +424,24 @@ class EnumMeta(type):
         classdict['_use_args_'] = use_args
         #
         # convert future enum members into temporary _proto_members
+        # and record integer values in case this will be a Flag
+        flag_mask = 0
         for name in member_names:
-            classdict[name] = _proto_member(classdict[name])
+            value = classdict[name]
+            if isinstance(value, int):
+                flag_mask |= value
+            classdict[name] = _proto_member(value)
         #
-        # house keeping structures
+        # house-keeping structures
         classdict['_member_names_'] = []
         classdict['_member_map_'] = {}
         classdict['_value2member_map_'] = {}
         classdict['_member_type_'] = member_type
+        #
+        # Flag structures (will be removed if final class is not a Flag
+        classdict['_boundary_'] = boundary or getattr(first_enum, '_boundary_', None)
+        classdict['_flag_mask_'] = flag_mask
+        classdict['_all_bits_'] = 2 ** ((flag_mask).bit_length()) - 1
         #
         # If a custom type is mixed into the Enum, and it does not know how
         # to pickle itself, pickle.dumps will succeed but pickle.loads will
@@ -413,6 +501,32 @@ class EnumMeta(type):
                 _order_ = _order_.replace(',', ' ').split()
             if _order_ != enum_class._member_names_:
                 raise TypeError('member order does not match _order_')
+        #
+        # remove Flag structures if final class is not a Flag
+        if Flag is None or not issubclass(enum_class, Flag):
+            delattr(enum_class, '_boundary_')
+            delattr(enum_class, '_flag_mask_')
+            delattr(enum_class, '_all_bits_')
+        elif Flag is not None and issubclass(enum_class, Flag):
+            # ensure _all_bits_ is correct and there are no missing flags
+            single_bit_total = 0
+            multi_bit_total = 0
+            for flag in enum_class._member_map_.values():
+                if _is_single_bit(flag._value_):
+                    single_bit_total |= flag._value_
+                else:
+                    # multi-bit flags are considered aliases
+                    multi_bit_total |= flag._value_
+            missed = []
+            all_bit_total = 0
+            for i in range(_bit_len(max(single_bit_total, multi_bit_total))):
+                i = 2**i
+                all_bit_total |= i
+                if i & multi_bit_total and not i & single_bit_total:
+                    missed.append(i)
+            if missed:
+                raise TypeError('invalid Flag %r -- missing values: %s' % (cls, ', '.join((str(i) for i in missed))))
+            enum_class._flag_mask_ = single_bit_total
         #
         return enum_class
 
@@ -761,6 +875,11 @@ class Enum(metaclass=EnumMeta):
             result = None
         if isinstance(result, cls):
             return result
+        elif (
+                Flag is not None and issubclass(cls, Flag)
+                and cls._boundary_ is EJECT and isinstance(result, int)
+            ):
+            return result
         else:
             ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             if result is None and exc is None:
@@ -770,7 +889,8 @@ class Enum(metaclass=EnumMeta):
                         'error in %s._missing_: returned %r instead of None or a valid member'
                         % (cls.__name__, result)
                         )
-            exc.__context__ = ve_exc
+            if not isinstance(exc, ValueError):
+                exc.__context__ = ve_exc
             raise exc
 
     def _generate_next_value_(name, start, count, last_values):
@@ -900,7 +1020,20 @@ class StrEnum(str, Enum):
 def _reduce_ex_by_name(self, proto):
     return self.name
 
-class Flag(Enum):
+class FlagBoundary(StrEnum):
+    """
+    control how out of range values are handled
+    "strict" -> error is raised  [default for Flag]
+    "conform" -> extra bits are discarded
+    "eject" -> lose flag status [default for IntFlag]
+    """
+    STRICT = auto()
+    CONFORM = auto()
+    EJECT = auto()
+STRICT, CONFORM, EJECT = FlagBoundary
+
+
+class Flag(Enum, boundary=STRICT):
     """
     Support for flags
     """
@@ -927,34 +1060,58 @@ class Flag(Enum):
     @classmethod
     def _missing_(cls, value):
         """
-        Returns member (possibly creating it) if one can be found for value.
-        """
-        original_value = value
-        if value < 0:
-            value = ~value
-        possible_member = cls._create_pseudo_member_(value)
-        if original_value < 0:
-            possible_member = ~possible_member
-        return possible_member
-
-    @classmethod
-    def _create_pseudo_member_(cls, value):
-        """
         Create a composite member iff value contains only members.
         """
-        pseudo_member = cls._value2member_map_.get(value, None)
-        if pseudo_member is None:
-            # verify all bits are accounted for
-            _, extra_flags = _decompose(cls, value)
-            if extra_flags:
-                raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+        if not isinstance(value, int):
+            raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+        # check boundaries
+        # - value must be in range (e.g. -16 <-> +15, i.e. ~15 <-> 15)
+        # - value must not include any skipped flags (e.g. if bit 2 is not defined, then 0d10 is invalid)
+        neg_value = None
+        if (
+                not ~cls._all_bits_ <= value <= cls._all_bits_
+                or value & (cls._all_bits_ ^ cls._flag_mask_)
+            ):
+            if cls._boundary_ is STRICT:
+                invalid_as_bits = _bits(value)
+                length = max(len(invalid_as_bits), _bit_len(cls._flag_mask_))
+                valid_as_bits = ('0' * length + _bits(cls._flag_mask_))[-length:]
+                invalid_as_bits = ('01'[value<0] * length + invalid_as_bits)[-length:]
+                raise ValueError(
+                        "%s: invalid value: %r\n    given %s\n  allowed %s" % (
+                            cls.__name__,
+                            value,
+                            invalid_as_bits,
+                            valid_as_bits,
+                            ))
+            elif cls._boundary_ is CONFORM:
+                value = value & cls._flag_mask_
+            elif cls._boundary_ is EJECT:
+                return value
+            else:
+                raise ValueError('unknown flag boundary: %r' % (cls._boundary_, ))
+        elif value < 0:
+            neg_value = value
+            value = cls._all_bits_ + 1 + value
+        # get members
+        members, _ = _decompose(cls, value)
+        if _:
+            raise ValueError('%s: _decompose(%r) --> %r, %r' % (cls.__name__, value, members, _))
+        # normal Flag?
+        __new__ = getattr(cls, '__new_member__', None)
+        if cls._member_type_ is object and not __new__:
             # construct a singleton enum pseudo-member
             pseudo_member = object.__new__(cls)
-            pseudo_member._name_ = None
+        else:
+            pseudo_member = (__new__ or cls._member_type_.__new__)(cls, value)
+        if not hasattr(pseudo_member, 'value'):
             pseudo_member._value_ = value
-            # use setdefault in case another thread already created a composite
-            # with this value
-            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+        pseudo_member._name_ = '|'.join([m._name_ for m in members]) or None
+        # use setdefault in case another thread already created a composite
+        # with this value
+        pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+        if neg_value is not None:
+            cls._value2member_map_[neg_value] = pseudo_member
         return pseudo_member
 
     def __contains__(self, other):
@@ -971,32 +1128,25 @@ class Flag(Enum):
         """
         Returns flags in decreasing value order.
         """
-        members, extra_flags = _decompose(self.__class__, self.value)
-        return (m for m in members if m._value_ != 0)
+        return (m for m in reversed(self.__class__) if m._value_ & self._value_)
+
+    def __len__(self):
+        return _bit_count(self._value_)
 
     def __repr__(self):
         cls = self.__class__
         if self._name_ is not None:
             return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
-        members, uncovered = _decompose(cls, self._value_)
-        return '<%s.%s: %r>' % (
-                cls.__name__,
-                '|'.join([str(m._name_ or m._value_) for m in members]),
-                self._value_,
-                )
+        else:
+            # only zero is unnamed by default
+            return '<%s: %r>' % (cls.__name__, self._value_)
 
     def __str__(self):
         cls = self.__class__
         if self._name_ is not None:
             return '%s.%s' % (cls.__name__, self._name_)
-        members, uncovered = _decompose(cls, self._value_)
-        if len(members) == 1 and members[0]._name_ is None:
-            return '%s.%r' % (cls.__name__, members[0]._value_)
         else:
-            return '%s.%s' % (
-                    cls.__name__,
-                    '|'.join([str(m._name_ or m._value_) for m in members]),
-                    )
+            return '%s.%s' % (cls.__name__, self._value_)
 
     def __bool__(self):
         return bool(self._value_)
@@ -1017,86 +1167,53 @@ class Flag(Enum):
         return self.__class__(self._value_ ^ other._value_)
 
     def __invert__(self):
-        members, uncovered = _decompose(self.__class__, self._value_)
-        inverted = self.__class__(0)
-        for m in self.__class__:
-            if m not in members and not (m._value_ & self._value_):
-                inverted = inverted | m
-        return self.__class__(inverted)
+        current = set(list(self))
+        return self.__class__(reduce(
+                _or_,
+                [m._value_ for m in self.__class__ if m not in current],
+                0,
+                ))
 
 
-class IntFlag(int, Flag):
+class IntFlag(int, Flag, boundary=EJECT):
     """
     Support for integer-based Flags
     """
 
-    @classmethod
-    def _missing_(cls, value):
-        """
-        Returns member (possibly creating it) if one can be found for value.
-        """
-        if not isinstance(value, int):
-            raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
-        new_member = cls._create_pseudo_member_(value)
-        return new_member
-
-    @classmethod
-    def _create_pseudo_member_(cls, value):
-        """
-        Create a composite member iff value contains only members.
-        """
-        pseudo_member = cls._value2member_map_.get(value, None)
-        if pseudo_member is None:
-            need_to_create = [value]
-            # get unaccounted for bits
-            _, extra_flags = _decompose(cls, value)
-            # timer = 10
-            while extra_flags:
-                # timer -= 1
-                bit = _high_bit(extra_flags)
-                flag_value = 2 ** bit
-                if (flag_value not in cls._value2member_map_ and
-                        flag_value not in need_to_create
-                        ):
-                    need_to_create.append(flag_value)
-                if extra_flags == -flag_value:
-                    extra_flags = 0
-                else:
-                    extra_flags ^= flag_value
-            for value in reversed(need_to_create):
-                # construct singleton pseudo-members
-                pseudo_member = int.__new__(cls, value)
-                pseudo_member._name_ = None
-                pseudo_member._value_ = value
-                # use setdefault in case another thread already created a composite
-                # with this value
-                pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
-        return pseudo_member
-
     def __or__(self, other):
-        if not isinstance(other, (self.__class__, int)):
+        if isinstance(other, self.__class__):
+            other = other._value_
+        elif isinstance(other, int):
+            other = other
+        else:
             return NotImplemented
-        result = self.__class__(self._value_ | self.__class__(other)._value_)
-        return result
+        value = self._value_
+        return self.__class__(value | other)
 
     def __and__(self, other):
-        if not isinstance(other, (self.__class__, int)):
+        if isinstance(other, self.__class__):
+            other = other._value_
+        elif isinstance(other, int):
+            other = other
+        else:
             return NotImplemented
-        return self.__class__(self._value_ & self.__class__(other)._value_)
+        value = self._value_
+        return self.__class__(value & other)
 
     def __xor__(self, other):
-        if not isinstance(other, (self.__class__, int)):
+        if isinstance(other, self.__class__):
+            other = other._value_
+        elif isinstance(other, int):
+            other = other
+        else:
             return NotImplemented
-        return self.__class__(self._value_ ^ self.__class__(other)._value_)
+        value = self._value_
+        return self.__class__(value ^ other)
 
     __ror__ = __or__
     __rand__ = __and__
     __rxor__ = __xor__
-
-    def __invert__(self):
-        result = self.__class__(~self._value_)
-        return result
-
+    __invert__ = Flag.__invert__
 
 def _high_bit(value):
     """
@@ -1120,30 +1237,36 @@ def unique(enumeration):
     return enumeration
 
 def _decompose(flag, value):
-    """
-    Extract all members from the value.
-    """
-    # _decompose is only called if the value is not named
-    not_covered = value
+    """Extract all members from the value."""
     negative = value < 0
+    if negative:
+        value = ~value
     members = []
     for member in flag:
-        member_value = member.value
-        if member_value and member_value & value == member_value:
+        if value & member._value_:
             members.append(member)
-            not_covered &= ~member_value
-    if not negative:
-        tmp = not_covered
-        while tmp:
-            flag_value = 2 ** _high_bit(tmp)
-            if flag_value in flag._value2member_map_:
-                members.append(flag._value2member_map_[flag_value])
-                not_covered &= ~flag_value
-            tmp &= ~flag_value
-    if not members and value in flag._value2member_map_:
-        members.append(flag._value2member_map_[value])
+            value ^= member._value_
+    if value:
+        # check value2member_map
+        possibles = [
+                m
+                for v, m in list(flag._value2member_map_.items())
+                if m not in flag
+                ]
+        possibles.sort(key=lambda m: m._value_, reverse=True)
+        for multi in possibles:
+            if multi._value_ & value == multi._value_:
+                members.append(multi)
+                value ^= multi._value_            
+    if negative:
+        members = [m for m in flag if m not in members]
+        if value:
+            value = ~value
     members.sort(key=lambda m: m._value_, reverse=True)
-    if len(members) > 1 and members[0].value == value:
-        # we have the breakdown, don't need the value member itself
-        members.pop(0)
-    return members, not_covered
+    return members, value
+
+def _power_of_two(value):
+    if value < 1:
+        return False
+    return value == 2 ** _high_bit(value)
+

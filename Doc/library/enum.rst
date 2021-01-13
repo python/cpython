@@ -638,12 +638,22 @@ IntFlag
 The next variation of :class:`Enum` provided, :class:`IntFlag`, is also based
 on :class:`int`.  The difference being :class:`IntFlag` members can be combined
 using the bitwise operators (&, \|, ^, ~) and the result is still an
-:class:`IntFlag` member.  However, as the name implies, :class:`IntFlag`
+:class:`IntFlag` member, if possible.  However, as the name implies, :class:`IntFlag`
 members also subclass :class:`int` and can be used wherever an :class:`int` is
-used.  Any operation on an :class:`IntFlag` member besides the bit-wise
-operations will lose the :class:`IntFlag` membership.
+used.
+
+.. note::
+
+    Any operation on an :class:`IntFlag` member besides the bit-wise operations will
+    lose the :class:`IntFlag` membership.
+
+.. note::
+
+    Bit-wise operations that result in invalid :class:`IntFlag` values will lose the
+    :class:`IntFlag` membership.
 
 .. versionadded:: 3.6
+.. versionchanged:: 3.10
 
 Sample :class:`IntFlag` class::
 
@@ -671,21 +681,41 @@ It is also possible to name the combinations::
     >>> Perm.RWX
     <Perm.RWX: 7>
     >>> ~Perm.RWX
-    <Perm.-8: -8>
+    <Perm: 0>
+    >>> Perm(7)
+    <Perm.RWX: 7>
+
+.. note::
+
+    Named combinations are considered aliases.  Aliases do not show up during
+    iteration, but can be returned from by-value lookups.
+
+.. versionchanged:: 3.10
 
 Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
 
     >>> Perm.R & Perm.X
-    <Perm.0: 0>
+    <Perm: 0>
     >>> bool(Perm.R & Perm.X)
     False
 
 Because :class:`IntFlag` members are also subclasses of :class:`int` they can
-be combined with them::
+be combined with them (but may lose :class:`IntFlag` membership::
+
+    >>> Perm.X | 4
+    <Perm.R|X: 5>
 
     >>> Perm.X | 8
-    <Perm.8|X: 9>
+    9
+
+.. note::
+
+    The negation operator, ``~``, always returns an :class:`IntFlag` member with a
+    positive number::
+
+    >>> ~Perm.X
+    <Perm.R|W: 6>
 
 :class:`IntFlag` members can also be iterated over::
 
@@ -717,7 +747,7 @@ flags being set, the boolean evaluation is :data:`False`::
     ...     GREEN = auto()
     ...
     >>> Color.RED & Color.GREEN
-    <Color.0: 0>
+    <Color: 0>
     >>> bool(Color.RED & Color.GREEN)
     False
 
