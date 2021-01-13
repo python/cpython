@@ -155,17 +155,18 @@ _Py_bit_length(unsigned long x)
         return 0;
     }
 #else
-    const int BIT_LENGTH_TABLE[32] = {
-        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-    };
-    int msb = 0;
-    while (x >= 32) {
-        msb += 6;
-        x >>= 6;
+    static const uint8_t lengths[16] = { 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
+    int result = 0;
+    if (x >= 1 << 16) {
+        result += 16; x >>= 16;
     }
-    msb += BIT_LENGTH_TABLE[x];
-    return msb;
+    if (x >= 1 << 8) {
+        result += 8; x >>= 8;
+    }
+    if (x >= 1 << 4) {
+        result += 4; x >>= 4;
+    }
+    return result + lengths[x];
 #endif
 }
 
