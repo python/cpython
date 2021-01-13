@@ -6328,10 +6328,9 @@ error:
 
 
 static void
-clean_basic_block(basicblock *bb) {
-    /* Remove NOPs. */
+clean_basic_block(basicblock *bb, int prev_lineno) {
+    /* Remove NOPs when legal to do so. */
     int dest = 0;
-    int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
         int lineno = bb->b_instr[src].i_lineno;
         if (bb->b_instr[src].i_opcode == NOP) {
@@ -6531,7 +6530,7 @@ optimize_cfg(struct assembler *a, PyObject *consts)
         if (optimize_basic_block(b, consts)) {
             return -1;
         }
-        clean_basic_block(b);
+        clean_basic_block(b, -1);
         assert(b->b_predecessors == 0);
     }
     if (mark_reachable(a)) {
@@ -6543,6 +6542,15 @@ optimize_cfg(struct assembler *a, PyObject *consts)
             b->b_iused = 0;
             b->b_nofallthrough = 0;
        }
+    }
+    basicblock *pred = NULL;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        int prev_lineno = -1;
+        if (pred && pred->b_iused) {
+            prev_lineno = pred->b_instr[pred->b_iused-1].i_lineno;
+        }
+        clean_basic_block(b, prev_lineno);
+        pred = b->b_nofallthrough ? NULL : b;
     }
     eliminate_empty_basic_blocks(a->a_entry);
     /* Delete jump instructions made redundant by previous step. If a non-empty
@@ -6571,7 +6579,7 @@ optimize_cfg(struct assembler *a, PyObject *consts)
                         case JUMP_ABSOLUTE:
                         case JUMP_FORWARD:
                             b_last_instr->i_opcode = NOP;
-                            clean_basic_block(b);
+                            clean_basic_block(b, -1);
                             maybe_empty_blocks = 1;
                             break;
                     }
