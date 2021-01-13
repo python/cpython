@@ -4467,10 +4467,11 @@ Error:
     Py_CLEAR(result);
     /* fall through */
 Done:
-    // Clean up, make sure we leave no pointers to dead objects
-    Py_CLEAR(aSquared);
-    for (int i = 0; i < 32 && table[i]; i++)
-        Py_CLEAR(table[i]);
+    Py_XDECREF(aSquared);
+    Py_XDECREF(temp);
+    // Yes the table is tableSize + 1 entries, I know
+    for (int i = 0; i <= tableSize; i++)
+        Py_DECREF(table[i]);
     return result;
 }
 
