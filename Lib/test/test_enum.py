@@ -1677,6 +1677,13 @@ class TestEnum(unittest.TestCase):
         class Test(Base):
             test = 1
         self.assertEqual(Test.test.test, 'dynamic')
+        class Base2(Enum):
+            @enum.property
+            def flash(self):
+                return 'flashy dynamic'
+        class Test(Base2):
+            flash = 1
+        self.assertEqual(Test.flash.flash, 'flashy dynamic')
 
     def test_no_duplicates(self):
         class UniqueEnum(Enum):
@@ -2118,7 +2125,7 @@ class TestEnum(unittest.TestCase):
             class ThirdFailedStrEnum(StrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
-                
+
 
 
     @unittest.skipUnless(
@@ -3269,7 +3276,7 @@ class TestStdLib(unittest.TestCase):
                 ('value', Enum.__dict__['value']),
                 ))
         result = dict(inspect.getmembers(self.Color))
-        self.assertEqual(values.keys(), result.keys())
+        self.assertEqual(set(values.keys()), set(result.keys()))
         failed = False
         for k in values.keys():
             if result[k] != values[k]:
@@ -3306,6 +3313,10 @@ class TestStdLib(unittest.TestCase):
         values.sort(key=lambda item: item.name)
         result = list(inspect.classify_class_attrs(self.Color))
         result.sort(key=lambda item: item.name)
+        self.assertEqual(
+                len(values), len(result),
+                "%s != %s" % ([a.name for a in values], [a.name for a in result])
+                )
         failed = False
         for v, r in zip(values, result):
             if r != v:
