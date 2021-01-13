@@ -1,11 +1,13 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
+from builtins import property as _bltin_property
 
 
 __all__ = [
         'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
         'auto', 'unique',
+        'property',
         ]
 
 
@@ -54,14 +56,20 @@ def _is_private(cls_name, name):
     else:
         return False
 
-def _make_class_unpicklable(cls):
+def _make_class_unpicklable(obj):
     """
-    Make the given class un-picklable.
+    Make the given obj un-picklable.
+
+    obj should be either a dictionary, on an Enum
     """
     def _break_on_call_reduce(self, proto):
         raise TypeError('%r cannot be pickled' % self)
-    cls.__reduce_ex__ = _break_on_call_reduce
-    cls.__module__ = '<unknown>'
+    if isinstance(obj, dict):
+        obj['__reduce_ex__'] = _break_on_call_reduce
+        obj['__module__'] = '<unknown>'
+    else:
+        setattr(obj, '__reduce_ex__', _break_on_call_reduce)
+        setattr(obj, '__module__', '<unknown>')
 
 _auto_null = object()
 class auto:
@@ -69,6 +77,125 @@ class auto:
     Instances are replaced with an appropriate value in Enum class suites.
     """
     value = _auto_null
+
+class property(DynamicClassAttribute):
+    """
+    This is a descriptor, used to define attributes that act differently
+    when accessed through an enum member and through an enum class.
+    Instance access is the same as property(), but access to an attribute
+    through the enum class will instead look in the class' _member_map_ for
+    a corresponding enum member.
+    """
+
+    def __get__(self, instance, ownerclass=None):
+        if instance is None:
+            try:
+                return ownerclass._member_map_[self.name]
+            except KeyError:
+                raise AttributeError('%r not found in %r' % (self.name, ownerclass.__name__))
+        else:
+            if self.fget is None:
+                raise AttributeError('%s: cannot read attribute %r' % (ownerclass.__name__, self.name))
+            else:
+                return self.fget(instance)
+
+    def __set__(self, instance, value):
+        if self.fset is None:
+            raise AttributeError("%s: cannot set attribute %r" % (self.clsname, self.name))
+        else:
+            return self.fset(instance, value)
+
+    def __delete__(self, instance):
+        if self.fdel is None:
+            raise AttributeError("%s: cannot delete attribute %r" % (self.clsname, self.name))
+        else:
+            return self.fdel(instance)
+
+    def __set_name__(self, ownerclass, name):
+        self.name = name
+        self.clsname = ownerclass.__name__
+
+
+class _proto_member:
+    """
+    intermediate step for enum members between class execution and final creation
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __set_name__(self, enum_class, member_name):
+        """
+        convert each quasi-member into an instance of the new enum class
+        """
+        # first step: remove ourself from enum_class
+        delattr(enum_class, member_name)
+        # second step: create member based on enum_class
+        value = self.value
+        if not isinstance(value, tuple):
+            args = (value, )
+        else:
+            args = value
+        if enum_class._member_type_ is tuple:   # special case for tuple enums
+            args = (args, )     # wrap it one more time
+        if not enum_class._use_args_:
+            enum_member = enum_class._new_member_(enum_class)
+            if not hasattr(enum_member, '_value_'):
+                enum_member._value_ = value
+        else:
+            enum_member = enum_class._new_member_(enum_class, *args)
+            if not hasattr(enum_member, '_value_'):
+                if enum_class._member_type_ is object:
+                    enum_member._value_ = value
+                else:
+                    enum_member._value_ = enum_class._member_type_(*args)
+        value = enum_member._value_
+        enum_member._name_ = member_name
+        enum_member.__objclass__ = enum_class
+        enum_member.__init__(*args)
+        # If another member with the same value was already defined, the
+        # new member becomes an alias to the existing one.
+        for name, canonical_member in enum_class._member_map_.items():
+            if canonical_member._value_ == enum_member._value_:
+                enum_member = canonical_member
+                break
+        else:
+            # no other instances found, record this member in _member_names_
+            enum_class._member_names_.append(member_name)
+        # get redirect in place before adding to _member_map_
+        # but check for other instances in parent classes first
+        need_override = False
+        descriptor = None
+        for base in enum_class.__mro__[1:]:
+            descriptor = base.__dict__.get(member_name)
+            if descriptor is not None:
+                if isinstance(descriptor, (property, DynamicClassAttribute)):
+                    break
+                else:
+                    need_override = True
+                    # keep looking for an enum.property
+        if descriptor and not need_override:
+            # previous enum.property found, no further action needed
+            pass
+        else:
+            redirect = property()
+            redirect.__set_name__(enum_class, member_name)
+            if descriptor and need_override:
+                # previous enum.property found, but some other inherited attribute
+                # is in the way; copy fget, fset, fdel to this one
+                redirect.fget = descriptor.fget
+                redirect.fset = descriptor.fset
+                redirect.fdel = descriptor.fdel
+            setattr(enum_class, member_name, redirect)
+        # now add to _member_map_ (even aliases)
+        enum_class._member_map_[member_name] = enum_member
+        try:
+            # This may fail if value is not hashable. We can't add the value
+            # to the map, and by-value lookups for this value will be
+            # linear.
+            enum_class._value2member_map_[value] = enum_member
+        except TypeError:
+            pass
 
 
 class _EnumDict(dict):
@@ -195,46 +322,39 @@ class EnumMeta(type):
         ignore = classdict['_ignore_']
         for key in ignore:
             classdict.pop(key, None)
+        #
+        # grab member names
+        member_names = classdict._member_names
+        #
+        # check for illegal enum names (any others?)
+        invalid_names = set(member_names) & {'mro', ''}
+        if invalid_names:
+            raise ValueError('Invalid enum member name: {0}'.format(
+                ','.join(invalid_names)))
+        #
+        # adjust the sunders
+        _order_ = classdict.pop('_order_', None)
+        # convert to normal dict
+        classdict = dict(classdict.items())
+        #
+        # data type of member and the controlling Enum class
         member_type, first_enum = metacls._get_mixins_(cls, bases)
         __new__, save_new, use_args = metacls._find_new_(
                 classdict, member_type, first_enum,
                 )
-
-        # save enum items into separate mapping so they don't get baked into
-        # the new class
-        enum_members = {k: classdict[k] for k in classdict._member_names}
-        for name in classdict._member_names:
-            del classdict[name]
-
-        # adjust the sunders
-        _order_ = classdict.pop('_order_', None)
-
-        # check for illegal enum names (any others?)
-        invalid_names = set(enum_members) & {'mro', ''}
-        if invalid_names:
-            raise ValueError('Invalid enum member name: {0}'.format(
-                ','.join(invalid_names)))
-
-        # create a default docstring if one has not been provided
-        if '__doc__' not in classdict:
-            classdict['__doc__'] = 'An enumeration.'
-
-        enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
-        enum_class._member_names_ = []               # names in definition order
-        enum_class._member_map_ = {}                 # name->value map
-        enum_class._member_type_ = member_type
-
-        # save DynamicClassAttribute attributes from super classes so we know
-        # if we can take the shortcut of storing members in the class dict
-        dynamic_attributes = {
-                k for c in enum_class.mro()
-                for k, v in c.__dict__.items()
-                if isinstance(v, DynamicClassAttribute)
-                }
-
-        # Reverse value->name map for hashable values.
-        enum_class._value2member_map_ = {}
-
+        classdict['_new_member_'] = __new__
+        classdict['_use_args_'] = use_args
+        #
+        # convert future enum members into temporary _proto_members
+        for name in member_names:
+            classdict[name] = _proto_member(classdict[name])
+        #
+        # house keeping structures
+        classdict['_member_names_'] = []
+        classdict['_member_map_'] = {}
+        classdict['_value2member_map_'] = {}
+        classdict['_member_type_'] = member_type
+        #
         # If a custom type is mixed into the Enum, and it does not know how
         # to pickle itself, pickle.dumps will succeed but pickle.loads will
         # fail.  Rather than have the error show up later and possibly far
@@ -250,58 +370,21 @@ class EnumMeta(type):
                 methods = ('__getnewargs_ex__', '__getnewargs__',
                         '__reduce_ex__', '__reduce__')
                 if not any(m in member_type.__dict__ for m in methods):
-                    _make_class_unpicklable(enum_class)
-
-        # instantiate them, checking for duplicates as we go
-        # we instantiate first instead of checking for duplicates first in case
-        # a custom __new__ is doing something funky with the values -- such as
-        # auto-numbering ;)
-        for member_name in classdict._member_names:
-            value = enum_members[member_name]
-            if not isinstance(value, tuple):
-                args = (value, )
-            else:
-                args = value
-            if member_type is tuple:   # special case for tuple enums
-                args = (args, )     # wrap it one more time
-            if not use_args:
-                enum_member = __new__(enum_class)
-                if not hasattr(enum_member, '_value_'):
-                    enum_member._value_ = value
-            else:
-                enum_member = __new__(enum_class, *args)
-                if not hasattr(enum_member, '_value_'):
-                    if member_type is object:
-                        enum_member._value_ = value
-                    else:
-                        enum_member._value_ = member_type(*args)
-            value = enum_member._value_
-            enum_member._name_ = member_name
-            enum_member.__objclass__ = enum_class
-            enum_member.__init__(*args)
-            # If another member with the same value was already defined, the
-            # new member becomes an alias to the existing one.
-            for name, canonical_member in enum_class._member_map_.items():
-                if canonical_member._value_ == enum_member._value_:
-                    enum_member = canonical_member
-                    break
-            else:
-                # Aliases don't appear in member names (only in __members__).
-                enum_class._member_names_.append(member_name)
-            # performance boost for any member that would not shadow
-            # a DynamicClassAttribute
-            if member_name not in dynamic_attributes:
-                setattr(enum_class, member_name, enum_member)
-            # now add to _member_map_
-            enum_class._member_map_[member_name] = enum_member
-            try:
-                # This may fail if value is not hashable. We can't add the value
-                # to the map, and by-value lookups for this value will be
-                # linear.
-                enum_class._value2member_map_[value] = enum_member
-            except TypeError:
-                pass
-
+                    _make_class_unpicklable(classdict)
+        #
+        # create a default docstring if one has not been provided
+        if '__doc__' not in classdict:
+            classdict['__doc__'] = 'An enumeration.'
+        try:
+            exc = None
+            enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
+        except RuntimeError as e:
+            # any exceptions raised by member.__new__ will get converted to a
+            # RuntimeError, so get that original exception back and raise it instead
+            exc = e.__cause__ or e
+        if exc is not None:
+            raise exc
+        #
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
         # however, if the method is defined in the Enum itself, don't replace
@@ -314,7 +397,7 @@ class EnumMeta(type):
             enum_method = getattr(first_enum, name, None)
             if obj_method is not None and obj_method is class_method:
                 setattr(enum_class, name, enum_method)
-
+        #
         # replace any other __new__ with our own (as long as Enum is not None,
         # anyway) -- again, this is to support pickle
         if Enum is not None:
@@ -323,14 +406,14 @@ class EnumMeta(type):
             if save_new:
                 enum_class.__new_member__ = __new__
             enum_class.__new__ = Enum.__new__
-
+        #
         # py3 support for definition order (helps keep py2/py3 code in sync)
         if _order_ is not None:
             if isinstance(_order_, str):
                 _order_ = _order_.replace(',', ' ').split()
             if _order_ != enum_class._member_names_:
                 raise TypeError('member order does not match _order_')
-
+        #
         return enum_class
 
     def __bool__(self):
@@ -424,7 +507,7 @@ class EnumMeta(type):
     def __len__(cls):
         return len(cls._member_names_)
 
-    @property
+    @_bltin_property
     def __members__(cls):
         """
         Returns a mapping of member name->value.
@@ -491,7 +574,6 @@ class EnumMeta(type):
             else:
                 member_name, member_value = item
             classdict[member_name] = member_value
-        enum_class = metacls.__new__(metacls, class_name, bases, classdict)
 
         # TODO: replace the frame hack if a blessed way to know the calling
         # module is ever developed
@@ -501,13 +583,13 @@ class EnumMeta(type):
             except (AttributeError, ValueError, KeyError):
                 pass
         if module is None:
-            _make_class_unpicklable(enum_class)
+            _make_class_unpicklable(classdict)
         else:
-            enum_class.__module__ = module
+            classdict['__module__'] = module
         if qualname is not None:
-            enum_class.__qualname__ = qualname
+            classdict['__qualname__'] = qualname
 
-        return enum_class
+        return metacls.__new__(metacls, class_name, bases, classdict)
 
     def _convert_(cls, name, module, filter, source=None):
         """
@@ -756,19 +838,20 @@ class Enum(metaclass=EnumMeta):
     def __reduce_ex__(self, proto):
         return self.__class__, (self._value_, )
 
-    # DynamicClassAttribute is used to provide access to the `name` and
-    # `value` properties of enum members while keeping some measure of
+    # enum.property is used to provide access to the `name` and
+    # `value` attributes of enum members while keeping some measure of
     # protection from modification, while still allowing for an enumeration
     # to have members named `name` and `value`.  This works because enumeration
-    # members are not set directly on the enum class -- __getattr__ is
-    # used to look them up.
+    # members are not set directly on the enum class; they are kept in a
+    # separate structure, _member_map_, which is where enum.property looks for
+    # them
 
-    @DynamicClassAttribute
+    @property
     def name(self):
         """The name of the Enum member."""
         return self._name_
 
-    @DynamicClassAttribute
+    @property
     def value(self):
         """The value of the Enum member."""
         return self._value_
