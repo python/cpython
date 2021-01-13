@@ -1524,7 +1524,6 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
 			*CVS) ;; \
 			*.py[co]) ;; \
 			*.orig) ;; \
-			*wininst-*.exe) ;; \
 			*~) ;; \
 			*) \
 				if test -d $$i; then continue; fi; \

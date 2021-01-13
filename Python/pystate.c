@@ -54,6 +54,9 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     void *open_code_hook = runtime->open_code_hook;
     void *open_code_userdata = runtime->open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+    // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
+    // is called multiple times.
+    int64_t unicode_next_index = runtime->unicode_ids.next_index;
 
     memset(runtime, 0, sizeof(*runtime));
 
@@ -90,7 +93,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     if (runtime->unicode_ids.lock == NULL) {
         return _PyStatus_NO_MEMORY();
     }
-    runtime->unicode_ids.next_index = 0;
+    runtime->unicode_ids.next_index = unicode_next_index;
 
     return _PyStatus_OK();
 }
