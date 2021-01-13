@@ -26,7 +26,7 @@ int _Py_bit_length64(uint64_t x) {
     return _Py_bit_length((unsigned long)x);
 }
 
-int _Py_bit_count(unsigned long x) {
+int _Py_bitcount(unsigned long x) {
 #define o33333333333 0xDB6DB6DB
 #define o11111111111 0x49249249
 #define o30303030303 0xC30C30C3
@@ -39,7 +39,7 @@ int _Py_bit_count(unsigned long x) {
 }
 
 int _Py_bit_count64(uint64_t x) {
-    return _Py_bit_count(x >> 32) + _Py_bit_count((unsigned long)x);
+    return _Py_popcount32(x >> 32) + _Py_popcount32((unsigned long)x);
 }
 
 #ifndef NSMALLPOSINTS
