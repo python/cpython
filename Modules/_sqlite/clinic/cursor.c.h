@@ -141,16 +141,13 @@ PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
 "fetchmany($self, /, size=<unrepresentable>)\n"
 "--\n"
 "\n"
-"Fetches several rows from the resultset.\n"
-"\n"
-"  size\n"
-"    The number of rows to fetch. Defaults to the cursor\'s arraysize.");
+"Fetches several rows from the resultset.");
 
 #define PYSQLITE_CURSOR_FETCHMANY_METHODDEF    \
     {"fetchmany", (PyCFunction)(void(*)(void))pysqlite_cursor_fetchmany, METH_FASTCALL|METH_KEYWORDS, pysqlite_cursor_fetchmany__doc__},
 
 static PyObject *
-pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, PyObject *maxrows_obj);
+pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows);
 
 static PyObject *
 pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -160,7 +157,7 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     static _PyArg_Parser _parser = {NULL, _keywords, "fetchmany", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *maxrows_obj = NULL;
+    int maxrows = self->arraysize;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
@@ -169,9 +166,12 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    maxrows_obj = args[0];
+    maxrows = _PyLong_AsInt(args[0]);
+    if (maxrows == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
 skip_optional_pos:
-    return_value = pysqlite_cursor_fetchmany_impl(self, maxrows_obj);
+    return_value = pysqlite_cursor_fetchmany_impl(self, maxrows);
 
 exit:
     return return_value;
@@ -256,4 +256,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=53cab2e724cd2ba5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b5ffd9029d33cd8 input=a9049054013a1b77]*/
