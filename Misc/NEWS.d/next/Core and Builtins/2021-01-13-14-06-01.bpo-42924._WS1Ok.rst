@@ -1,0 +1,1 @@
+Fix ``bytearray`` repetition incorrectly copying data from the start of the buffer, even if the data is offset within the buffer (e.g. after reassigning a slice at the start of the ``bytearray`` to a shorter byte string).
