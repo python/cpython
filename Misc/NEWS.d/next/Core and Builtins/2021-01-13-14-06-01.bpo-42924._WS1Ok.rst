@@ -1,0 +1,2 @@
+Fix :c:func:`bytearray_repeat` incorrectly copying from data from
+``ob_bytes`` instead of ``ob_start``.
