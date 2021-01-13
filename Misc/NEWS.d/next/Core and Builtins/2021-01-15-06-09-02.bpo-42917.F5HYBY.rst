@@ -1,0 +1,1 @@
+Make block stack for frame objects dynamically sizable and lift the old limit of 20 blocks.

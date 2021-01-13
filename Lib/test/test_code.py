@@ -218,6 +218,7 @@ class CodeTest(unittest.TestCase):
                         co.co_kwonlyargcount,
                         co.co_nlocals,
                         co.co_stacksize,
+                        co.co_blockstacksize,
                         co.co_flags,
                         co.co_code,
                         co.co_consts,

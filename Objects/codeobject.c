@@ -10,6 +10,9 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+/* Max static block nesting within a function prior to 3.10 */
+#define CO_LEGACYMAXBLOCKS 20
+
 /* Holder for co_extra information */
 typedef struct {
     Py_ssize_t ce_size;
@@ -114,12 +117,12 @@ intern_string_constants(PyObject *tuple, int *modified)
 }
 
 PyCodeObject *
-PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
-                          int nlocals, int stacksize, int flags,
-                          PyObject *code, PyObject *consts, PyObject *names,
-                          PyObject *varnames, PyObject *freevars, PyObject *cellvars,
-                          PyObject *filename, PyObject *name, int firstlineno,
-                          PyObject *linetable)
+PyCode_NewWithBlockStackSize(int argcount, int posonlyargcount, int kwonlyargcount,
+                             int nlocals, int stacksize, int blockstacksize, int flags,
+                             PyObject *code, PyObject *consts, PyObject *names,
+                             PyObject *varnames, PyObject *freevars, PyObject *cellvars,
+                             PyObject *filename, PyObject *name, int firstlineno,
+                             PyObject *linetable)
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
@@ -239,6 +242,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_kwonlyargcount = kwonlyargcount;
     co->co_nlocals = nlocals;
     co->co_stacksize = stacksize;
+    co->co_blockstacksize = blockstacksize;
     co->co_flags = flags;
     Py_INCREF(code);
     co->co_code = code;
@@ -279,10 +283,24 @@ PyCode_New(int argcount, int kwonlyargcount,
            PyObject *filename, PyObject *name, int firstlineno,
            PyObject *linetable)
 {
-    return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
-                                     stacksize, flags, code, consts, names,
-                                     varnames, freevars, cellvars, filename,
-                                     name, firstlineno, linetable);
+    return PyCode_NewWithBlockStackSize(
+        argcount, 0, kwonlyargcount,  nlocals, stacksize, CO_LEGACYMAXBLOCKS,
+        flags, code, consts, names, varnames, freevars, cellvars, filename,
+        name, firstlineno, linetable);
+}
+
+PyCodeObject *
+PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
+                          int nlocals, int stacksize, int flags, PyObject *code,
+                          PyObject *consts, PyObject *names, PyObject *varnames,
+                          PyObject *freevars, PyObject *cellvars,
+                          PyObject *filename, PyObject *name, int firstlineno,
+                          PyObject *linetable)
+{
+    return PyCode_NewWithBlockStackSize(
+        argcount, kwonlyargcount,  kwonlyargcount, nlocals, stacksize,
+        CO_LEGACYMAXBLOCKS, flags, code, consts, names, varnames, freevars,
+        cellvars, filename, name, firstlineno, linetable);
 }
 
 int
@@ -353,12 +371,13 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     if (filename_ob == NULL)
         goto failed;
 
-    result = PyCode_NewWithPosOnlyArgs(
-                0,                    /* argcount */
+    result = PyCode_NewWithBlockStackSize(
+                0,                              /* argcount */
                 0,                              /* posonlyargcount */
                 0,                              /* kwonlyargcount */
                 0,                              /* nlocals */
                 0,                              /* stacksize */
+                0,                              /* blockstacksize */
                 0,                              /* flags */
                 emptystring,                    /* code */
                 nulltuple,                      /* consts */
@@ -385,7 +404,8 @@ static PyMemberDef code_memberlist[] = {
     {"co_posonlyargcount",      T_INT,  OFF(co_posonlyargcount), READONLY},
     {"co_kwonlyargcount",       T_INT,  OFF(co_kwonlyargcount),  READONLY},
     {"co_nlocals",      T_INT,          OFF(co_nlocals),         READONLY},
-    {"co_stacksize",T_INT,              OFF(co_stacksize),       READONLY},
+    {"co_stacksize",    T_INT,          OFF(co_stacksize),       READONLY},
+    {"co_blockstacksize",       T_INT,  OFF(co_blockstacksize),  READONLY},
     {"co_flags",        T_INT,          OFF(co_flags),           READONLY},
     {"co_code",         T_OBJECT,       OFF(co_code),            READONLY},
     {"co_consts",       T_OBJECT,       OFF(co_consts),          READONLY},
@@ -529,6 +549,7 @@ code.__new__ as code_new
     kwonlyargcount: int
     nlocals: int
     stacksize: int
+    blockstacksize: int
     flags: int
     codestring as code: object(subclass_of="&PyBytes_Type")
     constants as consts: object(subclass_of="&PyTuple_Type")
@@ -547,12 +568,12 @@ Create a code object.  Not for the faint of heart.
 
 static PyObject *
 code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
-              int kwonlyargcount, int nlocals, int stacksize, int flags,
-              PyObject *code, PyObject *consts, PyObject *names,
-              PyObject *varnames, PyObject *filename, PyObject *name,
-              int firstlineno, PyObject *linetable, PyObject *freevars,
-              PyObject *cellvars)
-/*[clinic end generated code: output=42c1839b082ba293 input=0ec80da632b99f57]*/
+              int kwonlyargcount, int nlocals, int stacksize,
+              int blockstacksize, int flags, PyObject *code,
+              PyObject *consts, PyObject *names, PyObject *varnames,
+              PyObject *filename, PyObject *name, int firstlineno,
+              PyObject *linetable, PyObject *freevars, PyObject *cellvars)
+/*[clinic end generated code: output=c8c6d3f2e27371b6 input=8c0f3df5bf7cfead]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -612,13 +633,10 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
     if (ourcellvars == NULL)
         goto cleanup;
 
-    co = (PyObject *)PyCode_NewWithPosOnlyArgs(argcount, posonlyargcount,
-                                               kwonlyargcount,
-                                               nlocals, stacksize, flags,
-                                               code, consts, ournames,
-                                               ourvarnames, ourfreevars,
-                                               ourcellvars, filename,
-                                               name, firstlineno, linetable);
+    co = (PyObject *)PyCode_NewWithBlockStackSize(
+        argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,
+        blockstacksize, flags, code, consts, ournames, ourvarnames, ourfreevars,
+        ourcellvars, filename, name, firstlineno, linetable);
   cleanup:
     Py_XDECREF(ournames);
     Py_XDECREF(ourvarnames);
@@ -704,6 +722,7 @@ code.replace
     co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = -1
     co_nlocals: int(c_default="self->co_nlocals") = -1
     co_stacksize: int(c_default="self->co_stacksize") = -1
+    co_blockstacksize: int(c_default="self->co_blockstacksize") = -1
     co_flags: int(c_default="self->co_flags") = -1
     co_firstlineno: int(c_default="self->co_firstlineno") = -1
     co_code: PyBytesObject(c_default="(PyBytesObject *)self->co_code") = None
@@ -722,13 +741,13 @@ Return a copy of the code object with new values for the specified fields.
 static PyObject *
 code_replace_impl(PyCodeObject *self, int co_argcount,
                   int co_posonlyargcount, int co_kwonlyargcount,
-                  int co_nlocals, int co_stacksize, int co_flags,
-                  int co_firstlineno, PyBytesObject *co_code,
+                  int co_nlocals, int co_stacksize, int co_blockstacksize,
+                  int co_flags, int co_firstlineno, PyBytesObject *co_code,
                   PyObject *co_consts, PyObject *co_names,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyBytesObject *co_linetable)
-/*[clinic end generated code: output=50d77e668d3b449b input=a5f997b173d7f636]*/
+/*[clinic end generated code: output=57f36e2207bdf203 input=cf03400cc6f4111a]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -754,11 +773,11 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         return NULL;
     }
 
-    return (PyObject *)PyCode_NewWithPosOnlyArgs(
+    return (PyObject *)PyCode_NewWithBlockStackSize(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
-        co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
-        co_varnames, co_freevars, co_cellvars, co_filename, co_name,
-        co_firstlineno, (PyObject*)co_linetable);
+        co_stacksize, co_blockstacksize, co_flags, (PyObject*)co_code,
+        co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename,
+        co_name, co_firstlineno, (PyObject*)co_linetable);
 }
 
 static PyObject *

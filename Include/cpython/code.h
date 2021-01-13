@@ -22,6 +22,7 @@ struct PyCodeObject {
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_nlocals;             /* #local variables */
     int co_stacksize;           /* #entries needed for evaluation stack */
+    int co_blockstacksize;      /* #entries needed for block stack */
     int co_flags;               /* CO_..., see below */
     int co_firstlineno;         /* first source line number */
     PyObject *co_code;          /* instruction opcodes */
@@ -106,24 +107,32 @@ struct PyCodeObject {
 */
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
 
-#define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
-
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
 #define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 /* Public interface */
+
+/* Used in 3.7 and earlier.  New code should use PyCode_NewWithBlockStackSize
+   instead. */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
 
+/* Used between 3.8 and 3.9.  New code should use PyCode_NewWithBlockStackSize
+   instead. */
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
-        /* same as struct above */
+
+/* Used in 3.10 and later */
+PyAPI_FUNC(PyCodeObject *) PyCode_NewWithBlockStackSize(
+        int, int, int, int, int, int, int, PyObject *, PyObject *,
+        PyObject *, PyObject *, PyObject *, PyObject *,
+        PyObject *, PyObject *, int, PyObject *);
 
 /* Creates a new empty code object with the specified source location. */
 PyAPI_FUNC(PyCodeObject *)

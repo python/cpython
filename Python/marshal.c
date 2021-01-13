@@ -514,6 +514,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_nlocals, p);
         w_long(co->co_stacksize, p);
+        w_long(co->co_blockstacksize, p);
         w_long(co->co_flags, p);
         w_object(co->co_code, p);
         w_object(co->co_consts, p);
@@ -1302,6 +1303,7 @@ r_object(RFILE *p)
             int kwonlyargcount;
             int nlocals;
             int stacksize;
+            int blockstacksize;
             int flags;
             PyObject *code = NULL;
             PyObject *consts = NULL;
@@ -1335,6 +1337,9 @@ r_object(RFILE *p)
             if (PyErr_Occurred())
                 goto code_error;
             stacksize = (int)r_long(p);
+            if (PyErr_Occurred())
+                goto code_error;
+            blockstacksize = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
             flags = (int)r_long(p);
@@ -1371,15 +1376,15 @@ r_object(RFILE *p)
             if (linetable == NULL)
                 goto code_error;
 
-            if (PySys_Audit("code.__new__", "OOOiiiiii",
+            if (PySys_Audit("code.__new__", "OOOiiiiiii",
                             code, filename, name, argcount, posonlyargcount,
-                            kwonlyargcount, nlocals, stacksize, flags) < 0) {
+                            kwonlyargcount, nlocals, stacksize, blockstacksize, flags) < 0) {
                 goto code_error;
             }
 
-            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
+            v = (PyObject *) PyCode_NewWithBlockStackSize(
                             argcount, posonlyargcount, kwonlyargcount,
-                            nlocals, stacksize, flags,
+                            nlocals, stacksize, blockstacksize, flags,
                             code, consts, names, varnames,
                             freevars, cellvars, filename, name,
                             firstlineno, linetable);

@@ -45,8 +45,34 @@ struct _frame {
     int f_lineno;               /* Current line number. Only valid if non-zero */
     int f_iblock;               /* index in f_blockstack */
     PyFrameState f_state;       /* What state the frame is in */
-    PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
-    PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
+    PyTryBlock *f_blockstack;   /* points after the value stack */
+    PyObject *f_localsplus[1];  /* locals+stacks, dynamically sized */
+    /* The size of a PyFrameObject depends on the number of local
+     * variables and the size of the value and block stacks.
+     *                              _________________________________
+     *                             |            GC Header            |
+     *          PyFrameObject * -> |---------------------------------|
+     *                             | Fixed size PyFrameObject fields |
+     *                             |                                 |
+     *                             |      PyVarObject ob_base        |
+     *                             |              ...                |
+     *                             |    PyTryBlock* f_blockstack     |
+     *   PyObject *f_localsplus -> |---------------------------------|
+     *                             |    Dynamically sized locals     |
+     *                             |                                 |
+     *                             |        Local variables          |
+     *                             |         Cell variables          |
+     *                             |         Free variables          |
+     *  PyObject **f_valuestack -> |---------------------------------|
+     *                             |  Dynamically sized value stack  |
+     *                             |               |                 |
+     *                             |               V                 |
+     * PyTryBlock *f_blockstack -> |---------------------------------|
+     *                             |  Dynamically sized block stack  |
+     *                             |               |                 |
+     *                             |               V                 |
+     *                             |_________________________________|
+     */
 };
 
 static inline int _PyFrame_IsRunnable(struct _frame *f) {

@@ -83,49 +83,78 @@ typedef enum kind {
     Except = 4,
 } Kind;
 
-#define BITS_PER_BLOCK 3
+typedef struct block {
+    Kind kind;
+    struct block *parent;
+    struct block *children[4]; /* one child for each Kind */
+} Block;
 
-static inline int64_t
-push_block(int64_t stack, Kind kind)
+static inline Block *
+push_block(Block *stack, Kind kind, Block **next_block)
 {
-    assert(stack < ((int64_t)1)<<(BITS_PER_BLOCK*CO_MAXBLOCKS));
-    return (stack << BITS_PER_BLOCK) | kind;
+    if (stack->children[kind - 1] != NULL) {
+        return stack->children[kind - 1];
+    }
+    Block *new_stack = *next_block;
+    stack->children[kind - 1] = new_stack;
+    new_stack->kind = kind;
+    new_stack->parent = stack;
+    *next_block += 1;
+    return new_stack;
 }
 
-static inline int64_t
-pop_block(int64_t stack)
+static inline Block *
+pop_block(Block *stack)
 {
-    assert(stack > 0);
-    return stack >> BITS_PER_BLOCK;
+    assert(stack != NULL);
+    return stack->parent;
 }
 
 static inline Kind
-top_block(int64_t stack)
-{
-    return stack & ((1<<BITS_PER_BLOCK)-1);
+top_block(Block *stack) {
+    return stack->kind;
 }
 
-static int64_t *
+static Block **
 markblocks(PyCodeObject *code_obj, int len)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(code_obj->co_code);
-    int64_t *blocks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
+    int block_stacks_size = 1;
+    for (i = 0; i < len; i++) {
+        switch (_Py_OPCODE(code[i])) {
+            case SETUP_FINALLY:
+            case SETUP_WITH:
+            case SETUP_ASYNC_WITH:
+                block_stacks_size += 2;
+                break;
+            case GET_ITER:
+            case GET_AITER:
+                block_stacks_size++;
+                break;
+        }
+    }
+
+    size_t alloc_bytes = (len + 1) * sizeof(Block *) +
+                         block_stacks_size * sizeof(Block);
+    Block **blocks = PyMem_Calloc(alloc_bytes, 1);
     if (blocks == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(blocks, -1, (len+1)*sizeof(int64_t));
-    blocks[0] = 0;
+
+    Block *next_block = (Block *)&blocks[len+1];
+    blocks[0] = next_block++;
+
     int todo = 1;
     while (todo) {
         todo = 0;
         for (i = 0; i < len; i++) {
-            int64_t block_stack = blocks[i];
-            int64_t except_stack;
-            if (block_stack == -1) {
+            Block *block_stack = blocks[i];
+            Block *except_stack;
+            if (block_stack == NULL) {
                 continue;
             }
             opcode = _Py_OPCODE(code[i]);
@@ -137,50 +166,50 @@ markblocks(PyCodeObject *code_obj, int len)
                 case JUMP_IF_NOT_EXC_MATCH:
                     j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
                     assert(j < len);
-                    if (blocks[j] == -1 && j < i) {
+                    if (blocks[j] == NULL && j < i) {
                         todo = 1;
                     }
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    assert(blocks[j] == NULL || blocks[j] == block_stack);
                     blocks[j] = block_stack;
                     blocks[i+1] = block_stack;
                     break;
                 case JUMP_ABSOLUTE:
                     j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
                     assert(j < len);
-                    if (blocks[j] == -1 && j < i) {
+                    if (blocks[j] == NULL && j < i) {
                         todo = 1;
                     }
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    assert(blocks[j] == NULL || blocks[j] == block_stack);
                     blocks[j] = block_stack;
                     break;
                 case SETUP_FINALLY:
                     j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
                     assert(j < len);
-                    except_stack = push_block(block_stack, Except);
-                    assert(blocks[j] == -1 || blocks[j] == except_stack);
+                    except_stack = push_block(block_stack, Except, &next_block);
+                    assert(blocks[j] == NULL || blocks[j] == except_stack);
                     blocks[j] = except_stack;
-                    block_stack = push_block(block_stack, Try);
+                    block_stack = push_block(block_stack, Try, &next_block);
                     blocks[i+1] = block_stack;
                     break;
                 case SETUP_WITH:
                 case SETUP_ASYNC_WITH:
                     j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
                     assert(j < len);
-                    except_stack = push_block(block_stack, Except);
-                    assert(blocks[j] == -1 || blocks[j] == except_stack);
+                    except_stack = push_block(block_stack, Except, &next_block);
+                    assert(blocks[j] == NULL || blocks[j] == except_stack);
                     blocks[j] = except_stack;
-                    block_stack = push_block(block_stack, With);
+                    block_stack = push_block(block_stack, With, &next_block);
                     blocks[i+1] = block_stack;
                     break;
                 case JUMP_FORWARD:
                     j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
                     assert(j < len);
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    assert(blocks[j] == NULL || blocks[j] == block_stack);
                     blocks[j] = block_stack;
                     break;
                 case GET_ITER:
                 case GET_AITER:
-                    block_stack = push_block(block_stack, Loop);
+                    block_stack = push_block(block_stack, Loop, &next_block);
                     blocks[i+1] = block_stack;
                     break;
                 case FOR_ITER:
@@ -188,7 +217,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     block_stack = pop_block(block_stack);
                     j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
                     assert(j < len);
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
+                    assert(blocks[j] == NULL || blocks[j] == block_stack);
                     blocks[j] = block_stack;
                     break;
                 case POP_BLOCK:
@@ -215,9 +244,9 @@ markblocks(PyCodeObject *code_obj, int len)
 }
 
 static int
-compatible_block_stack(int64_t from_stack, int64_t to_stack)
+compatible_block_stack(Block *from_stack, Block *to_stack)
 {
-    if (to_stack < 0) {
+    if (to_stack == NULL) {
         return 0;
     }
     while(from_stack > to_stack) {
@@ -227,7 +256,7 @@ compatible_block_stack(int64_t from_stack, int64_t to_stack)
 }
 
 static const char *
-explain_incompatible_block_stack(int64_t to_stack)
+explain_incompatible_block_stack(Block *to_stack)
 {
     Kind target_kind = top_block(to_stack);
     switch(target_kind) {
@@ -396,7 +425,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
+    /* PyCode_NewWithBlockStackSize limits co_code to be under INT_MAX so this
      * should never overflow. */
     int len = (int)(PyBytes_GET_SIZE(f->f_code->co_code) / sizeof(_Py_CODEUNIT));
     int *lines = marklines(f->f_code, len);
@@ -413,16 +442,16 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int64_t *blocks = markblocks(f->f_code, len);
+    Block **blocks = markblocks(f->f_code, len);
     if (blocks == NULL) {
         PyMem_Free(lines);
         return -1;
     }
 
-    int64_t target_block_stack = -1;
-    int64_t best_block_stack = -1;
+    Block *target_block_stack = NULL;
+    Block *best_block_stack = NULL;
     int best_addr = -1;
-    int64_t start_block_stack = blocks[f->f_lasti/sizeof(_Py_CODEUNIT)];
+    Block *start_block_stack = blocks[f->f_lasti/sizeof(_Py_CODEUNIT)];
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
         if (lines[i] == new_lineno) {
@@ -435,7 +464,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                 }
             }
             else if (msg) {
-                if (target_block_stack >= 0) {
+                if (target_block_stack != NULL) {
                     msg = explain_incompatible_block_stack(target_block_stack);
                 }
                 else {
@@ -444,10 +473,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             }
         }
     }
-    PyMem_Free(blocks);
     PyMem_Free(lines);
     if (msg != NULL) {
         PyErr_SetString(PyExc_ValueError, msg);
+        PyMem_Free(blocks);
         return -1;
     }
 
@@ -473,6 +502,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         }
         start_block_stack = pop_block(start_block_stack);
     }
+    PyMem_Free(blocks);
 
     /* Finally set the new f_lasti and return OK. */
     f->f_lineno = 0;
@@ -685,18 +715,19 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(clear__doc__,
 "F.clear(): clear most references held by the frame");
 
+static inline Py_ssize_t
+frame_extra_bytes(PyCodeObject *code) {
+    Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
+    Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
+    Py_ssize_t blocks = code->co_blockstacksize;
+    Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
+    return extras * sizeof(PyObject *) + blocks * sizeof(PyTryBlock);
+}
+
 static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res, extras, ncells, nfrees;
-
-    PyCodeObject *code = f->f_code;
-    ncells = PyTuple_GET_SIZE(code->co_cellvars);
-    nfrees = PyTuple_GET_SIZE(code->co_freevars);
-    extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
-    /* subtract one as it is already included in PyFrameObject */
-    res = sizeof(PyFrameObject) + (extras-1) * sizeof(PyObject *);
-
+    Py_ssize_t res = sizeof(PyFrameObject) + frame_extra_bytes(f->f_code);
     return PyLong_FromSsize_t(res);
 }
 
@@ -724,8 +755,8 @@ static PyMethodDef frame_methods[] = {
 PyTypeObject PyFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "frame",
-    sizeof(PyFrameObject),
-    sizeof(PyObject *),
+    offsetof(PyFrameObject, f_localsplus),      /* tp_basicsize */
+    1,                                          /* tp_itemsize */
     (destructor)frame_dealloc,                  /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
@@ -769,13 +800,11 @@ frame_alloc(PyCodeObject *code)
         return f;
     }
 
-    Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
-    Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
-    Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
+    Py_ssize_t extra_bytes = frame_extra_bytes(code);
     struct _Py_frame_state *state = get_frame_state();
     if (state->free_list == NULL)
     {
-        f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
+        f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extra_bytes);
         if (f == NULL) {
             return NULL;
         }
@@ -789,8 +818,9 @@ frame_alloc(PyCodeObject *code)
         --state->numfree;
         f = state->free_list;
         state->free_list = state->free_list->f_back;
-        if (Py_SIZE(f) < extras) {
-            PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
+        if (Py_SIZE(f) < extra_bytes) {
+            PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f,
+                                                      extra_bytes);
             if (new_f == NULL) {
                 PyObject_GC_Del(f);
                 return NULL;
@@ -800,8 +830,12 @@ frame_alloc(PyCodeObject *code)
         _Py_NewReference((PyObject *)f);
     }
 
-    extras = code->co_nlocals + ncells + nfrees;
+    f->f_code = code;
+    Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
+    Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
+    Py_ssize_t extras = code->co_nlocals + ncells + nfrees;
     f->f_valuestack = f->f_localsplus + extras;
+    f->f_blockstack = (PyTryBlock *)(f->f_valuestack + code->co_stacksize);
     for (Py_ssize_t i=0; i < extras; i++) {
         f->f_localsplus[i] = NULL;
     }
@@ -875,7 +909,7 @@ void
 PyFrame_BlockSetup(PyFrameObject *f, int type, int handler, int level)
 {
     PyTryBlock *b;
-    if (f->f_iblock >= CO_MAXBLOCKS) {
+    if (f->f_iblock >= f->f_code->co_blockstacksize) {
         Py_FatalError("block stack overflow");
     }
     b = &f->f_blockstack[f->f_iblock++];

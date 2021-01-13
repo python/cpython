@@ -252,6 +252,25 @@ PyCode_NewWithPosOnlyArgs:PyObject*:name:0:
 PyCode_NewWithPosOnlyArgs:int:firstlineno::
 PyCode_NewWithPosOnlyArgs:PyObject*:lnotab:0:
 
+PyCode_NewWithBlockStackSize:PyCodeObject*::+1:
+PyCode_NewWithBlockStackSize:int:argcount::
+PyCode_NewWithBlockStackSize:int:posonlyargcount::
+PyCode_NewWithBlockStackSize:int:kwonlyargcount::
+PyCode_NewWithBlockStackSize:int:nlocals::
+PyCode_NewWithBlockStackSize:int:stacksize::
+PyCode_NewWithBlockStackSize:int:blockstacksize::
+PyCode_NewWithBlockStackSize:int:flags::
+PyCode_NewWithBlockStackSize:PyObject*:code:0:
+PyCode_NewWithBlockStackSize:PyObject*:consts:0:
+PyCode_NewWithBlockStackSize:PyObject*:names:0:
+PyCode_NewWithBlockStackSize:PyObject*:varnames:0:
+PyCode_NewWithBlockStackSize:PyObject*:freevars:0:
+PyCode_NewWithBlockStackSize:PyObject*:cellvars:0:
+PyCode_NewWithBlockStackSize:PyObject*:filename:0:
+PyCode_NewWithBlockStackSize:PyObject*:name:0:
+PyCode_NewWithBlockStackSize:int:firstlineno::
+PyCode_NewWithBlockStackSize:PyObject*:lnotab:0:
+
 PyCode_New:PyCodeObject*::+1:
 PyCode_New:int:argcount::
 PyCode_New:int:kwonlyargcount::

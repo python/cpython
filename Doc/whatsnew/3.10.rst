@@ -578,6 +578,9 @@ Other Language Changes
   ``__globals__["__builtins__"]`` if it exists, else from the current builtins.
   (Contributed by Mark Shannon in :issue:`42990`.)
 
+* The block stack size for :class:`frame` objects is now unlimited (previously
+  was limited to 20).
+  (Contributed by Thomas Anderson in :issue:`42917`.)
 
 New Modules
 ===========
@@ -914,7 +917,6 @@ Optimizations
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
 
-
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
   bytecode level. It is now around 2 times faster to create a function with
@@ -925,6 +927,11 @@ Optimizations
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
   algorithm to avoid quadratic behavior on long strings.  (Contributed
   by Dennis Sweeney in :issue:`41972`)
+
+* Reduced size of stack :class:`frame` objects by more than half for typical
+  functions.
+  (Contributed by Thomas Anderson in :issue:`42917`.)
+
 
 Deprecated
 ==========
@@ -1112,6 +1119,9 @@ Changes in the Python API
   also inherits the current builtins.
   (Contributed by Victor Stinner in :issue:`42990`.)
 
+* :meth:`code.__new__` now takes a *co_blockstacksize* argument.
+  (Contributed by Thomas Anderson in :issue:`42917`.)
+
 CPython bytecode changes
 ========================
 
@@ -1278,6 +1288,10 @@ Porting to Python 3.10
   included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`)
+
+* Usages of :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` should
+  be updated to use :c:func:`PyCode_NewWithBlockSize`.
+  (Contributed by Thomas Anderson in :issue:`42917`.)
 
 Deprecated
 ----------
