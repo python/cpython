@@ -830,7 +830,7 @@ Fetches several rows from the resultset.
 
 static PyObject *
 pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
-/*[clinic end generated code: output=a8ef31fea64d0906 input=ed86f9895a4d3796]*/
+/*[clinic end generated code: output=a8ef31fea64d0906 input=c527dc13615e01d7]*/
 {
     PyObject* row;
     PyObject* list;
