@@ -138,7 +138,7 @@ pysqlite_cursor_fetchone(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
-"fetchmany($self, /, size=cursor.arraysize)\n"
+"fetchmany($self, /, size=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Fetches several rows from the resultset.");
@@ -256,4 +256,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=11db0de4fb1951a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b5ffd9029d33cd8 input=a9049054013a1b77]*/
