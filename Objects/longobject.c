@@ -4351,7 +4351,7 @@ PyLongObject* addition_chain(
     }
     else {
         // Make sure we have a long in the table, because it could be something int-like
-        temp = (PyLongObject*)long_long(a);
+        temp = (PyLongObject*)long_long((PyObject*)a);
         if (temp == NULL)
             goto Error;
     }
