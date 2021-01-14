@@ -2544,6 +2544,7 @@ class TestFlag(unittest.TestCase):
 
     def test_member_iter(self):
         Color = self.Color
+        self.assertEqual(list(Color.BLACK), [])
         self.assertEqual(list(Color.PURPLE), [Color.BLUE, Color.RED])
         self.assertEqual(list(Color.BLUE), [Color.BLUE])
         self.assertEqual(list(Color.GREEN), [Color.GREEN])
@@ -3090,6 +3091,7 @@ class TestIntFlag(unittest.TestCase):
 
     def test_member_iter(self):
         Color = self.Color
+        self.assertEqual(list(Color.BLACK), [])
         self.assertEqual(list(Color.PURPLE), [Color.BLUE, Color.RED])
         self.assertEqual(list(Color.BLUE), [Color.BLUE])
         self.assertEqual(list(Color.GREEN), [Color.GREEN])
