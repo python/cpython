@@ -1,0 +1,12 @@
+[Enum] Flags consisting of a single bit are now considered canonical, and
+will be the only flags returned from listing and iterating over a Flag class
+or a Flag member.  Multi-bit flags are considered aliases; they will be
+returned from lookups and operations that result in their value.
+
+For example:
+
+>>> class Color(Flag):     ...     BLACK = 0     ...     RED = 1     ...
+GREEN = 2     ...     BLUE = 4     ...     WHITE = 7     ...     >>>
+list(Color)     [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]     >>>
+Color(7)     <Color.WHITE: 7>     >>> Color.RED | Color.GREEN | Color.BLUE
+<Color.WHITE: 7>     >>> Color.RED & Color.GREEN     <Color.BLACK: 0>
