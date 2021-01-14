@@ -10,7 +10,7 @@ __all__ = [
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
         'auto', 'unique',
         'property',
-        'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT',
+        'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         ]
 
 
@@ -65,18 +65,21 @@ def _is_private(cls_name, name):
         return False
 
 def _bits(num):
-    # return str(num) if num<=1 else bin(num>>1) + str(num&1)
-    if num in (0, 1):
-        return str(num)
+    if num == 0:
+        return '0b0'
     negative = False
     if num < 0:
         negative = True
         num = ~num
-    result = _bits(num>>1) + str(num&1)
+    digits = []
+    while num:
+        digits.insert(0, num&1)
+        num >>= 1
     if negative:
-        result = '1' + ''.join(['10'[d=='1'] for d in result])
+        result = '0b1' + (''.join(['10'[d] for d in digits]).lstrip('0'))
+    else:
+        result = '0b0' + ''.join(str(d) for d in digits)
     return result
-
 
 def _bit_count(num):
     """
@@ -130,6 +133,8 @@ def _is_single_bit(num):
     """
     True if only one bit set in num (should be an int)
     """
+    if num == 0:
+        return False
     num &= num - 1
     return num == 0
 
@@ -442,6 +447,7 @@ class EnumMeta(type):
         classdict['_boundary_'] = boundary or getattr(first_enum, '_boundary_', None)
         classdict['_flag_mask_'] = flag_mask
         classdict['_all_bits_'] = 2 ** ((flag_mask).bit_length()) - 1
+        classdict['_inverted_'] = None
         #
         # If a custom type is mixed into the Enum, and it does not know how
         # to pickle itself, pickle.dumps will succeed but pickle.loads will
@@ -507,6 +513,7 @@ class EnumMeta(type):
             delattr(enum_class, '_boundary_')
             delattr(enum_class, '_flag_mask_')
             delattr(enum_class, '_all_bits_')
+            delattr(enum_class, '_inverted_')
         elif Flag is not None and issubclass(enum_class, Flag):
             # ensure _all_bits_ is correct and there are no missing flags
             single_bit_total = 0
@@ -524,7 +531,7 @@ class EnumMeta(type):
                 all_bit_total |= i
                 if i & multi_bit_total and not i & single_bit_total:
                     missed.append(i)
-            if missed:
+            if missed and enum_class._boundary_ is not KEEP:
                 raise TypeError('invalid Flag %r -- missing values: %s' % (cls, ', '.join((str(i) for i in missed))))
             enum_class._flag_mask_ = single_bit_total
         #
@@ -536,7 +543,12 @@ class EnumMeta(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1):
+    def __call__(
+                cls, value, names=None,
+                *,
+                module=None, qualname=None, type=None,
+                start=1, boundary=None,
+        ):
         """
         Either returns an existing member, or creates a new enum class.
 
@@ -571,6 +583,7 @@ class EnumMeta(type):
                 qualname=qualname,
                 type=type,
                 start=start,
+                boundary=boundary,
                 )
 
     def __contains__(cls, member):
@@ -653,7 +666,12 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(cls, class_name, names, *, module=None, qualname=None, type=None, start=1):
+    def _create_(
+                cls, class_name, names,
+                *,
+                module=None, qualname=None, type=None,
+                start=1, boundary=None,
+        ):
         """
         Convenience method to create a new Enum class.
 
@@ -703,9 +721,12 @@ class EnumMeta(type):
         if qualname is not None:
             classdict['__qualname__'] = qualname
 
-        return metacls.__new__(metacls, class_name, bases, classdict)
+        return metacls.__new__(
+                metacls, class_name, bases, classdict,
+                boundary=boundary,
+                )
 
-    def _convert_(cls, name, module, filter, source=None):
+    def _convert_(cls, name, module, filter, source=None, boundary=None):
         """
         Create a new Enum subclass that replaces a collection of global constants
         """
@@ -732,7 +753,7 @@ class EnumMeta(type):
         except TypeError:
             # unless some values aren't comparable, in which case sort by name
             members.sort(key=lambda t: t[0])
-        cls = cls(name, members, module=module)
+        cls = cls(name, members, module=module, boundary=boundary or KEEP)
         cls.__reduce_ex__ = _reduce_ex_by_name
         module_globals.update(cls.__members__)
         module_globals[name] = cls
@@ -847,6 +868,7 @@ class Enum(metaclass=EnumMeta):
 
     Derive from this class to define new enumerations.
     """
+
     def __new__(cls, value):
         # all enum instances are actually created during class construction
         # without calling this method; this method is called by the metaclass'
@@ -1026,11 +1048,13 @@ class FlagBoundary(StrEnum):
     "strict" -> error is raised  [default for Flag]
     "conform" -> extra bits are discarded
     "eject" -> lose flag status [default for IntFlag]
+    "keep" -> keep flag status and all bits
     """
     STRICT = auto()
     CONFORM = auto()
     EJECT = auto()
-STRICT, CONFORM, EJECT = FlagBoundary
+    KEEP = auto()
+STRICT, CONFORM, EJECT, KEEP = FlagBoundary
 
 
 class Flag(Enum, boundary=STRICT):
@@ -1088,15 +1112,21 @@ class Flag(Enum, boundary=STRICT):
                 value = value & cls._flag_mask_
             elif cls._boundary_ is EJECT:
                 return value
+            elif cls._boundary_ is KEEP:
+                if value < 0:
+                    value = max(cls._all_bits_+1, 2**(value.bit_length())) + value
             else:
                 raise ValueError('unknown flag boundary: %r' % (cls._boundary_, ))
-        elif value < 0:
+        if value < 0:
             neg_value = value
             value = cls._all_bits_ + 1 + value
         # get members
-        members, _ = _decompose(cls, value)
-        if _:
-            raise ValueError('%s: _decompose(%r) --> %r, %r' % (cls.__name__, value, members, _))
+        members, unknown = _decompose(cls, value)
+        if unknown and cls._boundary_ is not KEEP:
+            raise ValueError(
+                    '%s: _decompose(%r) --> %r, %r'
+                    % (cls.__name__, value, members, unknown)
+                    )
         # normal Flag?
         __new__ = getattr(cls, '__new_member__', None)
         if cls._member_type_ is object and not __new__:
@@ -1106,12 +1136,19 @@ class Flag(Enum, boundary=STRICT):
             pseudo_member = (__new__ or cls._member_type_.__new__)(cls, value)
         if not hasattr(pseudo_member, 'value'):
             pseudo_member._value_ = value
-        pseudo_member._name_ = '|'.join([m._name_ for m in members]) or None
+        if members:
+            pseudo_member._name_ = '|'.join([m._name_ for m in members])
+            if unknown:
+                pseudo_member._name_ += '|0x%x' % unknown
+        else:
+            pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite
-        # with this value
-        pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
-        if neg_value is not None:
-            cls._value2member_map_[neg_value] = pseudo_member
+        # with this value, but only if all members are known
+        # note: zero is a special case -- add it
+        if not unknown:
+            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+            if neg_value is not None:
+                cls._value2member_map_[neg_value] = pseudo_member
         return pseudo_member
 
     def __contains__(self, other):
@@ -1146,7 +1183,7 @@ class Flag(Enum, boundary=STRICT):
         if self._name_ is not None:
             return '%s.%s' % (cls.__name__, self._name_)
         else:
-            return '%s.%s' % (cls.__name__, self._value_)
+            return '%s(%s)' % (cls.__name__, self._value_)
 
     def __bool__(self):
         return bool(self._value_)
@@ -1167,12 +1204,19 @@ class Flag(Enum, boundary=STRICT):
         return self.__class__(self._value_ ^ other._value_)
 
     def __invert__(self):
-        current = set(list(self))
-        return self.__class__(reduce(
-                _or_,
-                [m._value_ for m in self.__class__ if m not in current],
-                0,
-                ))
+        if self._inverted_ is None:
+            if self._boundary_ is KEEP:
+                # use all bits
+                self._inverted_ = self.__class__(~self._value_)
+            else:
+                # get flags not in this member
+                self._inverted_ = self.__class__(reduce(
+                        _or_,
+                        [m._value_ for m in self.__class__ if m not in self],
+                        0
+                        ))
+            self._inverted_._inverted_ = self
+        return self._inverted_
 
 
 class IntFlag(int, Flag, boundary=EJECT):
@@ -1255,6 +1299,9 @@ def _decompose(flag, value):
                 ]
         possibles.sort(key=lambda m: m._value_, reverse=True)
         for multi in possibles:
+            if multi._value_ == 0:
+                # do not add the zero flag
+                continue
             if multi._value_ & value == multi._value_:
                 members.append(multi)
                 value ^= multi._value_            

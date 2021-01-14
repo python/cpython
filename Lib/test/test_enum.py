@@ -2279,12 +2279,12 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(str(Perm.X), 'Perm.X')
         self.assertEqual(str(Perm.R | Perm.W), 'Perm.R|W')
         self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'Perm.R|W|X')
-        self.assertEqual(str(Perm(0)), 'Perm.0')
+        self.assertEqual(str(Perm(0)), 'Perm(0)')
         self.assertEqual(str(~Perm.R), 'Perm.W|X')
         self.assertEqual(str(~Perm.W), 'Perm.R|X')
         self.assertEqual(str(~Perm.X), 'Perm.R|W')
         self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm.0')
+        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
         self.assertEqual(str(Perm(~0)), 'Perm.R|W|X')
 
         Open = self.Open
@@ -2421,6 +2421,11 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(Space(11), 11)
         self.assertTrue(type(Space(11)) is int)
 
+    def test_iter(self):
+        Color = self.Color
+        Open = self.Open
+        self.assertEqual(list(Color), [Color.RED, Color.GREEN, Color.BLUE])
+        self.assertEqual(list(Open), [Open.WO, Open.RW, Open.CE])
 
     def test_programatic_function_string(self):
         Perm = Flag('Perm', 'R W X')
@@ -2762,13 +2767,13 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Perm.R | Perm.W), 'Perm.R|W')
         self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'Perm.R|W|X')
         self.assertEqual(str(Perm.R | 8), '12')
-        self.assertEqual(str(Perm(0)), 'Perm.0')
+        self.assertEqual(str(Perm(0)), 'Perm(0)')
         self.assertEqual(str(Perm(8)), '8')
         self.assertEqual(str(~Perm.R), 'Perm.W|X')
         self.assertEqual(str(~Perm.W), 'Perm.R|X')
         self.assertEqual(str(~Perm.X), 'Perm.R|W')
         self.assertEqual(str(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm.0')
+        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
         self.assertEqual(str(~(Perm.R | 8)), '-13')
         self.assertEqual(str(Perm(~0)), 'Perm.R|W|X')
         self.assertEqual(str(Perm(~8)), '-9')
@@ -2937,6 +2942,12 @@ class TestIntFlag(unittest.TestCase):
         self.assertIs(Water(11), Water.ONE|Water.TWO)
         self.assertEqual(Space(11), 11)
         self.assertTrue(type(Space(11)) is int)
+
+    def test_iter(self):
+        Color = self.Color
+        Open = self.Open
+        self.assertEqual(list(Color), [Color.RED, Color.GREEN, Color.BLUE])
+        self.assertEqual(list(Open), [Open.WO, Open.RW, Open.CE])
 
     def test_programatic_function_string(self):
         Perm = IntFlag('Perm', 'R W X')
@@ -3256,7 +3267,7 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
+ |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
  |\x20\x20
  |  An enumeration.
  |\x20\x20
