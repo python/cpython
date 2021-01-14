@@ -7,7 +7,7 @@ import unittest
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, StrEnum, EnumMeta, Flag, IntFlag, unique, auto
-from enum import STRICT, CONFORM, EJECT
+from enum import STRICT, CONFORM, EJECT, KEEP
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -2409,26 +2409,38 @@ class TestFlag(unittest.TestCase):
             self.assertEqual(bool(f.value), bool(f))
 
     def test_boundary(self):
+        self.assertIs(enum.Flag._boundary_, STRICT)
         class Iron(Flag, boundary=STRICT):
             ONE = 1
             TWO = 2
             EIGHT = 8
+        self.assertIs(Iron._boundary_, STRICT)
         #
         class Water(Flag, boundary=CONFORM):
             ONE = 1
             TWO = 2
             EIGHT = 8
+        self.assertIs(Water._boundary_, CONFORM)
         #
         class Space(Flag, boundary=EJECT):
             ONE = 1
             TWO = 2
             EIGHT = 8
+        self.assertIs(Space._boundary_, EJECT)
+        #
+        class Bizarre(Flag, boundary=KEEP):
+            b = 3
+            c = 4
+            d = 6
         #
         self.assertRaisesRegex(ValueError, 'invalid value: 7', Iron, 7)
         self.assertIs(Water(7), Water.ONE|Water.TWO)
         self.assertIs(Water(~9), Water.TWO)
         self.assertEqual(Space(7), 7)
         self.assertTrue(type(Space(7)) is int)
+        self.assertEqual(list(Bizarre), [Bizarre.c])
+        self.assertIs(Bizarre(3), Bizarre.b)
+        self.assertIs(Bizarre(6), Bizarre.d)
 
     def test_iter(self):
         Color = self.Color
@@ -2573,6 +2585,8 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(Color(7).name, 'WHITE')
         self.assertEqual(Color['BLANCO'].name, 'WHITE')
         self.assertIs(Color.BLANCO, Color.WHITE)
+        Open = self.Open
+        self.assertIs(Open['AC'], Open.AC)
 
     def test_auto_number(self):
         class Color(Flag):
@@ -2599,7 +2613,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
     def test_bizarre(self):
-        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 1, 2"):
+        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 2, 1"):
             class Bizarre(Flag):
                 b = 3
                 c = 4
@@ -2933,26 +2947,38 @@ class TestIntFlag(unittest.TestCase):
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
     def test_boundary(self):
+        self.assertIs(enum.IntFlag._boundary_, EJECT)
         class Iron(IntFlag, boundary=STRICT):
             ONE = 1
             TWO = 2
             EIGHT = 8
+        self.assertIs(Iron._boundary_, STRICT)
         #
         class Water(IntFlag, boundary=CONFORM):
             ONE = 1
             TWO = 2
             EIGHT = 8
+        self.assertIs(Water._boundary_, CONFORM)
         #
         class Space(IntFlag, boundary=EJECT):
             ONE = 1
             TWO = 2
             EIGHT = 8
+        self.assertIs(Space._boundary_, EJECT)
+        #
+        class Bizarre(IntFlag, boundary=KEEP):
+            b = 3
+            c = 4
+            d = 6
         #
         self.assertRaisesRegex(ValueError, 'invalid value: 5', Iron, 5)
         self.assertIs(Water(7), Water.ONE|Water.TWO)
         self.assertIs(Water(~9), Water.TWO)
         self.assertEqual(Space(7), 7)
         self.assertTrue(type(Space(7)) is int)
+        self.assertEqual(list(Bizarre), [Bizarre.c])
+        self.assertIs(Bizarre(3), Bizarre.b)
+        self.assertIs(Bizarre(6), Bizarre.d)
 
     def test_iter(self):
         Color = self.Color
@@ -3120,6 +3146,8 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(Color(7).name, 'WHITE')
         self.assertEqual(Color['BLANCO'].name, 'WHITE')
         self.assertIs(Color.BLANCO, Color.WHITE)
+        Open = self.Open
+        self.assertIs(Open['AC'], Open.AC)
 
     def test_bool(self):
         Perm = self.Perm
@@ -3128,6 +3156,13 @@ class TestIntFlag(unittest.TestCase):
         Open = self.Open
         for f in Open:
             self.assertEqual(bool(f.value), bool(f))
+
+    def test_bizarre(self):
+        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 2, 1"):
+            class Bizarre(IntFlag):
+                b = 3
+                c = 4
+                d = 6
 
     def test_multiple_mixin(self):
         class AllMixin:

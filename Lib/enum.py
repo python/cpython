@@ -116,20 +116,10 @@ def _bit_count(num):
     (from https://wiki.python.org/moin/BitManipulation)
     """
     count = 0
-    while(num):
+    while num:
         num &= num - 1
         count += 1
-    return(count)
-
-def _bit_len(num):
-    """
-    return number of bits required to represent num
-    """
-    length = 0
-    while num:
-        length += 1
-        num >>= 1
-    return length
+    return count
 
 def _is_single_bit(num):
     """
@@ -511,7 +501,7 @@ class EnumMeta(type):
                 raise TypeError('member order does not match _order_')
         #
         # remove Flag structures if final class is not a Flag
-        if Flag is None or not issubclass(enum_class, Flag):
+        if Flag is None and cls != 'Flag' or Flag is not None and not issubclass(enum_class, Flag):
             delattr(enum_class, '_boundary_')
             delattr(enum_class, '_flag_mask_')
             delattr(enum_class, '_all_bits_')
@@ -526,15 +516,15 @@ class EnumMeta(type):
                 else:
                     # multi-bit flags are considered aliases
                     multi_bit_total |= flag._value_
-            missed = []
-            all_bit_total = 0
-            for i in range(_bit_len(max(single_bit_total, multi_bit_total))):
-                i = 2**i
-                all_bit_total |= i
-                if i & multi_bit_total and not i & single_bit_total:
+            if enum_class._boundary_ is not KEEP:
+                missed_bits = multi_bit_total & ~single_bit_total
+                missed = []
+                while missed_bits:
+                    i = 2 ** (missed_bits.bit_length() - 1)
                     missed.append(i)
-            if missed and enum_class._boundary_ is not KEEP:
-                raise TypeError('invalid Flag %r -- missing values: %s' % (cls, ', '.join((str(i) for i in missed))))
+                    missed_bits &= ~i
+                if missed:
+                    raise TypeError('invalid Flag %r -- missing values: %s' % (cls, ', '.join((str(i) for i in missed))))
             enum_class._flag_mask_ = single_bit_total
         #
         return enum_class
@@ -1075,12 +1065,11 @@ class Flag(Enum, boundary=STRICT):
         """
         if not count:
             return start if start is not None else 1
-        for last_value in reversed(last_values):
-            try:
-                high_bit = _high_bit(last_value)
-                break
-            except Exception:
-                raise TypeError('Invalid Flag value: %r' % last_value) from None
+        last_value = max(last_values)
+        try:
+            high_bit = _high_bit(last_value)
+        except Exception:
+            raise TypeError('Invalid Flag value: %r' % last_value) from None
         return 2 ** (high_bit+1)
 
     @classmethod
@@ -1100,7 +1089,7 @@ class Flag(Enum, boundary=STRICT):
             ):
             if cls._boundary_ is STRICT:
                 invalid_as_bits = _bits(value)
-                length = max(len(invalid_as_bits), _bit_len(cls._flag_mask_))
+                length = max(len(invalid_as_bits), cls._flag_mask_.bit_length())
                 valid_as_bits = ('0' * length + _bits(cls._flag_mask_))[-length:]
                 invalid_as_bits = ('01'[value<0] * length + invalid_as_bits)[-length:]
                 raise ValueError(
@@ -1169,13 +1158,13 @@ class Flag(Enum, boundary=STRICT):
         """
         Returns flags in decreasing value order.
         """
-        return (
-                m
-                for m in sorted(
-                    self.__class__, key=lambda m: m._value_, reverse=True
-                    )
-                if m._value_ & self._value_
-                )
+        val = self._value_
+        while val:
+            i = 2 ** (val.bit_length() - 1)
+            member = self._value2member_map_.get(i)
+            if member is not None:
+                yield member
+            val &= ~i
 
     def __len__(self):
         return _bit_count(self._value_)
@@ -1219,12 +1208,8 @@ class Flag(Enum, boundary=STRICT):
                 # use all bits
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # get flags not in this member
-                self._inverted_ = self.__class__(reduce(
-                        _or_,
-                        [m._value_ for m in self.__class__ if m not in self],
-                        0
-                        ))
+                # calculate flags not in this member
+                self._inverted_ = self.__class__(self._flag_mask_ ^ self._value_)
             self._inverted_._inverted_ = self
         return self._inverted_
 
@@ -1292,35 +1277,18 @@ def unique(enumeration):
 
 def _decompose(flag, value):
     """Extract all members from the value."""
-    negative = value < 0
-    if negative:
-        value = ~value
     members = []
-    for member in flag:
-        if value & member._value_:
+    val = value
+    unknown = 0
+    while val:
+        i = 2 ** (val.bit_length() - 1)
+        member = flag._value2member_map_.get(i)
+        if member is None:
+            unknown |= i
+        else:
             members.append(member)
-            value ^= member._value_
-    if value:
-        # check value2member_map
-        possibles = [
-                m
-                for v, m in list(flag._value2member_map_.items())
-                if m not in flag
-                ]
-        possibles.sort(key=lambda m: m._value_, reverse=True)
-        for multi in possibles:
-            if multi._value_ == 0:
-                # do not add the zero flag
-                continue
-            if multi._value_ & value == multi._value_:
-                members.append(multi)
-                value ^= multi._value_
-    if negative:
-        members = [m for m in flag if m not in members]
-        if value:
-            value = ~value
-    members.sort(key=lambda m: m._value_, reverse=True)
-    return members, value
+        val &= ~i
+    return members, unknown
 
 def _power_of_two(value):
     if value < 1:
