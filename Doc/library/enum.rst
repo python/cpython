@@ -715,8 +715,8 @@ be combined with them (but may lose :class:`IntFlag` membership::
     The negation operator, ``~``, always returns an :class:`IntFlag` member with a
     positive value::
 
-    >>> ~Perm.X
-    <Perm.R|W: 6>
+        >>> (~Perm.X).value == (Perm.R|Perm.W).value == 6
+        True
 
 :class:`IntFlag` members can also be iterated over::
 
