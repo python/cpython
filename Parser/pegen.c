@@ -265,6 +265,16 @@ raise_decode_error(Parser *p)
     return -1;
 }
 
+static inline void
+raise_unclosed_parentheses_error(Parser *p) {
+       int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
+       int error_col = p->tok->parencolstack[p->tok->level-1];
+       RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
+                                  error_lineno, error_col,
+                                  "'%c' was never closed",
+                                  p->tok->parenstack[p->tok->level-1]);
+}
+
 static void
 raise_tokenizer_init_error(PyObject *filename)
 {
@@ -325,11 +335,7 @@ tokenizer_error(Parser *p)
             return -1;
         case E_EOF:
             if (p->tok->level) {
-                RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
-                                           p->tok->parenlinenostack[p->tok->level-1],
-                                           p->tok->parencolstack[p->tok->level-1],
-                                           "'%c' was never closed",
-                                           p->tok->parenstack[p->tok->level-1]);
+                raise_unclosed_parentheses_error(p);
             } else {
                 RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
             }
@@ -1159,7 +1165,7 @@ reset_parser_state(Parser *p)
     p->call_invalid_rules = 1;
 }
 
-int
+static int
 _PyPegen_check_tokenizer_errors(Parser *p) {
     // Tokenize the whole input to see if there are any tokenization
     // errors such as mistmatching parentheses. These will get priority
@@ -1187,12 +1193,8 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         if (type == ERRORTOKEN) {
             if (p->tok->level != 0) {
                 int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
-                int error_col = p->tok->parencolstack[p->tok->level-1];
                 if (current_err_line > error_lineno) {
-                    RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
-                                               error_lineno, error_col,
-                                               "'%c' was never closed",
-                                               p->tok->parenstack[p->tok->level-1]);
+                    raise_unclosed_parentheses_error(p);
                     return -1;
                 }
             }
@@ -1221,11 +1223,7 @@ _PyPegen_run_parser(Parser *p)
         }
        else if (p->tok->done == E_EOF) {
             if (p->tok->level) {
-                RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
-                                           p->tok->parenlinenostack[p->tok->level-1],
-                                           p->tok->parencolstack[p->tok->level-1],
-                                           "'%c' was never closed",
-                                           p->tok->parenstack[p->tok->level-1]);
+                raise_unclosed_parentheses_error(p);
             } else {
                 RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
             }
