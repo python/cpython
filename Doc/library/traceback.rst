@@ -217,10 +217,10 @@ capture data for later printing in a lightweight fashion.
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
 
-   If *compact* is true, only data that is required for :method:`format`
-   is saved in the class attributes. In particular, the ``__context__`` field
-   is calculated only if ``__cause__`` is ``None`` and ``__suppress_context__``
-   is false.
+   If *compact* is true, only data that is required by :class:`TracebackException`'s
+   ``format`` method is saved in the class attributes. In particular, the
+   ``__context__`` field is calculated only if ``__cause__`` is ``None`` and
+   ``__suppress_context__`` is false.
 
    Note that when locals are captured, they are also shown in the traceback.
 
