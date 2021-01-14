@@ -37,6 +37,7 @@ struct tok_state {
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
     const char *prompt, *nextprompt;          /* For interactive prompting */
+    char *stdin_content;
     int lineno;         /* Current line number */
     int first_lineno;   /* First line of a single line or multi line string
                            expression (cf. issue 16806) */
