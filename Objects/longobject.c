@@ -3978,7 +3978,7 @@ long_mod(PyObject *a, PyObject *b)
 
     if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
         return fast_mod((PyLongObject*)a, (PyLongObject*)b);
-    }b
+    }
 
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, NULL, &mod) < 0)
         mod = NULL;
