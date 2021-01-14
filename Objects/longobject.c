@@ -3978,7 +3978,7 @@ long_mod(PyObject *a, PyObject *b)
 
     if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
         return fast_mod((PyLongObject*)a, (PyLongObject*)b);
-    }
+    }b
 
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, NULL, &mod) < 0)
         mod = NULL;
@@ -4350,10 +4350,12 @@ PyLongObject* addition_chain(
         table[0] = temp;
         temp = NULL;
     }
-    else {
-        table[0] = (PyLongObject*)a;
-    }
-    Py_INCREF(table[0]);
+    // Make sure we have a long in the table, because it could be copied
+    temp = (PyLongObject*)long_long(a);
+    if (temp == NULL)
+        goto Error;
+    table[0] = temp;
+    temp = NULL;
     tableSize = 0;
 
     // Skip the computation of aSquared for exponent 1
