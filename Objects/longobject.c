@@ -4342,18 +4342,19 @@ PyLongObject* addition_chain(
     if (!currentDigit)
         return (PyLongObject*)PyLong_FromLong(1L);
 
-    // Prepare the table
+    // Prepare the table by storing a in table[0]
+    / table[0] could be the result of the call
     // since a can be > c, it must be reduced
     if (c != NULL) {
         if (l_divmod(a, c, NULL, &temp) < 0)
             goto Error;
-        table[0] = temp;
-        temp = NULL;
     }
-    // Make sure we have a long in the table, because it could be copied
-    temp = (PyLongObject*)long_long(a);
-    if (temp == NULL)
-        goto Error;
+    else {
+        // Make sure we have a long in the table, because it could be something int-like
+        temp = (PyLongObject*)long_long(a);
+        if (temp == NULL)
+            goto Error;
+    }
     table[0] = temp;
     temp = NULL;
     tableSize = 0;
@@ -4361,7 +4362,7 @@ PyLongObject* addition_chain(
     // Skip the computation of aSquared for exponent 1
     // because it isn't used
     if (restOfDigits || (currentDigit > 1))
-        MULTMODC(a, a, aSquared);
+        MULTMODC(table[0], table[0], aSquared);
 
     // The loop does this
     // Find a power of at most chunkSize bits that is odd
