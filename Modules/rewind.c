@@ -51,7 +51,9 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
             fprintf(rewindLog, ", ");
         }
         PyObject *obj = *p;
-        if (obj != NULL) {
+        if (obj == NULL) {
+            fprintf(rewindLog, "None");
+        } else {
             Rewind_serializeObject(rewindLog, obj);
         }
     }
