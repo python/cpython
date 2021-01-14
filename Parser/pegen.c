@@ -1177,33 +1177,36 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         return 0;
     }
 
-    const char *start;
-    const char *end;
-    int type;
 
     Token *current_token = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t current_err_line = current_token->lineno;
 
-    // Save the tokenizer buffers to restore them later in case we found nothing
+    // Save the tokenizer state to restore them later in case we found nothing
     struct tok_state saved_tok;
     memcpy(&saved_tok, p->tok, sizeof(struct tok_state));
 
-    while (1) {
-        type = PyTokenizer_Get(p->tok, &start, &end);
-        if (type == ERRORTOKEN) {
-            if (p->tok->level != 0) {
-                int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
-                if (current_err_line > error_lineno) {
-                    raise_unclosed_parentheses_error(p);
-                    return -1;
+    for (;;) {
+        const char *start;
+        const char *end;
+        switch (PyTokenizer_Get(p->tok, &start, &end)) {
+            case ERRORTOKEN:
+                if (p->tok->level != 0) {
+                    int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
+                    if (current_err_line > error_lineno) {
+                        raise_unclosed_parentheses_error(p);
+                        return -1;
+                    }
                 }
-            }
-            break;
+                break;
+            case ENDMARKER:
+                break;
+            default:
+                continue;
         }
-        if (type == ENDMARKER) {
-            break;
-        }
+        break;
     }
+
+    // Restore the tokenizer state
     memcpy(p->tok, &saved_tok, sizeof(struct tok_state));
     return 0;
 }
