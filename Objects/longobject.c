@@ -4225,7 +4225,7 @@ prepare_pow(PyLongObject* n, uint64_t* firstDigits, Py_ssize_t* restOfDigits)
         switch (upperBits >> (bitLength - 4)) {
         case 8:
         case 12:
-            if (bitLength < 14 || hamming2 < 4 + 25 / (bitLength - 14))
+            if (bitLength <= 14 || hamming2 < 4 + 25 / (bitLength - 14))
                 return 2;
             break;
         case 9:
@@ -4568,6 +4568,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 goto Error;
             Py_DECREF(a);
             a = temp;
+            temp = NULL;
         }
 
         /* Reduce base by modulus in some cases:
@@ -4609,10 +4610,10 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     Py_CLEAR(z);
     /* fall through */
   Done:
+    assert(temp == NULL);
     Py_DECREF(a);
     Py_DECREF(b);
     Py_XDECREF(c);
-    Py_XDECREF(temp);
     return (PyObject *)z;
 }
 
