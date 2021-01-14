@@ -380,6 +380,27 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     return NULL;
 }
 
+static PyObject *
+get_error_line(Parser *p, Py_ssize_t lineno)
+{
+    /* If p->tok->fp == NULL, then we're parsing from a string, which means that
+       the whole source is stored in p->tok->str. If not, then we're parsing
+       from the REPL, so the source lines of the current (multi-line) statement
+       are stored in p->tok->stdin_content */
+    assert(p->tok->fp == NULL || p->tok->fp == stdin);
+
+    char *cur_line = p->tok->fp == NULL ? p->tok->str : p->tok->stdin_content;
+    for (int i = 0; i < lineno - 1; i++) {
+        cur_line = strchr(cur_line, '\n') + 1;
+    }
+
+    char *next_newline;
+    if ((next_newline = strchr(cur_line, '\n')) == NULL) { // This is the last line
+        next_newline = cur_line + strlen(cur_line);
+    }
+    return PyUnicode_DecodeUTF8(cur_line, next_newline - cur_line, "replace");
+}
+
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -416,8 +437,22 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (!error_line) {
-        Py_ssize_t size = p->tok->inp - p->tok->buf;
-        error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        /* PyErr_ProgramTextObject was not called or returned NULL. If it was not called,
+           then we need to find the error line from some other source, because
+           p->start_rule != Py_file_input. If it returned NULL, then it either unexpectedly
+           failed or we're parsing from a string or the REPL. There's a third edge case where
+           we're actually parsing from a file, which has an E_EOF SyntaxError and in that case
+           `PyErr_ProgramTextObject` fails because lineno points to last_file_line + 1, which
+           does not physically exist */
+        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
+
+        if (p->tok->lineno == lineno) {
+            Py_ssize_t size = p->tok->inp - p->tok->buf;
+            error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
+        }
+        else {
+            error_line = get_error_line(p, lineno);
+        }
         if (!error_line) {
             goto error;
         }

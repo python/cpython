@@ -1,0 +1,2 @@
+Fix a crash when working out the error line of a :exc:`SyntaxError` in some
+multi-line expressions.
