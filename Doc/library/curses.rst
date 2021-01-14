@@ -220,10 +220,14 @@ The module :mod:`curses` defines the following functions:
    multiple devices, and *x*, *y*, *z* are the event's coordinates.  (*z* is
    currently unused.)  *bstate* is an integer value whose bits will be set to
    indicate the type of event, and will be the bitwise OR of one or more of the
-   following constants, where *n* is the button number from 1 to 4:
+   following constants, where *n* is the button number from 1 to 5:
    :const:`BUTTONn_PRESSED`, :const:`BUTTONn_RELEASED`, :const:`BUTTONn_CLICKED`,
    :const:`BUTTONn_DOUBLE_CLICKED`, :const:`BUTTONn_TRIPLE_CLICKED`,
    :const:`BUTTON_SHIFT`, :const:`BUTTON_CTRL`, :const:`BUTTON_ALT`.
+
+   .. versionchanged:: 3.10
+      The ``BUTTON5_*`` constants are now exposed if they are provided by the
+      underlying curses library.
 
 
 .. function:: getsyx()
