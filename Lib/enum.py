@@ -100,7 +100,8 @@ def _bit_count(num):
 
     * The C Programming Language 2nd Ed., Kernighan & Ritchie, 1988.
 
-    This works because each subtraction "borrows" from the lowest 1-bit. For example:
+    This works because each subtraction "borrows" from the lowest 1-bit. For
+    example:
 
           loop pass 1     loop pass 2
           -----------     -----------
@@ -110,8 +111,8 @@ def _bit_count(num):
              & 101000        & 100000
              = 100000        =      0
 
-    It is an excellent technique for Python, since the size of the integer need not
-    be determined beforehand.
+    It is an excellent technique for Python, since the size of the integer need
+    not be determined beforehand.
 
     (from https://wiki.python.org/moin/BitManipulation)
     """
@@ -166,22 +167,34 @@ class property(DynamicClassAttribute):
             try:
                 return ownerclass._member_map_[self.name]
             except KeyError:
-                raise AttributeError('%s: no attribute %r' % (ownerclass.__name__, self.name))
+                raise AttributeError(
+                        '%s: no attribute %r'
+                        % (ownerclass.__name__, self.name)
+                        )
         else:
             if self.fget is None:
-                raise AttributeError('%s: no attribute %r' % (ownerclass.__name__, self.name))
+                raise AttributeError(
+                        '%s: no attribute %r'
+                        % (ownerclass.__name__, self.name)
+                        )
             else:
                 return self.fget(instance)
 
     def __set__(self, instance, value):
         if self.fset is None:
-            raise AttributeError("%s: cannot set attribute %r" % (self.clsname, self.name))
+            raise AttributeError(
+                    "%s: cannot set attribute %r"
+                    % (self.clsname, self.name)
+                    )
         else:
             return self.fset(instance, value)
 
     def __delete__(self, instance):
         if self.fdel is None:
-            raise AttributeError("%s: cannot delete attribute %r" % (self.clsname, self.name))
+            raise AttributeError(
+                    "%s: cannot delete attribute %r"
+                    % (self.clsname, self.name)
+                    )
         else:
             return self.fdel(instance)
 
@@ -234,12 +247,19 @@ class _proto_member:
                 enum_member = canonical_member
                 break
         else:
-            # this could still be an alias if the value is multi-bit and the class
-            # is a flag class
-            if Flag is None or not issubclass(enum_class, Flag):
+            # this could still be an alias if the value is multi-bit and the
+            # class is a flag class
+            if (
+                    Flag is None
+                    or not issubclass(enum_class, Flag)
+                ):
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
-            elif Flag is not None and issubclass(enum_class, Flag) and _is_single_bit(value):
+            elif (
+                    Flag is not None
+                    and issubclass(enum_class, Flag)
+                    and _is_single_bit(value)
+                ):
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
         # get redirect in place before adding to _member_map_
@@ -261,8 +281,8 @@ class _proto_member:
             redirect = property()
             redirect.__set_name__(enum_class, member_name)
             if descriptor and need_override:
-                # previous enum.property found, but some other inherited attribute
-                # is in the way; copy fget, fset, fdel to this one
+                # previous enum.property found, but some other inherited
+                # attribute is in the way; copy fget, fset, fdel to this one
                 redirect.fget = descriptor.fget
                 redirect.fset = descriptor.fset
                 redirect.fdel = descriptor.fdel
@@ -310,13 +330,17 @@ class _EnumDict(dict):
                     '_generate_next_value_', '_missing_', '_ignore_',
                     ):
                 raise ValueError(
-                        '_sunder_ names, such as %r, are reserved for future Enum use'
+                        '_sunder_ names, such as %r, are reserved for future'
+                        ' Enum use'
                         % (key, )
                         )
             if key == '_generate_next_value_':
                 # check if members already defined as auto()
                 if self._auto_called:
-                    raise TypeError("_generate_next_value_ must be defined before members")
+                    raise TypeError(
+                            "_generate_next_value_ must be defined before"
+                            " members"
+                            )
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
                 if isinstance(value, str):
@@ -371,6 +395,7 @@ class EnumMeta(type):
     """
     Metaclass for Enum
     """
+
     @classmethod
     def __prepare__(metacls, cls, bases, **kwds):
         # check that previous enum members do not exist
@@ -436,7 +461,10 @@ class EnumMeta(type):
         classdict['_member_type_'] = member_type
         #
         # Flag structures (will be removed if final class is not a Flag
-        classdict['_boundary_'] = boundary or getattr(first_enum, '_boundary_', None)
+        classdict['_boundary_'] = (
+                boundary
+                or getattr(first_enum, '_boundary_', None)
+                )
         classdict['_flag_mask_'] = flag_mask
         classdict['_all_bits_'] = 2 ** ((flag_mask).bit_length()) - 1
         classdict['_inverted_'] = None
@@ -465,8 +493,9 @@ class EnumMeta(type):
             exc = None
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
         except RuntimeError as e:
-            # any exceptions raised by member.__new__ will get converted to a
-            # RuntimeError, so get that original exception back and raise it instead
+            # any exceptions raised by member.__new__ will get converted to
+            # a RuntimeError, so get that original exception back and raise
+            # it instead
             exc = e.__cause__ or e
         if exc is not None:
             raise exc
@@ -501,7 +530,10 @@ class EnumMeta(type):
                 raise TypeError('member order does not match _order_')
         #
         # remove Flag structures if final class is not a Flag
-        if Flag is None and cls != 'Flag' or Flag is not None and not issubclass(enum_class, Flag):
+        if (
+                Flag is None and cls != 'Flag'
+                or Flag is not None and not issubclass(enum_class, Flag)
+            ):
             delattr(enum_class, '_boundary_')
             delattr(enum_class, '_flag_mask_')
             delattr(enum_class, '_all_bits_')
@@ -524,7 +556,10 @@ class EnumMeta(type):
                     missed.append(i)
                     missed_bits &= ~i
                 if missed:
-                    raise TypeError('invalid Flag %r -- missing values: %s' % (cls, ', '.join((str(i) for i in missed))))
+                    raise TypeError(
+                            'invalid Flag %r -- missing values: %s'
+                            % (cls, ', '.join((str(i) for i in missed)))
+                            )
             enum_class._flag_mask_ = single_bit_total
         #
         return enum_class
@@ -553,7 +588,8 @@ class EnumMeta(type):
         `value` will be the name of the new class.
 
         `names` should be either a string of white-space/comma delimited names
-        (values will start at `start`), or an iterator/mapping of name, value pairs.
+        (values will start at `start`), or an iterator/mapping of name, value
+        pairs.
 
         `module` should be set to the module this class is being created in;
         if it is not set, an attempt to find that module will be made, but if
@@ -589,7 +625,10 @@ class EnumMeta(type):
         # nicer error message when someone tries to delete an attribute
         # (see issue19025).
         if attr in cls._member_map_:
-            raise AttributeError("%s: cannot delete Enum member %r." % (cls.__name__, attr))
+            raise AttributeError(
+                    "%s: cannot delete Enum member %r."
+                    % (cls.__name__, attr)
+                    )
         super().__delattr__(attr)
 
     def __dir__(self):
@@ -671,7 +710,8 @@ class EnumMeta(type):
 
         * A string containing member names, separated either with spaces or
           commas.  Values are incremented by 1 from `start`.
-        * An iterable of member names.  Values are incremented by 1 from `start`.
+        * An iterable of member names.  Values are incremented by 1 from
+          `start`.
         * An iterable of (member name, value) pairs.
         * A mapping of member name -> value pairs.
         """
@@ -679,18 +719,24 @@ class EnumMeta(type):
         bases = (cls, ) if type is None else (type, cls)
         _, first_enum = cls._get_mixins_(cls, bases)
         classdict = metacls.__prepare__(class_name, bases)
-
+        #
         # special processing needed for names?
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
-        if isinstance(names, (tuple, list)) and names and isinstance(names[0], str):
+        if (
+                isinstance(names, (tuple, list))
+                and names
+                and isinstance(names[0], str)
+            ):
             original_names, names = names, []
             last_values = []
             for count, name in enumerate(original_names):
-                value = first_enum._generate_next_value_(name, start, count, last_values[:])
+                value = first_enum._generate_next_value_(
+                        name, start, count, last_values[:]
+                        )
                 last_values.append(value)
                 names.append((name, value))
-
+        #
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
             if isinstance(item, str):
@@ -698,7 +744,7 @@ class EnumMeta(type):
             else:
                 member_name, member_value = item
             classdict[member_name] = member_value
-
+        #
         # TODO: replace the frame hack if a blessed way to know the calling
         # module is ever developed
         if module is None:
@@ -712,7 +758,7 @@ class EnumMeta(type):
             classdict['__module__'] = module
         if qualname is not None:
             classdict['__qualname__'] = qualname
-
+        #
         return metacls.__new__(
                 metacls, class_name, bases, classdict,
                 boundary=boundary,
@@ -771,7 +817,7 @@ class EnumMeta(type):
         """
         if not bases:
             return object, Enum
-
+        #
         def _find_data_type(bases):
             data_types = []
             for chain in bases:
@@ -791,12 +837,15 @@ class EnumMeta(type):
                     else:
                         candidate = base
             if len(data_types) > 1:
-                raise TypeError('%r: too many data types: %r' % (class_name, data_types))
+                raise TypeError(
+                        '%r: too many data types: %r'
+                        % (class_name, data_types)
+                        )
             elif data_types:
                 return data_types[0]
             else:
                 return None
-
+        #
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
@@ -821,10 +870,10 @@ class EnumMeta(type):
         # by the user; also check earlier enum classes in case a __new__ was
         # saved as __new_member__
         __new__ = classdict.get('__new__', None)
-
+        #
         # should __new__ be saved as __new_member__ later?
         save_new = __new__ is not None
-
+        #
         if __new__ is None:
             # check all possibles for __new_member__ before falling back to
             # __new__
@@ -843,7 +892,7 @@ class EnumMeta(type):
                     break
             else:
                 __new__ = object.__new__
-
+        #
         # if a non-object.__new__ is used then whatever value/tuple was
         # assigned to the enum member name will be passed to __new__ and to the
         # new enum member's __init__
@@ -895,12 +944,15 @@ class Enum(metaclass=EnumMeta):
             ):
             return result
         else:
-            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+            ve_exc = ValueError(
+                    "%r is not a valid %s" % (value, cls.__qualname__)
+                    )
             if result is None and exc is None:
                 raise ve_exc
             elif exc is None:
                 exc = TypeError(
-                        'error in %s._missing_: returned %r instead of None or a valid member'
+                        'error in %s._missing_: returned %r instead of None'
+                        ' or a valid member'
                         % (cls.__name__, result)
                         )
             if not isinstance(exc, ValueError):
@@ -954,7 +1006,7 @@ class Enum(metaclass=EnumMeta):
         # mixed-in Enums should use the mixed-in type's __format__, otherwise
         # we can get strange results with the Enum name showing up instead of
         # the value
-
+        #
         # pure Enum branch, or branch with __str__ explicitly overridden
         str_overridden = type(self).__str__ not in (Enum.__str__, Flag.__str__)
         if self._member_type_ is object or str_overridden:
@@ -1004,19 +1056,25 @@ class StrEnum(str, Enum):
 
     def __new__(cls, *values):
         if len(values) > 3:
-            raise TypeError('too many arguments for str(): %r' % (values, ))
+            raise TypeError(
+                    'too many arguments for str(): %r' % (values, )
+                    )
         if len(values) == 1:
             # it must be a string
             if not isinstance(values[0], str):
                 raise TypeError('%r is not a string' % (values[0], ))
-        if len(values) > 1:
+        if len(values) >= 2:
             # check that encoding argument is a string
             if not isinstance(values[1], str):
-                raise TypeError('encoding must be a string, not %r' % (values[1], ))
-            if len(values) > 2:
-                # check that errors argument is a string
-                if not isinstance(values[2], str):
-                    raise TypeError('errors must be a string, not %r' % (values[2], ))
+                raise TypeError(
+                        'encoding must be a string, not %r' % (values[1], )
+                        )
+        if len(values) == 3:
+            # check that errors argument is a string
+            if not isinstance(values[2], str):
+                raise TypeError(
+                        'errors must be a string, not %r' % (values[2], )
+                        )
         value = str(*values)
         member = str.__new__(cls, value)
         member._value_ = value
@@ -1078,10 +1136,13 @@ class Flag(Enum, boundary=STRICT):
         Create a composite member iff value contains only members.
         """
         if not isinstance(value, int):
-            raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+            raise ValueError(
+                    "%r is not a valid %s" % (value, cls.__qualname__)
+                    )
         # check boundaries
         # - value must be in range (e.g. -16 <-> +15, i.e. ~15 <-> 15)
-        # - value must not include any skipped flags (e.g. if bit 2 is not defined, then 0d10 is invalid)
+        # - value must not include any skipped flags (e.g. if bit 2 is not
+        #   defined, then 0d10 is invalid)
         neg_value = None
         if (
                 not ~cls._all_bits_ <= value <= cls._all_bits_
@@ -1089,9 +1150,16 @@ class Flag(Enum, boundary=STRICT):
             ):
             if cls._boundary_ is STRICT:
                 invalid_as_bits = _bits(value)
-                length = max(len(invalid_as_bits), cls._flag_mask_.bit_length())
-                valid_as_bits = ('0' * length + _bits(cls._flag_mask_))[-length:]
-                invalid_as_bits = ('01'[value<0] * length + invalid_as_bits)[-length:]
+                length = max(
+                        len(invalid_as_bits),
+                        cls._flag_mask_.bit_length()
+                        )
+                valid_as_bits = (
+                        ('0' * length + _bits(cls._flag_mask_))[-length:]
+                        )
+                invalid_as_bits = (
+                        ('01'[value<0] * length + invalid_as_bits)[-length:]
+                        )
                 raise ValueError(
                         "%s: invalid value: %r\n    given %s\n  allowed %s" % (
                             cls.__name__,
@@ -1105,9 +1173,14 @@ class Flag(Enum, boundary=STRICT):
                 return value
             elif cls._boundary_ is KEEP:
                 if value < 0:
-                    value = max(cls._all_bits_+1, 2**(value.bit_length())) + value
+                    value = (
+                            max(cls._all_bits_+1, 2**(value.bit_length()))
+                            + value
+                            )
             else:
-                raise ValueError('unknown flag boundary: %r' % (cls._boundary_, ))
+                raise ValueError(
+                        'unknown flag boundary: %r' % (cls._boundary_, )
+                        )
         if value < 0:
             neg_value = value
             value = cls._all_bits_ + 1 + value
