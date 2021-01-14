@@ -95,7 +95,8 @@ typedef struct basicblock_ {
     struct basicblock_ *b_next;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
-    unsigned b_reachable : 1;
+    /* Number of predecssors that a block has. */
+    int b_predecessors;
     /* Basic block has no fall through (it ends with a return, raise or jump) */
     unsigned b_nofallthrough : 1;
     /* Basic block exits scope (it ends with a return or raise) */
@@ -825,6 +826,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
         result->b_instr[n] = block->b_instr[i];
     }
     result->b_exit = block->b_exit;
+    result->b_nofallthrough = 1;
     return result;
 }
 
@@ -1169,7 +1171,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 */
 
 static int
-compiler_addop(struct compiler *c, int opcode)
+compiler_addop_line(struct compiler *c, int opcode, int line)
 {
     basicblock *b;
     struct instr *i;
@@ -1184,9 +1186,22 @@ compiler_addop(struct compiler *c, int opcode)
     i->i_oparg = 0;
     if (opcode == RETURN_VALUE)
         b->b_return = 1;
-    i->i_lineno = c->u->u_lineno;
+    i->i_lineno = line;
     return 1;
 }
+
+static int
+compiler_addop(struct compiler *c, int opcode)
+{
+    return compiler_addop_line(c, opcode, c->u->u_lineno);
+}
+
+static int
+compiler_addop_noline(struct compiler *c, int opcode)
+{
+    return compiler_addop_line(c, opcode, -1);
+}
+
 
 static Py_ssize_t
 compiler_add_o(PyObject *dict, PyObject *o)
@@ -1445,6 +1460,11 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 
 #define ADDOP(C, OP) { \
     if (!compiler_addop((C), (OP))) \
+        return 0; \
+}
+
+#define ADDOP_NOLINE(C, OP) { \
+    if (!compiler_addop_noline((C), (OP))) \
         return 0; \
 }
 
@@ -2955,9 +2975,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     else {
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
-    /* Mark code as artificial */
-    c->u->u_lineno = -1;
-    ADDOP(c, POP_BLOCK);
+    ADDOP_NOLINE(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
@@ -3019,9 +3037,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
-    ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
-    ADDOP_JUMP(c, JUMP_FORWARD, orelse);
+    ADDOP_NOLINE(c, POP_BLOCK);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
     /* Runtime will push a block here, so we need to account for that */
@@ -4925,6 +4943,9 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_with(c, s, pos))
             return 0;
 
+
+    /* Mark all following code as artificial */
+    c->u->u_lineno = -1;
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, WITH, block);
 
@@ -6307,10 +6328,9 @@ error:
 
 
 static void
-clean_basic_block(basicblock *bb) {
-    /* Remove NOPs. */
+clean_basic_block(basicblock *bb, int prev_lineno) {
+    /* Remove NOPs when legal to do so. */
     int dest = 0;
-    int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
         int lineno = bb->b_instr[src].i_lineno;
         if (bb->b_instr[src].i_opcode == NOP) {
@@ -6396,22 +6416,24 @@ mark_reachable(struct assembler *a) {
     if (stack == NULL) {
         return -1;
     }
-    a->a_entry->b_reachable = 1;
+    a->a_entry->b_predecessors = 1;
     *sp++ = a->a_entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        if (b->b_next && !b->b_nofallthrough && b->b_next->b_reachable == 0) {
-            b->b_next->b_reachable = 1;
-            *sp++ = b->b_next;
+        if (b->b_next && !b->b_nofallthrough) {
+            if (b->b_next->b_predecessors == 0) {
+                *sp++ = b->b_next;
+            }
+            b->b_next->b_predecessors++;
         }
         for (int i = 0; i < b->b_iused; i++) {
             basicblock *target;
             if (is_jump(&b->b_instr[i])) {
                 target = b->b_instr[i].i_target;
-                if (target->b_reachable == 0) {
-                    target->b_reachable = 1;
+                if (target->b_predecessors == 0) {
                     *sp++ = target;
                 }
+                target->b_predecessors++;
             }
         }
     }
@@ -6419,13 +6441,46 @@ mark_reachable(struct assembler *a) {
     return 0;
 }
 
+static void
+eliminate_empty_basic_blocks(basicblock *entry) {
+    /* Eliminate empty blocks */
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        basicblock *next = b->b_next;
+        if (next) {
+            while (next->b_iused == 0 && next->b_next) {
+                next = next->b_next;
+            }
+            b->b_next = next;
+        }
+    }
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_iused == 0) {
+            continue;
+        }
+        if (is_jump(&b->b_instr[b->b_iused-1])) {
+            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+            while (target->b_iused == 0) {
+                target = target->b_next;
+            }
+            b->b_instr[b->b_iused-1].i_target = target;
+        }
+    }
+}
+
+
 /* If an instruction has no line number, but it's predecessor in the BB does,
- * then copy the line number. This reduces the size of the line number table,
+ * then copy the line number. If a successor block has no line number, and only
+ * one predecessor, then inherit the line number.
+ * This ensures that all exit blocks (with one predecessor) receive a line number.
+ * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
 static void
-minimize_lineno_table(struct assembler *a) {
+propogate_line_numbers(struct assembler *a) {
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (b->b_iused == 0) {
+            continue;
+        }
         int prev_lineno = -1;
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_lineno < 0) {
@@ -6435,7 +6490,27 @@ minimize_lineno_table(struct assembler *a) {
                 prev_lineno = b->b_instr[i].i_lineno;
             }
         }
-
+        if (!b->b_nofallthrough && b->b_next->b_predecessors == 1) {
+            assert(b->b_next->b_iused);
+            if (b->b_next->b_instr[0].i_lineno < 0) {
+                b->b_next->b_instr[0].i_lineno = prev_lineno;
+            }
+        }
+        if (is_jump(&b->b_instr[b->b_iused-1])) {
+            switch (b->b_instr[b->b_iused-1].i_opcode) {
+                /* Note: Only actual jumps, not exception handlers */
+                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
+                case SETUP_FINALLY:
+                    continue;
+            }
+            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+            if (target->b_predecessors == 1) {
+                if (target->b_instr[0].i_lineno < 0) {
+                    target->b_instr[0].i_lineno = prev_lineno;
+                }
+            }
+        }
     }
 }
 
@@ -6455,24 +6530,35 @@ optimize_cfg(struct assembler *a, PyObject *consts)
         if (optimize_basic_block(b, consts)) {
             return -1;
         }
-        clean_basic_block(b);
-        assert(b->b_reachable == 0);
+        clean_basic_block(b, -1);
+        assert(b->b_predecessors == 0);
     }
     if (mark_reachable(a)) {
         return -1;
     }
     /* Delete unreachable instructions */
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-       if (b->b_reachable == 0) {
+       if (b->b_predecessors == 0) {
             b->b_iused = 0;
             b->b_nofallthrough = 0;
        }
     }
+    basicblock *pred = NULL;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        int prev_lineno = -1;
+        if (pred && pred->b_iused) {
+            prev_lineno = pred->b_instr[pred->b_iused-1].i_lineno;
+        }
+        clean_basic_block(b, prev_lineno);
+        pred = b->b_nofallthrough ? NULL : b;
+    }
+    eliminate_empty_basic_blocks(a->a_entry);
     /* Delete jump instructions made redundant by previous step. If a non-empty
        block ends with a jump instruction, check if the next non-empty block
        reached through normal flow control is the target of that jump. If it
        is, then the jump instruction is redundant and can be deleted.
     */
+    int maybe_empty_blocks = 0;
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
@@ -6480,11 +6566,8 @@ optimize_cfg(struct assembler *a, PyObject *consts)
                 b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
                 b_last_instr->i_opcode == JUMP_ABSOLUTE ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
-                basicblock *b_next_act = b->b_next;
-                while (b_next_act != NULL && b_next_act->b_iused == 0) {
-                    b_next_act = b_next_act->b_next;
-                }
-                if (b_last_instr->i_target == b_next_act) {
+                if (b_last_instr->i_target == b->b_next) {
+                    assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
                     switch(b_last_instr->i_opcode) {
                         case POP_JUMP_IF_FALSE:
@@ -6496,20 +6579,18 @@ optimize_cfg(struct assembler *a, PyObject *consts)
                         case JUMP_ABSOLUTE:
                         case JUMP_FORWARD:
                             b_last_instr->i_opcode = NOP;
-                            clean_basic_block(b);
+                            clean_basic_block(b, -1);
+                            maybe_empty_blocks = 1;
                             break;
-                    }
-                    /* The blocks after this one are now reachable through it */
-                    b_next_act = b->b_next;
-                    while (b_next_act != NULL && b_next_act->b_iused == 0) {
-                        b_next_act->b_reachable = 1;
-                        b_next_act = b_next_act->b_next;
                     }
                 }
             }
         }
     }
-    minimize_lineno_table(a);
+    if (maybe_empty_blocks) {
+        eliminate_empty_basic_blocks(a->a_entry);
+    }
+    propogate_line_numbers(a);
     return 0;
 }
 
