@@ -4475,7 +4475,8 @@ Error:
     /* fall through */
 Done:
     Py_CLEAR(aSquared);
-    for (int i = 0; i < 32 && table[i]; i++)
+    // Yes the table is tableSize + 1 entries, I know
+    for (int i = 0; i <= tableSize; i++)
         Py_CLEAR(table[i]);
     return result;
 }

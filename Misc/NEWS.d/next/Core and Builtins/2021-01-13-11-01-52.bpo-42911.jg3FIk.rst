@@ -1,0 +1,4 @@
+Integer exponents used a hard boundary between binary exponentation for short exponents, and "fiveary" (actually 32-ary) exponentiation for very long exponents.
+This patch fills in the gap for moderately long exponents, making a smooth transistion. Addition chains with dynamic windows are used to even make smaller exponentiations faster, and very long exponents will still gain a bit.
+Total speedup varies from 2 % to 15% if your exponent is midrange.
+Now an explanation can be found in Misc/additionchains.txt (which I assume you will move to a better location :-) 
