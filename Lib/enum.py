@@ -1304,7 +1304,7 @@ def _decompose(flag, value):
                 continue
             if multi._value_ & value == multi._value_:
                 members.append(multi)
-                value ^= multi._value_            
+                value ^= multi._value_
     if negative:
         members = [m for m in flag if m not in members]
         if value:
@@ -1316,4 +1316,3 @@ def _power_of_two(value):
     if value < 1:
         return False
     return value == 2 ** _high_bit(value)
-
