@@ -1,6 +1,15 @@
 # Todo
 
 # lists
+#   * append(done)
+#   * extend
+#   * insert
+#   * subscript set
+#   * remove
+#   * pop
+#   * clear
+#   * sort
+#   * reverse
 # tuples
 # dicts
 # sets
