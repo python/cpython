@@ -29,6 +29,7 @@
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
+#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 #include <ctype.h>
 
@@ -3173,6 +3174,25 @@ main_loop:
                     la = &co_opcache->u.la;
                     if (la->type == type && la->tp_version_tag == type->tp_version_tag)
                     {
+                        // Hint >= 0 is a dict index; hint < 0 is an inverted slot index
+                        if (la->hint < 0) {
+                            /* Even faster path -- slot hint */
+                            Py_ssize_t offset = ~la->hint;
+                            char *addr = (char *)owner + offset;
+                            res = *(PyObject **)addr;
+                            if (res != NULL) {
+                                Py_INCREF(res);
+                                SET_TOP(res);
+                                Py_DECREF(owner);
+                                DISPATCH();
+                            }
+                            else {
+                                Py_DECREF(owner);
+                                goto error;
+                            }
+                        }
+
+                        /* Fast path for dict */
                         assert(type->tp_dict != NULL);
                         assert(type->tp_dictoffset > 0);
 
@@ -3221,50 +3241,81 @@ main_loop:
                 if (co_opcache != NULL && /* co_opcache can be NULL after a DEOPT() call. */
                     type->tp_getattro == PyObject_GenericGetAttr)
                 {
-                    Py_ssize_t ret;
-
-                    if (type->tp_dictoffset > 0) {
-                        if (type->tp_dict == NULL) {
-                            if (PyType_Ready(type) < 0) {
-                                Py_DECREF(owner);
-                                SET_TOP(NULL);
-                                goto error;
-                            }
+                    if (type->tp_dict == NULL) {
+                        if (PyType_Ready(type) < 0) {
+                            Py_DECREF(owner);
+                            SET_TOP(NULL);
+                            goto error;
                         }
-                        if (_PyType_Lookup(type, name) == NULL) {
-                            dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-                            dict = *dictptr;
+                    }
+                    PyObject *descr = _PyType_Lookup(type, name);
+                    if (descr != NULL) {
+                        // We found an attribute with a data-like descriptor
+                        PyTypeObject *dtype = Py_TYPE(descr);
+                        if (dtype == &PyMemberDescr_Type) {  // It's a slot
+                            PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
+                            struct PyMemberDef *dmem = member->d_member;
+                            if (dmem->type == T_OBJECT_EX) {
+                                Py_ssize_t offset = dmem->offset;
 
-                            if (dict != NULL && PyDict_CheckExact(dict)) {
-                                Py_INCREF(dict);
-                                res = NULL;
-                                ret = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
+                                if (co_opcache->optimized == 0) {
+                                    // First time we optimize this opcode.
+                                    OPCACHE_STAT_ATTR_OPT();
+                                    co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
+                                    fprintf(stderr, "Setting hint for %s, offset %zd\n", dmem->name, offset);
+                                }
+
+                                la = &co_opcache->u.la;
+                                la->type = type;
+                                la->tp_version_tag = type->tp_version_tag;
+                                la->hint = ~offset;
+
+                                char *addr = (char *)owner + offset;
+                                res = *(PyObject **)addr;
                                 if (res != NULL) {
                                     Py_INCREF(res);
-                                    Py_DECREF(dict);
                                     Py_DECREF(owner);
                                     SET_TOP(res);
 
-                                    if (co_opcache->optimized == 0) {
-                                        // First time we optimize this opcode. */
-                                        OPCACHE_STAT_ATTR_OPT();
-                                        co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
-                                    }
-
-                                    la = &co_opcache->u.la;
-                                    la->type = type;
-                                    la->tp_version_tag = type->tp_version_tag;
-                                    la->hint = ret;
-
                                     DISPATCH();
                                 }
-                                Py_DECREF(dict);
-                            } else {
-                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
-                                OPCACHE_DEOPT_LOAD_ATTR();
+                                else {
+                                    Py_DECREF(owner);
+                                    goto error;
+                                }
                             }
+                        }
+                        OPCACHE_DEOPT_LOAD_ATTR();
+                    } else if (type->tp_dictoffset > 0) {
+                        dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+                        dict = *dictptr;
+
+                        if (dict != NULL && PyDict_CheckExact(dict)) {
+                            Py_INCREF(dict);
+                            res = NULL;
+                            Py_ssize_t ret = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
+                            if (res != NULL) {
+                                Py_INCREF(res);
+                                Py_DECREF(dict);
+                                Py_DECREF(owner);
+                                SET_TOP(res);
+
+                                if (co_opcache->optimized == 0) {
+                                    // First time we optimize this opcode.
+                                    OPCACHE_STAT_ATTR_OPT();
+                                    co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
+                                }
+
+                                la = &co_opcache->u.la;
+                                la->type = type;
+                                la->tp_version_tag = type->tp_version_tag;
+                                la->hint = ret;
+
+                                DISPATCH();
+                            }
+                            Py_DECREF(dict);
                         } else {
-                            // We failed to find an attribute without a data-like descriptor
+                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
                             OPCACHE_DEOPT_LOAD_ATTR();
                         }
                     } else {
