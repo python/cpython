@@ -75,8 +75,10 @@ def _bits(num):
     while num:
         digits.insert(0, num&1)
         num >>= 1
+    if len(digits) < 4:
+        digits = ([0, 0, 0, 0] + digits)[-4:]
     if negative:
-        result = '0b1' + (''.join(['10'[d] for d in digits]).lstrip('0'))
+        result = '0b1' + (''.join(['10'[d] for d in digits]))
     else:
         result = '0b0' + ''.join(str(d) for d in digits)
     return result

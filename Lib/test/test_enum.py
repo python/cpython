@@ -2404,22 +2404,23 @@ class TestFlag(unittest.TestCase):
         class Iron(Flag, boundary=STRICT):
             ONE = 1
             TWO = 2
-            FOUR = 4
+            EIGHT = 8
         #
         class Water(Flag, boundary=CONFORM):
             ONE = 1
             TWO = 2
-            FOUR = 4
+            EIGHT = 8
         #
         class Space(Flag, boundary=EJECT):
             ONE = 1
             TWO = 2
-            FOUR = 4
+            EIGHT = 8
         #
-        self.assertRaisesRegex(ValueError, 'invalid value: 11', Iron, 11)
-        self.assertIs(Water(11), Water.ONE|Water.TWO)
-        self.assertEqual(Space(11), 11)
-        self.assertTrue(type(Space(11)) is int)
+        self.assertRaisesRegex(ValueError, 'invalid value: 7', Iron, 7)
+        self.assertIs(Water(7), Water.ONE|Water.TWO)
+        self.assertIs(Water(~9), Water.TWO)
+        self.assertEqual(Space(7), 7)
+        self.assertTrue(type(Space(7)) is int)
 
     def test_iter(self):
         Color = self.Color
@@ -2924,25 +2925,26 @@ class TestIntFlag(unittest.TestCase):
         self.assertIs((Open.WO|Open.CE) & ~Open.WO, Open.CE)
 
     def test_boundary(self):
-        class Iron(Flag, boundary=STRICT):
+        class Iron(IntFlag, boundary=STRICT):
             ONE = 1
             TWO = 2
-            FOUR = 4
+            EIGHT = 8
         #
-        class Water(Flag, boundary=CONFORM):
+        class Water(IntFlag, boundary=CONFORM):
             ONE = 1
             TWO = 2
-            FOUR = 4
+            EIGHT = 8
         #
-        class Space(Flag, boundary=EJECT):
+        class Space(IntFlag, boundary=EJECT):
             ONE = 1
             TWO = 2
-            FOUR = 4
+            EIGHT = 8
         #
-        self.assertRaisesRegex(ValueError, 'invalid value: 11', Iron, 11)
-        self.assertIs(Water(11), Water.ONE|Water.TWO)
-        self.assertEqual(Space(11), 11)
-        self.assertTrue(type(Space(11)) is int)
+        self.assertRaisesRegex(ValueError, 'invalid value: 5', Iron, 5)
+        self.assertIs(Water(7), Water.ONE|Water.TWO)
+        self.assertIs(Water(~9), Water.TWO)
+        self.assertEqual(Space(7), 7)
+        self.assertTrue(type(Space(7)) is int)
 
     def test_iter(self):
         Color = self.Color
