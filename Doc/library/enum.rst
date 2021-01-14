@@ -197,7 +197,7 @@ Having two enum members with the same name is invalid::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: Attempted to reuse key: 'SQUARE'
+    TypeError: 'SQUARE' already defined as: 2
 
 However, two enum members are allowed to have the same value.  Given two members
 A and B with the same value (and A defined first), B is an alias to A.  By-value
@@ -422,7 +422,7 @@ any members.  So this is forbidden::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: Cannot extend enumerations
+    TypeError: MoreColor: cannot extend enumeration 'Color'
 
 But this is allowed::
 
@@ -617,6 +617,7 @@ by extension, string enumerations of different types can also be compared
 to each other.  :class:`StrEnum` exists to help avoid the problem of getting
 an incorrect member::
 
+    >>> from enum import StrEnum
     >>> class Directions(StrEnum):
     ...     NORTH = 'north',    # notice the trailing comma
     ...     SOUTH = 'south'
@@ -712,7 +713,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
 .. note::
 
     The negation operator, ``~``, always returns an :class:`IntFlag` member with a
-    positive number::
+    positive value::
 
     >>> ~Perm.X
     <Perm.R|W: 6>
@@ -983,7 +984,7 @@ to handle any extra arguments::
     ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
     ...
     >>> Swatch.SEA_GREEN
-    <Swatch.SEA_GREEN: 2>
+    <Swatch.SEA_GREEN>
     >>> Swatch.SEA_GREEN.pantone
     '1246'
     >>> Swatch.BLEACHED_CORAL.pantone
@@ -1209,11 +1210,9 @@ Private names are not converted to Enum members, but remain normal attributes.
 """"""""""""""""""""
 
 :class:`Enum` members are instances of their :class:`Enum` class, and are
-normally accessed as ``EnumClass.member``.  Under certain circumstances they
-can also be accessed as ``EnumClass.member.member``, but you should never do
-this as that lookup may fail or, worse, return something besides the
-:class:`Enum` member you are looking for (this is another good reason to use
-all-uppercase names for members)::
+normally accessed as ``EnumClass.member``.  In Python versions ``3.5`` to
+``3.9`` you could access members from other members -- this practice was
+discourages, and in ``3.10`` :class:`Enum` has returned to not allowing it::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -1221,11 +1220,12 @@ all-uppercase names for members)::
     ...     size = 2
     ...
     >>> FieldTypes.value.size
-    <FieldTypes.size: 2>
-    >>> FieldTypes.size.value
-    2
+    Traceback (most recent call last):
+    ...
+    AttributeError: FieldTypes: no attribute 'size'
 
 .. versionchanged:: 3.5
+.. versionchanged:: 3.10
 
 
 Creating members that are mixed with other data types
@@ -1267,14 +1267,14 @@ but not of the class::
     >>> dir(Planet)
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
     >>> dir(Planet.EARTH)
-    ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
+    ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
 
 
 Combining members of ``Flag``
 """""""""""""""""""""""""""""
 
-If a combination of Flag members is not named, the :func:`repr` will include
-all named flags and all named combinations of flags that are in the value::
+Iterating over a combination of Flag members will only return the members that
+are comprised of a single bit::
 
     >>> class Color(Flag):
     ...     RED = auto()
@@ -1284,10 +1284,10 @@ all named flags and all named combinations of flags that are in the value::
     ...     YELLOW = RED | GREEN
     ...     CYAN = GREEN | BLUE
     ...
-    >>> Color(3)  # named combination
+    >>> Color(3)
     <Color.YELLOW: 3>
-    >>> Color(7)      # not named combination
-    <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
+    >>> Color(7)
+    <Color.BLUE|GREEN|RED: 7>
 
 ``StrEnum`` and :meth:`str.__str__`
 """""""""""""""""""""""""""""""""""
@@ -1299,3 +1299,71 @@ parts of Python will read the string data directly, while others will call
 :meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
 ``str(StrEnum.member) == StrEnum.member`` is true.
 
+``Flag`` and ``IntFlag`` minutia
+""""""""""""""""""""""""""""""""
+
+The code sample::
+
+    >>> class Color(IntFlag):
+    ...     BLACK = 0
+    ...     RED = 1
+    ...     GREEN = 2
+    ...     BLUE = 4
+    ...     PURPLE = RED | BLUE
+    ...     WHITE = RED | GREEN | BLUE
+    ... 
+
+- single-bit flags are canonical
+- multi-bit and zero-bit flags are aliases
+- only canonical flags are returned during iteration::
+
+    >>> list(Color.WHITE)
+    [<Color.BLUE: 4>, <Color.GREEN: 2>, <Color.RED: 1>]
+
+- negating a flag or flag set returns a new flag/flag set with the
+  corresponding positive integer value::
+
+    >>> Color.GREEN
+    <Color.GREEN: 2>
+
+    >>> ~Color.GREEN
+    <Color.PURPLE: 5>
+
+- names of pseudo-flags are constructed from their members' names::
+
+    >>> (Color.RED | Color.GREEN).name
+    'GREEN|RED'
+
+- multi-bit flags, aka aliases, can be returned from operations::
+
+    >>> Color.RED | Color.BLUE
+    <Color.PURPLE: 5>
+
+    >>> Color(7)  # or Color(-1)
+    <Color.WHITE: 7>
+
+- membership / containment checking has changed slightly -- zero valued flags
+  are never considered to be contained::
+
+    >>> Color.BLACK in Color.WHITE
+    False
+
+  otherwise, if all bits of one flag are in the other flag, True is returned::
+
+    >>> Color.PURPLE in Color.WHITE
+    True
+
+There is a new boundary mechanism that controls how out-of-range / invalid
+bits are handled: ``STRICT``, ``CONFORM``, ``EJECT`', and ``KEEP``:
+
+  * STRICT --> raises an exception when presented with invalid values
+  * CONFORM --> discards any invalid bits
+  * EJECT --> lose Flag status and become a normal int with the given value
+  * KEEP --> keep the extra bits
+           - keeps Flag status and extra bits
+           - they don't show up in iteration
+           - they do show up in repr() and str()
+
+The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``DISCARD``,
+and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an
+example of when ``KEEP`` is needed).

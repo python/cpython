@@ -176,10 +176,10 @@ class property(DynamicClassAttribute):
             try:
                 return ownerclass._member_map_[self.name]
             except KeyError:
-                raise AttributeError('%r not found in %r' % (self.name, ownerclass.__name__))
+                raise AttributeError('%s: no attribute %r' % (ownerclass.__name__, self.name))
         else:
             if self.fget is None:
-                raise AttributeError('%s: cannot read attribute %r' % (ownerclass.__name__, self.name))
+                raise AttributeError('%s: no attribute %r' % (ownerclass.__name__, self.name))
             else:
                 return self.fget(instance)
 
@@ -1161,13 +1161,21 @@ class Flag(Enum, boundary=STRICT):
             raise TypeError(
                 "unsupported operand type(s) for 'in': '%s' and '%s'" % (
                     type(other).__qualname__, self.__class__.__qualname__))
+        if other._value_ == 0 or self._value_ == 0:
+            return False
         return other._value_ & self._value_ == other._value_
 
     def __iter__(self):
         """
         Returns flags in decreasing value order.
         """
-        return (m for m in reversed(self.__class__) if m._value_ & self._value_)
+        return (
+                m
+                for m in sorted(
+                    self.__class__, key=lambda m: m._value_, reverse=True
+                    )
+                if m._value_ & self._value_
+                )
 
     def __len__(self):
         return _bit_count(self._value_)
