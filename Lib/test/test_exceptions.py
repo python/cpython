@@ -209,6 +209,9 @@ class ExceptionTests(unittest.TestCase):
         check('x = "a', 1, 7)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
+        check('[file for str(file) in []\n])', 1, 11)
+        check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
+        check('[file for\n str(file) in []]', 2, 2)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
