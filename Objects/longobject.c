@@ -20,22 +20,11 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
+// These routine would be more happy in bitutils
 int _Py_bit_length64(uint64_t x) {
     if (x >= (uint64_t)1 << 32)
         return 32 + _Py_bit_length(x >> 32);
     return _Py_bit_length((unsigned long)x);
-}
-
-int _Py_bitcount(unsigned long x) {
-#define o33333333333 0xDB6DB6DB
-#define o11111111111 0x49249249
-#define o30303030303 0xC30C30C3
-    // count bits in groups of three (octal: 0o
-    x = x - ((x >> 1) & o33333333333) - ((x >> 2) & o11111111111);
-    // combine groups to groups of six
-    x = ((x >> 3) & o30303030303) + (x & o30303030303);
-    // add groups together
-    return x % 63;
 }
 
 int _Py_bit_count64(uint64_t x) {
@@ -4110,8 +4099,10 @@ long_invmod(PyLongObject *a, PyLongObject *n)
     return NULL;
 }
 
+// Beginning of addition chain code
 /* Perform a modular reduction, X = X % c, but leave X alone if c
  * is NULL.
+ * This routine is used both in long_pow and in addition_chain
  */
 #define REDUCEMODC(X)                                       \
     do {                                                \
@@ -4138,7 +4129,8 @@ long_invmod(PyLongObject *a, PyLongObject *n)
     } while(0)
 
 /* Generate entries in the table to make sure the proper one is there
- * uses square and c
+ * uses aSquare and c
+ * Used in addition_chain
  */
 #define ENSURE_TABLE_ENTRY(chunk)                                          \
     do {                                                                \
@@ -4151,7 +4143,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
 
 /* The routine prepare_pow gives chooses a chunksize
  * that produces a number of multiplications very close to optimal for
- * the addition chain routine
+ * the addition chain routine.
  * This piece of horrible black belt voodoo magic code produces
  * the best chunksize value to use for exponentiations.
  * The problem is that the best way to produce a power (i.e. generate
@@ -4169,6 +4161,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
  *    Optimal = the best parameter for the routine below
  *    Good = what the routine below returns
  *    Difference = with respect to binary (HAC Algorithm 14.79)
+ * Full explanation how I did this is in Misc/additionchain.txt
 */
 
 // Number of Python digits that fit in an ulong
@@ -4176,12 +4169,11 @@ long_invmod(PyLongObject *a, PyLongObject *n)
 
  /* Compute for the power routine:
   * - The first up to 60 bits of the exponent
-  * - the number of extra digits to be expected
+  * - the number of extra digits following these
   * - a heuristics based good value for chunksize
-  * n is a PyLong that is >0
+  * n is a PyLong that is >0, borrowed reference
   */
 
-// Heuristic constants. See expHeuristics.txt
 static const unsigned char CHUNKSIZES5TO7[8] = {
     2, 3, 2, 3, 2, 3, 2, 2 };
 static const unsigned char LENGTHSFOR4[8] = {
@@ -4199,16 +4191,21 @@ prepare_pow(PyLongObject* n, uint64_t* firstDigits, Py_ssize_t* restOfDigits)
     Py_ssize_t numberOfDigits = Py_SIZE(n);
 
     // Handle the common case of numbers of at most 7 bits
-    if (numberOfDigits == 0) {
+    if (numberOfDigits <= 1) {
         digit nValue = n->ob_digit[0];
         *firstDigits = nValue;
         *restOfDigits = 0;
         if (nValue < 16)
+            // four bits or less
             return 2;
-        // since the digit is now at least four bits, we can compute the prefix
-        int bitLength = bit_length_digit(nValue);
-        int prefix = nValue >> (bitLength - 4);
-        return CHUNKSIZES5TO7[prefix - 8];
+        if (nValue < 128) {
+            // seven bits or less
+            // since the digit is now at least four bits,
+            // we can compute the prefix
+            int bitLength = bit_length_digit(nValue);
+            int prefix = nValue >> (bitLength - 4);
+            return CHUNKSIZES5TO7[prefix - 8];
+        }
     }
 
     /* Handle numbers of up to 60 bits
@@ -4217,7 +4214,7 @@ prepare_pow(PyLongObject* n, uint64_t* firstDigits, Py_ssize_t* restOfDigits)
      * This code is all heuristic; all is does is return 2, 3 or 4
      * A wrong result wouldn't break the code, just make it slower
      */
-    if (numberOfDigits < DIGITS_IN_ULONG) {
+    if (numberOfDigits <= DIGITS_IN_ULONG) {
         *firstDigits = upperBits = PyLong_AsUnsignedLongLong((PyObject*)n);
         *restOfDigits = 0;
         int bitLength = _Py_bit_length64(upperBits);
@@ -4269,7 +4266,7 @@ prepare_pow(PyLongObject* n, uint64_t* firstDigits, Py_ssize_t* restOfDigits)
     // bit length of the upper bits for the prefix
     int upperBitLength = _Py_bit_length64(upperBits);
     uint8_t prefix = (uint8_t)(upperBits >> (upperBitLength - 4));
-    Py_ssize_t numberOfBits = upperBitLength + PYLONG_BITS_IN_DIGIT * numberOfDigits;
+    Py_ssize_t numberOfBits = upperBitLength + PYLONG_BITS_IN_DIGIT * *restOfDigits;
     // Now return the heuristic value for the chunk size
     // LENGHTSFOR3 would be [84, 0, 84, 0, 84, 0, 84, 0], but this is faster
     if ((numberOfBits < 84) && !(prefix & 1))
@@ -4282,7 +4279,7 @@ prepare_pow(PyLongObject* n, uint64_t* firstDigits, Py_ssize_t* restOfDigits)
 }
 
 // table for the addition chain routine to help find bit patterns
-// for chunk sizes 2 through 4 (last row is for 5 and 6)
+// for chunk sizes 2 through 4 (last row is for clipping zeros)
 // tell how much bitPos needs to be corrected given digit >> bitPos
 static const signed char CHUNKJUMPTABLE[5][16] = {
     //0  01  10  11 100 101 110 111 1000 1001 1010 1011 1100 1101 1110 1111
@@ -4301,7 +4298,7 @@ static const signed char CHUNKJUMPTABLE[5][16] = {
  * processed per step.
  * computes result = pow(a, b, c)
  * assumes b >= 0
- * gererates a new reference
+ * used borrowed reference to a, b, c
  *
  * Differences with the HAC method:
  *    The table contains only odd entries saving 50% on building time
@@ -4346,9 +4343,18 @@ PyLongObject* addition_chain(
         return (PyLongObject*)PyLong_FromLong(1L);
 
     // Prepare the table
-    table[0] = (PyLongObject*)a;
+    // since a can be > c, it must be reduced
+    if (c != NULL) {
+        if (l_divmod(a, c, NULL, &temp) < 0)
+            goto Error;
+        table[0] = temp;
+        temp = NULL;
+    }
+    else {
+        table[0] = (PyLongObject*)a;
+    }
+    Py_INCREF(table[0]);
     tableSize = 0;
-    Py_INCREF(a);
 
     // Skip the computation of aSquared for exponent 1
     // because it isn't used
@@ -4385,7 +4391,7 @@ PyLongObject* addition_chain(
                         if (currentDigit == 1)
                             delta = 0;
                         else
-                            delta = CHUNKJUMPTABLE[0][currentDigit];
+                            delta = CHUNKJUMPTABLE[3][currentDigit];
                         break;
                     }
                     // determine new jump size
@@ -4430,13 +4436,14 @@ PyLongObject* addition_chain(
                     assert(currentDigit >> bitPosition == chunk);
                     result = aSquared;
                 }
-                else if (bitPosition > 3 && currentDigit >> (bitPosition - 4) == 9) {
-                    bitPosition -= 3;
-                    chunk = 9;
-                    assert(currentDigit >> bitPosition == chunk);
-                    ENSURE_TABLE_ENTRY(chunk);
-                    result = table[chunk / 2];
-                } else {
+                else {
+                    // fetch from table, but first see if it is useful
+                    // to compute one extra entry...
+                    if (bitPosition > 3 && currentDigit >> (bitPosition - 4) == 9) {
+                        bitPosition -= 3;
+                        chunk = 9;
+                        assert(currentDigit >> bitPosition == chunk);
+                    }
                     ENSURE_TABLE_ENTRY(chunk);
                     result = table[chunk / 2];
                 }
@@ -4446,7 +4453,7 @@ PyLongObject* addition_chain(
             }
             // now all bits up to bitPosition are processed
             currentDigit &= ((uint64_t)1 << bitPosition) - 1;
-            // set bitPosition to get the maximum chunkk
+            // set bitPosition to get the maximum chunk
             bitPosition = squaresToDo;
         }
         // current digit has to ones anymore, but we may have to square a few times
@@ -4467,13 +4474,11 @@ Error:
     Py_CLEAR(result);
     /* fall through */
 Done:
-    // Clean up, make sure we leave no pointers to dead objects
     Py_CLEAR(aSquared);
     for (int i = 0; i < 32 && table[i]; i++)
         Py_CLEAR(table[i]);
     return result;
 }
-
 
 /* pow(v, w, x) */
 static PyObject *

@@ -1,0 +1,713 @@
+#!python3
+"""Investigation of how useful it is to optimize Python powers.
+(I am talking about integer-to-integer powers here, that are implemented
+by repeated multiplications.)
+In Python 3.9 and earlier, there were two algorithms:
+- the binary method which is the regular "left to right" method of powering.
+- the "fiveary" method, which is actually 32-are, which precomputes the powers
+  zero through 31 and than scans the exponent 5 bits at a time.
+There is a hard boundary of quite a large number of bits, where there is a
+switch from one method to another.
+
+But we can do better than that. First some exaplanation.
+
+Both methods use the same basic algorithm:
+- Start with a small power that is equal to the first few bits of the exponent
+- square this number repeatedly, and at the apppropriate time, do a single
+  multiplication
+In the binary case, a multiplication could occur at every squaring.
+In the fiveary case, a multiplication was considered every five squarings.
+
+I investigated if this can be improved upon by generalizing the fiveary method:
+- using different bases than just 2 and 32, to make a smooth transition
+- making computation of the table more efficient
+- vary the base not only on the length of the number, but also on other
+  characteristics to make it more efficient for smaller numbers
+  Actually, the first number where this happens is 15.
+
+So, first I wrote a routine that does this "generalized fiveary method" that
+uses a given "chunkSize" indicate how many bits are use at one time.
+Below you find a Python routine called otfR (for historic reasons) that
+calculates the number of squarings and multiplications, implicitly defining
+the algorithm.
+This routine uses the following optimizations:
+- the table only contains odd entries, since an even entry can be handled
+  simply by doing the multiplication at an earlier time
+- table entries are not computed if not needed
+- at the beginning of the number, you can recongnise the bit patterns 10
+  because you'll have to do a squaring anyway to fill the table
+- also, if a number starts with 1001, and the chunksize is 3, it is
+  advantageous to compute the start from table entry 111 and the square, so you
+  start one bit ahead.
+- No muliplication will be done at all if there are zeros in the exponent
+
+The result of this is that the binary method (corresponding to chunkSize 1)
+is no longer needed, since chunkSize 2 does never use more multiplies than
+chunkSize 1. Also, using the same 32 entry table of the fiveary method,
+we can go up to chunk size 6 instead of 5. And finally, since the zeros in
+the number are skipped, chunkSize n corresponds to chunkSize n+1 of the old
+method, so chunkSize 4 is as fast as the fiveary method, and we effectively
+are now up to chunksize 7!
+
+Now, the question remains what is the best chunkSize to use.
+Here we call numberLength the number of bits in the exponent, as given by
+Python's exponent.bit_length().
+
+The naive computation is as follows:
+- it takes 1 << chunkSize multiplications to construct the table (one for
+  computing the square, the rest for computing powers)
+  3, 5, ..., (1 << chunkSize) - 1
+- once the table is ready, there is a multplication for every chunkSize + 1
+  squarings
+- there are numberLength - chunkSize squarings, plus one for constructing
+  the table.
+Average number of operations (cs=chunkSize, nl=numberLength):
+              Multiplies          Squarings   Total
+Table         (1<<cs)-1           1           1<<cs
+First cs bits 0                   0           0
+Rest          (nl-cs)/(cs+1)      nl-cs       (nl+1)/(cs+1)-1
+Total         (1<<cs)+(nl-cs)/... nl-cs+1     (cs+2)*((nl+1)/(cs+1)-1)+(1<<cs)
+[nlcs stands for numberLength-chunkSize]
+
+From these numbers, you can simply compute the numberLength ranges where a given chunk size
+is optimal:
+chunkSize    min #mults   max #mults
+2            0     0      35   48
+3           35   34.3    140  179.2
+4          140  179.2    450  551.2
+5          450  551.2   1296 1538.2 
+6         1296 1538.3   -
+
+But you would be mistaken, since the other optimizations in the routine influence
+matters a lot.
+Some numbers are happy with a small chunkSize (two powers for example), while
+other are much more efficient is the chunkSize is bigger (like numbers with
+many ones in their pattern).
+I found that if you ignored that, the performance would suffer even for quite
+small numbers. So I wanted to optimize for that, too.
+After a lot of experimentation and days of number crunching, I found that there
+are two parameters, that are relatively easy to compute, that give an good indication
+on the optimal chunk size. I order of effect:
+- the initial bits of the number (I chose to use four bits): the prefix
+- the pairs in the number that are two bits apart: (n&n>>2).bit_length()
+- the length of the number
+There are also other parameters, but these turned out to be good. The routine 
+calculating this is called good_chunksize below.
+But of course, for very long number even calculating these pairs is complicated.
+Fortunately,the bit pattern doesn't make much of a difference for longer numbers,
+so I chose not to compute the bit pattern if it didn't fit in 60 bits.
+The routine fastChunksize below does that.
+
+The routine goodChunksize performs an algorithm to choose a good chunkSize in
+the three dimensional space of the three parameters.
+The Python code below explores that space, so you can see for yourself how well I did.
+I ended up with an algorithm that is partly table based, but the really
+complicated shapes consist of 8 simple curves indexed by prefix.
+The other routines below were used to construct these curves.
+
+And finally, I had to convert all that to C, and debug it.
+There were two challenges:
+- getting the reference counts right (of course)
+- making sure the fastChunksize algorithm is actually implemented.
+For that latter problem, I started with extendeding test_pow to find all
+little corner cases, so that all places in the code would be touched. Then I checked
+if all cases were indeed touched. That was quite useful, as I found that most bugs
+appeared just because a certain point in the routine never was reached, while I
+knew from the research that it actually would occur.
+So, if you are still interested, here's the code.
+- Jurjen Bos, januari 2021
+"""
+
+import re
+from collections import namedtuple, defaultdict, Counter
+from random import randrange, getrandbits, sample
+from operator import methodcaller, itemgetter, add
+from itertools import chain, product,islice
+from functools import partial
+
+# number of multiplications, squares and "empty" squares (of 1)
+_Mults = namedtuple("_Mults", "squares mults empty chunkSize")
+class Mults(namedtuple("Mults", "squares mults empty chunkSize")):
+    """Make sensible ordering in Mults"""
+    def __int__(self): return self.mults + self.squares
+    def __eq__(self, other): return int(self) == int(other)
+    def __lt__(self, other): return int(self) < int(other)
+    def __gt__(self, other): return int(self) > int(other)
+    def __le__(self, other): return int(self) <= int(other)
+    def __ge__(self, other): return int(self) >= int(other)
+    def __ne__(self, other): return int(self) != int(other)
+
+# auxiliary functions ----------------------------------------
+def digits(n, chunkSize=30):
+    """Split n into 'big digits' of chunkSize bits each
+    >>> digits(10000, 3)
+    [0, 2, 4, 3, 2]
+    """
+    mask = (1 << chunkSize) - 1
+    return [n >> i & mask
+            for i in range(0, n.bit_length(), chunkSize)]
+
+def hamming(n):
+    return bin(n).count('1')
+
+# original functions ----------------------------------------
+def mul_bin(n, ws=30):
+    """Compute number of multiplications using basic binary method
+    As close to python code as possible
+    counts squares, multiplications, empty squares
+    >>> mul_bin(10000, 8)
+    Mults(squares=13, mults=5, empty=3, chunkSize=None)
+    """
+    oneSquares = squares = mults = 0
+    resultPower = 0
+    for digit in reversed(digits(n, ws)):
+        for bitPos in range(ws - 1, -1, -1):
+            if resultPower: squares += 1
+            else: oneSquares += 1
+            resultPower *= 2
+            if digit >> bitPos & 1:
+                mults += 1
+                resultPower += 1
+    if resultPower != n: raise AssertionError
+    return Mults(squares, mults, oneSquares, None)
+
+def est_mul_bin(n, ws=30):
+    """Compute counts of mul_bin directly
+    >>> est_mul_bin(10000, 8)
+    Mults(squares=13, mults=5, empty=3, chunkSize=None)
+    """
+    if not n: return Mults(0, 0, 0, None)
+    bl = n.bit_length()
+    return Mults(bl - 1, hamming(n), -bl % ws + 1, None)
+
+def mulP(n, ws=30, chunkSize=5):
+    """Compute number of multiplications with chunkSize bits at a time
+    As close to python code as possible
+    counts squares, multiplications, empty squares
+    >>> mulP(10000, 8, 4)
+    Mults(squares=13, mults=17, empty=4, chunkSize=4)
+    """
+    # make table
+    if ws % chunkSize: raise AssertionError
+    mask = (1 << chunkSize) - 1
+    oneSquares, squares, mults = 0, 1, (1 << chunkSize) - 2
+    resultPower = 0
+    for digit in reversed(digits(n, ws)):
+        for bitPos in range(ws - chunkSize, -chunkSize, -chunkSize):
+            if resultPower: squares += chunkSize
+            else: oneSquares += chunkSize
+            resultPower <<= chunkSize
+            d = digit >> bitPos & mask
+            if d:
+                mults += 1
+                resultPower += d
+    if resultPower != n: raise AssertionError
+    return Mults(squares, mults, oneSquares, chunkSize)
+
+def est_mulP(n, ws=30, chunkSize=5):
+    """Compute counts of mulP directly
+    >>> est_mulP(10000, 8, 4)
+    Mults(squares=13, mults=17, empty=4, chunkSize=4)
+    """
+    if not n: return Mults(1, (1 << chunkSize) - 2, 0, chunkSize)
+    bl = n.bit_length()
+    dg = digits(n, chunkSize)
+    return Mults((len(dg) - 1) * chunkSize + 1,
+                 sum(map(bool, dg)) + (1 << chunkSize) - 2,
+                 (chunkSize - 1 - len(dg) * chunkSize) % ws + 1,
+                 chunkSize)
+
+# proposed function --------------------------------------------
+def otfR(n, ws=30, chunkSize=2, special=False):
+    """On the fly powering.
+    Using a table of powers, this routine multplies multiple bits
+    at a time.
+    Optimizations:
+      - only store odd numbers in the table, and search for the locations to
+        apply the power.
+      - do not compute table entries until needed
+      - use the square that is needed to construct the table where useful
+      - special case for numbers that start with 1001
+    Results:
+    chunkSize = 2 is never worse than binary (!)
+    chunkSize = 3 costs at most 1 (8% of numbers <100, 1.4% under a million)
+    The best value for the chunkSize parameter is computed by otfR_good
+    >>> otfR(27, 8, 2)
+    Mults(squares=4, mults=2, empty=0, chunkSize=2)
+    """
+    if n < 2: return Mults(0, 0, 0, chunkSize)
+    squares, mults, maxTable = 1, 0, 1
+    def tableFetch(p):
+        nonlocal maxTable, mults
+        assert p & 1
+        while maxTable < p:
+            mults += 1
+            maxTable += 2
+    resultPower = 0
+    myDigits = list(digits(n, ws))
+    if len(myDigits) > 1:
+        myDigits[-2] |= myDigits[-1] << ws
+        del myDigits[-1]
+    for digit in reversed(myDigits):
+        resultShift = ws
+        while digit:
+            # compute active position
+            bitPos = max(digit.bit_length(), chunkSize) - chunkSize
+            head = digit >> bitPos
+            if not resultPower:
+                # start here: first part of first digit
+                if head == 2:
+                    pass # from variable
+                elif head == 4 and bitPos > 1 and digit >> bitPos - 1 == 9:
+                    # head can be extended to 9 (we know chunkSize==3 now)
+                    bitPos -= 1
+                    head = 9
+                    tableFetch(head)
+                else:
+                    # make digit >> bitPos odd by moving to the left
+                    bitPos += (head ^ head - 1).bit_length() - 1
+                    head = digit >> bitPos
+                    if head == 1 and bitPos and digit >> bitPos - 1 == 2:
+                        # we can move to the right for free from the square
+                        bitPos -= 1
+                        head = 2
+                    else:
+                        tableFetch(head)
+            else:
+                # make digit >> bitPos odd
+                bitPos += (head ^ head - 1).bit_length() - 1
+                head = digit >> bitPos
+                # shift to bitPos, multiply with table entry
+                squares += resultShift - bitPos
+                resultPower <<= resultShift - bitPos
+                tableFetch(head)
+                mults += 1
+            resultShift = bitPos
+            resultPower += head
+            # remove chunk
+            digit &= (1 << resultShift) - 1
+        squares += resultShift
+        resultPower <<= resultShift
+    if resultPower != n: raise AssertionError
+    return Mults(squares, mults, 0, chunkSize)
+
+def goodChunksize(n):
+    """Determine a very good chunk size for n,
+    under the assumption that we have the comfort of having all the bits of n.
+    This condition will be removed below in "fastChunksize".
+    Roughly, using chunk size n costs 1<<n-1 multiplications to build the table
+    and n+2 multiplications per n+1 bits of exponent.
+    It is easy to verify that the crossover points are roughly:
+    2-3: 2*3*4 = 24 bits
+    3-4: 4*4*5 = 80 bits
+    4-5: 8*5*6 = 240 bits
+    5-6: 16*6*7 = 672 bits
+    If fact, for shorter numbers it depends heavily on the first few bits of
+    the exponent. So we look at the first four, and use this to make a better
+    guess. This saves a fraction of a multiplication on average, which still
+    makes it worth the effort spendind a few instructions.
+    """
+    # let's do the easy to see cases first
+    length = n.bit_length()
+    if length < 5: return 2
+    # first four bits of n to optimize the boundaries
+    prefix = n >> length - 4
+    if length > 100:
+        if length > [647, 669, 657, 671, 647, 670, 657, 671][prefix - 8]: return 6
+        if length > [197, 230, 215, 230, 197, 230, 214, 231][prefix - 8]: return 5
+        return 4
+    # now n has between 8 and 100 bits
+    # the optimal chunksize depends heavily on bit pattern subtleties in n
+    # we use the two values below to get an idea on the best approach
+    if length < 8:
+        return [2, 2, 3, 3, 2, 2, 3, 2][prefix - 8]
+    # number of times there are two ones with distance 2 apart in n
+    # note this is at least 1 for prefix 10,11,13,14 and at least two for 15
+    h2 = hamming(n & n >> 2)
+    # with these two numbers, we can combine a value for chunksize
+    # that is (in average) a fraction of a multiplication from optimal
+    # for lengths up to 17, it is optimal
+    if prefix == 8 or prefix == 12:
+        if length <= 14: return 2
+        if length > 83: return 4
+        return 2 if h2 < 4 + 25 // (length - 14) else 3
+    if prefix == 9:
+        # this is the most complicated one
+        if h2 < (31 - length) // 8: return 2
+        if length >= 60: return 4
+        if h2 < 3 + 110 // (64 - length) >> 1: return 4
+        return 3
+    if prefix == 10:
+        return 3 if length + h2 < 105 else 4
+    if prefix == 11:
+        # return 3 if length < 46 else 4
+        # there's a very complicated region around 45 to be handled here
+        return 3 if length + (h2 - 18) ** 2 // 19 < 50 else 4
+        # this saves .08 multiplications for numbers of 46 bits
+    if prefix == 13:
+        if length <= 14 or h2 < 9 + 40 // (length - 14) >> 1:
+            return 2
+        return 3 if length < 28 else 4
+    if prefix == 14:
+        return 3 if length < 84 else 4
+    if prefix == 15:
+        # the complicated region around 57 bits costs about .01 multiplication:
+        # we leave that since there's no benefit anymore
+        return 2 if h2 < 4 else (3 if length + h2 < 71 else 4)
+    raise ValueError
+
+def fastChunksize(n):
+    """Determine a very good chunk size for n,
+    but don't look further than the first two digits of n.
+    Roughly, using chunk size n costs 1<<n-1 multiplications to build the table
+    and n+2 multiplications per n+1 bits of exponent.
+    It is easy to verify that the crossover points are roughly:
+    2-3: 2*3*4 = 24 bits
+    3-4: 4*4*5 = 80 bits
+    4-5: 8*5*6 = 240 bits
+    5-6: 16*6*7 = 672 bits
+    If fact, for shorter numbers it depends heavily on the first few bits of
+    the exponent. So we look at the first four, and use this to make a better
+    guess. This saves a fraction of a multiplication on average, which still
+    makes it worth the effort spending a few instructions.
+    """
+    # let's do the easy to see cases first
+    length = n.bit_length()
+    if length <= 4: return 2
+    # first four bits of n to optimize the boundaries
+    prefix = n >> length - 4
+    # very short numbers
+    if length < 8:
+        return [2, 2, 3, 3, 2, 2, 3, 2][prefix - 8]
+    if length > 60:
+    # we don't want to compute h2 for such long numbers
+        # for odd prefix we don't need 3
+        if length < 84 and ~prefix & 1: return 3
+        if length < [198, 231, 216, 231, 198, 231, 215, 232][prefix - 8]: return 4
+        # in the C code we compare length >> 2
+        if length < [648, 670, 658, 672, 648, 671, 658, 672][prefix - 8]: return 5
+        return 6
+    # now n has between 8 and 60 bits
+    # the optimal chunksize depends heavily on bit pattern subtleties in n
+    # we use the h2 below to get an idea on the best approach
+    # number of times there are two ones with distance 2 apart in n
+    # note this is at least 1 for prefix 10,11,13,14 and at least two for 15
+    h2 = hamming(n & n >> 2) if length <= 60 else length // 4
+    # with length  prefix and h2, we can combine a value for chunksize
+    # that is (in average) a fraction of a multiplication from optimal
+    # for lengths up to 17, it is optimal
+    if prefix == 8 or prefix == 12:
+        if length <= 14: return 2
+        return 2 if h2 < 4 + 25 // (length - 14) else 3
+    if prefix == 9:
+        # this is the most complicated one
+        if h2 < (31 - length) // 8: return 2
+        if h2 < 3 + 110 // (64 - length) >> 1: return 4
+        return 3
+    if prefix == 10 or prefix == 14:
+        return 3
+    if prefix == 11:
+        # return 3 if length < 46 else 4
+        # there's a very complicated region around 45 to be handled here
+        return 3 if length + (h2 - 18) ** 2 // 19 < 50 else 4
+        # this saves .08 multiplications for numbers of 46 bits
+    if prefix == 13:
+        if length <= 14 or h2 < 9 + 40 // (length - 14) >> 1: return 2
+        return 3 if length < 28 else 4
+    if prefix == 15:
+        # the complicated region around 57 bits costs about .01 multiplication:
+        # we leave that since there's no benefit anymore
+        return 2 if h2 < 4 else (3 if length + h2 < 71 else 4)
+    raise ValueError
+
+goodChunksize = fastChunksize
+
+def otfR_good(n, ws=30):
+    """This optimal choice for chunk size gives pretty nice results.
+    Here's a comparison with respect to optimal parameter choice.
+    Method  Up to 10**3   10**4    10**5     10**6      10**7       10**8
+    Binary        12910  178226  2283954  27836418  327657410  3780229378
+    Optimal       11032  154298  1970878  23957755  282553573
+    Good          11039  154553  1974797  24024764  283496827  3254408073
+    Difference   -14.5%  -13.3%   -13.5%    -13.7%     -13.5%      -13.9%
+    """
+    return otfR(n, 32, goodChunksize(n))
+
+# analytic stuff -------------------------------------------
+def otfR_optimal(n, ws=30):
+    return min((otfR(n, ws, k) for k in range(2, 6)), key=int)
+
+def chooseBigChunk():
+    """Give statistical information for very big numbers
+    Apparently, we get something like this:
+    - 30: what otfR_good says
+    30-70: 4 appears to work nicely for prefixes 13, 9, 11, 15 too
+    70-250: most prefer 4, some 5
+    250-: all numbers use 5
+    750: all numbers use 66
+    """
+    for p in range(100):
+        if p % 10 == 0:
+            print("length  8  9 10 11 12 13 14 15   h2")
+        length = int(20 * 1.05 ** p)
+        n = getrandbits(length - 1) | 1 << length - 1
+        mults = [int(otfR(n, 30, k)) for k in range(2, 7)]
+        opt = min(mults)
+        opts = [i for i,m in enumerate(mults, start=2) if m==opt]
+        prefix = n >> length - 4
+        mask = (1 << length) - 1
+        h2 = hamming(mask & n & n >> 2)
+        print(f"{length:4d}:", "   " * (prefix - 8),
+            str(min(opts))+str(max(opts)), "   " * (15 - prefix), h2)
+
+def showSummary(m=9):
+    """Print the text in the header of otfR_good
+    """
+    print(end="Method To  ")
+    print(*(" " * (d-2) + f"10**{d:d}" for d in range(3, m)))
+    binary = [sum(int(est_mul_bin(n, 30)) for n in range(10 ** d))
+              for d in range(3, m)]
+    print(end="Binary     ")
+    print(*(f"{binary[d-3]:{d+3}d}" for d in range(3, m)))
+    optimal = [sum(int(otfR_optimal(n, 30)) for n in range(10 ** d))
+              for d in range(3, m-1)]
+    print(end="Optimal    ")
+    print(*(f"{optimal[d-3]:{d+3}d}" for d in range(3, m-1)))
+    good = [sum(int(otfR_good(n, 30)) for n in range(10 ** d))
+              for d in range(3, m)]
+    print(end="Good       ")
+    print(*(f"{good[d-3]:{d+3}d}" for d in range(3, m)))
+    print(end="Difference ")
+    print(*(f"{(good[d-3]-binary[d-3])/binary[d-3]:{d+3}.1%}"
+            for d in range(3, m)))
+
+# If you look at the output of this routine, you see the patterns
+# that allow to guess the optimal chunk size
+# for more, see showOverviewOutput.txt
+def showOverview(margin=.01, ws=30, lengths=None, prefixes=None, verbose=False):
+    """Shows a very concise overview of te best choices to make for
+    the otfR parameter.
+    Parameters: accuracy margin (take e.g. .001 for high accuracy (slow!)
+    ws: word size of Python's integers
+    lengths: iterable of bit lengths: default 6 to 100 in increasing steps
+    prefixs: iterable of prefixes: default is all
+    Lines are like this:
+    [22,9:2<1;3>4]24 4 4 4 4 34 3 s 3 3 3 3 3 3 3 3 3
+      | |  |   |  ^ choices for chunkSize for h2=0 and up that give value
+      | |  |   |    that uses almost optimal multiplications
+      | |  |   |    e.g. 34 means that for h2=5, both s and 4 are almost optimal
+      | |  |   ^ if h2>4, you can safely use s (! means: use always)
+      | |  ^ if h2<1, you can safely use 2
+      | ^ prefix (first four bits of number in hex)
+      ^ length of number in bits
+    If the line is near optimal for 2 (prefix 89cd) or 3 (prefix abef)
+    irrespective of h2, is it omitted.
+    Also notice the wordsize artifacts for numbers just above 30, 60.
+    Lower margin is more accurate, but slower of course
+    """
+    samplesize = int(1 / margin**2)
+    if prefixes is None: prefixes = range(8, 16)
+    if lengths is None: lengths = chain(
+            range(6,35),
+            range(35, 65, 2),
+            range(65, 100, 5))
+    for length in lengths:
+        for prefix in prefixes:
+            m2 = defaultdict(int)
+            m3 = defaultdict(int)
+            m4 = defaultdict(int)
+            m5 = defaultdict(int)
+            ns = range(prefix << length-4, prefix+1 << length-4)
+            if samplesize >> length - 4: pass
+            elif length < 30: ns = sample(ns, samplesize)
+            else: ns = islice(iter(
+                lambda:getrandbits(length-4)|prefix<<length-4,
+                None),samplesize)
+            for n in ns:
+                h2 = hamming(n&n>>2)
+                m2[h2] += int(otfR(n,ws,2))
+                m3[h2] += int(otfR(n,ws,3))
+                m4[h2] += int(otfR(n,ws,4))
+                m5[h2] += int(otfR(n,ws,5))
+            line = []
+            irrelevant = sum(m2.values()) * margin
+            for k in range(max(m2)+1):
+                m = m2[k],m3[k],m4[k],m5[k]
+                b = min(m) * (margin + 1)
+                line.append((''.join(
+                    str(i)
+                    for i,v in enumerate(m, start=2)
+                    if irrelevant <= v <= b)) or '-')
+            if not verbose:
+                prediction = str((prefix >> 1 & 1) + 2)
+                if all(prediction in w or w=='-' for w in line): continue
+            while line[-1] == '-': del line[-1]
+            head = ""
+            try:
+                non2 = min(i
+                           for i,w in enumerate(line)
+                           if "2" not in w and w != '-')
+                head += f"2<{non2}"
+            except ValueError: head += "2!"
+            try:
+                hi3 = max(i
+                          for i,w in enumerate(line)
+                          if "3" not in w and w != '-')
+                head += f";3>{hi3}"
+            except ValueError: head += ";3!"
+            try:
+                hi4 = max(i
+                          for i,w in enumerate(line)
+                          if "4" not in w and w != '-')
+                if hi4 < len(line) - 1: head += f";4>{hi4}"
+            except ValueError: head += ";4!"
+            line = ']' + ' '.join(line)
+            if prefix == 9: line = line.replace("3", "s")
+            print(f"[{length},{prefix:x}:" + head + line)
+        print()
+        #if length>15: input("?")
+
+def showOverview2(margin=.01, ws=30, lengths=None, prefixes=None):
+    """Checks out if goodChunksize works.
+    Parameters: accuracy margin (take e.g. .001 for high accuracy (slow!)
+    ws: word size of Python's integers
+    lengths: iterable of bit lengths: default 6 to 100 in increasing steps
+    prefixs: iterable of prefixes: default is all
+    [22,9:0.100]24 4 4 4 4 s4 s s s s s s s s s s s
+      ^ ^  ^    ^ choices for chunkSize for h2=0 and up that give value
+      | |  |      that uses almost optimal multiplications
+      | |  |      e.g. 34 means that for h2=5, both s and 4 are almost optimal
+      | |  ^  number of multiplications lost per call to goodChunksize
+      | ^ prefix (first four bits of number in hex)
+      ^ length of number in bits
+    """
+    if prefixes is None: prefixes = range(8, 16)
+    if lengths is None: lengths = chain(
+            range(6,35),
+            range(35, 65, 2),
+            range(65, 100, 5))
+    totalLoss = 0
+    samplesize = int(1 / margin**2)
+    for length in lengths:
+        for prefix in prefixes:
+            m2 = defaultdict(int)
+            m3 = defaultdict(int)
+            m4 = defaultdict(int)
+            m5 = defaultdict(int)
+            m6 = defaultdict(int)
+            choice = {}
+            ns = range(prefix << length-4, prefix+1 << length-4)
+            if samplesize >> length - 4: pass
+            elif length < 30: ns = sample(ns, samplesize)
+            else: ns = islice(iter(
+                lambda:getrandbits(length-4)|prefix<<length-4,
+                None),samplesize)
+            samples = 0
+            for n in ns:
+                samples += 1
+                h2 = hamming(n&n>>2)
+                m2[h2] += int(otfR(n,ws,2))
+                m3[h2] += int(otfR(n,ws,3))
+                m4[h2] += int(otfR(n,ws,4))
+                m5[h2] += int(otfR(n,ws,5))
+                m6[h2] += int(otfR(n,ws,6))
+                if h2 not in choice: choice[h2] = goodChunksize(n)
+            line = []
+            irrelevant = sum(m2.values()) * margin
+            loss = 0
+            for k in range(max(m2)+1):
+                m = m2[k],m3[k],m4[k],m5[k],m6[k]
+                b = min(m) * (margin + 1)
+                line.append((''.join(
+                    str(i)
+                    for i,v in enumerate(m, start=2)
+                    if irrelevant <= v <= b)) or '-')
+                if k in choice:
+                    loss += m[choice[k] - 2] - min(m)
+            while line and line[-1] == '-': del line[-1]
+            if line[:3] == ['-', '-', '-']:
+                firstNonDash = 0
+                while line[firstNonDash] == '-': firstNonDash += 1
+                line[:firstNonDash] = [str(firstNonDash) + '*-']
+            line = ']' + ' '.join(line)
+            print(f"[{length},{prefix:x}:{loss/samples:.3f}"  + line)
+            totalLoss += loss/samples
+        if len(prefixes) != 1: print()
+    return totalLoss
+
+# extended tests ---------------------------------------------------
+__test__ = {
+'mul_bin_small': '''
+    >>> for i in range(256):
+    ...   if est_mul_bin(i,4) != mul_bin(i, 4):
+    ...      print(i, est_mul_bin(i,4), mul_bin(i, 4))
+''',
+'mul_bin_big': '''
+    >>> for b in range(8, 100):
+    ...   r = getrandbits(b)
+    ...   if est_mul_bin(r, 15) != mul_bin(r, 15):
+    ...      print(i, est_mul_bin(i,15), mul_bin(i, 15))
+    ...   if est_mul_bin(r, 30) != mul_bin(r, 30):
+    ...      print(i, est_mul_bin(i,30), mul_bin(i, 30))
+''',
+'mulP_small': '''
+    >>> for i in range(256):
+    ...   if est_mulP(i,4,2) != mulP(i, 4, 2):
+    ...      print(i, est_mulP(i,4, 2), mulP(i, 4, 2))
+''',
+'mulP_big': '''
+    >>> for b in range(8, 100):
+    ...   r = getrandbits(b)
+    ...   if est_mulP(r, 15, 3) != mulP(r, 15, 3):
+    ...      print(b, est_mulP(r, 15, 3), mulP(r, 15, 3))
+    ...   if est_mulP(r, 30, 5) != mulP(r, 30, 5):
+    ...      print(b, est_mulP(r, 30, 5), mulP(r, 30, 5))
+''',
+'otfR_small': '''
+    >>> otfR(0x1b, 15, 2)
+    Mults(squares=4, mults=2, empty=0, chunkSize=2)
+    >>> otfR(0x27, 15, 3)
+    Mults(squares=3, mults=5, empty=0, chunkSize=3)
+    >>> otfR(0x73, 15, 3)
+    Mults(squares=5, mults=4, empty=0, chunkSize=3)
+    >>> for i in range(10):
+    ...    print (i, otfR(i, 8, 2 + i % 2))   #doctest:   +REPORT_NDIFF
+    0 Mults(squares=0, mults=0, empty=0, chunkSize=2)
+    1 Mults(squares=0, mults=0, empty=0, chunkSize=3)
+    2 Mults(squares=1, mults=0, empty=0, chunkSize=2)
+    3 Mults(squares=1, mults=1, empty=0, chunkSize=3)
+    4 Mults(squares=2, mults=0, empty=0, chunkSize=2)
+    5 Mults(squares=1, mults=2, empty=0, chunkSize=3)
+    6 Mults(squares=2, mults=1, empty=0, chunkSize=2)
+    7 Mults(squares=1, mults=3, empty=0, chunkSize=3)
+    8 Mults(squares=3, mults=0, empty=0, chunkSize=2)
+    9 Mults(squares=3, mults=1, empty=0, chunkSize=3)
+''',
+'quality': '''
+    >>> sum(int(est_mulP(n, 30, 5)) for n in range(1024))
+    38688
+    >>> sum(int(est_mulJ(n, 30, 5)) for n in range(1024))
+    21934
+    >>> sum(int(est_mulP(n, 30, 3)) for n in range(1024))
+    17832
+    >>> sum(int(est_mulP(n, 30, 2)) for n in range(1024))
+    14424
+    >>> sum(int(est_mul_bin(n, 30)) for n in range(1024))
+    13314
+    >>> sum(int(est_mulJ(n, 30, 3)) for n in range(1024))
+    12482
+    >>> sum(int(est_mulJ(n, 30, 2)) for n in range(1024))
+    11724
+    >>> sum(int(otfR(n, 30, 3)) for n in range(1024))
+    11581
+    >>> sum(int(otfR(n, 30, 2)) for n in range(1024))
+    11578
+    >>> sum(int(otfR(n, 30, 2)) > int(est_mul_bin(n, 30)) for n in range(1024))
+    0
+''',
+}
+
+if __name__ == "__main__":
+    import doctest
+    print(doctest.testmod())
+

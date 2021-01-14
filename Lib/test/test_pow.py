@@ -144,6 +144,29 @@ class PowTest(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             pow(a, -1001, m)
 
+    def test_fermat(self, base=3):
+        # use Fermat's theorem to test very high powers for the addition chains
+        prime = 10 ** 17 - 3
+        for length in range(60, 1000):
+            for prefix in range(8, 16):
+                n = prefix << length - 4 | getrandbits(length - 4)
+                self.assertEqual(pow(base, n, prime),
+                                 pow(base, n % (prime-1), prime))
+
+    def test_heuristic(self):
+        # test all cases of the heuristic addition chain optimizer
+        prime = 10 ** 17 - 3
+        for n in range(1 << 8):
+            self.assertEqual(2 ** n, 1 << n)
+        for length in range(8,61):
+            for ones in range(length - 3):
+                pattern = (1 << ones) - 1
+                for prefix in range(8, 16):
+                    n = prefix << length - 4 | pattern
+                    m = getrandbits(length - 1)
+                    self.assertEqual(
+                        pow(2, n, prime),
+                        pow(2, m, prime) * pow(2, n-m, prime) % prime)
 
 if __name__ == "__main__":
     unittest.main()
