@@ -242,6 +242,10 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
 
+The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
+they are provided by the underlying curses library.
+(Contributed by Zackery Spytz in :issue:`39273`.)
+
 distutils
 ---------
 
