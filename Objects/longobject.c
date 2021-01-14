@@ -4343,7 +4343,7 @@ PyLongObject* addition_chain(
         return (PyLongObject*)PyLong_FromLong(1L);
 
     // Prepare the table by storing a in table[0]
-    / table[0] could be the result of the call
+    // table[0] could be the result of the call
     // since a can be > c, it must be reduced
     if (c != NULL) {
         if (l_divmod(a, c, NULL, &temp) < 0)
