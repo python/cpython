@@ -1,0 +1,2 @@
+Improve error messages in the parser when parentheses are not closed. Patch
+by Pablo Galindo.
