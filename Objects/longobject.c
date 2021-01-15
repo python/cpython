@@ -31,12 +31,8 @@ int _Py_bit_count64(uint64_t x) {
     return _Py_popcount32(x >> 32) + _Py_popcount32((unsigned long)x);
 }
 
-#ifndef NSMALLPOSINTS
-#define NSMALLPOSINTS           257
-#endif
-#ifndef NSMALLNEGINTS
-#define NSMALLNEGINTS           5
-#endif
+#define NSMALLNEGINTS           _PY_NSMALLNEGINTS
+#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
 
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
