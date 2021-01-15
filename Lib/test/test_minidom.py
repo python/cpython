@@ -1699,5 +1699,16 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(parentNode.toxml(),
                          '<parent>new text<existing/></parent>')
 
+    def test_insertBefore_with_no_reference_node(self):
+        """Test insertBefore with no reference node."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        newNode = dom.createTextNode('text trailing')
+        # insertBefore with no reference node aka None
+        parentNode.insertBefore(newNode, None)
+        self.assertEqual(parentNode.toxml(),
+                         '<parent><existing/>text trailing</parent>')
+
 if __name__ == "__main__":
     unittest.main()
