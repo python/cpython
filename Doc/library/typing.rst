@@ -1949,7 +1949,7 @@ Introspection helpers
    For example, ``list["SomeClass"]`` is implicitly transformed into
    ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
-   
+
    .. versionadded:: 3.7.4
 
 Constant
