@@ -3178,6 +3178,7 @@ main_loop:
                         if (la->hint < 0) {
                             /* Even faster path -- slot hint */
                             Py_ssize_t offset = ~la->hint;
+                            // fprintf(stderr, "Using hint for offset %zd\n", offset);
                             char *addr = (char *)owner + offset;
                             res = *(PyObject **)addr;
                             if (res != NULL) {
@@ -3262,7 +3263,7 @@ main_loop:
                                     // First time we optimize this opcode.
                                     OPCACHE_STAT_ATTR_OPT();
                                     co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
-                                    fprintf(stderr, "Setting hint for %s, offset %zd\n", dmem->name, offset);
+                                    // fprintf(stderr, "Setting hint for %s, offset %zd\n", dmem->name, offset);
                                 }
 
                                 la = &co_opcache->u.la;
