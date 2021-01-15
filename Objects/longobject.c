@@ -4130,8 +4130,8 @@ long_invmod(PyLongObject *a, PyLongObject *n)
  */
 #define ENSURE_TABLE_ENTRY(chunk)                                          \
     do {                                                                \
-        while(tableSize < chunk / 2) {                                  \
-            MULTMODC(aSquared, table[tableSize], table[tableSize + 1]); \
+        while(tableSize <= chunk / 2) {                                  \
+            MULTMODC(aSquared, table[tableSize - 1], table[tableSize]); \
             tableSize++;                                                \
         }                                                               \
     } while (0);
@@ -4322,7 +4322,7 @@ PyLongObject* addition_chain(
     PyLongObject* table[32] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
     // index of last full entry in table
-    int tableSize;
+    int tableSize = 0;
     // if the exponent is larger than 1, we store the square here
     PyLongObject* aSquared = 0;
     // for digit loop: value of current digit, and number to digits to process then
@@ -4353,7 +4353,7 @@ PyLongObject* addition_chain(
     }
     table[0] = temp;
     temp = NULL;
-    tableSize = 0;
+    tableSize = 1;
 
     // Skip the computation of aSquared for exponent 1
     // because it isn't used
@@ -4474,8 +4474,8 @@ Error:
     /* fall through */
 Done:
     Py_CLEAR(aSquared);
-    // Yes the table is tableSize + 1 entries, I know
-    for (int i = 0; i <= tableSize; i++)
+    // Yes the table is tableSize entries, I know
+    for (int i = 0; i < tableSize; i++)
         Py_CLEAR(table[i]);
     return result;
 }
