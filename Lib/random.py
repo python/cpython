@@ -78,6 +78,7 @@ __all__ = [
     "lognormvariate",
     "normalvariate",
     "paretovariate",
+    "randbytes",
     "randint",
     "random",
     "randrange",
