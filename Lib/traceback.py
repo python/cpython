@@ -110,8 +110,8 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     value, tb = _parse_value_tb(exc, value, tb)
     if file is None:
         file = sys.stderr
-    for line in TracebackException(
-            type(value), value, tb, limit=limit).format(chain=chain):
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    for line in te.format(chain=chain):
         print(line, file=file, end="")
 
 
@@ -126,8 +126,8 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     printed as does print_exception().
     """
     value, tb = _parse_value_tb(exc, value, tb)
-    return list(TracebackException(
-        type(value), value, tb, limit=limit).format(chain=chain))
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    return list(te.format(chain=chain))
 
 
 def format_exception_only(exc, /, value=_sentinel):
@@ -146,8 +146,8 @@ def format_exception_only(exc, /, value=_sentinel):
     """
     if value is _sentinel:
         value = exc
-    return list(TracebackException(
-        type(value), value, None).format_exception_only())
+    te = TracebackException(type(value), value, None, compact=True)
+    return list(te.format_exception_only())
 
 
 # -- not official API but folk probably use these two functions.
@@ -476,7 +476,8 @@ class TracebackException:
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
-            lookup_lines=True, capture_locals=False, _seen=None):
+            lookup_lines=True, capture_locals=False, compact=False,
+            _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -485,6 +486,7 @@ class TracebackException:
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
+
         # TODO: locals.
         self.stack = StackSummary.extract(
             walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
@@ -504,7 +506,7 @@ class TracebackException:
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
-            exc_value.__suppress_context__ if exc_value else False
+            exc_value.__suppress_context__ if exc_value is not None else False
 
         # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
         # queue to avoid recursion (only the top-level call gets _seen == None)
@@ -524,8 +526,13 @@ class TracebackException:
                         _seen=_seen)
                 else:
                     cause = None
+
+                if compact:
+                    need_context = cause is None and not e.__suppress_context__
+                else:
+                    need_context = True
                 if (e and e.__context__ is not None
-                    and id(e.__context__) not in _seen):
+                    and need_context and id(e.__context__) not in _seen):
                     context = TracebackException(
                         type(e.__context__),
                         e.__context__,
