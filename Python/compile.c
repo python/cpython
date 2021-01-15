@@ -2371,6 +2371,8 @@ compiler_class(struct compiler *c, stmt_ty s)
             compiler_exit_scope(c);
             return 0;
         }
+        /* The following code is artificial */
+        c->u->u_lineno = -1;
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
