@@ -27,6 +27,7 @@ that mutations from extensions will be tracked
 * Problem: what if a data structure/object is modified outside of my
 supervision? Such as from a native C module?
     * Option 1: Have a dirty flag or version flag inside the data structure
+    * Option 2: track mutation events from within the data structure itself
 
 ## Done
 

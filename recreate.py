@@ -1,20 +1,25 @@
 # Todo
 
+# strings
+# bug: shortest_common_supersequence.py strings look like {}
 # lists
 #   * append(done)
-#   * extend
-#   * insert
-#   * subscript set
-#   * remove
-#   * pop
-#   * clear
+#   * extend (done)
+#   * delete subscript (done)
+#   * store subscript (done)
+#   * insert (done)
+#   * remove (done)
+#   * pop (done)
+#   * clear (done)
 #   * sort
-#   * reverse
-# tuples
+#   * reverse (done)
+#   * list within lists (heap object refs)
+# tuples (done)
 # dicts
 # sets
 # objects
 
+# bug: permutations_2.py rest looks like {}? (done)
 # test debugger on basic example (done)
 # change ID scheme for class-based objects (done)
 # Trim initialization code execution (done)
@@ -91,7 +96,7 @@ def parse_csv(value):
 
 def parse_value(value):
     if value[0] == "*":
-        return HeapRef(value[1:])
+        return HeapRef(int(value[1:]))
     else:
         return eval(value)
 
@@ -129,10 +134,19 @@ VISIT_REGEX = re.compile(r'VISIT #([0-9]+)')
 PUSH_FRAME_REGEX = re.compile(r'PUSH_FRAME\(filename: (.*), name: (.*), varnames: \((.*)\), locals: \((.*)\)\)')
 RETURN_VALUE_REGEX = re.compile(r'RETURN_VALUE\((.*)\)')
 DEALLOC_OBJECT_REGEX = re.compile(r'DEALLOC_OBJECT\((.*)\)')
-NEW_LIST_REGEX = re.compile(r'NEW_LIST\(((?:[*0-9]+, )+(?:[*0-9]+)?)\)')
+NEW_LIST_REGEX = re.compile(r'NEW_LIST\((.*)\)')
 STORE_FAST_REGEX = re.compile(r'STORE_FAST\(([0-9]+), (.*)\)')
 STORE_NAME_REGEX = re.compile(r'STORE_NAME\((.*), (.*)\)')
 LIST_APPEND_REGEX = re.compile(r'LIST_APPEND\((.*), (.*)\)')
+LIST_EXTEND_REGEX = re.compile(r'LIST_EXTEND\((.*), (.*)\)')
+NEW_TUPLE_REGEX = re.compile(r'NEW_TUPLE\((.*?), (.*)\)')
+DELETE_SUBSCRIPT_REGEX = re.compile(r'DELETE_SUBSCRIPT\((.*), (.*)\)')
+STORE_SUBSCRIPT_REGEX = re.compile(r'STORE_SUBSCRIPT\((.*), (.*), (.*)\)')
+LIST_INSERT_REGEX = re.compile(r'LIST_INSERT\((.*), (.*), (.*)\)')
+LIST_REMOVE_REGEX = re.compile(r'LIST_REMOVE\((.*), (.*)\)')
+LIST_POP_REGEX = re.compile(r'LIST_POP\((.*)\)')
+LIST_CLEAR_REGEX = re.compile(r'LIST_CLEAR\((.*)\)')
+LIST_REVERSE_REGEX = re.compile(r'LIST_REVERSE\((.*)\)')
 
 def recreate_past(conn):
     class StackFrameVars(object):
@@ -227,6 +241,8 @@ def recreate_past(conn):
             return "[" + ", ".join(map(serialize_member, value)) + "]"
         elif isinstance(value, dict):
             return "{" + ", ".join(map(format_key_value_pair, value.items())) + "}"
+        elif isinstance(value, tuple):
+            return "[" + ", ".join(map(serialize_member, value)) + "]"
         else:
             return serialize_member(value)
 
@@ -242,6 +258,15 @@ def recreate_past(conn):
         conn.commit()
         return oid
     
+    def update_heap_object(heap_id, new_obj):
+        nonlocal heap
+        nonlocal heap_id_to_object_dict
+
+        heap_id_to_object_dict[heap_id] = new_obj
+        oid = save_object(new_obj)
+        heap = { **heap, heap_id: ObjectRef(oid) }
+        save_object(heap)
+
     def process_push_frame(line):
         nonlocal begin
         nonlocal conn
@@ -404,14 +429,10 @@ def recreate_past(conn):
 
         m = NEW_LIST_REGEX.match(line)
         if m:
-            parts = m.group(1).split(', ')
+            parts = list(filter(lambda part: part != '', m.group(1).split(', ')))
             heap_id = int(parts[0])
-            a_list = []
-            heap_id_to_object_dict[heap_id] = a_list
-            oid = save_object(a_list)
-            heap = { **heap, heap_id: ObjectRef(oid) }
-            save_object(heap)
-            items = []
+            a_list = list(map(parse_value, parts[1:]))
+            update_heap_object(heap_id, a_list)
             return True
         return False
     
@@ -425,13 +446,130 @@ def recreate_past(conn):
             item = parse_value(m.group(2))
             a_list = heap_id_to_object_dict[heap_id]
             a_list = a_list + [item]
-            heap_id_to_object_dict[heap_id] = a_list
-            oid = save_object(a_list)
-            heap = { **heap, heap_id: ObjectRef(oid) }
-            save_object(heap)
+            update_heap_object(heap_id, a_list)
+            return True
+        return False
+    
+    def process_list_extend(line):
+        nonlocal stack
+        nonlocal heap
+
+        m = LIST_EXTEND_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            other_list_heap_ref = parse_value(m.group(2))
+            a_list = heap_id_to_object_dict[heap_id]
+            other_list = heap_id_to_object_dict[other_list_heap_ref.id]
+            new_a_list = a_list + list(other_list)
+            update_heap_object(heap_id, new_a_list)
+            return True
+        return False
+    
+    def process_new_tuple(line):
+        nonlocal stack
+        nonlocal heap
+
+        m = NEW_TUPLE_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            items = parse_csv(m.group(2))
+            a_tuple = tuple(items)
+            update_heap_object(heap_id, a_tuple)
             return True
         return False
 
+    def process_delete_subscript(line):
+        nonlocal stack
+        nonlocal heap
+        m = DELETE_SUBSCRIPT_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            index = parse_value(m.group(2))
+            obj = heap_id_to_object_dict[heap_id]
+            # lists only. TODO support dict and other structures
+            new_obj = obj.copy()
+            del new_obj[index]
+            update_heap_object(heap_id, new_obj)
+            return True
+        return False
+
+    def process_store_subscript(line):
+        nonlocal stack
+        nonlocal heap
+        m = STORE_SUBSCRIPT_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            index = parse_value(m.group(2))
+            value = parse_value(m.group(3))
+            obj = heap_id_to_object_dict[heap_id]
+            # lists only. TODO support dict and other structures
+            new_list = obj.copy()
+            new_list[index] = value
+            update_heap_object(heap_id, new_list)
+            return True
+        return False
+
+    def process_list_insert(line):
+        nonlocal stack
+        nonlocal heap
+
+        m = LIST_INSERT_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            index = parse_value(m.group(2))
+            value = parse_value(m.group(3))
+            obj = heap_id_to_object_dict[heap_id]
+            new_list = obj.copy()
+            new_list.insert(index, value)
+            update_heap_object(heap_id, new_list)
+            return True
+        return False
+
+    def process_list_remove(line):
+        nonlocal stack
+        nonlocal heap
+
+        m = LIST_REMOVE_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            value = parse_value(m.group(2))
+            obj = heap_id_to_object_dict[heap_id]
+            new_list = obj.copy()
+            new_list.remove(value)
+            update_heap_object(heap_id, new_list)
+            return True
+        return False
+
+    def process_list_pop(line):
+        m = LIST_POP_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            a_list = heap_id_to_object_dict[heap_id]
+            new_list = a_list.copy()
+            new_list.pop()
+            update_heap_object(heap_id, new_list)
+            return True
+        return False
+
+    def process_list_clear(line):
+        m = LIST_CLEAR_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            update_heap_object(heap_id, [])
+            return True
+        return False
+
+    def process_list_reverse(line):
+        m = LIST_REVERSE_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            a_list = heap_id_to_object_dict[heap_id]
+            new_list = a_list.copy()
+            new_list.reverse()
+            update_heap_object(heap_id, new_list)
+            return True
+        return False
+            
     cursor = conn.cursor()
     begin = False
     next_snapshot_id = 1
@@ -467,6 +605,24 @@ def recreate_past(conn):
         if process_new_list(line):
             continue
         if process_list_append(line):
+            continue
+        if process_list_extend(line):
+            continue
+        if process_new_tuple(line):
+            continue
+        if process_delete_subscript(line):
+            continue
+        if process_store_subscript(line):
+            continue
+        if process_list_insert(line):
+            continue
+        if process_list_remove(line):
+            continue
+        if process_list_pop(line):
+            continue
+        if process_list_clear(line):
+            continue
+        if process_list_reverse(line):
             continue
 
 def main():

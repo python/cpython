@@ -21,3 +21,5 @@ def permute_unique(so_far, rest):
 s = Solution()
 result = s.permuteUnique([1,2,3])
 print(result)
+result2 = s.permuteUnique([1,2,2,3])
+print(result2)

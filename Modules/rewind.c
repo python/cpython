@@ -35,6 +35,13 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
     if (equalstr(code->co_name, "__init__")) {
         Rewind_TrackObject(*frame->f_localsplus);
     }
+    PyObject **valuestack = frame->f_valuestack;
+    for (PyObject **p = frame->f_localsplus; p < valuestack; p++) {
+        PyObject *obj = *p;
+        if (obj != NULL) {
+            Rewind_TrackObject(obj);
+        }
+    }
 
     lastLine = -1;
     fprintf(rewindLog, "PUSH_FRAME(");
@@ -45,7 +52,7 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
     fprintf(rewindLog, ", varnames: ");
     PyObject_Print(code->co_varnames, rewindLog, 0);
     fprintf(rewindLog, ", locals: (");
-    PyObject **valuestack = frame->f_valuestack;
+    
     for (PyObject **p = frame->f_localsplus; p < valuestack; p++) {
         if (p != frame->f_localsplus) {
             fprintf(rewindLog, ", ");
@@ -54,6 +61,7 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
         if (obj == NULL) {
             fprintf(rewindLog, "None");
         } else {
+            
             Rewind_serializeObject(rewindLog, obj);
         }
     }
@@ -69,24 +77,9 @@ void Rewind_BuildList(PyObject *list) {
 
 void Rewind_ListExtend(PyObject *list, PyObject *iterable) {
     if (!rewindInitialized) return;
-
-    PyObject *iterator = PySequence_Fast(iterable, "argument must be iterable");
-    Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
-    PyObject **items = PySequence_Fast_ITEMS(iterator);
-    for (int i = 0; i < n; i++) {
-        Rewind_TrackObject(items[i]);
-    }
-
+    Rewind_TrackObject(iterable);
     fprintf(rewindLog, "LIST_EXTEND(%lu, ", (unsigned long)list);
-    iterator = PySequence_Fast(iterable, "argument must be iterable");
-    n = PySequence_Fast_GET_SIZE(iterator);
-    items = PySequence_Fast_ITEMS(iterator);
-    for (int i = 0; i < n; i++) {
-        if (i != 0) {
-            fprintf(rewindLog, ", ");
-        }
-        Rewind_serializeObject(rewindLog, items[i]);
-    }
+    Rewind_serializeObject(rewindLog, iterable);
     fprintf(rewindLog, ")\n");
 }
 
@@ -135,10 +128,7 @@ void Rewind_CallMethod(PyObject *method, PyObject **stack_pointer, int level) {
                 fprintf(rewindLog, ")\n");
             } else if (equalstr(currentMethodName, "extend")) {
                 PyObject *iterable = stack_pointer[-1];
-                Rewind_TrackObject(iterable);
-                fprintf(rewindLog, "LIST_EXTEND(%lu, ", (unsigned long)currentMethodSelf);
-                Rewind_serializeObject(rewindLog, iterable);
-                fprintf(rewindLog, ")\n");
+                Rewind_ListExtend(currentMethodSelf, iterable);
             } else if (equalstr(currentMethodName, "insert")) {
                 PyObject *value = stack_pointer[-1];
                 PyObject *index = stack_pointer[-2];
@@ -372,6 +362,31 @@ void Rewind_TrackObject(PyObject *obj) {
         Py_DECREF(iterator);
 
         fprintf(rewindLog, "NEW_SET(%lu, ", (unsigned long)obj);
+        iterator = PySequence_Fast(obj, "argument must be iterable");
+        n = PySequence_Fast_GET_SIZE(iterator);
+        iteratorItems = PySequence_Fast_ITEMS(iterator);
+        for (int i = 0; i < n; i++) {
+            if (i != 0) {
+                fprintf(rewindLog, ", ");
+            }
+            PyObject *item = iteratorItems[i];
+            Rewind_serializeObject(rewindLog, item);
+        }
+        fprintf(rewindLog, ")\n");
+    } else if (Py_IS_TYPE(obj, &PyTuple_Type)) {
+        PySet_Add(knownObjectIds, id);
+        Py_DECREF(id);
+
+        PyObject *iterator = PySequence_Fast(obj, "argument must be iterable");
+        Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
+        PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
+        for (int i = 0; i < n; i++) {
+            PyObject *item = iteratorItems[i];
+            Rewind_TrackObject(item);
+        }
+        Py_DECREF(iterator);
+
+        fprintf(rewindLog, "NEW_TUPLE(%lu, ", (unsigned long)obj);
         iterator = PySequence_Fast(obj, "argument must be iterable");
         n = PySequence_Fast_GET_SIZE(iterator);
         iteratorItems = PySequence_Fast_ITEMS(iterator);
