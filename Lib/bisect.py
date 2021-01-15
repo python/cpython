@@ -17,7 +17,7 @@ def insort_right(a, x, lo=0, hi=None):
         mid = (lo+hi)//2
         if x < a[mid]: hi = mid
         else: lo = mid+1
-    a.insert(lo, x)
+    a[lo:lo] = x
 
 insort = insort_right   # backward compatibility
 
@@ -61,7 +61,7 @@ def insort_left(a, x, lo=0, hi=None):
         mid = (lo+hi)//2
         if a[mid] < x: lo = mid+1
         else: hi = mid
-    a.insert(lo, x)
+    a[lo:lo] = x
 
 
 def bisect_left(a, x, lo=0, hi=None):
