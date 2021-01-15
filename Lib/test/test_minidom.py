@@ -1676,5 +1676,16 @@ class MinidomTest(unittest.TestCase):
         # after the insert the fragment is empty
         self.assertEqual(fragment.childNodes.length, 0)
 
+    def test_insertBefore_with_invalid_node_type(self):
+        """Test insertBefore with invalid node type."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        doc = getDOMImplementation().createDocument(None, "doc", None)
+        # parentNode.insertBefore(doc, existingNode) will raise
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          parentNode.insertBefore, doc, existingNode)
+
 if __name__ == "__main__":
     unittest.main()
