@@ -2456,7 +2456,7 @@ fatal_error_dump_runtime(FILE *stream, _PyRuntimeState *runtime)
     fprintf(stream, "Python runtime state: ");
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
     if (finalizing) {
-        fprintf(stream, "finalizing (tstate=%p)", finalizing);
+        fprintf(stream, "finalizing (tstate=%p)", (const void *)finalizing);
     }
     else if (runtime->initialized) {
         fprintf(stream, "initialized");
