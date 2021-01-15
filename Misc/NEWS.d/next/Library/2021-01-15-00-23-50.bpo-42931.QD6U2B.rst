@@ -1,1 +1,1 @@
-Add randbytes to random.__all__
+Add :func:`randbytes` to ``random.__all__``.
