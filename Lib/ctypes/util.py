@@ -251,6 +251,8 @@ elif os.name == "posix":
                     line = line.strip()
                     if line.startswith(b'Default Library Path (ELF):'):
                         paths = os.fsdecode(line).split()[4]
+                    elif line.startswith(b'Default Library Path:'):
+                        paths = os.fsdecode(line).split()[3]
 
             if not paths:
                 return None
