@@ -3170,11 +3170,11 @@ main_loop:
             if (co_opcache != NULL && PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
             {
                 if (co_opcache->optimized > 0) {
-                    /* Fast path -- cache hit makes LOAD_ATTR ~30% faster */
+                    // Fast path -- cache hit makes LOAD_ATTR ~30% faster.
                     la = &co_opcache->u.la;
                     if (la->type == type && la->tp_version_tag == type->tp_version_tag)
                     {
-                        // Hint >= 0 is a dict index; hint < 0 is an inverted slot index
+                        // Hint >= 0 is a dict index; hint < 0 is an inverted slot index.
                         if (la->hint < 0) {
                             /* Even faster path -- slot hint */
                             Py_ssize_t offset = ~la->hint;
@@ -3187,55 +3187,52 @@ main_loop:
                                 Py_DECREF(owner);
                                 DISPATCH();
                             }
-                            else {
-                                Py_DECREF(owner);
-                                goto error;
-                            }
-                        }
-
-                        /* Fast path for dict */
-                        assert(type->tp_dict != NULL);
-                        assert(type->tp_dictoffset > 0);
-
-                        dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-                        dict = *dictptr;
-                        if (dict != NULL && PyDict_CheckExact(dict)) {
-                            Py_ssize_t hint = la->hint;
-                            Py_INCREF(dict);
-                            res = NULL;
-                            la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
-
-                            if (res != NULL) {
-                                if (la->hint == hint && hint >= 0) {
-                                    /* Our hint has helped -- cache hit. */
-                                    OPCACHE_STAT_ATTR_HIT();
-                                } else {
-                                    /* The hint we provided didn't work.
-                                       Maybe next time? */
-                                    OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
-                                }
-
-                                Py_INCREF(res);
-                                SET_TOP(res);
-                                Py_DECREF(owner);
-                                Py_DECREF(dict);
-                                DISPATCH();
-                            } else {
-                                // This attribute can be missing sometimes -- we
-                                // don't want to optimize this lookup.
-                                OPCACHE_DEOPT_LOAD_ATTR();
-                                Py_DECREF(dict);
-                            }
+                            // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
+                            // Don't DEOPT, since the slot is still there.
                         } else {
-                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
-                            OPCACHE_DEOPT_LOAD_ATTR();
+                            // Fast path for dict
+                            assert(type->tp_dict != NULL);
+                            assert(type->tp_dictoffset > 0);
+
+                            dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+                            dict = *dictptr;
+                            if (dict != NULL && PyDict_CheckExact(dict)) {
+                                Py_ssize_t hint = la->hint;
+                                Py_INCREF(dict);
+                                res = NULL;
+                                la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
+
+                                if (res != NULL) {
+                                    if (la->hint == hint && hint >= 0) {
+                                        /* Our hint has helped -- cache hit. */
+                                        OPCACHE_STAT_ATTR_HIT();
+                                    } else {
+                                        /* The hint we provided didn't work.
+                                        Maybe next time? */
+                                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
+                                    }
+
+                                    Py_INCREF(res);
+                                    SET_TOP(res);
+                                    Py_DECREF(owner);
+                                    Py_DECREF(dict);
+                                    DISPATCH();
+                                } else {
+                                    // This attribute can be missing sometimes -- we
+                                    // don't want to optimize this lookup.
+                                    OPCACHE_DEOPT_LOAD_ATTR();
+                                    Py_DECREF(dict);
+                                }
+                            } else {
+                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                                OPCACHE_DEOPT_LOAD_ATTR();
+                            }
                         }
                     } else {
                         // The type of the object has either been updated,
                         // or is different.  Maybe it will stabilize?
                         OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
                     }
-
                     OPCACHE_STAT_ATTR_MISS();
                 }
 
@@ -3251,7 +3248,7 @@ main_loop:
                     }
                     PyObject *descr = _PyType_Lookup(type, name);
                     if (descr != NULL) {
-                        // We found an attribute with a data-like descriptor
+                        // We found an attribute with a data-like descriptor.
                         PyTypeObject *dtype = Py_TYPE(descr);
                         if (dtype == &PyMemberDescr_Type) {  // It's a slot
                             PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
@@ -3280,14 +3277,14 @@ main_loop:
 
                                     DISPATCH();
                                 }
-                                else {
-                                    Py_DECREF(owner);
-                                    goto error;
-                                }
+                                // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
                             }
+                            // Else it's a slot of a different type.  We don't handle those.
                         }
+                        // Else it's some other kind of descriptor that we don't handle.
                         OPCACHE_DEOPT_LOAD_ATTR();
                     } else if (type->tp_dictoffset > 0) {
+                        // We found an instance with a __dict__.
                         dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
                         dict = *dictptr;
 
