@@ -1687,5 +1687,17 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.HierarchyRequestErr,
                           parentNode.insertBefore, doc, existingNode)
 
+    def test_insertBefore_with_text_node(self):
+        """Test insertBefore for text node."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        newNode = dom.createTextNode('new text')
+        # insertBefore with text node
+        parentNode.insertBefore(newNode, existingNode)
+        self.assertEqual(parentNode.toxml(),
+                         '<parent>new text<existing/></parent>')
+
 if __name__ == "__main__":
     unittest.main()
