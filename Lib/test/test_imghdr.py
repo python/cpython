@@ -22,6 +22,7 @@ TEST_FILES = (
     ('python.xbm', 'xbm'),
     ('python.webp', 'webp'),
     ('python.exr', 'exr'),
+    ('python.dcm', 'dicom'),
 )
 
 class UnseekableIO(io.FileIO):

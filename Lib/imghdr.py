@@ -14,10 +14,10 @@ def what(file, h=None):
         if h is None:
             if isinstance(file, (str, PathLike)):
                 f = open(file, 'rb')
-                h = f.read(32)
+                h = f.read(132)
             else:
                 location = file.tell()
-                h = file.read(32)
+                h = file.read(132)
                 file.seek(location)
         for tf in tests:
             res = tf(h, f)
@@ -123,6 +123,13 @@ def test_exr(h, f):
         return 'exr'
 
 tests.append(test_exr)
+
+def test_dicom(h, f):
+    """DICOM (Digital Imaging and Communications in Medicine)"""
+    if h[128:132] == b'DICM':
+        return 'dicom'
+
+tests.append(test_dicom)
 
 #--------------------#
 # Small test program #
