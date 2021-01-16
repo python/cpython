@@ -1,10 +1,14 @@
 # Todo
 
-# switch store subscript to intercepting data structures at low level
-# list pop index parameter
+# dicts
+# sets
+# objects
 # make line parsing generic
 # perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
-# test subscript delete and store with dictionaries and class-based objects
+
+# list sort (done)
+# list pop index parameter (done)
+# tuples (done)
 # lists
 #   * append(done)
 #   * extend (done)
@@ -14,14 +18,9 @@
 #   * remove (done)
 #   * pop (done)
 #   * clear (done)
-#   * sort
 #   * reverse (done)
 #   * list within lists (heap object refs)
-# tuples (done)
-# dicts
-# sets
-# objects
-
+# switch store subscript to intercepting data structures at low level (done)
 # should we remove intercept for BUILD_LIST (done)
 # bug: shortest_common_supersequence.py strings look like {} (done)
 # get log output to trim the initialization (done)
@@ -152,9 +151,10 @@ LIST_DELETE_SUBSCRIPT_REGEX = re.compile(r'LIST_DELETE_SUBSCRIPT\((.*), (.*)\)')
 LIST_STORE_SUBSCRIPT_REGEX = re.compile(r'LIST_STORE_SUBSCRIPT\((.*), (.*), (.*)\)')
 LIST_INSERT_REGEX = re.compile(r'LIST_INSERT\((.*), (.*), (.*)\)')
 LIST_REMOVE_REGEX = re.compile(r'LIST_REMOVE\((.*), (.*)\)')
-LIST_POP_REGEX = re.compile(r'LIST_POP\((.*)\)')
+LIST_POP_REGEX = re.compile(r'LIST_POP\((.*), (.*)\)')
 LIST_CLEAR_REGEX = re.compile(r'LIST_CLEAR\((.*)\)')
 LIST_REVERSE_REGEX = re.compile(r'LIST_REVERSE\((.*)\)')
+LIST_SORT_REGEX = re.compile(r'LIST_SORT\((.*)\)')
 STRING_INPLACE_ADD_RESULT_REGEX = re.compile(r'STRING_INPLACE_ADD_RESULT\((.*), (.*)\)')
 
 def recreate_past(conn):
@@ -525,9 +525,6 @@ def recreate_past(conn):
         return False
 
     def process_list_insert(line):
-        nonlocal stack
-        nonlocal heap
-
         m = LIST_INSERT_REGEX.match(line)
         if m:
             heap_id = int(m.group(1))
@@ -541,9 +538,6 @@ def recreate_past(conn):
         return False
 
     def process_list_remove(line):
-        nonlocal stack
-        nonlocal heap
-
         m = LIST_REMOVE_REGEX.match(line)
         if m:
             heap_id = int(m.group(1))
@@ -559,9 +553,10 @@ def recreate_past(conn):
         m = LIST_POP_REGEX.match(line)
         if m:
             heap_id = int(m.group(1))
+            index = int(m.group(2))
             a_list = heap_id_to_object_dict[heap_id]
             new_list = a_list.copy()
-            new_list.pop()
+            new_list.pop(index)
             update_heap_object(heap_id, new_list)
             return True
         return False
@@ -585,6 +580,16 @@ def recreate_past(conn):
             return True
         return False
     
+    def process_list_sort(line):
+        m = LIST_SORT_REGEX.match(line)
+        if m:
+            parts = parse_csv(m.group(1))
+            heap_id = parts[0]
+            new_list = parts[1:]
+            update_heap_object(heap_id, new_list)
+            return True
+        return False
+
     def process_string_inplace_add_result(line):
         m = STRING_INPLACE_ADD_RESULT_REGEX.match(line)
         if m:
@@ -593,6 +598,8 @@ def recreate_past(conn):
             update_heap_object(heap_id, string)
             return True
         return False
+    
+    
             
     cursor = conn.cursor()
     begin = False
@@ -653,6 +660,8 @@ def recreate_past(conn):
         if process_list_reverse(line):
             continue
         if process_string_inplace_add_result(line):
+            continue
+        if process_list_sort(line):
             continue
         
 

@@ -26,6 +26,8 @@ void Rewind_ListClear(PyListObject *list);
 
 void Rewind_ListReverse(PyListObject *list);
 
+void Rewind_ListSort(PyListObject *list);
+
 void Rewind_ListStoreSubscript(PyListObject *list, PyObject* item, PyObject* value);
 
 void Rewind_ListStoreItem(PyListObject *list, Py_ssize_t index, PyObject* value);

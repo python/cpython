@@ -1011,8 +1011,6 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     PyObject *v;
     int status;
 
-    Rewind_ListPop(self, index);
-
     if (Py_SIZE(self) == 0) {
         /* Special-case most common failure cause */
         PyErr_SetString(PyExc_IndexError, "pop from empty list");
@@ -1024,6 +1022,8 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
+    Rewind_ListPop(self, index);
+
     v = self->ob_item[index];
     if (index == Py_SIZE(self) - 1) {
         status = list_resize(self, Py_SIZE(self) - 1);
@@ -2454,6 +2454,9 @@ keyfunc_fail:
         PyMem_Free(final_ob_item);
     }
     Py_XINCREF(result);
+
+    Rewind_ListSort(self);
+
     return result;
 }
 #undef IFLT

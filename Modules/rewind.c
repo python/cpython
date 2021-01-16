@@ -114,7 +114,7 @@ void Rewind_ListPop(PyListObject *list, Py_ssize_t index) {
     if (!rewindInitialized) return;
 
     Rewind_TrackObject((PyObject *)list);
-    fprintf(rewindLog, "LIST_POP(%lu)\n", (unsigned long)list);
+    fprintf(rewindLog, "LIST_POP(%lu, %lu)\n", (unsigned long)list, index);
 }
 
 void Rewind_ListClear(PyListObject *list) {
@@ -129,6 +129,21 @@ void Rewind_ListReverse(PyListObject *list) {
 
     Rewind_TrackObject((PyObject *)list);
     fprintf(rewindLog, "LIST_REVERSE(%lu)\n", (unsigned long)list);
+}
+
+void Rewind_ListSort(PyListObject *list) {
+    if (!rewindInitialized) return;
+
+    Rewind_TrackObject((PyObject *)list);
+    fprintf(rewindLog, "LIST_SORT(%lu, ", (unsigned long)list);
+    for (int i = 0; i < Py_SIZE(list); ++i) {
+        PyObject *item = list->ob_item[i];
+        if (i != 0) {
+            fprintf(rewindLog, ", ");
+        }
+        Rewind_serializeObject(rewindLog, item);
+    }
+    fprintf(rewindLog, ")\n");
 }
 
 void Rewind_ListStoreSubscript(PyListObject *list, PyObject* item, PyObject* value) {

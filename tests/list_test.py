@@ -21,7 +21,9 @@ c_list.clear()
 
 b_list.reverse()
 
-d_list = [[1, 2], [3, 4], [5, 6]]
+d_list = [[3, 4], [5, 6], [1, 2]]
 e_list = []
 for sub_list in d_list:
     e_list.append(sub_list[0] + sub_list[1])
+
+e_list.sort()
