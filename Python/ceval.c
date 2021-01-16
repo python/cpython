@@ -1967,8 +1967,6 @@ main_loop:
             int err;
             err = PyList_Append(list, v);
 
-            Rewind_ListAppend(list, v);
-
             Py_DECREF(v);
             if (err != 0)
                 goto error;
@@ -1981,7 +1979,7 @@ main_loop:
             PyObject *v = POP();
             PyObject *set = PEEK(oparg);
             int err;
-            Rewind_SetAdd(set, v);
+            
             err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err != 0)
@@ -2076,6 +2074,7 @@ main_loop:
             if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
                 sum = unicode_concatenate(tstate, left, right, f, next_instr);
                 /* unicode_concatenate consumed the ref to left */
+                Rewind_StringInPlaceAdd(left, right, sum);
             }
             else {
                 sum = PyNumber_InPlaceAdd(left, right);
@@ -2176,8 +2175,6 @@ main_loop:
             /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
 
-            Rewind_StoreSubscript(container, sub, v);
-
             Py_DECREF(v);
             Py_DECREF(container);
             Py_DECREF(sub);
@@ -2195,8 +2192,6 @@ main_loop:
             /* del container[sub] */
             err = PyObject_DelItem(container, sub);
 
-            Rewind_DeleteSubscript(container, sub);
-            
             Py_DECREF(container);
             Py_DECREF(sub);
             if (err != 0)
@@ -3014,8 +3009,6 @@ main_loop:
                 PyObject *item = POP();
                 PyList_SET_ITEM(list, oparg, item);
             }
-
-            Rewind_BuildList(list);
             
             PUSH(list);
             DISPATCH();
@@ -3038,7 +3031,7 @@ main_loop:
             PyObject *iterable = POP();
             PyObject *list = PEEK(oparg);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
-            Rewind_ListExtend(list, iterable);
+            
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
                    (Py_TYPE(iterable)->tp_iter == NULL && !PySequence_Check(iterable)))
@@ -3846,8 +3839,7 @@ main_loop:
             PyObject *meth = NULL;
 
             int meth_found = _PyObject_GetMethod(obj, name, &meth);
-            Rewind_LoadMethod(obj, name, meth);
-
+            
             if (meth == NULL) {
                 /* Most likely attribute wasn't found. */
                 goto error;
@@ -3887,8 +3879,6 @@ main_loop:
 
             meth = PEEK(oparg + 2);
             
-            Rewind_CallMethod(meth, stack_pointer, STACK_LEVEL());
-
             if (meth == NULL) {
                 /* `meth` is NULL when LOAD_METHOD thinks that it's not
                    a method call.
@@ -3938,8 +3928,6 @@ main_loop:
             PyObject **sp, *res;
             sp = stack_pointer;
 
-            Rewind_CallFunction(sp, oparg);
-            
             res = call_function(tstate, &sp, oparg, NULL);
             stack_pointer = sp;
             PUSH(res);

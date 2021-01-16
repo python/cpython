@@ -17,6 +17,7 @@ list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
 static PyObject *
 list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
+    
     PyObject *return_value = NULL;
     Py_ssize_t index;
     PyObject *object;

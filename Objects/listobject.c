@@ -18,6 +18,7 @@ class list "PyListObject *" "&PyList_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=f9b222678f9f71e0]*/
 
 #include "clinic/listobject.c.h"
+#include "rewind.h"
 
 
 static struct _Py_list_state *
@@ -790,6 +791,7 @@ static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object)
 /*[clinic end generated code: output=7f35e32f60c8cb78 input=858514cf894c7eab]*/
 {
+    Rewind_ListInsert(self, index, object);
     if (ins1(self, index, object) == 0)
         Py_RETURN_NONE;
     return NULL;
@@ -805,6 +807,8 @@ static PyObject *
 list_clear_impl(PyListObject *self)
 /*[clinic end generated code: output=67a1896c01f74362 input=ca3c1646856742f6]*/
 {
+    Rewind_ListClear(self);
+    
     _list_clear(self);
     Py_RETURN_NONE;
 }
@@ -835,6 +839,7 @@ static PyObject *
 list_append(PyListObject *self, PyObject *object)
 /*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
 {
+    Rewind_ListAppend(self, object);
     if (app1(self, object) == 0)
         Py_RETURN_NONE;
     return NULL;
@@ -859,6 +864,8 @@ list_extend(PyListObject *self, PyObject *iterable)
     Py_ssize_t mn;                 /* m + n */
     Py_ssize_t i;
     PyObject *(*iternext)(PyObject *);
+
+    Rewind_ListExtend(self, iterable);
 
     /* Special cases:
        1) lists and tuples which can use PySequence_Fast ops
@@ -1003,6 +1010,8 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
 {
     PyObject *v;
     int status;
+
+    Rewind_ListPop(self, index);
 
     if (Py_SIZE(self) == 0) {
         /* Special-case most common failure cause */
@@ -2474,6 +2483,7 @@ static PyObject *
 list_reverse_impl(PyListObject *self)
 /*[clinic end generated code: output=482544fc451abea9 input=eefd4c3ae1bc9887]*/
 {
+    Rewind_ListReverse(self);
     if (Py_SIZE(self) > 1)
         reverse_slice(self->ob_item, self->ob_item + Py_SIZE(self));
     Py_RETURN_NONE;
@@ -2596,6 +2606,7 @@ list_remove(PyListObject *self, PyObject *value)
 /*[clinic end generated code: output=f087e1951a5e30d1 input=2dc2ba5bb2fb1f82]*/
 {
     Py_ssize_t i;
+    Rewind_ListRemove(self, value);
 
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *obj = self->ob_item[i];
@@ -2865,6 +2876,13 @@ list_subscript(PyListObject* self, PyObject* item)
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
+
+    if (value == NULL) {
+        Rewind_ListDeleteSubscript(self, item);
+    } else {
+        Rewind_ListStoreSubscript(self, item, value);
+    }
+
     if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())

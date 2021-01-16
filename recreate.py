@@ -1,7 +1,10 @@
 # Todo
 
-# strings
-# bug: shortest_common_supersequence.py strings look like {}
+# switch store subscript to intercepting data structures at low level
+# list pop index parameter
+# make line parsing generic
+# perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
+# test subscript delete and store with dictionaries and class-based objects
 # lists
 #   * append(done)
 #   * extend (done)
@@ -19,6 +22,10 @@
 # sets
 # objects
 
+# should we remove intercept for BUILD_LIST (done)
+# bug: shortest_common_supersequence.py strings look like {} (done)
+# get log output to trim the initialization (done)
+# strings (done)
 # bug: permutations_2.py rest looks like {}? (done)
 # test debugger on basic example (done)
 # change ID scheme for class-based objects (done)
@@ -135,18 +142,20 @@ PUSH_FRAME_REGEX = re.compile(r'PUSH_FRAME\(filename: (.*), name: (.*), varnames
 RETURN_VALUE_REGEX = re.compile(r'RETURN_VALUE\((.*)\)')
 DEALLOC_OBJECT_REGEX = re.compile(r'DEALLOC_OBJECT\((.*)\)')
 NEW_LIST_REGEX = re.compile(r'NEW_LIST\((.*)\)')
+NEW_STRING_REGEX = re.compile(r'NEW_STRING\((.*), (.*)\)')
 STORE_FAST_REGEX = re.compile(r'STORE_FAST\(([0-9]+), (.*)\)')
 STORE_NAME_REGEX = re.compile(r'STORE_NAME\((.*), (.*)\)')
 LIST_APPEND_REGEX = re.compile(r'LIST_APPEND\((.*), (.*)\)')
 LIST_EXTEND_REGEX = re.compile(r'LIST_EXTEND\((.*), (.*)\)')
 NEW_TUPLE_REGEX = re.compile(r'NEW_TUPLE\((.*?), (.*)\)')
-DELETE_SUBSCRIPT_REGEX = re.compile(r'DELETE_SUBSCRIPT\((.*), (.*)\)')
-STORE_SUBSCRIPT_REGEX = re.compile(r'STORE_SUBSCRIPT\((.*), (.*), (.*)\)')
+LIST_DELETE_SUBSCRIPT_REGEX = re.compile(r'LIST_DELETE_SUBSCRIPT\((.*), (.*)\)')
+LIST_STORE_SUBSCRIPT_REGEX = re.compile(r'LIST_STORE_SUBSCRIPT\((.*), (.*), (.*)\)')
 LIST_INSERT_REGEX = re.compile(r'LIST_INSERT\((.*), (.*), (.*)\)')
 LIST_REMOVE_REGEX = re.compile(r'LIST_REMOVE\((.*), (.*)\)')
 LIST_POP_REGEX = re.compile(r'LIST_POP\((.*)\)')
 LIST_CLEAR_REGEX = re.compile(r'LIST_CLEAR\((.*)\)')
 LIST_REVERSE_REGEX = re.compile(r'LIST_REVERSE\((.*)\)')
+STRING_INPLACE_ADD_RESULT_REGEX = re.compile(r'STRING_INPLACE_ADD_RESULT\((.*), (.*)\)')
 
 def recreate_past(conn):
     class StackFrameVars(object):
@@ -262,6 +271,8 @@ def recreate_past(conn):
         nonlocal heap
         nonlocal heap_id_to_object_dict
 
+        if heap_id == 4481524480:
+            print("found it", log_line_no)
         heap_id_to_object_dict[heap_id] = new_obj
         oid = save_object(new_obj)
         heap = { **heap, heap_id: ObjectRef(oid) }
@@ -422,17 +433,21 @@ def recreate_past(conn):
         return False
     
     def process_new_list(line):
-        nonlocal next_object_id
-        nonlocal cursor
-        nonlocal conn
-        nonlocal heap
-
         m = NEW_LIST_REGEX.match(line)
         if m:
             parts = list(filter(lambda part: part != '', m.group(1).split(', ')))
             heap_id = int(parts[0])
             a_list = list(map(parse_value, parts[1:]))
             update_heap_object(heap_id, a_list)
+            return True
+        return False
+    
+    def process_new_string(line):
+        m = NEW_STRING_REGEX.match(line)
+        if m:
+            heap_id = m.group(1)
+            string = parse_value(m.group(2))
+            update_heap_object(heap_id, string)
             return True
         return False
     
@@ -444,9 +459,10 @@ def recreate_past(conn):
         if m:
             heap_id = int(m.group(1))
             item = parse_value(m.group(2))
-            a_list = heap_id_to_object_dict[heap_id]
-            a_list = a_list + [item]
-            update_heap_object(heap_id, a_list)
+            if heap_id in heap_id_to_object_dict:
+                a_list = heap_id_to_object_dict[heap_id]
+                a_list = a_list + [item]
+                update_heap_object(heap_id, a_list)
             return True
         return False
     
@@ -478,25 +494,24 @@ def recreate_past(conn):
             return True
         return False
 
-    def process_delete_subscript(line):
+    def process_list_delete_subscript(line):
         nonlocal stack
         nonlocal heap
-        m = DELETE_SUBSCRIPT_REGEX.match(line)
+        m = LIST_DELETE_SUBSCRIPT_REGEX.match(line)
         if m:
             heap_id = int(m.group(1))
             index = parse_value(m.group(2))
             obj = heap_id_to_object_dict[heap_id]
-            # lists only. TODO support dict and other structures
             new_obj = obj.copy()
             del new_obj[index]
             update_heap_object(heap_id, new_obj)
             return True
         return False
 
-    def process_store_subscript(line):
+    def process_list_store_subscript(line):
         nonlocal stack
         nonlocal heap
-        m = STORE_SUBSCRIPT_REGEX.match(line)
+        m = LIST_STORE_SUBSCRIPT_REGEX.match(line)
         if m:
             heap_id = int(m.group(1))
             index = parse_value(m.group(2))
@@ -569,6 +584,15 @@ def recreate_past(conn):
             update_heap_object(heap_id, new_list)
             return True
         return False
+    
+    def process_string_inplace_add_result(line):
+        m = STRING_INPLACE_ADD_RESULT_REGEX.match(line)
+        if m:
+            heap_id = int(m.group(1))
+            string = parse_value(m.group(2))
+            update_heap_object(heap_id, string)
+            return True
+        return False
             
     cursor = conn.cursor()
     begin = False
@@ -587,9 +611,11 @@ def recreate_past(conn):
 
     save_object(heap)
     line_no = None
+    log_line_no = 0
     
     file = open("rewind.log", "r")
     for line in file:
+        log_line_no += 1
         if process_push_frame(line):
             continue
         if not begin:
@@ -604,15 +630,17 @@ def recreate_past(conn):
             continue
         if process_new_list(line):
             continue
+        if process_new_string(line):
+            continue
         if process_list_append(line):
             continue
         if process_list_extend(line):
             continue
         if process_new_tuple(line):
             continue
-        if process_delete_subscript(line):
+        if process_list_delete_subscript(line):
             continue
-        if process_store_subscript(line):
+        if process_list_store_subscript(line):
             continue
         if process_list_insert(line):
             continue
@@ -624,6 +652,9 @@ def recreate_past(conn):
             continue
         if process_list_reverse(line):
             continue
+        if process_string_inplace_add_result(line):
+            continue
+        
 
 def main():
     if os.path.isfile("rewind.sqlite"):

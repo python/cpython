@@ -74,7 +74,7 @@ pymain_init(const _PyArgv *args)
 
 done:
     PyConfig_Clear(&config);
-    Rewind_Initialize2();
+    
     return status;
 }
 
@@ -556,6 +556,8 @@ pymain_run_python(int *exitcode)
 
     pymain_header(config);
     pymain_import_readline(config);
+
+    Rewind_Initialize2();
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command, &cf);
