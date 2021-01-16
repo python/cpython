@@ -299,6 +299,13 @@ capture data for later printing in a lightweight fashion.
       The message indicating which exception occurred is always the last
       string in the output.
 
+   .. method::  print(*, file=None, chain=True)
+
+      Print to *file* the exception information as returned by
+      ``self.format(chain=chain)``.
+
+      .. versionadded:: 3.10
+
    .. versionchanged:: 3.10
       Added the *compact* parameter.
 
