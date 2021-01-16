@@ -13,8 +13,6 @@ class CommonTests(util.CommonResourceTests, unittest.TestCase):
 
 
 class PathTests:
-    UTF_8_FILE_CONTENTS = b'Hello, UTF-8 world!\n'
-
     def test_reading(self):
         # Path should be readable.
         # Test also implicitly verifies the returned object is a pathlib.Path
@@ -23,7 +21,7 @@ class PathTests:
             # pathlib.Path.read_text() was introduced in Python 3.5.
             with path.open('r', encoding='utf-8') as file:
                 text = file.read()
-            self.assertEqual(self.UTF_8_FILE_CONTENTS.decode(), text)
+            self.assertEqual('Hello, UTF-8 world!\n', text)
 
 
 class PathDiskTests(PathTests, unittest.TestCase):
@@ -32,10 +30,11 @@ class PathDiskTests(PathTests, unittest.TestCase):
 
 class PathMemoryTests(PathTests, unittest.TestCase):
     def setUp(self):
-        file = io.BytesIO(self.UTF_8_FILE_CONTENTS)
+        file = io.BytesIO(b'Hello, UTF-8 world!\n')
         self.addCleanup(file.close)
         self.data = util.create_package(
-            file=file, path=FileNotFoundError("package exists only in memory"))
+            file=file, path=FileNotFoundError("package exists only in memory")
+        )
         self.data.__spec__.origin = None
         self.data.__spec__.has_location = False
 
