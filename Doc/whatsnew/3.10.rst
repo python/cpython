@@ -272,6 +272,13 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+imghdr
+-------
+
+The :func:`~imghdr.what` function now recognizes the
+`DICOM (Digital Imaging and Communications in Medicine) <https://www.dicomstandard.org/>`_ format
+(Contributed by Ross Rhodes in :issue:`42916`.)
+
 inspect
 -------
 
