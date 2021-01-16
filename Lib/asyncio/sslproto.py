@@ -215,8 +215,7 @@ class _SSLPipe(object):
         except (ssl.SSLError, ssl.CertificateError) as exc:
             exc_errno = getattr(exc, 'errno', None)
             if exc_errno not in (
-                    ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE,
-                    ssl.SSL_ERROR_SYSCALL):
+                    ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE):
                 if self._state == _DO_HANDSHAKE and self._handshake_cb:
                     self._handshake_cb(exc)
                 raise
@@ -267,8 +266,7 @@ class _SSLPipe(object):
                 if exc.reason == 'PROTOCOL_IS_SHUTDOWN':
                     exc_errno = exc.errno = ssl.SSL_ERROR_WANT_READ
                 if exc_errno not in (ssl.SSL_ERROR_WANT_READ,
-                                     ssl.SSL_ERROR_WANT_WRITE,
-                                     ssl.SSL_ERROR_SYSCALL):
+                                     ssl.SSL_ERROR_WANT_WRITE):
                     raise
                 self._need_ssldata = (exc_errno == ssl.SSL_ERROR_WANT_READ)
 
