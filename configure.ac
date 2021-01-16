@@ -2980,7 +2980,7 @@ validate_tzpath() {
 
     # Bad paths are those that don't start with /
     dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-    if ( echo $1 | grep -qE '(^|:)(@<:@^/@:>@|$)' ); then
+    if ( echo $1 | grep '\(^\|:\)\(@<:@^/@:>@\|$\)' > /dev/null); then
         AC_MSG_ERROR([--with-tzpath must contain only absolute paths, not $1])
         return 1;
     fi

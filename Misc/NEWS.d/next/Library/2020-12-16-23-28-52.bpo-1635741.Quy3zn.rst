@@ -1,2 +1,0 @@
-Port the :mod:`_thread` extension module to the multiphase initialization
-API (:pep:`489`) and convert its static types to heap types.

@@ -1,0 +1,1 @@
+frame.f_lineno is correct even if frame.f_trace is set to True

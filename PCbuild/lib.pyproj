@@ -162,7 +162,6 @@
     <Compile Include="distutils\command\bdist_dumb.py" />
     <Compile Include="distutils\command\bdist_msi.py" />
     <Compile Include="distutils\command\bdist_rpm.py" />
-    <Compile Include="distutils\command\bdist_wininst.py" />
     <Compile Include="distutils\command\build.py" />
     <Compile Include="distutils\command\build_clib.py" />
     <Compile Include="distutils\command\build_ext.py" />
@@ -204,7 +203,6 @@
     <Compile Include="distutils\tests\test_bdist_dumb.py" />
     <Compile Include="distutils\tests\test_bdist_msi.py" />
     <Compile Include="distutils\tests\test_bdist_rpm.py" />
-    <Compile Include="distutils\tests\test_bdist_wininst.py" />
     <Compile Include="distutils\tests\test_build.py" />
     <Compile Include="distutils\tests\test_build_clib.py" />
     <Compile Include="distutils\tests\test_build_ext.py" />

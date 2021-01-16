@@ -66,6 +66,8 @@ typedef struct {
 /*                                Capsule API                               */
 /****************************************************************************/
 
+#define PyDec_CAPSULE_NAME "_decimal._API"
+
 /* Simple API */
 #define PyDec_TypeCheck_INDEX 0
 #define PyDec_TypeCheck_RETURN int
@@ -164,7 +166,7 @@ static void **_decimal_api;
 static int
 import_decimal(void)
 {
-    _decimal_api = (void **)PyCapsule_Import("_decimal._API", 0);
+    _decimal_api = (void **)PyCapsule_Import(PyDec_CAPSULE_NAME, 0);
     if (_decimal_api == NULL) {
         return -1;
     }

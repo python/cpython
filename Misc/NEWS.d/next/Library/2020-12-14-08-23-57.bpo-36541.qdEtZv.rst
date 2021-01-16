@@ -1,2 +1,0 @@
-Fixed lib2to3.pgen2 to be able to parse PEP-570 positional only argument
-syntax.

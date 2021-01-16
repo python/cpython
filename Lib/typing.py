@@ -779,7 +779,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     args = object()
     kwargs = object()
 
-    def __init__(self, name, bound=None, covariant=False, contravariant=False):
+    def __init__(self, name, *, bound=None, covariant=False, contravariant=False):
         self.__name__ = name
         super().__init__(bound, covariant, contravariant)
         try:

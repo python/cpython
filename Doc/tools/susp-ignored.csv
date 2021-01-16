@@ -168,6 +168,7 @@ library/ipaddress,,::,2001:db00::0/24
 library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
 library/ipaddress,,::,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
+library/itertools,,::,kernel = tuple(kernel)[::-1]
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
