@@ -181,32 +181,31 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
 {
     /* Do a lexicographic search. Essentially this:
            >>> max(needle[i:] for i in range(len(needle)+1))
-       Also find the period of the right half.
-    */
+       Also find the period of the right half.   */
     Py_ssize_t max_suffix = 0;
     Py_ssize_t candidate = 1;
     Py_ssize_t k = 0;
-    // the minimal local period around max_suffix
+    // The period of the right half.
     Py_ssize_t period = 1;
 
     while (candidate + k < len_needle) {
+        // loop increases candidate + k by 1 at each step
         STRINGLIB_CHAR a = needle[candidate + k];
         STRINGLIB_CHAR b = needle[max_suffix + k];
+        // check if the suffix at candidate is better than max_suffix
         if (invert_alphabet ? (b < a) : (a < b)) {
             // Fell short of max_suffix.
-
             // The next k + 1 characters are non-increasing
             // from candidate, so they won't start a maximal suffix.
             candidate += k + 1;
             k = 0;
-
             // We've ruled out any period smaller than what's
             // been scanned since max_suffix.
             period = candidate - max_suffix;
         }
         else if (a == b) {
             if (k + 1 != period) {
-                // Keep scanning
+                // Keep scanning the equal strings
                 k++;
             }
             else {
@@ -312,9 +311,12 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     p->needle = needle;
     p->len_needle = len_needle;
     p->cut = STRINGLIB(_factorize)(needle, len_needle, &(p->period));
+    assert(p->period + p->cut <= len_needle);
     p->is_periodic = (0 == memcmp(needle,
                                   needle + p->period,
                                   p->cut * STRINGLIB_SIZEOF_CHAR));
+    assert(!p->is_periodic || (p->cut <= len_needle/2
+                               && p->cut < p->period));
     // Now fill up a table
     memset(&(p->table[0]), 0xff, TABLE_SIZE*sizeof(SHIFT_TYPE));
     assert(p->table[0] == NOT_FOUND);
@@ -370,7 +372,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 }
                 else {
                     LOG("Shifting to line up \"%c\".\n", first_outside);
-                    window += shift;
+                    Py_ssize_t memory_shift = i - cut + 1;
+                    window += Py_MAX(shift, memory_shift);
                 }
                 memory = 0;
                 continue;
@@ -473,30 +476,9 @@ STRINGLIB(_two_way_find)(const STRINGLIB_CHAR *haystack,
                          Py_ssize_t len_needle)
 {
     LOG("###### Finding \"%s\" in \"%s\".\n", needle, haystack);
-    Py_ssize_t index;
-    index = STRINGLIB(find_char)(haystack,
-                                 len_haystack - len_needle + 1,
-                                 needle[0]);
-    if (index == -1) {
-        return -1;
-    }
-    if (0 == memcmp(haystack + index,
-                    needle,
-                    len_needle * STRINGLIB_SIZEOF_CHAR))
-    {
-        return index;
-    }
-    else {
-        index++;
-    }
     STRINGLIB(prework) p;
     STRINGLIB(_preprocess)(needle, len_needle, &p);
-    Py_ssize_t result;
-    result = STRINGLIB(_two_way)(haystack + index, len_haystack - index, &p);
-    if (result == -1) {
-        return -1;
-    }
-    return result + index;
+    return STRINGLIB(_two_way)(haystack, len_haystack, &p);
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
@@ -507,27 +489,10 @@ STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
                           Py_ssize_t maxcount)
 {
     LOG("###### Counting \"%s\" in \"%s\".\n", needle, haystack);
-    Py_ssize_t index;
-    Py_ssize_t count = 0;
-    index = STRINGLIB(find_char)(haystack,
-                                 len_haystack - len_needle + 1,
-                                 needle[0]);
-    if (index == -1) {
-        return -1;
-    }
-    if (0 == memcmp(haystack + index,
-                    needle,
-                    len_needle * STRINGLIB_SIZEOF_CHAR))
-    {
-        count++;
-        index += len_needle;
-        if (count == maxcount || index + len_needle > len_haystack) {
-            return count;
-        }
-    }
     STRINGLIB(prework) p;
     STRINGLIB(_preprocess)(needle, len_needle, &p);
-    while (index + len_needle <= len_haystack) {
+    Py_ssize_t index = 0, count = 0;
+    while (1) {
         Py_ssize_t result;
         result = STRINGLIB(_two_way)(haystack + index,
                                      len_haystack - index, &p);
