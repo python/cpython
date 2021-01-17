@@ -553,7 +553,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     }
 
     mlast = m - 1;
-    skip = mlast - 1;
+    skip = mlast;
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
