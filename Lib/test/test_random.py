@@ -250,6 +250,19 @@ class TestBasicOps:
         s2 = ''.join(sample(expanded, k=30))
         self.assertEqual(s1, s2)
 
+    def test_bug_42944(self):
+        # Random.sample used to call random.sample function instead of itself when counts was not None.
+        seed = '1/17/2021'
+        population = range(50)
+        k = 5
+        counts = range(1, 51)
+        gen = random.Random()
+        gen.seed(seed)
+        s1 = gen.sample(population, k, counts=counts)
+        gen.seed(seed)
+        s2 = gen.sample(population, k, counts=counts)
+        self.assertEqual(s1, s2)
+
     def test_choices(self):
         choices = self.gen.choices
         data = ['red', 'green', 'blue', 'yellow']
