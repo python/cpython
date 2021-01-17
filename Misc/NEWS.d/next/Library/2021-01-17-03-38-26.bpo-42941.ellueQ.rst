@@ -1,0 +1,1 @@
+Fixed infinite loop in feed_appdata() when OpenSSL returns SSL_ERROR_SYSCALL.
