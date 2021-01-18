@@ -556,6 +556,16 @@ class CAPITest(unittest.TestCase):
         self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
                       err)
 
+        match = re.search('^Extension modules:(.*)$', err, re.MULTILINE)
+        if not match:
+            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
+        modules = set(match.group(1).strip().split(', '))
+        # Test _PyModule_IsExtension(): the list doesn't have to
+        # be exhaustive.
+        for name in ('sys', 'builtins', '_imp', '_thread', '_weakref',
+                     '_io', 'marshal', '_signal', '_abc', '_testcapi'):
+            self.assertIn(name, modules)
+
 
 class TestPendingCalls(unittest.TestCase):
 
