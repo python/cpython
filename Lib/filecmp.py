@@ -36,7 +36,13 @@ def cmp(f1, f2, shallow=True):
 
     f2 -- Second file name
 
-    shallow -- Just check stat signature (do not read the files).
+    shallow -- Check file signatures instead of contents, the
+               signature contains the file its mode, size and
+               mtime.
+               If the size differs, the files are considerd to be
+               different.
+               If other parts of the signature indicate that the files
+               differ, a deep compare is performed.
                defaults to True.
 
     Return value:
