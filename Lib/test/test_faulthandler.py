@@ -227,25 +227,23 @@ class FaultHandlerTests(unittest.TestCase):
             5,
             'Illegal instruction')
 
+    def check_fatal_error_func(self, release_gil):
+        # Test that Py_FatalError() dumps a traceback
+        with support.SuppressCrashReport():
+            self.check_fatal_error(f"""
+                import _testcapi
+                _testcapi.fatal_error(b'xyz', {release_gil})
+                """,
+                2,
+                'xyz',
+                func='test_fatal_error',
+                py_fatal_error=True)
+
     def test_fatal_error(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler._fatal_error(b'xyz')
-            """,
-            2,
-            'xyz',
-            func='faulthandler_fatal_error_py',
-            py_fatal_error=True)
+        self.check_fatal_error_func(False)
 
     def test_fatal_error_without_gil(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler._fatal_error(b'xyz', True)
-            """,
-            2,
-            'xyz',
-            func='faulthandler_fatal_error_py',
-            py_fatal_error=True)
+        self.check_fatal_error_func(True)
 
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
