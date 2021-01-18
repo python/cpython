@@ -3241,6 +3241,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #else
     {
         EC_KEY *key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        if (key == NULL) {
+            Py_DECREF(self);
+            return _setSSLError(NULL, 0, __FILE__, __LINE__);
+        }
         SSL_CTX_set_tmp_ecdh(self->ctx, key);
         EC_KEY_free(key);
     }
