@@ -547,6 +547,15 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
+    def test_fatal_error(self):
+        code = 'import _testcapi; _testcapi.fatal_error(b"MESSAGE")'
+        with support.SuppressCrashReport():
+            rc, out, err = assert_python_failure('-sSI', '-c', code)
+
+        err = err.replace(b'\r', b'').decode('ascii', 'replace')
+        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
+                      err)
+
 
 class TestPendingCalls(unittest.TestCase):
 

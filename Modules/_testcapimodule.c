@@ -5665,6 +5665,27 @@ test_refcount(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject *
+test_fatal_error(PyObject *self, PyObject *args)
+{
+    char *message;
+    int release_gil = 0;
+    if (!PyArg_ParseTuple(args, "y|i:fatal_error", &message, &release_gil))
+        return NULL;
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        Py_FatalError(message);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        Py_FatalError(message);
+    }
+    // Py_FatalError() does not return, but exits the process.
+    Py_RETURN_NONE;
+}
+
+
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5938,6 +5959,8 @@ static PyMethodDef TestMethods[] = {
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
     {"test_refcount", test_refcount, METH_NOARGS},
+    {"fatal_error", test_fatal_error, METH_VARARGS,
+     PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {NULL, NULL} /* sentinel */
 };
 
