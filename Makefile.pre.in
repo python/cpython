@@ -755,7 +755,7 @@ regen-limited-abi: all
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-importlib clinic \
+	regen-token regen-ast regen-keyword regen-importlib clinic \
 	regen-pegen-metaparser regen-pegen
 
 ############################################################################
