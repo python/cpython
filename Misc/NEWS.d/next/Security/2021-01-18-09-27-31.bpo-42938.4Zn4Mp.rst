@@ -1,0 +1,2 @@
+Avoid static buffers when computing the repr of :class:`ctypes.c_double` and
+:class:`ctypes.c_longdouble` values.
