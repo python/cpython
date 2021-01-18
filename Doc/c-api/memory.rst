@@ -114,7 +114,7 @@ The three allocation domains are:
   allocator can operate without the :term:`GIL`. The memory is requested directly
   to the system.
 
-* Mem domain: intended for allocating memory for Python buffers and
+* "Mem" domain: intended for allocating memory for Python buffers and
   general-purpose memory buffers where the allocation must be performed with
   the :term:`GIL` held. The memory is taken from the Python private heap.
 
@@ -633,4 +633,3 @@ heap, objects in Python are allocated and released with :c:func:`PyObject_New`,
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.
-
