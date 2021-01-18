@@ -33,12 +33,6 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-requireAlternativePythonInPath = unittest.skipUnless(
-        shutil.which("python") is not None
-        and shutil.which("python") != sys._base_executable,
-        ('testing alternative executable for venv only makes '
-        'sense when one is available'))
-
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
@@ -341,26 +335,40 @@ class BasicTest(BaseTest):
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
-    @requireAlternativePythonInPath
     def test_custom_executable(self):
-        alt_python = shutil.which("python")
 
-        # sanity check
-        self.assertNotEqual(alt_python, sys._base_executable)
+        pythons = list(map(lambda minor: 'python3.%s' % minor, range(3, sys.version_info[1] + 1))) + ['python']
 
-        builder = venv.EnvBuilder()
-        self.assertNotEqual(alt_python, builder.executable)
-        self.assertEqual(sys._base_executable, builder.executable)
+        found_a_python = False
+        for executable in pythons:
+            alt_python = shutil.which(executable)
+            if alt_python and alt_python != sys._base_executable:
+                found_a_python = True
 
-        builder = venv.EnvBuilder(executable=alt_python)
-        self.assertEqual(alt_python, builder.executable)
-        self.assertNotEqual(sys._base_executable, builder.executable)
+                out, err = check_output([alt_python, '--version'])
+                expected_version_output = out.strip()
 
-        # make sure it can be created with the alternative executable
-        rmtree(self.env_dir)
-        self.run_with_capture(venv.create, self.env_dir)
-        self.isdir(self.bindir)
-        self.isdir(self.include)
+                builder = venv.EnvBuilder(executable=alt_python)
+                self.assertEqual(alt_python, builder.executable)
+                self.assertNotEqual(sys._base_executable, builder.executable)
+
+                rmtree(self.env_dir)
+
+                builder.create(self.env_dir)
+                self.isdir(self.bindir)
+                self.isdir(self.include)
+
+                envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, os.path.basename(alt_python))
+
+                out, err = check_output([envpy, '--version'])
+                self.assertEqual(out.strip(), expected_version_output)
+
+                # do not let the test execution time depend on the
+                # number of installed python versions
+                break
+
+        if not found_a_python:
+            raise unittest.SkipTest('No alternative Python interpreters found for venv executable test')
 
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):

@@ -407,9 +407,10 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False, executable=None):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
+                         executable=executable,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
                          prompt=prompt, upgrade_deps=upgrade_deps)
     builder.create(env_dir)
@@ -437,6 +438,8 @@ def main(args=None):
                                                 'in its bin directory.')
         parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                             help='A directory to create the environment in.')
+        parser.add_argument('--executable', help='Python executable to use for'
+                                                 'this virtualenv')
         parser.add_argument('--system-site-packages', default=False,
                             action='store_true', dest='system_site',
                             help='Give the virtual environment access to the '
@@ -483,6 +486,7 @@ def main(args=None):
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
         builder = EnvBuilder(system_site_packages=options.system_site,
+                             executable=executable,
                              clear=options.clear,
                              symlinks=options.symlinks,
                              upgrade=options.upgrade,
