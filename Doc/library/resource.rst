@@ -255,6 +255,14 @@ platform.
 
    .. versionadded:: 3.4
 
+.. data:: RLIMIT_KQUEUES
+
+   The maximum number of kqueues created by this user id.
+
+   .. availability:: FreeBSD 11 or later.
+
+   .. versionadded:: 3.10
+
 Resource Usage
 --------------
 
