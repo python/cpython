@@ -218,6 +218,12 @@ PyThread__init_thread(void)
  * Thread support.
  */
 
+static void
+_pythread_at_thread_exit(void)
+{
+    dprintf(("_pythread_at_thread_exit called\n"));
+}
+
 /* bpo-33015: pythread_callback struct and pythread_wrapper() cast
    "void func(void *)" to "void* func(void *)": always return NULL.
 
@@ -238,6 +244,7 @@ pythread_wrapper(void *arg)
     PyMem_RawFree(arg);
 
     func(func_arg);
+    _pythread_at_thread_exit();
     return NULL;
 }
 
@@ -359,7 +366,7 @@ PyThread_get_thread_native_id(void)
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
-    dprintf(("PyThread_exit_thread called\n"));
+    _pythread_at_thread_exit();
     if (!initialized)
         exit(0);
     pthread_exit(0);

@@ -160,6 +160,13 @@ PyThread__init_thread(void)
  * Thread support.
  */
 
+static void
+_pythread_at_thread_exit(void)
+{
+    dprintf(("%lu: _pythread_at_thread_exit called\n",
+            PyThread_get_thread_ident()));
+}
+
 typedef struct {
     void (*func)(void*);
     void *arg;
@@ -175,6 +182,7 @@ bootstrap(void *call)
     void *arg = obj->arg;
     HeapFree(GetProcessHeap(), 0, obj);
     func(arg);
+    _pythread_at_thread_exit();
     return 0;
 }
 
@@ -254,7 +262,7 @@ PyThread_get_thread_native_id(void)
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
-    dprintf(("%lu: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
+    _pythread_at_thread_exit();
     if (!initialized)
         exit(0);
     _endthreadex(0);

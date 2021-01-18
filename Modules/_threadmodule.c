@@ -1087,8 +1087,6 @@ thread_run(void *boot_raw)
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
-
-    PyThread_exit_thread();
 }
 
 static PyObject *
