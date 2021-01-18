@@ -138,10 +138,13 @@ pysqlite_cursor_fetchone(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
-"fetchmany($self, /, size=cursor.arraysize)\n"
+"fetchmany($self, /, size=1)\n"
 "--\n"
 "\n"
-"Fetches several rows from the resultset.");
+"Fetches several rows from the resultset.\n"
+"\n"
+"  size\n"
+"    The default value is set by the Cursor.arraysize attribute.");
 
 #define PYSQLITE_CURSOR_FETCHMANY_METHODDEF    \
     {"fetchmany", (PyCFunction)(void(*)(void))pysqlite_cursor_fetchmany, METH_FASTCALL|METH_KEYWORDS, pysqlite_cursor_fetchmany__doc__},
@@ -256,4 +259,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=11db0de4fb1951a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a2d4d49784aa686 input=a9049054013a1b77]*/

@@ -547,6 +547,25 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
+    def test_fatal_error(self):
+        code = 'import _testcapi; _testcapi.fatal_error(b"MESSAGE")'
+        with support.SuppressCrashReport():
+            rc, out, err = assert_python_failure('-sSI', '-c', code)
+
+        err = err.replace(b'\r', b'').decode('ascii', 'replace')
+        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
+                      err)
+
+        match = re.search('^Extension modules:(.*)$', err, re.MULTILINE)
+        if not match:
+            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
+        modules = set(match.group(1).strip().split(', '))
+        # Test _PyModule_IsExtension(): the list doesn't have to
+        # be exhaustive.
+        for name in ('sys', 'builtins', '_imp', '_thread', '_weakref',
+                     '_io', 'marshal', '_signal', '_abc', '_testcapi'):
+            self.assertIn(name, modules)
+
 
 class TestPendingCalls(unittest.TestCase):
 
