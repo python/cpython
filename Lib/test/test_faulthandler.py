@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import datetime
 import faulthandler
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -328,6 +329,24 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertTrue(not_expected not in stderr,
                      "%r is present in %r" % (not_expected, stderr))
         self.assertNotEqual(exitcode, 0)
+
+    @skip_segfault_on_android
+    def test_dump_ext_modules(self):
+        code = """
+            import faulthandler
+            faulthandler.enable()
+            faulthandler._sigsegv()
+            """
+        stderr, exitcode = self.get_output(code)
+        stderr = '\n'.join(stderr)
+        match = re.search('^Extension modules:(.*)$', stderr, re.MULTILINE)
+        if not match:
+            self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
+        modules = set(match.group(1).strip().split(', '))
+        # Only check for a few extensions, the list doesn't have to be
+        # exhaustive.
+        for ext in ('sys', 'builtins', '_io', 'faulthandler'):
+            self.assertIn(ext, modules)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr

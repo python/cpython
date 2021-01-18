@@ -2496,6 +2496,45 @@ fatal_error_exit(int status)
 }
 
 
+// Dump the list of extension modules of sys.modules into fd file descriptor.
+// This function is called by a signal handler in faulthandler: avoid memory
+// allocations and keep the implementation simple. For example, the list
+// is not sorted on purpose.
+void
+_Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
+{
+    if (interp == NULL) {
+        return;
+    }
+    PyObject *modules = interp->modules;
+    if (!PyDict_Check(modules)) {
+        return;
+    }
+
+    PUTS(fd, "\nExtension modules: ");
+
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    int comma = 0;
+    while (PyDict_Next(modules, &pos, &key, &value)) {
+        if (!PyUnicode_Check(key)) {
+            continue;
+        }
+        if (!_PyModule_IsExtension(value)) {
+            continue;
+        }
+
+        if (comma) {
+            PUTS(fd, ", ");
+        }
+        comma = 1;
+
+        _Py_DumpASCII(fd, key);
+    }
+    PUTS(fd, "\n");
+}
+
+
 static void _Py_NO_RETURN
 fatal_error(int fd, int header, const char *prefix, const char *msg,
             int status)
@@ -2556,6 +2595,8 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
     else {
         _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
     }
+
+    _Py_DumpExtensionModules(fd, interp);
 
     /* The main purpose of faulthandler is to display the traceback.
        This function already did its best to display a traceback.
