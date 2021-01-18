@@ -3036,7 +3036,7 @@ class Test_map(FixerTestCase):
     fixer = "map"
 
     def check(self, b, a):
-        self.unchanged("from future_builtins import map; " + b, a)
+        self.unchanged("from future_builtins import map; " + b)
         super(Test_map, self).check(b, a)
 
     def test_prefix_preservation(self):
@@ -3160,7 +3160,7 @@ class Test_zip(FixerTestCase):
     fixer = "zip"
 
     def check(self, b, a):
-        self.unchanged("from future_builtins import zip; " + b, a)
+        self.unchanged("from future_builtins import zip; " + b)
         super(Test_zip, self).check(b, a)
 
     def test_zip_basic(self):
