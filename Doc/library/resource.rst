@@ -257,7 +257,7 @@ platform.
 
 .. data:: RLIMIT_KQUEUES
 
-   The maximum number of kqueues created by this user id.
+   The maximum number of kqueues this user id is allowed to create.
 
    .. availability:: FreeBSD 11 or later.
 
