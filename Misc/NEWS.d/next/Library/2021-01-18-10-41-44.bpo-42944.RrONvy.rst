@@ -1,1 +1,1 @@
-Fix `random.Random.sample` when `counts` argument is not `None`.
+Fix ``random.Random.sample`` when ``counts`` argument is not ``None``.
