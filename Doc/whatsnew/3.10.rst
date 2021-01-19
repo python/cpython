@@ -637,6 +637,7 @@ Changes in the Python API
      async def foo():
          loop = get_loop()
          ...
+
   Users can also store the result of :func:`asyncio.get_event_loop` should
   they wish to avoid the slight performance overhead of always calling the
   function.  Note that this requires additional thread safety and loop checks.
