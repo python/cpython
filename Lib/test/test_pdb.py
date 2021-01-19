@@ -1649,10 +1649,10 @@ def bœr():
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',
-            '(Pdb) *** SyntaxError: unexpected EOF while parsing',
+            '(Pdb) *** SyntaxError: \'(\' was never closed',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
-            '*** SyntaxError: unexpected EOF while parsing',
+            '*** SyntaxError: \'(\' was never closed',
             'LEAVING RECURSIVE DEBUGGER',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
