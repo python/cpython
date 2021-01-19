@@ -547,8 +547,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
-    def test_fatal_error(self):
-        code = 'import _testcapi; _testcapi.fatal_error(b"MESSAGE")'
+    def check_fatal_error(self, code, expected, not_expected=()):
         with support.SuppressCrashReport():
             rc, out, err = assert_python_failure('-sSI', '-c', code)
 
@@ -556,15 +555,25 @@ class CAPITest(unittest.TestCase):
         self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
                       err)
 
-        match = re.search('^Extension modules:(.*)$', err, re.MULTILINE)
+        match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
+                          err, re.MULTILINE)
         if not match:
             self.fail(f"Cannot find 'Extension modules:' in {err!r}")
         modules = set(match.group(1).strip().split(', '))
-        # Test _PyModule_IsExtension(): the list doesn't have to
-        # be exhaustive.
-        for name in ('sys', 'builtins', '_imp', '_thread', '_weakref',
-                     '_io', 'marshal', '_signal', '_abc', '_testcapi'):
+        total = int(match.group(2))
+
+        for name in expected:
             self.assertIn(name, modules)
+        for name in not_expected:
+            self.assertNotIn(name, modules)
+        self.assertEqual(len(modules), total)
+
+    def test_fatal_error(self):
+        expected = ('_testcapi',)
+        not_expected = ('sys', 'builtins', '_imp', '_thread', '_weakref',
+                        '_io', 'marshal', '_signal', '_abc')
+        code = 'import _testcapi; _testcapi.fatal_error(b"MESSAGE")'
+        self.check_fatal_error(code, expected, not_expected)
 
 
 class TestPendingCalls(unittest.TestCase):
