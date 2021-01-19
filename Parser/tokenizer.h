@@ -45,6 +45,7 @@ struct tok_state {
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
     int parenlinenostack[MAXLEVEL];
+    int parencolstack[MAXLEVEL];
     PyObject *filename;
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
