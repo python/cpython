@@ -602,45 +602,21 @@ Changes in the Python API
   a 16-bit unsigned integer.
   (Contributed by Erlend E. Aasland in :issue:`42393`.)
 
-* The ``loop`` parameter to nearly all :mod:`asyncio` functions has been
-  removed following deprecation in Python 3.8.  Users should instead get the
-  current event loop inside of coroutines preferrably via
-  :func:`asyncio.get_running_loop` (Python 3.7 and above) or
-  :func:`asyncio.get_event_loop`.  For example, a coroutine that currently look
-  like this::
+* The ``loop`` parameter to nearly all :mod:`asyncio` functions has been removed
+  following deprecation in Python 3.8. For example, a coroutine that currently
+  look like this::
+
+     import asyncio
 
      async def foo(loop):
-         ...
+         await asyncio.sleep(loop=loop)
 
-  Can be replaced with this::
-
-     import asyncio
-
-     async def foo():
-         # Note that this asserts the loop is already running.
-         loop = asyncio.get_running_loop()
-         ...
-
-  A minimal thread-safe version::
+  Can *usually* be replaced with this::
 
      import asyncio
-     import threading
 
-     lock = threading.Lock()
-
-     def get_loop():
-         global lock
-         with lock:
-             # Note that this asserts the loop is already running.
-             return asyncio.get_running_loop()
-
-     async def foo():
-         loop = get_loop()
-         ...
-
-  Users can also store the result of :func:`asyncio.get_event_loop` should
-  they wish to avoid the slight performance overhead of always calling the
-  function.  Note that this requires additional thread safety and loop checks.
+     async def foo(loop):
+         await asyncio.sleep()
 
   Maintaining backwards compatibility with 3.6 code is slightly trickier.
   Previous code using :mod:`asyncio` functions and classes, passing the loop
