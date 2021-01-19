@@ -1696,7 +1696,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  conflict_handler='error',
                  add_help=True,
                  allow_abbrev=True,
-                 exit_on_error=True):
+                 exit_on_error=True,
+                 greedy_star=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1716,6 +1717,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
+        self.greedy_star = greedy_star
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2010,17 +2012,22 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             match_partial = self._match_arguments_partial
             selected_pattern = arg_strings_pattern[start_index:]
             arg_counts = match_partial(positionals, selected_pattern)
+            action_index = 0
 
             # slice off the appropriate arg strings for each Positional
             # and add the Positional and its args to the list
-            for action, arg_count in zip(positionals, arg_counts):
+            for arg_count in arg_counts:
+                action = positionals[action_index]
                 args = arg_strings[start_index: start_index + arg_count]
                 start_index += arg_count
                 take_action(action, args)
+                # positional action is '*', never remove it from list
+                if not self.greedy_star or action.nargs != ZERO_OR_MORE:
+                    action_index += 1
 
             # slice off the Positionals that we just parsed and return the
             # index at which the Positionals' string args stopped
-            positionals[:] = positionals[len(arg_counts):]
+            positionals[:] = positionals[action_index:]
             return start_index
 
         # consume Positionals and Optionals alternately, until we have
