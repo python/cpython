@@ -1556,6 +1556,9 @@ class MinidomTest(unittest.TestCase):
         doc = dom.documentElement
         self.assertEqual(doc.firstChild.toxml(), '<img/>')
         self.assertIsInstance(doc.firstChild, Element)
+        dom = parseString('<div/>')
+        doc = dom.documentElement
+        self.assertIsNone(doc.firstChild)
 
     def test_lastChild(self):
         """Test access to the last child of a DOM Element."""
@@ -1563,6 +1566,9 @@ class MinidomTest(unittest.TestCase):
         doc = dom.documentElement
         self.assertEqual(doc.lastChild.toxml(), '<hr/>')
         self.assertIsInstance(doc.lastChild, Element)
+        dom = parseString('<div/>')
+        doc = dom.documentElement
+        self.assertIsNone(doc.lastChild)
 
     def test_insertBefore_with_document_fragment_node(self):
         """Test insertBefore for DOCUMENT_FRAGMENT_NODE."""
