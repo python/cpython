@@ -98,23 +98,6 @@ class MinidomTest(unittest.TestCase):
         frag.appendChild(c3)
         return dom, orig, c1, c2, c3, frag
 
-    def testInsertBeforeFragment(self):
-        dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
-        dom.documentElement.insertBefore(frag, None)
-        self.confirm(tuple(dom.documentElement.childNodes) ==
-                     (orig, c1, c2, c3),
-                     "insertBefore(<fragment>, None)")
-        frag.unlink()
-        dom.unlink()
-
-        dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
-        dom.documentElement.insertBefore(frag, orig)
-        self.confirm(tuple(dom.documentElement.childNodes) ==
-                     (c1, c2, c3, orig),
-                     "insertBefore(<fragment>, orig)")
-        frag.unlink()
-        dom.unlink()
-
     def testAppendChild(self):
         dom = parse(tstfile)
         dom.documentElement.appendChild(dom.createComment("Hello"))
@@ -1709,6 +1692,26 @@ class MinidomTest(unittest.TestCase):
         parentNode.insertBefore(newNode, None)
         self.assertEqual(parentNode.toxml(),
                          '<parent><existing/>text trailing</parent>')
+
+    def test_insertBefore_with_no_children(self):
+        """Test insertBefore with no children node."""
+        # Preparing the test
+        dom = parseString('<parent></parent>')
+        parentNode = dom.documentElement
+        newNode = dom.createElement('new')
+        existingNode = dom.createElement('existing')
+        # insertBefore with existing node not existing
+        self.assertRaises(xml.dom.NotFoundErr,
+                          parentNode.insertBefore, newNode, existingNode)
+
+    def test_insertBefore_return_value(self):
+        """Test insertBefore returned value."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        newNode = dom.createElement('new')
+        existingNode = parentNode.firstChild
+        return_value = parentNode.insertBefore(newNode, existingNode)
+        self.assertEqual(return_value, newNode)
 
 if __name__ == "__main__":
     unittest.main()
