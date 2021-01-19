@@ -558,6 +558,12 @@ Removed
   the :mod:`collections` module.
   (Contributed by Victor Stinner in :issue:`37324`.)
 
+* Removed the ``loop`` parameter of nearly all :mod:`asyncio` functions and
+  classes.  This parameter was marked for deprecation in Python 3.8.  See
+  `Changes in the Python API`_ for examples of how to replace existing code.
+  (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
+  in :issue:`42392`.)
+
 
 Porting to Python 3.10
 ======================
@@ -596,6 +602,46 @@ Changes in the Python API
   a 16-bit unsigned integer.
   (Contributed by Erlend E. Aasland in :issue:`42393`.)
 
+* The ``loop`` parameter to nearly all :mod:`asyncio` functions has been
+  removed following deprecation in Python 3.8.  Users should instead get the
+  current event loop inside of coroutines preferrably via
+  :func:`asyncio.get_running_loop` or :func:`asyncio.get_event_loop`.  For
+  example, a coroutine that currently look like this::
+
+     async def foo(loop):
+         ...
+
+  Can be replaced with this::
+
+     import asyncio
+
+     async def foo():
+         # Note that this asserts the loop is already running.
+         loop = asyncio.get_running_loop()
+         ...
+
+  A minimal thread-safe version::
+
+     import asyncio
+     import threading
+
+     lock = threading.Lock()
+
+     def get_loop():
+         global lock
+         with lock:
+             # Note that this asserts the loop is already running.
+             return asyncio.get_running_loop()
+
+     async def foo():
+         loop = get_loop()
+         ...
+  Users can also store the result of :func:`asyncio.get_event_loop` should
+  they wish to avoid the slight performance overhead of always calling the
+  function.  Note that this requires additional thread safety and loop checks.
+
+  (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
+  in :issue:`42392`.)
 
 CPython bytecode changes
 ========================
