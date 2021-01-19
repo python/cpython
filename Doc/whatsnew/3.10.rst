@@ -644,7 +644,7 @@ Changes in the Python API
   Maintaining backwards compatibility with 3.6 code is slightly trickier.
   Previous code using :mod:`asyncio` functions and classes, passing the loop
   explicitly and relying on special behavior will error on 3.10.  A possible
-  option is to guard the old call with a check for Python versions before 3.6
+  option is to guard the old call with a check for Python versions before 3.7
   and use the new call signature for newer versions.
 
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
