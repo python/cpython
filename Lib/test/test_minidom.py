@@ -98,15 +98,6 @@ class MinidomTest(unittest.TestCase):
         frag.appendChild(c3)
         return dom, orig, c1, c2, c3, frag
 
-    def testReplaceChildFragment(self):
-        dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
-        dom.documentElement.replaceChild(frag, orig)
-        orig.unlink()
-        self.confirm(tuple(dom.documentElement.childNodes) == (c1, c2, c3),
-                "replaceChild(<fragment>)")
-        frag.unlink()
-        dom.unlink()
-
     def testLegalChildren(self):
         dom = Document()
         elem = dom.createElement('element')
@@ -1228,15 +1219,6 @@ class MinidomTest(unittest.TestCase):
         self.checkWholeText(text, "cabd")
         self.checkWholeText(text2, "cabd")
 
-    def testPatch1094164(self):
-        doc = parseString("<doc><e/></doc>")
-        elem = doc.documentElement
-        e = elem.firstChild
-        self.confirm(e.parentNode is elem, "Before replaceChild()")
-        # Check that replacing a child with itself leaves the tree unchanged
-        elem.replaceChild(e, e)
-        self.confirm(e.parentNode is elem, "After replaceChild()")
-
     def testReplaceWholeText(self):
         def setup():
             doc = parseString("<doc>a<e/>d</doc>")
@@ -1685,6 +1667,85 @@ class MinidomTest(unittest.TestCase):
         # append a new node child
         return_value = parentNode.appendChild(newNode)
         self.assertEqual(return_value, newNode)
+
+    def test_replaceChild(self):
+        """Test replaceChild for a simple node."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        newNode = dom.createElement('new')
+        # replace existingNode by newNode
+        parentNode.replaceChild(newNode, existingNode)
+        self.assertEqual(parentNode.toxml(), '<parent><new/></parent>')
+
+    def test_replaceChild_with_document_fragment_node(self):
+        """Test replaceChild for DOCUMENT_FRAGMENT_NODE."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        newNode = dom.createElement('new')
+        fragment = DocumentFragment()
+        fragment.appendChild(newNode)
+        # replaceChild with document fragment
+        parentNode.replaceChild(fragment, existingNode)
+        self.assertEqual(parentNode.toxml(), '<parent><new/></parent>')
+        # after the replaceChild, the fragment should be empty
+        self.assertEqual(fragment.childNodes.length, 0)
+
+    def test_replaceChild_with_invalid_node_type(self):
+        """Test replaceChild with invalid node type."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        doc = getDOMImplementation().createDocument(None, "doc", None)
+        # parentNode.replaceChild(doc, existingNode) will raise
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          parentNode.replaceChild, doc, existingNode)
+
+    def test_replaceChild_with_same_node(self):
+        """Test replaceChild with same node."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        # replace existingNode by existingNode
+        parentNode.replaceChild(existingNode, existingNode)
+        self.assertEqual(parentNode.toxml(), '<parent><existing/></parent>')
+
+    def test_replaceChild_with_new_child_parent_not_None(self):
+        """Test replaceChild with new child parent is not Nonce."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        newdom = parseString('<newparent><new/></newparent>')
+        newparentNode = newdom.documentElement
+        newNode = newparentNode.firstChild
+        # replace existingNode by newNode
+        parentNode.replaceChild(newNode, existingNode)
+        self.assertEqual(parentNode.toxml(), '<parent><new/></parent>')
+
+    def test_replaceChild_with_no_existing_node(self):
+        """Test replaceChild with missing existing node."""
+        dom = parseString('<parent></parent>')
+        parentNode = dom.documentElement
+        existingNode = dom.createElement('existing')
+        newdom = parseString('<newparent><new/></newparent>')
+        newparentNode = newdom.documentElement
+        newNode = newparentNode.firstChild
+        # replace existingNode by newNode
+        self.assertRaises(xml.dom.NotFoundErr,
+                          parentNode.replaceChild, newNode, existingNode)
+
+    def test_replaceChild_return_value(self):
+        """Test replaceChild returned value."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        newNode = dom.createElement('new')
+        # replace a new node child
+        return_value = parentNode.replaceChild(newNode, existingNode)
+        self.assertEqual(return_value, existingNode)
 
 if __name__ == "__main__":
     unittest.main()
