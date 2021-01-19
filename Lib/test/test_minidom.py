@@ -1449,15 +1449,6 @@ class MinidomTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unsupported syntax'):
             parseString('<element xmlns:abc="http:abc.com/de f g/hi/j k"><abc:foo /></element>')
 
-    def testDocRemoveChild(self):
-        doc = parse(tstfile)
-        title_tag = doc.documentElement.getElementsByTagName("TITLE")[0]
-        self.assertRaises( xml.dom.NotFoundErr, doc.removeChild, title_tag)
-        num_children_before = len(doc.childNodes)
-        doc.removeChild(doc.childNodes[0])
-        num_children_after = len(doc.childNodes)
-        self.assertTrue(num_children_after == num_children_before - 1)
-
     def testProcessingInstructionNameError(self):
         # wrong variable in .nodeValue property will
         # lead to "NameError: name 'data' is not defined"
@@ -1746,6 +1737,24 @@ class MinidomTest(unittest.TestCase):
         # replace a new node child
         return_value = parentNode.replaceChild(newNode, existingNode)
         self.assertEqual(return_value, existingNode)
+
+    def test_removeChild(self):
+        """Test removeChild for a simple node."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        existingNode = parentNode.firstChild
+        # remove an existing node child
+        parentNode.removeChild(existingNode)
+        self.assertEqual(parentNode.toxml(), '<parent/>')
+
+    def test_removeChild_with_no_existing_node(self):
+        """Test removeChild with missing existing node."""
+        dom = parseString('<parent/>')
+        parentNode = dom.documentElement
+        existingNode = dom.createElement('existing')
+        # remove non existing Node
+        self.assertRaises(xml.dom.NotFoundErr,
+                          parentNode.removeChild, existingNode)
 
 if __name__ == "__main__":
     unittest.main()

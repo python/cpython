@@ -139,6 +139,7 @@ class Node(xml.dom.Node):
         return node
 
     def replaceChild(self, newChild, oldChild):
+        """Replace an existing node with a new node."""
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             refChild = oldChild.nextSibling
             self.removeChild(oldChild)
@@ -171,6 +172,7 @@ class Node(xml.dom.Node):
         return oldChild
 
     def removeChild(self, oldChild):
+        """Remove an existing child."""
         try:
             self.childNodes.remove(oldChild)
         except ValueError:
@@ -182,7 +184,6 @@ class Node(xml.dom.Node):
         oldChild.nextSibling = oldChild.previousSibling = None
         if oldChild.nodeType in _nodeTypes_with_children:
             _clear_id_cache(self)
-
         oldChild.parentNode = None
         return oldChild
 
