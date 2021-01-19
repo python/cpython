@@ -63,6 +63,7 @@ jobs:
           # Build Python with the libpython dynamic library
           ./configure --with-pydebug --enable-shared
           make -j4 regen-all
+          make regen-module-names
       - name: Check for changes
         run: |
           changes=$(git status --porcelain)
