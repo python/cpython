@@ -18,6 +18,8 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
+#include "module_names.h"         // _Py_module_names
+
 #include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
@@ -2496,10 +2498,12 @@ fatal_error_exit(int status)
 }
 
 
-// Dump the list of extension modules of sys.modules into fd file descriptor.
+// Dump the list of extension modules of sys.modules, excluding stdlib modules
+// (_Py_module_names), into fd file descriptor.
+//
 // This function is called by a signal handler in faulthandler: avoid memory
-// allocations and keep the implementation simple. For example, the list
-// is not sorted on purpose.
+// allocations and keep the implementation simple. For example, the list is not
+// sorted on purpose.
 void
 _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
 {
@@ -2507,15 +2511,14 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         return;
     }
     PyObject *modules = interp->modules;
-    if (!PyDict_Check(modules)) {
+    if (modules == NULL || !PyDict_Check(modules)) {
         return;
     }
 
-    PUTS(fd, "\nExtension modules: ");
-
+    int header = 1;
+    Py_ssize_t count = 0;
     Py_ssize_t pos = 0;
     PyObject *key, *value;
-    int comma = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
         if (!PyUnicode_Check(key)) {
             continue;
@@ -2524,14 +2527,41 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
             continue;
         }
 
-        if (comma) {
+        // Check if it is a stdlib extension module.
+        // Use the module name from the sys.modules key,
+        // don't attempt to get the module object name.
+        const Py_ssize_t names_len = Py_ARRAY_LENGTH(_Py_module_names);
+        int is_stdlib_mod = 0;
+        for (Py_ssize_t i=0; i < names_len; i++) {
+            const char *name = _Py_module_names[i];
+            if (PyUnicode_CompareWithASCIIString(key, name) == 0) {
+                is_stdlib_mod = 1;
+                break;
+            }
+        }
+        if (is_stdlib_mod) {
+            // Ignore stdlib extension module.
+            continue;
+        }
+
+        if (header) {
+            PUTS(fd, "\nExtension modules: ");
+            header = 0;
+        }
+        else {
             PUTS(fd, ", ");
         }
-        comma = 1;
 
         _Py_DumpASCII(fd, key);
+        count++;
     }
-    PUTS(fd, "\n");
+
+    if (count) {
+        PUTS(fd, " (total: ");
+        _Py_DumpDecimal(fd, count);
+        PUTS(fd, ")");
+        PUTS(fd, "\n");
+    }
 }
 
 

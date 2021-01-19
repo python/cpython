@@ -74,7 +74,7 @@ PyAPI_FUNC(void) _Py_DumpASCII(int fd, PyObject *text);
    This function is signal safe. */
 PyAPI_FUNC(void) _Py_DumpDecimal(
     int fd,
-    unsigned long value);
+    size_t value);
 
 /* Format an integer as hexadecimal with width digits into fd file descriptor.
    The function is signal safe. */
