@@ -1,5 +1,4 @@
-"""Implementation of JSONDecoder
-"""
+# Implementation of JSONDecoder
 import re
 
 from json import scanner
