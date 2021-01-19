@@ -1,0 +1,1 @@
+Allow for Solaris 11.4 crle output not containing ELF
