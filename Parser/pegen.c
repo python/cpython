@@ -265,6 +265,16 @@ raise_decode_error(Parser *p)
     return -1;
 }
 
+static inline void
+raise_unclosed_parentheses_error(Parser *p) {
+       int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
+       int error_col = p->tok->parencolstack[p->tok->level-1];
+       RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
+                                  error_lineno, error_col,
+                                  "'%c' was never closed",
+                                  p->tok->parenstack[p->tok->level-1]);
+}
+
 static void
 raise_tokenizer_init_error(PyObject *filename)
 {
@@ -324,7 +334,11 @@ tokenizer_error(Parser *p)
             RAISE_SYNTAX_ERROR("EOL while scanning string literal");
             return -1;
         case E_EOF:
-            RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
+            if (p->tok->level) {
+                raise_unclosed_parentheses_error(p);
+            } else {
+                RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
+            }
             return -1;
         case E_DEDENT:
             RAISE_INDENTATION_ERROR("unindent does not match any outer indentation level");
@@ -1151,6 +1165,52 @@ reset_parser_state(Parser *p)
     p->call_invalid_rules = 1;
 }
 
+static int
+_PyPegen_check_tokenizer_errors(Parser *p) {
+    // Tokenize the whole input to see if there are any tokenization
+    // errors such as mistmatching parentheses. These will get priority
+    // over generic syntax errors only if the line number of the error is
+    // before the one that we had for the generic error.
+
+    // We don't want to tokenize to the end for interactive input
+    if (p->tok->prompt != NULL) {
+        return 0;
+    }
+
+
+    Token *current_token = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
+    Py_ssize_t current_err_line = current_token->lineno;
+
+    // Save the tokenizer state to restore them later in case we found nothing
+    struct tok_state saved_tok;
+    memcpy(&saved_tok, p->tok, sizeof(struct tok_state));
+
+    for (;;) {
+        const char *start;
+        const char *end;
+        switch (PyTokenizer_Get(p->tok, &start, &end)) {
+            case ERRORTOKEN:
+                if (p->tok->level != 0) {
+                    int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
+                    if (current_err_line > error_lineno) {
+                        raise_unclosed_parentheses_error(p);
+                        return -1;
+                    }
+                }
+                break;
+            case ENDMARKER:
+                break;
+            default:
+                continue;
+        }
+        break;
+    }
+
+    // Restore the tokenizer state
+    memcpy(p->tok, &saved_tok, sizeof(struct tok_state));
+    return 0;
+}
+
 void *
 _PyPegen_run_parser(Parser *p)
 {
@@ -1164,8 +1224,12 @@ _PyPegen_run_parser(Parser *p)
         if (p->fill == 0) {
             RAISE_SYNTAX_ERROR("error at start before reading any input");
         }
-        else if (p->tok->done == E_EOF) {
-            RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
+       else if (p->tok->done == E_EOF) {
+            if (p->tok->level) {
+                raise_unclosed_parentheses_error(p);
+            } else {
+                RAISE_SYNTAX_ERROR("unexpected EOF while parsing");
+            }
         }
         else {
             if (p->tokens[p->fill-1]->type == INDENT) {
@@ -1175,6 +1239,9 @@ _PyPegen_run_parser(Parser *p)
                 RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
+                if (_PyPegen_check_tokenizer_errors(p)) {
+                    return NULL;
+                }
                 RAISE_SYNTAX_ERROR("invalid syntax");
             }
         }
