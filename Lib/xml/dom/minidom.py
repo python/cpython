@@ -122,10 +122,10 @@ class Node(xml.dom.Node):
         return newChild
 
     def appendChild(self, node):
+        """Append a child node to an existing node."""
         if node.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             for c in tuple(node.childNodes):
                 self.appendChild(c)
-            ### The DOM does not clearly specify what to return in this case
             return node
         if node.nodeType not in self._child_node_types:
             raise xml.dom.HierarchyRequestErr(

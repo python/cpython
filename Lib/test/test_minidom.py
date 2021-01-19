@@ -98,22 +98,6 @@ class MinidomTest(unittest.TestCase):
         frag.appendChild(c3)
         return dom, orig, c1, c2, c3, frag
 
-    def testAppendChild(self):
-        dom = parse(tstfile)
-        dom.documentElement.appendChild(dom.createComment("Hello"))
-        self.confirm(dom.documentElement.childNodes[-1].nodeName == "#comment")
-        self.confirm(dom.documentElement.childNodes[-1].data == "Hello")
-        dom.unlink()
-
-    def testAppendChildFragment(self):
-        dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
-        dom.documentElement.appendChild(frag)
-        self.confirm(tuple(dom.documentElement.childNodes) ==
-                     (orig, c1, c2, c3),
-                     "appendChild(<fragment>)")
-        frag.unlink()
-        dom.unlink()
-
     def testReplaceChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.replaceChild(frag, orig)
@@ -1711,6 +1695,50 @@ class MinidomTest(unittest.TestCase):
         newNode = dom.createElement('new')
         existingNode = parentNode.firstChild
         return_value = parentNode.insertBefore(newNode, existingNode)
+        self.assertEqual(return_value, newNode)
+
+    def test_appendChild(self):
+        """Test appendChild for a simple node."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        newNode = dom.createElement('new')
+        # append a new node child
+        parentNode.appendChild(newNode)
+        self.assertEqual(parentNode.toxml(),
+                         '<parent><existing/><new/></parent>')
+
+    def test_appendChild_with_document_fragment_node(self):
+        """Test appendChild for DOCUMENT_FRAGMENT_NODE."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        newNode = dom.createElement('new')
+        fragment = DocumentFragment()
+        fragment.appendChild(newNode)
+        # appendChild with document fragment
+        parentNode.appendChild(fragment)
+        self.assertEqual(parentNode.toxml(),
+                         '<parent><existing/><new/></parent>')
+        # after the appendChild, the fragment should be empty
+        self.assertEqual(fragment.childNodes.length, 0)
+
+    def test_appendChild_with_invalid_node_type(self):
+        """Test appendChild with invalid node type."""
+        # Preparing the test
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        doc = getDOMImplementation().createDocument(None, "doc", None)
+        # parentNode.appendChild(doc) will raise
+        self.assertRaises(xml.dom.HierarchyRequestErr,
+                          parentNode.appendChild, doc)
+
+    def test_appendChild_return_value(self):
+        """Test appendChild returned value."""
+        dom = parseString('<parent><existing/></parent>')
+        parentNode = dom.documentElement
+        newNode = dom.createElement('new')
+        # append a new node child
+        return_value = parentNode.appendChild(newNode)
         self.assertEqual(return_value, newNode)
 
 if __name__ == "__main__":
