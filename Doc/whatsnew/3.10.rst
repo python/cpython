@@ -558,9 +558,10 @@ Removed
   the :mod:`collections` module.
   (Contributed by Victor Stinner in :issue:`37324`.)
 
-* Removed the ``loop`` parameter of nearly all :mod:`asyncio` functions and
-  classes.  This parameter was marked for deprecation in Python 3.8.  See
-  `Changes in the Python API`_ for examples of how to replace existing code.
+* The ``loop`` parameter has been removed from most of :mod:`asyncio`
+  :doc:`high-level API <../library/asyncio-api-index>` following deprecation
+  in Python 3.8. See `Changes in the Python API`_ for the reasoning behind the
+  change, and examples of how to replace existing code.
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
@@ -602,21 +603,32 @@ Changes in the Python API
   a 16-bit unsigned integer.
   (Contributed by Erlend E. Aasland in :issue:`42393`.)
 
-* The ``loop`` parameter to nearly all :mod:`asyncio` functions has been removed
-  following deprecation in Python 3.8. For example, a coroutine that currently
-  look like this::
+* The ``loop`` parameter has been removed from most of :mod:`asyncio`
+  :doc:`high-level API <../library/asyncio-api-index>` following deprecation
+  in Python 3.8. The motivation behind this change is multifold:
 
-     import asyncio
+  1. This simplifies the high-level API.
+  2. The functions in the high-level API have been implicitly getting the
+     current thread's running event loop since Python 3.6.  There isn't a need to
+     pass the event loop to the API in most normal use cases.
+  3. Event loop passing is error-prone especially when dealing with loops
+     running in different threads.
+
+  Note that the low-level API has **not** been affected.
+
+  A coroutine that currently look like this::
 
      async def foo(loop):
-         await asyncio.sleep(loop=loop)
+         await asyncio.sleep(1, loop=loop)
 
-  Can *usually* be replaced with this::
+  Should be replaced with this::
 
-     import asyncio
+     async def foo():
+         await asyncio.sleep(1)
 
-     async def foo(loop):
-         await asyncio.sleep()
+  If ``foo()`` was specifically designed *not* to run in the current thread's
+  running event loop (eg. running in another thread's event loop), consider
+  using :func:`asyncio.run_coroutine_threadsafe` instead.
 
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
