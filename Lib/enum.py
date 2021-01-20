@@ -533,7 +533,7 @@ class EnumMeta(type):
             inverted = ~enum_class(0)
             if list(enum_class) != list(inverted):
                 if '|' in inverted._name_:
-                    del enum_class._value2member_map_[inverted._value_]
+                    enum_class._value2member_map_.pop(inverted._value_, None)
                 enum_class._iter_member_ = enum_class._iter_member_by_def_
         #
         return enum_class
