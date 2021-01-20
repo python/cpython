@@ -1309,14 +1309,14 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
 }
 
 static void
-udc_destroy_capi(PyObject *capsule)
+unicodedata_destroy_capi(PyObject *capsule)
 {
     void *capi = PyCapsule_GetPointer(capsule, PyUnicodeData_CAPSULE_NAME);
     PyMem_Free(capi);
 }
 
-static _PyUnicode_Name_CAPI *
-udc_get_capi(void)
+static PyObject *
+unicodedata_create_capi(void)
 {
     _PyUnicode_Name_CAPI *capi = PyMem_Malloc(sizeof(_PyUnicode_Name_CAPI));
     if (capi == NULL) {
@@ -1325,7 +1325,14 @@ udc_get_capi(void)
     }
     capi->getname = capi_getucname;
     capi->getcode = capi_getcode;
-    return capi;
+
+    PyObject *capsule = PyCapsule_New(capi,
+                                      PyUnicodeData_CAPSULE_NAME,
+                                      unicodedata_destroy_capi);
+    if (capsule == NULL) {
+        PyMem_Free(capi);
+    }
+    return capsule;
 };
 
 
@@ -1491,15 +1498,8 @@ unicodedata_exec(PyObject *module)
     }
 
     /* Export C API */
-    _PyUnicode_Name_CAPI *capi = udc_get_capi();
-    if (capi == NULL) {
-        return -1;
-    }
-    PyObject *capsule = PyCapsule_New(capi,
-                                      PyUnicodeData_CAPSULE_NAME,
-                                      udc_destroy_capi);
+    PyObject *capsule = unicodedata_create_capi();
     if (capsule == NULL) {
-        PyMem_Free(capi);
         return -1;
     }
     int rc = PyModule_AddObjectRef(module, "_ucnhash_CAPI", capsule);
