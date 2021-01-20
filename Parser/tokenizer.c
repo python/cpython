@@ -1743,6 +1743,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 tok->cur = (char *)tok->start;
                 tok->cur++;
                 tok->line_start = tok->multi_line_start;
+                tok->lineno = tok->first_lineno;
                 if (quote_size == 3) {
                     return syntaxerror(tok,
                            "unterminated triple-quoted string literal");
