@@ -1177,13 +1177,8 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         return 0;
     }
 
-
     Token *current_token = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t current_err_line = current_token->lineno;
-
-    // Save the tokenizer state to restore them later in case we found nothing
-    struct tok_state saved_tok;
-    memcpy(&saved_tok, p->tok, sizeof(struct tok_state));
 
     for (;;) {
         const char *start;
@@ -1206,8 +1201,6 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         break;
     }
 
-    // Restore the tokenizer state
-    memcpy(p->tok, &saved_tok, sizeof(struct tok_state));
     return 0;
 }
 
@@ -1239,10 +1232,10 @@ _PyPegen_run_parser(Parser *p)
                 RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
-                if (_PyPegen_check_tokenizer_errors(p)) {
-                    return NULL;
-                }
                 RAISE_SYNTAX_ERROR("invalid syntax");
+                // _PyPegen_check_tokenizer_errors will override the existing
+                // generic SyntaxError we just raised if errors are found.
+                _PyPegen_check_tokenizer_errors(p);
             }
         }
         return NULL;
