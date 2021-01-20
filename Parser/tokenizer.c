@@ -1739,20 +1739,17 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (c == EOF) {
+            if (c == EOF || (quote_size == 1 && c == '\n')) {
+                tok->cur = (char *)tok->start;
+                tok->cur++;
+                tok->line_start = tok->multi_line_start;
                 if (quote_size == 3) {
-                    tok->done = E_EOFS;
+                    return syntaxerror(tok,
+                           "unterminated triple-quoted string literal");
                 }
                 else {
-                    tok->done = E_EOLS;
+                    return syntaxerror(tok, "unterminated string literal");
                 }
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
-            }
-            if (quote_size == 1 && c == '\n') {
-                tok->done = E_EOLS;
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
             }
             if (c == quote) {
                 end_quote_size += 1;

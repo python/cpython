@@ -206,7 +206,7 @@ class ExceptionTests(unittest.TestCase):
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
-        check('x = "a', 1, 7)
+        check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 1, 11)
