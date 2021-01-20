@@ -681,30 +681,37 @@ class PyBuildExt(build_ext):
             left = path[2:].replace("\\", "/")
             return "/" + drive + left
 
+        def add_search_path(line):
+            # On Windows building machine, VxWorks does
+            # cross builds under msys2 environment.
+            pathsep = (";" if sys.platform == "msys" else ":")
+            for d in line.strip().split("=")[1].split(pathsep):
+                d = d.strip()
+                if sys.platform == "msys":
+                    # On Windows building machine, compiler
+                    # returns mixed style path like:
+                    # C:\folder1\folder2/folder3/folder4
+                    d = convert_mixed_path(d)
+                d = os.path.normpath(d)
+                add_dir_to_list(self.compiler.library_dirs, d)
+
         cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'wrccpaths')
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-        ret = os.system('%s --print-search-dirs >%s' % (cc, tmpfile))
+        os.makedirs(self.build_temp, exist_ok=True)
         try:
-            if ret >> 8 == 0:
-                with open(tmpfile) as fp:
-                    for line in fp.readlines():
-                        if line.startswith("libraries"):
-                            # On Windows building machine, VxWorks does
-                            # cross builds under msys2 environment.
-                            sep=";" if sys.platform == "msys" else ":"
-                            for d in line.strip().split("=")[1].split(sep):
-                                d = d.strip()
-                                if sys.platform == "msys":
-                                    # On Windows building machine, compiler
-                                    # returns mixed style path like:
-                                    # C:\folder1\folder2/folder3/folder4
-                                    d = convert_mixed_path(d)
-                                d = os.path.normpath(d)
-                                add_dir_to_list(self.compiler.library_dirs, d)
+            ret = run_command('%s --print-search-dirs >%s' % (cc, tmpfile))
+            if ret:
+                return
+            with open(tmpfile) as fp:
+                for line in fp:
+                    if not line.startswith("libraries"):
+                        continue
+                    add_search_path(line)
         finally:
-            os.unlink(tmpfile)
+            try:
+                os.unlink(tmpfile)
+            except OSError:
+                pass
 
     def add_cross_compiling_paths(self):
         cc = sysconfig.get_config_var('CC')
