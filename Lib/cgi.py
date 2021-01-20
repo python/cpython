@@ -319,7 +319,7 @@ class FieldStorage:
     def __init__(self, fp=None, headers=None, outerboundary=b'',
                  environ=os.environ, keep_blank_values=0, strict_parsing=0,
                  limit=None, encoding='utf-8', errors='replace',
-                 max_num_fields=None):
+                 max_num_fields=None, semicolon_sep=True):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -362,11 +362,16 @@ class FieldStorage:
         max_num_fields: int. If set, then __init__ throws a ValueError
             if there are more than n fields read by parse_qsl().
 
+        semicolon_sep: flag indicating whether ``;`` should be treated as a
+            valid separator. Passed directly to urllib.parse.parse_qsl
+            internally.
+
         """
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
         self.max_num_fields = max_num_fields
+        self.semicolon_sep = semicolon_sep
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -476,7 +481,7 @@ class FieldStorage:
         if ctype == 'application/x-www-form-urlencoded':
             self.read_urlencoded()
         elif ctype[:10] == 'multipart/':
-            self.read_multi(environ, keep_blank_values, strict_parsing)
+            self.read_multi(environ, keep_blank_values, strict_parsing, semicolon_sep)
         else:
             self.read_single()
 
@@ -593,13 +598,14 @@ class FieldStorage:
         query = urllib.parse.parse_qsl(
             qs, self.keep_blank_values, self.strict_parsing,
             encoding=self.encoding, errors=self.errors,
-            max_num_fields=self.max_num_fields)
+            max_num_fields=self.max_num_fields,
+            semicolon_sep=self.semicolon_sep)
         self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
     FieldStorageClass = None
 
-    def read_multi(self, environ, keep_blank_values, strict_parsing):
+    def read_multi(self, environ, keep_blank_values, strict_parsing, semicolon_sep):
         """Internal: read a part that is itself multipart."""
         ib = self.innerboundary
         if not valid_boundary(ib):
@@ -609,7 +615,8 @@ class FieldStorage:
             query = urllib.parse.parse_qsl(
                 self.qs_on_post, self.keep_blank_values, self.strict_parsing,
                 encoding=self.encoding, errors=self.errors,
-                max_num_fields=self.max_num_fields)
+                max_num_fields=self.max_num_fields,
+                semicolon_sep=self.semicolon_sep)
             self.list.extend(MiniFieldStorage(key, value) for key, value in query)
 
         klass = self.FieldStorageClass or self.__class__
@@ -653,7 +660,8 @@ class FieldStorage:
                 else self.limit - self.bytes_read
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing, limit,
-                         self.encoding, self.errors, max_num_fields)
+                         self.encoding, self.errors, max_num_fields,
+                         semicolon_sep)
 
             if max_num_fields is not None:
                 max_num_fields -= 1
