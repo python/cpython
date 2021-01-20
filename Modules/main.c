@@ -36,8 +36,6 @@ pymain_init(const _PyArgv *args)
 {
     PyStatus status;
 
-    Rewind_Initialize();
-
     status = _PyRuntime_Initialize();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -557,7 +555,7 @@ pymain_run_python(int *exitcode)
     pymain_header(config);
     pymain_import_readline(config);
 
-    Rewind_Initialize2();
+    Rewind_Activate();
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command, &cf);
@@ -575,7 +573,7 @@ pymain_run_python(int *exitcode)
         *exitcode = pymain_run_stdin(config, &cf);
     }
 
-    Rewind_Deinitialize();
+    Rewind_Deactivate();
 
     pymain_repl(config, &cf, exitcode);
     goto done;
@@ -663,8 +661,6 @@ Py_RunMain(void)
     if (_Py_UnhandledKeyboardInterrupt) {
         exitcode = exit_sigint();
     }
-
-    Rewind_Cleanup();
 
     return exitcode;
 }

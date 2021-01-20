@@ -1,10 +1,8 @@
 #include "Python.h"
 
-void Rewind_Initialize(void);
+void Rewind_Activate(void);
 
-void Rewind_Initialize2(void);
-
-void Rewind_Deinitialize(void);
+void Rewind_Deactivate(void);
 
 int Rewind_isSimpleType(PyObject *obj);
 
