@@ -6008,7 +6008,9 @@ void Py_LeaveRecursiveCall(void)
     _Py_LeaveRecursiveCall_inline();
 }
 
-static void improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t nargs) {
+static void
+improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t nargs)
+{
 
     if (nargs + 1 != co->co_argcount) {
         return;
