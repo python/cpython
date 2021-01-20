@@ -3897,6 +3897,10 @@ class FDInheritanceTests(unittest.TestCase):
         fd = os_helper.make_bad_fd()
 
         with self.assertRaises(OSError) as ctx:
+            os.get_inheritable(fd)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as ctx:
             os.set_inheritable(fd, True)
         self.assertEqual(ctx.exception.errno, errno.EBADF)
 
