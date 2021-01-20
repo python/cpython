@@ -1266,10 +1266,6 @@ state.  Example from the `setattro` slot method in
     }
 
 
-Note that ``_PyType_GetModuleByDef`` traverses the MRO cache, and therefore has
-performance impact.
-
-
 See also :pep:`573`.
 
 
