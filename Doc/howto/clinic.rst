@@ -1262,6 +1262,8 @@ state.  Example from the `setattro` slot method in
     {
         PyObject *module = _PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
         thread_module_state *state = get_thread_state(module);
+        ...
+    }
 
 
 Note that ``_PyType_GetModuleByDef`` traverses the MRO cache, and therefore has
