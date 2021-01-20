@@ -115,7 +115,8 @@ log = initlog           # The current logging function
 # 0 ==> unlimited input
 maxlen = 0
 
-def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
+def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0,
+          semicolon_sep=True):
     """Parse a query in the environment or from a file (default stdin)
 
         Arguments, all optional:
@@ -134,6 +135,9 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         strict_parsing: flag indicating what to do with parsing errors.
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
+
+        semicolon_sep: flag indicating whether ``;`` should be treated as a
+            valid separator.
     """
     if fp is None:
         fp = sys.stdin
@@ -178,7 +182,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             qs = ""
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
     return urllib.parse.parse_qs(qs, keep_blank_values, strict_parsing,
-                                 encoding=encoding)
+                                 encoding=encoding, semicolon_sep=semicolon_sep)
 
 
 def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):

@@ -663,7 +663,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace', max_num_fields=None,
-             semicolon_sep=False):
+             semicolon_sep=True):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -688,7 +688,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
             are more than n fields read by parse_qsl().
 
         semicolon_sep: flag indicating whether ``;`` should be treated as a
-            valid separator. Defaults to False due to recommendation by the W3C
+            valid separator. Recommended to set to False.
             (see https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#url-encoded-form-data)
 
         Returns a dictionary.
@@ -708,7 +708,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace', max_num_fields=None,
-              semicolon_sep=False):
+              semicolon_sep=True):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -732,7 +732,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             if there are more than n fields read by parse_qsl().
 
         semicolon_sep: flag indicating whether ``;`` should be treated as a
-            valid separator. Defaults to False due to recommendation by the W3C
+            valid separator. Recommended to set to False.
             (see https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#url-encoded-form-data)
 
         Returns a list, as G-d intended.

@@ -203,7 +203,7 @@ class UrlParseTestCase(unittest.TestCase):
     def test_qsl_no_semicolon(self):
         # See bpo-42967 for more information.
         for orig, expect in parse_qsl_test_cases_semicolon:
-            with self.subTest(f"Original: {orig}, Expected: {expect}"):
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
                 result = urllib.parse.parse_qsl(orig, keep_blank_values=True,
                                                 semicolon_sep=False)
                 self.assertEqual(result, expect,
@@ -215,9 +215,9 @@ class UrlParseTestCase(unittest.TestCase):
                                  "Error parsing %r" % orig)
 
     def test_qs_no_semicolon(self):
-
+        # See bpo-42967 for more information.
         for orig, expect in parse_qs_test_cases_semicolon:
-            with self.subTest(f"Original: {orig}, Expected: {expect}"):
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
                 result = urllib.parse.parse_qs(orig, keep_blank_values=True,
                                                semicolon_sep=False)
                 self.assertEqual(result, expect, "Error parsing %r" % orig)
