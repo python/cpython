@@ -327,12 +327,6 @@ tokenizer_error(Parser *p)
         case E_TOKEN:
             msg = "invalid token";
             break;
-        case E_EOFS:
-            RAISE_SYNTAX_ERROR("EOF while scanning triple-quoted string literal");
-            return -1;
-        case E_EOLS:
-            RAISE_SYNTAX_ERROR("EOL while scanning string literal");
-            return -1;
         case E_EOF:
             if (p->tok->level) {
                 raise_unclosed_parentheses_error(p);
