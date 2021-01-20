@@ -1253,7 +1253,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
     if (n < 2 || n & (n - 1)) {
         PyErr_SetString(PyExc_ValueError,
-                        "n must be a power of 2.");
+                        "n must be a power of 2 larger than 1.");
         return NULL;
     }
 
@@ -1275,14 +1275,15 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         /* OpenSSL 1.1.0 restricts maxmem to 32 MiB. It may change in the
            future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
-                     "maxmem must be positive and smaller than %d",
+                     "maxmem must be positive and smaller than or equal to %d",
                       INT_MAX);
         return NULL;
     }
 
     if (dklen < 1 || dklen > INT_MAX) {
         PyErr_Format(PyExc_ValueError,
-                    "dklen must be greater than 0 and smaller than %d",
+                    "dklen must be greater than 0 and smaller than or equal "
+                    "to %d",
                     INT_MAX);
         return NULL;
     }
