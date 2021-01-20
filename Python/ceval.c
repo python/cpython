@@ -86,6 +86,7 @@ static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
+static void improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t nargs);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -3786,13 +3787,21 @@ main_loop:
                   We'll be passing `oparg + 1` to call_function, to
                   make it accept the `self` as a first argument.
                 */
+
+                PyObject **pfunc = (*(&sp)) - (oparg + 1) - 1;
+                PyObject *func = *pfunc;
+                PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
                 res = call_function(tstate, &bounds, &sp, oparg + 1, NULL);
+                if (res == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
+                    improve_missing_self_error(tstate, co, oparg - 1);
+                }
                 stack_pointer = sp;
             }
 
             PUSH(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
             DISPATCH();
         }
 
@@ -5997,4 +6006,39 @@ int Py_EnterRecursiveCall(const char *where)
 void Py_LeaveRecursiveCall(void)
 {
     _Py_LeaveRecursiveCall_inline();
+}
+
+static void improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t nargs) {
+
+    if (nargs + 1 != co->co_argcount) {
+        return;
+    }
+    PyObject *type, *val, *tb;
+    _PyErr_Fetch(tstate, &type, &val, &tb);
+
+    if (co->co_argcount > 0 && co->co_varnames && PyTuple_GET_SIZE(co->co_varnames) > 0) {
+        PyObject* first_arg = PyTuple_GET_ITEM(co->co_varnames, 0);
+        int comp = PyUnicode_CompareWithASCIIString(first_arg, "self");
+        if (comp == 0 || comp == -1) {
+            PyErr_Clear();
+            goto exit;
+        }
+    }
+
+    if (PyUnicode_CheckExact(val)) {
+        PyObject* trailing = PyUnicode_FromString(". Did you forget 'self' in the method definition?");
+        if (trailing == NULL) {
+            PyErr_Clear();
+            goto exit;
+        }
+        PyObject* new_val = PyUnicode_Concat(val, trailing);
+        if (new_val == NULL) {
+            PyErr_Clear();
+            goto exit;
+        }
+        Py_DECREF(val);
+        val = new_val;
+    }
+exit:
+    PyErr_Restore(type, val, tb);
 }

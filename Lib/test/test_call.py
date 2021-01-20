@@ -713,5 +713,66 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
             A().method_two_args("x", "y", x="oops")
 
 
+class NoSelfClass:
+    def foo():
+        pass
+
+    def foo1(x, y):
+        pass
+
+    def foo2(self, y):
+        pass
+
+    @classmethod
+    def clsmethod(x, y):
+        pass
+
+    @staticmethod
+    def stmethod(x, y):
+        pass
+
+
+@cpython_only
+class TestErrorMessagesInMethodsGiveHintAboutSelf(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_raises_type_error(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertEqual(str(cm.exception), message)
+
+
+    def test_method_with_missing_self_no_args(self):
+
+        msg = ("NoSelfClass.foo() takes 0 positional arguments but 1 was given. "
+               "Did you forget 'self' in the method definition?")
+        with self.check_raises_type_error(msg):
+            NoSelfClass().foo()
+
+    def test_method_with_missing_self_args(self):
+
+        msg = ("NoSelfClass.foo1() takes 2 positional arguments but 3 were given. "
+               "Did you forget 'self' in the method definition?")
+        with self.check_raises_type_error(msg):
+            NoSelfClass().foo1(1, 2)
+
+    def test_method_with_self_args(self):
+
+        msg = "NoSelfClass.foo2() takes 2 positional arguments but 3 were given"
+        with self.check_raises_type_error(msg):
+            NoSelfClass().foo2(1, 2)
+
+    def test_method_with_classmethod(self):
+
+        msg = "NoSelfClass.clsmethod() takes 2 positional arguments but 3 were given"
+        with self.check_raises_type_error(msg):
+            NoSelfClass().clsmethod(1, 2)
+
+    def test_method_with_staticmethod(self):
+
+        msg = "NoSelfClass.stmethod() takes 2 positional arguments but 3 were given"
+        with self.check_raises_type_error(msg):
+            NoSelfClass().stmethod(1, 2, 3)
+
+
 if __name__ == "__main__":
-    unittest.main()
+     unittest.main()
