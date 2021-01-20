@@ -560,8 +560,18 @@ Removed
 
 * The ``loop`` parameter has been removed from most of :mod:`asyncio`\ 's
   :doc:`high-level API <../library/asyncio-api-index>` following deprecation
-  in Python 3.8. See `Changes in the Python API`_ for the reasoning behind the
-  change, and examples of how to replace existing code.
+  in Python 3.8.  The motivation behind this change is multifold:
+
+  1. This simplifies the high-level API.
+  2. The functions in the high-level API have been implicitly getting the
+     current thread's running event loop since Python 3.6.  There isn't a need to
+     pass the event loop to the API in most normal use cases.
+  3. Event loop passing is error-prone especially when dealing with loops
+     running in different threads.
+
+  Note that the low-level API will still accept ``loop``.
+  See `Changes in the Python API`_ for examples of how to replace existing code.
+
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
@@ -605,16 +615,7 @@ Changes in the Python API
 
 * The ``loop`` parameter has been removed from most of :mod:`asyncio`\ 's
   :doc:`high-level API <../library/asyncio-api-index>` following deprecation
-  in Python 3.8. The motivation behind this change is multifold:
-
-  1. This simplifies the high-level API.
-  2. The functions in the high-level API have been implicitly getting the
-     current thread's running event loop since Python 3.6.  There isn't a need to
-     pass the event loop to the API in most normal use cases.
-  3. Event loop passing is error-prone especially when dealing with loops
-     running in different threads.
-
-  Note that the low-level API has **not** been affected.
+  in Python 3.8.
 
   A coroutine that currently look like this::
 
