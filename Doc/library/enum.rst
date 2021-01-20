@@ -782,7 +782,7 @@ value::
 
     >>> purple = Color.RED | Color.BLUE
     >>> list(purple)
-    [<Color.BLUE: 2>, <Color.RED: 1>]
+    [<Color.RED: 1>, <Color.BLUE: 2>]
 
 .. versionadded:: 3.10
 
@@ -1212,7 +1212,7 @@ Private names are not converted to Enum members, but remain normal attributes.
 :class:`Enum` members are instances of their :class:`Enum` class, and are
 normally accessed as ``EnumClass.member``.  In Python versions ``3.5`` to
 ``3.9`` you could access members from other members -- this practice was
-discourages, and in ``3.10`` :class:`Enum` has returned to not allowing it::
+discouraged, and in ``3.10`` :class:`Enum` has returned to not allowing it::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -1287,7 +1287,7 @@ are comprised of a single bit::
     >>> Color(3)
     <Color.YELLOW: 3>
     >>> Color(7)
-    <Color.BLUE|GREEN|RED: 7>
+    <Color.RED|GREEN|BLUE: 7>
 
 ``StrEnum`` and :meth:`str.__str__`
 """""""""""""""""""""""""""""""""""
@@ -1311,14 +1311,14 @@ The code sample::
     ...     BLUE = 4
     ...     PURPLE = RED | BLUE
     ...     WHITE = RED | GREEN | BLUE
-    ... 
+    ...
 
 - single-bit flags are canonical
 - multi-bit and zero-bit flags are aliases
 - only canonical flags are returned during iteration::
 
     >>> list(Color.WHITE)
-    [<Color.BLUE: 4>, <Color.GREEN: 2>, <Color.RED: 1>]
+    [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
 
 - negating a flag or flag set returns a new flag/flag set with the
   corresponding positive integer value::
@@ -1332,7 +1332,7 @@ The code sample::
 - names of pseudo-flags are constructed from their members' names::
 
     >>> (Color.RED | Color.GREEN).name
-    'GREEN|RED'
+    'RED|GREEN'
 
 - multi-bit flags, aka aliases, can be returned from operations::
 
@@ -1361,8 +1361,8 @@ bits are handled: ``STRICT``, ``CONFORM``, ``EJECT`', and ``KEEP``:
   * EJECT --> lose Flag status and become a normal int with the given value
   * KEEP --> keep the extra bits
            - keeps Flag status and extra bits
-           - they don't show up in iteration
-           - they do show up in repr() and str()
+           - extra bits do not show up in iteration
+           - extra bits do show up in repr() and str()
 
 The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``DISCARD``,
 and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an

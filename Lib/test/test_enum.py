@@ -2300,9 +2300,9 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(str(Open.WO), 'Open.WO')
         self.assertEqual(str(Open.AC), 'Open.AC')
         self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'Open.CE|WO')
-        self.assertEqual(str(~Open.RO), 'Open.CE|RW|WO')
-        self.assertEqual(str(~Open.WO), 'Open.CE|RW')
+        self.assertEqual(str(Open.WO | Open.CE), 'Open.WO|CE')
+        self.assertEqual(str(~Open.RO), 'Open.WO|RW|CE')
+        self.assertEqual(str(~Open.WO), 'Open.RW|CE')
         self.assertEqual(str(~Open.AC), 'Open.CE')
         self.assertEqual(str(~Open.CE), 'Open.AC')
         self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
@@ -2328,9 +2328,9 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(Open.WO), '<Open.WO: 1>')
         self.assertEqual(repr(Open.AC), '<Open.AC: 3>')
         self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
-        self.assertEqual(repr(Open.WO | Open.CE), '<Open.CE|WO: 524289>')
-        self.assertEqual(repr(~Open.RO), '<Open.CE|RW|WO: 524291>')
-        self.assertEqual(repr(~Open.WO), '<Open.CE|RW: 524290>')
+        self.assertEqual(repr(Open.WO | Open.CE), '<Open.WO|CE: 524289>')
+        self.assertEqual(repr(~Open.RO), '<Open.WO|RW|CE: 524291>')
+        self.assertEqual(repr(~Open.WO), '<Open.RW|CE: 524290>')
         self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
         self.assertEqual(repr(~Open.CE), '<Open.AC: 3>')
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
@@ -2566,11 +2566,11 @@ class TestFlag(unittest.TestCase):
     def test_member_iter(self):
         Color = self.Color
         self.assertEqual(list(Color.BLACK), [])
-        self.assertEqual(list(Color.PURPLE), [Color.BLUE, Color.RED])
+        self.assertEqual(list(Color.PURPLE), [Color.RED, Color.BLUE])
         self.assertEqual(list(Color.BLUE), [Color.BLUE])
         self.assertEqual(list(Color.GREEN), [Color.GREEN])
-        self.assertEqual(list(Color.WHITE), [Color.BLUE, Color.GREEN, Color.RED])
-        self.assertEqual(list(Color.WHITE), [Color.BLUE, Color.GREEN, Color.RED])
+        self.assertEqual(list(Color.WHITE), [Color.RED, Color.GREEN, Color.BLUE])
+        self.assertEqual(list(Color.WHITE), [Color.RED, Color.GREEN, Color.BLUE])
 
     def test_member_length(self):
         self.assertEqual(self.Color.__len__(self.Color.BLACK), 0)
@@ -2613,7 +2613,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
     def test_bizarre(self):
-        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 2, 1"):
+        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 1, 2"):
             class Bizarre(Flag):
                 b = 3
                 c = 4
@@ -2741,9 +2741,9 @@ class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
 
     class Perm(IntFlag):
-        X = 1 << 0
-        W = 1 << 1
         R = 1 << 2
+        W = 1 << 1
+        X = 1 << 0
 
     class Open(IntFlag):
         RO = 0
@@ -2807,10 +2807,10 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Open.WO), 'Open.WO')
         self.assertEqual(str(Open.AC), 'Open.AC')
         self.assertEqual(str(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'Open.CE|WO')
+        self.assertEqual(str(Open.WO | Open.CE), 'Open.WO|CE')
         self.assertEqual(str(Open(4)), '4')
-        self.assertEqual(str(~Open.RO), 'Open.CE|RW|WO')
-        self.assertEqual(str(~Open.WO), 'Open.CE|RW')
+        self.assertEqual(str(~Open.RO), 'Open.WO|RW|CE')
+        self.assertEqual(str(~Open.WO), 'Open.RW|CE')
         self.assertEqual(str(~Open.AC), 'Open.CE')
         self.assertEqual(str(~Open.CE), 'Open.AC')
         self.assertEqual(str(~(Open.RO | Open.CE)), 'Open.AC')
@@ -2818,7 +2818,7 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Open(~4)), '-5')
 
         Skip = self.Skip
-        self.assertEqual(str(Skip(~4)), 'Skip.EIGHTH|SECOND|FIRST')
+        self.assertEqual(str(Skip(~4)), 'Skip.FIRST|SECOND|EIGHTH')
 
     def test_repr(self):
         Perm = self.Perm
@@ -2844,17 +2844,17 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(Open.WO), '<Open.WO: 1>')
         self.assertEqual(repr(Open.AC), '<Open.AC: 3>')
         self.assertEqual(repr(Open.RO | Open.CE), '<Open.CE: 524288>')
-        self.assertEqual(repr(Open.WO | Open.CE), '<Open.CE|WO: 524289>')
+        self.assertEqual(repr(Open.WO | Open.CE), '<Open.WO|CE: 524289>')
         self.assertEqual(repr(Open(4)), '4')
-        self.assertEqual(repr(~Open.RO), '<Open.CE|RW|WO: 524291>')
-        self.assertEqual(repr(~Open.WO), '<Open.CE|RW: 524290>')
+        self.assertEqual(repr(~Open.RO), '<Open.WO|RW|CE: 524291>')
+        self.assertEqual(repr(~Open.WO), '<Open.RW|CE: 524290>')
         self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
         self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: 2>')
         self.assertEqual(repr(Open(~4)), '-5')
 
         Skip = self.Skip
-        self.assertEqual(repr(Skip(~4)), '<Skip.EIGHTH|SECOND|FIRST: 11>')
+        self.assertEqual(repr(Skip(~4)), '<Skip.FIRST|SECOND|EIGHTH: 11>')
 
     def test_format(self):
         Perm = self.Perm
@@ -3128,10 +3128,10 @@ class TestIntFlag(unittest.TestCase):
     def test_member_iter(self):
         Color = self.Color
         self.assertEqual(list(Color.BLACK), [])
-        self.assertEqual(list(Color.PURPLE), [Color.BLUE, Color.RED])
+        self.assertEqual(list(Color.PURPLE), [Color.RED, Color.BLUE])
         self.assertEqual(list(Color.BLUE), [Color.BLUE])
         self.assertEqual(list(Color.GREEN), [Color.GREEN])
-        self.assertEqual(list(Color.WHITE), [Color.BLUE, Color.GREEN, Color.RED])
+        self.assertEqual(list(Color.WHITE), [Color.RED, Color.GREEN, Color.BLUE])
 
     def test_member_length(self):
         self.assertEqual(self.Color.__len__(self.Color.BLACK), 0)
@@ -3158,7 +3158,7 @@ class TestIntFlag(unittest.TestCase):
             self.assertEqual(bool(f.value), bool(f))
 
     def test_bizarre(self):
-        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 2, 1"):
+        with self.assertRaisesRegex(TypeError, "invalid Flag 'Bizarre' -- missing values: 1, 2"):
             class Bizarre(IntFlag):
                 b = 3
                 c = 4
@@ -3466,7 +3466,7 @@ class TestStdLib(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, enum)
+        support.check__all__(self, enum, not_exported={'bin'})
 
 
 # These are unordered here on purpose to ensure that declaration order

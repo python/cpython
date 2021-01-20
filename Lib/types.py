@@ -155,7 +155,7 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):

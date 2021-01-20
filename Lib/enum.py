@@ -1,8 +1,6 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
-from operator import or_ as _or_, and_ as _and_, xor as _xor_, inv as _inv_
-from functools import reduce
-from builtins import property as _bltin_property
+from builtins import property as _bltin_property, bin as _bltin_bin
 
 
 __all__ = [
@@ -64,64 +62,6 @@ def _is_private(cls_name, name):
     else:
         return False
 
-def _bits(num):
-    if num == 0:
-        return '0b0'
-    negative = False
-    if num < 0:
-        negative = True
-        num = ~num
-    digits = []
-    while num:
-        digits.insert(0, num&1)
-        num >>= 1
-    if len(digits) < 4:
-        digits = ([0, 0, 0, 0] + digits)[-4:]
-    if negative:
-        result = '0b1' + (''.join(['10'[d] for d in digits]))
-    else:
-        result = '0b0' + ''.join(str(d) for d in digits)
-    return result
-
-def _bit_count(num):
-    """
-    return number of set bits
-
-    Counting bits set, Brian Kernighan's way*
-
-        unsigned int v;          // count the number of bits set in v
-        unsigned int c;          // c accumulates the total bits set in v
-        for (c = 0; v; c++)
-        {   v &= v - 1;  }       //clear the least significant bit set
-
-    This method goes through as many iterations as there are set bits. So if we
-    have a 32-bit word with only the high bit set, then it will only go once
-    through the loop.
-
-    * The C Programming Language 2nd Ed., Kernighan & Ritchie, 1988.
-
-    This works because each subtraction "borrows" from the lowest 1-bit. For
-    example:
-
-          loop pass 1     loop pass 2
-          -----------     -----------
-               101000          100000
-             -      1        -      1
-             = 100111        = 011111
-             & 101000        & 100000
-             = 100000        =      0
-
-    It is an excellent technique for Python, since the size of the integer need
-    not be determined beforehand.
-
-    (from https://wiki.python.org/moin/BitManipulation)
-    """
-    count = 0
-    while num:
-        num &= num - 1
-        count += 1
-    return count
-
 def _is_single_bit(num):
     """
     True if only one bit set in num (should be an int)
@@ -146,12 +86,44 @@ def _make_class_unpicklable(obj):
         setattr(obj, '__reduce_ex__', _break_on_call_reduce)
         setattr(obj, '__module__', '<unknown>')
 
+def _iter_bits_lsb(num):
+    while num:
+        b = num & (~num + 1)
+        yield b
+        num ^= b
+
+def bin(num, max_bits=None):
+    """
+    Like built-in bin(), except negative values are represented in
+    twos-compliment, and the leading bit always indicates sign
+    (0=positive, 1=negative).
+
+    >>> bin(10)
+    '0b0 1010'
+    >>> bin(~10)   # ~10 is -11
+    '0b1 0101'
+    """
+
+    ceiling = 2 ** (num).bit_length()
+    if num >= 0:
+        s = _bltin_bin(num + ceiling).replace('1', '0', 1)
+    else:
+        s = _bltin_bin(~num ^ (ceiling - 1) + ceiling)
+    sign = s[:3]
+    digits = s[3:]
+    if max_bits is not None:
+        if len(digits) < max_bits:
+            digits = (sign[-1] * max_bits + digits)[-max_bits:]
+    return "%s %s" % (sign, digits)
+
+
 _auto_null = object()
 class auto:
     """
     Instances are replaced with an appropriate value in Enum class suites.
     """
     value = _auto_null
+
 
 class property(DynamicClassAttribute):
     """
@@ -240,6 +212,7 @@ class _proto_member:
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
         enum_member.__init__(*args)
+        enum_member._sort_order_ = len(enum_class._member_names_)
         # If another member with the same value was already defined, the
         # new member becomes an alias to the existing one.
         for name, canonical_member in enum_class._member_map_.items():
@@ -328,6 +301,7 @@ class _EnumDict(dict):
             if key not in (
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
+                    '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
                     ):
                 raise ValueError(
                         '_sunder_ names, such as %r, are reserved for future'
@@ -369,10 +343,7 @@ class _EnumDict(dict):
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(
-                            key,
-                            1,
-                            len(self._member_names),
-                            self._last_values[:],
+                            key, 1, len(self._member_names), self._last_values[:],
                             )
                     self._auto_called = True
                 value = value.value
@@ -549,18 +520,25 @@ class EnumMeta(type):
                     # multi-bit flags are considered aliases
                     multi_bit_total |= flag._value_
             if enum_class._boundary_ is not KEEP:
-                missed_bits = multi_bit_total & ~single_bit_total
-                missed = []
-                while missed_bits:
-                    i = 2 ** (missed_bits.bit_length() - 1)
-                    missed.append(i)
-                    missed_bits &= ~i
+                # missed_bits = multi_bit_total & ~single_bit_total
+                missed = list(_iter_bits_lsb(multi_bit_total & ~single_bit_total))
+                # while missed_bits:
+                #     i = 2 ** (missed_bits.bit_length() - 1)
+                #     missed.append(i)
+                #     missed_bits &= ~i
                 if missed:
                     raise TypeError(
                             'invalid Flag %r -- missing values: %s'
                             % (cls, ', '.join((str(i) for i in missed)))
                             )
             enum_class._flag_mask_ = single_bit_total
+            #
+            # set correct __iter__
+            inverted = ~enum_class(0)
+            if list(enum_class) != list(inverted):
+                if '|' in inverted._name_:
+                    del enum_class._value2member_map_[inverted._value_]
+                enum_class._iter_member_ = enum_class._iter_member_by_def_
         #
         return enum_class
 
@@ -1131,6 +1109,28 @@ class Flag(Enum, boundary=STRICT):
         return 2 ** (high_bit+1)
 
     @classmethod
+    def _iter_member_by_value_(cls, value):
+        """
+        Extract all members from the value in definition (i.e. increasing value) order.
+        """
+        for val in _iter_bits_lsb(value):
+            member = cls._value2member_map_.get(val)
+            if member is not None:
+                yield member
+
+    _iter_member_ = _iter_member_by_value_
+
+    @classmethod
+    def _iter_member_by_def_(cls, value):
+        """
+        Extract all members from the value in definition order.
+        """
+        members = list(cls._iter_member_by_value_(value))
+        members.sort(key=lambda m: m._sort_order_)
+        for member in members:
+            yield member
+
+    @classmethod
     def _missing_(cls, value):
         """
         Create a composite member iff value contains only members.
@@ -1149,23 +1149,10 @@ class Flag(Enum, boundary=STRICT):
                 or value & (cls._all_bits_ ^ cls._flag_mask_)
             ):
             if cls._boundary_ is STRICT:
-                invalid_as_bits = _bits(value)
-                length = max(
-                        len(invalid_as_bits),
-                        cls._flag_mask_.bit_length()
-                        )
-                valid_as_bits = (
-                        ('0' * length + _bits(cls._flag_mask_))[-length:]
-                        )
-                invalid_as_bits = (
-                        ('01'[value<0] * length + invalid_as_bits)[-length:]
-                        )
+                max_bits = max(value.bit_length(), cls._flag_mask_.bit_length())
                 raise ValueError(
                         "%s: invalid value: %r\n    given %s\n  allowed %s" % (
-                            cls.__name__,
-                            value,
-                            invalid_as_bits,
-                            valid_as_bits,
+                            cls.__name__, value, bin(value, max_bits), bin(cls._flag_mask_, max_bits),
                             ))
             elif cls._boundary_ is CONFORM:
                 value = value & cls._flag_mask_
@@ -1184,12 +1171,13 @@ class Flag(Enum, boundary=STRICT):
         if value < 0:
             neg_value = value
             value = cls._all_bits_ + 1 + value
-        # get members
-        members, unknown = _decompose(cls, value)
+        # get members and unknown
+        unknown = value & ~cls._flag_mask_
+        members = list(cls._iter_member_(value))
         if unknown and cls._boundary_ is not KEEP:
             raise ValueError(
-                    '%s: _decompose(%r) --> %r, %r'
-                    % (cls.__name__, value, members, unknown)
+                    '%s(%r) -->  unknown values %r [%s]'
+                    % (cls.__name__, value, unknown, bin(unknown))
                     )
         # normal Flag?
         __new__ = getattr(cls, '__new_member__', None)
@@ -1229,18 +1217,12 @@ class Flag(Enum, boundary=STRICT):
 
     def __iter__(self):
         """
-        Returns flags in decreasing value order.
+        Returns flags in definition order.
         """
-        val = self._value_
-        while val:
-            i = 2 ** (val.bit_length() - 1)
-            member = self._value2member_map_.get(i)
-            if member is not None:
-                yield member
-            val &= ~i
+        yield from self._iter_member_(self._value_)
 
     def __len__(self):
-        return _bit_count(self._value_)
+        return self._value_.bit_count()
 
     def __repr__(self):
         cls = self.__class__
@@ -1347,21 +1329,6 @@ def unique(enumeration):
         raise ValueError('duplicate values found in %r: %s' %
                 (enumeration, alias_details))
     return enumeration
-
-def _decompose(flag, value):
-    """Extract all members from the value."""
-    members = []
-    val = value
-    unknown = 0
-    while val:
-        i = 2 ** (val.bit_length() - 1)
-        member = flag._value2member_map_.get(i)
-        if member is None:
-            unknown |= i
-        else:
-            members.append(member)
-        val &= ~i
-    return members, unknown
 
 def _power_of_two(value):
     if value < 1:
