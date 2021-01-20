@@ -124,7 +124,6 @@ class auto:
     """
     value = _auto_null
 
-
 class property(DynamicClassAttribute):
     """
     This is a descriptor, used to define attributes that act differently
@@ -139,10 +138,7 @@ class property(DynamicClassAttribute):
             try:
                 return ownerclass._member_map_[self.name]
             except KeyError:
-                raise AttributeError(
-                        '%s: no attribute %r'
-                        % (ownerclass.__name__, self.name)
-                        )
+                raise AttributeError('%r not found in %r' % (self.name, ownerclass.__name__))	
         else:
             if self.fget is None:
                 raise AttributeError(
@@ -154,19 +150,13 @@ class property(DynamicClassAttribute):
 
     def __set__(self, instance, value):
         if self.fset is None:
-            raise AttributeError(
-                    "%s: cannot set attribute %r"
-                    % (self.clsname, self.name)
-                    )
+            raise AttributeError("%s: cannot set attribute %r" % (self.clsname, self.name))	
         else:
             return self.fset(instance, value)
 
     def __delete__(self, instance):
         if self.fdel is None:
-            raise AttributeError(
-                    "%s: cannot delete attribute %r"
-                    % (self.clsname, self.name)
-                    )
+            raise AttributeError("%s: cannot delete attribute %r" % (self.clsname, self.name))
         else:
             return self.fdel(instance)
 
@@ -254,8 +244,8 @@ class _proto_member:
             redirect = property()
             redirect.__set_name__(enum_class, member_name)
             if descriptor and need_override:
-                # previous enum.property found, but some other inherited
-                # attribute is in the way; copy fget, fset, fdel to this one
+                # previous enum.property found, but some other inherited attribute
+                # is in the way; copy fget, fset, fdel to this one
                 redirect.fget = descriptor.fget
                 redirect.fset = descriptor.fset
                 redirect.fdel = descriptor.fdel
@@ -304,17 +294,14 @@ class _EnumDict(dict):
                     '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
                     ):
                 raise ValueError(
-                        '_sunder_ names, such as %r, are reserved for future'
-                        ' Enum use'
+                        '_sunder_ names, such as %r, are reserved for future Enum use'
                         % (key, )
                         )
             if key == '_generate_next_value_':
                 # check if members already defined as auto()
                 if self._auto_called:
                     raise TypeError(
-                            "_generate_next_value_ must be defined before"
-                            " members"
-                            )
+                            "_generate_next_value_ must be defined before members")
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
                 if isinstance(value, str):
@@ -343,7 +330,10 @@ class _EnumDict(dict):
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(
-                            key, 1, len(self._member_names), self._last_values[:],
+                            key,
+                            1,
+                            len(self._member_names),
+                            self._last_values[:],
                             )
                     self._auto_called = True
                 value = value.value
@@ -366,7 +356,6 @@ class EnumMeta(type):
     """
     Metaclass for Enum
     """
-
     @classmethod
     def __prepare__(metacls, cls, bases, **kwds):
         # check that previous enum members do not exist
@@ -425,7 +414,7 @@ class EnumMeta(type):
                 flag_mask |= value
             classdict[name] = _proto_member(value)
         #
-        # house-keeping structures
+        # house keeping structures
         classdict['_member_names_'] = []
         classdict['_member_map_'] = {}
         classdict['_value2member_map_'] = {}
@@ -464,9 +453,8 @@ class EnumMeta(type):
             exc = None
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
         except RuntimeError as e:
-            # any exceptions raised by member.__new__ will get converted to
-            # a RuntimeError, so get that original exception back and raise
-            # it instead
+            # any exceptions raised by member.__new__ will get converted to a
+            # RuntimeError, so get that original exception back and raise it instead
             exc = e.__cause__ or e
         if exc is not None:
             raise exc
@@ -544,12 +532,7 @@ class EnumMeta(type):
         """
         return True
 
-    def __call__(
-                cls, value, names=None,
-                *,
-                module=None, qualname=None, type=None,
-                start=1, boundary=None,
-        ):
+    def __call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
@@ -562,8 +545,7 @@ class EnumMeta(type):
         `value` will be the name of the new class.
 
         `names` should be either a string of white-space/comma delimited names
-        (values will start at `start`), or an iterator/mapping of name, value
-        pairs.
+        (values will start at `start`), or an iterator/mapping of name, value pairs.
 
         `module` should be set to the module this class is being created in;
         if it is not set, an attempt to find that module will be made, but if
@@ -671,12 +653,7 @@ class EnumMeta(type):
             raise AttributeError('Cannot reassign members.')
         super().__setattr__(name, value)
 
-    def _create_(
-                cls, class_name, names,
-                *,
-                module=None, qualname=None, type=None,
-                start=1, boundary=None,
-        ):
+    def _create_(cls, class_name, names, *, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Convenience method to create a new Enum class.
 
@@ -684,8 +661,7 @@ class EnumMeta(type):
 
         * A string containing member names, separated either with spaces or
           commas.  Values are incremented by 1 from `start`.
-        * An iterable of member names.  Values are incremented by 1 from
-          `start`.
+        * An iterable of member names.  Values are incremented by 1 from `start`.
         * An iterable of (member name, value) pairs.
         * A mapping of member name -> value pairs.
         """
@@ -697,20 +673,14 @@ class EnumMeta(type):
         # special processing needed for names?
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
-        if (
-                isinstance(names, (tuple, list))
-                and names
-                and isinstance(names[0], str)
-            ):
+        if isinstance(names, (tuple, list)) and names and isinstance(names[0], str)):
             original_names, names = names, []
             last_values = []
             for count, name in enumerate(original_names):
-                value = first_enum._generate_next_value_(
-                        name, start, count, last_values[:]
-                        )
+                value = first_enum._generate_next_value_(name, start, count, last_values[:])
                 last_values.append(value)
                 names.append((name, value))
-        #
+
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
             if isinstance(item, str):
@@ -718,7 +688,7 @@ class EnumMeta(type):
             else:
                 member_name, member_value = item
             classdict[member_name] = member_value
-        #
+
         # TODO: replace the frame hack if a blessed way to know the calling
         # module is ever developed
         if module is None:
@@ -732,11 +702,8 @@ class EnumMeta(type):
             classdict['__module__'] = module
         if qualname is not None:
             classdict['__qualname__'] = qualname
-        #
-        return metacls.__new__(
-                metacls, class_name, bases, classdict,
-                boundary=boundary,
-                )
+
+        return metacls.__new__(metacls, class_name, bases, classdict, boundary=boundary)
 
     def _convert_(cls, name, module, filter, source=None, boundary=None):
         """
@@ -791,7 +758,7 @@ class EnumMeta(type):
         """
         if not bases:
             return object, Enum
-        #
+
         def _find_data_type(bases):
             data_types = []
             for chain in bases:
@@ -811,15 +778,12 @@ class EnumMeta(type):
                     else:
                         candidate = base
             if len(data_types) > 1:
-                raise TypeError(
-                        '%r: too many data types: %r'
-                        % (class_name, data_types)
-                        )
+                raise TypeError('%r: too many data types: %r' % (class_name, data_types))
             elif data_types:
                 return data_types[0]
             else:
                 return None
-        #
+
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
@@ -844,10 +808,10 @@ class EnumMeta(type):
         # by the user; also check earlier enum classes in case a __new__ was
         # saved as __new_member__
         __new__ = classdict.get('__new__', None)
-        #
+
         # should __new__ be saved as __new_member__ later?
         save_new = __new__ is not None
-        #
+
         if __new__ is None:
             # check all possibles for __new_member__ before falling back to
             # __new__
@@ -866,7 +830,7 @@ class EnumMeta(type):
                     break
             else:
                 __new__ = object.__new__
-        #
+
         # if a non-object.__new__ is used then whatever value/tuple was
         # assigned to the enum member name will be passed to __new__ and to the
         # new enum member's __init__
@@ -918,15 +882,11 @@ class Enum(metaclass=EnumMeta):
             ):
             return result
         else:
-            ve_exc = ValueError(
-                    "%r is not a valid %s" % (value, cls.__qualname__)
-                    )
+            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             if result is None and exc is None:
                 raise ve_exc
             elif exc is None:
-                exc = TypeError(
-                        'error in %s._missing_: returned %r instead of None'
-                        ' or a valid member'
+                exc = TypeError('error in %s._missing_: returned %r instead of None or a valid member'
                         % (cls.__name__, result)
                         )
             if not isinstance(exc, ValueError):
@@ -980,7 +940,7 @@ class Enum(metaclass=EnumMeta):
         # mixed-in Enums should use the mixed-in type's __format__, otherwise
         # we can get strange results with the Enum name showing up instead of
         # the value
-        #
+
         # pure Enum branch, or branch with __str__ explicitly overridden
         str_overridden = type(self).__str__ not in (Enum.__str__, Flag.__str__)
         if self._member_type_ is object or str_overridden:
@@ -1030,25 +990,19 @@ class StrEnum(str, Enum):
 
     def __new__(cls, *values):
         if len(values) > 3:
-            raise TypeError(
-                    'too many arguments for str(): %r' % (values, )
-                    )
+            raise TypeError('too many arguments for str(): %r' % (values, ))
         if len(values) == 1:
             # it must be a string
             if not isinstance(values[0], str):
                 raise TypeError('%r is not a string' % (values[0], ))
-        if len(values) >= 2:
+        if len(values) > 1:
             # check that encoding argument is a string
             if not isinstance(values[1], str):
-                raise TypeError(
-                        'encoding must be a string, not %r' % (values[1], )
-                        )
-        if len(values) == 3:
-            # check that errors argument is a string
-            if not isinstance(values[2], str):
-                raise TypeError(
-                        'errors must be a string, not %r' % (values[2], )
-                        )
+                raise TypeError('encoding must be a string, not %r' % (values[1], ))
+            if len(values) > 2:
+                # check that errors argument is a string
+                if not isinstance(values[2], str):
+                    raise TypeError('errors must be a string, not %r' % (values[2], ))
         value = str(*values)
         member = str.__new__(cls, value)
         member._value_ = value
