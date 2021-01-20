@@ -383,6 +383,7 @@ classes:
            RawTextHelpFormatter
            ArgumentDefaultsHelpFormatter
            MetavarTypeHelpFormatter
+           GnuStyleLongOptionsHelpFormatter
 
 :class:`RawDescriptionHelpFormatter` and :class:`RawTextHelpFormatter` give
 more control over how textual descriptions are displayed.
@@ -476,6 +477,22 @@ as the regular formatter does)::
    options:
      -h, --help  show this help message and exit
      --foo int
+
+:class:`GnuStyleLongOptionsHelpFormatter` inserts '=' in between long options
+and their arguments, rather than a space::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     prog='PROG',
+   ...     formatter_class=argparse.GnuStyleLongOptionsHelpFormatter)
+   >>> parser.add_argument('--foo')
+   >>> parser.print_help()
+   usage: PROG [-h] [--foo=FOO]
+
+   options:
+     -h, --help  show this help message and exit
+     --foo=FOO
+
+.. versionadded:: 3.10
 
 
 prefix_chars

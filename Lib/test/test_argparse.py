@@ -4412,6 +4412,47 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
     version = ''
 
 
+class TestHelpGnuStyleLongOptions(HelpTestCase):
+    """Test the GnuStyleLongOptionsHelpFormatter"""
+
+    parser_signature = Sig(
+        prog='PROG', formatter_class=argparse.GnuStyleLongOptionsHelpFormatter,
+        description='description')
+
+    argument_signatures = [
+        Sig('--foo', help='with argument'),
+        Sig('--bar', action='store_true', help='no argument'),
+        Sig('-z', '--baz', help='both short and long'),
+        Sig('spam', help='positional'),
+    ]
+    argument_group_signatures = [
+        (Sig('title', description='a group'),
+         [Sig('--turtle', type=int, default=42, help='option in group')]),
+    ]
+    usage = '''\
+        usage: PROG [-h] [--foo=FOO] [--bar] [-z BAZ] [--turtle=TURTLE] spam
+        '''
+    help = usage + '''\
+
+        description
+
+        positional arguments:
+          spam               positional
+
+        options:
+          -h, --help         show this help message and exit
+          --foo=FOO          with argument
+          --bar              no argument
+          -z BAZ, --baz=BAZ  both short and long
+
+        title:
+          a group
+
+          --turtle=TURTLE    option in group
+        '''
+    version = ''
+
+
 # =====================================
 # Optional/Positional constructor tests
 # =====================================

@@ -74,6 +74,7 @@ __all__ = [
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
     'MetavarTypeHelpFormatter',
+    'GnuStyleLongOptionsHelpFormatter',
     'Namespace',
     'Action',
     'ONE_OR_MORE',
@@ -462,7 +463,7 @@ class HelpFormatter(object):
                 else:
                     default = self._get_default_metavar_for_optional(action)
                     args_string = self._format_args(action, default)
-                    part = '%s %s' % (option_string, args_string)
+                    part = self._format_option_with_args(option_string, args_string)
 
                 # make it look optional if it's not required or in a group
                 if not action.required and action not in group_actions:
@@ -564,9 +565,12 @@ class HelpFormatter(object):
                 default = self._get_default_metavar_for_optional(action)
                 args_string = self._format_args(action, default)
                 for option_string in action.option_strings:
-                    parts.append('%s %s' % (option_string, args_string))
+                    parts.append(self._format_option_with_args(option_string, args_string))
 
             return ', '.join(parts)
+
+    def _format_option_with_args(self, option_string, args_string):
+        return '%s %s' % (option_string, args_string)
 
     def _metavar_formatter(self, action, default_metavar):
         if action.metavar is not None:
@@ -700,7 +704,7 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
 
 class MetavarTypeHelpFormatter(HelpFormatter):
     """Help message formatter which uses the argument 'type' as the default
-    metavar value (instead of the argument 'dest')
+    metavar value (instead of the argument 'dest').
 
     Only the name of this class is considered a public API. All the methods
     provided by the class are considered an implementation detail.
@@ -711,6 +715,20 @@ class MetavarTypeHelpFormatter(HelpFormatter):
 
     def _get_default_metavar_for_positional(self, action):
         return action.type.__name__
+
+
+class GnuStyleLongOptionsHelpFormatter(HelpFormatter):
+    """Help message formatter which uses the GNU-style long option format
+    (with '=' in between options and arguments) in help messages.
+
+    Only the name of this class is considered a public API. All the methods
+    provided by the class are considered an implementation detail.
+    """
+
+    def _format_option_with_args(self, option_string, args_string):
+        if option_string.startswith('--'):
+            return '%s=%s' % (option_string, args_string)
+        return '%s %s' % (option_string, args_string)
 
 
 
