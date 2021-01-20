@@ -904,7 +904,13 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Load the transition indices and list
     self->trans_list_utc =
         PyMem_Malloc(self->num_transitions * sizeof(int64_t));
+    if (self->trans_list_utc == NULL) {
+        goto error;
+    }
     trans_idx = PyMem_Malloc(self->num_transitions * sizeof(Py_ssize_t));
+    if (trans_idx == NULL) {
+        goto error;
+    }
 
     for (size_t i = 0; i < self->num_transitions; ++i) {
         PyObject *num = PyTuple_GetItem(trans_utc, i);
@@ -986,6 +992,9 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
 
     // Build _ttinfo objects from utcoff, dstoff and abbr
     self->_ttinfos = PyMem_Malloc(self->num_ttinfos * sizeof(_ttinfo));
+    if (self->_ttinfos == NULL) {
+        goto error;
+    }
     for (size_t i = 0; i < self->num_ttinfos; ++i) {
         PyObject *tzname = PyTuple_GetItem(abbr, i);
         if (tzname == NULL) {
@@ -1001,6 +1010,9 @@ load_data(PyZoneInfo_ZoneInfo *self, PyObject *file_obj)
     // Build our mapping from transition to the ttinfo that applies
     self->trans_ttinfos =
         PyMem_Calloc(self->num_transitions, sizeof(_ttinfo *));
+    if (self->trans_ttinfos == NULL) {
+        goto error;
+    }
     for (size_t i = 0; i < self->num_transitions; ++i) {
         size_t ttinfo_idx = trans_idx[i];
         assert(ttinfo_idx < self->num_ttinfos);
