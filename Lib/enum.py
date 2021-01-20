@@ -297,8 +297,7 @@ class _EnumDict(dict):
             if key == '_generate_next_value_':
                 # check if members already defined as auto()
                 if self._auto_called:
-                    raise TypeError(
-                            "_generate_next_value_ must be defined before members")
+                    raise TypeError("_generate_next_value_ must be defined before members")
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
                 if isinstance(value, str):
