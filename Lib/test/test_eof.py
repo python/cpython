@@ -7,23 +7,25 @@ from test.support import script_helper
 import unittest
 
 class EOFTestCase(unittest.TestCase):
-    def test_EOFC(self):
-        expect = "EOL while scanning string literal (<string>, line 1)"
-        try:
-            eval("""'this is a test\
-            """)
-        except SyntaxError as msg:
-            self.assertEqual(str(msg), expect)
-        else:
-            raise support.TestFailed
+    def test_EOF_single_quote(self):
+        expect = "unterminated string literal (detected at line 1) (<string>, line 1)"
+        for quote in ("'", "\""):
+            try:
+                eval(f"""{quote}this is a test\
+                """)
+            except SyntaxError as msg:
+                self.assertEqual(str(msg), expect)
+                self.assertEqual(msg.offset, 1)
+            else:
+                raise support.TestFailed
 
     def test_EOFS(self):
-        expect = ("EOF while scanning triple-quoted string literal "
-                  "(<string>, line 1)")
+        expect = ("unterminated triple-quoted string literal (detected at line 1) (<string>, line 1)")
         try:
             eval("""'''this is a test""")
         except SyntaxError as msg:
             self.assertEqual(str(msg), expect)
+            self.assertEqual(msg.offset, 1)
         else:
             raise support.TestFailed
 
