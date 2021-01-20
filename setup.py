@@ -703,6 +703,9 @@ class PyBuildExt(build_ext):
             if ret:
                 return
             with open(tmpfile) as fp:
+                # Parse paths in libraries line. The line is like:
+                # On Linux, "libraries: = path1:path2:path3"
+                # On Windows, "libraries: = path1;path2;path3"
                 for line in fp:
                     if not line.startswith("libraries"):
                         continue
