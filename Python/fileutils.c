@@ -1234,6 +1234,13 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             return 0;
         }
 
+#ifdef __linux__
+        if (errno == EBADF) {
+            // On Linux, ioctl(FIOCLEX) will fail with EBADF for O_PATH file descriptors
+            // Fall through to the fcntl() path
+        }
+        else
+#endif
         if (errno != ENOTTY && errno != EACCES) {
             if (raise)
                 PyErr_SetFromErrno(PyExc_OSError);
