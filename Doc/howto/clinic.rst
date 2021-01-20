@@ -1239,7 +1239,7 @@ METH_METHOD`` as the calling convention. The argument will not appear in
 The ``defining_class`` converter is not compatible with ``__init__`` and ``__new__``
 methods, which cannot use the ``METH_METHOD`` convention.
 
-See also PEP 573.
+See also :pep:`573`.
 
 
 Writing a custom converter
