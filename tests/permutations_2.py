@@ -1,5 +1,5 @@
 class Solution:
-    def permuteUnique(self, nums: List[int]) -> List[List[int]]:
+    def permuteUnique(self, nums):
         return permute_unique([], sorted(nums))
         
 

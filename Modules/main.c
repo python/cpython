@@ -575,6 +575,8 @@ pymain_run_python(int *exitcode)
         *exitcode = pymain_run_stdin(config, &cf);
     }
 
+    Rewind_Deinitialize();
+
     pymain_repl(config, &cf, exitcode);
     goto done;
 

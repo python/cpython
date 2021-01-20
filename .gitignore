@@ -124,3 +124,6 @@ Tools/ssl/win32
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+
+rewind.log
+rewind.sqlite

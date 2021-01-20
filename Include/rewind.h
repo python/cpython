@@ -4,6 +4,8 @@ void Rewind_Initialize(void);
 
 void Rewind_Initialize2(void);
 
+void Rewind_Deinitialize(void);
+
 int Rewind_isSimpleType(PyObject *obj);
 
 void Rewind_Cleanup(void);
@@ -34,11 +36,17 @@ void Rewind_ListStoreItem(PyListObject *list, Py_ssize_t index, PyObject* value)
 
 void Rewind_ListDeleteSubscript(PyListObject *list, PyObject *item);
 
+void Rewind_DictStoreSubscript(PyDictObject *dict, PyObject *key, PyObject *value);
+
+void Rewind_DictDeleteSubscript(PyDictObject *dict, PyObject *item);
+
 void Rewind_DictUpdate(PyDictObject *dict, PyObject *otherDict);
 
 void Rewind_DictClear(PyDictObject *dict);
 
 void Rewind_DictPop(PyDictObject *dict, PyObject *key);
+
+void Rewind_DictPopItem(PyDictObject *dict, PyObject *key);
 
 void Rewind_SetAdd(PySetObject *set, PyObject *newItem);
 

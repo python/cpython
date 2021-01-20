@@ -25,6 +25,10 @@ void Rewind_Initialize2() {
     rewindInitialized = 1;
 }
 
+void Rewind_Deinitialize() {
+    rewindInitialized = 0;
+}
+
 void Rewind_Cleanup() {
     fclose(rewindLog);
 }
@@ -45,18 +49,23 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
 
     lastLine = -1;
     fprintf(rewindLog, "PUSH_FRAME(");
-    fprintf(rewindLog, "filename: ");
-    PyObject_Print(code->co_filename, rewindLog, Py_PRINT_RAW);
-    fprintf(rewindLog, ", name: ");
-    PyObject_Print(code->co_name, rewindLog, Py_PRINT_RAW);
-    fprintf(rewindLog, ", varnames: ");
-    PyObject_Print(code->co_varnames, rewindLog, 0);
-    fprintf(rewindLog, ", locals: (");
+    PyObject_Print(code->co_filename, rewindLog, 0);
+    fprintf(rewindLog, ", ");
+    PyObject_Print(code->co_name, rewindLog, 0);
     
-    for (PyObject **p = frame->f_localsplus; p < valuestack; p++) {
-        if (p != frame->f_localsplus) {
-            fprintf(rewindLog, ", ");
-        }
+    PyTupleObject *varnames = (PyTupleObject *)code->co_varnames;
+    Py_ssize_t numVarnames = Py_SIZE(varnames);
+    fprintf(rewindLog, ", %lu", numVarnames);
+
+    for (int i = 0; i < numVarnames; i++) {
+        PyObject *item = varnames->ob_item[i];
+        fprintf(rewindLog, ", ");
+        PyObject_Print(item, rewindLog, 0);
+    }
+    
+    PyObject **p = frame->f_localsplus;
+    while (p < valuestack) {
+        fprintf(rewindLog, ", ");
         PyObject *obj = *p;
         if (obj == NULL) {
             fprintf(rewindLog, "None");
@@ -64,8 +73,9 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
             
             Rewind_serializeObject(rewindLog, obj);
         }
+        p++;
     }
-    fprintf(rewindLog, "))");
+    fprintf(rewindLog, ")");
     fprintf(rewindLog, "\n");
 }
 
@@ -169,6 +179,29 @@ void Rewind_ListDeleteSubscript(PyListObject *list, PyObject *item) {
     fprintf(rewindLog, ")\n");
 }
 
+void Rewind_DictStoreSubscript(PyDictObject *dict, PyObject *key, PyObject *value) {
+    if (!rewindInitialized) return;
+
+    Rewind_TrackObject((PyObject *)dict);
+    Rewind_TrackObject(key);
+    Rewind_TrackObject(value);
+    fprintf(rewindLog, "DICT_STORE_SUBSCRIPT(%lu, ", (unsigned long)dict);
+    Rewind_serializeObject(rewindLog, key);
+    fprintf(rewindLog, ", ");
+    Rewind_serializeObject(rewindLog, value);
+    fprintf(rewindLog, ")\n");
+}
+
+void Rewind_DictDeleteSubscript(PyDictObject *dict, PyObject *item) {
+    if (!rewindInitialized) return;
+
+    Rewind_TrackObject((PyObject *)dict);
+    Rewind_TrackObject(item);
+    fprintf(rewindLog, "DICT_DELETE_SUBSCRIPT(%lu, ", (unsigned long)dict);
+    Rewind_serializeObject(rewindLog, item);
+    fprintf(rewindLog, ")\n");
+}
+
 void Rewind_DictUpdate(PyDictObject *dict, PyObject *otherDict) {
     if (!rewindInitialized) return;
 
@@ -183,7 +216,7 @@ void Rewind_DictClear(PyDictObject *dict) {
     if (!rewindInitialized) return;
 
     Rewind_TrackObject((PyObject *)dict);
-    fprintf(rewindLog, "DICT_CLEAR(%lu)", (unsigned long)PyDict_Copy);
+    fprintf(rewindLog, "DICT_CLEAR(%lu)\n", (unsigned long)dict);
 }
 
 void Rewind_DictPop(PyDictObject *dict, PyObject *key) {
@@ -192,6 +225,16 @@ void Rewind_DictPop(PyDictObject *dict, PyObject *key) {
     Rewind_TrackObject((PyObject *)dict);
     Rewind_TrackObject(key);
     fprintf(rewindLog, "DICT_POP(%lu, ", (unsigned long)dict);
+    Rewind_serializeObject(rewindLog, key);
+    fprintf(rewindLog, ")\n");
+}
+
+void Rewind_DictPopItem(PyDictObject *dict, PyObject *key) {
+    if (!rewindInitialized) return;
+
+    Rewind_TrackObject((PyObject *)dict);
+    Rewind_TrackObject(key);
+    fprintf(rewindLog, "DICT_POP_ITEM(%lu, ", (unsigned long)dict);
     Rewind_serializeObject(rewindLog, key);
     fprintf(rewindLog, ")\n");
 }
@@ -320,7 +363,7 @@ void Rewind_TrackObject(PyObject *obj) {
     if (obj == NULL) {
         return;
     }
-    // Rewind_FlushDeallocatedIds();
+    //Rewind_FlushDeallocatedIds();
     if (Rewind_isSimpleType(obj)) {
         return;
     }
@@ -340,12 +383,10 @@ void Rewind_TrackObject(PyObject *obj) {
             PyObject *item = list->ob_item[i];
             Rewind_TrackObject(item);
         }
-        fprintf(rewindLog, "NEW_LIST(%lu, ", (unsigned long)obj);
+        fprintf(rewindLog, "NEW_LIST(%lu", (unsigned long)obj);
         for (int i = 0; i < Py_SIZE(list); ++i) {
             PyObject *item = list->ob_item[i];
-            if (i != 0) {
-                fprintf(rewindLog, ", ");
-            }
+            fprintf(rewindLog, ", ");
             Rewind_serializeObject(rewindLog, item);
         }
         fprintf(rewindLog, ")\n");
@@ -478,8 +519,9 @@ void Rewind_Dealloc(PyObject *obj) {
     PyObject *id = PyLong_FromLong((long)obj);
     if (PySet_Contains(knownObjectIds, id)) {
         PySet_Discard(knownObjectIds, id);
+        fprintf(rewindLog, "DEALLOC(%lu)\n", (unsigned long)obj);
     }
-    PySet_Add(deallocatedObjectIds, id);
+    // PySet_Add(deallocatedObjectIds, id);
 }
 
 void Rewind_FlushDeallocatedIds() {
@@ -492,18 +534,7 @@ void Rewind_FlushDeallocatedIds() {
     fprintf(rewindLog, "DEALLOC_OBJECT(");
     PyObject *deallocatedObjectIdsList = PyList_New(0);
     _PyList_Extend((PyListObject *)deallocatedObjectIdsList, deallocatedObjectIds);
-    PyObject *iterator = PySequence_Fast(deallocatedObjectIdsList, "argument must be iterable");
-    Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
-    PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
-    for (int i = 0; i < n; i++) {
-        PyObject *id = iteratorItems[i];
-        if (i != 0) {
-            fprintf(rewindLog, ", ");
-        }
-        PyObject_Print(id, rewindLog, Py_PRINT_RAW);
-    }
-    fprintf(rewindLog, ")\n");
-    Py_DECREF(iterator);
+
     Py_DECREF(deallocatedObjectIdsList);
     PySet_Clear(deallocatedObjectIds);
 }
@@ -555,118 +586,10 @@ void logOp(char *label, PyObject **stack_pointer, int level, PyFrameObject *fram
     int lineNo = PyFrame_GetLineNumber(frame);
     if (rewindLog) {
         if (lastLine != lineNo) {
-            fprintf(rewindLog, "VISIT #%d\n", lineNo);
+            fprintf(rewindLog, "VISIT(%d)\n", lineNo);
         }
         lastLine = lineNo;
     }
     // printStack(rewindLog, stack_pointer, level);
     // fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
-}
-
-void Rewind_LoadMethod(PyObject *obj, PyObject *name, PyObject *method) {
-    // if (!rewindInitialized) return;
-    
-    // currentMethodSelf = obj;
-    // currentMethodName = name;
-    // currentMethodObject = method;
-}
-
-void Rewind_CallMethod(PyObject *method, PyObject **stack_pointer, int level) {
-    // if (!rewindInitialized) return;
-
-    // if (currentMethodSelf && currentMethodSelf) {
-    //     if (Py_IS_TYPE(currentMethodSelf, &PyList_Type)) {
-    //         if (equalstr(currentMethodName, "append")) {
-    //             // PyObject *newItem = stack_pointer[-1];
-    //             // Rewind_ListAppend(currentMethodSelf, newItem);
-    //         } else if (equalstr(currentMethodName, "remove")) {
-    //             // PyObject *item = stack_pointer[-1];
-    //             // fprintf(rewindLog, "LIST_REMOVE(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, item);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "extend")) {
-    //             // PyObject *iterable = stack_pointer[-1];
-    //             // Rewind_ListExtend(currentMethodSelf, iterable);
-    //         } else if (equalstr(currentMethodName, "insert")) {
-    //             // PyObject *value = stack_pointer[-1];
-    //             // PyObject *index = stack_pointer[-2];
-    //             // Rewind_TrackObject(value);
-    //             // fprintf(rewindLog, "LIST_INSERT(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, index);
-    //             // fprintf(rewindLog, ", ");
-    //             // Rewind_serializeObject(rewindLog, value);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "pop")) {
-    //             // fprintf(rewindLog, "LIST_POP(%lu)\n", (unsigned long)currentMethodSelf);
-    //         } else if (equalstr(currentMethodName, "clear")) {
-    //             // fprintf(rewindLog, "LIST_CLEAR(%lu)\n", (unsigned long)currentMethodSelf);
-    //         } else if (equalstr(currentMethodName, "reverse")) {
-    //             // fprintf(rewindLog, "LIST_REVERSE(%lu)\n", (unsigned long)currentMethodSelf);
-    //         }
-    //     } else if (Py_IS_TYPE(currentMethodSelf, &PyDict_Type)) {
-    //         if (equalstr(currentMethodName, "update")) {
-    //             // PyObject *otherDict = stack_pointer[-1];
-    //             // Rewind_TrackObject(otherDict);
-    //             // fprintf(rewindLog, "DICT_UPDATE(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, otherDict);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "clear")) {
-    //             // fprintf(rewindLog, "DICT_CLEAR(%lu)", (unsigned long)currentMethodSelf);
-    //         } else if (equalstr(currentMethodName, "pop")) {
-    //             // PyObject *key = stack_pointer[-1];
-    //             // Rewind_TrackObject(key);
-    //             // fprintf(rewindLog, "DICT_POP(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, key);
-    //             // fprintf(rewindLog, ")\n");
-    //         }
-    //     } else if (Py_IS_TYPE(currentMethodSelf, &PySet_Type)) {
-    //         if (equalstr(currentMethodName, "add")) {
-    //             // PyObject *newItem = stack_pointer[-1];
-    //             // Rewind_TrackObject(newItem);
-    //             // fprintf(rewindLog, "SET_ADD(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, newItem);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "update")) {
-    //             // PyObject *other = stack_pointer[-1];
-    //             // Rewind_TrackObject(other);
-    //             // fprintf(rewindLog, "SET_UPDATE(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, other);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "discard")) {
-    //             // PyObject *item = stack_pointer[-1];
-    //             // Rewind_TrackObject(item);
-    //             // fprintf(rewindLog, "SET_DISCARD(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, item);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "remove")) {
-    //             // PyObject *item = stack_pointer[-1];
-    //             // Rewind_TrackObject(item);
-    //             // fprintf(rewindLog, "SET_REMOVE(%lu, ", (unsigned long)currentMethodSelf);
-    //             // Rewind_serializeObject(rewindLog, item);
-    //             // fprintf(rewindLog, ")\n");
-    //         } else if (equalstr(currentMethodName, "clear")) {
-    //             // fprintf(rewindLog, "SET_CLEAR(%lu)\n", (unsigned long)currentMethodSelf);
-    //         }
-    //     }
-    // }
-    // currentMethodSelf = NULL;
-    // currentMethodName = NULL;
-    // currentMethodObject = NULL;
-}
-
-void Rewind_CallFunction(PyObject **sp, int oparg) {
-    // if (!rewindInitialized) return;
-    
-    // PyObject *func = *(sp - oparg - 1);
-    // PyObject *qualNameStr = PyUnicode_FromString("__qualname__");
-    // if (PyObject_HasAttr(func, qualNameStr)) {
-    //     PyObject *name = PyObject_GetAttr(func, qualNameStr);
-    //     PyObject *type = PyObject_Type(func);
-    //     PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__name__"));
-    //     if (equalstr(typeName, "builtin_function_or_method")) {
-    //         fprintf(rewindLog, "CALL_BUILT_IN_FUNCTION(");
-    //         PyObject_Print(name, rewindLog, 0);
-    //         fprintf(rewindLog, ")\n");
-    //     }
-    // }
 }

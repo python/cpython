@@ -1,11 +1,18 @@
 # Todo
 
-# dicts
 # sets
 # objects
-# make line parsing generic
 # perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
 
+# bug: entries wo line no (done)
+# clean up reclaimed objects (done)
+# dicts (done)
+# * dict.update (done)
+# * dict.clear (done)
+# * dict.pop (done)
+# * dict.popitem (done)
+# make line parsing generic (done)
+# dealing with dict key and set uniqueness (done)
 # list sort (done)
 # list pop index parameter (done)
 # tuples (done)
@@ -95,9 +102,8 @@ def define_schema(conn):
     conn.commit()
 
 def parse_csv(value):
-    parts = value.split(", ")
-    if parts == [""]:
-        return []
+    parts = list(filter(lambda v: v != "", value.split(", ")))
+    print("parse_csv parts", parts)
     return list(map(parse_value, parts))
 
 def parse_value(value):
@@ -105,6 +111,39 @@ def parse_value(value):
         return HeapRef(int(value[1:]))
     else:
         return eval(value)
+
+NUMBER_REGEX = r"-?(?:(?:[1-9][0-9]*)|[0-9])(?:\.[0-9]+)?"
+STRING_REGEX = r"'(?:[^'\\]|(?:\\['\\]))*'"
+BOOLEAN_REGEX = r"True|False"
+REF_REGEX = r"\*[0-9]+"
+NONE_REGEX = r"None"
+ARGUMENT_REGEX = re.compile("(%s|%s|%s|%s|%s)[,)]" % (
+    NUMBER_REGEX,
+    STRING_REGEX,
+    BOOLEAN_REGEX,
+    REF_REGEX,
+    NONE_REGEX
+))
+LINE_START_REGEX = re.compile(r"([A-Z_]+)\(")
+
+def parse_line(line):
+    args = []
+    m = LINE_START_REGEX.match(line)
+    fun_name = m.group(1)
+    start_idx = m.span()[1]
+    while True:
+        m = ARGUMENT_REGEX.match(line, start_idx)
+        if m is None:
+            raise Exception("Parse error on line '%s' at %d" % (line, start_idx))
+        value = parse_value(m.group(1))
+        args.append(value)
+        if m.span()[1] == len(line):
+            break
+        if line[m.span()[1]] == "\n":
+            break 
+        assert line[m.span()[1]] == " "
+        start_idx = m.span()[1] + 1
+    return (fun_name, args)
 
 class ObjectRef(object):
     def __init__(self, id):
@@ -125,6 +164,12 @@ class HeapRef(object):
 
     def __repr__(self):
         return f"HeapRef({self.id})"
+    
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return self.id
 
 class FunCall(object):
     def __init__(self, id, filename, name, varnames, locals):
@@ -136,28 +181,9 @@ class FunCall(object):
     def __repr__(self):
         return "<" + str(self.id) + ">" + self.name + "(" + str(self.varnames) + ")"
 
-VISIT_REGEX = re.compile(r'VISIT #([0-9]+)')
-PUSH_FRAME_REGEX = re.compile(r'PUSH_FRAME\(filename: (.*), name: (.*), varnames: \((.*)\), locals: \((.*)\)\)')
-RETURN_VALUE_REGEX = re.compile(r'RETURN_VALUE\((.*)\)')
-DEALLOC_OBJECT_REGEX = re.compile(r'DEALLOC_OBJECT\((.*)\)')
-NEW_LIST_REGEX = re.compile(r'NEW_LIST\((.*)\)')
-NEW_STRING_REGEX = re.compile(r'NEW_STRING\((.*), (.*)\)')
-STORE_FAST_REGEX = re.compile(r'STORE_FAST\(([0-9]+), (.*)\)')
-STORE_NAME_REGEX = re.compile(r'STORE_NAME\((.*), (.*)\)')
-LIST_APPEND_REGEX = re.compile(r'LIST_APPEND\((.*), (.*)\)')
-LIST_EXTEND_REGEX = re.compile(r'LIST_EXTEND\((.*), (.*)\)')
-NEW_TUPLE_REGEX = re.compile(r'NEW_TUPLE\((.*?), (.*)\)')
-LIST_DELETE_SUBSCRIPT_REGEX = re.compile(r'LIST_DELETE_SUBSCRIPT\((.*), (.*)\)')
-LIST_STORE_SUBSCRIPT_REGEX = re.compile(r'LIST_STORE_SUBSCRIPT\((.*), (.*), (.*)\)')
-LIST_INSERT_REGEX = re.compile(r'LIST_INSERT\((.*), (.*), (.*)\)')
-LIST_REMOVE_REGEX = re.compile(r'LIST_REMOVE\((.*), (.*)\)')
-LIST_POP_REGEX = re.compile(r'LIST_POP\((.*), (.*)\)')
-LIST_CLEAR_REGEX = re.compile(r'LIST_CLEAR\((.*)\)')
-LIST_REVERSE_REGEX = re.compile(r'LIST_REVERSE\((.*)\)')
-LIST_SORT_REGEX = re.compile(r'LIST_SORT\((.*)\)')
-STRING_INPLACE_ADD_RESULT_REGEX = re.compile(r'STRING_INPLACE_ADD_RESULT\((.*), (.*)\)')
-
 def recreate_past(conn):
+    fun_lookup = {}
+
     class StackFrameVars(object):
         def __init__(self, stack_locals, varnames, extra_vars = None):
             self.varnames = varnames
@@ -241,7 +267,11 @@ def recreate_past(conn):
             return "*" + str(oid)
 
     def format_key_value_pair(item):
-        return quote(str(item[0])) + ": " + serialize_member(item[1])
+        # TODO: update jsonr parser syntax to support refs for keys
+        # return quote(str(item[0])) + ": " + serialize_member(item[1])
+        value = serialize_member(item[1])
+        key = serialize_member(item[0])
+        return key + ": " + value
 
     def serialize(value):
         if hasattr(value, "serialize"):
@@ -271,338 +301,291 @@ def recreate_past(conn):
         nonlocal heap
         nonlocal heap_id_to_object_dict
 
-        if heap_id == 4481524480:
-            print("found it", log_line_no)
         heap_id_to_object_dict[heap_id] = new_obj
         oid = save_object(new_obj)
-        heap = { **heap, heap_id: ObjectRef(oid) }
+        
+        heap = { **heap, str(heap_id): ObjectRef(oid) }
         save_object(heap)
 
-    def process_push_frame(line):
-        nonlocal begin
-        nonlocal conn
-        nonlocal conn
-        nonlocal source_code_files
+    def process_push_frame(filename, name, num_varnames, *rest):
         nonlocal stack
         nonlocal next_source_code_id
+        nonlocal activate_snapshots
         
-        m = PUSH_FRAME_REGEX.match(line)
-        if m:
-            filename = m.group(1)
-            name = m.group(2)
-            if name == "<module>":
-                begin = True
-            else:
-                if not begin:
-                    return True
-            varnames = parse_csv(m.group(3))
-            locals = parse_csv(m.group(4))
-            
-            parent_id = None
-            if stack is not None:
-                parent_id = stack[0].fun_call.id
-            
-            if filename not in source_code_files and os.path.isfile(filename):
-                the_file = open(filename, "r")
-                content = the_file.read()
-                the_file.close()
-                source_code_id = next_source_code_id
-                next_source_code_id += 1
-                cursor.execute("INSERT INTO SourceCode VALUES (?, ?, ?)", (
-                    source_code_id,
-                    filename,
-                    content
-                ))
-                conn.commit()
-                source_code_files.add(filename)
-            
-            fun_call = FunCall(new_fun_call_id(), filename, name, varnames, locals)
-            frame_vars = StackFrameVars(locals, varnames)
-            save_object(frame_vars)
-            frame = StackFrame(fun_call, frame_vars)
-            save_object(frame)
-            stack = [frame, stack]
-            save_object(stack)
+        varnames = []
+        locals = []
+        for i in range(num_varnames):
+            varnames.append(rest[i])
+        for i in range(num_varnames, len(rest)):
+            locals.append(rest[i])
 
-            cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?)", (
-                fun_call.id,
-                name,
-                immut_id(frame_vars),
-                parent_id,
-            ))
-
-            conn.commit()
-            return True
-        return False
-
-    def process_visit(line):
-        nonlocal stack
-        nonlocal cursor
-        nonlocal conn
-        nonlocal heap
-        nonlocal line_no
-
-        m = VISIT_REGEX.match(line)
-        if m:
-            line_no = int(m.group(1))
-            cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
-                new_snapshot_id(), 
-                stack and stack[0].fun_call.id, 
-                immut_id(stack), 
-                immut_id(heap),
-                None,
-                line_no,
-                None
+        parent_id = None
+        if stack is not None:
+            parent_id = stack[0].fun_call.id
+        
+        if filename not in source_code_files and os.path.isfile(filename):
+            if not activate_snapshots and name == "<module>":
+                activate_snapshots = True
+            the_file = open(filename, "r")
+            content = the_file.read()
+            the_file.close()
+            source_code_id = next_source_code_id
+            next_source_code_id += 1
+            cursor.execute("INSERT INTO SourceCode VALUES (?, ?, ?)", (
+                source_code_id,
+                filename,
+                content
             ))
             conn.commit()
-            return True
-        return False
+            source_code_files.add(filename)
+        
+        fun_call = FunCall(new_fun_call_id(), filename, name, varnames, locals)
+        frame_vars = StackFrameVars(locals, varnames)
+        save_object(frame_vars)
+        frame = StackFrame(fun_call, frame_vars)
+        save_object(frame)
+        stack = [frame, stack]
+        save_object(stack)
 
-    def process_store_name(line):
-        nonlocal stack
+        cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?)", (
+            fun_call.id,
+            name,
+            immut_id(frame_vars),
+            parent_id,
+        ))
 
-        m = STORE_NAME_REGEX.match(line)
-        if m:
-            name = eval(m.group(1))
-            value = parse_value(m.group(2))
-            new_frame_vars = stack[0].frame_vars.update_by_name(name, value)
-            save_object(new_frame_vars)
-            new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
-            save_object(new_frame)
-            stack = [new_frame, stack[1]]
-            save_object(stack)
-            return True
-        return False
+        conn.commit()
     
-    def process_store_fast(line):
-        nonlocal stack
+    fun_lookup["PUSH_FRAME"] = process_push_frame
 
-        m = STORE_FAST_REGEX.match(line)
-        if m:
-            index = int(m.group(1))
-            value = parse_value(m.group(2))
-            assert stack is not None
-            new_frame_vars = stack[0].frame_vars.update_local(index, value)
-            save_object(new_frame_vars)
-            new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
-            save_object(new_frame)
-            stack = [new_frame, stack[1]]
-            save_object(stack)
-            return True
-        return False
+    def process_visit(line_no):
+        nonlocal curr_line_no
 
-    def process_dealloc_object(line):
-        m = DEALLOC_OBJECT_REGEX.match(line)
-        if m:
-            object_ids = map(int, m.group(1).split(", "))
-            for oid in object_ids:
-                object_tracker.untrack(oid)
-            return True
-        return False
+        curr_line_no = line_no
+        if not activate_snapshots:
+            return
+        cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
+            new_snapshot_id(), 
+            stack and stack[0].fun_call.id, 
+            immut_id(stack), 
+            immut_id(heap),
+            None,
+            line_no,
+            None
+        ))
+        conn.commit()
     
-    def process_return_value(line):
+    fun_lookup["VISIT"] = process_visit
+
+    def process_store_name(name, value):
         nonlocal stack
-        nonlocal cursor
-        nonlocal conn
-        nonlocal heap
+        new_frame_vars = stack[0].frame_vars.update_by_name(name, value)
+        save_object(new_frame_vars)
+        new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
+        save_object(new_frame)
+        stack = [new_frame, stack[1]]
+        save_object(stack)
 
-        m = RETURN_VALUE_REGEX.match(line)
-        if m:
-            ret_val = parse_value(m.group(1))
-            new_frame_vars = stack[0].frame_vars.update_by_name("<ret val>", ret_val)
-            save_object(new_frame_vars)
-            new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
-            save_object(new_frame)
-            stack = [new_frame, stack[1]]
-            save_object(stack)
-
-            cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
-                new_snapshot_id(), 
-                stack and stack[0].fun_call.id, 
-                immut_id(stack), 
-                immut_id(heap),
-                None,
-                line_no, 
-                None
-            ))
-            conn.commit()
-
-            stack = stack[1]
-            ret_val = m.group(1)
-            return True
-        return False
+    fun_lookup["STORE_NAME"] = process_store_name
     
-    def process_new_list(line):
-        m = NEW_LIST_REGEX.match(line)
-        if m:
-            parts = list(filter(lambda part: part != '', m.group(1).split(', ')))
-            heap_id = int(parts[0])
-            a_list = list(map(parse_value, parts[1:]))
+    def process_store_fast(index, value):
+        nonlocal stack
+        assert stack is not None
+        new_frame_vars = stack[0].frame_vars.update_local(index, value)
+        save_object(new_frame_vars)
+        new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
+        save_object(new_frame)
+        stack = [new_frame, stack[1]]
+        save_object(stack)
+    
+    fun_lookup["STORE_FAST"] = process_store_fast
+
+    # def process_dealloc_object(line):
+    #     m = DEALLOC_OBJECT_REGEX.match(line)
+    #     if m:
+    #         object_ids = map(int, m.group(1).split(", "))
+    #         for oid in object_ids:
+    #             object_tracker.untrack(oid)
+    #         return True
+    #     return False
+    
+    def process_return_value(ret_val):
+        nonlocal stack
+        if not activate_snapshots:
+            return
+        new_frame_vars = stack[0].frame_vars.update_by_name("<ret val>", ret_val)
+        save_object(new_frame_vars)
+        new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
+        save_object(new_frame)
+        stack = [new_frame, stack[1]]
+        save_object(stack)
+
+        cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
+            new_snapshot_id(), 
+            stack and stack[0].fun_call.id, 
+            immut_id(stack), 
+            immut_id(heap),
+            None,
+            curr_line_no, 
+            None
+        ))
+        conn.commit()
+
+        stack = stack[1]
+
+    fun_lookup["RETURN_VALUE"] = process_return_value
+    
+    def process_new_list(heap_id, *a_list):
+        update_heap_object(heap_id, list(a_list))
+
+    fun_lookup["NEW_LIST"] = process_new_list
+    
+    def process_new_string(heap_id, string):
+        update_heap_object(heap_id, string)
+    
+    fun_lookup["NEW_STRING"] = process_new_string
+    
+    def process_list_append(heap_id, item):
+        if heap_id in heap_id_to_object_dict:
+            a_list = heap_id_to_object_dict[heap_id]
+            a_list = a_list + [item]
             update_heap_object(heap_id, a_list)
-            return True
-        return False
     
-    def process_new_string(line):
-        m = NEW_STRING_REGEX.match(line)
-        if m:
-            heap_id = m.group(1)
-            string = parse_value(m.group(2))
-            update_heap_object(heap_id, string)
-            return True
-        return False
+    fun_lookup["LIST_APPEND"] = process_list_append
     
-    def process_list_append(line):
-        nonlocal stack
+    def process_list_extend(heap_id, other_list_heap_ref):
+        a_list = heap_id_to_object_dict[heap_id]
+        other_list = heap_id_to_object_dict[other_list_heap_ref.id]
+        new_a_list = a_list + list(other_list)
+        update_heap_object(heap_id, new_a_list)
+    
+    fun_lookup["LIST_EXTEND"] = process_list_extend
+    
+    def process_new_tuple(heap_id, *a_tuple):
+        update_heap_object(heap_id, a_tuple)
+    
+    fun_lookup["NEW_TUPLE"] = process_new_tuple
+
+    def process_list_delete_subscript(heap_id, index):
+        obj = heap_id_to_object_dict[heap_id]
+        new_obj = obj.copy()
+        del new_obj[index]
+        update_heap_object(heap_id, new_obj)
+    
+    fun_lookup["LIST_DELETE_SUBSCRIPT"] = process_list_delete_subscript
+
+    def process_list_store_subscript(heap_id, index, value):
+        obj = heap_id_to_object_dict[heap_id]
+        new_list = obj.copy()
+        new_list[index] = value
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_STORE_SUBSCRIPT"] = process_list_store_subscript
+
+    def process_list_insert(heap_id, index, value):
+        obj = heap_id_to_object_dict[heap_id]
+        new_list = obj.copy()
+        new_list.insert(index, value)
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_INSERT"] = process_list_insert
+
+    def process_list_remove(heap_id, value):
+        obj = heap_id_to_object_dict[heap_id]
+        new_list = obj.copy()
+        new_list.remove(value)
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_REMOVE"] = process_list_remove
+
+    def process_list_pop(heap_id, index):
+        a_list = heap_id_to_object_dict[heap_id]
+        new_list = a_list.copy()
+        new_list.pop(index)
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_POP"] = process_list_pop
+
+    def process_list_clear(heap_id):
+        update_heap_object(heap_id, [])
+    
+    fun_lookup["LIST_CLEAR"] = process_list_clear
+
+    def process_list_reverse(heap_id):
+        a_list = heap_id_to_object_dict[heap_id]
+        new_list = a_list.copy()
+        new_list.reverse()
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_REVERSE"] = process_list_reverse
+    
+    def process_list_sort(heap_id, *new_list):
+        update_heap_object(heap_id, list(new_list))
+    
+    fun_lookup["LIST_SORT"] = process_list_sort
+
+    def process_string_inplace_add_result(heap_id, string):
+        update_heap_object(heap_id, string)
+
+    fun_lookup["STRING_INPLACE_ADD_RESULT"]  = process_string_inplace_add_result
+    
+    def process_new_dict(heap_id, *entries):
+        a_dict = {}
+        for i in range(0, len(entries), 2):
+            key = entries[i]
+            value = entries[i + 1]
+            a_dict[key] = value
+        update_heap_object(heap_id, a_dict)
+    
+    fun_lookup["NEW_DICT"] = process_new_dict
+    
+    def process_dict_store_subscript(heap_id, key, value):
+        a_dict = heap_id_to_object_dict[heap_id]
+        new_dict = a_dict.copy()
+        new_dict[key] = value
+        update_heap_object(heap_id, new_dict)
+    
+    fun_lookup["DICT_STORE_SUBSCRIPT"] = process_dict_store_subscript
+
+    def process_dict_delete_subscript(heap_id, key):
+        a_dict = heap_id_to_object_dict[heap_id]
+        new_dict = a_dict.copy()
+        del new_dict[key]
+        update_heap_object(heap_id, new_dict)
+    
+    fun_lookup["DICT_DELETE_SUBSCRIPT"] = process_dict_delete_subscript
+
+    def process_dict_clear(heap_id):
+        update_heap_object(heap_id, {})
+
+    fun_lookup["DICT_CLEAR"] = process_dict_clear
+
+    def process_dict_pop(heap_id, key):
+        a_dict = heap_id_to_object_dict[heap_id]
+        new_dict = a_dict.copy()
+        new_dict.pop(key)
+        update_heap_object(heap_id, new_dict)
+    
+    fun_lookup["DICT_POP"] = process_dict_pop
+    fun_lookup["DICT_POP_ITEM"] = process_dict_pop
+
+    def process_dealloc(heap_id):
         nonlocal heap
+        if heap_id in heap_id_to_object_dict:
+            # print("process_dealloc removing heap_id_to_object_dict entry: " + str(heap_id))
+            del heap_id_to_object_dict[heap_id]
 
-        m = LIST_APPEND_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            item = parse_value(m.group(2))
-            if heap_id in heap_id_to_object_dict:
-                a_list = heap_id_to_object_dict[heap_id]
-                a_list = a_list + [item]
-                update_heap_object(heap_id, a_list)
-            return True
-        return False
+        if str(heap_id) in heap:
+            # print("process_dealloc removing heap entry: " + str(heap_id))
+            new_heap = heap.copy()
+            del new_heap[str(heap_id)]
+            heap = new_heap
+            save_object(heap)
     
-    def process_list_extend(line):
-        nonlocal stack
-        nonlocal heap
-
-        m = LIST_EXTEND_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            other_list_heap_ref = parse_value(m.group(2))
-            a_list = heap_id_to_object_dict[heap_id]
-            other_list = heap_id_to_object_dict[other_list_heap_ref.id]
-            new_a_list = a_list + list(other_list)
-            update_heap_object(heap_id, new_a_list)
-            return True
-        return False
-    
-    def process_new_tuple(line):
-        nonlocal stack
-        nonlocal heap
-
-        m = NEW_TUPLE_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            items = parse_csv(m.group(2))
-            a_tuple = tuple(items)
-            update_heap_object(heap_id, a_tuple)
-            return True
-        return False
-
-    def process_list_delete_subscript(line):
-        nonlocal stack
-        nonlocal heap
-        m = LIST_DELETE_SUBSCRIPT_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            index = parse_value(m.group(2))
-            obj = heap_id_to_object_dict[heap_id]
-            new_obj = obj.copy()
-            del new_obj[index]
-            update_heap_object(heap_id, new_obj)
-            return True
-        return False
-
-    def process_list_store_subscript(line):
-        nonlocal stack
-        nonlocal heap
-        m = LIST_STORE_SUBSCRIPT_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            index = parse_value(m.group(2))
-            value = parse_value(m.group(3))
-            obj = heap_id_to_object_dict[heap_id]
-            # lists only. TODO support dict and other structures
-            new_list = obj.copy()
-            new_list[index] = value
-            update_heap_object(heap_id, new_list)
-            return True
-        return False
-
-    def process_list_insert(line):
-        m = LIST_INSERT_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            index = parse_value(m.group(2))
-            value = parse_value(m.group(3))
-            obj = heap_id_to_object_dict[heap_id]
-            new_list = obj.copy()
-            new_list.insert(index, value)
-            update_heap_object(heap_id, new_list)
-            return True
-        return False
-
-    def process_list_remove(line):
-        m = LIST_REMOVE_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            value = parse_value(m.group(2))
-            obj = heap_id_to_object_dict[heap_id]
-            new_list = obj.copy()
-            new_list.remove(value)
-            update_heap_object(heap_id, new_list)
-            return True
-        return False
-
-    def process_list_pop(line):
-        m = LIST_POP_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            index = int(m.group(2))
-            a_list = heap_id_to_object_dict[heap_id]
-            new_list = a_list.copy()
-            new_list.pop(index)
-            update_heap_object(heap_id, new_list)
-            return True
-        return False
-
-    def process_list_clear(line):
-        m = LIST_CLEAR_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            update_heap_object(heap_id, [])
-            return True
-        return False
-
-    def process_list_reverse(line):
-        m = LIST_REVERSE_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            a_list = heap_id_to_object_dict[heap_id]
-            new_list = a_list.copy()
-            new_list.reverse()
-            update_heap_object(heap_id, new_list)
-            return True
-        return False
-    
-    def process_list_sort(line):
-        m = LIST_SORT_REGEX.match(line)
-        if m:
-            parts = parse_csv(m.group(1))
-            heap_id = parts[0]
-            new_list = parts[1:]
-            update_heap_object(heap_id, new_list)
-            return True
-        return False
-
-    def process_string_inplace_add_result(line):
-        m = STRING_INPLACE_ADD_RESULT_REGEX.match(line)
-        if m:
-            heap_id = int(m.group(1))
-            string = parse_value(m.group(2))
-            update_heap_object(heap_id, string)
-            return True
-        return False
-    
-    
+    fun_lookup["DEALLOC"] = process_dealloc
             
+    activate_snapshots = False
     cursor = conn.cursor()
-    begin = False
     next_snapshot_id = 1
     next_fun_call_id = 1
     next_object_id = 1
@@ -617,53 +600,18 @@ def recreate_past(conn):
     heap = {}
 
     save_object(heap)
-    line_no = None
+    curr_line_no = None
     log_line_no = 0
     
     file = open("rewind.log", "r")
     for line in file:
         log_line_no += 1
-        if process_push_frame(line):
+        command = parse_line(line)
+        if command[0] not in fun_lookup:
+            print("Warning: no process function for command %s on line %d" % (command[0], log_line_no))
             continue
-        if not begin:
-            continue
-        if process_visit(line):
-            continue
-        if process_store_name(line):
-            continue
-        if process_store_fast(line):
-            continue
-        if process_return_value(line):
-            continue
-        if process_new_list(line):
-            continue
-        if process_new_string(line):
-            continue
-        if process_list_append(line):
-            continue
-        if process_list_extend(line):
-            continue
-        if process_new_tuple(line):
-            continue
-        if process_list_delete_subscript(line):
-            continue
-        if process_list_store_subscript(line):
-            continue
-        if process_list_insert(line):
-            continue
-        if process_list_remove(line):
-            continue
-        if process_list_pop(line):
-            continue
-        if process_list_clear(line):
-            continue
-        if process_list_reverse(line):
-            continue
-        if process_string_inplace_add_result(line):
-            continue
-        if process_list_sort(line):
-            continue
-        
+        fun = fun_lookup[command[0]]
+        fun(*command[1])
 
 def main():
     if os.path.isfile("rewind.sqlite"):

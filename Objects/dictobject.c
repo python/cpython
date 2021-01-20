@@ -118,6 +118,7 @@ converting the dict to the combined table.
 #include "pycore_pystate.h"  // _PyThreadState_GET()
 #include "dict-common.h"
 #include "stringlib/eq.h"    // unicode_eq()
+#include "rewind.h"
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -240,6 +241,12 @@ static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
 static int dictresize(PyDictObject *mp, Py_ssize_t newsize);
 
 static PyObject* dict_iter(PyDictObject *dict);
+
+int
+_PyDict_Merge(PyObject *a, PyObject *b, int override, char rewindLog);
+
+int
+_PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override, char rewindLog);
 
 /*Global counter used to set ma_version_tag field of dictionary.
  * It is incremented each time that a dictionary is created and each
@@ -1068,7 +1075,7 @@ Used both by the internal resize routine and by the public insert routine.
 Returns -1 if an error occurred, or 0 on success.
 */
 static int
-insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
+_insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, char rewindLog)
 {
     PyObject *old_value;
     PyDictKeyEntry *ep;
@@ -1124,6 +1131,9 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
         ASSERT_CONSISTENT(mp);
+        if (rewindLog) {
+            Rewind_DictStoreSubscript(mp, key, value);
+        }
         return 0;
     }
 
@@ -1141,6 +1151,11 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
         }
         mp->ma_version_tag = DICT_NEXT_VERSION();
+        if (rewindLog) {
+            PyDictKeyEntry entry = DK_ENTRIES(mp->ma_keys)[ix];
+            PyObject *existingKey = entry.me_key;
+            Rewind_DictStoreSubscript(mp, existingKey, value);
+        }
     }
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     ASSERT_CONSISTENT(mp);
@@ -1151,6 +1166,11 @@ Fail:
     Py_DECREF(value);
     Py_DECREF(key);
     return -1;
+}
+
+static int
+insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value) {
+    return _insertdict(mp, key, hash, value, 0);
 }
 
 // Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
@@ -1624,7 +1644,7 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
  * remove them.
  */
 int
-PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+_PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value, char rewindLog)
 {
     PyDictObject *mp;
     Py_hash_t hash;
@@ -1647,7 +1667,12 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
         return insert_to_emptydict(mp, key, hash, value);
     }
     /* insertdict() handles any resizing that might be necessary */
-    return insertdict(mp, key, hash, value);
+    return _insertdict(mp, key, hash, value, rewindLog);
+}
+
+int
+PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value) {
+    return _PyDict_SetItem(op, key, value, 0);
 }
 
 int
@@ -1698,22 +1723,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
 }
 
 int
-PyDict_DelItem(PyObject *op, PyObject *key)
-{
-    Py_hash_t hash;
-    assert(key);
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
-    }
-
-    return _PyDict_DelItem_KnownHash(op, key, hash);
-}
-
-int
-_PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
+__PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash, char rewindLog)
 {
     Py_ssize_t ix;
     PyDictObject *mp;
@@ -1734,6 +1744,12 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
         return -1;
     }
 
+    if (rewindLog) {
+        PyDictKeyEntry entry = DK_ENTRIES(mp->ma_keys)[ix];
+        PyObject *existingKey = entry.me_key;
+        Rewind_DictDeleteSubscript(mp, existingKey);
+    }
+
     // Split table doesn't allow deletion.  Combine it.
     if (_PyDict_HasSplitTable(mp)) {
         if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
@@ -1744,6 +1760,31 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     }
 
     return delitem_common(mp, hash, ix, old_value);
+}
+
+int
+_PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash) {
+    return __PyDict_DelItem_KnownHash(op, key, hash, 0);
+}
+
+int
+_PyDict_DelItem(PyObject *op, PyObject *key, char rewindLog)
+{
+    Py_hash_t hash;
+    assert(key);
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return -1;
+    }
+
+    return __PyDict_DelItem_KnownHash(op, key, hash, rewindLog);
+}
+
+int
+PyDict_DelItem(PyObject *op, PyObject *key) {
+    return _PyDict_DelItem(op, key, 0);
 }
 
 /* This function promises that the predicate -> deletion sequence is atomic
@@ -1911,7 +1952,7 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
 /* Internal version of dict.pop(). */
 PyObject *
-_PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *deflt)
+__PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *deflt, char rewindLog)
 {
     Py_ssize_t ix, hashpos;
     PyObject *old_value, *old_key;
@@ -1941,6 +1982,12 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
         return NULL;
     }
 
+    if (rewindLog) {
+        PyDictKeyEntry entry = DK_ENTRIES(mp->ma_keys)[ix];
+        PyObject *existingKey = entry.me_key;
+        Rewind_DictPop(mp, existingKey);
+    }
+
     // Split table doesn't allow deletion.  Combine it.
     if (_PyDict_HasSplitTable(mp)) {
         if (dictresize(mp, DK_SIZE(mp->ma_keys))) {
@@ -1968,7 +2015,12 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
 }
 
 PyObject *
-_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
+_PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *deflt) {
+    return __PyDict_Pop_KnownHash(dict, key, hash, deflt, 0);
+}
+
+PyObject *
+__PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt, char rewindLog)
 {
     Py_hash_t hash;
 
@@ -1986,7 +2038,12 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
         if (hash == -1)
             return NULL;
     }
-    return _PyDict_Pop_KnownHash(dict, key, hash, deflt);
+    return __PyDict_Pop_KnownHash(dict, key, hash, deflt, rewindLog);
+}
+
+PyObject *
+_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt) {
+    return __PyDict_Pop(dict, key, deflt, 0);
 }
 
 /* Internal version of dict.from_keys().  It is subclass-friendly. */
@@ -2246,10 +2303,11 @@ dict_subscript(PyDictObject *mp, PyObject *key)
 static int
 dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
 {
-    if (w == NULL)
-        return PyDict_DelItem((PyObject *)mp, v);
-    else
-        return PyDict_SetItem((PyObject *)mp, v, w);
+    if (w == NULL) {
+        return _PyDict_DelItem((PyObject *)mp, v, 1);
+    } else {
+        return _PyDict_SetItem((PyObject *)mp, v, w, 1);
+    }
 }
 
 static PyMappingMethods dict_as_mapping = {
@@ -2424,10 +2482,10 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
 
 /* Single-arg dict update; used by dict_update_common and operators. */
 static int
-dict_update_arg(PyObject *self, PyObject *arg)
+_dict_update_arg(PyObject *self, PyObject *arg, char rewindLog)
 {
     if (PyDict_CheckExact(arg)) {
-        return PyDict_Merge(self, arg, 1);
+        return _PyDict_Merge(self, arg, 1, rewindLog);
     }
     _Py_IDENTIFIER(keys);
     PyObject *func;
@@ -2436,14 +2494,19 @@ dict_update_arg(PyObject *self, PyObject *arg)
     }
     if (func != NULL) {
         Py_DECREF(func);
-        return PyDict_Merge(self, arg, 1);
+        return _PyDict_Merge(self, arg, 1, rewindLog);
     }
-    return PyDict_MergeFromSeq2(self, arg, 1);
+    return _PyDict_MergeFromSeq2(self, arg, 1, rewindLog);
 }
 
 static int
-dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
-                   const char *methname)
+dict_update_arg(PyObject *self, PyObject *arg) {
+    return _dict_update_arg(self, arg, 0);
+}
+
+static int
+_dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
+                   const char *methname, char rewindLog)
 {
     PyObject *arg = NULL;
     int result = 0;
@@ -2452,16 +2515,22 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        result = dict_update_arg(self, arg);
+        result = _dict_update_arg(self, arg, rewindLog);
     }
 
     if (result == 0 && kwds != NULL) {
         if (PyArg_ValidateKeywordArguments(kwds))
-            result = PyDict_Merge(self, kwds, 1);
+            result = _PyDict_Merge(self, kwds, 1, rewindLog);
         else
             result = -1;
     }
     return result;
+}
+
+static int
+dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
+                   const char *methname) {
+    return _dict_update_common(self, args, kwds, methname, 0);
 }
 
 /* Note: dict.update() uses the METH_VARARGS|METH_KEYWORDS calling convention.
@@ -2470,7 +2539,7 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
 static PyObject *
 dict_update(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (dict_update_common(self, args, kwds, "update") != -1)
+    if (_dict_update_common(self, args, kwds, "update", 1) != -1)
         Py_RETURN_NONE;
     return NULL;
 }
@@ -2486,7 +2555,7 @@ dict_update(PyObject *self, PyObject *args, PyObject *kwds)
 */
 
 int
-PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
+_PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override, char rewindLog)
 {
     PyObject *it;       /* iter(seq2) */
     Py_ssize_t i;       /* index into seq2 of current element */
@@ -2538,7 +2607,7 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
         Py_INCREF(key);
         Py_INCREF(value);
         if (override) {
-            if (PyDict_SetItem(d, key, value) < 0) {
+            if (_PyDict_SetItem(d, key, value, rewindLog) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 goto Fail;
@@ -2570,8 +2639,13 @@ Return:
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
 }
 
+int
+PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override) {
+    return _PyDict_MergeFromSeq2(d, seq2, override, 0);
+}
+
 static int
-dict_merge(PyObject *a, PyObject *b, int override)
+_dict_merge(PyObject *a, PyObject *b, int override, char rewindLog)
 {
     PyDictObject *mp, *other;
     Py_ssize_t i, n;
@@ -2659,11 +2733,11 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 Py_INCREF(key);
                 Py_INCREF(value);
                 if (override == 1)
-                    err = insertdict(mp, key, hash, value);
+                    err = _insertdict(mp, key, hash, value, rewindLog);
                 else {
                     err = _PyDict_Contains_KnownHash(a, key, hash);
                     if (err == 0) {
-                        err = insertdict(mp, key, hash, value);
+                        err = _insertdict(mp, key, hash, value, rewindLog);
                     }
                     else if (err > 0) {
                         if (override != 0) {
@@ -2730,7 +2804,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 Py_DECREF(key);
                 return -1;
             }
-            status = PyDict_SetItem(a, key, value);
+            status = _PyDict_SetItem(a, key, value, rewindLog);
             Py_DECREF(key);
             Py_DECREF(value);
             if (status < 0) {
@@ -2747,10 +2821,22 @@ dict_merge(PyObject *a, PyObject *b, int override)
     return 0;
 }
 
+static int
+dict_merge(PyObject *a, PyObject *b, int override) {
+    return _dict_merge(a, b, override, 0);
+}
+
 int
 PyDict_Update(PyObject *a, PyObject *b)
 {
     return dict_merge(a, b, 1);
+}
+
+int
+_PyDict_Merge(PyObject *a, PyObject *b, int override, char rewindLog)
+{
+    /* XXX Deprecate override not in (0, 1). */
+    return _dict_merge(a, b, override != 0, rewindLog);
 }
 
 int
@@ -3159,6 +3245,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 static PyObject *
 dict_clear(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 {
+    Rewind_DictClear(mp);
     PyDict_Clear((PyObject *)mp);
     Py_RETURN_NONE;
 }
@@ -3180,7 +3267,7 @@ static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 /*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
 {
-    return _PyDict_Pop((PyObject*)self, key, default_value);
+    return __PyDict_Pop((PyObject*)self, key, default_value, 1);
 }
 
 /*[clinic input]
@@ -3228,6 +3315,7 @@ dict_popitem_impl(PyDictObject *self)
 
     /* Pop last item */
     ep0 = DK_ENTRIES(self->ma_keys);
+    
     i = self->ma_keys->dk_nentries - 1;
     while (i >= 0 && ep0[i].me_value == NULL) {
         i--;
@@ -3235,6 +3323,7 @@ dict_popitem_impl(PyDictObject *self)
     assert(i >= 0);
 
     ep = &ep0[i];
+    Rewind_DictPopItem(self, ep->me_key);
     j = lookdict_index(self->ma_keys, ep->me_hash, i);
     assert(j >= 0);
     assert(dictkeys_get_index(self->ma_keys, j) == i);
@@ -3249,6 +3338,9 @@ dict_popitem_impl(PyDictObject *self)
     self->ma_used--;
     self->ma_version_tag = DICT_NEXT_VERSION();
     ASSERT_CONSISTENT(self);
+
+    
+    
     return res;
 }
 
