@@ -1254,7 +1254,7 @@ methods, which cannot use the ``METH_METHOD`` convention.
 It is not possible to use ``defining_class`` with slot methods.  In order to
 fetch the module state from such methods, use ``_PyType_GetModuleByDef`` to
 look up the module and then :c:func:`PyModule_GetState` to fetch the module
-state.  Example from the `setattro` slot method in
+state.  Example from the ``setattro`` slot method in
 ``Modules/_threadmodule.c``::
 
     static int
