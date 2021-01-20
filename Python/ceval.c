@@ -86,7 +86,7 @@ static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
-static void improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t nargs);
+static void improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -3792,8 +3792,9 @@ main_loop:
                 PyObject *func = *pfunc;
                 PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
                 res = call_function(tstate, &bounds, &sp, oparg + 1, NULL);
-                if (res == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
-                    improve_missing_self_error(tstate, co, oparg - 1);
+                if (res == NULL && oparg == co->co_argcount &&
+                    PyErr_ExceptionMatches(PyExc_TypeError)) {
+                    improve_missing_self_error(tstate, co);
                 }
                 stack_pointer = sp;
             }
@@ -6009,12 +6010,8 @@ void Py_LeaveRecursiveCall(void)
 }
 
 static void
-improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t nargs)
+improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co)
 {
-
-    if (nargs + 1 != co->co_argcount) {
-        return;
-    }
 
     PyObject *type, *val, *tb;
     _PyErr_Fetch(tstate, &type, &val, &tb);
