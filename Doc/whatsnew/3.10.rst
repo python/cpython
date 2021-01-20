@@ -564,7 +564,7 @@ Removed
 
   1. This simplifies the high-level API.
   2. The functions in the high-level API have been implicitly getting the
-     current thread's running event loop since Python 3.6.  There isn't a need to
+     current thread's running event loop since Python 3.7.  There isn't a need to
      pass the event loop to the API in most normal use cases.
   3. Event loop passing is error-prone especially when dealing with loops
      running in different threads.
@@ -628,7 +628,7 @@ Changes in the Python API
          await asyncio.sleep(1)
 
   If ``foo()`` was specifically designed *not* to run in the current thread's
-  running event loop (eg. running in another thread's event loop), consider
+  running event loop (e.g. running in another thread's event loop), consider
   using :func:`asyncio.run_coroutine_threadsafe` instead.
 
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
