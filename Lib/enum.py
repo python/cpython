@@ -138,19 +138,16 @@ class property(DynamicClassAttribute):
             try:
                 return ownerclass._member_map_[self.name]
             except KeyError:
-                raise AttributeError('%r not found in %r' % (self.name, ownerclass.__name__))	
+                raise AttributeError('%r not found in %r' % (self.name, ownerclass.__name__))
         else:
             if self.fget is None:
-                raise AttributeError(
-                        '%s: no attribute %r'
-                        % (ownerclass.__name__, self.name)
-                        )
+                raise AttributeError('%s: cannot read attribute %r' % (ownerclass.__name__, self.name))
             else:
                 return self.fget(instance)
 
     def __set__(self, instance, value):
         if self.fset is None:
-            raise AttributeError("%s: cannot set attribute %r" % (self.clsname, self.name))	
+            raise AttributeError("%s: cannot set attribute %r" % (self.clsname, self.name))
         else:
             return self.fset(instance, value)
 
@@ -581,10 +578,7 @@ class EnumMeta(type):
         # nicer error message when someone tries to delete an attribute
         # (see issue19025).
         if attr in cls._member_map_:
-            raise AttributeError(
-                    "%s: cannot delete Enum member %r."
-                    % (cls.__name__, attr)
-                    )
+            raise AttributeError("%s: cannot delete Enum member %r." % (cls.__name__, attr))
         super().__delattr__(attr)
 
     def __dir__(self):
@@ -669,7 +663,7 @@ class EnumMeta(type):
         bases = (cls, ) if type is None else (type, cls)
         _, first_enum = cls._get_mixins_(cls, bases)
         classdict = metacls.__prepare__(class_name, bases)
-        #
+
         # special processing needed for names?
         if isinstance(names, str):
             names = names.replace(',', ' ').split()
@@ -847,7 +841,6 @@ class Enum(metaclass=EnumMeta):
 
     Derive from this class to define new enumerations.
     """
-
     def __new__(cls, value):
         # all enum instances are actually created during class construction
         # without calling this method; this method is called by the metaclass'
@@ -886,7 +879,8 @@ class Enum(metaclass=EnumMeta):
             if result is None and exc is None:
                 raise ve_exc
             elif exc is None:
-                exc = TypeError('error in %s._missing_: returned %r instead of None or a valid member'
+                exc = TypeError(
+                        'error in %s._missing_: returned %r instead of None or a valid member'
                         % (cls.__name__, result)
                         )
             if not isinstance(exc, ValueError):
