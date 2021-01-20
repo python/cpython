@@ -3473,6 +3473,12 @@ math_nextafter_impl(PyObject *module, double x, double y)
            Bug fixed in bos.adt.libm 7.2.2.0 by APAR IV95512. */
         return PyFloat_FromDouble(y);
     }
+    if (Py_IS_NAN(x)) {
+        return x;
+    }
+    if (Py_IS_NAN(y)) {
+        return y;
+    }
 #endif
     return PyFloat_FromDouble(nextafter(x, y));
 }
