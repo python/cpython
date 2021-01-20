@@ -1,2 +1,2 @@
-Syntax errors for unterminated string literals now points to the start,
-instead of the EOF/EOL. Patch by Batuhan Taskaya.
+Syntax errors for unterminated string literals now point to the start
+of the string instead of reporting EOF/EOL.
