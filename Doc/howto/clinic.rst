@@ -1230,7 +1230,7 @@ the clinic input::
 After running the Argument Clinic tool, the following function signature is
 generated::
 
-    [clinic start generated code]*/
+    /*[clinic start generated code]*/
     static PyObject *
     zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data)
