@@ -2,7 +2,6 @@
 // List used to create sys.module_names.
 
 static const char* _Py_module_names[] = {
-
 "__future__",
 "_abc",
 "_aix_support",
@@ -315,5 +314,4 @@ static const char* _Py_module_names[] = {
 "zipimport",
 "zlib",
 "zoneinfo",
-
 };

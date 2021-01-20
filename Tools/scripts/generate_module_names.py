@@ -48,6 +48,7 @@ WINDOWS_MODULES = (
 )
 
 
+# Pure Python modules (Lib/*.py)
 def list_python_modules(names):
     for filename in os.listdir(STDLIB_PATH):
         if not filename.endswith(".py"):
@@ -58,9 +59,9 @@ def list_python_modules(names):
 
 def _list_sub_packages(path, names, parent=None):
     for name in os.listdir(path):
-        package_path = os.path.join(path, name)
         if name in IGNORE:
             continue
+        package_path = os.path.join(path, name)
         if not os.path.isdir(package_path):
             continue
         if not any(package_file.endswith(".py")
@@ -115,10 +116,9 @@ def list_modules_setup_extensions(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names)
+    names = set(sys.builtin_module_names) | set(WINDOWS_MODULES)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
-    names |= set(WINDOWS_MODULES)
     list_packages(names)
     list_python_modules(names)
     names -= set(IGNORE)
@@ -130,10 +130,8 @@ def write_modules(fp, names):
     print("// List used to create sys.module_names.", file=fp)
     print(file=fp)
     print("static const char* _Py_module_names[] = {", file=fp)
-    print(file=fp)
     for name in sorted(names):
         print(f'"{name}",', file=fp)
-    print(file=fp)
     print("};", file=fp)
 
 
