@@ -1237,7 +1237,7 @@ generated::
     /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
 
 
-The follwing code can now use ``PyType_GetModuleState(cls)`` to fetch the
+The following code can now use ``PyType_GetModuleState(cls)`` to fetch the
 module state::
 
     zlibstate *state = PyType_GetModuleState(cls);
