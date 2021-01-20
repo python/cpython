@@ -1820,7 +1820,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
-        tok->parencolstack[tok->level] = tok->start - tok->line_start;
+        tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
         tok->level++;
         break;
     case ')':
