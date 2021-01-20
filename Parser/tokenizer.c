@@ -1740,16 +1740,24 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
             if (c == EOF || (quote_size == 1 && c == '\n')) {
+                // shift the tok_state's location into
+                // the start of string, and report the error
+                // from the initial quote character
                 tok->cur = (char *)tok->start;
                 tok->cur++;
                 tok->line_start = tok->multi_line_start;
+                int start = tok->lineno;
                 tok->lineno = tok->first_lineno;
+
                 if (quote_size == 3) {
                     return syntaxerror(tok,
-                           "unterminated triple-quoted string literal");
+                                       "unterminated triple-quoted string literal"
+                                       " (detected at line %d)", start);
                 }
                 else {
-                    return syntaxerror(tok, "unterminated string literal");
+                    return syntaxerror(tok,
+                                       "unterminated string literal (detected at"
+                                       " line %d)", start);
                 }
             }
             if (c == quote) {
