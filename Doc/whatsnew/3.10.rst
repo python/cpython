@@ -621,6 +621,18 @@ Build Changes
   don't build nor install test modules.
   (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
+* Add ``--with-wheel-pkg-dir=PATH`` option to the ``./configure`` script. If
+  specified, the :mod:`ensurepip` module looks for ``setuptools`` and ``pip``
+  wheel packages in this directory: if both are present, these wheel packages
+  are used instead of ensurepip bundled wheel packages.
+
+  Some Linux distribution packaging policies recommend against bundling
+  dependencies. For example, Fedora installs wheel packages in the
+  ``/usr/share/python-wheels/`` directory and don't install the
+  ``ensurepip._bundled`` package.
+
+  (Contributed by Victor Stinner in :issue:`42856`.)
+
 
 C API Changes
 =============
