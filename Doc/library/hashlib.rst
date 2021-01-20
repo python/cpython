@@ -247,7 +247,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    a proper source, e.g. :func:`os.urandom`.
 
    The number of *iterations* should be chosen based on the hash algorithm and
-   computing power. As of 2013, at least 100,000 iterations of SHA-256 are
+   computing power. As of 2021, at least 250,000 iterations of SHA-256 are
    suggested.
 
    *dklen* is the length of the derived key. If *dklen* is ``None`` then the
