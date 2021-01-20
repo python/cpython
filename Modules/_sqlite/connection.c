@@ -1351,7 +1351,7 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 
     _pysqlite_drop_unused_statement_references(self);
 
-    statement = PyObject_New(pysqlite_Statement, pysqlite_StatementType);
+    statement = PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType);
     if (!statement) {
         return NULL;
     }

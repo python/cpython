@@ -506,7 +506,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     if (self->statement->in_use) {
         Py_SETREF(self->statement,
-                  PyObject_New(pysqlite_Statement, pysqlite_StatementType));
+                  PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType));
         if (!self->statement) {
             goto error;
         }
