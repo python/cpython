@@ -6015,32 +6015,30 @@ improve_missing_self_error(PyThreadState* tstate, PyCodeObject* co, Py_ssize_t n
     if (nargs + 1 != co->co_argcount) {
         return;
     }
+
     PyObject *type, *val, *tb;
     _PyErr_Fetch(tstate, &type, &val, &tb);
 
+    if (!PyUnicode_CheckExact(val)) {
+        goto exit;
+    }
+
     if (co->co_argcount > 0 && co->co_varnames && PyTuple_GET_SIZE(co->co_varnames) > 0) {
         PyObject* first_arg = PyTuple_GET_ITEM(co->co_varnames, 0);
-        int comp = PyUnicode_CompareWithASCIIString(first_arg, "self");
-        if (comp == 0 || comp == -1) {
+        if (_PyUnicode_EqualToASCIIString(first_arg, "self")) {
             PyErr_Clear();
             goto exit;
         }
     }
 
-    if (PyUnicode_CheckExact(val)) {
-        PyObject* trailing = PyUnicode_FromString(". Did you forget 'self' in the method definition?");
-        if (trailing == NULL) {
-            PyErr_Clear();
-            goto exit;
-        }
-        PyObject* new_val = PyUnicode_Concat(val, trailing);
-        if (new_val == NULL) {
-            PyErr_Clear();
-            goto exit;
-        }
-        Py_DECREF(val);
-        val = new_val;
+    PyObject* new_val = PyUnicode_FromFormat("%U. Did you forget 'self' in the method"
+                                             " definition?", val);
+    if (new_val == NULL) {
+        PyErr_Clear();
+        goto exit;
     }
+    Py_DECREF(val);
+    val = new_val;
 exit:
     PyErr_Restore(type, val, tb);
 }
