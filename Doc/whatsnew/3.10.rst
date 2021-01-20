@@ -558,7 +558,7 @@ Removed
   the :mod:`collections` module.
   (Contributed by Victor Stinner in :issue:`37324`.)
 
-* The ``loop`` parameter has been removed from most of :mod:`asyncio`
+* The ``loop`` parameter has been removed from most of :mod:`asyncio`\ 's
   :doc:`high-level API <../library/asyncio-api-index>` following deprecation
   in Python 3.8. See `Changes in the Python API`_ for the reasoning behind the
   change, and examples of how to replace existing code.
@@ -603,7 +603,7 @@ Changes in the Python API
   a 16-bit unsigned integer.
   (Contributed by Erlend E. Aasland in :issue:`42393`.)
 
-* The ``loop`` parameter has been removed from most of :mod:`asyncio`
+* The ``loop`` parameter has been removed from most of :mod:`asyncio`\ 's
   :doc:`high-level API <../library/asyncio-api-index>` following deprecation
   in Python 3.8. The motivation behind this change is multifold:
 
