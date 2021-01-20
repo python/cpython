@@ -522,10 +522,6 @@ class EnumMeta(type):
             if enum_class._boundary_ is not KEEP:
                 # missed_bits = multi_bit_total & ~single_bit_total
                 missed = list(_iter_bits_lsb(multi_bit_total & ~single_bit_total))
-                # while missed_bits:
-                #     i = 2 ** (missed_bits.bit_length() - 1)
-                #     missed.append(i)
-                #     missed_bits &= ~i
                 if missed:
                     raise TypeError(
                             'invalid Flag %r -- missing values: %s'
@@ -1113,10 +1109,8 @@ class Flag(Enum, boundary=STRICT):
         """
         Extract all members from the value in definition (i.e. increasing value) order.
         """
-        for val in _iter_bits_lsb(value):
-            member = cls._value2member_map_.get(val)
-            if member is not None:
-                yield member
+        for val in _iter_bits_lsb(value & cls._flag_mask_):
+            yield cls._value2member_map_.get(val)
 
     _iter_member_ = _iter_member_by_value_
 
