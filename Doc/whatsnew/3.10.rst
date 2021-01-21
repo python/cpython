@@ -185,10 +185,10 @@ the syntax error:
 
 .. code-block:: text
 
-      File "example.py", line 3
-        some_other_code = foo()
-                        ^
-    SyntaxError: invalid syntax
+   File "example.py", line 3
+       some_other_code = foo()
+                       ^
+   SyntaxError: invalid syntax
 
 but in Python3.10 a more informative error is emitted:
 
