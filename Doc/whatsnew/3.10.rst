@@ -166,6 +166,48 @@ See :class:`typing.Callable`, :class:`typing.ParamSpec`,
 
 (Contributed by Ken Jin in :issue:`41559`.)
 
+Better error messages in the parser
+-----------------------------------
+
+When parsing code that contains unclosed parentheses or brackets the interpreter
+now includes the location of the unclosed bracket of parentheses instead of displaying
+*SyntaxError: unexpected EOF while parsing* or pointing to some incorrect location.
+For instance, consider the following code (notice the unclosed '{'):
+
+.. code-block:: python
+
+    expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
+                38: 4, 39: 4, 45: 5, 46: 5, 47: 5, 48: 5, 49: 5, 54: 6,
+    some_other_code = foo()
+
+previous versions of the interpreter reported confusing places as the location of
+the syntax error:
+
+.. code-block:: text
+
+   File "example.py", line 3
+       some_other_code = foo()
+                       ^
+   SyntaxError: invalid syntax
+
+but in Python3.10 a more informative error is emitted:
+
+.. code-block:: text
+
+    File "example.py", line 1
+        expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
+                   ^
+    SyntaxError: '{' was never closed
+
+
+In a similar way, errors involving unclosed string literals (single and triple
+quoted) now point to the start of the string instead of reporting EOF/EOL.
+
+These improvements are inspired by previous work in the PyPy interpreter.
+
+(Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
+:issue:`40176`.)
+
 Other Language Changes
 ======================
 
