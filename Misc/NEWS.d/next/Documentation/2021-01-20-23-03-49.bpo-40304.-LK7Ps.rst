@@ -1,0 +1,2 @@
+Fix doc for type(name, bases, dict).  Patch by Борис Верховский
+(Boris Verhovsky).

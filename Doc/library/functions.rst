@@ -1703,13 +1703,14 @@ are always available.  They are listed here in alphabetical order.
 
 
    With three arguments, return a new type object.  This is essentially a
-   dynamic form of the :keyword:`class` statement. The *name* string is the
-   class name and becomes the :attr:`~definition.__name__` attribute; the *bases*
-   tuple contains the base classes and becomes the :attr:`~class.__bases__`
-   attribute (with the addition of :class:`object`, the ultimate base of all classes);
-   and the *dict* dictionary is the namespace containing attribute and method definitions
-   for the class body.  For example, the following two
-   statements create identical :class:`type` objects:
+   dynamic form of the :keyword:`class` statement. The *name* string is
+   the class name and becomes the :attr:`~definition.__name__` attribute.
+   The *bases* tuple contains the base classes and becomes the
+   :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
+   ultimate base of all classes, is added.  The *dict* dictionary contains
+   attribute and method definitions for the class body; it may be copied
+   or wrapped before becoming the :attr:`~class.__bases__` attribute.
+   The following two statements create identical :class:`type` objects:
 
       >>> class X:
       ...     a = 1
