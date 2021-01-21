@@ -295,7 +295,7 @@ strings, so we provide a ``tp_new`` implementation::
    Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    {
        CustomObject *self;
-       self = (CustomObject *) type->tp_alloc(type, 0);
+       self = (CustomObject *) type->tp_alloc(type, 1);
        if (self != NULL) {
            self->first = PyUnicode_FromString("");
            if (self->first == NULL) {
@@ -338,7 +338,7 @@ in C or ``__init__`` in Python) methods.
 The ``tp_new`` implementation calls the :c:member:`~PyTypeObject.tp_alloc`
 slot to allocate memory::
 
-   self = (CustomObject *) type->tp_alloc(type, 0);
+   self = (CustomObject *) type->tp_alloc(type, 1);
 
 Since memory allocation may fail, we must check the :c:member:`~PyTypeObject.tp_alloc`
 result against ``NULL`` before proceeding.
