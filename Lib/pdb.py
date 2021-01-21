@@ -161,6 +161,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         self.allow_kbdint = False
         self.nosigint = nosigint
+        self.sigint_triggered_cmd = None
 
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
@@ -189,9 +190,29 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
             raise KeyboardInterrupt
-        self.message("\nProgram interrupted. (Use 'cont' to resume).")
-        self.set_step()
-        self.set_trace(frame)
+        try:
+            self.message("\nReceived SIGINT signal\nResuming Pdb ... (please wait)")
+        except RuntimeError:
+            # 'print' is not safe in signal handlers, check issue24283
+            # if we encounter this issue, we just silently resume the execution
+            pass
+        if self.sigint_triggered_cmd == 'continue':
+            self.set_trace(frame)
+        else:
+            self.set_step()
+
+    def register_sigint_handler(self, triggered_cmd):
+        if self.nosigint:
+            return
+        self.sigint_triggered_cmd = triggered_cmd
+        try:
+            Pdb._previous_sigint_handler = \
+                signal.signal(signal.SIGINT, self.sigint_handler)
+        except ValueError:
+            # ValueError happens when any do_xxx() is invoked from
+            # a non-main thread in which case we just continue without
+            # SIGINT set.
+            pass
 
     def reset(self):
         bdb.Bdb.reset(self)
@@ -993,6 +1014,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return
         else:
             lineno = None
+        self.register_sigint_handler(triggered_cmd='until')
         self.set_until(self.curframe, lineno)
         return 1
     do_unt = do_until
@@ -1012,6 +1034,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Continue execution until the next line in the current function
         is reached or it returns.
         """
+        self.register_sigint_handler(triggered_cmd='next')
         self.set_next(self.curframe)
         return 1
     do_n = do_next
@@ -1037,6 +1060,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """r(eturn)
         Continue execution until the current function returns.
         """
+        self.register_sigint_handler(triggered_cmd='return')
         self.set_return(self.curframe)
         return 1
     do_r = do_return
@@ -1045,16 +1069,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """c(ont(inue))
         Continue execution, only stop when a breakpoint is encountered.
         """
-        if not self.nosigint:
-            try:
-                Pdb._previous_sigint_handler = \
-                    signal.signal(signal.SIGINT, self.sigint_handler)
-            except ValueError:
-                # ValueError happens when do_continue() is invoked from
-                # a non-main thread in which case we just continue without
-                # SIGINT set. Would printing a message here (once) make
-                # sense?
-                pass
+        self.register_sigint_handler(triggered_cmd='continue')
         self.set_continue()
         return 1
     do_c = do_cont = do_continue
