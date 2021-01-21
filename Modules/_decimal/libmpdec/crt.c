@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,11 +27,14 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
+
 #include <assert.h>
+
+#include "constants.h"
+#include "crt.h"
 #include "numbertheory.h"
 #include "umodarith.h"
-#include "crt.h"
+#include "typearith.h"
 
 
 /* Bignum: Chinese Remainder Theorem, extends the maximum transform length. */
@@ -175,5 +178,3 @@ crt3(mpd_uint_t *x1, mpd_uint_t *x2, mpd_uint_t *x3, mpd_size_t rsize)
 
     assert(carry[0] == 0 && carry[1] == 0 && carry[2] == 0);
 }
-
-

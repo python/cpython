@@ -329,7 +329,10 @@ class _PosixFlavour(_Flavour):
                     # parent dir
                     path, _, _ = path.rpartition(sep)
                     continue
-                newpath = path + sep + name
+                if path.endswith(sep):
+                    newpath = path + name
+                else:
+                    newpath = path + sep + name
                 if newpath in seen:
                     # Already seen this path
                     path = seen[newpath]
@@ -446,6 +449,20 @@ class _NormalAccessor(_Accessor):
     # Helper for resolve()
     def readlink(self, path):
         return os.readlink(path)
+
+    def owner(self, path):
+        try:
+            import pwd
+            return pwd.getpwuid(self.stat(path).st_uid).pw_name
+        except ImportError:
+            raise NotImplementedError("Path.owner() is unsupported on this system")
+
+    def group(self, path):
+        try:
+            import grp
+            return grp.getgrgid(self.stat(path).st_gid).gr_name
+        except ImportError:
+            raise NotImplementedError("Path.group() is unsupported on this system")
 
 
 _normal_accessor = _NormalAccessor()
@@ -613,7 +630,10 @@ class _PathParents(Sequence):
             return len(self._parts)
 
     def __getitem__(self, idx):
-        if idx < 0 or idx >= len(self):
+        if isinstance(idx, slice):
+            return tuple(self[i] for i in range(*idx.indices(len(self))))
+
+        if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
@@ -856,6 +876,10 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
+    def with_stem(self, stem):
+        """Return a new path with the stem changed."""
+        return self.with_name(stem + self.suffix)
+
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed.  If the path
         has no suffix, add given suffix.  If the given suffix is an empty
@@ -904,7 +928,8 @@ class PurePath(object):
         cf = self._flavour.casefold_parts
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} does not start with {!r}"
+            raise ValueError("{!r} is not in the subpath of {!r}"
+                    " OR one path is relative and the other is absolute."
                              .format(str(self), str(formatted)))
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
@@ -1117,7 +1142,7 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = os.stat(other_path)
+            other_st = self._accessor.stat(other_path)
         return os.path.samestat(st, other_st)
 
     def iterdir(self):
@@ -1202,15 +1227,13 @@ class Path(PurePath):
         """
         Return the login name of the file owner.
         """
-        import pwd
-        return pwd.getpwuid(self.stat().st_uid).pw_name
+        return self._accessor.owner(self)
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        import grp
-        return grp.getgrgid(self.stat().st_gid).gr_name
+        return self._accessor.group(self)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1244,14 +1267,14 @@ class Path(PurePath):
         with self.open(mode='wb') as f:
             return f.write(view)
 
-    def write_text(self, data, encoding=None, errors=None):
+    def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors) as f:
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
     def readlink(self):
@@ -1346,17 +1369,26 @@ class Path(PurePath):
 
     def rename(self, target):
         """
-        Rename this path to the given path,
-        and return a new Path instance pointing to the given path.
+        Rename this path to the target path.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
         """
         self._accessor.rename(self, target)
         return self.__class__(target)
 
     def replace(self, target):
         """
-        Rename this path to the given path, clobbering the existing
-        destination if it exists, and return a new Path instance
-        pointing to the given path.
+        Rename this path to the target path, overwriting if that path exists.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
         """
         self._accessor.replace(self, target)
         return self.__class__(target)
@@ -1426,9 +1458,8 @@ class Path(PurePath):
         if not self.exists() or not self.is_dir():
             return False
 
-        parent = Path(self.parent)
         try:
-            parent_dev = parent.stat().st_dev
+            parent_dev = self.parent.stat().st_dev
         except OSError:
             return False
 
@@ -1436,7 +1467,7 @@ class Path(PurePath):
         if dev != parent_dev:
             return True
         ino = self.stat().st_ino
-        parent_ino = parent.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
         return ino == parent_ino
 
     def is_symlink(self):
@@ -1543,12 +1574,6 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def owner(self):
-        raise NotImplementedError("Path.owner() is unsupported on this system")
-
-    def group(self):
-        raise NotImplementedError("Path.group() is unsupported on this system")
 
     def is_mount(self):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")

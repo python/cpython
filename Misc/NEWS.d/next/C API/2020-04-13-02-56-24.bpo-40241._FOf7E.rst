@@ -1,1 +1,0 @@
-Move the :c:type:`PyGC_Head` structure to the internal C API.

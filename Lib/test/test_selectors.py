@@ -6,6 +6,8 @@ import signal
 import socket
 import sys
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 from time import sleep
 import unittest
 import unittest.mock
@@ -22,7 +24,7 @@ if hasattr(socket, 'socketpair'):
 else:
     def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
         with socket.socket(family, type, proto) as l:
-            l.bind((support.HOST, 0))
+            l.bind((socket_helper.HOST, 0))
             l.listen()
             c = socket.socket(family, type, proto)
             try:
@@ -535,7 +537,7 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
         # a file descriptor that's been closed should raise an OSError
         # with EBADF
         s = self.SELECTOR()
-        bad_f = support.make_bad_fd()
+        bad_f = os_helper.make_bad_fd()
         with self.assertRaises(OSError) as cm:
             s.register(bad_f, selectors.EVENT_READ)
         self.assertEqual(cm.exception.errno, errno.EBADF)

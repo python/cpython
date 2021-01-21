@@ -463,7 +463,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.listening_sock.settimeout(10)
         try:
             self.rpcclt.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.display_no_subprocess_error()
             return None
         self.rpcclt.register("console", self.tkconsole)
@@ -498,7 +498,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.spawn_subprocess()
         try:
             self.rpcclt.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.display_no_subprocess_error()
             return None
         self.transfer_path(with_cwd=with_cwd)
@@ -757,7 +757,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            self.interp.restart_subprocess()
+            self.restart_subprocess()
         self.checklinecache()
         debugger = self.debugger
         try:
@@ -833,7 +833,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 class PyShell(OutputWindow):
 
-    shell_title = "Python " + python_version() + " Shell"
+    shell_title = "IDLE Shell " + python_version()
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
@@ -1061,8 +1061,10 @@ class PyShell(OutputWindow):
                    (sys.version, sys.platform, self.COPYRIGHT, nosub))
         self.text.focus_force()
         self.showprompt()
+        # User code should use separate default Tk root window
         import tkinter
-        tkinter._default_root = None # 03Jan04 KBK What's this?
+        tkinter._support_default_root = True
+        tkinter._default_root = None
         return True
 
     def stop_readline(self):
@@ -1485,9 +1487,14 @@ def main():
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
     elif not macosx.isAquaTk():
-        ext = '.png' if TkVersion >= 8.6 else '.gif'
+        if TkVersion >= 8.6:
+            ext = '.png'
+            sizes = (16, 32, 48, 256)
+        else:
+            ext = '.gif'
+            sizes = (16, 32, 48)
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
-                     for size in (16, 32, 48)]
+                     for size in sizes]
         icons = [PhotoImage(master=root, file=iconfile)
                  for iconfile in iconfiles]
         root.wm_iconphoto(True, *icons)

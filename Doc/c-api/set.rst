@@ -53,28 +53,29 @@ the constructor functions work with any iterable Python object.
 .. c:function:: int PySet_Check(PyObject *p)
 
    Return true if *p* is a :class:`set` object or an instance of a subtype.
+   This function always succeeds.
 
 .. c:function:: int PyFrozenSet_Check(PyObject *p)
 
    Return true if *p* is a :class:`frozenset` object or an instance of a
-   subtype.
+   subtype.  This function always succeeds.
 
 .. c:function:: int PyAnySet_Check(PyObject *p)
 
    Return true if *p* is a :class:`set` object, a :class:`frozenset` object, or an
-   instance of a subtype.
+   instance of a subtype.  This function always succeeds.
 
 
 .. c:function:: int PyAnySet_CheckExact(PyObject *p)
 
    Return true if *p* is a :class:`set` object or a :class:`frozenset` object but
-   not an instance of a subtype.
+   not an instance of a subtype.  This function always succeeds.
 
 
 .. c:function:: int PyFrozenSet_CheckExact(PyObject *p)
 
    Return true if *p* is a :class:`frozenset` object but not an instance of a
-   subtype.
+   subtype.  This function always succeeds.
 
 
 .. c:function:: PyObject* PySet_New(PyObject *iterable)
@@ -157,10 +158,3 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 .. c:function:: int PySet_Clear(PyObject *set)
 
    Empty an existing set of all elements.
-
-
-.. c:function:: int PySet_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3

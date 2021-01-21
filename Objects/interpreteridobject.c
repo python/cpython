@@ -270,7 +270,7 @@ _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
     if (_PyInterpreterState_IDInitref(interp) != 0) {
         return NULL;
     };
-    PY_INT64_T id = PyInterpreterState_GetID(interp);
+    int64_t id = PyInterpreterState_GetID(interp);
     if (id < 0) {
         return NULL;
     }

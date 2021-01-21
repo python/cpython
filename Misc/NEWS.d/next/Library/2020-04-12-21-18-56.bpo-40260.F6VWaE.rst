@@ -1,1 +1,0 @@
-Ensure :mod:`modulefinder` uses :func:`io.open_code` and respects coding comments.

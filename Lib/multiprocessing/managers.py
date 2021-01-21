@@ -60,7 +60,7 @@ if view_types[0] is not list:       # only needed in Py3.0
 
 class Token(object):
     '''
-    Type to uniquely indentify a shared object
+    Type to uniquely identify a shared object
     '''
     __slots__ = ('typeid', 'address', 'id')
 
@@ -795,7 +795,7 @@ class BaseProxy(object):
 
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
-        Try to call a method of the referrent and return a copy of the result
+        Try to call a method of the referent and return a copy of the result
         '''
         try:
             conn = self._tls.connection

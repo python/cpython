@@ -35,7 +35,8 @@ on efficient attribute extraction for output formatting and manipulation.
 Aware and Naive Objects
 -----------------------
 
-Date and time objects may be categorized as "aware" or "naive."
+Date and time objects may be categorized as "aware" or "naive" depending on
+whether or not they include timezone information.
 
 With sufficient knowledge of applicable algorithmic and political time
 adjustments, such as time zone and daylight saving time information,
@@ -670,7 +671,8 @@ Instance methods:
 
 .. method:: date.isocalendar()
 
-   Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
+   Return a :term:`named tuple` object with three components: ``year``,
+   ``week`` and ``weekday``.
 
    The ISO calendar is a widely used variant of the Gregorian calendar. [#]_
 
@@ -682,11 +684,14 @@ Instance methods:
    For example, 2004 begins on a Thursday, so the first week of ISO year 2004
    begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan 2004::
 
-       >>> from datetime import date
-       >>> date(2003, 12, 29).isocalendar()
-       (2004, 1, 1)
-       >>> date(2004, 1, 4).isocalendar()
-       (2004, 1, 7)
+        >>> from datetime import date
+        >>> date(2003, 12, 29).isocalendar()
+        datetime.IsoCalendarDate(year=2004, week=1, weekday=1)
+        >>> date(2004, 1, 4).isocalendar()
+        datetime.IsoCalendarDate(year=2004, week=1, weekday=7)
+
+   .. versionchanged:: 3.9
+      Result changed from a tuple to a :term:`named tuple`.
 
 .. method:: date.isoformat()
 
@@ -1214,7 +1219,7 @@ Instance methods:
 
 .. method:: datetime.replace(year=self.year, month=self.month, day=self.day, \
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
-   tzinfo=self.tzinfo, * fold=0)
+   tzinfo=self.tzinfo, *, fold=0)
 
    Return a datetime with the same attributes, except for those attributes given
    new values by whichever keyword arguments are specified. Note that
@@ -1397,8 +1402,8 @@ Instance methods:
 
 .. method:: datetime.isocalendar()
 
-   Return a 3-tuple, (ISO year, ISO week number, ISO weekday). The same as
-   ``self.date().isocalendar()``.
+   Return a :term:`named tuple` with three components: ``year``, ``week``
+   and ``weekday``. The same as ``self.date().isocalendar()``.
 
 
 .. method:: datetime.isoformat(sep='T', timespec='auto')
@@ -1778,7 +1783,7 @@ Other constructor:
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
-   microsecond=self.microsecond, tzinfo=self.tzinfo, * fold=0)
+   microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
 
    Return a :class:`.time` with the same value, except for those attributes given
    new values by whichever keyword arguments are specified. Note that

@@ -130,7 +130,6 @@ import sys
 import threading
 import unittest
 import weakref
-import opcode
 try:
     import ctypes
 except ImportError:
@@ -259,7 +258,7 @@ class CodeTest(unittest.TestCase):
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
-            ("co_lnotab", code2.co_lnotab),
+            ("co_linetable", code2.co_linetable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})

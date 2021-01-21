@@ -1,5 +1,5 @@
--- ASDL's 5 builtin types are:
--- identifier, int, string, object, constant
+-- ASDL's 4 builtin types are:
+-- identifier, int, string, constant
 
 module Python
 {

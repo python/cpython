@@ -79,6 +79,24 @@ Here we add keyword arguments
     >>> f(1, 2, 3, *(4, 5), x=6, y=7, **UserDict(a=8, b=9))
     (1, 2, 3, 4, 5) {'a': 8, 'b': 9, 'x': 6, 'y': 7}
 
+Mix keyword arguments and dict unpacking
+
+    >>> d1 = {'a':1}
+
+    >>> d2 = {'c':3}
+
+    >>> f(b=2, **d1, **d2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, b=2, **d2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, **d2, b=2)
+    () {'a': 1, 'b': 2, 'c': 3}
+
+    >>> f(**d1, b=2, **d2, d=4)
+    () {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+
 Examples with invalid arguments (TypeErrors). We're also testing the function
 names in the exception messages.
 

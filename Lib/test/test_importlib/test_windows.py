@@ -6,11 +6,12 @@ import re
 import sys
 import unittest
 from test import support
+from test.support import import_helper
 from distutils.util import get_platform
 from contextlib import contextmanager
 from .util import temp_module
 
-support.import_module('winreg', required_on=['win'])
+import_helper.import_module('winreg', required_on=['win'])
 from winreg import (
     CreateKey, HKEY_CURRENT_USER,
     SetValue, REG_SZ, KEY_ALL_ACCESS,
