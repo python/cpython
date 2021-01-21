@@ -1709,7 +1709,7 @@ are always available.  They are listed here in alphabetical order.
    :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
    ultimate base of all classes, is added.  The *dict* dictionary contains
    attribute and method definitions for the class body; it may be copied
-   or wrapped before becoming the :attr:`~class.__bases__` attribute.
+   or wrapped before becoming the :attr:`~class.__dict__` attribute.
    The following two statements create identical :class:`type` objects:
 
       >>> class X:
