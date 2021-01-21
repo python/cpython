@@ -617,6 +617,31 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_suffix,
                           (self.flavour.sep, 'd'))
 
+    def test_with_suffix_appended_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b').with_suffix_appended('.gz'), P('a/b.gz'))
+        self.assertEqual(P('/a/b').with_suffix_appended('.gz'), P('/a/b.gz'))
+        self.assertEqual(P('a/b.py').with_suffix_appended('.gz'), P('a/b.py.gz'))
+        self.assertEqual(P('/a/b.py').with_suffix_appended('.gz'), P('/a/b.py.gz'))
+        # Stripping suffix.
+        self.assertEqual(P('a/b.py').with_suffix_appended(''), P('a/b.py'))
+        self.assertEqual(P('/a/b').with_suffix_appended(''), P('/a/b'))
+        # Path doesn't have a "filename" component.
+        self.assertRaises(ValueError, P('').with_suffix_appended, '.gz')
+        self.assertRaises(ValueError, P('.').with_suffix_appended, '.gz')
+        self.assertRaises(ValueError, P('/').with_suffix_appended, '.gz')
+        # Invalid suffix.
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, 'gz')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, '/')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, '.')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, '/.gz')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, 'c/d')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, '.c/.d')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, './.d')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended, '.d/.')
+        self.assertRaises(ValueError, P('a/b').with_suffix_appended,
+                          (self.flavour.sep, 'd'))
+
     def test_relative_to_common(self):
         P = self.cls
         p = P('a/b')
@@ -1102,6 +1127,30 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:a/b').with_suffix, 'c\\d')
         self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c/d')
         self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c\\d')
+
+    def test_with_suffix_appended(self):
+        P = self.cls
+        self.assertEqual(P('c:a/b').with_suffix_appended('.gz'), P('c:a/b.gz'))
+        self.assertEqual(P('c:/a/b').with_suffix_appended('.gz'), P('c:/a/b.gz'))
+        self.assertEqual(P('c:a/b.py').with_suffix_appended('.gz'), P('c:a/b.py.gz'))
+        self.assertEqual(P('c:/a/b.py').with_suffix_appended('.gz'), P('c:/a/b.py.gz'))
+        # Path doesn't have a "filename" component.
+        self.assertRaises(ValueError, P('').with_suffix_appended, '.gz')
+        self.assertRaises(ValueError, P('.').with_suffix_appended, '.gz')
+        self.assertRaises(ValueError, P('/').with_suffix_appended, '.gz')
+        self.assertRaises(ValueError, P('//My/Share').with_suffix_appended, '.gz')
+        # Invalid suffix.
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, 'gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, '/')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, '\\')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, 'c:')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, '/.gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, '\\.gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, 'c:.gz')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, 'c/d')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, 'c\\d')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, '.c/d')
+        self.assertRaises(ValueError, P('c:a/b').with_suffix_appended, '.c\\d')
 
     def test_relative_to(self):
         P = self.cls

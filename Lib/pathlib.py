@@ -901,6 +901,10 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
+    def with_suffix_appended(self, suffix):
+        """Return a new path with the suffix appended."""
+        return self.with_stem(self.name).with_suffix(suffix)
+
     def relative_to(self, *other):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
