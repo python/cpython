@@ -558,6 +558,23 @@ Removed
   the :mod:`collections` module.
   (Contributed by Victor Stinner in :issue:`37324`.)
 
+* The ``loop`` parameter has been removed from most of :mod:`asyncio`\ 's
+  :doc:`high-level API <../library/asyncio-api-index>` following deprecation
+  in Python 3.8.  The motivation behind this change is multifold:
+
+  1. This simplifies the high-level API.
+  2. The functions in the high-level API have been implicitly getting the
+     current thread's running event loop since Python 3.7.  There isn't a need to
+     pass the event loop to the API in most normal use cases.
+  3. Event loop passing is error-prone especially when dealing with loops
+     running in different threads.
+
+  Note that the low-level API will still accept ``loop``.
+  See `Changes in the Python API`_ for examples of how to replace existing code.
+
+  (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
+  in :issue:`42392`.)
+
 
 Porting to Python 3.10
 ======================
@@ -596,6 +613,26 @@ Changes in the Python API
   a 16-bit unsigned integer.
   (Contributed by Erlend E. Aasland in :issue:`42393`.)
 
+* The ``loop`` parameter has been removed from most of :mod:`asyncio`\ 's
+  :doc:`high-level API <../library/asyncio-api-index>` following deprecation
+  in Python 3.8.
+
+  A coroutine that currently look like this::
+
+     async def foo(loop):
+         await asyncio.sleep(1, loop=loop)
+
+  Should be replaced with this::
+
+     async def foo():
+         await asyncio.sleep(1)
+
+  If ``foo()`` was specifically designed *not* to run in the current thread's
+  running event loop (e.g. running in another thread's event loop), consider
+  using :func:`asyncio.run_coroutine_threadsafe` instead.
+
+  (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
+  in :issue:`42392`.)
 
 CPython bytecode changes
 ========================
