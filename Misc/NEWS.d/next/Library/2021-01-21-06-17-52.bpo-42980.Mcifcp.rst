@@ -1,0 +1,1 @@
+Added a new help formatter for argparse that prints the help message using GNU-style long options (with '=' in between the option and the argument for options that take arguments).
