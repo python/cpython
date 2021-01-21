@@ -204,7 +204,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # #RRGGBB - extends each 8-bit hex value to be 16-bit.
         self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
         # #RRRRGGGGBBBB
-        self.assertEqual(rgb('#dcdc14143c3c'), (0xdcdc, 0x1414, 0x3c3c))
+        self.assertEqual(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
         # Invalid string.
         with self.assertRaises(tkinter.TclError):
             rgb('#123456789a')
