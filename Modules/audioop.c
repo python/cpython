@@ -1895,17 +1895,17 @@ audioop.demux
 
     fragment: Py_buffer
     width: int
-    nChannels: int
+    n_channels: int
     channel: int
     /
 
 Extract a single channel from a multichannel fragment.
 [clinic start generated code]*/
 
-static PyObject*
-audioop_demux_impl(PyObject* module, Py_buffer* fragment, int width,
+static PyObject *
+audioop_demux_impl(PyObject *module, Py_buffer *fragment, int width,
                    int n_channels, int channel)
-    /*[clinic end generated code: output=235c8277216d4e4e input=c4ec949b3f4dddfa]*/
+/*[clinic end generated code: output=911e3a91b6d499aa input=a4c7ba41fe028796]*/
 {
     signed char* cp, *ncp;
     Py_ssize_t len, i, j;

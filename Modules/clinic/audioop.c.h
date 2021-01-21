@@ -1311,23 +1311,23 @@ exit:
 }
 
 PyDoc_STRVAR(audioop_demux__doc__,
-    "demux($module, fragment, width, n_channels, channel, /)\n"
-    "--\n"
-    "\n"
-    "Extract a single channel from a multichannel fragment and return it as mono fragment.");
+"demux($module, fragment, width, n_channels, channel, /)\n"
+"--\n"
+"\n"
+"Extract a single channel from a multichannel fragment.");
 
 #define AUDIOOP_DEMUX_METHODDEF    \
     {"demux", (PyCFunction)(void(*)(void))audioop_demux, METH_FASTCALL, audioop_demux__doc__},
 
-static PyObject*
-audioop_demux_impl(PyObject* module, Py_buffer* fragment, int width,
-    int n_channels, int channel);
+static PyObject *
+audioop_demux_impl(PyObject *module, Py_buffer *fragment, int width,
+                   int n_channels, int channel);
 
-static PyObject*
-audioop_demux(PyObject* module, PyObject* const* args, Py_ssize_t nargs)
+static PyObject *
+audioop_demux(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject* return_value = NULL;
-    Py_buffer fragment = { NULL, NULL };
+    PyObject *return_value = NULL;
+    Py_buffer fragment = {NULL, NULL};
     int width;
     int n_channels;
     int channel;
@@ -1359,9 +1359,9 @@ audioop_demux(PyObject* module, PyObject* const* args, Py_ssize_t nargs)
 exit:
     /* Cleanup for fragment */
     if (fragment.obj) {
-        PyBuffer_Release(&fragment);
+       PyBuffer_Release(&fragment);
     }
 
     return return_value;
 }
-/*[clinic end generated code: output=840f8c315ebd4946 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0babdf95432e2389 input=a9049054013a1b77]*/
