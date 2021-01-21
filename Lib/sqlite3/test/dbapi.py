@@ -25,6 +25,7 @@ import unittest
 import sqlite3 as sqlite
 import sys
 
+from test.support import gc_collect
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -180,6 +181,8 @@ class ConnectionTests(unittest.TestCase):
         path = Path()
         with sqlite.connect(path) as cx:
             cx.execute('create table test(id integer)')
+        cx.close()
+        gc_collect()
 
     def test_open_uri(self):
         self.addCleanup(unlink, TESTFN)
@@ -190,6 +193,8 @@ class ConnectionTests(unittest.TestCase):
         with sqlite.connect('file:' + TESTFN + '?mode=ro', uri=True) as cx:
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
+        cx.close()
+        gc_collect()
 
 
 class StatementCacheTests(unittest.TestCase):
