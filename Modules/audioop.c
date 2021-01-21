@@ -1890,6 +1890,67 @@ audioop_adpcm2lin_impl(PyObject *module, Py_buffer *fragment, int width,
     return rv;
 }
 
+/*[clinic input]
+audioop.demux
+
+    fragment: Py_buffer
+    width: int
+    nChannels: int
+    channel: int
+    /
+
+Extract a single channel from a multichannel fragment.
+[clinic start generated code]*/
+
+static PyObject*
+audioop_demux_impl(PyObject* module, Py_buffer* fragment, int width,
+                   int n_channels, int channel)
+    /*[clinic end generated code: output=235c8277216d4e4e input=c4ec949b3f4dddfa]*/
+{
+    signed char* cp, *ncp;
+    Py_ssize_t len, i, j;
+    PyObject* rv;
+    int bytes_per_frame = n_channels*width;
+    int bytes_offset = channel*width;
+    cp = fragment->buf;
+    len = fragment->len;
+
+
+    if (!audioop_check_parameters(module, len, width)) {
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+            "audioop_check_parameters returned 0");
+        return NULL;
+    }
+    if (n_channels < 1) {
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+            "total number of channels must be > 0");
+        return NULL;
+    }
+    if (channel >= n_channels || channel < 0) {
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+            "invalid channel, number not in range");
+        return NULL;
+    }
+    else if (len%bytes_per_frame != 0) {
+        PyErr_SetString(get_audioop_state(module)->AudioopError,
+            "not a whole number of frames");
+        return NULL;
+    }
+
+    rv = PyBytes_FromStringAndSize(NULL, len/n_channels);
+    if (rv == NULL)
+        return NULL;
+
+    ncp = (signed char*)PyBytes_AsString(rv);
+
+    for (i = bytes_offset; i < len; i += bytes_per_frame) {
+        int val = GETRAWSAMPLE(width, cp, i);
+        j = (i-bytes_offset)/n_channels;
+        SETRAWSAMPLE(width, ncp, j, val);
+    }
+    return rv;
+}
+
 #include "clinic/audioop.c.h"
 
 static PyMethodDef audioop_methods[] = {
@@ -1919,6 +1980,7 @@ static PyMethodDef audioop_methods[] = {
     AUDIOOP_REVERSE_METHODDEF
     AUDIOOP_BYTESWAP_METHODDEF
     AUDIOOP_RATECV_METHODDEF
+    AUDIOOP_DEMUX_METHODDEF
     { 0,          0 }
 };
 

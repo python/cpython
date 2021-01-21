@@ -1309,4 +1309,59 @@ exit:
 
     return return_value;
 }
+
+PyDoc_STRVAR(audioop_demux__doc__,
+    "demux($module, fragment, width, n_channels, channel, /)\n"
+    "--\n"
+    "\n"
+    "Extract a single channel from a multichannel fragment and return it as mono fragment.");
+
+#define AUDIOOP_DEMUX_METHODDEF    \
+    {"demux", (PyCFunction)(void(*)(void))audioop_demux, METH_FASTCALL, audioop_demux__doc__},
+
+static PyObject*
+audioop_demux_impl(PyObject* module, Py_buffer* fragment, int width,
+    int n_channels, int channel);
+
+static PyObject*
+audioop_demux(PyObject* module, PyObject* const* args, Py_ssize_t nargs)
+{
+    PyObject* return_value = NULL;
+    Py_buffer fragment = { NULL, NULL };
+    int width;
+    int n_channels;
+    int channel;
+
+    if (!_PyArg_CheckPositional("demux", nargs, 4, 4)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &fragment, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&fragment, 'C')) {
+        _PyArg_BadArgument("demux", "argument 1", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    width = _PyLong_AsInt(args[1]);
+    if (width == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    n_channels = _PyLong_AsInt(args[2]);
+    if (n_channels == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    channel = _PyLong_AsInt(args[3]);
+    if (channel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = audioop_demux_impl(module, &fragment, width, n_channels, channel);
+
+exit:
+    /* Cleanup for fragment */
+    if (fragment.obj) {
+        PyBuffer_Release(&fragment);
+    }
+
+    return return_value;
+}
 /*[clinic end generated code: output=840f8c315ebd4946 input=a9049054013a1b77]*/

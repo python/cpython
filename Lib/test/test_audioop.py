@@ -501,6 +501,18 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.byteswap(memoryview(datas[w]), w),
                              swapped_datas[w])
 
+    def test_demux(self):
+        for w in 1, 2, 3, 4:
+            data1 = datas[w]
+            data2 = bytearray(6 * len(data1))
+            for k in range(w):
+                data2[k::6*w] = data1[k::w]
+            self.assertEqual(audioop.demux(data2, w, 6, 0), data1)
+            self.assertEqual(audioop.demux(data2, w, 6, 1), b'\0' * len(data1))
+            self.assertEqual(audioop.demux(data1, w, 1, 0), data1)
+            self.assertEqual(audioop.demux(bytearray(data1), w, 1, 0), data1)
+            self.assertEqual(audioop.demux(memoryview(data1), w, 1, 0), data1)
+
     def test_negativelen(self):
         # from issue 3306, previously it segfaulted
         self.assertRaises(audioop.error,
@@ -529,6 +541,7 @@ class TestAudioop(unittest.TestCase):
             self.assertRaises(audioop.error, audioop.lin2ulaw, data, size)
             self.assertRaises(audioop.error, audioop.lin2alaw, data, size)
             self.assertRaises(audioop.error, audioop.lin2adpcm, data, size, state)
+            self.assertRaises(audioop.error, audioop.demux, data, size, 1, 0)
 
     def test_string(self):
         data = 'abcd'
@@ -552,6 +565,7 @@ class TestAudioop(unittest.TestCase):
         self.assertRaises(TypeError, audioop.lin2ulaw, data, size)
         self.assertRaises(TypeError, audioop.lin2alaw, data, size)
         self.assertRaises(TypeError, audioop.lin2adpcm, data, size, None)
+        self.assertRaises(TypeError, audioop.demux, data, size, 1, 0)
 
     def test_wrongsize(self):
         data = b'abcdefgh'
