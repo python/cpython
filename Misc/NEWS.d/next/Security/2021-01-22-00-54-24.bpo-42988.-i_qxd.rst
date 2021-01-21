@@ -1,0 +1,5 @@
+Removed ``html_getfile`` function from :mod:`pydoc` since it allowed reading
+an arbitrary file location.  Also added a warning to discourage users from
+using :mod:`pydoc`\ 's Web server because it potentially allows other users
+on the same computer to access any files accessible by the user who started the
+Web server.

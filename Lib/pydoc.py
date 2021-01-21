@@ -2780,7 +2780,7 @@ def cli():
 
         if start_server:
             warnings.warn("WARNING: The web server is accessible by other users "
-                          "on this machine. This will potentially make all "
+                          "on this computer. This will potentially make all "
                           "content accessible by you visible to anyone else "
                           "sharing the machine.", category=RuntimeWarning)
             browse(port, hostname=hostname, open_browser=open_browser)
