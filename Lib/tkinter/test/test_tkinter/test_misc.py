@@ -202,7 +202,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # #RGB - extends each 4-bit hex value to be 16-bit.
         self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
         # #RRGGBB - extends each 8-bit hex value to be 16-bit.
-        self.assertEqual(rgb('#dc143c'), (0xdcdc, 0x1414, 0x3c3c))
+        self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
         # #RRRGGGBBB - uses 2 highest order bits for each color.
         self.assertEqual(rgb('#123456789'), (0x1212, 0x4545, 0x7878))
         # #RRRRGGGGBBBB - uses 2 highest order bits for each color.

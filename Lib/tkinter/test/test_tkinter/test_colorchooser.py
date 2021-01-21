@@ -35,8 +35,8 @@ class ChooserTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(cc._fixresult(self.root, ''), (None, None))
         self.assertEqual(cc._fixresult(self.root, 'chocolate'),
                          ((210, 105, 30), 'chocolate'))
-        self.assertEqual(cc._fixresult(self.root, '#dc144c'),
-                         ((220, 20, 76), '#dc144c'))
+        self.assertEqual(cc._fixresult(self.root, '#4a3c8c'),
+                         ((74, 60, 140), '#4a3c8c'))
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
