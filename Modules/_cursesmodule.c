@@ -4709,6 +4709,7 @@ static void
 curses_destructor(PyObject *op)
 {
     void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    Py_DECREF(*(void **)ptr);
     PyMem_Free(ptr);
 }
 
@@ -4738,7 +4739,7 @@ PyInit__curses(void)
         return NULL;
     }
     /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)&PyCursesWindow_Type; // borrowed ref
+    PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
     PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
     PyCurses_API[2] = (void *)func_PyCursesInitialised;
     PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
