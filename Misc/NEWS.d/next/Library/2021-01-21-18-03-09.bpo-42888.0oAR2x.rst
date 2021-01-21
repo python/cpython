@@ -1,0 +1,4 @@
+Remove calls of :c:func:`PyThread_exit_thread()` from top-level thread
+functions, thereby avoiding a runtime dependency on ``libgcc_s.so`` and
+associated issues with lazy-loading it via ``dlopen()`` in typical scenarios
+on glibc-based Linux systems.
