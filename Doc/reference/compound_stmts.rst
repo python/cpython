@@ -411,7 +411,8 @@ This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist:: python-grammar
-   with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
+   with_stmt: ( "(" `with_stmt_contents` ")" | `with_stmt_contents` ) ":" `suite`
+   with_stmt_contents: "with" `with_item` ("," `with_item`)*
    with_item: `expression` ["as" `target`]
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
@@ -490,6 +491,9 @@ is semantically equivalent to::
 
 .. versionchanged:: 3.1
    Support for multiple context expressions.
+
+.. versionchanged:: 3.10
+   Support for using grouping parentheses to break the statement in multiple lines.
 
 .. seealso::
 
