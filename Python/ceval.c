@@ -4627,7 +4627,7 @@ fail: /* Jump here from prelude on failure */
     return retval;
 }
 
-/* Lageacy API */
+/* Legacy API */
 PyObject *
 _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
@@ -4666,7 +4666,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     return res;
 }
 
-/* Lageacy API */
+/* Legacy API */
 PyObject *
 PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                   PyObject *const *args, int argcount,
