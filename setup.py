@@ -682,6 +682,51 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
+    def add_wrcc_search_dirs(self):
+        # add library search path by wr-cc, the compiler wrapper
+
+        def convert_mixed_path(path):
+            # convert path like C:\folder1\folder2/folder3/folder4
+            # to msys style /c/folder1/folder2/folder3/folder4
+            drive = path[0].lower()
+            left = path[2:].replace("\\", "/")
+            return "/" + drive + left
+
+        def add_search_path(line):
+            # On Windows building machine, VxWorks does
+            # cross builds under msys2 environment.
+            pathsep = (";" if sys.platform == "msys" else ":")
+            for d in line.strip().split("=")[1].split(pathsep):
+                d = d.strip()
+                if sys.platform == "msys":
+                    # On Windows building machine, compiler
+                    # returns mixed style path like:
+                    # C:\folder1\folder2/folder3/folder4
+                    d = convert_mixed_path(d)
+                d = os.path.normpath(d)
+                add_dir_to_list(self.compiler.library_dirs, d)
+
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = os.path.join(self.build_temp, 'wrccpaths')
+        os.makedirs(self.build_temp, exist_ok=True)
+        try:
+            ret = run_command('%s --print-search-dirs >%s' % (cc, tmpfile))
+            if ret:
+                return
+            with open(tmpfile) as fp:
+                # Parse paths in libraries line. The line is like:
+                # On Linux, "libraries: = path1:path2:path3"
+                # On Windows, "libraries: = path1;path2;path3"
+                for line in fp:
+                    if not line.startswith("libraries"):
+                        continue
+                    add_search_path(line)
+        finally:
+            try:
+                os.unlink(tmpfile)
+            except OSError:
+                pass
+
     def add_cross_compiling_paths(self):
         cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
@@ -714,6 +759,9 @@ class PyBuildExt(build_ext):
                                             line.strip())
         finally:
             os.unlink(tmpfile)
+
+        if VXWORKS:
+            self.add_wrcc_search_dirs()
 
     def add_ldflags_cppflags(self):
         # Add paths specified in the environment variables LDFLAGS and
