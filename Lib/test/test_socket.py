@@ -1121,9 +1121,11 @@ class GeneralModuleTests(unittest.TestCase):
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
         l_bad_values = [-1, -2, 1<<32, 1<<1000]
-        s_bad_values = l_bad_values + [_testcapi.INT_MIN - 1,
-                                       _testcapi.INT_MAX + 1]
-        s_deprecated_values = [1<<16, _testcapi.INT_MAX]
+        s_bad_values = (
+            l_bad_values +
+            [_testcapi.INT_MIN-1, _testcapi.INT_MAX+1] +
+            [1 << 16, _testcapi.INT_MAX]
+        )
         for k in s_good_values:
             socket.ntohs(k)
             socket.htons(k)
@@ -1136,9 +1138,6 @@ class GeneralModuleTests(unittest.TestCase):
         for k in l_bad_values:
             self.assertRaises(OverflowError, socket.ntohl, k)
             self.assertRaises(OverflowError, socket.htonl, k)
-        for k in s_deprecated_values:
-            self.assertWarns(DeprecationWarning, socket.ntohs, k)
-            self.assertWarns(DeprecationWarning, socket.htons, k)
 
     def testGetServBy(self):
         eq = self.assertEqual
@@ -1611,7 +1610,7 @@ class GeneralModuleTests(unittest.TestCase):
             if with_timeout:
                 signal.signal(signal.SIGALRM, ok_handler)
                 signal.alarm(1)
-                self.assertRaises(socket.timeout, c.sendall,
+                self.assertRaises(TimeoutError, c.sendall,
                                   b"x" * support.SOCK_MAX_SIZE)
         finally:
             signal.alarm(0)
@@ -1738,6 +1737,7 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
     @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
+    @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
     def test_getaddrinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface (Linux, Mac OS X)
         (ifindex, test_interface) = socket.if_nameindex()[0]
@@ -1770,6 +1770,7 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test.')
     @unittest.skipIf(sys.platform == 'win32', 'does not work on Windows')
     @unittest.skipIf(AIX, 'Symbolic scope id does not work')
+    @unittest.skipUnless(hasattr(socket, 'if_nameindex'), "test needs socket.if_nameindex()")
     def test_getnameinfo_ipv6_scopeid_symbolic(self):
         # Just pick up any network interface.
         (ifindex, test_interface) = socket.if_nameindex()[0]
@@ -2966,7 +2967,7 @@ class SendmsgStreamTests(SendmsgTests):
             try:
                 while True:
                     self.sendmsgToServer([b"a"*512])
-            except socket.timeout:
+            except TimeoutError:
                 pass
             except OSError as exc:
                 if exc.errno != errno.ENOMEM:
@@ -2974,7 +2975,7 @@ class SendmsgStreamTests(SendmsgTests):
                 # bpo-33937 the test randomly fails on Travis CI with
                 # "OSError: [Errno 12] Cannot allocate memory"
             else:
-                self.fail("socket.timeout not raised")
+                self.fail("TimeoutError not raised")
         finally:
             self.misc_event.set()
 
@@ -3109,7 +3110,7 @@ class RecvmsgGenericTests(SendrecvmsgBase):
         # Check that timeout works.
         try:
             self.serv_sock.settimeout(0.03)
-            self.assertRaises(socket.timeout,
+            self.assertRaises(TimeoutError,
                               self.doRecvmsg, self.serv_sock, len(MSG))
         finally:
             self.misc_event.set()
@@ -4129,7 +4130,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
     @requireAttrs(socket, "CMSG_SPACE", "IPV6_RECVHOPLIMIT", "IPV6_HOPLIMIT",
                   "IPV6_RECVTCLASS", "IPV6_TCLASS")
-    def testSecomdCmsgTruncInData(self):
+    def testSecondCmsgTruncInData(self):
         # Test truncation of the second of two control messages inside
         # its associated data.
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
@@ -4164,8 +4165,8 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
         self.assertEqual(ancdata, [])
 
-    @testSecomdCmsgTruncInData.client_skip
-    def _testSecomdCmsgTruncInData(self):
+    @testSecondCmsgTruncInData.client_skip
+    def _testSecondCmsgTruncInData(self):
         self.assertTrue(self.misc_event.wait(timeout=self.fail_timeout))
         self.sendToServer(MSG)
 
@@ -4827,7 +4828,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.cli_conn.settimeout(1)
         self.read_file.read(3)
         # First read raises a timeout
-        self.assertRaises(socket.timeout, self.read_file.read, 1)
+        self.assertRaises(TimeoutError, self.read_file.read, 1)
         # Second read is disallowed
         with self.assertRaises(OSError) as ctx:
             self.read_file.read(1)
@@ -5092,7 +5093,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
 
     class MockSocket(socket.socket):
         def connect(self, *args):
-            raise socket.timeout('timed out')
+            raise TimeoutError('timed out')
 
     @contextlib.contextmanager
     def mocked_socket_module(self):
@@ -5142,13 +5143,13 @@ class NetworkConnectionNoServer(unittest.TestCase):
         with self.mocked_socket_module():
             try:
                 socket.create_connection((HOST, 1234))
-            except socket.timeout:
+            except TimeoutError:
                 pass
             except OSError as exc:
                 if socket_helper.IPV6_ENABLED or exc.errno != errno.EAFNOSUPPORT:
                     raise
             else:
-                self.fail('socket.timeout not raised')
+                self.fail('TimeoutError not raised')
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
@@ -5250,7 +5251,7 @@ class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
 
     def _testOutsideTimeout(self):
         self.cli = sock = socket.create_connection((HOST, self.port), timeout=1)
-        self.assertRaises(socket.timeout, lambda: sock.recv(5))
+        self.assertRaises(TimeoutError, lambda: sock.recv(5))
 
 
 class TCPTimeoutTest(SocketTCPTest):
@@ -5259,7 +5260,7 @@ class TCPTimeoutTest(SocketTCPTest):
         def raise_timeout(*args, **kwargs):
             self.serv.settimeout(1.0)
             self.serv.accept()
-        self.assertRaises(socket.timeout, raise_timeout,
+        self.assertRaises(TimeoutError, raise_timeout,
                               "Error generating a timeout exception (TCP)")
 
     def testTimeoutZero(self):
@@ -5267,7 +5268,7 @@ class TCPTimeoutTest(SocketTCPTest):
         try:
             self.serv.settimeout(0.0)
             foo = self.serv.accept()
-        except socket.timeout:
+        except TimeoutError:
             self.fail("caught timeout instead of error (TCP)")
         except OSError:
             ok = True
@@ -5292,7 +5293,7 @@ class TCPTimeoutTest(SocketTCPTest):
             try:
                 signal.alarm(2)    # POSIX allows alarm to be up to 1 second early
                 foo = self.serv.accept()
-            except socket.timeout:
+            except TimeoutError:
                 self.fail("caught timeout instead of Alarm")
             except Alarm:
                 pass
@@ -5316,7 +5317,7 @@ class UDPTimeoutTest(SocketUDPTest):
         def raise_timeout(*args, **kwargs):
             self.serv.settimeout(1.0)
             self.serv.recv(1024)
-        self.assertRaises(socket.timeout, raise_timeout,
+        self.assertRaises(TimeoutError, raise_timeout,
                               "Error generating a timeout exception (UDP)")
 
     def testTimeoutZero(self):
@@ -5324,7 +5325,7 @@ class UDPTimeoutTest(SocketUDPTest):
         try:
             self.serv.settimeout(0.0)
             foo = self.serv.recv(1024)
-        except socket.timeout:
+        except TimeoutError:
             self.fail("caught timeout instead of error (UDP)")
         except OSError:
             ok = True
@@ -5341,7 +5342,7 @@ class UDPLITETimeoutTest(SocketUDPLITETest):
         def raise_timeout(*args, **kwargs):
             self.serv.settimeout(1.0)
             self.serv.recv(1024)
-        self.assertRaises(socket.timeout, raise_timeout,
+        self.assertRaises(TimeoutError, raise_timeout,
                               "Error generating a timeout exception (UDPLITE)")
 
     def testTimeoutZero(self):
@@ -5349,7 +5350,7 @@ class UDPLITETimeoutTest(SocketUDPLITETest):
         try:
             self.serv.settimeout(0.0)
             foo = self.serv.recv(1024)
-        except socket.timeout:
+        except TimeoutError:
             self.fail("caught timeout instead of error (UDPLITE)")
         except OSError:
             ok = True
@@ -5365,6 +5366,8 @@ class TestExceptions(unittest.TestCase):
         self.assertTrue(issubclass(socket.herror, OSError))
         self.assertTrue(issubclass(socket.gaierror, OSError))
         self.assertTrue(issubclass(socket.timeout, OSError))
+        self.assertIs(socket.error, OSError)
+        self.assertIs(socket.timeout, TimeoutError)
 
     def test_setblocking_invalidfd(self):
         # Regression test for issue #28471
@@ -6167,7 +6170,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
             with socket.create_connection(address) as sock:
                 sock.settimeout(0.01)
                 meth = self.meth_from_sock(sock)
-                self.assertRaises(socket.timeout, meth, file)
+                self.assertRaises(TimeoutError, meth, file)
 
     def testWithTimeoutTriggeredSend(self):
         conn = self.accept_conn()

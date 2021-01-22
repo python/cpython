@@ -150,9 +150,6 @@ class PyclbrTest(TestCase):
         self.checkModule('difflib', ignore=("Match",))
 
     def test_decorators(self):
-        # XXX: See comment in pyclbr_input.py for a test that would fail
-        #      if it were not commented out.
-        #
         self.checkModule('test.pyclbr_input', ignore=['om'])
 
     def test_nested(self):
@@ -160,10 +157,10 @@ class PyclbrTest(TestCase):
         # Set arguments for descriptor creation and _creat_tree call.
         m, p, f, t, i = 'test', '', 'test.py', {}, None
         source = dedent("""\
-        def f0:
+        def f0():
             def f1(a,b,c):
                 def f2(a=1, b=2, c=3): pass
-                    return f1(a,b,d)
+                return f1(a,b,d)
             class c1: pass
         class C0:
             "Test class."

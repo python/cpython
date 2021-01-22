@@ -73,6 +73,7 @@ typedef struct {
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
     int level;
+    int call_invalid_rules;
 } Parser;
 
 typedef struct {
@@ -178,8 +179,8 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
     return result;
 }
 
-#define CHECK(result) CHECK_CALL(p, result)
-#define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
+#define CHECK(type, result) ((type) CHECK_CALL(p, result))
+#define CHECK_NULL_ALLOWED(type, result) ((type) CHECK_CALL_NULL_ALLOWED(p, result))
 
 PyObject *_PyPegen_new_type_comment(Parser *, char *);
 
@@ -218,7 +219,7 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
     return node;
 }
 
-#define CHECK_VERSION(version, msg, node) INVALID_VERSION_CHECK(p, version, msg, node)
+#define CHECK_VERSION(type, version, msg, node) ((type) INVALID_VERSION_CHECK(p, version, msg, node))
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
 PyObject *_PyPegen_new_identifier(Parser *, char *);
@@ -262,7 +263,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
-int _PyPegen_check_barry_as_flufl(Parser *);
+int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 
 // Error reporting helpers
@@ -277,7 +278,7 @@ expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
 Py_LOCAL_INLINE(void *)
 _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
 {
-    expr_ty invalid_target = CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, type));
+    expr_ty invalid_target = CHECK_NULL_ALLOWED(expr_ty, _PyPegen_get_invalid_target(e, type));
     if (invalid_target != NULL) {
         const char *msg;
         if (type == STAR_TARGETS || type == FOR_TARGETS) {

@@ -173,7 +173,13 @@ The :class:`dircmp` class
    .. attribute:: subdirs
 
       A dictionary mapping names in :attr:`common_dirs` to :class:`dircmp`
-      objects.
+      instances (or MyDirCmp instances if this instance is of type MyDirCmp, a
+      subclass of :class:`dircmp`).
+
+      .. versionchanged:: 3.10
+         Previously entries were always :class:`dircmp` instances. Now entries
+         are the same type as *self*, if *self* is a subclass of
+         :class:`dircmp`.
 
 .. attribute:: DEFAULT_IGNORES
 

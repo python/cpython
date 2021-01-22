@@ -232,7 +232,6 @@ class _LazyModule(types.ModuleType):
         # Figure out exactly what attributes were mutated between the creation
         # of the module and now.
         attrs_then = self.__spec__.loader_state['__dict__']
-        original_type = self.__spec__.loader_state['__class__']
         attrs_now = self.__dict__
         attrs_updated = {}
         for key, value in attrs_now.items():

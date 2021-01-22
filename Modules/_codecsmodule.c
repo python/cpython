@@ -160,25 +160,6 @@ _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
 
 /* --- Helpers ------------------------------------------------------------ */
 
-/*[clinic input]
-_codecs._forget_codec
-
-    encoding: str
-    /
-
-Purge the named codec from the internal codec lookup cache
-[clinic start generated code]*/
-
-static PyObject *
-_codecs__forget_codec_impl(PyObject *module, const char *encoding)
-/*[clinic end generated code: output=0bde9f0a5b084aa2 input=18d5d92d0e386c38]*/
-{
-    if (_PyCodec_Forget(encoding) < 0) {
-        return NULL;
-    };
-    Py_RETURN_NONE;
-}
-
 static
 PyObject *codec_tuple(PyObject *decoded,
                       Py_ssize_t len)
@@ -1057,7 +1038,6 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
-    _CODECS__FORGET_CODEC_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

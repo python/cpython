@@ -1452,6 +1452,25 @@ class DictTest(unittest.TestCase):
         d = CustomReversedDict(pairs)
         self.assertEqual(pairs[::-1], list(dict(d).items()))
 
+    @support.cpython_only
+    def test_dict_items_result_gc(self):
+        # bpo-42536: dict.items's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = iter({None: []}.items())
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_dict_items_result_gc(self):
+        # Same as test_dict_items_result_gc above, but reversed.
+        it = reversed({None: []}.items())
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
 
 class CAPITest(unittest.TestCase):
 

@@ -176,8 +176,8 @@ public override bool Execute() {
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\</SdkBinPath>
-    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
-    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificateSha1)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /sha1 "$(SigningCertificateSha1)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /n "$(SigningCertificate)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificateSha1)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /sha1 "$(SigningCertificateSha1)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "Python $(PythonVersion)"</_SignCommand>
     <_MakeCatCommand Condition="Exists($(SdkBinPath))">"$(SdkBinPath)\makecat.exe"</_MakeCatCommand>
   </PropertyGroup>
 

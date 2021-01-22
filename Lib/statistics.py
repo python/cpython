@@ -106,7 +106,7 @@ import random
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby
+from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter
@@ -364,37 +364,37 @@ def geometric_mean(data):
                               ' containing positive numbers') from None
 
 
-def harmonic_mean(data):
+def harmonic_mean(data, weights=None):
     """Return the harmonic mean of data.
 
     The harmonic mean, sometimes called the subcontrary mean, is the
     reciprocal of the arithmetic mean of the reciprocals of the data,
     and is often appropriate when averaging quantities which are rates
-    or ratios, for example speeds. Example:
+    or ratios, for example speeds.
 
-    Suppose an investor purchases an equal value of shares in each of
-    three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
-    What is the average P/E ratio for the investor's portfolio?
+    Suppose a car travels 40 km/hr for 5 km and then speeds-up to
+    60 km/hr for another 5 km. What is the average speed?
 
-    >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
-    3.6
+        >>> harmonic_mean([40, 60])
+        48.0
 
-    Using the arithmetic mean would give an average of about 5.167, which
-    is too high.
+    Suppose a car travels 40 km/hr for 5 km, and when traffic clears,
+    speeds-up to 60 km/hr for the remaining 30 km of the journey. What
+    is the average speed?
+
+        >>> harmonic_mean([40, 60], weights=[5, 30])
+        56.0
 
     If ``data`` is empty, or any element is less than zero,
     ``harmonic_mean`` will raise ``StatisticsError``.
     """
-    # For a justification for using harmonic mean for P/E ratios, see
-    # http://fixthepitch.pellucid.com/comps-analysis-the-missing-harmony-of-summary-statistics/
-    # http://papers.ssrn.com/sol3/papers.cfm?abstract_id=2621087
     if iter(data) is data:
         data = list(data)
     errmsg = 'harmonic mean does not support negative values'
     n = len(data)
     if n < 1:
         raise StatisticsError('harmonic_mean requires at least one data point')
-    elif n == 1:
+    elif n == 1 and weights is None:
         x = data[0]
         if isinstance(x, (numbers.Real, Decimal)):
             if x < 0:
@@ -402,13 +402,23 @@ def harmonic_mean(data):
             return x
         else:
             raise TypeError('unsupported type')
+    if weights is None:
+        weights = repeat(1, n)
+        sum_weights = n
+    else:
+        if iter(weights) is weights:
+            weights = list(weights)
+        if len(weights) != n:
+            raise StatisticsError('Number of weights does not match data size')
+        _, sum_weights, _ = _sum(w for w in _fail_neg(weights, errmsg))
     try:
-        T, total, count = _sum(1 / x for x in _fail_neg(data, errmsg))
+        data = _fail_neg(data, errmsg)
+        T, total, count = _sum(w / x if w else 0 for w, x in zip(weights, data))
     except ZeroDivisionError:
         return 0
-    assert count == n
-    return _convert(n / total, T)
-
+    if total <= 0:
+        raise StatisticsError('Weighted sum must be positive')
+    return _convert(sum_weights / total, T)
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
 def median(data):
