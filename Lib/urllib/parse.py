@@ -734,6 +734,10 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     """
     qs, _coerce_result = _coerce_args(qs)
 
+    if not separator or (not isinstance(separator, str)
+        and not isinstance(separator, bytes)):
+        raise ValueError("Separator must be of type string or bytes.")
+
     # If max_num_fields is defined then check that the number of fields
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
