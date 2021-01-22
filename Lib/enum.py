@@ -514,10 +514,8 @@ class EnumMeta(type):
             enum_class._flag_mask_ = single_bit_total
             #
             # set correct __iter__
-            inverted = ~enum_class(0)
-            if list(enum_class) != list(inverted):
-                if '|' in inverted._name_:
-                    enum_class._value2member_map_.pop(inverted._value_, None)
+            member_list = [m._value_ for m in enum_class]
+            if member_list != sorted(member_list):
                 enum_class._iter_member_ = enum_class._iter_member_by_def_
         #
         return enum_class
