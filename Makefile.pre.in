@@ -283,7 +283,8 @@ MODULE_OBJS=	\
 		Modules/config.o \
 		Modules/getpath.o \
 		Modules/main.o \
-		Modules/gcmodule.o
+		Modules/gcmodule.o \
+		Modules/rewind.o
 
 IO_H=		Modules/_io/_iomodule.h
 

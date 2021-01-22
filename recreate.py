@@ -1,13 +1,23 @@
 # Todo
 
-# objects
-# use low level iteration methods whenever possible
-# perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
-# make log file same prefix name as program name
 # make work for multiple files
+# make log file same prefix name as program name
+# make modules work
+# get rpg game working
+# get pygame working
+# get ascii draw working
+# get flask working
+# get caves (xlrd) working
+# compile SSL into Python
+# collect "real world" python apps
+# have a flag to turn on debug mode
 # try it on a "real" app
+# optimization: use low level iteration methods whenever possible
+# optimization: perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
 
-# sets
+# put rewind.o in modules permanently (don't edit Makefile) (done)
+# objects (done)
+# sets (done)
 # * set.add (done)
 # * set.discard (done)
 # * set.remove (done)
@@ -118,7 +128,7 @@ def define_schema(conn):
     conn.commit()
 
 NUMBER_REGEX = r"-?(?:(?:[1-9][0-9]*)|[0-9])(?:\.[0-9]+)?"
-STRING_REGEX = r"'(?:[^'\\]|(?:\\['\\]))*'"
+STRING_REGEX = r"(?:'(?:[^'\\]|(?:\\['\\nt]))*')|(?:\"(?:[^\"\\]|(?:\\[\"\\nt]))*\")"
 BOOLEAN_REGEX = r"True|False"
 REF_REGEX = r"\*[0-9]+"
 NONE_REGEX = r"None"
@@ -616,6 +626,25 @@ def recreate_past(conn):
         update_heap_object(heap_id, new_set)
 
     fun_lookup["SET_DISCARD"] = process_set_discard
+
+    def process_new_object(heap_id, type_name, type_object):
+        if type_name == 'type':
+            # this is the definition of a custom class
+            # do don't track anything here
+            return
+        # represent an object simply with a dict
+        update_heap_object(heap_id, {})
+    
+    fun_lookup["NEW_OBJECT"] = process_new_object
+
+    def process_store_attr(heap_id, name, value):
+        an_obj = heap_id_to_object_dict[heap_id]
+        # objects represented by dicts
+        new_obj = an_obj.copy()
+        new_obj[name] = value
+        update_heap_object(heap_id, new_obj)
+
+    fun_lookup["STORE_ATTR"] = process_store_attr
             
     activate_snapshots = False
     cursor = conn.cursor()
@@ -639,7 +668,7 @@ def recreate_past(conn):
     file = open("rewind.log", "r")
     for line in file:
         log_line_no += 1
-        # print(line)
+        print(log_line_no, line)
         if line.startswith("--"):
             continue
         command = parse_line(line)
