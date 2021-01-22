@@ -4748,6 +4748,7 @@ PyInit__curses(void)
     c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
                                  curses_destructor);
     if (c_api_object == NULL) {
+        Py_DECREF(PyCurses_API[0]);
         PyMem_Free(PyCurses_API);
         return NULL;
     }
