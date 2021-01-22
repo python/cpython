@@ -246,6 +246,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
+    {"__closure__",   T_OBJECT,     OFF(func_descr.closure), READONLY},
     {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   T_OBJECT,     OFF(func_descr.globals), READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
@@ -261,19 +262,6 @@ func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
 
     Py_INCREF(op->func_descr.code);
     return op->func_descr.code;
-}
-
-static PyObject *
-func_get_closure(PyFunctionObject *op, void *Py_UNUSED(ignored))
-{
-    if (PySys_Audit("object.__getattr__", "Os", op, "__closure__") < 0) {
-        return NULL;
-    }
-    if (op->func_descr.closure == NULL) {
-        Py_RETURN_NONE;
-    }
-    Py_INCREF(op->func_descr.closure);
-    return op->func_descr.closure;
 }
 
 static int
@@ -485,7 +473,6 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
 }
 
 static PyGetSetDef func_getsetlist[] = {
-    {"__closure__", (getter)func_get_closure, NULL},
     {"__code__", (getter)func_get_code, (setter)func_set_code},
     {"__defaults__", (getter)func_get_defaults,
      (setter)func_set_defaults},
