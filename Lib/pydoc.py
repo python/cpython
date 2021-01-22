@@ -2666,7 +2666,7 @@ def _url_handler(url, content_type="text/html"):
 
     left, sep, right = url.partition(SECRET_URL_TOKEN)
     if not sep:
-        raise TypeError(f'Invalid secret token for {url}')
+        raise ValueError(f'Invalid secret token for {url}')
     url = right
     if url.startswith('/'):
         url = url[1:]

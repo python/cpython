@@ -1356,8 +1356,8 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
     def test_content_type_err(self):
         f = pydoc._url_handler
-        self.assertRaises(TypeError, f, 'A', '')
-        self.assertRaises(TypeError, f, 'B', 'foobar')
+        self.assertRaises(TypeError, f, f'{pydoc.SECRET_URL_TOKEN}/A', '')
+        self.assertRaises(TypeError, f, f'{pydoc.SECRET_URL_TOKEN}/B', 'foobar')
 
     def test_url_requests(self):
         # Test for the correct title in the html pages returned.
@@ -1379,8 +1379,15 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
         with self.restrict_walk_packages():
             for url, title in requests:
-                self.call_url_handler(f"{pydoc.SECRET_URL_TOKEN}/{url}", title)
-
+                with self.subTest(url):
+                    self.call_url_handler(f"{pydoc.SECRET_URL_TOKEN}/{url}",
+                                          title)
+        # These should all fail without a token, see bpo-42988.
+        with self.restrict_walk_packages():
+            for url, title in requests:
+                with self.subTest(f"{url} should raise error without token"):
+                    with self.assertRaises(ValueError):
+                        self.call_url_handler(f"{url}", title)
 
 
 class TestHelper(unittest.TestCase):
