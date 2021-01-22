@@ -1,4 +1,4 @@
 Removed ``html_getfile`` function from :mod:`pydoc` since it allowed reading
 an arbitrary file location.  Also use a unique token only available to the
-current user to prevent other users on the same computer from accessing the 
+current user to prevent other users on the same computer from accessing the
 :mod:`pydoc` Web server.
