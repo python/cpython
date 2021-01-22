@@ -65,6 +65,7 @@ import os
 import pkgutil
 import platform
 import re
+import secrets
 import sys
 import sysconfig
 import time
@@ -2280,6 +2281,10 @@ def apropos(key):
 
 # --------------------------------------- enhanced Web browser interface
 
+# As of 2021, 128 byte secret is secure. Update in future if
+# necessary.
+SECRET_URL_TOKEN = secrets.token_urlsafe(128)
+
 def _start_server(urlhandler, hostname, port):
     """Start an HTTP server thread on a specific port.
 
@@ -2411,7 +2416,7 @@ def _start_server(urlhandler, hostname, port):
             self.serving = True
             self.host = server.host
             self.port = server.server_port
-            self.url = 'http://%s:%d/' % (self.host, self.port)
+            self.url = 'http://%s:%d/%s/' % (self.host, self.port, SECRET_URL_TOKEN)
 
         def stop(self):
             """Stop the server and this thread nicely"""
@@ -2449,12 +2454,14 @@ def _url_handler(url, content_type="text/html"):
             css_link = (
                 '<link rel="stylesheet" type="text/css" href="%s">' %
                 css_path)
+            favicon_link = f'{SECRET_URL_TOKEN}/favicon.ico'
             return '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Pydoc: %s</title>
+<link rel="shortcut icon" href="%s" type="image/x-icon"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 %s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
-</body></html>''' % (title, css_link, html_navbar(), contents)
+</body></html>''' % (title, favicon_link, css_link, html_navbar(), contents)
 
 
 
@@ -2657,6 +2664,10 @@ def _url_handler(url, content_type="text/html"):
             title, content = html_error(complete_url, exc)
         return html.page(title, content)
 
+    left, sep, right = url.partition(SECRET_URL_TOKEN)
+    if not sep:
+        raise TypeError(f'Invalid secret token for {url}')
+    url = right
     if url.startswith('/'):
         url = url[1:]
     if content_type == 'text/css':
