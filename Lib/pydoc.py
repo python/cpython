@@ -2454,14 +2454,13 @@ def _url_handler(url, content_type="text/html"):
             css_link = (
                 '<link rel="stylesheet" type="text/css" href="%s">' %
                 css_path)
-            favicon_link = f'{SECRET_URL_TOKEN}/favicon.ico'
             return '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Pydoc: %s</title>
-<link rel="shortcut icon" href="%s" type="image/x-icon"/>
+<link rel="shortcut icon" href="./favicon.ico" type="image/x-icon"/>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 %s</head><body bgcolor="#f0f0f8">%s<div style="clear:both;padding-top:.5em;">%s</div>
-</body></html>''' % (title, favicon_link, css_link, html_navbar(), contents)
+</body></html>''' % (title, css_link, html_navbar(), contents)
 
 
 
@@ -2664,6 +2663,7 @@ def _url_handler(url, content_type="text/html"):
             title, content = html_error(complete_url, exc)
         return html.page(title, content)
 
+    # Make sure the secret token is inside before doing any URL operations.
     left, sep, right = url.partition(SECRET_URL_TOKEN)
     if not sep:
         raise ValueError(f'Invalid secret token for {url}')
