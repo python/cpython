@@ -1,0 +1,1 @@
+Fix os.set_inheritable() for O_PATH file descriptors on Linux.

@@ -64,7 +64,6 @@ tok_new(void)
     tok->tabsize = TABSIZE;
     tok->indent = 0;
     tok->indstack[0] = 0;
-
     tok->atbol = 1;
     tok->pendin = 0;
     tok->prompt = tok->nextprompt = NULL;
@@ -1396,6 +1395,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
 
     /* Check for EOF and errors now */
     if (c == EOF) {
+        if (tok->level) {
+            return ERRORTOKEN;
+        }
         return tok->done == E_EOF ? ENDMARKER : ERRORTOKEN;
     }
 
@@ -1737,20 +1739,26 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (c == EOF) {
+            if (c == EOF || (quote_size == 1 && c == '\n')) {
+                // shift the tok_state's location into
+                // the start of string, and report the error
+                // from the initial quote character
+                tok->cur = (char *)tok->start;
+                tok->cur++;
+                tok->line_start = tok->multi_line_start;
+                int start = tok->lineno;
+                tok->lineno = tok->first_lineno;
+
                 if (quote_size == 3) {
-                    tok->done = E_EOFS;
+                    return syntaxerror(tok,
+                                       "unterminated triple-quoted string literal"
+                                       " (detected at line %d)", start);
                 }
                 else {
-                    tok->done = E_EOLS;
+                    return syntaxerror(tok,
+                                       "unterminated string literal (detected at"
+                                       " line %d)", start);
                 }
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
-            }
-            if (quote_size == 1 && c == '\n') {
-                tok->done = E_EOLS;
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
             }
             if (c == quote) {
                 end_quote_size += 1;
@@ -1818,6 +1826,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
+        tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
         tok->level++;
         break;
     case ')':

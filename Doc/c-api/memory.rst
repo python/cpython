@@ -92,6 +92,38 @@ for the I/O buffer escapes completely the Python memory manager.
    statistics of the :ref:`pymalloc memory allocator <pymalloc>` every time a
    new pymalloc object arena is created, and on shutdown.
 
+Allocator Domains
+=================
+
+All allocating functions belong to one of three different "domains" (see also
+:c:type`PyMemAllocatorDomain`). These domains represent different allocation
+strategies and are optimized for different purposes. The specific details on
+how every domain allocates memory or what internal functions each domain calls
+is considered an implementation detail, but for debugging purposes a simplified
+table can be found at :ref:`here <default-memory-allocators>`. There is no hard
+requirement to use the memory returned by the allocation functions belonging to
+a given domain for only the purposes hinted by that domain (although this is the
+recommended practice). For example, one could use the memory returned by
+:c:func:`PyMem_RawMalloc` for allocating Python objects or the memory returned
+by :c:func:`PyObject_Malloc` for allocating memory for buffers.
+
+The three allocation domains are:
+
+* Raw domain: intended for allocating memory for general-purpose memory
+  buffers where the allocation *must* go to the system allocator or where the
+  allocator can operate without the :term:`GIL`. The memory is requested directly
+  to the system.
+
+* "Mem" domain: intended for allocating memory for Python buffers and
+  general-purpose memory buffers where the allocation must be performed with
+  the :term:`GIL` held. The memory is taken from the Python private heap.
+
+* Object domain: intended for allocating memory belonging to Python objects. The
+  memory is taken from the Python private heap.
+
+When freeing memory previously allocated by the allocating functions belonging to a
+given domain,the matching specific deallocating functions must be used. For example,
+:c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
 Raw Memory Interface
 ====================
@@ -272,6 +304,12 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
+.. note::
+    There is no guarantee that the memory returned by these allocators can be
+    succesfully casted to a Python object when intercepting the allocating
+    functions in this domain by the methods described in
+    the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
+
 The :ref:`default object allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`.
 
@@ -353,6 +391,7 @@ Legend:
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`
 * "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`
 
+.. _customize-memory-allocators:
 
 Customize Memory Allocators
 ===========================
@@ -601,4 +640,3 @@ heap, objects in Python are allocated and released with :c:func:`PyObject_New`,
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.
-
