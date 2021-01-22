@@ -48,23 +48,11 @@ void Rewind_DictPopItem(PyDictObject *dict, PyObject *key);
 
 void Rewind_SetAdd(PySetObject *set, PyObject *newItem);
 
-void Rewind_SetUpdate(PySetObject *set, PyObject *other);
-
 void Rewind_SetDiscard(PySetObject *set, PyObject *item);
-
-void Rewind_SetRemove(PySetObject *set, PyObject *item);
 
 void Rewind_SetClear(PySetObject *set);
 
-void Rewind_LoadMethod(PyObject *obj, PyObject *name, PyObject *method);
-
-void Rewind_CallMethod(PyObject *method, PyObject **stack_pointer, int level);
-
-void Rewind_CallFunction(PyObject **sp, int oparg);
-
-void Rewind_StoreSubscript(PyObject *container, PyObject *item, PyObject *value);
-
-void Rewind_DeleteSubscript(PyObject *container, PyObject *item);
+void Rewind_SetUpdate(PySetObject *set);
 
 void Rewind_StoreName(PyObject *name, PyObject *value);
 

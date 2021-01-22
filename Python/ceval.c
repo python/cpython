@@ -3053,7 +3053,7 @@ main_loop:
             logOp("SET_UPDATE", stack_pointer, STACK_LEVEL(), f, oparg);
             PyObject *iterable = POP();
             PyObject *set = PEEK(oparg);
-            int err = _PySet_Update(set, iterable);
+            int err = __PySet_Update(set, iterable, 1);
             Py_DECREF(iterable);
             if (err < 0) {
                 goto error;

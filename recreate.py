@@ -1,9 +1,25 @@
 # Todo
 
-# sets
 # objects
+# use low level iteration methods whenever possible
 # perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
+# make log file same prefix name as program name
+# make work for multiple files
+# try it on a "real" app
 
+# sets
+# * set.add (done)
+# * set.discard (done)
+# * set.remove (done)
+# * set.update
+# * set.clear (done)
+# * -= (done)
+# * &= (done)
+# * ^= (done)
+# * |= (done)
+# * difference_update (done)
+# * intersection_update (done)
+# * symmetric_difference_update (done)
 # bug: entries wo line no (done)
 # clean up reclaimed objects (done)
 # dicts (done)
@@ -101,17 +117,6 @@ def define_schema(conn):
 
     conn.commit()
 
-def parse_csv(value):
-    parts = list(filter(lambda v: v != "", value.split(", ")))
-    print("parse_csv parts", parts)
-    return list(map(parse_value, parts))
-
-def parse_value(value):
-    if value[0] == "*":
-        return HeapRef(int(value[1:]))
-    else:
-        return eval(value)
-
 NUMBER_REGEX = r"-?(?:(?:[1-9][0-9]*)|[0-9])(?:\.[0-9]+)?"
 STRING_REGEX = r"'(?:[^'\\]|(?:\\['\\]))*'"
 BOOLEAN_REGEX = r"True|False"
@@ -125,6 +130,12 @@ ARGUMENT_REGEX = re.compile("(%s|%s|%s|%s|%s)[,)]" % (
     NONE_REGEX
 ))
 LINE_START_REGEX = re.compile(r"([A-Z_]+)\(")
+
+def parse_value(value):
+    if value[0] == "*":
+        return HeapRef(int(value[1:]))
+    else:
+        return eval(value)
 
 def parse_line(line):
     args = []
@@ -182,6 +193,7 @@ class FunCall(object):
         return "<" + str(self.id) + ">" + self.name + "(" + str(self.varnames) + ")"
 
 def recreate_past(conn):
+
     fun_lookup = {}
 
     class StackFrameVars(object):
@@ -282,6 +294,8 @@ def recreate_past(conn):
             return "{" + ", ".join(map(format_key_value_pair, value.items())) + "}"
         elif isinstance(value, tuple):
             return "[" + ", ".join(map(serialize_member, value)) + "]"
+        elif isinstance(value, set):
+            return "[" + ", ".join(map(serialize_member, value)) + "]"
         else:
             return serialize_member(value)
 
@@ -289,7 +303,9 @@ def recreate_past(conn):
         nonlocal object_id_to_immutable_id_dict
 
         oid = new_obj_id()
+        
         object_id_to_immutable_id_dict[id(obj)] = oid
+        # print("saving object", oid, serialize(obj))
         cursor.execute("INSERT INTO Object VALUES (?, ?)", (
             oid,
             serialize(obj)
@@ -399,15 +415,6 @@ def recreate_past(conn):
         save_object(stack)
     
     fun_lookup["STORE_FAST"] = process_store_fast
-
-    # def process_dealloc_object(line):
-    #     m = DEALLOC_OBJECT_REGEX.match(line)
-    #     if m:
-    #         object_ids = map(int, m.group(1).split(", "))
-    #         for oid in object_ids:
-    #             object_tracker.untrack(oid)
-    #         return True
-    #     return False
     
     def process_return_value(ret_val):
         nonlocal stack
@@ -572,17 +579,43 @@ def recreate_past(conn):
     def process_dealloc(heap_id):
         nonlocal heap
         if heap_id in heap_id_to_object_dict:
-            # print("process_dealloc removing heap_id_to_object_dict entry: " + str(heap_id))
+            obj = heap_id_to_object_dict[heap_id]
             del heap_id_to_object_dict[heap_id]
-
-        if str(heap_id) in heap:
-            # print("process_dealloc removing heap entry: " + str(heap_id))
+            del object_id_to_immutable_id_dict[id(obj)]
             new_heap = heap.copy()
             del new_heap[str(heap_id)]
             heap = new_heap
             save_object(heap)
     
     fun_lookup["DEALLOC"] = process_dealloc
+
+    def process_new_set(heap_id, *items):
+        a_set = set(items)
+        update_heap_object(heap_id, a_set)
+    
+    fun_lookup["NEW_SET"] = process_new_set
+    fun_lookup["SET_UPDATE"] = process_new_set
+
+    def process_set_add(heap_id, item):
+        a_set = heap_id_to_object_dict[heap_id]
+        new_set = a_set.copy()
+        new_set.add(item)
+        update_heap_object(heap_id, new_set)
+    
+    fun_lookup["SET_ADD"] = process_set_add
+
+    def process_set_clear(heap_id):
+        update_heap_object(heap_id, set())
+    
+    fun_lookup["SET_CLEAR"] = process_set_clear
+
+    def process_set_discard(heap_id, item):
+        a_set = heap_id_to_object_dict[heap_id]
+        new_set = a_set.copy()
+        new_set.discard(item)
+        update_heap_object(heap_id, new_set)
+
+    fun_lookup["SET_DISCARD"] = process_set_discard
             
     activate_snapshots = False
     cursor = conn.cursor()
@@ -606,6 +639,9 @@ def recreate_past(conn):
     file = open("rewind.log", "r")
     for line in file:
         log_line_no += 1
+        # print(line)
+        if line.startswith("--"):
+            continue
         command = parse_line(line)
         if command[0] not in fun_lookup:
             print("Warning: no process function for command %s on line %d" % (command[0], log_line_no))

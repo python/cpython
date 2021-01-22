@@ -238,32 +238,12 @@ void Rewind_SetAdd(PySetObject *set, PyObject *newItem) {
     fprintf(rewindLog, ")\n");
 }
 
-void Rewind_SetUpdate(PySetObject *set, PyObject *other) {
-    if (!rewindActive) return;
-
-    Rewind_TrackObject((PyObject *)set);
-    Rewind_TrackObject(other);
-    fprintf(rewindLog, "SET_UPDATE(%lu, ", (unsigned long)set);
-    Rewind_serializeObject(rewindLog, other);
-    fprintf(rewindLog, ")\n");
-}
-
 void Rewind_SetDiscard(PySetObject *set, PyObject *item) {
     if (!rewindActive) return;
 
     Rewind_TrackObject((PyObject *)set);
     Rewind_TrackObject(item);
     fprintf(rewindLog, "SET_DISCARD(%lu, ", (unsigned long)set);
-    Rewind_serializeObject(rewindLog, item);
-    fprintf(rewindLog, ")\n");
-}
-
-void Rewind_SetRemove(PySetObject *set, PyObject *item) {
-    if (!rewindActive) return;
-
-    Rewind_TrackObject((PyObject *)set);
-    Rewind_TrackObject(item);
-    fprintf(rewindLog, "SET_REMOVE(%lu, ", (unsigned long)set);
     Rewind_serializeObject(rewindLog, item);
     fprintf(rewindLog, ")\n");
 }
@@ -275,23 +255,21 @@ void Rewind_SetClear(PySetObject *set) {
     fprintf(rewindLog, "SET_CLEAR(%lu)\n", (unsigned long)set);
 }
 
-void Rewind_StoreSubscript(PyObject *container, PyObject *item, PyObject *value) {
-    if (!rewindActive) return;
-
-    Rewind_TrackObject(item);
-    Rewind_TrackObject(value);
-    fprintf(rewindLog, "STORE_SUBSCRIPT(%lu, ", (unsigned long)container);
-    Rewind_serializeObject(rewindLog, item);
-    fprintf(rewindLog, ", ");
-    Rewind_serializeObject(rewindLog, value);
-    fprintf(rewindLog, ")\n");
+void Rewind_SetPrintItems(PySetObject *set) {
+    Py_ssize_t pos;
+    PyObject *key;
+    Py_hash_t hash;
+    pos = 0;
+    while (_PySet_NextEntry((PyObject *)set, &pos, &key, &hash)) {
+        fprintf(rewindLog, ", ");
+        Rewind_serializeObject(rewindLog, key);
+    }
 }
 
-void Rewind_DeleteSubscript(PyObject *container, PyObject *item) {
-    if (!rewindActive) return;
-
-    fprintf(rewindLog, "DELETE_SUBSCRIPT(%lu, ", (unsigned long)container);
-    Rewind_serializeObject(rewindLog, item);
+void Rewind_SetUpdate(PySetObject *set) {
+    Rewind_TrackObject((PyObject *)set);
+    fprintf(rewindLog, "SET_UPDATE(%lu", (unsigned long)set);
+    Rewind_SetPrintItems(set);
     fprintf(rewindLog, ")\n");
 }
 
@@ -391,6 +369,7 @@ void Rewind_TrackObject(PyObject *obj) {
         Py_DECREF(id);
 
         PyObject *items = PyDict_Items(obj);
+
         PyObject *iterator = PySequence_Fast(items, "argument must be iterable");
         Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
         PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
@@ -424,26 +403,21 @@ void Rewind_TrackObject(PyObject *obj) {
     } else if (Py_IS_TYPE(obj, &PySet_Type)) {
         PySet_Add(knownObjectIds, id);
         Py_DECREF(id);
+        Py_ssize_t pos;
+        PyObject *key;
+        Py_hash_t hash;
+        pos = 0;
 
-        PyObject *iterator = PySequence_Fast(obj, "argument must be iterable");
-        Py_ssize_t n = PySequence_Fast_GET_SIZE(iterator);
-        PyObject **iteratorItems = PySequence_Fast_ITEMS(iterator);
-        for (int i = 0; i < n; i++) {
-            PyObject *item = iteratorItems[i];
-            Rewind_TrackObject(item);
+        while (_PySet_NextEntry(obj, &pos, &key, &hash)) {
+            Rewind_TrackObject(key);
         }
-        Py_DECREF(iterator);
 
-        fprintf(rewindLog, "NEW_SET(%lu, ", (unsigned long)obj);
-        iterator = PySequence_Fast(obj, "argument must be iterable");
-        n = PySequence_Fast_GET_SIZE(iterator);
-        iteratorItems = PySequence_Fast_ITEMS(iterator);
-        for (int i = 0; i < n; i++) {
-            if (i != 0) {
-                fprintf(rewindLog, ", ");
-            }
-            PyObject *item = iteratorItems[i];
-            Rewind_serializeObject(rewindLog, item);
+        fprintf(rewindLog, "NEW_SET(%lu", (unsigned long)obj);
+        
+        pos = 0;
+        while (_PySet_NextEntry(obj, &pos, &key, &hash)) {
+            fprintf(rewindLog, ", ");
+            Rewind_serializeObject(rewindLog, key);
         }
         fprintf(rewindLog, ")\n");
     } else if (Py_IS_TYPE(obj, &PyTuple_Type)) {
@@ -564,5 +538,5 @@ void logOp(char *label, PyObject **stack_pointer, int level, PyFrameObject *fram
         lastLine = lineNo;
     }
     // printStack(rewindLog, stack_pointer, level);
-    // fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
+    fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
 }
