@@ -973,7 +973,8 @@ class PydocImportTest(PydocBaseTest):
                 with self.assertRaisesRegex(ValueError, "ouch"):
                     import test_error_package  # Sanity check
 
-                text = self.call_url_handler("search?key=test_error_package",
+                text = self.call_url_handler(f"{pydoc.SECRET_URL_TOKEN}/search"
+                                             f"?key=test_error_package",
                     "Pydoc: Search Results")
                 found = ('<a href="test_error_package.html">'
                     'test_error_package</a>')
@@ -1378,7 +1379,7 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
         with self.restrict_walk_packages():
             for url, title in requests:
-                self.call_url_handler(url, title)
+                self.call_url_handler(f"{pydoc.SECRET_URL_TOKEN}/{url}", title)
 
 
 

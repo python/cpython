@@ -2281,9 +2281,9 @@ def apropos(key):
 
 # --------------------------------------- enhanced Web browser interface
 
-# As of 2021, 128 byte secret is secure. Update in future if
-# necessary.
-SECRET_URL_TOKEN = secrets.token_urlsafe(128)
+# As of 2021, a secret with this number of bytes is secure. Update in the future
+# if necessary.
+SECRET_URL_TOKEN = secrets.token_urlsafe(80)
 
 def _start_server(urlhandler, hostname, port):
     """Start an HTTP server thread on a specific port.
@@ -2790,10 +2790,6 @@ def cli():
                 hostname = val
 
         if start_server:
-            warnings.warn("WARNING: The web server is accessible by other users "
-                          "on this computer. This will potentially make all "
-                          "content accessible by you visible to anyone else "
-                          "sharing the machine.", category=RuntimeWarning)
             browse(port, hostname=hostname, open_browser=open_browser)
             return
 
