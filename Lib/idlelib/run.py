@@ -565,7 +565,10 @@ class Executive(object):
             self.usr_exc_info = sys.exc_info()
             if quitting:
                 exit()
-            print_exception()
+            if sys.excepthook is sys.__excepthook__:
+                print_exception()
+            else:
+                sys.excepthook(*self.usr_exc_info)
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
                 self.rpchandler.interp.open_remote_stack_viewer()
