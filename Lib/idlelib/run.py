@@ -568,7 +568,13 @@ class Executive(object):
             if sys.excepthook is sys.__excepthook__:
                 print_exception()
             else:
-                sys.excepthook(*self.usr_exc_info)
+                try:
+                    sys.excepthook(*self.usr_exc_info)
+                except:
+                    print_exception()
+                    print("\nDuring handling of the above exception, another exception occurred:\n", file=sys.stderr)
+                    self.usr_exc_info = sys.exc_info()
+                    print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
                 self.rpchandler.interp.open_remote_stack_viewer()
