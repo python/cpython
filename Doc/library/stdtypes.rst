@@ -2636,6 +2636,15 @@ binary data. These restrictions are covered below.
    Using these ASCII based operations to manipulate binary data that is not
    stored in an ASCII based format may lead to data corruption.
 
+
+The following method is only for bytearray objects.
+
+.. method:: bytearray.copy()
+
+   Return a copy of the bytearray.  (Immutable bytes never need to be
+   copied.)
+
+
 The following methods on bytes and bytearray objects can be used with
 arbitrary binary data.
 
