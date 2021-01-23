@@ -2544,9 +2544,38 @@ def _url_handler(url, content_type="text/html"):
             'key = %s' % key, '#ffffff', '#ee77aa', '<br>'.join(results))
         return 'Search Results', contents
 
+    def validate_source_path(path):
+        for importer, modname, ispkg in pkgutil.walk_packages():
+            try:
+                spec = pkgutil._get_spec(importer, modname)
+            except SyntaxError:
+                # raised by tests for bad coding cookies or BOM
+                continue
+            loader = spec.loader
+            if hasattr(loader, 'get_source'):
+                try:
+                    source = loader.get_source(modname)
+                except Exception:
+                    continue
+                if hasattr(loader, 'get_filename'):
+                    sourcepath = loader.get_filename(modname)
+                    if path == sourcepath:
+                        return
+            else:
+                try:
+                    module = importlib._bootstrap._load(spec)
+                except ImportError:
+                    continue
+                sourcepath = getattr(module, '__file__', None)
+                if path == sourcepath:
+                    return
+        else:
+            raise ValueError('not found')
+
     def html_getfile(path):
         """Get and display a source file listing safely."""
         path = urllib.parse.unquote(path)
+        validate_source_path(path)
         with tokenize.open(path) as fp:
             lines = html.escape(fp.read())
         body = '<pre>%s</pre>' % lines
