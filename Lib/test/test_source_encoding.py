@@ -1,7 +1,9 @@
 # -*- coding: koi8-r -*-
 
 import unittest
-from test.support import TESTFN, unlink, unload, rmtree, script_helper, captured_stdout
+from test.support import script_helper, captured_stdout
+from test.support.os_helper import TESTFN, unlink, rmtree
+from test.support.import_helper import unload
 import importlib
 import os
 import sys
@@ -56,6 +58,9 @@ class MiscSourceEncodingTest(unittest.TestCase):
 
         # one byte in common with the UTF-16-LE BOM
         self.assertRaises(SyntaxError, eval, b'\xff\x20')
+
+        # one byte in common with the UTF-8 BOM
+        self.assertRaises(SyntaxError, eval, b'\xef\x20')
 
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')

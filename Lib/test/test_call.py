@@ -1,4 +1,3 @@
-import datetime
 import unittest
 from test.support import cpython_only
 try:
@@ -9,6 +8,7 @@ import struct
 import collections
 import itertools
 import gc
+import contextlib
 
 
 class FunctionCalls(unittest.TestCase):
@@ -74,7 +74,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^list[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -90,19 +90,19 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, next, x=2)
 
     def test_varargs8_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack, x=2)
 
     def test_varargs9_kw(self):
-        msg = r"^pack_into\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack_into\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack_into, x=2)
 
     def test_varargs10_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^deque[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, collections.deque().index, x=2)
 
     def test_varargs11_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^Struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.Struct.pack, struct.Struct(""), x=2)
 
     def test_varargs12_kw(self):
@@ -468,7 +468,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
     def test_vectorcall_dict(self):
-        # Test _PyObject_FastCallDict()
+        # Test PyObject_VectorcallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -487,7 +487,7 @@ class FastCallTests(unittest.TestCase):
                 self.check_result(result, expected)
 
     def test_vectorcall(self):
-        # Test _PyObject_Vectorcall()
+        # Test PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
             with self.subTest(func=func, args=args):
@@ -594,7 +594,7 @@ class TestPEP590(unittest.TestCase):
         # 1. vectorcall using PyVectorcall_Call()
         #   (only for objects that support vectorcall directly)
         # 2. normal call
-        # 3. vectorcall using _PyObject_Vectorcall()
+        # 3. vectorcall using PyObject_Vectorcall()
         # 4. call as bound method
         # 5. call using functools.partial
 
@@ -664,6 +664,53 @@ class TestPEP590(unittest.TestCase):
                 self.assertEqual(expected, vectorcall(func, args, kwargs))
                 self.assertEqual(expected, meth(*args1, **kwargs))
                 self.assertEqual(expected, wrapped(*args, **kwargs))
+
+
+class A:
+    def method_two_args(self, x, y):
+        pass
+
+    @staticmethod
+    def static_no_args():
+        pass
+
+    @staticmethod
+    def positional_only(arg, /):
+        pass
+
+@cpython_only
+class TestErrorMessagesUseQualifiedName(unittest.TestCase):
+
+    @contextlib.contextmanager
+    def check_raises_type_error(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertEqual(str(cm.exception), message)
+
+    def test_missing_arguments(self):
+        msg = "A.method_two_args() missing 1 required positional argument: 'y'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x")
+
+    def test_too_many_positional(self):
+        msg = "A.static_no_args() takes 0 positional arguments but 1 was given"
+        with self.check_raises_type_error(msg):
+            A.static_no_args("oops it's an arg")
+
+    def test_positional_only_passed_as_keyword(self):
+        msg = "A.positional_only() got some positional-only arguments passed as keyword arguments: 'arg'"
+        with self.check_raises_type_error(msg):
+            A.positional_only(arg="x")
+
+    def test_unexpected_keyword(self):
+        msg = "A.method_two_args() got an unexpected keyword argument 'bad'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args(bad="x")
+
+    def test_multiple_values(self):
+        msg = "A.method_two_args() got multiple values for argument 'x'"
+        with self.check_raises_type_error(msg):
+            A().method_two_args("x", "y", x="oops")
 
 
 if __name__ == "__main__":

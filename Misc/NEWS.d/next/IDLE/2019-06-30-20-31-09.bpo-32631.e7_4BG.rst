@@ -1,0 +1,2 @@
+Finish zzdummy example extension module: make menu entries work;
+add docstrings and tests with 100% coverage.

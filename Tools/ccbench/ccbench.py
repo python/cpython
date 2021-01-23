@@ -84,13 +84,6 @@ def task_regex():
     pat = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)', re.MULTILINE)
     with open(__file__, "r") as f:
         arg = f.read(2000)
-
-    def findall(s):
-        t = time.time()
-        try:
-            return pat.findall(s)
-        finally:
-            print(time.time() - t)
     return pat.findall, (arg, )
 
 def task_sort():

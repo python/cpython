@@ -1,3 +1,4 @@
+import os
 import signal
 import sys
 import unittest
@@ -9,6 +10,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import os_helper
 
 if sys.platform != 'win32':
     from asyncio import unix_events
@@ -143,7 +145,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0)
+        task = asyncio.wait_for(task, support.LONG_TIMEOUT)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -476,12 +478,19 @@ class SubprocessMixin:
             proc.kill = kill
             returncode = transport.get_returncode()
             transport.close()
-            await transport._wait()
+            await asyncio.wait_for(transport._wait(), 5)
             return (returncode, kill_called)
 
         # Ignore "Close running child process: kill ..." log
         with test_utils.disable_logger():
-            returncode, killed = self.loop.run_until_complete(kill_running())
+            try:
+                returncode, killed = self.loop.run_until_complete(
+                    kill_running()
+                )
+            except asyncio.TimeoutError:
+                self.skipTest(
+                    "Timeout failure on waiting for subprocess stopping"
+                )
         self.assertIsNone(returncode)
 
         # transport.close() must kill the process if it is still running
@@ -618,33 +627,13 @@ class SubprocessMixin:
     def test_create_subprocess_exec_with_path(self):
         async def execute():
             p = await subprocess.create_subprocess_exec(
-                support.FakePath(sys.executable), '-c', 'pass')
+                os_helper.FakePath(sys.executable), '-c', 'pass')
             await p.wait()
             p = await subprocess.create_subprocess_exec(
-                sys.executable, '-c', 'pass', support.FakePath('.'))
+                sys.executable, '-c', 'pass', os_helper.FakePath('.'))
             await p.wait()
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
-
-    def test_exec_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_exec(
-                    sys.executable, '-c', 'pass',
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
-
-    def test_shell_loop_deprecated(self):
-        async def go():
-            with self.assertWarns(DeprecationWarning):
-                proc = await asyncio.create_subprocess_shell(
-                    "exit 0",
-                    loop=self.loop,
-                )
-            await proc.wait()
-        self.loop.run_until_complete(go())
 
 
 if sys.platform != 'win32':
@@ -691,6 +680,23 @@ if sys.platform != 'win32':
 
         Watcher = unix_events.FastChildWatcher
 
+    def has_pidfd_support():
+        if not hasattr(os, 'pidfd_open'):
+            return False
+        try:
+            os.close(os.pidfd_open(os.getpid()))
+        except OSError:
+            return False
+        return True
+
+    @unittest.skipUnless(
+        has_pidfd_support(),
+        "operating system does not support pidfds",
+    )
+    class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
+                                      test_utils.TestCase):
+        Watcher = unix_events.PidfdChildWatcher
+
 else:
     # Windows
     class SubprocessProactorTests(SubprocessMixin, test_utils.TestCase):
@@ -712,7 +718,7 @@ class GenericWatcherTests:
 
             with self.assertRaises(RuntimeError):
                 await subprocess.create_subprocess_exec(
-                    support.FakePath(sys.executable), '-c', 'pass')
+                    os_helper.FakePath(sys.executable), '-c', 'pass')
 
             watcher.add_child_handler.assert_not_called()
 

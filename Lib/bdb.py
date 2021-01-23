@@ -548,14 +548,7 @@ class Bdb:
             s += frame.f_code.co_name
         else:
             s += "<lambda>"
-        if '__args__' in frame.f_locals:
-            args = frame.f_locals['__args__']
-        else:
-            args = None
-        if args:
-            s += reprlib.repr(args)
-        else:
-            s += '()'
+        s += '()'
         if '__return__' in frame.f_locals:
             rv = frame.f_locals['__return__']
             s += '->'

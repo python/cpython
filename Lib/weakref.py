@@ -33,6 +33,9 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakSet", "WeakMethod", "finalize"]
 
 
+_collections_abc.Set.register(WeakSet)
+_collections_abc.MutableSet.register(WeakSet)
+
 class WeakMethod(ref):
     """
     A custom `weakref.ref` subclass which simulates a weak reference to
@@ -307,6 +310,25 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             self._commit_removals()
         return list(self.data.values())
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
+
 
 class KeyedRef(ref):
     """Specialized reference that includes a key corresponding to the value.
@@ -484,6 +506,25 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 d[ref(key, self._remove)] = value
         if len(kwargs):
             self.update(kwargs)
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
 
 
 class finalize:

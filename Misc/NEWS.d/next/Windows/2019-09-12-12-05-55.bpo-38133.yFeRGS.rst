@@ -1,2 +1,0 @@
-Allow py.exe launcher to locate installations from the Microsoft Store and
-improve display of active virtual environments.

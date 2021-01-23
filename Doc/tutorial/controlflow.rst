@@ -70,6 +70,9 @@ Code that modifies a collection while iterating over that same collection can
 be tricky to get right.  Instead, it is usually more straight-forward to loop
 over a copy of the collection or to create a new collection::
 
+    # Create a sample collection
+    users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
+
     # Strategy:  Iterate over a copy
     for user, status in users.copy().items():
         if status == 'inactive':
@@ -142,7 +145,7 @@ the list, thus saving space.
 We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
 obtain successive items until the supply is exhausted.  We have seen that
-the :keyword:`for` statement is such a construct, while an example of function
+the :keyword:`for` statement is such a construct, while an example of a function
 that takes an iterable is :func:`sum`::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3
@@ -207,15 +210,15 @@ iteration of the loop::
     ...     if num % 2 == 0:
     ...         print("Found an even number", num)
     ...         continue
-    ...     print("Found a number", num)
+    ...     print("Found an odd number", num)
     Found an even number 2
-    Found a number 3
+    Found an odd number 3
     Found an even number 4
-    Found a number 5
+    Found an odd number 5
     Found an even number 6
-    Found a number 7
+    Found an odd number 7
     Found an even number 8
-    Found a number 9
+    Found an odd number 9
 
 .. _tut-pass:
 
@@ -297,11 +300,10 @@ passed using *call by value* (where the *value* is always an object *reference*,
 not the value of the object). [#]_ When a function calls another function, a new
 local symbol table is created for that call.
 
-A function definition introduces the function name in the current symbol table.
-The value of the function name has a type that is recognized by the interpreter
-as a user-defined function.  This value can be assigned to another name which
-can then also be used as a function.  This serves as a general renaming
-mechanism::
+A function definition associates the function name with the function object in
+the current symbol table.  The interpreter recognizes the object pointed to by
+that name as a user-defined function.  Other names can also point to that same
+function object and can also be used to access the function::
 
    >>> fib
    <function fib at 10042ed0>
@@ -659,7 +661,7 @@ Finally, consider this function definition which has a potential collision betwe
         return 'name' in kwds
 
 There is no possible call that will make it return ``True`` as the keyword ``'name'``
-will always to bind to the first parameter. For example::
+will always bind to the first parameter. For example::
 
     >>> foo(1, **{'name': 2})
     Traceback (most recent call last):

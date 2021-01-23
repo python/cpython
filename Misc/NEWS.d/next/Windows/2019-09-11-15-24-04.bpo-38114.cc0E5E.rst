@@ -1,1 +1,0 @@
-The ``pip.ini`` is no longer included in the Nuget package.

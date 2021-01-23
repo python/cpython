@@ -82,10 +82,12 @@ library that Python uses on your platform. On most platforms the
 
 .. versionchanged:: 3.9
    All hashlib constructors take a keyword-only argument *usedforsecurity*
-   with default value *True*. A false value allows the use of insecure and
-   blocked hashing algorithms in restricted environments. *False* indicates
+   with default value ``True``. A false value allows the use of insecure and
+   blocked hashing algorithms in restricted environments. ``False`` indicates
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
+
+   Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
 
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
@@ -744,5 +746,5 @@ Domain Dedication 1.0 Universal:
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
-   https://www.ietf.org/rfc/rfc2898.txt
-      PKCS #5: Password-Based Cryptography Specification Version 2.0
+   https://www.ietf.org/rfc/rfc8018.txt
+      PKCS #5: Password-Based Cryptography Specification Version 2.1

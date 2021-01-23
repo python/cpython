@@ -38,8 +38,10 @@ an event loop:
 
 .. function:: get_event_loop()
 
-   Get the current event loop.  If there is no current event loop set
-   in the current OS thread and :func:`set_event_loop` has not yet
+   Get the current event loop.
+
+   If there is no current event loop set in the current OS thread,
+   the OS thread is main, and :func:`set_event_loop` has not yet
    been called, asyncio will create a new event loop and set it as the
    current one.
 
@@ -189,8 +191,8 @@ Scheduling callbacks
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule a *callback* to be called with *args* arguments at
-   the next iteration of the event loop.
+   Schedule the *callback* :term:`callback` to be called with
+   *args* arguments at the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
@@ -319,7 +321,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, \*, name=None)
+.. method:: loop.create_task(coro, *, name=None)
 
    Schedule the execution of a :ref:`coroutine`.
    Return a :class:`Task` object.
@@ -354,10 +356,11 @@ Opening network connections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. coroutinemethod:: loop.create_connection(protocol_factory, \
-                          host=None, port=None, \*, ssl=None, \
+                          host=None, port=None, *, ssl=None, \
                           family=0, proto=0, flags=0, sock=None, \
                           local_addr=None, server_hostname=None, \
-                          ssl_handshake_timeout=None)
+                          ssl_handshake_timeout=None, \
+                          happy_eyeballs_delay=None, interleave=None)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -446,7 +449,18 @@ Opening network connections
 
    .. versionadded:: 3.8
 
-      The *happy_eyeballs_delay* and *interleave* parameters.
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
+
+      Happy Eyeballs Algorithm: Success with Dual-Stack Hosts.
+      When a server's IPv4 path and protocol are working, but the server's
+      IPv6 path and protocol are not working, a dual-stack client
+      application experiences significant connection delay compared to an
+      IPv4-only client.  This is undesirable because it causes the dual-
+      stack client to have a worse user experience.  This document
+      specifies requirements for algorithms that reduce this user-visible
+      delay and provides an algorithm.
+
+      For more information: https://tools.ietf.org/html/rfc6555
 
    .. versionadded:: 3.7
 
@@ -468,10 +482,25 @@ Opening network connections
       that can be used directly in async/await code.
 
 .. coroutinemethod:: loop.create_datagram_endpoint(protocol_factory, \
-                        local_addr=None, remote_addr=None, \*, \
+                        local_addr=None, remote_addr=None, *, \
                         family=0, proto=0, flags=0, \
                         reuse_address=None, reuse_port=None, \
                         allow_broadcast=None, sock=None)
+
+   .. note::
+      The parameter *reuse_address* is no longer supported, as using
+      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
+
+      When multiple processes with differing UIDs assign sockets to an
+      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
 
    Create a datagram connection.
 
@@ -501,11 +530,6 @@ Opening network connections
      resolution. If given, these should all be integers from the
      corresponding :mod:`socket` module constants.
 
-   * *reuse_address* tells the kernel to reuse a local socket in
-     ``TIME_WAIT`` state, without waiting for its natural timeout to
-     expire. If not specified will automatically be set to ``True`` on
-     Unix.
-
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
@@ -527,11 +551,15 @@ Opening network connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
 
+   .. versionchanged:: 3.8.1
+      The *reuse_address* parameter is no longer supported due to security
+      concerns.
+
    .. versionchanged:: 3.8
       Added support for Windows.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
-                        path=None, \*, ssl=None, sock=None, \
+                        path=None, *, ssl=None, sock=None, \
                         server_hostname=None, ssl_handshake_timeout=None)
 
    Create a Unix connection.
@@ -564,7 +592,7 @@ Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. coroutinemethod:: loop.create_server(protocol_factory, \
-                        host=None, port=None, \*, \
+                        host=None, port=None, *, \
                         family=socket.AF_UNSPEC, \
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
@@ -655,7 +683,7 @@ Creating network servers
 
 
 .. coroutinemethod:: loop.create_unix_server(protocol_factory, path=None, \
-                          \*, sock=None, backlog=100, ssl=None, \
+                          *, sock=None, backlog=100, ssl=None, \
                           ssl_handshake_timeout=None, start_serving=True)
 
    Similar to :meth:`loop.create_server` but works with the
@@ -680,7 +708,7 @@ Creating network servers
       The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
-                        sock, \*, ssl=None, ssl_handshake_timeout=None)
+                        sock, *, ssl=None, ssl_handshake_timeout=None)
 
    Wrap an already accepted connection into a transport/protocol pair.
 
@@ -745,7 +773,7 @@ TLS Upgrade
 ^^^^^^^^^^^
 
 .. coroutinemethod:: loop.start_tls(transport, protocol, \
-                        sslcontext, \*, server_side=False, \
+                        sslcontext, *, server_side=False, \
                         server_hostname=None, ssl_handshake_timeout=None)
 
    Upgrade an existing transport-based connection to TLS.
@@ -778,7 +806,7 @@ TLS Upgrade
 Watching file descriptors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: loop.add_reader(fd, callback, \*args)
+.. method:: loop.add_reader(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for read availability and
    invoke *callback* with the specified arguments once *fd* is available for
@@ -788,7 +816,7 @@ Watching file descriptors
 
    Stop monitoring the *fd* file descriptor for read availability.
 
-.. method:: loop.add_writer(fd, callback, \*args)
+.. method:: loop.add_writer(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
@@ -902,7 +930,7 @@ convenient.
       :meth:`loop.create_server` and :func:`start_server`.
 
 .. coroutinemethod:: loop.sock_sendfile(sock, file, offset=0, count=None, \
-                                        \*, fallback=True)
+                                        *, fallback=True)
 
    Send a file using high-performance :mod:`os.sendfile` if possible.
    Return the total number of bytes sent.
@@ -936,7 +964,7 @@ convenient.
 DNS
 ^^^
 
-.. coroutinemethod:: loop.getaddrinfo(host, port, \*, family=0, \
+.. coroutinemethod:: loop.getaddrinfo(host, port, *, family=0, \
                         type=0, proto=0, flags=0)
 
    Asynchronous version of :meth:`socket.getaddrinfo`.
@@ -1001,7 +1029,7 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
-.. method:: loop.add_signal_handler(signum, callback, \*args)
+.. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
 
@@ -1036,7 +1064,7 @@ Unix signals
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. awaitablemethod:: loop.run_in_executor(executor, func, \*args)
+.. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
    Arrange for *func* to be called in the specified executor.
 
@@ -1156,10 +1184,13 @@ Allows customizing how exceptions are handled in the event loop.
    * 'message': Error message;
    * 'exception' (optional): Exception object;
    * 'future' (optional): :class:`asyncio.Future` instance;
+   * 'task' (optional): :class:`asyncio.Task` instance;
    * 'handle' (optional): :class:`asyncio.Handle` instance;
    * 'protocol' (optional): :ref:`Protocol <asyncio-protocol>` instance;
    * 'transport' (optional): :ref:`Transport <asyncio-transport>` instance;
-   * 'socket' (optional): :class:`socket.socket` instance.
+   * 'socket' (optional): :class:`socket.socket` instance;
+   * 'asyncgen' (optional): Asynchronous generator that caused
+                            the exception.
 
    .. note::
 
@@ -1184,7 +1215,7 @@ Enabling debug mode
 
    .. versionchanged:: 3.7
 
-      The new ``-X dev`` command line option can now also be used
+      The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
 .. seealso::
@@ -1206,9 +1237,9 @@ async/await code consider using the high-level
    subprocesses. See :ref:`Subprocess Support on Windows
    <asyncio-windows-subprocess>` for details.
 
-.. coroutinemethod:: loop.subprocess_exec(protocol_factory, \*args, \
+.. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                      stderr=subprocess.PIPE, \*\*kwargs)
+                      stderr=subprocess.PIPE, **kwargs)
 
    Create a subprocess from one or more string arguments specified by
    *args*.
@@ -1288,9 +1319,9 @@ async/await code consider using the high-level
    conforms to the :class:`asyncio.SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
 
-.. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, \*, \
+.. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, *, \
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                        stderr=subprocess.PIPE, \*\*kwargs)
+                        stderr=subprocess.PIPE, **kwargs)
 
    Create a subprocess from *cmd*, which can be a :class:`str` or a
    :class:`bytes` string encoded to the
