@@ -4728,8 +4728,8 @@ static struct PyModuleDef _cursesmodule = {
 static void
 curses_destructor(PyObject *op)
 {
-    void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
-    Py_DECREF(*(void **)ptr);
+    PyCurses_CAPI *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    Py_DECREF(ptr->Window_Type);
     PyMem_Free(ptr);
 }
 
@@ -4753,22 +4753,23 @@ PyInit__curses(void)
         return NULL;
     ModDict = d; /* For PyCurses_InitScr to use later */
 
-    void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
+    PyCurses_CAPI *PyCurses_API = PyMem_Malloc(sizeof(PyCurses_CAPI));
     if (PyCurses_API == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
-    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
-    PyCurses_API[2] = (void *)func_PyCursesInitialised;
-    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
+    /* Initialize the C API struct pointer */
+    PyCurses_API->Window_Type = (PyTypeObject *)Py_NewRef(
+        &PyCursesWindow_Type);
+    PyCurses_API->SetupTermCalled = func_PyCursesSetupTermCalled;
+    PyCurses_API->Initialised = func_PyCursesInitialised;
+    PyCurses_API->InitialisedColor = func_PyCursesInitialisedColor;
 
     /* Add a capsule for the C API */
     c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
                                  curses_destructor);
     if (c_api_object == NULL) {
-        Py_DECREF(PyCurses_API[0]);
+        Py_DECREF(PyCurses_API->Window_Type);
         PyMem_Free(PyCurses_API);
         return NULL;
     }
