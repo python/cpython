@@ -2641,8 +2641,8 @@ The following method is only for bytearray objects.
 
 .. method:: bytearray.copy()
 
-   Return a copy of the bytearray.  (Immutable bytes never need to be
-   copied.)
+   Return a copy of the bytearray.  (Bytes objects are immutable and never need
+   to be copied.)
 
 
 The following methods on bytes and bytearray objects can be used with
