@@ -663,7 +663,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace', max_num_fields=None,
-             semicolon_sep=True):
+             separators=('&', ';')):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -687,9 +687,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         max_num_fields: int. If set, then throws a ValueError if there
             are more than n fields read by parse_qsl().
 
-        semicolon_sep: flag indicating whether ``;`` should be treated as a
-            valid separator. Recommended to set to False.
-            (see https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#url-encoded-form-data)
+        separators: valid separators in the query string, e.g. ('&',)
 
         Returns a dictionary.
     """
@@ -697,7 +695,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
                       encoding=encoding, errors=errors,
                       max_num_fields=max_num_fields,
-                      semicolon_sep=semicolon_sep)
+                      separators=separators)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -708,7 +706,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
               encoding='utf-8', errors='replace', max_num_fields=None,
-              semicolon_sep=True):
+              separators=('&', ';')):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -731,9 +729,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         max_num_fields: int. If set, then throws a ValueError
             if there are more than n fields read by parse_qsl().
 
-        semicolon_sep: flag indicating whether ``;`` should be treated as a
-            valid separator. Recommended to set to False.
-            (see https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#url-encoded-form-data)
+        separators: valid separators in the query string, e.g. ('&',)
 
         Returns a list, as G-d intended.
     """
@@ -743,17 +739,15 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        if semicolon_sep:
-            num_fields = 1 + qs.count('&') + qs.count(';')
-        else:
-            num_fields = 1 + qs.count('&')
+        num_fields = 1 + sum(qs.count(sep) for sep in separators)
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
-    if semicolon_sep:
-        pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
-    else:
-        pairs = [s for s in qs.split('&')]
+    if not separators:
+        raise ValueError('Separators must be a tuple or list of strings')
+    for sep in separators[1:]:
+        qs = qs.replace(sep, separators[0])
+    pairs = qs.split(separators[0])
 
     r = []
     for name_value in pairs:

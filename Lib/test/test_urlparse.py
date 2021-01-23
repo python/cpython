@@ -180,23 +180,23 @@ class UrlParseTestCase(unittest.TestCase):
     def test_qsl(self):
         for orig, expect in parse_qsl_test_cases:
             result = urllib.parse.parse_qsl(orig, keep_blank_values=True,
-                                            semicolon_sep=True)
+                                            separators=('&', ';'))
             self.assertEqual(result, expect, "Error parsing %r" % orig)
             expect_without_blanks = [v for v in expect if len(v[1])]
             result = urllib.parse.parse_qsl(orig, keep_blank_values=False,
-                                            semicolon_sep=True)
+                                            separators=('&', ';'))
             self.assertEqual(result, expect_without_blanks,
                             "Error parsing %r" % orig)
 
     def test_qs(self):
         for orig, expect in parse_qs_test_cases:
             result = urllib.parse.parse_qs(orig, keep_blank_values=True,
-                                           semicolon_sep=True)
+                                           separators=('&', ';'))
             self.assertEqual(result, expect, "Error parsing %r" % orig)
             expect_without_blanks = {v: expect[v]
                                      for v in expect if len(expect[v][0])}
             result = urllib.parse.parse_qs(orig, keep_blank_values=False,
-                                           semicolon_sep=True)
+                                           separators=('&', ';'))
             self.assertEqual(result, expect_without_blanks,
                             "Error parsing %r" % orig)
 
@@ -205,12 +205,12 @@ class UrlParseTestCase(unittest.TestCase):
         for orig, expect in parse_qsl_test_cases_semicolon:
             with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
                 result = urllib.parse.parse_qsl(orig, keep_blank_values=True,
-                                                semicolon_sep=False)
+                                                separators=('&',))
                 self.assertEqual(result, expect,
                                 "Error parsing %r" % orig)
                 expect_without_blanks = [v for v in expect if len(v[1])]
                 result = urllib.parse.parse_qsl(orig, keep_blank_values=False,
-                                                semicolon_sep=False)
+                                                separators=('&',))
                 self.assertEqual(result, expect_without_blanks,
                                  "Error parsing %r" % orig)
 
@@ -219,12 +219,12 @@ class UrlParseTestCase(unittest.TestCase):
         for orig, expect in parse_qs_test_cases_semicolon:
             with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
                 result = urllib.parse.parse_qs(orig, keep_blank_values=True,
-                                               semicolon_sep=False)
+                                               separators=('&',))
                 self.assertEqual(result, expect, "Error parsing %r" % orig)
                 expect_without_blanks = {v: expect[v]
                                          for v in expect if len(expect[v][0])}
                 result = urllib.parse.parse_qs(orig, keep_blank_values=False,
-                                               semicolon_sep=False)
+                                               separators=('&',))
                 self.assertEqual(result, expect_without_blanks,
                              "Error parsing %r" % orig)
 
@@ -964,7 +964,7 @@ class UrlParseTestCase(unittest.TestCase):
             urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
         with self.assertRaises(ValueError):
             urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10,
-                                  semicolon_sep=True)
+                                  separators=('&', ';'))
         urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
 
     def test_urlencode_sequences(self):

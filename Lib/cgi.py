@@ -116,7 +116,7 @@ log = initlog           # The current logging function
 maxlen = 0
 
 def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0,
-          semicolon_sep=True):
+          separators=('&', ';')):
     """Parse a query in the environment or from a file (default stdin)
 
         Arguments, all optional:
@@ -136,8 +136,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0,
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
 
-        semicolon_sep: flag indicating whether ``;`` should be treated as a
-            valid separator.
+        separators: valid separators in the query string, e.g. ('&',)
     """
     if fp is None:
         fp = sys.stdin
@@ -158,7 +157,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0,
     if environ['REQUEST_METHOD'] == 'POST':
         ctype, pdict = parse_header(environ['CONTENT_TYPE'])
         if ctype == 'multipart/form-data':
-            return parse_multipart(fp, pdict, semicolon_sep=semicolon_sep)
+            return parse_multipart(fp, pdict, separators=separators)
         elif ctype == 'application/x-www-form-urlencoded':
             clength = int(environ['CONTENT_LENGTH'])
             if maxlen and clength > maxlen:
@@ -182,11 +181,11 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0,
             qs = ""
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
     return urllib.parse.parse_qs(qs, keep_blank_values, strict_parsing,
-                                 encoding=encoding, semicolon_sep=semicolon_sep)
+                                 encoding=encoding, separators=separators)
 
 
 def parse_multipart(fp, pdict, encoding="utf-8", errors="replace",
-                    semicolon_sep=True):
+                    separators=('&', ';')):
     """Parse multipart input.
 
     Arguments:
@@ -210,7 +209,7 @@ def parse_multipart(fp, pdict, encoding="utf-8", errors="replace",
     except KeyError:
         pass
     fs = FieldStorage(fp, headers=headers, encoding=encoding, errors=errors,
-        environ={'REQUEST_METHOD': 'POST'}, semicolon_sep=semicolon_sep)
+        environ={'REQUEST_METHOD': 'POST'}, separators=separators)
     return {k: fs.getlist(k) for k in fs}
 
 def _parseparam(s):
@@ -320,7 +319,7 @@ class FieldStorage:
     def __init__(self, fp=None, headers=None, outerboundary=b'',
                  environ=os.environ, keep_blank_values=0, strict_parsing=0,
                  limit=None, encoding='utf-8', errors='replace',
-                 max_num_fields=None, semicolon_sep=True):
+                 max_num_fields=None, separators=('&', ';')):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -363,16 +362,15 @@ class FieldStorage:
         max_num_fields: int. If set, then __init__ throws a ValueError
             if there are more than n fields read by parse_qsl().
 
-        semicolon_sep: flag indicating whether ``;`` should be treated as a
-            valid separator. Passed directly to urllib.parse.parse_qsl
-            internally.
+        separators: valid separators in the query string, e.g. ('&',).
+            Passed directly to urllib.parse.parse_qsl internally.
 
         """
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
         self.max_num_fields = max_num_fields
-        self.semicolon_sep = semicolon_sep
+        self.separators = separators
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -482,7 +480,7 @@ class FieldStorage:
         if ctype == 'application/x-www-form-urlencoded':
             self.read_urlencoded()
         elif ctype[:10] == 'multipart/':
-            self.read_multi(environ, keep_blank_values, strict_parsing, semicolon_sep)
+            self.read_multi(environ, keep_blank_values, strict_parsing, separators)
         else:
             self.read_single()
 
@@ -600,13 +598,14 @@ class FieldStorage:
             qs, self.keep_blank_values, self.strict_parsing,
             encoding=self.encoding, errors=self.errors,
             max_num_fields=self.max_num_fields,
-            semicolon_sep=self.semicolon_sep)
+            separators=self.separators)
         self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
     FieldStorageClass = None
 
-    def read_multi(self, environ, keep_blank_values, strict_parsing, semicolon_sep=True):
+    def read_multi(self, environ, keep_blank_values, strict_parsing,
+                   separators=('&', ';')):
         """Internal: read a part that is itself multipart."""
         ib = self.innerboundary
         if not valid_boundary(ib):
@@ -617,7 +616,7 @@ class FieldStorage:
                 self.qs_on_post, self.keep_blank_values, self.strict_parsing,
                 encoding=self.encoding, errors=self.errors,
                 max_num_fields=self.max_num_fields,
-                semicolon_sep=self.semicolon_sep)
+                separators=self.separators)
             self.list.extend(MiniFieldStorage(key, value) for key, value in query)
 
         klass = self.FieldStorageClass or self.__class__
@@ -662,7 +661,7 @@ class FieldStorage:
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing, limit,
                          self.encoding, self.errors, max_num_fields,
-                         semicolon_sep)
+                         separators)
 
             if max_num_fields is not None:
                 max_num_fields -= 1
