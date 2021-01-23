@@ -1,0 +1,2 @@
+name = "Jack"
+del name

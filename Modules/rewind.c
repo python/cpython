@@ -68,6 +68,17 @@ void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame) {
     fprintf(rewindLog, "\n");
 }
 
+void Rewind_PopFrame(PyFrameObject *frame) {
+    if (!rewindActive) return;
+
+    PyCodeObject *code = frame->f_code;
+    fprintf(rewindLog, "POP_FRAME(");
+    PyObject_Print(code->co_filename, rewindLog, 0);
+    fprintf(rewindLog, ", ");
+    PyObject_Print(code->co_name, rewindLog, 0);
+    fprintf(rewindLog, ")\n");
+}
+
 void Rewind_ListAppend(PyListObject *list, PyObject *value) {
     if (!rewindActive) return;
 
@@ -134,12 +145,10 @@ void Rewind_ListSort(PyListObject *list) {
     if (!rewindActive) return;
 
     Rewind_TrackObject((PyObject *)list);
-    fprintf(rewindLog, "LIST_SORT(%lu, ", (unsigned long)list);
+    fprintf(rewindLog, "LIST_SORT(%lu", (unsigned long)list);
     for (int i = 0; i < Py_SIZE(list); ++i) {
         PyObject *item = list->ob_item[i];
-        if (i != 0) {
-            fprintf(rewindLog, ", ");
-        }
+        fprintf(rewindLog, ", ");
         Rewind_serializeObject(rewindLog, item);
     }
     fprintf(rewindLog, ")\n");
@@ -267,9 +276,20 @@ void Rewind_SetPrintItems(PySetObject *set) {
 }
 
 void Rewind_SetUpdate(PySetObject *set) {
+    if (!rewindActive) return;
+
     Rewind_TrackObject((PyObject *)set);
     fprintf(rewindLog, "SET_UPDATE(%lu", (unsigned long)set);
     Rewind_SetPrintItems(set);
+    fprintf(rewindLog, ")\n");
+}
+
+void Rewind_YieldValue(PyObject *retval) {
+    if (!rewindActive) return;
+
+    Rewind_TrackObject(retval);
+    fprintf(rewindLog, "YIELD_VALUE(");
+    Rewind_serializeObject(rewindLog, retval);
     fprintf(rewindLog, ")\n");
 }
 
@@ -382,14 +402,12 @@ void Rewind_TrackObject(PyObject *obj) {
         }
         Py_DECREF(iterator);
 
-        fprintf(rewindLog, "NEW_DICT(%lu, ", (unsigned long)obj);
+        fprintf(rewindLog, "NEW_DICT(%lu", (unsigned long)obj);
         iterator = PySequence_Fast(items, "argument must be iterable");
         n = PySequence_Fast_GET_SIZE(iterator);
         iteratorItems = PySequence_Fast_ITEMS(iterator);
         for (int i = 0; i < n; i++) {
-            if (i != 0) {
-                fprintf(rewindLog, ", ");
-            }
+            fprintf(rewindLog, ", ");
             PyObject *item = iteratorItems[i];
             PyObject *key = PyObject_GetItem(item, PyLong_FromLong(0));
             PyObject *value = PyObject_GetItem(item, PyLong_FromLong(1));
@@ -432,14 +450,12 @@ void Rewind_TrackObject(PyObject *obj) {
         }
         Py_DECREF(iterator);
 
-        fprintf(rewindLog, "NEW_TUPLE(%lu, ", (unsigned long)obj);
+        fprintf(rewindLog, "NEW_TUPLE(%lu", (unsigned long)obj);
         iterator = PySequence_Fast(obj, "argument must be iterable");
         n = PySequence_Fast_GET_SIZE(iterator);
         iteratorItems = PySequence_Fast_ITEMS(iterator);
         for (int i = 0; i < n; i++) {
-            if (i != 0) {
-                fprintf(rewindLog, ", ");
-            }
+            fprintf(rewindLog, ", ");
             PyObject *item = iteratorItems[i];
             Rewind_serializeObject(rewindLog, item);
         }

@@ -10,6 +10,8 @@ void Rewind_Cleanup(void);
 
 void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame);
 
+void Rewind_PopFrame(PyFrameObject *frame);
+
 void Rewind_BuildList(PyObject *list);
 
 void Rewind_ListAppend(PyListObject *list, PyObject *value);
@@ -53,6 +55,8 @@ void Rewind_SetDiscard(PySetObject *set, PyObject *item);
 void Rewind_SetClear(PySetObject *set);
 
 void Rewind_SetUpdate(PySetObject *set);
+
+void Rewind_YieldValue(PyObject *retval);
 
 void Rewind_StoreName(PyObject *name, PyObject *value);
 

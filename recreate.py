@@ -1,20 +1,29 @@
 # Todo
 
-# make work for multiple files
+# clean up server.js code
+# get classes to work as objects
+# log exceptions
+# learn how frozen works
 # make log file same prefix name as program name
-# make modules work
-# get rpg game working
 # get pygame working
 # get ascii draw working
 # get flask working
 # get caves (xlrd) working
 # compile SSL into Python
 # collect "real world" python apps
+# write terminal debugger in python
 # have a flag to turn on debug mode
 # try it on a "real" app
 # optimization: use low level iteration methods whenever possible
 # optimization: perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
 
+# bug in rpg game __doc__ = --------------- (done)
+# bug in rpg game where step over but actually step into (done)
+# make modules work (done)
+# get rpg game working (done)
+# make work for multiple files (done)
+# make exceptions work (done)
+# make work for generator expressions (done)
 # put rewind.o in modules permanently (don't edit Makefile) (done)
 # objects (done)
 # sets (done)
@@ -104,14 +113,17 @@ def define_schema(conn):
             fun_name text,
             parameters integer,
             parent_id integer,
+            code_file_id integer,
             
             constraint FunCall_fk_parent_id foreign key (parent_id)
                 references FunCall(id)
+            constraint FunCall_fk_code_file_id foreign key (code_file_id)
+                references CodeFile(id)
         );
     """)
 
     c.execute(""" 
-        create table SourceCode (
+        create table CodeFile (
             id integer primary key,
             file_path text,
             source text
@@ -193,9 +205,10 @@ class HeapRef(object):
         return self.id
 
 class FunCall(object):
-    def __init__(self, id, filename, name, varnames, locals):
+    def __init__(self, id, filename, code_file_id, name, varnames, locals):
         self.id = id
         self.filename = filename
+        self.code_file_id = code_file_id
         self.name = name
         self.varnames = varnames
 
@@ -239,6 +252,9 @@ def recreate_past(conn):
 
         def serialize(self):
             return '{ "funCall": ' + str(self.fun_call.id) + ', "variables": *' + str(immut_id(self.frame_vars)) + '}'
+        
+        def __repr__(self):
+            return "Frame<" + repr(self.fun_call) + ">"
 
     def quote(value):
         return '"' + value.replace('"', '\\"') + '"'
@@ -333,9 +349,29 @@ def recreate_past(conn):
         heap = { **heap, str(heap_id): ObjectRef(oid) }
         save_object(heap)
 
+    def ensure_code_file_saved(filename, name):
+        nonlocal activate_snapshots
+        nonlocal next_code_file_id
+
+        if filename not in code_files and os.path.isfile(filename):
+            if not activate_snapshots and name == "<module>":
+                activate_snapshots = True
+            the_file = open(filename, "r")
+            content = the_file.read()
+            the_file.close()
+            code_file_id = next_code_file_id
+            next_code_file_id += 1
+            cursor.execute("INSERT INTO CodeFile VALUES (?, ?, ?)", (
+                code_file_id,
+                filename,
+                content
+            ))
+            conn.commit()
+            code_files[filename] = code_file_id
+
     def process_push_frame(filename, name, num_varnames, *rest):
         nonlocal stack
-        nonlocal next_source_code_id
+        nonlocal next_code_file_id
         nonlocal activate_snapshots
         
         varnames = []
@@ -349,23 +385,10 @@ def recreate_past(conn):
         if stack is not None:
             parent_id = stack[0].fun_call.id
         
-        if filename not in source_code_files and os.path.isfile(filename):
-            if not activate_snapshots and name == "<module>":
-                activate_snapshots = True
-            the_file = open(filename, "r")
-            content = the_file.read()
-            the_file.close()
-            source_code_id = next_source_code_id
-            next_source_code_id += 1
-            cursor.execute("INSERT INTO SourceCode VALUES (?, ?, ?)", (
-                source_code_id,
-                filename,
-                content
-            ))
-            conn.commit()
-            source_code_files.add(filename)
-        
-        fun_call = FunCall(new_fun_call_id(), filename, name, varnames, locals)
+        ensure_code_file_saved(filename, name)
+
+        code_file_id = code_files.get(filename)
+        fun_call = FunCall(new_fun_call_id(), filename, code_file_id, name, varnames, locals)
         frame_vars = StackFrameVars(locals, varnames)
         save_object(frame_vars)
         frame = StackFrame(fun_call, frame_vars)
@@ -373,11 +396,12 @@ def recreate_past(conn):
         stack = [frame, stack]
         save_object(stack)
 
-        cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?)", (
+        cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?, ?)", (
             fun_call.id,
             name,
             immut_id(frame_vars),
             parent_id,
+            code_file_id
         ))
 
         conn.commit()
@@ -417,6 +441,7 @@ def recreate_past(conn):
     def process_store_fast(index, value):
         nonlocal stack
         assert stack is not None
+        print("store fast into", stack)
         new_frame_vars = stack[0].frame_vars.update_local(index, value)
         save_object(new_frame_vars)
         new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
@@ -426,7 +451,7 @@ def recreate_past(conn):
     
     fun_lookup["STORE_FAST"] = process_store_fast
     
-    def process_return_value(ret_val):
+    def process_return_value(ret_val, *extra_params):
         nonlocal stack
         if not activate_snapshots:
             return
@@ -448,9 +473,17 @@ def recreate_past(conn):
         ))
         conn.commit()
 
-        stack = stack[1]
-
     fun_lookup["RETURN_VALUE"] = process_return_value
+    fun_lookup["YIELD_VALUE"] = process_return_value
+
+    def process_pop_frame(filename, name):
+        nonlocal stack
+        fun_call = stack[0].fun_call
+        assert stack[0].fun_call.filename == filename
+        assert stack[0].fun_call.name == name
+        stack = stack[1]
+    
+    fun_lookup["POP_FRAME"] = process_pop_frame
     
     def process_new_list(heap_id, *a_list):
         update_heap_object(heap_id, list(a_list))
@@ -458,6 +491,7 @@ def recreate_past(conn):
     fun_lookup["NEW_LIST"] = process_new_list
     
     def process_new_string(heap_id, string):
+        print("process_new_string", heap_id, string)
         update_heap_object(heap_id, string)
     
     fun_lookup["NEW_STRING"] = process_new_string
@@ -567,7 +601,8 @@ def recreate_past(conn):
     def process_dict_delete_subscript(heap_id, key):
         a_dict = heap_id_to_object_dict[heap_id]
         new_dict = a_dict.copy()
-        del new_dict[key]
+        if key in new_dict:
+            del new_dict[key]
         update_heap_object(heap_id, new_dict)
     
     fun_lookup["DICT_DELETE_SUBSCRIPT"] = process_dict_delete_subscript
@@ -638,6 +673,8 @@ def recreate_past(conn):
     fun_lookup["NEW_OBJECT"] = process_new_object
 
     def process_store_attr(heap_id, name, value):
+        if heap_id not in heap_id_to_object_dict:
+            return
         an_obj = heap_id_to_object_dict[heap_id]
         # objects represented by dicts
         new_obj = an_obj.copy()
@@ -651,8 +688,8 @@ def recreate_past(conn):
     next_snapshot_id = 1
     next_fun_call_id = 1
     next_object_id = 1
-    next_source_code_id = 1
-    source_code_files = set()
+    next_code_file_id = 1
+    code_files = {}
     stack = None
     # memory address in original program (heap ID) => object in this program
     heap_id_to_object_dict = {}

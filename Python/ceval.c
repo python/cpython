@@ -2451,6 +2451,8 @@ main_loop:
             logOp("YIELD_VALUE", stack_pointer, STACK_LEVEL(), f, oparg);
             retval = POP();
 
+            Rewind_YieldValue(retval);
+
             if (co->co_flags & CO_ASYNC_GENERATOR) {
                 PyObject *w = _PyAsyncGenValueWrapperNew(retval);
                 Py_DECREF(retval);
@@ -4259,6 +4261,8 @@ exit_eval_frame:
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
     tstate->frame = f->f_back;
+
+    Rewind_PopFrame(f);
 
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
