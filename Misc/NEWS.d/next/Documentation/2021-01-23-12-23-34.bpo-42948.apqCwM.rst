@@ -1,1 +1,1 @@
-Document bytearray.copy()
+Document ``bytearray.copy()``
