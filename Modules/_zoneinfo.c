@@ -1239,12 +1239,12 @@ calendarrule_new(int month, int week, int day, int hour,
 
     CalendarRule new_offset = {
         .base = base,
-        .month = Py_SAFE_DOWNCAST(month, int, uint8_t),
-        .week = Py_SAFE_DOWNCAST(week, int, uint8_t),
-        .day = Py_SAFE_DOWNCAST(day, int, uint8_t),
-        .hour = Py_SAFE_DOWNCAST(hour, int, int16_t),
-        .minute = Py_SAFE_DOWNCAST(minute, int, int8_t),
-        .second = Py_SAFE_DOWNCAST(second, int, int8_t),
+        .month = (uint8_t)month,
+        .week = (uint8_t)week,
+        .day = (uint8_t)day,
+        .hour = (int16_t)hour,
+        .minute = (int8_t)minute,
+        .second = (int8_t)second,
     };
 
     *out = new_offset;
@@ -1318,11 +1318,11 @@ dayrule_new(int julian, int day, int hour, int minute,
 
     DayRule tmp = {
         .base = base,
-        .julian = Py_SAFE_DOWNCAST(julian, int, uint8_t),
-        .day = Py_SAFE_DOWNCAST(day, int, int16_t),
-        .hour = Py_SAFE_DOWNCAST(hour, int, int16_t),
-        .minute = Py_SAFE_DOWNCAST(minute, int, int8_t),
-        .second = Py_SAFE_DOWNCAST(second, int, int8_t),
+        .julian = (uint8_t)julian,
+        .day = (int16_t)day,
+        .hour = (int16_t)hour,
+        .minute = (int8_t)minute,
+        .second = (int8_t)second,
     };
 
     *out = tmp;
