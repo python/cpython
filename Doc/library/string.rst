@@ -424,7 +424,7 @@ When no explicit alignment is given, preceding the *width* field by a zero
 sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
 character of ``'0'`` with an *alignment* type of ``'='``.
 
-.. versionchanged:: 3.8
+.. versionchanged:: 3.10
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
 
