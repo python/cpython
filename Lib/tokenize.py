@@ -35,6 +35,8 @@ import sys
 from token import *
 from token import EXACT_TOKEN_TYPES
 
+_CACHE_MAX_SIZE = 512
+
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
@@ -96,7 +98,7 @@ def _all_string_prefixes():
                 result.add(''.join(u))
     return result
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=_CACHE_MAX_SIZE)
 def _compile(expr):
     return re.compile(expr, re.UNICODE)
 
