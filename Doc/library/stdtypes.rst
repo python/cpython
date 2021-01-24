@@ -4959,6 +4959,11 @@ All parameterized generics implement special read-only attributes.
       (~T,)
 
 
+   .. note::
+      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
+      have correct ``__parameters__`` after substitution because
+      :class:`typing.ParamSpec` is intended primarily for static type checking.
+
 .. seealso::
 
    * :pep:`585` -- "Type Hinting Generics In Standard Collections"
@@ -5353,8 +5358,8 @@ types, where they are relevant.  Some of these are not reported by the
 .. method:: class.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.
-   Example::
+   method returns a list of all those references still alive.  The list is in
+   definition order.  Example::
 
       >>> int.__subclasses__()
       [<class 'bool'>]

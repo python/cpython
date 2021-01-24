@@ -580,18 +580,23 @@ star_targets[expr_ty]:
     | a=star_target !',' { a }
     | a=star_target b=(',' c=star_target { c })* [','] {
         _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
-star_targets_seq[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_target+ [','] { a }
+star_targets_list_seq[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_target+ [','] { a }
+star_targets_tuple_seq[asdl_expr_seq*]:
+    | a=star_target b=(',' c=star_target { c })+ [','] { (asdl_expr_seq*) _PyPegen_seq_insert_in_front(p, a, b) }
+    | a=star_target ',' { (asdl_expr_seq*) _PyPegen_singleton_seq(p, a) }
 star_target[expr_ty] (memo):
     | '*' a=(!'*' star_target) {
         _Py_Starred(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
+    | target_with_star_atom
+target_with_star_atom[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
     | star_atom
 star_atom[expr_ty]:
     | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=star_target ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=[star_targets_seq] ')' { _Py_Tuple(a, Store, EXTRA) }
-    | '[' a=[star_targets_seq] ']' { _Py_List(a, Store, EXTRA) }
+    | '(' a=target_with_star_atom ')' { _PyPegen_set_expr_context(p, a, Store) }
+    | '(' a=[star_targets_tuple_seq] ')' { _Py_Tuple(a, Store, EXTRA) }
+    | '[' a=[star_targets_list_seq] ']' { _Py_List(a, Store, EXTRA) }
 
 single_target[expr_ty]:
     | single_subscript_attribute_target
@@ -691,11 +696,17 @@ invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
-    | param_no_default* (slash_with_default | param_with_default+) param_no_default {
+    | param_no_default* invalid_parameters_helper param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_parameters_helper: # This is only there to avoid type errors
+    | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
+    | param_with_default+
 invalid_lambda_parameters:
-    | lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) lambda_param_no_default {
+    | lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_lambda_parameters_helper:
+    | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
+    | lambda_param_with_default+
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
     | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }

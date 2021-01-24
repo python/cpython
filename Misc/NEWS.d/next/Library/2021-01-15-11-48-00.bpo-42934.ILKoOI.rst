@@ -1,0 +1,3 @@
+Use :class:`~traceback.TracebackException`'s new ``compact`` param in
+:class:`~unittest.TestResult` to reduce time and memory consumed by
+traceback formatting.

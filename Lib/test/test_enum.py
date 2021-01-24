@@ -1677,6 +1677,13 @@ class TestEnum(unittest.TestCase):
         class Test(Base):
             test = 1
         self.assertEqual(Test.test.test, 'dynamic')
+        class Base2(Enum):
+            @enum.property
+            def flash(self):
+                return 'flashy dynamic'
+        class Test(Base2):
+            flash = 1
+        self.assertEqual(Test.flash.flash, 'flashy dynamic')
 
     def test_no_duplicates(self):
         class UniqueEnum(Enum):
@@ -2118,42 +2125,7 @@ class TestEnum(unittest.TestCase):
             class ThirdFailedStrEnum(StrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
-                
-    def test_init_subclass(self):
-        class MyEnum(Enum):
-            def __init_subclass__(cls, **kwds):
-                super(MyEnum, cls).__init_subclass__(**kwds)
-                self.assertFalse(cls.__dict__.get('_test', False))
-                cls._test1 = 'MyEnum'
-        #
-        class TheirEnum(MyEnum):
-            def __init_subclass__(cls, **kwds):
-                super().__init_subclass__(**kwds)
-                cls._test2 = 'TheirEnum'
-        class WhoseEnum(TheirEnum):
-            def __init_subclass__(cls, **kwds):
-                pass
-        class NoEnum(WhoseEnum):
-            ONE = 1
-        self.assertEqual(TheirEnum.__dict__['_test1'], 'MyEnum')
-        self.assertEqual(WhoseEnum.__dict__['_test1'], 'MyEnum')
-        self.assertEqual(WhoseEnum.__dict__['_test2'], 'TheirEnum')
-        self.assertFalse(NoEnum.__dict__.get('_test1', False))
-        self.assertFalse(NoEnum.__dict__.get('_test2', False))
-        #
-        class OurEnum(MyEnum):
-            def __init_subclass__(cls, **kwds):
-                cls._test2 = 'OurEnum'
-        class WhereEnum(OurEnum):
-            def __init_subclass__(cls, **kwds):
-                pass
-        class NeverEnum(WhereEnum):
-            ONE = 'one'
-        self.assertEqual(OurEnum.__dict__['_test1'], 'MyEnum')
-        self.assertFalse(WhereEnum.__dict__.get('_test1', False))
-        self.assertEqual(WhereEnum.__dict__['_test2'], 'OurEnum')
-        self.assertFalse(NeverEnum.__dict__.get('_test1', False))
-        self.assertFalse(NeverEnum.__dict__.get('_test2', False))
+
 
 
     @unittest.skipUnless(
@@ -3304,7 +3276,7 @@ class TestStdLib(unittest.TestCase):
                 ('value', Enum.__dict__['value']),
                 ))
         result = dict(inspect.getmembers(self.Color))
-        self.assertEqual(values.keys(), result.keys())
+        self.assertEqual(set(values.keys()), set(result.keys()))
         failed = False
         for k in values.keys():
             if result[k] != values[k]:
@@ -3341,6 +3313,10 @@ class TestStdLib(unittest.TestCase):
         values.sort(key=lambda item: item.name)
         result = list(inspect.classify_class_attrs(self.Color))
         result.sort(key=lambda item: item.name)
+        self.assertEqual(
+                len(values), len(result),
+                "%s != %s" % ([a.name for a in values], [a.name for a in result])
+                )
         failed = False
         for v, r in zip(values, result):
             if r != v:

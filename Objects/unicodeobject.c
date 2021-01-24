@@ -41,6 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -205,22 +206,6 @@ extern "C" {
 #  define OVERALLOCATE_FACTOR 4
 #endif
 
-/* bpo-40521: Interned strings are shared by all interpreters. */
-#ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  define INTERNED_STRINGS
-#endif
-
-/* This dictionary holds all interned unicode strings.  Note that references
-   to strings in this dictionary are *not* counted in the string's ob_refcnt.
-   When the interned string reaches a refcnt of 0 the string deallocation
-   function will delete the reference from this dictionary.
-
-   Another way to look at this is that to say that the actual reference
-   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
-*/
-#ifdef INTERNED_STRINGS
-static PyObject *interned = NULL;
-#endif
 
 static struct _Py_unicode_state*
 get_unicode_state(void)
@@ -301,9 +286,6 @@ static PyObject *
 unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed);
-
-/* List of static strings. */
-static _Py_Identifier *static_strings = NULL;
 
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
@@ -1948,7 +1930,8 @@ unicode_dealloc(PyObject *unicode)
         break;
 
     case SSTATE_INTERNED_MORTAL:
-#ifdef INTERNED_STRINGS
+    {
+        struct _Py_unicode_state *state = get_unicode_state();
         /* Revive the dead object temporarily. PyDict_DelItem() removes two
            references (key and value) which were ignored by
            PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
@@ -1956,14 +1939,14 @@ unicode_dealloc(PyObject *unicode)
            PyDict_DelItem(). */
         assert(Py_REFCNT(unicode) == 0);
         Py_SET_REFCNT(unicode, 3);
-        if (PyDict_DelItem(interned, unicode) != 0) {
+        if (PyDict_DelItem(state->interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
         }
         assert(Py_REFCNT(unicode) == 1);
         Py_SET_REFCNT(unicode, 0);
-#endif
         break;
+    }
 
     case SSTATE_INTERNED_IMMORTAL:
         _PyObject_ASSERT_FAILED_MSG(unicode, "Immortal interned string died");
@@ -2312,41 +2295,83 @@ PyUnicode_FromString(const char *u)
     return PyUnicode_DecodeUTF8Stateful(u, (Py_ssize_t)size, NULL, NULL);
 }
 
+
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    if (id->object) {
-        return id->object;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_unicode_ids *ids = &interp->unicode.ids;
+
+    Py_ssize_t index = _Py_atomic_size_get(&id->index);
+    if (index < 0) {
+        struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_ids;
+
+        PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
+        // Check again to detect concurrent access. Another thread can have
+        // initialized the index while this thread waited for the lock.
+        index = _Py_atomic_size_get(&id->index);
+        if (index < 0) {
+            assert(rt_ids->next_index < PY_SSIZE_T_MAX);
+            index = rt_ids->next_index;
+            rt_ids->next_index++;
+            _Py_atomic_size_set(&id->index, index);
+        }
+        PyThread_release_lock(rt_ids->lock);
     }
+    assert(index >= 0);
 
     PyObject *obj;
-    obj = PyUnicode_DecodeUTF8Stateful(id->string,
-                                       strlen(id->string),
+    if (index < ids->size) {
+        obj = ids->array[index];
+        if (obj) {
+            // Return a borrowed reference
+            return obj;
+        }
+    }
+
+    obj = PyUnicode_DecodeUTF8Stateful(id->string, strlen(id->string),
                                        NULL, NULL);
     if (!obj) {
         return NULL;
     }
     PyUnicode_InternInPlace(&obj);
 
-    assert(!id->next);
-    id->object = obj;
-    id->next = static_strings;
-    static_strings = id;
-    return id->object;
+    if (index >= ids->size) {
+        // Overallocate to reduce the number of realloc
+        Py_ssize_t new_size = Py_MAX(index * 2, 16);
+        Py_ssize_t item_size = sizeof(ids->array[0]);
+        PyObject **new_array = PyMem_Realloc(ids->array, new_size * item_size);
+        if (new_array == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        memset(&new_array[ids->size], 0, (new_size - ids->size) * item_size);
+        ids->array = new_array;
+        ids->size = new_size;
+    }
+
+    // The array stores a strong reference
+    ids->array[index] = obj;
+
+    // Return a borrowed reference
+    return obj;
 }
 
+
 static void
-unicode_clear_static_strings(void)
+unicode_clear_identifiers(struct _Py_unicode_state *state)
 {
-    _Py_Identifier *tmp, *s = static_strings;
-    while (s) {
-        Py_CLEAR(s->object);
-        tmp = s->next;
-        s->next = NULL;
-        s = tmp;
+    struct _Py_unicode_ids *ids = &state->ids;
+    for (Py_ssize_t i=0; i < ids->size; i++) {
+        Py_XDECREF(ids->array[i]);
     }
-    static_strings = NULL;
+    ids->size = 0;
+    PyMem_Free(ids->array);
+    ids->array = NULL;
+    // Don't reset _PyRuntime next_index: _Py_Identifier.id remains valid
+    // after Py_Finalize().
 }
+
 
 /* Internal function, doesn't check maximum character */
 
@@ -11495,12 +11520,11 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
     if (PyUnicode_CHECK_INTERNED(left))
         return 0;
 
-#ifdef INTERNED_STRINGS
     assert(_PyUnicode_HASH(right_uni) != -1);
     Py_hash_t hash = _PyUnicode_HASH(left);
-    if (hash != -1 && hash != _PyUnicode_HASH(right_uni))
+    if (hash != -1 && hash != _PyUnicode_HASH(right_uni)) {
         return 0;
-#endif
+    }
 
     return unicode_compare_eq(left, right_uni);
 }
@@ -15724,23 +15748,21 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-#ifdef INTERNED_STRINGS
     if (PyUnicode_READY(s) == -1) {
         PyErr_Clear();
         return;
     }
 
-    if (interned == NULL) {
-        interned = PyDict_New();
-        if (interned == NULL) {
+    struct _Py_unicode_state *state = get_unicode_state();
+    if (state->interned == NULL) {
+        state->interned = PyDict_New();
+        if (state->interned == NULL) {
             PyErr_Clear(); /* Don't leave an exception */
             return;
         }
     }
 
-    PyObject *t;
-    t = PyDict_SetDefault(interned, s, s);
-
+    PyObject *t = PyDict_SetDefault(state->interned, s, s);
     if (t == NULL) {
         PyErr_Clear();
         return;
@@ -15757,12 +15779,8 @@ PyUnicode_InternInPlace(PyObject **p)
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
-#else
-    // PyDict expects that interned strings have their hash
-    // (PyASCIIObject.hash) already computed.
-    (void)unicode_hash(s);
-#endif
 }
+
 
 void
 PyUnicode_InternImmortal(PyObject **p)
@@ -15797,35 +15815,25 @@ PyUnicode_InternFromString(const char *cp)
 void
 _PyUnicode_ClearInterned(PyThreadState *tstate)
 {
-    if (!_Py_IsMainInterpreter(tstate)) {
-        // interned dict is shared by all interpreters
+    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    if (state->interned == NULL) {
         return;
     }
-
-    if (interned == NULL) {
-        return;
-    }
-    assert(PyDict_CheckExact(interned));
-
-    PyObject *keys = PyDict_Keys(interned);
-    if (keys == NULL) {
-        PyErr_Clear();
-        return;
-    }
-    assert(PyList_CheckExact(keys));
+    assert(PyDict_CheckExact(state->interned));
 
     /* Interned unicode strings are not forcibly deallocated; rather, we give
        them their stolen references back, and then clear and DECREF the
        interned dict. */
 
-    Py_ssize_t n = PyList_GET_SIZE(keys);
 #ifdef INTERNED_STATS
-    fprintf(stderr, "releasing %zd interned strings\n", n);
+    fprintf(stderr, "releasing %zd interned strings\n",
+            PyDict_GET_SIZE(state->interned));
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *s = PyList_GET_ITEM(keys, i);
+    Py_ssize_t pos = 0;
+    PyObject *s, *ignored_value;
+    while (PyDict_Next(state->interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
 
         switch (PyUnicode_CHECK_INTERNED(s)) {
@@ -15855,10 +15863,9 @@ _PyUnicode_ClearInterned(PyThreadState *tstate)
             "total size of all interned strings: %zd/%zd mortal/immortal\n",
             mortal_size, immortal_size);
 #endif
-    Py_DECREF(keys);
 
-    PyDict_Clear(interned);
-    Py_CLEAR(interned);
+    PyDict_Clear(state->interned);
+    Py_CLEAR(state->interned);
 }
 
 
@@ -16228,21 +16235,19 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 void
 _PyUnicode_Fini(PyThreadState *tstate)
 {
-    // _PyUnicode_ClearInterned() must be called before
-
     struct _Py_unicode_state *state = &tstate->interp->unicode;
 
-    Py_CLEAR(state->empty_string);
+    // _PyUnicode_ClearInterned() must be called before
+    assert(state->interned == NULL);
+
+    _PyUnicode_FiniEncodings(&state->fs_codec);
+
+    unicode_clear_identifiers(state);
 
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);
     }
-
-    if (_Py_IsMainInterpreter(tstate)) {
-        unicode_clear_static_strings();
-    }
-
-    _PyUnicode_FiniEncodings(&tstate->interp->unicode.fs_codec);
+    Py_CLEAR(state->empty_string);
 }
 
 

@@ -19,7 +19,7 @@ PostgreSQL or Oracle.
 
 The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.7.3 or newer.
+requires SQLite 3.7.15 or newer.
 
 To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
@@ -198,7 +198,9 @@ Module functions and constants
 
    *detect_types* defaults to 0 (i. e. off, no type detection), you can set it to
    any combination of :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES` to turn
-   type detection on.
+   type detection on. Due to SQLite behaviour, types can't be detected for generated
+   fields (for example ``max(data)``), even when *detect_types* parameter is set. In
+   such case, the returned type is :class:`str`.
 
    By default, *check_same_thread* is :const:`True` and only the creating thread may
    use the connection. If set :const:`False`, the returned connection may be shared
@@ -544,7 +546,7 @@ Connection Objects
          con.close()
 
 
-   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       This method makes a backup of a SQLite database even while it's being accessed
       by other clients, or concurrently by the same connection.  The copy will be
@@ -1086,19 +1088,6 @@ committed:
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
-
-Common issues
--------------
-
-Multithreading
-^^^^^^^^^^^^^^
-
-Older SQLite versions had issues with sharing connections between threads.
-That's why the Python module disallows sharing connections and cursors between
-threads. If you still try to do so, you will get an exception at runtime.
-
-The only exception is calling the :meth:`~Connection.interrupt` method, which
-only makes sense to call from a different thread.
 
 .. rubric:: Footnotes
 

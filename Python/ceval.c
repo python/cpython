@@ -46,10 +46,10 @@ _Py_IDENTIFIER(__name__);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(
-    PyThreadState *tstate, PyObject ***pp_stack,
+    PyThreadState *tstate, PyCodeAddressRange *, PyObject ***pp_stack,
     Py_ssize_t oparg, PyObject *kwnames);
 static PyObject * do_call_core(
-    PyThreadState *tstate, PyObject *func,
+    PyThreadState *tstate, PyCodeAddressRange *, PyObject *func,
     PyObject *callargs, PyObject *kwdict);
 
 #ifdef LLTRACE
@@ -58,12 +58,15 @@ static int prtrace(PyThreadState *, PyObject *, const char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
                       PyThreadState *, PyFrameObject *,
+                      PyCodeAddressRange *,
                       int, PyObject *);
 static int call_trace_protected(Py_tracefunc, PyObject *,
                                 PyThreadState *, PyFrameObject *,
+                                PyCodeAddressRange *,
                                 int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *,
-                           PyThreadState *, PyFrameObject *);
+                           PyThreadState *, PyFrameObject *,
+                           PyCodeAddressRange *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
                                  PyThreadState *, PyFrameObject *,
                                  PyCodeAddressRange *, int *);
@@ -1380,6 +1383,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
     tstate->frame = f;
+    co = f->f_code;
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
 
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc != NULL) {
@@ -1398,7 +1404,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                whenever an exception is detected. */
             if (call_trace_protected(tstate->c_tracefunc,
                                      tstate->c_traceobj,
-                                     tstate, f, PyTrace_CALL, Py_None)) {
+                                     tstate, f, &bounds,
+                                     PyTrace_CALL, Py_None)) {
                 /* Trace function raised an error */
                 goto exit_eval_frame;
             }
@@ -1408,7 +1415,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                return itself and isn't called for "line" events */
             if (call_trace_protected(tstate->c_profilefunc,
                                      tstate->c_profileobj,
-                                     tstate, f, PyTrace_CALL, Py_None)) {
+                                     tstate, f, &bounds,
+                                     PyTrace_CALL, Py_None)) {
                 /* Profile function raised an error */
                 goto exit_eval_frame;
             }
@@ -1418,9 +1426,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     if (PyDTrace_FUNCTION_ENTRY_ENABLED())
         dtrace_function_entry(f);
 
-    co = f->f_code;
-    PyCodeAddressRange bounds;
-    _PyCode_InitAddressRange(co, &bounds);
     int instr_prev = -1;
 
     names = co->co_names;
@@ -2348,7 +2353,7 @@ main_loop:
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f, &bounds);
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -3596,7 +3601,7 @@ main_loop:
                     goto error;
                 }
                 else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f, &bounds);
                 }
                 _PyErr_Clear(tstate);
             }
@@ -3764,7 +3769,7 @@ main_loop:
                    `callable` will be POPed by call_function.
                    NULL will will be POPed manually later.
                 */
-                res = call_function(tstate, &sp, oparg, NULL);
+                res = call_function(tstate, &bounds, &sp, oparg, NULL);
                 stack_pointer = sp;
                 (void)POP(); /* POP the NULL. */
             }
@@ -3781,7 +3786,7 @@ main_loop:
                   We'll be passing `oparg + 1` to call_function, to
                   make it accept the `self` as a first argument.
                 */
-                res = call_function(tstate, &sp, oparg + 1, NULL);
+                res = call_function(tstate, &bounds, &sp, oparg + 1, NULL);
                 stack_pointer = sp;
             }
 
@@ -3795,7 +3800,7 @@ main_loop:
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
             sp = stack_pointer;
-            res = call_function(tstate, &sp, oparg, NULL);
+            res = call_function(tstate, &bounds, &sp, oparg, NULL);
             stack_pointer = sp;
             PUSH(res);
             if (res == NULL) {
@@ -3812,7 +3817,7 @@ main_loop:
             assert(PyTuple_GET_SIZE(names) <= oparg);
             /* We assume without checking that names contains only strings */
             sp = stack_pointer;
-            res = call_function(tstate, &sp, oparg, names);
+            res = call_function(tstate, &bounds, &sp, oparg, names);
             stack_pointer = sp;
             PUSH(res);
             Py_DECREF(names);
@@ -3857,7 +3862,7 @@ main_loop:
             }
             assert(PyTuple_CheckExact(callargs));
 
-            result = do_call_core(tstate, func, callargs, kwargs);
+            result = do_call_core(tstate, &bounds, func, callargs, kwargs);
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -4024,7 +4029,7 @@ error:
             assert(f->f_state == FRAME_EXECUTING);
             f->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
-                           tstate, f);
+                           tstate, f, &bounds);
         }
 exception_unwind:
         f->f_state = FRAME_UNWINDING;
@@ -4102,13 +4107,13 @@ exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
-                                     tstate, f, PyTrace_RETURN, retval)) {
+                                     tstate, f, &bounds, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
         }
         if (tstate->c_profilefunc) {
             if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
-                                     tstate, f, PyTrace_RETURN, retval)) {
+                                     tstate, f, &bounds, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
         }
@@ -4902,7 +4907,9 @@ prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
-               PyThreadState *tstate, PyFrameObject *f)
+               PyThreadState *tstate,
+               PyFrameObject *f,
+               PyCodeAddressRange *bounds)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
@@ -4918,7 +4925,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
         _PyErr_Restore(tstate, type, value, orig_traceback);
         return;
     }
-    err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
+    err = call_trace(func, self, tstate, f, bounds, PyTrace_EXCEPTION, arg);
     Py_DECREF(arg);
     if (err == 0) {
         _PyErr_Restore(tstate, type, value, orig_traceback);
@@ -4933,12 +4940,13 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
 static int
 call_trace_protected(Py_tracefunc func, PyObject *obj,
                      PyThreadState *tstate, PyFrameObject *frame,
+                     PyCodeAddressRange *bounds,
                      int what, PyObject *arg)
 {
     PyObject *type, *value, *traceback;
     int err;
     _PyErr_Fetch(tstate, &type, &value, &traceback);
-    err = call_trace(func, obj, tstate, frame, what, arg);
+    err = call_trace(func, obj, tstate, frame, bounds, what, arg);
     if (err == 0)
     {
         _PyErr_Restore(tstate, type, value, traceback);
@@ -4955,6 +4963,7 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
            PyThreadState *tstate, PyFrameObject *frame,
+           PyCodeAddressRange *bounds,
            int what, PyObject *arg)
 {
     int result;
@@ -4962,7 +4971,14 @@ call_trace(Py_tracefunc func, PyObject *obj,
         return 0;
     tstate->tracing++;
     tstate->use_tracing = 0;
+    if (frame->f_lasti < 0) {
+        frame->f_lineno = frame->f_code->co_firstlineno;
+    }
+    else {
+        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
+    }
     result = func(obj, frame, what, arg);
+    frame->f_lineno = 0;
     tstate->use_tracing = ((tstate->c_tracefunc != NULL)
                            || (tstate->c_profilefunc != NULL));
     tstate->tracing--;
@@ -4993,27 +5009,24 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
                       PyCodeAddressRange *bounds, int *instr_prev)
 {
     int result = 0;
-    int line = frame->f_lineno;
 
-    /* If the last instruction executed isn't in the current
-       instruction window, reset the window.
-    */
-    line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
     /* If the last instruction falls at the start of a line or if it
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    if ((line != frame->f_lineno || frame->f_lasti < *instr_prev)) {
-        if (line != -1) {
-            frame->f_lineno = line;
-            if (frame->f_trace_lines) {
-                result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
-            }
+    int lastline = bounds->ar_line;
+    int line = _PyCode_CheckLineNumber(frame->f_lasti, bounds);
+    if (line != -1 && frame->f_trace_lines) {
+        /* Trace backward edges or first instruction of a new line */
+        if (frame->f_lasti < *instr_prev ||
+            (line != lastline && frame->f_lasti == bounds->ar_start))
+        {
+            result = call_trace(func, obj, tstate, frame, bounds, PyTrace_LINE, Py_None);
         }
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
     if (frame->f_trace_opcodes) {
-        result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
+        result = call_trace(func, obj, tstate, frame, bounds, PyTrace_OPCODE, Py_None);
     }
     *instr_prev = frame->f_lasti;
     return result;
@@ -5280,7 +5293,7 @@ PyEval_GetFuncDesc(PyObject *func)
 #define C_TRACE(x, call) \
 if (tstate->use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->frame, \
+        tstate, tstate->frame, bounds, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -5290,13 +5303,13 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, \
+                    tstate, tstate->frame, bounds, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, \
+                    tstate, tstate->frame, bounds, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
@@ -5311,6 +5324,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
 
 static PyObject *
 trace_call_function(PyThreadState *tstate,
+                    PyCodeAddressRange *bounds,
                     PyObject *func,
                     PyObject **args, Py_ssize_t nargs,
                     PyObject *kwnames)
@@ -5345,7 +5359,11 @@ trace_call_function(PyThreadState *tstate,
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
    to reduce the stack consumption. */
 Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyObject *kwnames)
+call_function(PyThreadState *tstate,
+              PyCodeAddressRange *bounds,
+              PyObject ***pp_stack,
+              Py_ssize_t oparg,
+              PyObject *kwnames)
 {
     PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *func = *pfunc;
@@ -5355,7 +5373,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
     if (tstate->use_tracing) {
-        x = trace_call_function(tstate, func, stack, nargs, kwnames);
+        x = trace_call_function(tstate, bounds, func, stack, nargs, kwnames);
     }
     else {
         x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
@@ -5373,7 +5391,11 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
 }
 
 static PyObject *
-do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject *kwdict)
+do_call_core(PyThreadState *tstate,
+             PyCodeAddressRange *bounds,
+             PyObject *func,
+             PyObject *callargs,
+             PyObject *kwdict)
 {
     PyObject *result;
 

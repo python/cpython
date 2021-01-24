@@ -51,22 +51,6 @@ except ImportError:
     pass
 
 
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3, "
-                      "and in 3.10 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
-
 ################################################################################
 ### OrderedDict
 ################################################################################
