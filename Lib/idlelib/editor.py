@@ -46,7 +46,7 @@ def _sphinx_version():
     return release
 
 
-class EditorWindow(object):
+class EditorWindow:
     from idlelib.percolator import Percolator
     from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
@@ -1546,7 +1546,7 @@ def get_line_indent(line, tabwidth):
     return m.end(), len(m.group().expandtabs(tabwidth))
 
 
-class IndentSearcher(object):
+class IndentSearcher:
 
     # .run() chews over the Text widget, looking for a block opener
     # and the stmt following it.  Returns a pair,
