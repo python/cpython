@@ -32,10 +32,21 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int code;
     PyObject *arg = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
-        conv_descriptor, &fd, &code, &arg)) {
+    if (!_PyArg_CheckPositional("fcntl", nargs, 2, 3)) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    code = _PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    arg = args[2];
+skip_optional:
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
 
 exit:
@@ -91,10 +102,28 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *ob_arg = NULL;
     int mutate_arg = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
-        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
+    if (!_PyArg_CheckPositional("ioctl", nargs, 2, 4)) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (code == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    ob_arg = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    mutate_arg = PyObject_IsTrue(args[3]);
+    if (mutate_arg < 0) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
 
 exit:
@@ -123,8 +152,14 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int code;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
-        conv_descriptor, &fd, &code)) {
+    if (!_PyArg_CheckPositional("flock", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    code = _PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = fcntl_flock_impl(module, fd, code);
@@ -177,13 +212,35 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *startobj = NULL;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
-        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
+    if (!_PyArg_CheckPositional("lockf", nargs, 2, 5)) {
         goto exit;
     }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    code = _PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    lenobj = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    startobj = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    whence = _PyLong_AsInt(args[4]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fc1a781750750a14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ea34bd0f7cf25ec input=a9049054013a1b77]*/

@@ -19,7 +19,8 @@ _winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int wait;
 
-    if (!PyArg_Parse(arg, "p:GetOverlappedResult", &wait)) {
+    wait = PyObject_IsTrue(arg);
+    if (wait < 0) {
         goto exit;
     }
     return_value = _winapi_Overlapped_GetOverlappedResult_impl(self, wait);
@@ -167,6 +168,55 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_CreateFileMapping__doc__,
+"CreateFileMapping($module, file_handle, security_attributes, protect,\n"
+"                  max_size_high, max_size_low, name, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_CREATEFILEMAPPING_METHODDEF    \
+    {"CreateFileMapping", (PyCFunction)(void(*)(void))_winapi_CreateFileMapping, METH_FASTCALL, _winapi_CreateFileMapping__doc__},
+
+static HANDLE
+_winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
+                               LPSECURITY_ATTRIBUTES security_attributes,
+                               DWORD protect, DWORD max_size_high,
+                               DWORD max_size_low, LPCWSTR name);
+
+static PyObject *
+_winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE file_handle;
+    LPSECURITY_ATTRIBUTES security_attributes;
+    DWORD protect;
+    DWORD max_size_high;
+    DWORD max_size_low;
+    LPCWSTR name;
+    HANDLE _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkkO&:CreateFileMapping",
+        &file_handle, &security_attributes, &protect, &max_size_high, &max_size_low, _PyUnicode_WideCharString_Converter, &name)) {
+        goto exit;
+    }
+    _return_value = _winapi_CreateFileMapping_impl(module, file_handle, security_attributes, protect, max_size_high, max_size_low, name);
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (_return_value == NULL) {
+        Py_RETURN_NONE;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    /* Cleanup for name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_CreateJunction__doc__,
 "CreateJunction($module, src_path, dst_path, /)\n"
 "--\n"
@@ -176,23 +226,55 @@ PyDoc_STRVAR(_winapi_CreateJunction__doc__,
     {"CreateJunction", (PyCFunction)(void(*)(void))_winapi_CreateJunction, METH_FASTCALL, _winapi_CreateJunction__doc__},
 
 static PyObject *
-_winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
-                            LPWSTR dst_path);
+_winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
+                            LPCWSTR dst_path);
 
 static PyObject *
 _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPWSTR src_path;
-    LPWSTR dst_path;
+    LPCWSTR src_path;
+    LPCWSTR dst_path;
 
-    if (!_PyArg_ParseStack(args, nargs, "uu:CreateJunction",
-        &src_path, &dst_path)) {
+    if (!_PyArg_CheckPositional("CreateJunction", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("CreateJunction", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    #if USE_UNICODE_WCHAR_CACHE
+    src_path = _PyUnicode_AsUnicode(args[0]);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    src_path = PyUnicode_AsWideCharString(args[0], NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (src_path == NULL) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("CreateJunction", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    #if USE_UNICODE_WCHAR_CACHE
+    dst_path = _PyUnicode_AsUnicode(args[1]);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    dst_path = PyUnicode_AsWideCharString(args[1], NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (dst_path == NULL) {
         goto exit;
     }
     return_value = _winapi_CreateJunction_impl(module, src_path, dst_path);
 
 exit:
+    /* Cleanup for src_path */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)src_path);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for dst_path */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)dst_path);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -322,13 +404,22 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZOOOikOZO:CreateProcess",
-        &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&OOOikOO&O:CreateProcess",
+        _PyUnicode_WideCharString_Opt_Converter, &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, _PyUnicode_WideCharString_Opt_Converter, &current_directory, &startup_info)) {
         goto exit;
     }
     return_value = _winapi_CreateProcess_impl(module, application_name, command_line, proc_attrs, thread_attrs, inherit_handles, creation_flags, env_mapping, current_directory, startup_info);
 
 exit:
+    /* Cleanup for application_name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)application_name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for current_directory */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)current_directory);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -601,6 +692,88 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_MapViewOfFile__doc__,
+"MapViewOfFile($module, file_map, desired_access, file_offset_high,\n"
+"              file_offset_low, number_bytes, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_MAPVIEWOFFILE_METHODDEF    \
+    {"MapViewOfFile", (PyCFunction)(void(*)(void))_winapi_MapViewOfFile, METH_FASTCALL, _winapi_MapViewOfFile__doc__},
+
+static LPVOID
+_winapi_MapViewOfFile_impl(PyObject *module, HANDLE file_map,
+                           DWORD desired_access, DWORD file_offset_high,
+                           DWORD file_offset_low, size_t number_bytes);
+
+static PyObject *
+_winapi_MapViewOfFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HANDLE file_map;
+    DWORD desired_access;
+    DWORD file_offset_high;
+    DWORD file_offset_low;
+    size_t number_bytes;
+    LPVOID _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "kkkO&:MapViewOfFile",
+        &file_map, &desired_access, &file_offset_high, &file_offset_low, _PyLong_Size_t_Converter, &number_bytes)) {
+        goto exit;
+    }
+    _return_value = _winapi_MapViewOfFile_impl(module, file_map, desired_access, file_offset_high, file_offset_low, number_bytes);
+    if ((_return_value == NULL) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_OpenFileMapping__doc__,
+"OpenFileMapping($module, desired_access, inherit_handle, name, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_OPENFILEMAPPING_METHODDEF    \
+    {"OpenFileMapping", (PyCFunction)(void(*)(void))_winapi_OpenFileMapping, METH_FASTCALL, _winapi_OpenFileMapping__doc__},
+
+static HANDLE
+_winapi_OpenFileMapping_impl(PyObject *module, DWORD desired_access,
+                             BOOL inherit_handle, LPCWSTR name);
+
+static PyObject *
+_winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    DWORD desired_access;
+    BOOL inherit_handle;
+    LPCWSTR name;
+    HANDLE _return_value;
+
+    if (!_PyArg_ParseStack(args, nargs, "kiO&:OpenFileMapping",
+        &desired_access, &inherit_handle, _PyUnicode_WideCharString_Converter, &name)) {
+        goto exit;
+    }
+    _return_value = _winapi_OpenFileMapping_impl(module, desired_access, inherit_handle, name);
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (_return_value == NULL) {
+        Py_RETURN_NONE;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    /* Cleanup for name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_OpenProcess__doc__,
 "OpenProcess($module, desired_access, inherit_handle, process_id, /)\n"
 "--\n"
@@ -758,6 +931,37 @@ _winapi_TerminateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
     return_value = _winapi_TerminateProcess_impl(module, handle, exit_code);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_VirtualQuerySize__doc__,
+"VirtualQuerySize($module, address, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_VIRTUALQUERYSIZE_METHODDEF    \
+    {"VirtualQuerySize", (PyCFunction)_winapi_VirtualQuerySize, METH_O, _winapi_VirtualQuerySize__doc__},
+
+static size_t
+_winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address);
+
+static PyObject *
+_winapi_VirtualQuerySize(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCVOID address;
+    size_t _return_value;
+
+    if (!PyArg_Parse(arg, "" F_POINTER ":VirtualQuerySize", &address)) {
+        goto exit;
+    }
+    _return_value = _winapi_VirtualQuerySize_impl(module, address);
+    if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSize_t(_return_value);
 
 exit:
     return return_value;
@@ -944,4 +1148,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=145d0d362167c1b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f10e03f64ff9777 input=a9049054013a1b77]*/

@@ -4,6 +4,8 @@
 Writing the Setup Script
 ************************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 The setup script is the centre of all activity in building, distributing, and
 installing modules using the Distutils.  The main purpose of the setup script is
 to describe your module distribution to the Distutils, so that the various
@@ -523,21 +525,24 @@ following way::
 
     setup(...,
           data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
-                      ('config', ['cfg/data.cfg']),
-                      ('/etc/init.d', ['init-script'])]
+                      ('config', ['cfg/data.cfg'])],
          )
 
-Note that you can specify the directory names where the data files will be
-installed, but you cannot rename the data files themselves.
-
 Each (*directory*, *files*) pair in the sequence specifies the installation
-directory and the files to install there.  If *directory* is a relative path, it
-is interpreted relative to the installation prefix (Python's ``sys.prefix`` for
-pure-Python packages, ``sys.exec_prefix`` for packages that contain extension
-modules).  Each file name in *files* is interpreted relative to the
-:file:`setup.py` script at the top of the package source distribution.  No
-directory information from *files* is used to determine the final location of
-the installed file; only the name of the file is used.
+directory and the files to install there.
+
+Each file name in *files* is interpreted relative to the :file:`setup.py`
+script at the top of the package source distribution. Note that you can
+specify the directory where the data files will be installed, but you cannot
+rename the data files themselves.
+
+The *directory* should be a relative path. It is interpreted relative to the
+installation prefix (Python's ``sys.prefix`` for system installations;
+``site.USER_BASE`` for user installations). Distutils allows *directory* to be
+an absolute installation path, but this is discouraged since it is
+incompatible with the wheel packaging format. No directory information from
+*files* is used to determine the final location of the installed file; only
+the name of the file is used.
 
 You can specify the ``data_files`` options as a simple sequence of files
 without specifying a target directory, but this is not recommended, and the
@@ -609,9 +614,8 @@ Notes:
     provided, distutils lists it as the author in :file:`PKG-INFO`.
 
 (4)
-    The ``long_description`` field is used by PyPI when you are
-    :ref:`registering <package-register>` a package, to
-    :ref:`build its home page <package-display>`.
+    The ``long_description`` field is used by PyPI when you publish a package,
+    to build its project page.
 
 (5)
     The ``license`` field is a text indicating the license covering the

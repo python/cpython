@@ -1,3 +1,0 @@
-Add support for sockets of the AF_QIPCRTR address family, supported by the
-Linux kernel. This is used to communicate with services, such as GPS or
-radio, running on Qualcomm devices. Patch by Bjorn Andersson.

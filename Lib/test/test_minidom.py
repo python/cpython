@@ -1152,6 +1152,22 @@ class MinidomTest(unittest.TestCase):
 
         doc.unlink()
 
+    def testStandalone(self):
+        doc = parseString('<foo>&#x20ac;</foo>')
+        self.assertEqual(doc.toxml(),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=None),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=True),
+            '<?xml version="1.0" standalone="yes"?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml(standalone=False),
+            '<?xml version="1.0" standalone="no"?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml('utf-8', True),
+            b'<?xml version="1.0" encoding="utf-8" standalone="yes"?>'
+            b'<foo>\xe2\x82\xac</foo>')
+
+        doc.unlink()
+
     class UserDataHandler:
         called = 0
         def handle(self, operation, key, data, src, dst):
@@ -1630,6 +1646,22 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(doc.toprettyxml(),
                          '<?xml version="1.0" ?>\n'
                          '<curriculum status="public" company="example"/>\n')
+
+    def test_toprettyxml_with_cdata(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        doc = parseString(xml_str)
+        self.assertEqual(doc.toprettyxml(),
+                         '<?xml version="1.0" ?>\n'
+                         '<root>\n'
+                         '\t<node><![CDATA[</data>]]></node>\n'
+                         '</root>\n')
+
+    def test_cdata_parsing(self):
+        xml_str = '<?xml version="1.0" ?><root><node><![CDATA[</data>]]></node></root>'
+        dom1 = parseString(xml_str)
+        self.checkWholeText(dom1.getElementsByTagName('node')[0].firstChild, '</data>')
+        dom2 = parseString(dom1.toprettyxml())
+        self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
 if __name__ == "__main__":
     unittest.main()

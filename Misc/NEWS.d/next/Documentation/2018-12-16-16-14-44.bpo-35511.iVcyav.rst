@@ -1,3 +1,0 @@
-Specified that profile.Profile class doesn't not support enable or disable
-methods. Also, elaborated that Profile object as a context manager is only
-supported in cProfile module.

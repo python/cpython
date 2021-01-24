@@ -1,1 +1,0 @@
-Add the --json-lines option to json.tool. Patch by hongweipeng.

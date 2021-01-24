@@ -1,3 +1,0 @@
-Improve the doc about IDLE running user code.   The section is renamed from
-"IDLE -- console differences" is renamed "Running user code".
-It mostly covers the implications of using custom sys.stdxxx objects.

@@ -21,13 +21,23 @@ stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"tabsize", NULL};
-    static _PyArg_Parser _parser = {"|i:expandtabs", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "expandtabs", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &tabsize)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    tabsize = _PyLong_AsInt(args[0]);
+    if (tabsize == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = stringlib_expandtabs_impl(self, tabsize);
 
 exit:
@@ -55,10 +65,35 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|c:ljust",
-        &width, &fillchar)) {
+    if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
         goto exit;
     }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[1]) && PyBytes_GET_SIZE(args[1]) == 1) {
+        fillchar = PyBytes_AS_STRING(args[1])[0];
+    }
+    else if (PyByteArray_Check(args[1]) && PyByteArray_GET_SIZE(args[1]) == 1) {
+        fillchar = PyByteArray_AS_STRING(args[1])[0];
+    }
+    else {
+        _PyArg_BadArgument("ljust", "argument 2", "a byte string of length 1", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = stringlib_ljust_impl(self, width, fillchar);
 
 exit:
@@ -86,10 +121,35 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|c:rjust",
-        &width, &fillchar)) {
+    if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
         goto exit;
     }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[1]) && PyBytes_GET_SIZE(args[1]) == 1) {
+        fillchar = PyBytes_AS_STRING(args[1])[0];
+    }
+    else if (PyByteArray_Check(args[1]) && PyByteArray_GET_SIZE(args[1]) == 1) {
+        fillchar = PyByteArray_AS_STRING(args[1])[0];
+    }
+    else {
+        _PyArg_BadArgument("rjust", "argument 2", "a byte string of length 1", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = stringlib_rjust_impl(self, width, fillchar);
 
 exit:
@@ -117,10 +177,35 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!_PyArg_ParseStack(args, nargs, "n|c:center",
-        &width, &fillchar)) {
+    if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
         goto exit;
     }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (PyBytes_Check(args[1]) && PyBytes_GET_SIZE(args[1]) == 1) {
+        fillchar = PyBytes_AS_STRING(args[1])[0];
+    }
+    else if (PyByteArray_Check(args[1]) && PyByteArray_GET_SIZE(args[1]) == 1) {
+        fillchar = PyByteArray_AS_STRING(args[1])[0];
+    }
+    else {
+        _PyArg_BadArgument("center", "argument 2", "a byte string of length 1", args[1]);
+        goto exit;
+    }
+skip_optional:
     return_value = stringlib_center_impl(self, width, fillchar);
 
 exit:
@@ -147,12 +232,21 @@ stringlib_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (!PyArg_Parse(arg, "n:zfill", &width)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        width = ival;
     }
     return_value = stringlib_zfill_impl(self, width);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d09ba158d470566e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d9abc7b1cffeca6 input=a9049054013a1b77]*/

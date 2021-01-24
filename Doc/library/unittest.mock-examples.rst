@@ -12,8 +12,9 @@
 
 .. testsetup::
 
+    import asyncio
     import unittest
-    from unittest.mock import Mock, MagicMock, patch, call, sentinel
+    from unittest.mock import Mock, MagicMock, AsyncMock, patch, call, sentinel
 
     class SomeClass:
         attribute = 'this is a doctest'
@@ -274,6 +275,47 @@ function returns is what the call returns:
     1
     >>> mock(2, 3)
     2
+
+
+Mocking asynchronous iterators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
+:ref:`async-iterators` through ``__aiter__``. The :attr:`~Mock.return_value`
+attribute of ``__aiter__`` can be used to set the return values to be used for
+iteration.
+
+    >>> mock = MagicMock()  # AsyncMock also works here
+    >>> mock.__aiter__.return_value = [1, 2, 3]
+    >>> async def main():
+    ...     return [i async for i in mock]
+    ...
+    >>> asyncio.run(main())
+    [1, 2, 3]
+
+
+Mocking asynchronous context manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
+:ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``.
+By default, ``__aenter__`` and ``__aexit__`` are ``AsyncMock`` instances that
+return an async function.
+
+    >>> class AsyncContextManager:
+    ...     async def __aenter__(self):
+    ...         return self
+    ...     async def __aexit__(self, exc_type, exc, tb):
+    ...         pass
+    ...
+    >>> mock_instance = MagicMock(AsyncContextManager())  # AsyncMock also works here
+    >>> async def main():
+    ...     async with mock_instance as result:
+    ...         pass
+    ...
+    >>> asyncio.run(main())
+    >>> mock_instance.__aenter__.assert_awaited_once()
+    >>> mock_instance.__aexit__.assert_awaited_once()
 
 
 Creating a Mock from an Existing Object
@@ -848,7 +890,7 @@ Here's an example implementation:
 
     >>> from copy import deepcopy
     >>> class CopyingMock(MagicMock):
-    ...     def __call__(self, *args, **kwargs):
+    ...     def __call__(self, /, *args, **kwargs):
     ...         args = deepcopy(args)
     ...         kwargs = deepcopy(kwargs)
     ...         return super(CopyingMock, self).__call__(*args, **kwargs)
@@ -1042,7 +1084,7 @@ that it takes arbitrary keyword arguments (``**kwargs``) which are then passed
 onto the mock constructor:
 
     >>> class Subclass(MagicMock):
-    ...     def _get_child_mock(self, **kwargs):
+    ...     def _get_child_mock(self, /, **kwargs):
     ...         return MagicMock(**kwargs)
     ...
     >>> mymock = Subclass()

@@ -1,11 +1,11 @@
 #ifndef Py_INTERNAL_CONTEXT_H
 #define Py_INTERNAL_CONTEXT_H
 
-#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
-#  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_BUILTIN define"
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hamt.h"
+#include "pycore_hamt.h"   /* PyHamtObject */
 
 struct _pycontextobject {
     PyObject_HEAD
@@ -37,6 +37,6 @@ struct _pycontexttokenobject {
 
 
 int _PyContext_Init(void);
-void _PyContext_Fini(void);
+void _PyContext_Fini(PyThreadState *tstate);
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

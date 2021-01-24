@@ -1,1 +1,0 @@
-:class:`smtplib.SMTP` objects now always have a `sock` attribute present

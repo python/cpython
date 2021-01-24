@@ -28,7 +28,10 @@ character for the same purpose in string literals; for example, to match
 a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
-literal.
+literal. Also, please note that any invalid escape sequences in Python's
+usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
+and in the future this will become a :exc:`SyntaxError`. This behaviour
+will happen even if it is a valid escape sequence for a regular expression.
 
 The solution is to use Python's raw string notation for regular expression
 patterns; backslashes are not handled in any special way in a string literal
@@ -368,6 +371,8 @@ The special characters are:
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
 
+.. index:: single: (?=; in regular expressions
+
 ``(?=...)``
    Matches if ``...`` matches next, but doesn't consume any of the string.  This is
    called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
@@ -535,8 +540,8 @@ character ``'$'``.
    Matches any character which is not a word character. This is
    the opposite of ``\w``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^a-zA-Z0-9_]``.  If the :const:`LOCALE` flag is
-   used, matches characters considered alphanumeric in the current locale
-   and the underscore.
+   used, matches characters which are neither alphanumeric in the current locale
+   nor the underscore.
 
 .. index:: single: \Z; in regular expressions
 
@@ -568,7 +573,8 @@ accepted by the regular expression parser::
 only inside character classes.)
 
 ``'\u'``, ``'\U'``, and ``'\N'`` escape sequences are only recognized in Unicode
-patterns.  In bytes patterns they are errors.
+patterns.  In bytes patterns they are errors.  Unknown escapes of ASCII
+letters are reserved for future use and treated as errors.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
@@ -845,7 +851,9 @@ form.
    *string* is returned unchanged.  *repl* can be a string or a function; if it is
    a string, any backslash escapes in it are processed.  That is, ``\n`` is
    converted to a single newline character, ``\r`` is converted to a carriage return, and
-   so forth.  Unknown escapes such as ``\&`` are left alone.  Backreferences, such
+   so forth.  Unknown escapes of ASCII letters are reserved for future use and
+   treated as errors.  Other unknown escapes such as ``\&`` are left alone.
+   Backreferences, such
    as ``\6``, are replaced with the substring matched by group 6 in the pattern.
    For example::
 
@@ -900,6 +908,7 @@ form.
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
 
+   .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
@@ -922,8 +931,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('python.exe'))
-      python\.exe
+      >>> print(re.escape('http://www.python.org'))
+      http://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
@@ -933,7 +942,7 @@ form.
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
       /|\-|\+|\*\*|\*
 
-   This functions must not be used for the replacement string in :func:`sub`
+   This function must not be used for the replacement string in :func:`sub`
    and :func:`subn`, only backslashes should be escaped.  For example::
 
       >>> digits_re = r'\d+'
@@ -946,7 +955,9 @@ form.
 
    .. versionchanged:: 3.7
       Only characters that can have special meaning in a regular expression
-      are escaped.
+      are escaped. As a result, ``'!'``, ``'"'``, ``'%'``, ``"'"``, ``','``,
+      ``'/'``, ``':'``, ``';'``, ``'<'``, ``'='``, ``'>'``, ``'@'``, and
+      ``"`"`` are no longer escaped.
 
 
 .. function:: purge()
@@ -1606,10 +1617,14 @@ The text categories are specified with regular expressions.  The technique is
 to combine those into a single master regular expression and to loop over
 successive matches::
 
-    import collections
+    from typing import NamedTuple
     import re
 
-    Token = collections.namedtuple('Token', ['type', 'value', 'line', 'column'])
+    class Token(NamedTuple):
+        type: str
+        value: str
+        line: int
+        column: int
 
     def tokenize(code):
         keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}

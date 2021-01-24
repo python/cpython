@@ -1,4 +1,0 @@
-help() on a type now displays builtin subclasses. This is intended primarily
-to help with notification of more specific exception subclasses.
-
-Patch by Sanyam Khurana.

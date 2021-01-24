@@ -1,1 +1,0 @@
-Update ensurepip to install pip 18.1 and setuptools 40.6.2.

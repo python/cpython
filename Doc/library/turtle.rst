@@ -20,8 +20,8 @@ Introduction
 ============
 
 Turtle graphics is a popular way for introducing programming to kids.  It was
-part of the original Logo programming language developed by Wally Feurzig and
-Seymour Papert in 1966.
+part of the original Logo programming language developed by Wally Feurzeig,
+Seymour Papert and Cynthia Solomon in 1967.
 
 Imagine a robotic turtle starting at (0, 0) in the x-y plane.  After an ``import turtle``, give it the
 command ``turtle.forward(15)``, and it moves (on-screen!) 15 pixels in the
@@ -913,8 +913,8 @@ Color control
       Set pencolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the outline of that polygon is drawn with the
-    newly set pencolor.
+   If turtleshape is a polygon, the outline of that polygon is drawn with the
+   newly set pencolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -962,8 +962,8 @@ Color control
       Set fillcolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the interior of that polygon is drawn
-    with the newly set fillcolor.
+   If turtleshape is a polygon, the interior of that polygon is drawn
+   with the newly set fillcolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1001,8 +1001,8 @@ Color control
       Equivalent to ``pencolor(colorstring1)`` and ``fillcolor(colorstring2)``
       and analogously if the other input format is used.
 
-    If turtleshape is a polygon, outline and interior of that polygon is drawn
-    with the newly set colors.
+   If turtleshape is a polygon, outline and interior of that polygon is drawn
+   with the newly set colors.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1051,6 +1051,11 @@ Filling
 
    Fill the shape drawn after the last call to :func:`begin_fill`.
 
+   Whether or not overlap regions for self-intersecting polygons
+   or multiple shapes are filled depends on the operating system graphics,
+   type of overlap, and number of overlaps.  For example, the Turtle star
+   above may be either all yellow or have some white regions.
+
    .. doctest::
       :skipif: _tkinter is None
 
@@ -1064,6 +1069,7 @@ More drawing control
 ~~~~~~~~~~~~~~~~~~~~
 
 .. function:: reset()
+   :noindex:
 
    Delete the turtle's drawings from the screen, re-center the turtle and set
    variables to the default values.
@@ -1085,6 +1091,7 @@ More drawing control
 
 
 .. function:: clear()
+   :noindex:
 
    Delete the turtle's drawings from the screen.  Do not move turtle.  State and
    position of the turtle as well as drawings of other turtles are not affected.
@@ -1357,6 +1364,7 @@ Using events
 ------------
 
 .. function:: onclick(fun, btn=1, add=None)
+   :noindex:
 
    :param fun: a function with two arguments which will be called with the
                coordinates of the clicked point on the canvas

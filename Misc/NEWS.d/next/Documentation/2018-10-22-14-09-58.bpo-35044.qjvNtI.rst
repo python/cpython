@@ -1,2 +1,0 @@
-Fix the documentation with the role ``exc`` for the appropriated exception. Patch by
-Stéphane Wirtel

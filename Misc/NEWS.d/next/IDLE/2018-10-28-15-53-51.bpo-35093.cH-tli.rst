@@ -1,2 +1,0 @@
-Document the IDLE document viewer in the IDLE doc. Add a paragraph in "Help
-and preferences", "Help sources" subsection.

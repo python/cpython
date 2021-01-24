@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
    this file.
@@ -70,6 +70,7 @@ source.
    :data:`sys.path` (allowing modules in that directory to be imported as top
    level modules).
 
+   .. audit-event:: cpython.run_command command cmdoption-c
 
 .. cmdoption:: -m <module-name>
 
@@ -100,11 +101,18 @@ source.
    first element will be set to ``"-m"``). As with the :option:`-c` option,
    the current directory will be added to the start of :data:`sys.path`.
 
+   :option:`-I` option can  be used to run the script in isolated mode where
+   :data:`sys.path` contains neither the current directory nor the user's
+   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   ignored, too.
+
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
 
-       python -mtimeit -s 'setup here' 'benchmarked code here'
-       python -mtimeit -h # for details
+       python -m timeit -s 'setup here' 'benchmarked code here'
+       python -m timeit -h # for details
+
+   .. audit-event:: cpython.run_module module-name cmdoption-m
 
    .. seealso::
       :func:`runpy.run_module`
@@ -112,13 +120,13 @@ source.
 
       :pep:`338` -- Executing modules as scripts
 
-
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
 
    .. versionchanged:: 3.4
       namespace packages are also supported
 
+.. _cmdarg-dash:
 
 .. describe:: -
 
@@ -129,6 +137,9 @@ source.
    ``"-"`` and the current directory will be added to the start of
    :data:`sys.path`.
 
+   .. audit-event:: cpython.run_stdin "" ""
+
+.. _cmdarg-script:
 
 .. describe:: <script>
 
@@ -147,6 +158,13 @@ source.
    If the script name refers to a directory or zipfile, the script name is
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
+
+   :option:`-I` option can  be used to run the script in isolated mode where
+   :data:`sys.path` contains neither the script's directory nor the user's
+   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   ignored, too.
+
+   .. audit-event:: cpython.run_file filename
 
    .. seealso::
       :func:`runpy.run_path`
@@ -182,13 +200,13 @@ Generic options
 
    .. code-block:: none
 
-       Python 3.6.0b2+
+       Python 3.8.0b2+
 
    When given twice, print more information about the build, like:
 
    .. code-block:: none
 
-       Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
+       Python 3.8.0b2+ (3.8:0c076caaa8, Apr 20 2019, 21:55:00)
        [GCC 6.2.0 20161005]
 
    .. versionadded:: 3.6
@@ -297,7 +315,7 @@ Miscellaneous options
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`__hash__` values of str, bytes and datetime
+   so that the :meth:`__hash__` values of str and bytes objects
    are "salted" with an unpredictable random value.  Although they remain
    constant within an individual Python process, they are not predictable
    between repeated invocations of Python.
@@ -351,6 +369,11 @@ Miscellaneous options
    (filename or built-in module) from which it is loaded.  When given twice
    (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
+
+   .. versionchanged:: 3.10
+      The :mod:`site` module reports the site-specific paths
+      and :file:`.pth` files being processed.
+
    See also :envvar:`PYTHONVERBOSE`.
 
 
@@ -416,32 +439,17 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
-   * ``-X showalloccount`` to output the total count of allocated objects for
-     each type when the program finishes. This only works when Python was built with
-     ``COUNT_ALLOCS`` defined.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
-   * ``-X dev``: enable CPython's "development mode", introducing additional
-     runtime checks which are too expensive to be enabled by default. It should
-     not be more verbose than the default if the code is correct: new warnings
-     are only emitted when an issue is detected. Effect of the developer mode:
-
-     * Add ``default`` warning filter, as :option:`-W` ``default``.
-     * Install debug hooks on memory allocators: see the
-       :c:func:`PyMem_SetupDebugHooks` C function.
-     * Enable the :mod:`faulthandler` module to dump the Python traceback
-       on a crash.
-     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
-     * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
-       ``True``
-
-   * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
-     the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
-     mode (even when it would otherwise activate automatically).
-     See :envvar:`PYTHONUTF8` for more details.
+   * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
+     additional runtime checks that are too expensive to be enabled by
+     default.
+   * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
+     ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
+     (even when it would otherwise activate automatically).
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
@@ -465,7 +473,17 @@ Miscellaneous options
       The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
    .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option.
+      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+      ``close()`` exceptions in :class:`io.IOBase` destructor.
+
+   .. versionchanged:: 3.9
+      Using ``-X dev`` option, check *encoding* and *errors* arguments on
+      string encoding and decoding operations.
+
+      The ``-X showalloccount`` option has been removed.
+
+   .. deprecated-removed:: 3.9 3.10
+      The ``-X oldparser`` option.
 
 
 Options you shouldn't use
@@ -522,6 +540,14 @@ conflict.
    within a Python program as the variable :data:`sys.path`.
 
 
+.. envvar:: PYTHONPLATLIBDIR
+
+   If this is set to a non-empty string, it overrides the :data:`sys.platlibdir`
+   value.
+
+   .. versionadded:: 3.9
+
+
 .. envvar:: PYTHONSTARTUP
 
    If this is the name of a readable file, the Python commands in that file are
@@ -530,6 +556,11 @@ conflict.
    that objects defined or imported in it can be used without qualification in
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
+
+   .. audit-event:: cpython.run_startup filename envvar-PYTHONSTARTUP
+
+      Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
+      the filename as the argument when called on startup.
 
 
 .. envvar:: PYTHONOPTIMIZE
@@ -606,7 +637,7 @@ conflict.
 .. envvar:: PYTHONHASHSEED
 
    If this variable is not set or set to ``random``, a random value is used
-   to seed the hashes of str, bytes and datetime objects.
+   to seed the hashes of str and bytes objects.
 
    If :envvar:`PYTHONHASHSEED` is set to an integer value, it is used as a fixed
    seed for generating the hash() of the types covered by the hash
@@ -748,8 +779,8 @@ conflict.
 
    * ``debug``: install debug hooks on top of the :ref:`default memory
      allocators <default-memory-allocators>`.
-   * ``malloc_debug``: same as ``malloc`` but also install debug hooks
-   * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
+   * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
+   * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
 
    See the :ref:`default memory allocators <default-memory-allocators>` and the
    :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
@@ -778,9 +809,10 @@ conflict.
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
 
-   If set to a non-empty string, the default filesystem encoding and errors mode
-   will revert to their pre-3.6 values of 'mbcs' and 'replace', respectively.
-   Otherwise, the new defaults 'utf-8' and 'surrogatepass' are used.
+   If set to a non-empty string, the default :term:`filesystem encoding and
+   error handler` mode will revert to their pre-3.6 values of 'mbcs' and
+   'replace', respectively.  Otherwise, the new defaults 'utf-8' and
+   'surrogatepass' are used.
 
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
@@ -858,77 +890,39 @@ conflict.
 
 .. envvar:: PYTHONDEVMODE
 
-   If this environment variable is set to a non-empty string, enable the
-   CPython "development mode". See the :option:`-X` ``dev`` option.
+   If this environment variable is set to a non-empty string, enable
+   :ref:`Python Development Mode <devmode>`, introducing additional runtime
+   checks that are too expensive to be enabled by default.
 
    .. versionadded:: 3.7
 
 .. envvar:: PYTHONUTF8
 
-   If set to ``1``, enables the interpreter's UTF-8 mode, where ``UTF-8`` is
-   used as the text encoding for system interfaces, regardless of the
-   current locale setting.
+   If set to ``1``, enable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
-   This means that:
-
-    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'`` (the locale
-      encoding is ignored).
-    * :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the locale
-      encoding is ignored, and the function's ``do_setlocale`` parameter has no
-      effect).
-    * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
-      UTF-8 as their text encoding, with the ``surrogateescape``
-      :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
-      and :data:`sys.stdout` (:data:`sys.stderr` continues to use
-      ``backslashreplace`` as it does in the default locale-aware mode)
-
-   As a consequence of the changes in those lower level APIs, other higher
-   level APIs also exhibit different default behaviours:
-
-    * Command line arguments, environment variables and filenames are decoded
-      to text using the UTF-8 encoding.
-    * :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
-    * :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
-      encoding by default. However, they still use the strict error handler by
-      default so that attempting to open a binary file in text mode is likely
-      to raise an exception rather than producing nonsense data.
-
-   Note that the standard stream settings in UTF-8 mode can be overridden by
-   :envvar:`PYTHONIOENCODING` (just as they can be in the default locale-aware
-   mode).
-
-   If set to ``0``, the interpreter runs in its default locale-aware mode.
+   If set to ``0``, disable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    Setting any other non-empty string causes an error during interpreter
    initialisation.
 
-   If this environment variable is not set at all, then the interpreter defaults
-   to using the current locale settings, *unless* the current locale is
-   identified as a legacy ASCII-based locale
-   (as described for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
-   either disabled or fails. In such legacy locales, the interpreter will
-   default to enabling UTF-8 mode unless explicitly instructed not to do so.
-
-   Also available as the :option:`-X` ``utf8`` option.
-
-   .. availability:: \*nix.
-
    .. versionadded:: 3.7
-      See :pep:`540` for more details.
 
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-Setting these variables only has an effect in a debug build of Python, that is,
-if Python was configured with the ``--with-pydebug`` build option.
+Setting these variables only has an effect in a debug build of Python.
 
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.
+
+   Need Python configured with the ``--with-pydebug`` build option.
 
 
 .. envvar:: PYTHONDUMPREFS
 
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
+
+   Need Python configured with the ``--with-trace-refs`` build option.

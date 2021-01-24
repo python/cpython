@@ -1,2 +1,0 @@
-Expose :meth:`symtable.Symbol.is_nonlocal` in the symtable module. Patch by
-Pablo Galindo.

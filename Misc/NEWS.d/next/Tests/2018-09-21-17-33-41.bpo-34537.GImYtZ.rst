@@ -1,2 +1,0 @@
-Fix ``test_gdb.test_strings()`` when ``LC_ALL=C`` and GDB was compiled with
-Python 3.6 or earlier.

@@ -1,2 +1,0 @@
-Fix incorrect parsing of :class:`_io.IncrementalNewlineDecoder`'s
-*translate* argument.

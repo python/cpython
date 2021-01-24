@@ -98,8 +98,7 @@ class TestCallable(unittest.TestCase):
 
     def test_patch_spec_callable_class(self):
         class CallableX(X):
-            def __call__(self):
-                pass
+            def __call__(self): pass
 
         class Sub(CallableX):
             pass

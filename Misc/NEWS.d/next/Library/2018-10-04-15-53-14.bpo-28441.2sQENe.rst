@@ -1,3 +1,0 @@
-On Cygwin and MinGW, ensure that ``sys.executable`` always includes the full
-filename in the path, including the ``.exe`` suffix (unless it is a symbolic
-link).

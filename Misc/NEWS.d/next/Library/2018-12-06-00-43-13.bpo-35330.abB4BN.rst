@@ -1,4 +1,0 @@
-When a :class:`Mock` instance was used to wrap an object, if `side_effect`
-is used in one of the mocks of it methods, don't call the original
-implementation and return the result of using the side effect the same way
-that it is done with return_value.

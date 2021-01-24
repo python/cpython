@@ -1,1 +1,0 @@
-Enable TCP_NODELAY on Windows for proactor asyncio event loop.

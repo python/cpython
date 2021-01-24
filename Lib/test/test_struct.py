@@ -7,6 +7,7 @@ import struct
 import sys
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
 
@@ -652,6 +653,31 @@ class StructTest(unittest.TestCase):
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
 
+    def test_struct_cleans_up_at_runtime_shutdown(self):
+        code = """if 1:
+            import struct
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            struct.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"C.__del__", stderr)
+
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '2\0i', b'\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
@@ -678,6 +704,10 @@ class UnpackIteratorTest(unittest.TestCase):
             s.iter_unpack(b"")
         with self.assertRaises(struct.error):
             s.iter_unpack(b"12")
+
+    def test_uninstantiable(self):
+        iter_unpack_type = type(struct.Struct(">ibcp").iter_unpack(b""))
+        self.assertRaises(TypeError, iter_unpack_type)
 
     def test_iterate(self):
         s = struct.Struct('>IB')

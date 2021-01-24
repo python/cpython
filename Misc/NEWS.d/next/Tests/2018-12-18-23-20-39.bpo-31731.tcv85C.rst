@@ -1,4 +1,0 @@
-Fix a race condition in ``check_interrupted_write()`` of test_io: create
-directly the thread with SIGALRM signal blocked, rather than blocking the
-signal later from the thread. Previously, it was possible that the thread gets
-the signal before the signal is blocked.

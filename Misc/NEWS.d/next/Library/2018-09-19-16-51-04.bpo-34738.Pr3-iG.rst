@@ -1,2 +1,0 @@
-ZIP files created by :mod:`distutils` will now include entries for
-directories.
