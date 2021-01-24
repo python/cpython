@@ -1809,7 +1809,7 @@ Functions and decorators
       @overload
       def process(response: bytes) -> str:
           ...
-      def process(response):
+      def process(response: Union[None, int, bytes]) -> Union[None, tuple[int, str], str]:
           <actual implementation>
 
    See :pep:`484` for details and comparison with other typing semantics.
