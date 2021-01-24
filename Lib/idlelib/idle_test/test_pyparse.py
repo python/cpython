@@ -73,11 +73,12 @@ class PyParseTest(unittest.TestCase):
 
         # Split def across lines.
         setcode('"""This is a module docstring"""\n'
-                'class C():\n'
+                'class C:\n'
                 '    def __init__(self, a,\n'
                 '                 b=True):\n'
                 '        pass\n'
                 )
+        pos0, pos = 33, 42  # Start of 'class...', '    def' lines.
 
         # Passing no value or non-callable should fail (issue 32989).
         with self.assertRaises(TypeError):
@@ -91,40 +92,41 @@ class PyParseTest(unittest.TestCase):
 
         # Make all text look like it's not in a string.  This means that it
         # found a good start position.
-        eq(start(char_in_string_false), 44)
+        eq(start(char_in_string_false), pos)
 
         # If the beginning of the def line is not in a string, then it
         # returns that as the index.
-        eq(start(is_char_in_string=lambda index: index > 44), 44)
+        eq(start(is_char_in_string=lambda index: index > pos), pos)
         # If the beginning of the def line is in a string, then it
         # looks for a previous index.
-        eq(start(is_char_in_string=lambda index: index >= 44), 33)
+        eq(start(is_char_in_string=lambda index: index >= pos), pos0)
         # If everything before the 'def' is in a string, then returns None.
         # The non-continuation def line returns 44 (see below).
-        eq(start(is_char_in_string=lambda index: index < 44), None)
+        eq(start(is_char_in_string=lambda index: index < pos), None)
 
         # Code without extra line break in def line - mostly returns the same
         # values.
         setcode('"""This is a module docstring"""\n'
-                'class C():\n'
+                'class C:\n'
                 '    def __init__(self, a, b=True):\n'
                 '        pass\n'
-                )
-        eq(start(char_in_string_false), 44)
-        eq(start(is_char_in_string=lambda index: index > 44), 44)
-        eq(start(is_char_in_string=lambda index: index >= 44), 33)
+                )  # Does not affect class, def positions.
+        eq(start(char_in_string_false), pos)
+        eq(start(is_char_in_string=lambda index: index > pos), pos)
+        eq(start(is_char_in_string=lambda index: index >= pos), pos0)
         # When the def line isn't split, this returns which doesn't match the
         # split line test.
-        eq(start(is_char_in_string=lambda index: index < 44), 44)
+        eq(start(is_char_in_string=lambda index: index < pos), pos)
 
     def test_set_lo(self):
         code = (
                 '"""This is a module docstring"""\n'
-                'class C():\n'
+                'class C:\n'
                 '    def __init__(self, a,\n'
                 '                 b=True):\n'
                 '        pass\n'
                 )
+        pos = 42
         p = self.parser
         p.set_code(code)
 
@@ -137,8 +139,8 @@ class PyParseTest(unittest.TestCase):
         self.assertEqual(p.code, code)
 
         # An index that is preceded by a newline.
-        p.set_lo(44)
-        self.assertEqual(p.code, code[44:])
+        p.set_lo(pos)
+        self.assertEqual(p.code, code[pos:])
 
     def test_study1(self):
         eq = self.assertEqual
