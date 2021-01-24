@@ -1148,6 +1148,71 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
 
+    def test_long_context_chain(self):
+        def f():
+            try:
+                1/0
+            except:
+                f()
+
+        try:
+            f()
+        except RecursionError:
+            exc_info = sys.exc_info()
+        else:
+            self.fail("Exception not raised")
+
+        te = traceback.TracebackException(*exc_info)
+        res = list(te.format())
+
+        # many ZeroDiv errors followed by the RecursionError
+        self.assertGreater(len(res), sys.getrecursionlimit())
+        self.assertGreater(
+            len([l for l in res if 'ZeroDivisionError:' in l]),
+            sys.getrecursionlimit() * 0.5)
+        self.assertIn(
+            "RecursionError: maximum recursion depth exceeded", res[-1])
+
+    def test_compact_with_cause(self):
+        try:
+            try:
+                1/0
+            finally:
+                cause = Exception("cause")
+                raise Exception("uh oh") from cause
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info, compact=True)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        exc_cause = traceback.TracebackException(Exception, cause, None)
+        self.assertEqual(exc_cause, exc.__cause__)
+        self.assertEqual(None, exc.__context__)
+        self.assertEqual(True, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_compact_no_cause(self):
+        try:
+            try:
+                1/0
+            finally:
+                exc_info_context = sys.exc_info()
+                exc_context = traceback.TracebackException(*exc_info_context)
+                raise Exception("uh oh")
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info, compact=True)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        self.assertEqual(None, exc.__cause__)
+        self.assertEqual(exc_context, exc.__context__)
+        self.assertEqual(False, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
     def test_no_refs_to_exception_and_traceback_objects(self):
         try:
             1/0

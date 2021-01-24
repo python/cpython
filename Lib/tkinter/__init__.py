@@ -516,15 +516,11 @@ class Variable:
             self._tk.call("trace", "vinfo", self._name))]
 
     def __eq__(self, other):
-        """Comparison for equality (==).
-
-        Note: if the Variable's master matters to behavior
-        also compare self._master == other._master
-        """
         if not isinstance(other, Variable):
             return NotImplemented
-        return self.__class__.__name__ == other.__class__.__name__ \
-            and self._name == other._name
+        return (self._name == other._name
+                and self.__class__.__name__ == other.__class__.__name__
+                and self._tk == other._tk)
 
 
 class StringVar(Variable):
@@ -1189,8 +1185,7 @@ class Misc:
             self.tk.call('winfo', 'reqwidth', self._w))
 
     def winfo_rgb(self, color):
-        """Return tuple of decimal values for red, green, blue for
-        COLOR in this widget."""
+        """Return a tuple of integer RGB values in range(65536) for color in this widget."""
         return self._getints(
             self.tk.call('winfo', 'rgb', self._w, color))
 

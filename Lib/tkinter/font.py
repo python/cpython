@@ -107,7 +107,7 @@ class Font:
     def __eq__(self, other):
         if not isinstance(other, Font):
             return NotImplemented
-        return self.name == other.name
+        return self.name == other.name and self._tk == other._tk
 
     def __getitem__(self, key):
         return self.cget(key)

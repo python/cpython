@@ -3,8 +3,12 @@ import unittest
 
 from contextlib import ExitStack
 from importlib.metadata import (
-    distribution, entry_points, files, PackageNotFoundError,
-    version, distributions,
+    PackageNotFoundError,
+    distribution,
+    distributions,
+    entry_points,
+    files,
+    version,
 )
 from importlib import resources
 

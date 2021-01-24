@@ -18,6 +18,8 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
+#include "module_names.h"         // _Py_module_names
+
 #include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
@@ -36,6 +38,9 @@
 #  define PyWindowsConsoleIO_Check(op) \
        (PyObject_TypeCheck((op), &PyWindowsConsoleIO_Type))
 #endif
+
+
+#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 
 
 _Py_IDENTIFIER(flush);
@@ -2348,8 +2353,7 @@ static void
 _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
                               PyThreadState *tstate)
 {
-    fputc('\n', stderr);
-    fflush(stderr);
+    PUTS(fd, "\n");
 
     /* display the current Python stack */
     _Py_DumpTracebackThreads(fd, interp, tstate);
@@ -2451,30 +2455,31 @@ fatal_output_debug(const char *msg)
 
 
 static void
-fatal_error_dump_runtime(FILE *stream, _PyRuntimeState *runtime)
+fatal_error_dump_runtime(int fd, _PyRuntimeState *runtime)
 {
-    fprintf(stream, "Python runtime state: ");
+    PUTS(fd, "Python runtime state: ");
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
     if (finalizing) {
-        fprintf(stream, "finalizing (tstate=%p)", finalizing);
+        PUTS(fd, "finalizing (tstate=0x");
+        _Py_DumpHexadecimal(fd, (uintptr_t)finalizing, sizeof(finalizing) * 2);
+        PUTS(fd, ")");
     }
     else if (runtime->initialized) {
-        fprintf(stream, "initialized");
+        PUTS(fd, "initialized");
     }
     else if (runtime->core_initialized) {
-        fprintf(stream, "core initialized");
+        PUTS(fd, "core initialized");
     }
     else if (runtime->preinitialized) {
-        fprintf(stream, "preinitialized");
+        PUTS(fd, "preinitialized");
     }
     else if (runtime->preinitializing) {
-        fprintf(stream, "preinitializing");
+        PUTS(fd, "preinitializing");
     }
     else {
-        fprintf(stream, "unknown");
+        PUTS(fd, "unknown");
     }
-    fprintf(stream, "\n");
-    fflush(stream);
+    PUTS(fd, "\n");
 }
 
 
@@ -2493,11 +2498,77 @@ fatal_error_exit(int status)
 }
 
 
+// Dump the list of extension modules of sys.modules, excluding stdlib modules
+// (_Py_module_names), into fd file descriptor.
+//
+// This function is called by a signal handler in faulthandler: avoid memory
+// allocations and keep the implementation simple. For example, the list is not
+// sorted on purpose.
+void
+_Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
+{
+    if (interp == NULL) {
+        return;
+    }
+    PyObject *modules = interp->modules;
+    if (modules == NULL || !PyDict_Check(modules)) {
+        return;
+    }
+
+    int header = 1;
+    Py_ssize_t count = 0;
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(modules, &pos, &key, &value)) {
+        if (!PyUnicode_Check(key)) {
+            continue;
+        }
+        if (!_PyModule_IsExtension(value)) {
+            continue;
+        }
+
+        // Check if it is a stdlib extension module.
+        // Use the module name from the sys.modules key,
+        // don't attempt to get the module object name.
+        const Py_ssize_t names_len = Py_ARRAY_LENGTH(_Py_module_names);
+        int is_stdlib_mod = 0;
+        for (Py_ssize_t i=0; i < names_len; i++) {
+            const char *name = _Py_module_names[i];
+            if (PyUnicode_CompareWithASCIIString(key, name) == 0) {
+                is_stdlib_mod = 1;
+                break;
+            }
+        }
+        if (is_stdlib_mod) {
+            // Ignore stdlib extension module.
+            continue;
+        }
+
+        if (header) {
+            PUTS(fd, "\nExtension modules: ");
+            header = 0;
+        }
+        else {
+            PUTS(fd, ", ");
+        }
+
+        _Py_DumpASCII(fd, key);
+        count++;
+    }
+
+    if (count) {
+        PUTS(fd, " (total: ");
+        _Py_DumpDecimal(fd, count);
+        PUTS(fd, ")");
+        PUTS(fd, "\n");
+    }
+}
+
+
 static void _Py_NO_RETURN
-fatal_error(FILE *stream, int header, const char *prefix, const char *msg,
+fatal_error(int fd, int header, const char *prefix, const char *msg,
             int status)
 {
-    const int fd = fileno(stream);
     static int reentrant = 0;
 
     if (reentrant) {
@@ -2508,29 +2579,22 @@ fatal_error(FILE *stream, int header, const char *prefix, const char *msg,
     reentrant = 1;
 
     if (header) {
-        fprintf(stream, "Fatal Python error: ");
+        PUTS(fd, "Fatal Python error: ");
         if (prefix) {
-            fputs(prefix, stream);
-            fputs(": ", stream);
+            PUTS(fd, prefix);
+            PUTS(fd, ": ");
         }
         if (msg) {
-            fputs(msg, stream);
+            PUTS(fd, msg);
         }
         else {
-            fprintf(stream, "<message not set>");
+            PUTS(fd, "<message not set>");
         }
-        fputs("\n", stream);
-        fflush(stream);
+        PUTS(fd, "\n");
     }
 
     _PyRuntimeState *runtime = &_PyRuntime;
-    fatal_error_dump_runtime(stream, runtime);
-
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyInterpreterState *interp = NULL;
-    if (tstate != NULL) {
-        interp = tstate->interp;
-    }
+    fatal_error_dump_runtime(fd, runtime);
 
     /* Check if the current thread has a Python thread state
        and holds the GIL.
@@ -2540,8 +2604,17 @@ fatal_error(FILE *stream, int header, const char *prefix, const char *msg,
 
        tss_tstate != tstate if the current Python thread does not hold the GIL.
        */
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = NULL;
     PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
+    if (tstate != NULL) {
+        interp = tstate->interp;
+    }
+    else if (tss_tstate != NULL) {
+        interp = tss_tstate->interp;
+    }
     int has_tstate_and_gil = (tss_tstate != NULL && tss_tstate == tstate);
+
     if (has_tstate_and_gil) {
         /* If an exception is set, print the exception with its traceback */
         if (!_Py_FatalError_PrintExc(tss_tstate)) {
@@ -2552,6 +2625,8 @@ fatal_error(FILE *stream, int header, const char *prefix, const char *msg,
     else {
         _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
     }
+
+    _Py_DumpExtensionModules(fd, interp);
 
     /* The main purpose of faulthandler is to display the traceback.
        This function already did its best to display a traceback.
@@ -2578,14 +2653,14 @@ fatal_error(FILE *stream, int header, const char *prefix, const char *msg,
 void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
-    fatal_error(stderr, 1, NULL, msg, -1);
+    fatal_error(fileno(stderr), 1, NULL, msg, -1);
 }
 
 
 void _Py_NO_RETURN
 _Py_FatalErrorFunc(const char *func, const char *msg)
 {
-    fatal_error(stderr, 1, func, msg, -1);
+    fatal_error(fileno(stderr), 1, func, msg, -1);
 }
 
 
@@ -2600,12 +2675,12 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     reentrant = 1;
 
     FILE *stream = stderr;
-    fprintf(stream, "Fatal Python error: ");
+    const int fd = fileno(stream);
+    PUTS(fd, "Fatal Python error: ");
     if (func) {
-        fputs(func, stream);
-        fputs(": ", stream);
+        PUTS(fd, func);
+        PUTS(fd, ": ");
     }
-    fflush(stream);
 
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
@@ -2619,7 +2694,7 @@ _Py_FatalErrorFormat(const char *func, const char *format, ...)
     fputs("\n", stream);
     fflush(stream);
 
-    fatal_error(stream, 0, NULL, NULL, -1);
+    fatal_error(fd, 0, NULL, NULL, -1);
 }
 
 
@@ -2630,7 +2705,7 @@ Py_ExitStatusException(PyStatus status)
         exit(status.exitcode);
     }
     else if (_PyStatus_IS_ERROR(status)) {
-        fatal_error(stderr, 1, status.func, status.err_msg, 1);
+        fatal_error(fileno(stderr), 1, status.func, status.err_msg, 1);
     }
     else {
         Py_FatalError("Py_ExitStatusException() must not be called on success");

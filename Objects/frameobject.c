@@ -44,7 +44,7 @@ int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_trace) {
+    if (f->f_lineno != 0) {
         return f->f_lineno;
     }
     else {
@@ -476,8 +476,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_block_stack = pop_block(start_block_stack);
     }
 
-    /* Finally set the new f_lineno and f_lasti and return OK. */
-    f->f_lineno = new_lineno;
+    /* Finally set the new f_lasti and return OK. */
+    f->f_lineno = 0;
     f->f_lasti = best_addr;
     return 0;
 }
@@ -498,11 +498,9 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    /* We rely on f_lineno being accurate when f_trace is set. */
-    f->f_lineno = PyFrame_GetLineNumber(f);
-
-    if (v == Py_None)
+    if (v == Py_None) {
         v = NULL;
+    }
     Py_XINCREF(v);
     Py_XSETREF(f->f_trace, v);
 

@@ -28,7 +28,7 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
-          if [ -z "GITHUB_BASE_REF" ]; then
+          if [ -z "$GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
@@ -63,6 +63,7 @@ jobs:
           # Build Python with the libpython dynamic library
           ./configure --with-pydebug --enable-shared
           make -j4 regen-all
+          make regen-module-names
       - name: Check for changes
         run: |
           changes=$(git status --porcelain)

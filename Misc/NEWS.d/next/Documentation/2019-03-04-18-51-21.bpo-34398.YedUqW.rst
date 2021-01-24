@@ -1,2 +1,0 @@
-Prominently feature listings from the glossary in documentation search
-results. Patch by Ammar Askar.

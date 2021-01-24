@@ -623,12 +623,14 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
+WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
@@ -846,12 +848,14 @@ with_libm
 with_libc
 enable_big_digits
 with_platlibdir
+with_wheel_pkg_dir
 with_computed_gotos
 with_ensurepip
 with_openssl
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
+enable_test_modules
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1503,6 +1507,7 @@ Optional Features:
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
                           (default is system-dependent)]
+  --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1573,6 +1578,9 @@ Optional Packages:
                           system-dependent)
   --with-platlibdir=DIRNAME
                           Python library directory name (default is "lib")
+  --with-wheel-pkg-dir=PATH
+                          Directory of wheel packages used by ensurepip
+                          (default: none)
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
   --with-ensurepip[=install|upgrade|no]
@@ -10249,7 +10257,7 @@ validate_tzpath() {
     fi
 
     # Bad paths are those that don't start with /
-        if ( echo $1 | grep -qE '(^|:)([^/]|$)' ); then
+        if ( echo $1 | grep '\(^\|:\)\([^/]\|$\)' > /dev/null); then
         as_fn_error $? "--with-tzpath must contain only absolute paths, not $1" "$LINENO" 5
         return 1;
     fi
@@ -15490,6 +15498,29 @@ else
 fi
 
 
+# Check for --with-wheel-pkg-dir=PATH
+
+WHEEL_PKG_DIR=""
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-wheel-pkg-dir" >&5
+$as_echo_n "checking for --with-wheel-pkg-dir... " >&6; }
+
+# Check whether --with-wheel-pkg-dir was given.
+if test "${with_wheel_pkg_dir+set}" = set; then :
+  withval=$with_wheel_pkg_dir;
+if test -n "$withval"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  WHEEL_PKG_DIR="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether right shift extends the sign bit" >&5
@@ -17725,6 +17756,26 @@ $as_echo "no" >&6; }
 fi
 
 
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --disable-test-modules" >&5
+$as_echo_n "checking for --disable-test-modules... " >&6; }
+# Check whether --enable-test-modules was given.
+if test "${enable_test_modules+set}" = set; then :
+  enableval=$enable_test_modules;
+fi
+
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+    TEST_MODULES=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"
@@ -19051,4 +19102,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&6
     echo "" >&6
 fi
-

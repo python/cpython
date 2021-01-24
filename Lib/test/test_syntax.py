@@ -987,6 +987,14 @@ def func2():
         self._check_error("A.\u03bc\\\n",
                           "unexpected EOF while parsing")
 
+    def test_error_parenthesis(self):
+        for paren in "([{":
+            self._check_error(paren + "1 + 2", f"\\{paren}' was never closed")
+
+        for paren in ")]}":
+            self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
+
+
 def test_main():
     support.run_unittest(SyntaxTestCase)
     from test import test_syntax

@@ -1,3 +1,0 @@
-At Python exit, if a callback registered with :func:`atexit.register` fails,
-its exception is now logged. Previously, only some exceptions were logged, and
-the last exception was always silently ignored.
