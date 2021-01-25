@@ -396,7 +396,7 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
-Add :data:`sys.module_names`, containing the list of the standard library
+Add :data:`sys.stdlib_module_names`, containing the list of the standard library
 module names.
 (Contributed by Victor Stinner in :issue:`42955`.)
 
