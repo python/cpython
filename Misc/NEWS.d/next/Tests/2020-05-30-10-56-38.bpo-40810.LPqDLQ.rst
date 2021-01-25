@@ -1,0 +1,1 @@
+In :mod:`sqlite3`, fix ``CheckTraceCallbackContent`` for SQLite pre 3.7.15.

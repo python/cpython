@@ -393,7 +393,7 @@ py_blake2b_dealloc(PyObject *self)
     }
 
     PyTypeObject *type = Py_TYPE(self);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 

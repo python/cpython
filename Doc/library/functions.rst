@@ -164,8 +164,8 @@ are always available.  They are listed here in alphabetical order.
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
 
-   * If it is an object conforming to the *buffer* interface, a read-only buffer
-     of the object will be used to initialize the bytes array.
+   * If it is an object conforming to the :ref:`buffer interface <bufferobjects>`,
+     a read-only buffer of the object will be used to initialize the bytes array.
 
    * If it is an *iterable*, it must be an iterable of integers in the range
      ``0 <= x < 256``, which are used as the initial contents of the array.
@@ -259,7 +259,7 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional argument *flags* and *dont_inherit* controls which
+   The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
    and which :ref:`future features <future>` should be allowed. If neither
    is present (or both are zero) the code is compiled with the same flags that
@@ -478,14 +478,15 @@ are always available.  They are listed here in alphabetical order.
    dictionaries as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.  This means that
-   *expression* normally has full access to the standard :mod:`builtins`
-   module and restricted environments are propagated.  If the *locals*
-   dictionary is omitted it defaults to the *globals* dictionary.  If both
-   dictionaries are omitted, the expression is executed with the *globals* and
-   *locals* in the environment where :func:`eval` is called.  Note, *eval()*
-   does not have access to the :term:`nested scopes <nested scope>` (non-locals) in the
-   enclosing environment.
+   inserted under that key before *expression* is parsed.  That way you can
+   control what builtins are available to the executed code by inserting your
+   own ``__builtins__`` dictionary into *globals* before passing it to
+   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
+   *globals* dictionary.  If both dictionaries are omitted, the expression is
+   executed with the *globals* and *locals* in the environment where
+   :func:`eval` is called.  Note, *eval()* does not have access to the
+   :term:`nested scopes <nested scope>` (non-locals) in the enclosing
+   environment.
 
    The return value is the result of
    the evaluated expression. Syntax errors are reported as exceptions.  Example:
@@ -1333,7 +1334,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file* and *flush*, if present, must be given as keyword
@@ -1702,18 +1703,19 @@ are always available.  They are listed here in alphabetical order.
 
 
    With three arguments, return a new type object.  This is essentially a
-   dynamic form of the :keyword:`class` statement. The *name* string is the
-   class name and becomes the :attr:`~definition.__name__` attribute; the *bases*
-   tuple itemizes the base classes and becomes the :attr:`~class.__bases__`
-   attribute; and the *dict* dictionary is the namespace containing definitions
-   for class body and is copied to a standard dictionary to become the
-   :attr:`~object.__dict__` attribute.  For example, the following two
-   statements create identical :class:`type` objects:
+   dynamic form of the :keyword:`class` statement. The *name* string is
+   the class name and becomes the :attr:`~definition.__name__` attribute.
+   The *bases* tuple contains the base classes and becomes the
+   :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
+   ultimate base of all classes, is added.  The *dict* dictionary contains
+   attribute and method definitions for the class body; it may be copied
+   or wrapped before becoming the :attr:`~object.__dict__` attribute.
+   The following two statements create identical :class:`type` objects:
 
       >>> class X:
       ...     a = 1
       ...
-      >>> X = type('X', (object,), dict(a=1))
+      >>> X = type('X', (), dict(a=1))
 
    See also :ref:`bltin-type-objects`.
 

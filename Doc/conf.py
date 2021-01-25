@@ -15,8 +15,7 @@ sys.path.append(os.path.abspath('includes'))
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
               'pyspecific', 'c_annotations', 'escape4chm',
-              'asdl_highlight', 'peg_highlight']
-
+              'asdl_highlight', 'peg_highlight', 'glossary_search']
 
 doctest_global_setup = '''
 try:

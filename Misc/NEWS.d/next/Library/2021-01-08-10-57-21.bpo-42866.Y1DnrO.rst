@@ -1,0 +1,2 @@
+Fix a reference leak in the ``getcodec()`` function of CJK codecs. Patch by
+Victor Stinner.

@@ -1,7 +1,6 @@
 import os.path
 import re
 
-from c_common.fsutil import expand_filenames, iter_files_by_suffix
 from c_parser.preprocessor import (
     get_preprocessor as _get_preprocessor,
 )
@@ -9,7 +8,7 @@ from c_parser import (
     parse_file as _parse_file,
     parse_files as _parse_files,
 )
-from . import REPO_ROOT, INCLUDE_DIRS, SOURCE_DIRS
+from . import REPO_ROOT
 
 
 GLOB_ALL = '**/*'
@@ -43,15 +42,6 @@ def clean_lines(text):
 @end=sh@
 '''
 
-GLOBS = [
-    'Include/*.h',
-    'Include/internal/*.h',
-    'Modules/**/*.c',
-    'Objects/**/*.c',
-    'Parser/**/*.c',
-    'Python/**/*.c',
-]
-
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
@@ -67,11 +57,24 @@ Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 Modules/_winapi.c               # windows.h
 Modules/overlapped.c            # winsock.h
 Python/dynload_win.c            # windows.h
+Modules/expat/winconfig.h
+Python/thread_nt.h
 
 # other OS-dependent
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/dynload_aix.c            # sys/ldr.h
+Python/thread_pthread.h
+
+# only huge constants (safe but parsing is slow)
+Modules/_ssl_data.h
+Modules/unicodedata_db.h
+Modules/unicodename_db.h
+Modules/cjkcodecs/mappings_*.h
+Objects/unicodetype_db.h
+Python/importlib.h
+Python/importlib_external.h
+Python/importlib_zipimport.h
 
 # @end=conf@
 ''')
@@ -79,6 +82,17 @@ Python/dynload_aix.c            # sys/ldr.h
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
+Modules/hashlib.h
+Objects/stringlib/codecs.h
+Objects/stringlib/count.h
+Objects/stringlib/ctype.h
+Objects/stringlib/fastsearch.h
+Objects/stringlib/find.h
+Objects/stringlib/find_max_char.h
+Objects/stringlib/partition.h
+Objects/stringlib/replace.h
+Objects/stringlib/split.h
 
 Modules/_dbmmodule.c
 Modules/cjkcodecs/_codecs_*.c
@@ -134,6 +148,15 @@ Modules/_datetimemodule.c	Py_BUILD_CORE	1
 Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
 Modules/_heapqmodule.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
+Modules/_sre.c	Py_BUILD_CORE	1
+Modules/_collectionsmodule.c	Py_BUILD_CORE	1
+Modules/_zoneinfo.c	Py_BUILD_CORE	1
+Modules/unicodedata.c	Py_BUILD_CORE	1
+Modules/_cursesmodule.c	Py_BUILD_CORE	1
+Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
+Objects/stringlib/codecs.h	Py_BUILD_CORE	1
+Python/ceval_gil.h	Py_BUILD_CORE	1
+Python/condvar.h	Py_BUILD_CORE	1
 
 Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
 Modules/_pickle.c	Py_BUILD_CORE_BUILTIN	1
@@ -177,6 +200,12 @@ Python/Python-ast.c	PyMODINIT_FUNC	PyObject*
 Python/import.c	PyMODINIT_FUNC	PyObject*
 Modules/_testcapimodule.c	PyAPI_FUNC(RTYPE)	RTYPE
 Python/getargs.c	PyAPI_FUNC(RTYPE)	RTYPE
+Objects/stringlib/unicode_format.h	Py_LOCAL_INLINE(type)	static inline type
+
+# implied include of pymacro.h
+*/clinic/*.c.h	PyDoc_VAR(name)	static const char name[]
+*/clinic/*.c.h	PyDoc_STR(str)	str
+*/clinic/*.c.h	PyDoc_STRVAR(name,str)	PyDoc_VAR(name) = PyDoc_STR(str)
 
 # implied include of exports.h
 #Modules/_io/bytesio.c	Py_EXPORTED_SYMBOL	/* */
@@ -212,6 +241,11 @@ Modules/expat/xmlparse.c	HAVE_EXPAT_CONFIG_H	1
 Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
 Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 
+# others
+Modules/sre_lib.h	LOCAL(type)	static inline type
+Modules/sre_lib.h	SRE(F)	sre_ucs2_##F
+Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+
 # @end=tsv@
 ''')[1:]
 
@@ -230,26 +264,6 @@ Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 SAME = [
     './Include/cpython/',
 ]
-
-
-def resolve_filename(filename):
-    orig = filename
-    filename = os.path.normcase(os.path.normpath(filename))
-    if os.path.isabs(filename):
-        if os.path.relpath(filename, REPO_ROOT).startswith('.'):
-            raise Exception(f'{orig!r} is outside the repo ({REPO_ROOT})')
-        return filename
-    else:
-        return os.path.join(REPO_ROOT, filename)
-
-
-def iter_filenames(*, search=False):
-    if search:
-        yield from iter_files_by_suffix(INCLUDE_DIRS, ('.h',))
-        yield from iter_files_by_suffix(SOURCE_DIRS, ('.c',))
-    else:
-        globs = (os.path.join(REPO_ROOT, file) for file in GLOBS)
-        yield from expand_filenames(globs)
 
 
 def get_preprocessor(*,

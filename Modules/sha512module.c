@@ -453,7 +453,7 @@ static void
 SHA512_dealloc(PyObject *ptr)
 {
     PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_Del(ptr);
+    PyObject_Free(ptr);
     Py_DECREF(tp);
 }
 

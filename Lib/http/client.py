@@ -861,7 +861,7 @@ class HTTPConnection:
         the endpoint passed to `set_tunnel`. This done by sending an HTTP
         CONNECT request to the proxy server when the connection is established.
 
-        This method must be called before the HTML connection has been
+        This method must be called before the HTTP connection has been
         established.
 
         The headers argument should be a mapping of extra HTTP headers to send
@@ -1407,6 +1407,9 @@ else:
             self.cert_file = cert_file
             if context is None:
                 context = ssl._create_default_https_context()
+                # send ALPN extension to indicate HTTP/1.1 protocol
+                if self._http_vsn == 11:
+                    context.set_alpn_protocols(['http/1.1'])
                 # enable PHA for TLS 1.3 connections if available
                 if context.post_handshake_auth is not None:
                     context.post_handshake_auth = True

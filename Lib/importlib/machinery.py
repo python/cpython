@@ -1,7 +1,5 @@
 """The machinery of importlib: finders, loaders, hooks, etc."""
 
-import _imp
-
 from ._bootstrap import ModuleSpec
 from ._bootstrap import BuiltinImporter
 from ._bootstrap import FrozenImporter

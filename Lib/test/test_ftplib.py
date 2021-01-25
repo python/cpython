@@ -1036,7 +1036,7 @@ class TestTimeouts(TestCase):
         self.evt.set()
         try:
             conn, addr = self.sock.accept()
-        except socket.timeout:
+        except TimeoutError:
             pass
         else:
             conn.sendall(b"1 Hola mundo\n")

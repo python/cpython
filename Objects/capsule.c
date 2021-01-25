@@ -198,7 +198,7 @@ PyCapsule_Import(const char *name, int no_block)
     void *return_value = NULL;
     char *trace;
     size_t name_length = (strlen(name) + 1) * sizeof(char);
-    char *name_dup = (char *)PyMem_MALLOC(name_length);
+    char *name_dup = (char *)PyMem_Malloc(name_length);
 
     if (!name_dup) {
         return PyErr_NoMemory();
@@ -247,7 +247,7 @@ PyCapsule_Import(const char *name, int no_block)
 EXIT:
     Py_XDECREF(object);
     if (name_dup) {
-        PyMem_FREE(name_dup);
+        PyMem_Free(name_dup);
     }
     return return_value;
 }
@@ -260,7 +260,7 @@ capsule_dealloc(PyObject *o)
     if (capsule->destructor) {
         capsule->destructor(o);
     }
-    PyObject_DEL(o);
+    PyObject_Free(o);
 }
 
 

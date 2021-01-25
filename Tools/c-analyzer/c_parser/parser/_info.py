@@ -1,3 +1,5 @@
+import re
+
 from ..info import KIND, ParsedItem, FileInfo
 
 
@@ -120,6 +122,19 @@ class SourceInfo:
 
     def done(self):
         self._set_ready()
+
+    def too_much(self, maxtext, maxlines):
+        if maxtext and len(self.text) > maxtext:
+            pass
+        elif maxlines and self.end - self.start > maxlines:
+            pass
+        else:
+            return False
+
+        #if re.fullmatch(r'[^;]+\[\][ ]*=[ ]*[{]([ ]*\d+,)*([ ]*\d+,?)\s*',
+        #                self._current.text):
+        #    return False
+        return True
 
     def _set_ready(self):
         if self._current is None:
