@@ -2578,6 +2578,24 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(self.Color.__len__(self.Color.PURPLE), 2)
         self.assertEqual(self.Color.__len__(self.Color.BLANCO), 3)
 
+    def test_number_reset_and_order_cleanup(self):
+        class Confused(Flag):
+            _settings_ = AutoValue
+            _order_ = 'ONE TWO FOUR DOS EIGHT SIXTEEN'
+            ONE = auto()
+            TWO = auto()
+            FOUR = auto()
+            DOS = 2
+            EIGHT = auto()
+            SIXTEEN = auto()
+        self.assertEqual(
+                list(Confused),
+                [Confused.ONE, Confused.TWO, Confused.FOUR, Confused.EIGHT, Confused.SIXTEEN])
+        self.assertIs(Confused.TWO, Confused.DOS)
+        self.assertEqual(Confused.DOS._value_, 2)
+        self.assertEqual(Confused.EIGHT._value_, 8)
+        self.assertEqual(Confused.SIXTEEN._value_, 16)
+
     def test_aliases(self):
         Color = self.Color
         self.assertEqual(Color(1).name, 'RED')
