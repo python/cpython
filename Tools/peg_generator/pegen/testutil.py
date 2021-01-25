@@ -96,7 +96,7 @@ def generate_parser_c_extension(
     # context.
     assert not os.listdir(path)
     source = path / "parse.c"
-    with open(source, "w") as file:
+    with open(source, "w", encoding="utf-8") as file:
         genr = CParserGenerator(
             grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
         )

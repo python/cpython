@@ -10,10 +10,13 @@ import unittest
 import weakref
 from collections.abc import MutableMapping
 from test import mapping_tests, support
+from test.support import import_helper
 
 
-py_coll = support.import_fresh_module('collections', blocked=['_collections'])
-c_coll = support.import_fresh_module('collections', fresh=['_collections'])
+py_coll = import_helper.import_fresh_module('collections',
+                                            blocked=['_collections'])
+c_coll = import_helper.import_fresh_module('collections',
+                                           fresh=['_collections'])
 
 
 @contextlib.contextmanager
@@ -697,6 +700,17 @@ class OrderedDictTests:
         with self.assertRaises(ValueError):
             a |= "BAD"
 
+    @support.cpython_only
+    def test_ordered_dict_items_result_gc(self):
+        # bpo-42536: OrderedDict.items's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = iter(self.OrderedDict({None: []}).items())
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
@@ -737,20 +751,21 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         size = support.calcobjsize
         check = self.check_sizeof
 
-        basicsize = size('nQ2P' + '3PnPn2P') + calcsize('2nP2n')
+        basicsize = size('nQ2P' + '3PnPn2P')
+        keysize = calcsize('2nP2n')
 
         entrysize = calcsize('n2P')
         p = calcsize('P')
         nodesize = calcsize('Pn2P')
 
         od = OrderedDict()
-        check(od, basicsize + 8 + 5*entrysize)  # 8byte indices + 8*2//3 * entry table
+        check(od, basicsize)  # 8byte indices + 8*2//3 * entry table
         od.x = 1
-        check(od, basicsize + 8 + 5*entrysize)
+        check(od, basicsize)
         od.update([(i, i) for i in range(3)])
-        check(od, basicsize + 8*p + 8 + 5*entrysize + 3*nodesize)
+        check(od, basicsize + keysize + 8*p + 8 + 5*entrysize + 3*nodesize)
         od.update([(i, i) for i in range(3, 10)])
-        check(od, basicsize + 16*p + 16 + 10*entrysize + 10*nodesize)
+        check(od, basicsize + keysize + 16*p + 16 + 10*entrysize + 10*nodesize)
 
         check(od.keys(), size('P'))
         check(od.items(), size('P'))

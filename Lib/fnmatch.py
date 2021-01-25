@@ -16,6 +16,12 @@ import functools
 
 __all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
 
+# Build a thread-safe incrementing counter to help create unique regexp group
+# names across calls.
+from itertools import count
+_nextgroupnum = count().__next__
+del count
+
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
 
@@ -46,7 +52,7 @@ def _compile_pattern(pat):
     return re.compile(res).match
 
 def filter(names, pat):
-    """Return the subset of the list NAMES that match PAT."""
+    """Construct a list from those elements of the iterable NAMES that match PAT."""
     result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
@@ -148,9 +154,12 @@ def translate(pat):
     # in a lookahead assertion, save the matched part in a group, then
     # consume that group via a backreference. If the overall match fails,
     # the lookahead assertion won't try alternatives. So the translation is:
-    #     (?=(P<name>.*?fixed))(?P=name)
-    # Group names are created as needed: g1, g2, g3, ...
-    groupnum = 0
+    #     (?=(?P<name>.*?fixed))(?P=name)
+    # Group names are created as needed: g0, g1, g2, ...
+    # The numbers are obtained from _nextgroupnum() to ensure they're unique
+    # across calls and across threads. This is because people rely on the
+    # undocumented ability to join multiple translate() results together via
+    # "|" to build large regexps matching "one of many" shell patterns.
     while i < n:
         assert inp[i] is STAR
         i += 1
@@ -167,7 +176,7 @@ def translate(pat):
             add(".*")
             add(fixed)
         else:
-            groupnum += 1
+            groupnum = _nextgroupnum()
             add(f"(?=(?P<g{groupnum}>.*?{fixed}))(?P=g{groupnum})")
     assert i == n
     res = "".join(res)

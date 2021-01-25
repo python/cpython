@@ -1251,13 +1251,12 @@ class IMAP4:
             sys.stderr.write('  %s.%02d %s\n' % (tm, (secs*100)%100, s))
             sys.stderr.flush()
 
-        def _dump_ur(self, dict):
-            # Dump untagged responses (in `dict').
-            l = dict.items()
-            if not l: return
-            t = '\n\t\t'
-            l = map(lambda x:'%s: "%s"' % (x[0], x[1][0] and '" "'.join(x[1]) or ''), l)
-            self._mesg('untagged responses dump:%s%s' % (t, t.join(l)))
+        def _dump_ur(self, untagged_resp_dict):
+            if not untagged_resp_dict:
+                return
+            items = (f'{key}: {value!r}'
+                    for key, value in untagged_resp_dict.items())
+            self._mesg('untagged responses dump:' + '\n\t\t'.join(items))
 
         def _log(self, line):
             # Keep log of last `_cmd_log_len' interactions for debugging.

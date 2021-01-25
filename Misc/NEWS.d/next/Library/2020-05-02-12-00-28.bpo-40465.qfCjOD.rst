@@ -1,1 +1,0 @@
-Deprecated the optional *random* argument to *random.shuffle()*.

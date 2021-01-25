@@ -75,9 +75,9 @@ class _OverlappedFuture(futures.Future):
             self._loop.call_exception_handler(context)
         self._ov = None
 
-    def cancel(self):
+    def cancel(self, msg=None):
         self._cancel_overlapped()
-        return super().cancel()
+        return super().cancel(msg=msg)
 
     def set_exception(self, exception):
         super().set_exception(exception)
@@ -149,9 +149,9 @@ class _BaseWaitHandleFuture(futures.Future):
 
         self._unregister_wait_cb(None)
 
-    def cancel(self):
+    def cancel(self, msg=None):
         self._unregister_wait()
-        return super().cancel()
+        return super().cancel(msg=msg)
 
     def set_exception(self, exception):
         self._unregister_wait()
@@ -318,8 +318,12 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             if self._self_reading_future is not None:
                 ov = self._self_reading_future._ov
                 self._self_reading_future.cancel()
-                # self_reading_future was just cancelled so it will never be signalled
-                # Unregister it otherwise IocpProactor.close will wait for it forever
+                # self_reading_future was just cancelled so if it hasn't been
+                # finished yet, it never will be (it's possible that it has
+                # already finished and its callback is waiting in the queue,
+                # where it could still happen if the event loop is restarted).
+                # Unregister it otherwise IocpProactor.close will wait for it
+                # forever
                 if ov is not None:
                     self._proactor._unregister(ov)
                 self._self_reading_future = None
@@ -469,7 +473,7 @@ class IocpProactor:
             else:
                 ov.ReadFileInto(conn.fileno(), buf)
         except BrokenPipeError:
-            return self._result(b'')
+            return self._result(0)
 
         def finish_recv(trans, key, ov):
             try:

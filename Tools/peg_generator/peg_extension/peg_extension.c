@@ -96,21 +96,21 @@ error:
 }
 
 static PyObject *
-clear_memo_stats()
+clear_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     _PyPegen_clear_memo_statistics();
     Py_RETURN_NONE;
 }
 
 static PyObject *
-get_memo_stats()
+get_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     return _PyPegen_get_memo_statistics();
 }
 
 // TODO: Write to Python's sys.stdout instead of C's stdout.
 static PyObject *
-dump_memo_stats()
+dump_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     PyObject *list = _PyPegen_get_memo_statistics();
     if (list == NULL) {
@@ -124,7 +124,7 @@ dump_memo_stats()
             break;
         }
         if (count > 0) {
-            printf("%4ld %9ld\n", i, count);
+            printf("%4zd %9ld\n", i, count);
         }
     }
     Py_DECREF(list);

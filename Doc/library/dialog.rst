@@ -198,7 +198,7 @@ These do not emulate the native look-and-feel of the platform.
    A subclass of FileDialog that creates a dialog window for selecting a
    destination file.
 
-    .. method:: ok_command()
+   .. method:: ok_command()
 
       Test whether or not the selection points to a valid file that is not a
       directory. Confirmation is required if an already existing file is

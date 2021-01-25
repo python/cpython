@@ -1,6 +1,12 @@
 steps:
   - template: ./checkout.yml
 
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=SigningDescription]Python $($d.PythonVersion)"
+    displayName: 'Update signing description'
+    condition: and(succeeded(), not(variables['SigningDescription']))
+
   - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact: doc'
     inputs:

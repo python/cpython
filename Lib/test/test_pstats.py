@@ -95,5 +95,9 @@ class StatsTestCase(unittest.TestCase):
         self.assertIn('pass2', funcs_called)
         self.assertIn('pass3', funcs_called)
 
+    def test_SortKey_enum(self):
+        self.assertEqual(SortKey.FILENAME, 'filename')
+        self.assertNotEqual(SortKey.FILENAME, SortKey.CALLS)
+
 if __name__ == "__main__":
     unittest.main()

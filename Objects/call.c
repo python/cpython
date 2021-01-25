@@ -1,11 +1,11 @@
 #include "Python.h"
-#include "pycore_call.h"
-#include "pycore_ceval.h"        // _PyEval_EvalFrame()
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
-#include "frameobject.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgTstate()
+#include "pycore_ceval.h"         // _PyEval_EvalFrame()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "frameobject.h"          // _PyFrame_New_NoTrack()
 
 
 static PyObject *const *
@@ -205,6 +205,7 @@ PyObject *
 PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    vectorcallfunc func;
 
     /* get vectorcallfunc as in PyVectorcall_Function, but without
      * the Py_TPFLAGS_HAVE_VECTORCALL check */
@@ -215,7 +216,7 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
                       Py_TYPE(callable)->tp_name);
         return NULL;
     }
-    vectorcallfunc func = *(vectorcallfunc *)(((char *)callable) + offset);
+    memcpy(&func, (char *) callable + offset, sizeof(func));
     if (func == NULL) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "'%.200s' object does not support vectorcall",

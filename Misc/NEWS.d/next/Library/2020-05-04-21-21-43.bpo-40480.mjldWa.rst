@@ -1,1 +1,0 @@
-``fnmatch.fnmatch()`` could take exponential time in the presence of multiple ``*`` pattern characters.  This was repaired by generating more elaborate regular expressions to avoid futile backtracking.

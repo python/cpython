@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,12 +26,11 @@
  */
 
 
-#ifndef BITS_H
-#define BITS_H
+#ifndef LIBMPDEC_BITS_H_
+#define LIBMPDEC_BITS_H_
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
 
 
 /* Check if n is a power of 2. */
@@ -186,7 +185,4 @@ mpd_bsf(mpd_size_t a)
 #endif /* BSR/BSF */
 
 
-#endif /* BITS_H */
-
-
-
+#endif /* LIBMPDEC_BITS_H_ */

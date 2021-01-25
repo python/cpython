@@ -1,2 +1,0 @@
-Revert bpo-25597. :class:`unittest.mock.MagicMock` with wraps' set uses
-default return values for magic methods.

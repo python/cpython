@@ -25,7 +25,7 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     void *arg);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyThreadState *tstate);
 #ifdef HAVE_FORK
-extern void _PyEval_ReInitThreads(struct pyruntimestate *runtime);
+extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
 PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
@@ -63,8 +63,6 @@ extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
-
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */
@@ -94,24 +92,8 @@ static inline int _Py_EnterRecursiveCall_inline(const char *where) {
 
 #define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
 
-/* Compute the "lower-water mark" for a recursion limit. When
- * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
- * the overflowed flag is reset to 0. */
-static inline int _Py_RecursionLimitLowerWaterMark(int limit) {
-    if (limit > 200) {
-        return (limit - 50);
-    }
-    else {
-        return (3 * (limit >> 2));
-    }
-}
-
 static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
     tstate->recursion_depth--;
-    int limit = tstate->interp->ceval.recursion_limit;
-    if (tstate->recursion_depth < _Py_RecursionLimitLowerWaterMark(limit)) {
-        tstate->overflowed = 0;
-    }
 }
 
 static inline void _Py_LeaveRecursiveCall_inline(void)  {

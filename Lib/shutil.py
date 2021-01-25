@@ -53,6 +53,9 @@ COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 _USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
+# CMD defaults in Windows 10
+_WIN_DEFAULT_PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
+
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
            "ExecError", "make_archive", "get_archive_formats",
@@ -708,7 +711,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
         try:
             fd = os.open(path, os.O_RDONLY)
         except Exception:
-            onerror(os.lstat, path, sys.exc_info())
+            onerror(os.open, path, sys.exc_info())
             return
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):
@@ -1415,7 +1418,9 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
-        pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+        pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
+        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
         # See if the given file matches any of the expected path extensions.
