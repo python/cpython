@@ -1545,11 +1545,11 @@ def main():
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
     if cmd or script:
-        shell.interp.runcommand("""if 1:
+        shell.interp.runcommand(f"""if 1:
             import sys as _sys
-            _sys.argv = %r
+            _sys.argv = {sys.argv!r}
             del _sys
-            \n""" % (sys.argv,))
+            \n"""
         if cmd:
             shell.interp.execsource(cmd)
         elif script:
