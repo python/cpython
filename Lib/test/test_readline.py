@@ -3,13 +3,16 @@ Very minimal unittests for parts of the readline module.
 """
 from contextlib import ExitStack
 from errno import EIO
+import locale
 import os
 import selectors
 import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink, temp_dir, TESTFN, verbose
+from test.support import verbose
+from test.support.import_helper import import_module
+from test.support.os_helper import unlink, temp_dir, TESTFN
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
@@ -153,6 +156,13 @@ print("History length:", readline.get_current_history_length())
         self.assertIn(b"History length: 0\r\n", output)
 
     def test_nonascii(self):
+        loc = locale.setlocale(locale.LC_CTYPE, None)
+        if loc in ('C', 'POSIX'):
+            # bpo-29240: On FreeBSD, if the LC_CTYPE locale is C or POSIX,
+            # writing and reading non-ASCII bytes into/from a TTY works, but
+            # readline or ncurses ignores non-ASCII bytes on read.
+            self.skipTest(f"the LC_CTYPE locale is {loc!r}")
+
         try:
             readline.add_history("\xEB\xEF")
         except UnicodeEncodeError as err:

@@ -1,3 +1,4 @@
+import functools
 import re
 import tkinter
 import unittest
@@ -35,6 +36,33 @@ class AbstractTkTest:
             w.destroy()
         self.root.withdraw()
 
+
+class AbstractDefaultRootTest:
+
+    def setUp(self):
+        self._old_support_default_root = tkinter._support_default_root
+        destroy_default_root()
+        tkinter._support_default_root = True
+        self.wantobjects = tkinter.wantobjects
+
+    def tearDown(self):
+        destroy_default_root()
+        tkinter._default_root = None
+        tkinter._support_default_root = self._old_support_default_root
+
+    def _test_widget(self, constructor):
+        # no master passing
+        x = constructor()
+        self.assertIsNotNone(tkinter._default_root)
+        self.assertIs(x.master, tkinter._default_root)
+        self.assertIs(x.tk, tkinter._default_root.tk)
+        x.destroy()
+        destroy_default_root()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, constructor)
+        self.assertFalse(hasattr(tkinter, '_default_root'))
+
+
 def destroy_default_root():
     if getattr(tkinter, '_default_root', None):
         tkinter._default_root.update_idletasks()
@@ -54,8 +82,19 @@ import _tkinter
 tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
 
 def requires_tcl(*version):
-    return unittest.skipUnless(tcl_version >= version,
+    if len(version) <= 2:
+        return unittest.skipUnless(tcl_version >= version,
             'requires Tcl version >= ' + '.'.join(map(str, version)))
+
+    def deco(test):
+        @functools.wraps(test)
+        def newtest(self):
+            if get_tk_patchlevel() < version:
+                self.skipTest('requires Tcl version >= ' +
+                                '.'.join(map(str, version)))
+            test(self)
+        return newtest
+    return deco
 
 _tk_patchlevel = None
 def get_tk_patchlevel():

@@ -1,6 +1,7 @@
 import collections.abc
 import copy
 import pickle
+import sys
 import unittest
 
 class DictSetTest(unittest.TestCase):
@@ -91,6 +92,12 @@ class DictSetTest(unittest.TestCase):
         d1 = {'a': 1, 'b': 2}
         d2 = {'b': 3, 'c': 2}
         d3 = {'d': 4, 'e': 5}
+        d4 = {'d': 4}
+
+        class CustomSet(set):
+            def intersection(self, other):
+                return CustomSet(super().intersection(other))
+
         self.assertEqual(d1.keys() & d1.keys(), {'a', 'b'})
         self.assertEqual(d1.keys() & d2.keys(), {'b'})
         self.assertEqual(d1.keys() & d3.keys(), set())
@@ -98,6 +105,14 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(d1.keys() & set(d2.keys()), {'b'})
         self.assertEqual(d1.keys() & set(d3.keys()), set())
         self.assertEqual(d1.keys() & tuple(d1.keys()), {'a', 'b'})
+        self.assertEqual(d3.keys() & d4.keys(), {'d'})
+        self.assertEqual(d4.keys() & d3.keys(), {'d'})
+        self.assertEqual(d4.keys() & set(d3.keys()), {'d'})
+        self.assertIsInstance(d4.keys() & frozenset(d3.keys()), set)
+        self.assertIsInstance(frozenset(d3.keys()) & d4.keys(), set)
+        self.assertIs(type(d4.keys() & CustomSet(d3.keys())), set)
+        self.assertIs(type(d1.keys() & []), set)
+        self.assertIs(type([] & d1.keys()), set)
 
         self.assertEqual(d1.keys() | d1.keys(), {'a', 'b'})
         self.assertEqual(d1.keys() | d2.keys(), {'a', 'b', 'c'})
@@ -199,9 +214,55 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(de.items().isdisjoint(de.items()))
         self.assertTrue(de.items().isdisjoint([1]))
 
+    def test_set_operations_with_iterator(self):
+        origin = {1: 2, 3: 4}
+        self.assertEqual(origin.keys() & iter([1, 2]), {1})
+        self.assertEqual(origin.keys() | iter([1, 2]), {1, 2, 3})
+        self.assertEqual(origin.keys() ^ iter([1, 2]), {2, 3})
+        self.assertEqual(origin.keys() - iter([1, 2]), {3})
+
+        items = origin.items()
+        self.assertEqual(items & iter([(1, 2)]), {(1, 2)})
+        self.assertEqual(items ^ iter([(1, 2)]), {(3, 4)})
+        self.assertEqual(items | iter([(1, 2)]), {(1, 2), (3, 4)})
+        self.assertEqual(items - iter([(1, 2)]), {(3, 4)})
+
+    def test_set_operations_with_noniterable(self):
+        with self.assertRaises(TypeError):
+            {}.keys() & 1
+        with self.assertRaises(TypeError):
+            {}.keys() | 1
+        with self.assertRaises(TypeError):
+            {}.keys() ^ 1
+        with self.assertRaises(TypeError):
+            {}.keys() - 1
+
+        with self.assertRaises(TypeError):
+            {}.items() & 1
+        with self.assertRaises(TypeError):
+            {}.items() | 1
+        with self.assertRaises(TypeError):
+            {}.items() ^ 1
+        with self.assertRaises(TypeError):
+            {}.items() - 1
+
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()
+        r = repr(d)
+        # Cannot perform a stronger test, as the contents of the repr
+        # are implementation-dependent.  All we can say is that we
+        # want a str result, not an exception of any sort.
+        self.assertIsInstance(r, str)
+        d[42] = d.items()
+        r = repr(d)
+        # Again.
+        self.assertIsInstance(r, str)
+
+    def test_deeply_nested_repr(self):
+        d = {}
+        for i in range(sys.getrecursionlimit() + 100):
+            d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 
     def test_copy(self):

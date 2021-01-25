@@ -7,7 +7,7 @@ __email__ = "mbland at acm dot org"
 import sys
 import unittest
 from collections import deque
-from contextlib import _GeneratorContextManager, contextmanager
+from contextlib import _GeneratorContextManager, contextmanager, nullcontext
 
 
 class MockContextManager(_GeneratorContextManager):
@@ -458,8 +458,8 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise StopIteration("from with")
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            self.assertRaises(StopIteration, shouldThrow)
+        with self.assertRaisesRegex(StopIteration, 'from with'):
+            shouldThrow()
 
     def testRaisedStopIteration2(self):
         # From bug 1462485
@@ -473,7 +473,8 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise StopIteration("from with")
 
-        self.assertRaises(StopIteration, shouldThrow)
+        with self.assertRaisesRegex(StopIteration, 'from with'):
+            shouldThrow()
 
     def testRaisedStopIteration3(self):
         # Another variant where the exception hasn't been instantiated
@@ -486,8 +487,8 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise next(iter([]))
 
-        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
-            self.assertRaises(StopIteration, shouldThrow)
+        with self.assertRaises(StopIteration):
+            shouldThrow()
 
     def testRaisedGeneratorExit1(self):
         # From bug 1462485
@@ -639,6 +640,12 @@ class AssignmentTargetTestCase(unittest.TestCase):
             self.assertEqual(blah.one, 1)
             self.assertEqual(blah.two, 2)
             self.assertEqual(blah.three, 3)
+
+    def testWithExtendedTargets(self):
+        with nullcontext(range(1, 5)) as (a, *b, c):
+            self.assertEqual(a, 1)
+            self.assertEqual(b, [2, 3])
+            self.assertEqual(c, 4)
 
 
 class ExitSwallowsExceptionTestCase(unittest.TestCase):

@@ -71,11 +71,10 @@
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_launcher" Value="-1" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
-    <Variable Name="Include_launcher" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_launcherState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
-    <Variable Name="Include_launcher" Value="0" />
     <Variable Name="Include_launcherState" Value="disable" />
     <?endif ?>
     <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />

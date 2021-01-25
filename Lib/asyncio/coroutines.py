@@ -7,6 +7,7 @@ import os
 import sys
 import traceback
 import types
+import warnings
 
 from . import base_futures
 from . import constants
@@ -30,14 +31,6 @@ def _is_debug_mode():
 
 
 _DEBUG = _is_debug_mode()
-
-
-def debug_wrapper(gen):
-    # This function is called from 'sys.set_coroutine_wrapper'.
-    # We only wrap here coroutines defined via 'async def' syntax.
-    # Generator-based coroutines are wrapped in @coroutine
-    # decorator.
-    return CoroWrapper(gen, None)
 
 
 class CoroWrapper:
@@ -87,39 +80,16 @@ class CoroWrapper:
         return self.gen.gi_code
 
     def __await__(self):
-        cr_await = getattr(self.gen, 'cr_await', None)
-        if cr_await is not None:
-            raise RuntimeError(
-                f"Cannot await on coroutine {self.gen!r} while it's "
-                f"awaiting for {cr_await!r}")
         return self
 
     @property
     def gi_yieldfrom(self):
         return self.gen.gi_yieldfrom
 
-    @property
-    def cr_await(self):
-        return self.gen.cr_await
-
-    @property
-    def cr_running(self):
-        return self.gen.cr_running
-
-    @property
-    def cr_code(self):
-        return self.gen.cr_code
-
-    @property
-    def cr_frame(self):
-        return self.gen.cr_frame
-
     def __del__(self):
         # Be careful accessing self.gen.frame -- self.gen might not exist.
         gen = getattr(self, 'gen', None)
         frame = getattr(gen, 'gi_frame', None)
-        if frame is None:
-            frame = getattr(gen, 'cr_frame', None)
         if frame is not None and frame.f_lasti == -1:
             msg = f'{self!r} was never yielded from'
             tb = getattr(self, '_source_traceback', ())
@@ -138,11 +108,12 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
+    warnings.warn('"@coroutine" decorator is deprecated since Python 3.8, use "async def" instead',
+                  DeprecationWarning,
+                  stacklevel=2)
     if inspect.iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defined with "async def".
-        # Wrapping in CoroWrapper will happen via
-        # 'sys.set_coroutine_wrapper' function.
         return func
 
     if inspect.isgeneratorfunction(func):
@@ -165,8 +136,9 @@ def coroutine(func):
                         res = yield from await_meth()
             return res
 
+    coro = types.coroutine(coro)
     if not _DEBUG:
-        wrapper = types.coroutine(coro)
+        wrapper = coro
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):
@@ -221,56 +193,63 @@ def iscoroutine(obj):
 def _format_coroutine(coro):
     assert iscoroutine(coro)
 
-    if not hasattr(coro, 'cr_code') and not hasattr(coro, 'gi_code'):
-        # Most likely a built-in type or a Cython coroutine.
+    is_corowrapper = isinstance(coro, CoroWrapper)
 
-        # Built-in types might not have __qualname__ or __name__.
-        coro_name = getattr(
-            coro, '__qualname__',
-            getattr(coro, '__name__', type(coro).__name__))
-        coro_name = f'{coro_name}()'
+    def get_name(coro):
+        # Coroutines compiled with Cython sometimes don't have
+        # proper __qualname__ or __name__.  While that is a bug
+        # in Cython, asyncio shouldn't crash with an AttributeError
+        # in its __repr__ functions.
+        if is_corowrapper:
+            return format_helpers._format_callback(coro.func, (), {})
 
-        running = False
+        if hasattr(coro, '__qualname__') and coro.__qualname__:
+            coro_name = coro.__qualname__
+        elif hasattr(coro, '__name__') and coro.__name__:
+            coro_name = coro.__name__
+        else:
+            # Stop masking Cython bugs, expose them in a friendly way.
+            coro_name = f'<{type(coro).__name__} without __name__>'
+        return f'{coro_name}()'
+
+    def is_running(coro):
         try:
-            running = coro.cr_running
+            return coro.cr_running
         except AttributeError:
             try:
-                running = coro.gi_running
+                return coro.gi_running
             except AttributeError:
-                pass
+                return False
 
-        if running:
+    coro_code = None
+    if hasattr(coro, 'cr_code') and coro.cr_code:
+        coro_code = coro.cr_code
+    elif hasattr(coro, 'gi_code') and coro.gi_code:
+        coro_code = coro.gi_code
+
+    coro_name = get_name(coro)
+
+    if not coro_code:
+        # Built-in types might not have __qualname__ or __name__.
+        if is_running(coro):
             return f'{coro_name} running'
         else:
             return coro_name
 
-    coro_name = None
-    if isinstance(coro, CoroWrapper):
-        func = coro.func
-        coro_name = coro.__qualname__
-        if coro_name is not None:
-            coro_name = f'{coro_name}()'
-    else:
-        func = coro
-
-    if coro_name is None:
-        coro_name = format_helpers._format_callback(func, (), {})
-
-    try:
-        coro_code = coro.gi_code
-    except AttributeError:
-        coro_code = coro.cr_code
-
-    try:
+    coro_frame = None
+    if hasattr(coro, 'gi_frame') and coro.gi_frame:
         coro_frame = coro.gi_frame
-    except AttributeError:
+    elif hasattr(coro, 'cr_frame') and coro.cr_frame:
         coro_frame = coro.cr_frame
 
-    filename = coro_code.co_filename
+    # If Cython's coroutine has a fake code object without proper
+    # co_filename -- expose that.
+    filename = coro_code.co_filename or '<empty co_filename>'
+
     lineno = 0
-    if (isinstance(coro, CoroWrapper) and
-            not inspect.isgeneratorfunction(coro.func) and
-            coro.func is not None):
+    if (is_corowrapper and
+            coro.func is not None and
+            not inspect.isgeneratorfunction(coro.func)):
         source = format_helpers._get_function_source(coro.func)
         if source is not None:
             filename, lineno = source
@@ -278,9 +257,11 @@ def _format_coroutine(coro):
             coro_repr = f'{coro_name} done, defined at {filename}:{lineno}'
         else:
             coro_repr = f'{coro_name} running, defined at {filename}:{lineno}'
+
     elif coro_frame is not None:
         lineno = coro_frame.f_lineno
         coro_repr = f'{coro_name} running at {filename}:{lineno}'
+
     else:
         lineno = coro_code.co_firstlineno
         coro_repr = f'{coro_name} done, defined at {filename}:{lineno}'

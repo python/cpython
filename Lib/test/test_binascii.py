@@ -3,6 +3,9 @@
 import unittest
 import binascii
 import array
+import re
+from test.support import warnings_helper
+
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
 b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_hqx', 'b2a_qp', 'b2a_uu',
@@ -35,6 +38,7 @@ class BinASCIITest(unittest.TestCase):
             self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
             self.assertRaises(TypeError, getattr(binascii, name))
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_returned_value(self):
         # Limit to the minimum of all limits (b2a_uu)
         MAX_ALL = 45
@@ -110,6 +114,37 @@ class BinASCIITest(unittest.TestCase):
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
 
+    def test_base64errors(self):
+        # Test base64 with invalid padding
+        def assertIncorrectPadding(data):
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Incorrect padding'):
+                binascii.a2b_base64(self.type2test(data))
+
+        assertIncorrectPadding(b'ab')
+        assertIncorrectPadding(b'ab=')
+        assertIncorrectPadding(b'abc')
+        assertIncorrectPadding(b'abcdef')
+        assertIncorrectPadding(b'abcdef=')
+        assertIncorrectPadding(b'abcdefg')
+        assertIncorrectPadding(b'a=b=')
+        assertIncorrectPadding(b'a\nb=')
+
+        # Test base64 with invalid number of valid characters (1 mod 4)
+        def assertInvalidLength(data):
+            n_data_chars = len(re.sub(br'[^A-Za-z0-9/+]', br'', data))
+            expected_errmsg_re = \
+                r'(?i)Invalid.+number of data characters.+' + str(n_data_chars)
+            with self.assertRaisesRegex(binascii.Error, expected_errmsg_re):
+                binascii.a2b_base64(self.type2test(data))
+
+        assertInvalidLength(b'a')
+        assertInvalidLength(b'a=')
+        assertInvalidLength(b'a==')
+        assertInvalidLength(b'a===')
+        assertInvalidLength(b'a' * 5)
+        assertInvalidLength(b'a' * (4 * 87 + 1))
+        assertInvalidLength(b'A\tB\nC ??DE')  # only 5 valid characters
+
     def test_uu(self):
         MAX_UU = 45
         for backtick in (True, False):
@@ -147,6 +182,7 @@ class BinASCIITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             binascii.b2a_uu(b"", True)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_crc_hqx(self):
         crc = binascii.crc_hqx(self.type2test(b"Test the CRC-32 of"), 0)
         crc = binascii.crc_hqx(self.type2test(b" this string."), crc)
@@ -166,6 +202,7 @@ class BinASCIITest(unittest.TestCase):
 
         self.assertRaises(TypeError, binascii.crc32)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_hqx(self):
         # Perform binhex4 style RLE-compression
         # Then calculate the hexbin4 binary-to-ASCII translation
@@ -176,6 +213,7 @@ class BinASCIITest(unittest.TestCase):
         res = binascii.rledecode_hqx(b)
         self.assertEqual(res, self.rawdata)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_rle(self):
         # test repetition with a repetition longer than the limit of 255
         data = (b'a' * 100 + b'b' + b'c' * 300)
@@ -198,10 +236,27 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(s, u)
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1])
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1] + b'q')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, bytes([255, 255]))
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'0G')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'0g')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'G0')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, b'g0')
 
         # Confirm that b2a_hex == hexlify and a2b_hex == unhexlify
         self.assertEqual(binascii.hexlify(self.type2test(s)), t)
         self.assertEqual(binascii.unhexlify(self.type2test(t)), u)
+
+    def test_hex_separator(self):
+        """Test that hexlify and b2a_hex are binary versions of bytes.hex."""
+        # Logic of separators is tested in test_bytes.py.  This checks that
+        # arg parsing works and exercises the direct to bytes object code
+        # path within pystrhex.c.
+        s = b'{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
+        self.assertEqual(binascii.hexlify(self.type2test(s)), s.hex().encode('ascii'))
+        expected8 = s.hex('.', 8).encode('ascii')
+        self.assertEqual(binascii.hexlify(self.type2test(s), '.', 8), expected8)
+        expected1 = s.hex(':').encode('ascii')
+        self.assertEqual(binascii.b2a_hex(self.type2test(s), ':'), expected1)
 
     def test_qp(self):
         type2test = self.type2test
@@ -305,6 +360,7 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(b2a_qp(type2test(b'a.\n')), b'a.\n')
         self.assertEqual(b2a_qp(type2test(b'.a')[:-1]), b'=2E')
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_empty_string(self):
         # A test for SF bug #1022953.  Make sure SystemError is not raised.
         empty = self.type2test(b'')
@@ -329,6 +385,7 @@ class BinASCIITest(unittest.TestCase):
         # crc_hqx needs 2 arguments
         self.assertRaises(TypeError, binascii.crc_hqx, "test", 0)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_unicode_a2b(self):
         # Unicode strings are accepted by a2b_* functions.
         MAX_ALL = 45
@@ -366,6 +423,18 @@ class BinASCIITest(unittest.TestCase):
                          b'aGVsbG8=\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False),
                          b'aGVsbG8=')
+
+    def test_deprecated_warnings(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(binascii.b2a_hqx(b'abc'), b'B@*M')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(binascii.a2b_hqx(b'B@*M'), (b'abc', 0))
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(binascii.rlecode_hqx(b'a' * 10), b'a\x90\n')
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(binascii.rledecode_hqx(b'a\x90\n'), b'a' * 10)
 
 
 class ArrayBinASCIITest(BinASCIITest):

@@ -35,45 +35,45 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
 .. function:: dictConfig(config)
 
-    Takes the logging configuration from a dictionary.  The contents of
-    this dictionary are described in :ref:`logging-config-dictschema`
-    below.
+   Takes the logging configuration from a dictionary.  The contents of
+   this dictionary are described in :ref:`logging-config-dictschema`
+   below.
 
-    If an error is encountered during configuration, this function will
-    raise a :exc:`ValueError`, :exc:`TypeError`, :exc:`AttributeError`
-    or :exc:`ImportError` with a suitably descriptive message.  The
-    following is a (possibly incomplete) list of conditions which will
-    raise an error:
+   If an error is encountered during configuration, this function will
+   raise a :exc:`ValueError`, :exc:`TypeError`, :exc:`AttributeError`
+   or :exc:`ImportError` with a suitably descriptive message.  The
+   following is a (possibly incomplete) list of conditions which will
+   raise an error:
 
-    * A ``level`` which is not a string or which is a string not
-      corresponding to an actual logging level.
-    * A ``propagate`` value which is not a boolean.
-    * An id which does not have a corresponding destination.
-    * A non-existent handler id found during an incremental call.
-    * An invalid logger name.
-    * Inability to resolve to an internal or external object.
+   * A ``level`` which is not a string or which is a string not
+     corresponding to an actual logging level.
+   * A ``propagate`` value which is not a boolean.
+   * An id which does not have a corresponding destination.
+   * A non-existent handler id found during an incremental call.
+   * An invalid logger name.
+   * Inability to resolve to an internal or external object.
 
-    Parsing is performed by the :class:`DictConfigurator` class, whose
-    constructor is passed the dictionary used for configuration, and
-    has a :meth:`configure` method.  The :mod:`logging.config` module
-    has a callable attribute :attr:`dictConfigClass`
-    which is initially set to :class:`DictConfigurator`.
-    You can replace the value of :attr:`dictConfigClass` with a
-    suitable implementation of your own.
+   Parsing is performed by the :class:`DictConfigurator` class, whose
+   constructor is passed the dictionary used for configuration, and
+   has a :meth:`configure` method.  The :mod:`logging.config` module
+   has a callable attribute :attr:`dictConfigClass`
+   which is initially set to :class:`DictConfigurator`.
+   You can replace the value of :attr:`dictConfigClass` with a
+   suitable implementation of your own.
 
-    :func:`dictConfig` calls :attr:`dictConfigClass` passing
-    the specified dictionary, and then calls the :meth:`configure` method on
-    the returned object to put the configuration into effect::
+   :func:`dictConfig` calls :attr:`dictConfigClass` passing
+   the specified dictionary, and then calls the :meth:`configure` method on
+   the returned object to put the configuration into effect::
 
-          def dictConfig(config):
-              dictConfigClass(config).configure()
+         def dictConfig(config):
+             dictConfigClass(config).configure()
 
-    For example, a subclass of :class:`DictConfigurator` could call
-    ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
-    set up custom prefixes which would be usable in the subsequent
-    :meth:`configure` call. :attr:`dictConfigClass` would be bound to
-    this new subclass, and then :func:`dictConfig` could be called exactly as
-    in the default, uncustomized state.
+   For example, a subclass of :class:`DictConfigurator` could call
+   ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
+   set up custom prefixes which would be usable in the subsequent
+   :meth:`configure` call. :attr:`dictConfigClass` would be bound to
+   this new subclass, and then :func:`dictConfig` could be called exactly as
+   in the default, uncustomized state.
 
    .. versionadded:: 3.2
 
@@ -107,9 +107,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     enabled. The default is ``True`` because this
                                     enables old behaviour in a
                                     backward-compatible way. This behaviour is to
-                                    disable any existing loggers unless they or
-                                    their ancestors are explicitly named in the
-                                    logging configuration.
+                                    disable any existing non-root loggers unless
+                                    they or their ancestors are explicitly named
+                                    in the logging configuration.
 
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
@@ -226,6 +226,11 @@ otherwise, the context is used to determine what to instantiate.
   (with defaults of ``None``) and these are used to construct a
   :class:`~logging.Formatter` instance.
 
+  .. versionchanged:: 3.8
+     a ``validate`` key (with default of ``True``) can be added into
+     the ``formatters`` section of the configuring dict, this is to
+     validate the format.
+
 * *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
   the corresponding Filter instance.
@@ -308,8 +313,8 @@ otherwise, the context is used to determine what to instantiate.
   If the specified value is ``True``, the configuration is processed
   as described in the section on :ref:`logging-config-dict-incremental`.
 
-* *disable_existing_loggers* - whether any existing loggers are to be
-  disabled. This setting mirrors the parameter of the same name in
+* *disable_existing_loggers* - whether any existing non-root loggers are
+  to be disabled. This setting mirrors the parameter of the same name in
   :func:`fileConfig`. If absent, this parameter defaults to ``True``.
   This value is ignored if *incremental* is ``True``.
 
@@ -538,7 +543,9 @@ target handler, and the system will resolve to the handler from the
 id.  If, however, a user defines a ``my.package.MyHandler`` which has
 an ``alternate`` handler, the configuration system would not know that
 the ``alternate`` referred to a handler.  To cater for this, a generic
-resolution system allows the user to specify::
+resolution system allows the user to specify:
+
+.. code-block:: yaml
 
     handlers:
       file:
@@ -552,7 +559,9 @@ The literal string ``'cfg://handlers.file'`` will be resolved in an
 analogous way to strings with the ``ext://`` prefix, but looking
 in the configuration itself rather than the import namespace.  The
 mechanism allows access by dot or by index, in a similar way to
-that provided by ``str.format``.  Thus, given the following snippet::
+that provided by ``str.format``.  Thus, given the following snippet:
+
+.. code-block:: yaml
 
     handlers:
       email:
@@ -786,11 +795,10 @@ Sections which specify formatter configuration are typified by the following.
 
 The ``format`` entry is the overall format string, and the ``datefmt`` entry is
 the :func:`strftime`\ -compatible date/time format string.  If empty, the
-package substitutes ISO8601 format date/times, which is almost equivalent to
-specifying the date format string ``'%Y-%m-%d %H:%M:%S'``.  The ISO8601 format
-also specifies milliseconds, which are appended to the result of using the above
-format string, with a comma separator.  An example time in ISO8601 format is
-``2003-01-23 00:29:50,411``.
+package substitutes something which is almost equivalent to specifying the date
+format string ``'%Y-%m-%d %H:%M:%S'``.  This format also specifies milliseconds,
+which are appended to the result of using the above format string, with a comma
+separator.  An example time in this format is ``2003-01-23 00:29:50,411``.
 
 The ``class`` entry is optional.  It indicates the name of the formatter's class
 (as a dotted module and class name.)  This option is useful for instantiating a
