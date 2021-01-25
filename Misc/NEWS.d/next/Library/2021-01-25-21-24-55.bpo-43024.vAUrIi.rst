@@ -1,1 +1,1 @@
-Improved appearance of the help signature of :func:`TracebackException.print_exception`, :func:`TracebackException.format_exception` and :func:`TracebackException.format_exception_only`.
+Improved appearance of the help signature of :func:`traceback.print_exception`, :func:`traceback.format_exception` and :func:`traceback.format_exception_only`.
