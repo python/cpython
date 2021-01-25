@@ -1703,7 +1703,7 @@ def bœr():
             self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
 
     def test_issue42383(self):
-        with os_helper.temp_cwd() as cwd:
+        with support.temp_cwd() as cwd:
             with open('foo.py', 'w') as f:
                 s = textwrap.dedent("""
                     print('The correct file was executed')
