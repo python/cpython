@@ -1,0 +1,1 @@
+Make pdb populate sys.path[0] exactly the same as regular python execution.

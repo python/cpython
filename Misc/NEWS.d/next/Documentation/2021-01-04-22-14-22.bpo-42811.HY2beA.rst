@@ -1,0 +1,2 @@
+Updated importlib.utils.resolve_name() doc to use __spec__.parent
+instead of __package__. (Thanks Yair Frid.)

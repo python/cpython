@@ -26,39 +26,39 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_Concat(PyObject *o1, PyObject *o2)
 
-   Return the concatenation of *o1* and *o2* on success, and *NULL* on failure.
+   Return the concatenation of *o1* and *o2* on success, and ``NULL`` on failure.
    This is the equivalent of the Python expression ``o1 + o2``.
 
 
 .. c:function:: PyObject* PySequence_Repeat(PyObject *o, Py_ssize_t count)
 
-   Return the result of repeating sequence object *o* *count* times, or *NULL* on
+   Return the result of repeating sequence object *o* *count* times, or ``NULL`` on
    failure.  This is the equivalent of the Python expression ``o * count``.
 
 
 .. c:function:: PyObject* PySequence_InPlaceConcat(PyObject *o1, PyObject *o2)
 
-   Return the concatenation of *o1* and *o2* on success, and *NULL* on failure.
+   Return the concatenation of *o1* and *o2* on success, and ``NULL`` on failure.
    The operation is done *in-place* when *o1* supports it.  This is the equivalent
    of the Python expression ``o1 += o2``.
 
 
 .. c:function:: PyObject* PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
 
-   Return the result of repeating sequence object *o* *count* times, or *NULL* on
+   Return the result of repeating sequence object *o* *count* times, or ``NULL`` on
    failure.  The operation is done *in-place* when *o* supports it.  This is the
    equivalent of the Python expression ``o *= count``.
 
 
 .. c:function:: PyObject* PySequence_GetItem(PyObject *o, Py_ssize_t i)
 
-   Return the *i*\ th element of *o*, or *NULL* on failure. This is the equivalent of
+   Return the *i*\ th element of *o*, or ``NULL`` on failure. This is the equivalent of
    the Python expression ``o[i]``.
 
 
 .. c:function:: PyObject* PySequence_GetSlice(PyObject *o, Py_ssize_t i1, Py_ssize_t i2)
 
-   Return the slice of sequence object *o* between *i1* and *i2*, or *NULL* on
+   Return the slice of sequence object *o* between *i1* and *i2*, or ``NULL`` on
    failure. This is the equivalent of the Python expression ``o[i1:i2]``.
 
 
@@ -69,7 +69,7 @@ Sequence Protocol
    is the equivalent of the Python statement ``o[i] = v``.  This function *does
    not* steal a reference to *v*.
 
-   If *v* is *NULL*, the element is deleted, however this feature is
+   If *v* is ``NULL``, the element is deleted, however this feature is
    deprecated in favour of using :c:func:`PySequence_DelItem`.
 
 
@@ -114,7 +114,7 @@ Sequence Protocol
 .. c:function:: PyObject* PySequence_List(PyObject *o)
 
    Return a list object with the same contents as the sequence or iterable *o*,
-   or *NULL* on failure.  The returned list is guaranteed to be new.  This is
+   or ``NULL`` on failure.  The returned list is guaranteed to be new.  This is
    equivalent to the Python expression ``list(o)``.
 
 
@@ -123,38 +123,45 @@ Sequence Protocol
    .. index:: builtin: tuple
 
    Return a tuple object with the same contents as the sequence or iterable *o*,
-   or *NULL* on failure.  If *o* is a tuple, a new reference will be returned,
+   or ``NULL`` on failure.  If *o* is a tuple, a new reference will be returned,
    otherwise a tuple will be constructed with the appropriate contents.  This is
    equivalent to the Python expression ``tuple(o)``.
 
 
 .. c:function:: PyObject* PySequence_Fast(PyObject *o, const char *m)
 
-   Return the sequence or iterable *o* as a list, unless it is already a tuple or list, in
-   which case *o* is returned.  Use :c:func:`PySequence_Fast_GET_ITEM` to access
-   the members of the result.  Returns *NULL* on failure.  If the object is not
-   a sequence or iterable, raises :exc:`TypeError` with *m* as the message text.
+   Return the sequence or iterable *o* as an object usable by the other
+   ``PySequence_Fast*`` family of functions. If the object is not a sequence or
+   iterable, raises :exc:`TypeError` with *m* as the message text. Returns
+   ``NULL`` on failure.
+
+   The ``PySequence_Fast*`` functions are thus named because they assume
+   *o* is a :c:type:`PyTupleObject` or a :c:type:`PyListObject` and access
+   the data fields of *o* directly.
+
+   As a CPython implementation detail, if *o* is already a sequence or list, it
+   will be returned.
 
 
 .. c:function:: Py_ssize_t PySequence_Fast_GET_SIZE(PyObject *o)
 
    Returns the length of *o*, assuming that *o* was returned by
-   :c:func:`PySequence_Fast` and that *o* is not *NULL*.  The size can also be
+   :c:func:`PySequence_Fast` and that *o* is not ``NULL``.  The size can also be
    gotten by calling :c:func:`PySequence_Size` on *o*, but
-   :c:func:`PySequence_Fast_GET_SIZE` is faster because it can assume *o* is a list
-   or tuple.
+   :c:func:`PySequence_Fast_GET_SIZE` is faster because it can assume *o* is a
+   list or tuple.
 
 
 .. c:function:: PyObject* PySequence_Fast_GET_ITEM(PyObject *o, Py_ssize_t i)
 
    Return the *i*\ th element of *o*, assuming that *o* was returned by
-   :c:func:`PySequence_Fast`, *o* is not *NULL*, and that *i* is within bounds.
+   :c:func:`PySequence_Fast`, *o* is not ``NULL``, and that *i* is within bounds.
 
 
 .. c:function:: PyObject** PySequence_Fast_ITEMS(PyObject *o)
 
    Return the underlying array of PyObject pointers.  Assumes that *o* was returned
-   by :c:func:`PySequence_Fast` and *o* is not *NULL*.
+   by :c:func:`PySequence_Fast` and *o* is not ``NULL``.
 
    Note, if a list gets resized, the reallocation may relocate the items array.
    So, only use the underlying array pointer in contexts where the sequence
@@ -163,7 +170,7 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_ITEM(PyObject *o, Py_ssize_t i)
 
-   Return the *i*\ th element of *o* or *NULL* on failure. Macro form of
+   Return the *i*\ th element of *o* or ``NULL`` on failure. Faster form of
    :c:func:`PySequence_GetItem` but without checking that
    :c:func:`PySequence_Check` on *o* is true and without adjustment for negative
    indices.

@@ -17,11 +17,14 @@ def format_duration(seconds):
     if minutes:
         parts.append('%s min' % minutes)
     if seconds:
-        parts.append('%s sec' % seconds)
-    if ms:
-        parts.append('%s ms' % ms)
+        if parts:
+            # 2 min 1 sec
+            parts.append('%s sec' % seconds)
+        else:
+            # 1.0 sec
+            parts.append('%.1f sec' % (seconds + ms / 1000))
     if not parts:
-        return '0 ms'
+        return '%s ms' % ms
 
     parts = parts[:2]
     return ' '.join(parts)
@@ -59,7 +62,7 @@ def printlist(x, width=70, indent=4, file=None):
 
 
 def print_warning(msg):
-    print(f"Warning -- {msg}", file=sys.stderr, flush=True)
+    support.print_warning(msg)
 
 
 orig_unraisablehook = None
@@ -69,7 +72,12 @@ def regrtest_unraisable_hook(unraisable):
     global orig_unraisablehook
     support.environment_altered = True
     print_warning("Unraisable exception")
-    orig_unraisablehook(unraisable)
+    old_stderr = sys.stderr
+    try:
+        sys.stderr = sys.__stderr__
+        orig_unraisablehook(unraisable)
+    finally:
+        sys.stderr = old_stderr
 
 
 def setup_unraisable_hook():

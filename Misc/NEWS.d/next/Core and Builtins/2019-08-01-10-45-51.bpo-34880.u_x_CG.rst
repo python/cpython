@@ -1,3 +1,0 @@
-The :keyword:`assert` statement now works properly if the
-:exc:`AssertionError` exception is being shadowed.
-Patch by Zackery Spytz.

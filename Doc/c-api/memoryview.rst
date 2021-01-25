@@ -45,7 +45,8 @@ any other object.
 .. c:function:: int PyMemoryView_Check(PyObject *obj)
 
    Return true if the object *obj* is a memoryview object.  It is not
-   currently allowed to create subclasses of :class:`memoryview`.
+   currently allowed to create subclasses of :class:`memoryview`.  This
+   function always succeeds.
 
 
 .. c:function:: Py_buffer *PyMemoryView_GET_BUFFER(PyObject *mview)
@@ -57,7 +58,7 @@ any other object.
 .. c:function:: Py_buffer *PyMemoryView_GET_BASE(PyObject *mview)
 
    Return either a pointer to the exporting object that the memoryview is based
-   on or *NULL* if the memoryview has been created by one of the functions
+   on or ``NULL`` if the memoryview has been created by one of the functions
    :c:func:`PyMemoryView_FromMemory` or :c:func:`PyMemoryView_FromBuffer`.
    *mview* **must** be a memoryview instance.
 

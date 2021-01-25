@@ -1,5 +1,4 @@
 """Abstract base classes related to import."""
-from . import _bootstrap
 from . import _bootstrap_external
 from . import machinery
 try:
@@ -10,10 +9,12 @@ except ImportError as exc:
     _frozen_importlib = None
 try:
     import _frozen_importlib_external
-except ImportError as exc:
+except ImportError:
     _frozen_importlib_external = _bootstrap_external
+from ._abc import Loader
 import abc
 import warnings
+from typing import Protocol, runtime_checkable
 
 
 def _register(abstract_cls, *classes):
@@ -131,53 +132,6 @@ class PathEntryFinder(Finder):
         """
 
 _register(PathEntryFinder, machinery.FileFinder)
-
-
-class Loader(metaclass=abc.ABCMeta):
-
-    """Abstract base class for import loaders."""
-
-    def create_module(self, spec):
-        """Return a module to initialize and into which to load.
-
-        This method should raise ImportError if anything prevents it
-        from creating a new module.  It may return None to indicate
-        that the spec should create the new module.
-        """
-        # By default, defer to default semantics for the new module.
-        return None
-
-    # We don't define exec_module() here since that would break
-    # hasattr checks we do to support backward compatibility.
-
-    def load_module(self, fullname):
-        """Return the loaded module.
-
-        The module must be added to sys.modules and have import-related
-        attributes set properly.  The fullname is a str.
-
-        ImportError is raised on failure.
-
-        This method is deprecated in favor of loader.exec_module(). If
-        exec_module() exists then it is used to provide a backwards-compatible
-        functionality for this method.
-
-        """
-        if not hasattr(self, 'exec_module'):
-            raise ImportError
-        return _bootstrap._load_module_shim(self, fullname)
-
-    def module_repr(self, module):
-        """Return a module's repr.
-
-        Used by the module type when the method does not raise
-        NotImplementedError.
-
-        This method is deprecated.
-
-        """
-        # The exception will cause ModuleType.__repr__ to ignore this method.
-        raise NotImplementedError
 
 
 class ResourceLoader(Loader):
@@ -386,3 +340,88 @@ class ResourceReader(metaclass=abc.ABCMeta):
 
 
 _register(ResourceReader, machinery.SourceFileLoader)
+
+
+@runtime_checkable
+class Traversable(Protocol):
+    """
+    An object with a subset of pathlib.Path methods suitable for
+    traversing directories and opening files.
+    """
+
+    @abc.abstractmethod
+    def iterdir(self):
+        """
+        Yield Traversable objects in self
+        """
+
+    @abc.abstractmethod
+    def read_bytes(self):
+        """
+        Read contents of self as bytes
+        """
+
+    @abc.abstractmethod
+    def read_text(self, encoding=None):
+        """
+        Read contents of self as bytes
+        """
+
+    @abc.abstractmethod
+    def is_dir(self):
+        """
+        Return True if self is a dir
+        """
+
+    @abc.abstractmethod
+    def is_file(self):
+        """
+        Return True if self is a file
+        """
+
+    @abc.abstractmethod
+    def joinpath(self, child):
+        """
+        Return Traversable child in self
+        """
+
+    @abc.abstractmethod
+    def __truediv__(self, child):
+        """
+        Return Traversable child in self
+        """
+
+    @abc.abstractmethod
+    def open(self, mode='r', *args, **kwargs):
+        """
+        mode may be 'r' or 'rb' to open as text or binary. Return a handle
+        suitable for reading (same as pathlib.Path.open).
+
+        When opening as text, accepts encoding parameters such as those
+        accepted by io.TextIOWrapper.
+        """
+
+    @abc.abstractproperty
+    def name(self):
+        # type: () -> str
+        """
+        The base name of this object without any parent references.
+        """
+
+
+class TraversableResources(ResourceReader):
+    @abc.abstractmethod
+    def files(self):
+        """Return a Traversable object for the loaded package."""
+
+    def open_resource(self, resource):
+        return self.files().joinpath(resource).open('rb')
+
+    def resource_path(self, resource):
+        raise FileNotFoundError(resource)
+
+    def is_resource(self, path):
+        return self.files().joinpath(path).is_file()
+
+    def contents(self):
+        return (item.name for item in self.files().iterdir())

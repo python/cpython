@@ -188,8 +188,6 @@ class TestCommandLineArgs(unittest.TestCase):
         program = self.program
         for arg, attr in (('buffer', 'buffer'), ('failfast', 'failfast'),
                       ('catch', 'catchbreak')):
-            if attr == 'catch' and not hasInstallHandler:
-                continue
 
             setattr(program, attr, None)
             program.parseArgs([None])

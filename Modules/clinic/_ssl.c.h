@@ -399,16 +399,11 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     int proto_version;
 
-    if ((type == &PySSLContext_Type) &&
+    if ((type == PySSLContext_Type) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
     if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
-        goto exit;
-    }
-    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     proto_version = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
@@ -571,8 +566,8 @@ _ssl__SSLContext_load_cert_chain(PySSLContext *self, PyObject *const *args, Py_s
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *certfile;
-    PyObject *keyfile = NULL;
-    PyObject *password = NULL;
+    PyObject *keyfile = Py_None;
+    PyObject *password = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
@@ -618,9 +613,9 @@ _ssl__SSLContext_load_verify_locations(PySSLContext *self, PyObject *const *args
     static _PyArg_Parser _parser = {NULL, _keywords, "load_verify_locations", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *cafile = NULL;
-    PyObject *capath = NULL;
-    PyObject *cadata = NULL;
+    PyObject *cafile = Py_None;
+    PyObject *capath = Py_None;
+    PyObject *cadata = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -694,11 +689,6 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
         goto exit;
     }
     sock = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     server_side = _PyLong_AsInt(args[1]);
     if (server_side == -1 && PyErr_Occurred()) {
         goto exit;
@@ -764,21 +754,16 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], &PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (&PySSLMemoryBIO_Type)->tp_name, args[0]);
+    if (!PyObject_TypeCheck(args[0], PySSLMemoryBIO_Type)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (PySSLMemoryBIO_Type)->tp_name, args[0]);
         goto exit;
     }
     incoming = (PySSLMemoryBIO *)args[0];
-    if (!PyObject_TypeCheck(args[1], &PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (&PySSLMemoryBIO_Type)->tp_name, args[1]);
+    if (!PyObject_TypeCheck(args[1], PySSLMemoryBIO_Type)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (PySSLMemoryBIO_Type)->tp_name, args[1]);
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     server_side = _PyLong_AsInt(args[2]);
     if (server_side == -1 && PyErr_Occurred()) {
         goto exit;
@@ -934,11 +919,11 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == &PySSLMemoryBIO_Type) &&
+    if ((type == PySSLMemoryBIO_Type) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == &PySSLMemoryBIO_Type) &&
+    if ((type == PySSLMemoryBIO_Type) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -976,11 +961,6 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     len = _PyLong_AsInt(args[0]);
     if (len == -1 && PyErr_Occurred()) {
@@ -1132,11 +1112,6 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     n = _PyLong_AsInt(arg);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1168,11 +1143,6 @@ _ssl_RAND_pseudo_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     n = _PyLong_AsInt(arg);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1333,11 +1303,6 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int nid;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     nid = _PyLong_AsInt(arg);
     if (nid == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1482,4 +1447,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=aa4947067c3fef2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2bb53a80040c9b35 input=a9049054013a1b77]*/

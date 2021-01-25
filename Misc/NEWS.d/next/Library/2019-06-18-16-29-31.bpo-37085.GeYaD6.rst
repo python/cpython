@@ -1,2 +1,0 @@
-Add the optional Linux SocketCAN Broadcast Manager constants, used as flags
-to configure the BCM behaviour, in the socket module.  Patch by Karl Ding.

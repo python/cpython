@@ -5,7 +5,8 @@ preserve
 PyDoc_STRVAR(py_blake2s_new__doc__,
 "blake2s(data=b\'\', /, *, digest_size=_blake2.blake2s.MAX_DIGEST_SIZE,\n"
 "        key=b\'\', salt=b\'\', person=b\'\', fanout=1, depth=1, leaf_size=0,\n"
-"        node_offset=0, node_depth=0, inner_size=0, last_node=False)\n"
+"        node_offset=0, node_depth=0, inner_size=0, last_node=False,\n"
+"        usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new BLAKE2s hash object.");
@@ -15,15 +16,15 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
-                    int inner_size, int last_node);
+                    int inner_size, int last_node, int usedforsecurity);
 
 static PyObject *
 py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "digest_size", "key", "salt", "person", "fanout", "depth", "leaf_size", "node_offset", "node_depth", "inner_size", "last_node", NULL};
+    static const char * const _keywords[] = {"", "digest_size", "key", "salt", "person", "fanout", "depth", "leaf_size", "node_offset", "node_depth", "inner_size", "last_node", "usedforsecurity", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "blake2s", 0};
-    PyObject *argsbuf[12];
+    PyObject *argsbuf[13];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
@@ -39,6 +40,7 @@ py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int node_depth = 0;
     int inner_size = 0;
     int last_node = 0;
+    int usedforsecurity = 1;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
     if (!fastargs) {
@@ -54,11 +56,6 @@ skip_optional_posonly:
         goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
-        if (PyFloat_Check(fastargs[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         digest_size = _PyLong_AsInt(fastargs[1]);
         if (digest_size == -1 && PyErr_Occurred()) {
             goto exit;
@@ -104,11 +101,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[5]) {
-        if (PyFloat_Check(fastargs[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         fanout = _PyLong_AsInt(fastargs[5]);
         if (fanout == -1 && PyErr_Occurred()) {
             goto exit;
@@ -118,11 +110,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[6]) {
-        if (PyFloat_Check(fastargs[6])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         depth = _PyLong_AsInt(fastargs[6]);
         if (depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -148,11 +135,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[9]) {
-        if (PyFloat_Check(fastargs[9])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         node_depth = _PyLong_AsInt(fastargs[9]);
         if (node_depth == -1 && PyErr_Occurred()) {
             goto exit;
@@ -162,11 +144,6 @@ skip_optional_posonly:
         }
     }
     if (fastargs[10]) {
-        if (PyFloat_Check(fastargs[10])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         inner_size = _PyLong_AsInt(fastargs[10]);
         if (inner_size == -1 && PyErr_Occurred()) {
             goto exit;
@@ -175,12 +152,21 @@ skip_optional_posonly:
             goto skip_optional_kwonly;
         }
     }
-    last_node = PyObject_IsTrue(fastargs[11]);
-    if (last_node < 0) {
+    if (fastargs[11]) {
+        last_node = PyObject_IsTrue(fastargs[11]);
+        if (last_node < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    usedforsecurity = PyObject_IsTrue(fastargs[12]);
+    if (usedforsecurity < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = py_blake2s_new_impl(type, data, digest_size, &key, &salt, &person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node);
+    return_value = py_blake2s_new_impl(type, data, digest_size, &key, &salt, &person, fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node, usedforsecurity);
 
 exit:
     /* Cleanup for key */
@@ -261,4 +247,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=39af5a74c8805b36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7ee8092ed67e9c7 input=a9049054013a1b77]*/
