@@ -72,6 +72,59 @@ New Features
 
 .. _whatsnew310-pep563:
 
+Parenthesized context managers
+------------------------------
+
+Using enclosing parentheses for continuation across multiple lines
+in context managers is now supported. This allows formatting a long
+collection of context managers in multiple lines in a similar way
+as it was previously possible with import statements. For instance,
+all these examples are now valid:
+
+.. code-block:: python
+
+    with (CtxManager() as example):
+        ...
+
+    with (
+        CtxManager1(),
+        CtxManager2()
+    ):
+        ...
+
+    with (CtxManager1() as example,
+          CtxManager2()):
+        ...
+
+    with (CtxManager1(),
+          CtxManager2() as example):
+        ...
+
+    with (
+        CtxManager1() as example1,
+        CtxManager2() as example2
+    ):
+        ...
+
+it is also possible to use a trailing comma at the end of the
+enclosed group:
+
+.. code-block:: python
+
+    with (
+        CtxManager1() as example1,
+        CtxManager2() as example2,
+        CtxManager3() as example3,
+    ):
+        ...
+
+This new syntax uses the non LL(1) capacities of the new parser.
+Check :pep:`617` for more details.
+
+(Contributed by Guido van Rossum, Pablo Galindo and Lysandros Nikolaou
+in :issue:`12782` and :issue:`40334`.)
+
+
 PEP 563: Postponed Evaluation of Annotations Becomes Default
 ------------------------------------------------------------
 
