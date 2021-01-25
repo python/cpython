@@ -556,17 +556,21 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 return
 
     def transfer_path(self, with_cwd=False):
+        """Set sys.path in user namespace, maybe with current directory.
+
+        Called from start_subprocess (True) and restart_subprocess (?).
+        """
         if with_cwd:        # Issue 13506
             path = ['']     # include Current Working Directory
             path.extend(sys.path)
         else:
             path = sys.path
 
-        self.runcommand("""if 1:
+        self.runcommand(f"""if 1:
         import sys as _sys
-        _sys.path = %r
+        _sys.path = {path!r}
         del _sys
-        \n""" % (path,))
+        \n""")
 
     active_seq = None
 
@@ -692,15 +696,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def prepend_syspath(self, filename):
         "Prepend sys.path with file's directory if not already included"
-        self.runcommand("""if 1:
-            _filename = %r
+        self.runcommand(f"""if 1:
             import sys as _sys
             from os.path import dirname as _dirname
-            _dir = _dirname(_filename)
+            _dir = _dirname({filename!r})
             if not _dir in _sys.path:
                 _sys.path.insert(0, _dir)
-            del _filename, _sys, _dirname, _dir
-            \n""" % (filename,))
+            del _sys, _dirname, _dir
+            \n""")
 
     def showsyntaxerror(self, filename=None):
         """Override Interactive Interpreter method: Use Colorizing
@@ -743,8 +746,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 del c[key]
 
     def runcommand(self, code):
-        "Run the code without invoking the debugger"
-        # The code better not raise an exception!
+        """Run internal code to adjust user-code environment.
+
+        Targets include sys.argv, sys.path, and current directory.
+        Run without debugger; must not raise an exception!
+        Called from transfer_path, prepend_syspath, main, and
+        runscript.run_module_event.
+        """
         if self.tkconsole.executing:
             self.display_executing_dialog()
             return 0
