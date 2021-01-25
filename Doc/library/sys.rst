@@ -153,9 +153,11 @@ always available.
 
 .. data:: builtin_module_names
 
-   A tuple of strings giving the names of all modules that are compiled into this
+   A tuple of strings containing the names of all modules that are compiled into this
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
+
+   See also the :attr:`sys.module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -1059,6 +1061,24 @@ always available.
         :meth:`~importlib.abc.MetaPathFinder.find_module`.
         This is still called as a fallback if a :data:`meta_path` entry doesn't
         have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
+
+.. data:: module_names
+
+   A frozenset of strings containing the names of standard library modules.
+
+   It is the same on all platforms. Modules which are not available on
+   some platforms and modules disabled at Python build are also listed.
+   All module kinds are listed: pure Python, built-in, frozen and extension
+   modules. Test modules are excluded.
+
+   For packages, only sub-packages are listed, not sub-modules. For example,
+   ``concurrent`` package and ``concurrent.futures`` sub-package are listed,
+   but not ``concurrent.futures.base`` sub-module.
+
+   See also the :attr:`sys.builtin_module_names` list.
+
+   .. versionchanged:: 3.10
+
 
 .. data:: modules
 
