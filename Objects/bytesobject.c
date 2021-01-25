@@ -3019,9 +3019,6 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         return 0;
     }
     if (Py_SIZE(v) == 0) {
-        if (newsize == 0) {
-            return 0;
-        }
         *pv = _PyBytes_FromSize(newsize, 0);
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
