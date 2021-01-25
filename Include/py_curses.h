@@ -63,10 +63,10 @@ typedef struct {
 } PyCursesWindowObject;
 
 typedef struct {
-    PyTypeObject *Window_Type;
-    int (*SetupTermCalled)(void);
-    int (*Initialised)(void);
-    int (*InitialisedColor)(void);
+    PyTypeObject *window_type;
+    int (*setup_term_called)(void);
+    int (*initialized)(void);
+    int (*initialized_color)(void);
 } PyCurses_CAPI;
 
 #define PyCursesWindow_Check(v) Py_IS_TYPE(v, &PyCursesWindow_Type)
@@ -82,10 +82,10 @@ typedef struct {
 
 static PyCurses_CAPI *PyCurses_API;
 
-#define PyCursesWindow_Type (*PyCurses_API->Window_Type)
-#define PyCursesSetupTermCalled  {if (!PyCurses_API->SetupTermCalled()) return NULL;}
-#define PyCursesInitialised      {if (!PyCurses_API->Initialised()) return NULL;}
-#define PyCursesInitialisedColor {if (!PyCurses_API->InitialisedColor()) return NULL;}
+#define PyCursesWindow_Type (*PyCurses_API->window_type)
+#define PyCursesSetupTermCalled  {if (!PyCurses_API->setup_term_called()) return NULL;}
+#define PyCursesInitialised      {if (!PyCurses_API->initialized()) return NULL;}
+#define PyCursesInitialisedColor {if (!PyCurses_API->initialized_color()) return NULL;}
 
 #define import_curses() \
     PyCurses_API = PyCapsule_Import(PyCurses_CAPSULE_NAME, 1);

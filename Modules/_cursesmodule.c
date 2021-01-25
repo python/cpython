@@ -4729,7 +4729,7 @@ static void
 curses_destructor(PyObject *op)
 {
     PyCurses_CAPI *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
-    Py_DECREF(ptr->Window_Type);
+    Py_DECREF(ptr->window_type);
     PyMem_Free(ptr);
 }
 
@@ -4759,17 +4759,17 @@ PyInit__curses(void)
         return NULL;
     }
     /* Initialize the C API struct pointer */
-    PyCurses_API->Window_Type = (PyTypeObject *)Py_NewRef(
+    PyCurses_API->window_type = (PyTypeObject *)Py_NewRef(
         &PyCursesWindow_Type);
-    PyCurses_API->SetupTermCalled = func_PyCursesSetupTermCalled;
-    PyCurses_API->Initialised = func_PyCursesInitialised;
-    PyCurses_API->InitialisedColor = func_PyCursesInitialisedColor;
+    PyCurses_API->setup_term_called = func_PyCursesSetupTermCalled;
+    PyCurses_API->initialized = func_PyCursesInitialised;
+    PyCurses_API->initialized_color = func_PyCursesInitialisedColor;
 
     /* Add a capsule for the C API */
     c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
                                  curses_destructor);
     if (c_api_object == NULL) {
-        Py_DECREF(PyCurses_API->Window_Type);
+        Py_DECREF(PyCurses_API->window_type);
         PyMem_Free(PyCurses_API);
         return NULL;
     }
