@@ -1549,7 +1549,7 @@ def main():
             import sys as _sys
             _sys.argv = {sys.argv!r}
             del _sys
-            \n"""
+            \n""")
         if cmd:
             shell.interp.execsource(cmd)
         elif script:
