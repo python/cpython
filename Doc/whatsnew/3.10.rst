@@ -530,6 +530,10 @@ Deprecated
   as appropriate to help identify code which needs updating during
   this transition.
 
+* Non-integer arguments to :func:`random.randrange` are deprecated.
+  The :exc:`ValueError` is deprecated in favor of a :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka and Raymond Hettinger in :issue:`37319`.)
+
 * The various ``load_module()`` methods of :mod:`importlib` have been
   documented as deprecated since Python 3.6, but will now also trigger
   a :exc:`DeprecationWarning`. Use
