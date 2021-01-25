@@ -1,0 +1,2 @@
+Add :func:`demux` to :mod:`audioop` for extracting single channels from
+multichannel audio. Patch by Ramon Fraterman.
