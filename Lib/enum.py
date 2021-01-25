@@ -138,22 +138,30 @@ class property(DynamicClassAttribute):
             try:
                 return ownerclass._member_map_[self.name]
             except KeyError:
-                raise AttributeError('%r not found in %r' % (self.name, ownerclass.__name__))
+                raise AttributeError(
+                        '%s: no attribute %r' % (ownerclass.__name__, self.name)
+                        )
         else:
             if self.fget is None:
-                raise AttributeError('%s: cannot read attribute %r' % (ownerclass.__name__, self.name))
+                raise AttributeError(
+                        '%s: no attribute %r' % (ownerclass.__name__, self.name)
+                        )
             else:
                 return self.fget(instance)
 
     def __set__(self, instance, value):
         if self.fset is None:
-            raise AttributeError("%s: cannot set attribute %r" % (self.clsname, self.name))
+            raise AttributeError(
+                    "%s: cannot set attribute %r" % (self.clsname, self.name)
+                    )
         else:
             return self.fset(instance, value)
 
     def __delete__(self, instance):
         if self.fdel is None:
-            raise AttributeError("%s: cannot delete attribute %r" % (self.clsname, self.name))
+            raise AttributeError(
+                    "%s: cannot delete attribute %r" % (self.clsname, self.name)
+                    )
         else:
             return self.fdel(instance)
 
@@ -331,10 +339,7 @@ class _EnumDict(dict):
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(
-                            key,
-                            1,
-                            len(self._member_names),
-                            self._last_values[:],
+                            key, 1, len(self._member_names), self._last_values[:],
                             )
                     self._auto_called = True
                 value = value.value
@@ -357,6 +362,7 @@ class EnumMeta(type):
     """
     Metaclass for Enum
     """
+
     @classmethod
     def __prepare__(metacls, cls, bases, **kwds):
         # check that previous enum members do not exist
@@ -415,7 +421,7 @@ class EnumMeta(type):
                 flag_mask |= value
             classdict[name] = _proto_member(value)
         #
-        # house keeping structures
+        # house-keeping structures
         classdict['_member_names_'] = []
         classdict['_member_map_'] = {}
         classdict['_value2member_map_'] = {}
@@ -873,6 +879,7 @@ class Enum(metaclass=EnumMeta):
 
     Derive from this class to define new enumerations.
     """
+
     def __new__(cls, value):
         # all enum instances are actually created during class construction
         # without calling this method; this method is called by the metaclass'
@@ -1021,14 +1028,14 @@ class StrEnum(str, Enum):
             # it must be a string
             if not isinstance(values[0], str):
                 raise TypeError('%r is not a string' % (values[0], ))
-        if len(values) > 1:
+        if len(values) >= 2:
             # check that encoding argument is a string
             if not isinstance(values[1], str):
                 raise TypeError('encoding must be a string, not %r' % (values[1], ))
-            if len(values) > 2:
-                # check that errors argument is a string
-                if not isinstance(values[2], str):
-                    raise TypeError('errors must be a string, not %r' % (values[2], ))
+        if len(values) == 3:
+            # check that errors argument is a string
+            if not isinstance(values[2], str):
+                raise TypeError('errors must be a string, not %r' % (values[2]))
         value = str(*values)
         member = str.__new__(cls, value)
         member._value_ = value

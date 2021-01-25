@@ -1198,7 +1198,9 @@ and raise an error if the two do not match::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: member order does not match _order_
+    TypeError: member order does not match _order_:
+    ['RED', 'BLUE', 'GREEN']
+    ['RED', 'GREEN', 'BLUE']
 
 .. note::
 
