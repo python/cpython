@@ -2497,7 +2497,7 @@ fatal_error_exit(int status)
 
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
-// (sys.module_names), into fd file descriptor.
+// (sys.stdlib_module_names), into fd file descriptor.
 //
 // This function is called by a signal handler in faulthandler: avoid memory
 // allocations and keep the implementation simple. For example, the list is not
@@ -2519,19 +2519,19 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     // Avoid PyDict_GetItemString() which calls PyUnicode_FromString(),
     // memory cannot be allocated on the heap in a signal handler.
     // Iterate on the dict instead.
-    PyObject *module_names = NULL;
+    PyObject *stdlib_module_names = NULL;
     pos = 0;
     while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
         if (PyUnicode_Check(key)
-           && PyUnicode_CompareWithASCIIString(key, "module_names") == 0) {
-            module_names = value;
+           && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+            stdlib_module_names = value;
             break;
         }
     }
-    // If we failed to get sys.module_names or it's not a frozenset,
+    // If we failed to get sys.stdlib_module_names or it's not a frozenset,
     // don't exclude stdlib modules.
-    if (module_names != NULL && !PyFrozenSet_Check(module_names)) {
-        module_names = NULL;
+    if (stdlib_module_names != NULL && !PyFrozenSet_Check(stdlib_module_names)) {
+        stdlib_module_names = NULL;
     }
 
     // List extensions
@@ -2547,13 +2547,13 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         }
         // Use the module name from the sys.modules key,
         // don't attempt to get the module object name.
-        if (module_names != NULL) {
+        if (stdlib_module_names != NULL) {
             int is_stdlib_ext = 0;
 
-            Py_ssize_t i;
+            Py_ssize_t i = 0;
             PyObject *item;
             Py_hash_t hash;
-            for (i=0; _PySet_NextEntry(module_names, &i, &item, &hash); ) {
+            while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
                 if (PyUnicode_Check(item)
                     && PyUnicode_Compare(key, item) == 0)
                 {

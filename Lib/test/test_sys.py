@@ -987,8 +987,8 @@ class SysModuleTest(unittest.TestCase):
                          proc)
 
     def test_module_names(self):
-        self.assertIsInstance(sys.module_names, frozenset)
-        for name in sys.module_names:
+        self.assertIsInstance(sys.stdlib_module_names, frozenset)
+        for name in sys.stdlib_module_names:
             self.assertIsInstance(name, str)
 
 
