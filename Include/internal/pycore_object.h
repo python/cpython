@@ -27,6 +27,9 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags & feature) != 0);
 }
 
+extern void _PyType_InitCache(PyInterpreterState *interp);
+
+
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
    _PyObject_InitVar() is the fast version of PyObject_InitVar().

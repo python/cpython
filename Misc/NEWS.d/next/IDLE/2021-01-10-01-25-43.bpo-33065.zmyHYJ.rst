@@ -1,0 +1,1 @@
+Fix problem debugging user classes with __repr__ method.

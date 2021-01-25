@@ -1,18 +1,12 @@
 /*
- * This file includes functions to transform a concrete syntax tree (CST) to
- * an abstract syntax tree (AST). The main function is PyAST_FromNode().
- *
+ * This file exposes PyAST_Validate interface to check the integrity
+ * of the given abstract syntax tree (potentially constructed manually).
  */
 #include "Python.h"
 #include "Python-ast.h"
 #include "ast.h"
-#include "token.h"
-#include "pythonrun.h"
 
 #include <assert.h>
-#include <stdbool.h>
-
-#define MAXLEVEL 200    /* Max parentheses level */
 
 static int validate_stmts(asdl_stmt_seq *);
 static int validate_exprs(asdl_expr_seq*, expr_context_ty, int);
@@ -62,7 +56,7 @@ validate_keywords(asdl_keyword_seq *keywords)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(keywords); i++)
-        if (!validate_expr(((keyword_ty)asdl_seq_GET(keywords, i))->value, Load))
+        if (!validate_expr((asdl_seq_GET(keywords, i))->value, Load))
             return 0;
     return 1;
 }
@@ -556,7 +550,7 @@ _PyAST_GetDocString(asdl_stmt_seq *body)
     if (!asdl_seq_LEN(body)) {
         return NULL;
     }
-    stmt_ty st = (stmt_ty)asdl_seq_GET(body, 0);
+    stmt_ty st = asdl_seq_GET(body, 0);
     if (st->kind != Expr_kind) {
         return NULL;
     }

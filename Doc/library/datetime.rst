@@ -1219,7 +1219,7 @@ Instance methods:
 
 .. method:: datetime.replace(year=self.year, month=self.month, day=self.day, \
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
-   tzinfo=self.tzinfo, * fold=0)
+   tzinfo=self.tzinfo, *, fold=0)
 
    Return a datetime with the same attributes, except for those attributes given
    new values by whichever keyword arguments are specified. Note that
@@ -1783,7 +1783,7 @@ Other constructor:
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
-   microsecond=self.microsecond, tzinfo=self.tzinfo, * fold=0)
+   microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
 
    Return a :class:`.time` with the same value, except for those attributes given
    new values by whichever keyword arguments are specified. Note that

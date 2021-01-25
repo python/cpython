@@ -22,13 +22,13 @@ Dictionary Objects
 .. c:function:: int PyDict_Check(PyObject *p)
 
    Return true if *p* is a dict object or an instance of a subtype of the dict
-   type.
+   type.  This function always succeeds.
 
 
 .. c:function:: int PyDict_CheckExact(PyObject *p)
 
    Return true if *p* is a dict object, but not an instance of a subtype of
-   the dict type.
+   the dict type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyDict_New()
@@ -81,14 +81,16 @@ Dictionary Objects
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
 
    Remove the entry in dictionary *p* with key *key*. *key* must be hashable;
-   if it isn't, :exc:`TypeError` is raised.  Return ``0`` on success or ``-1``
-   on failure.
+   if it isn't, :exc:`TypeError` is raised.
+   If *key* is not in the dictionary, :exc:`KeyError` is raised.
+   Return ``0`` on success or ``-1`` on failure.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
 
-   Remove the entry in dictionary *p* which has a key specified by the string
-   *key*.  Return ``0`` on success or ``-1`` on failure.
+   Remove the entry in dictionary *p* which has a key specified by the string *key*.
+   If *key* is not in the dictionary, :exc:`KeyError` is raised.
+   Return ``0`` on success or ``-1`` on failure.
 
 
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)

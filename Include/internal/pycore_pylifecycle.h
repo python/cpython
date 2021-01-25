@@ -44,11 +44,10 @@ extern PyStatus _PySys_Create(
     PyObject **sysmod_p);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
-extern int _PySys_InitMain(PyThreadState *tstate);
+extern int _PySys_UpdateConfig(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(PyThreadState *tstate);
 extern PyStatus _PyErr_Init(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
-extern PyStatus _PyImportHooks_Init(PyThreadState *tstate);
 extern int _PyFloat_Init(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
@@ -56,6 +55,7 @@ extern PyStatus _PyTypes_Init(void);
 extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyThreadState *tstate);
+extern PyStatus _PyAtExit_Init(PyThreadState *tstate);
 
 
 /* Various internal finalizers */
@@ -69,13 +69,14 @@ extern void _PyFloat_Fini(PyThreadState *tstate);
 extern void _PySlice_Fini(PyThreadState *tstate);
 extern void _PyAsyncGen_Fini(PyThreadState *tstate);
 
-extern void PyOS_FiniInterrupts(void);
+extern int _PySignal_Init(int install_signal_handlers);
+extern void _PySignal_Fini(void);
 
 extern void _PyExc_Fini(PyThreadState *tstate);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyThreadState *tstate);
-extern void _PyType_Fini(void);
+extern void _PyType_Fini(PyThreadState *tstate);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyThreadState *tstate);
 extern void _PyUnicode_ClearInterned(PyThreadState *tstate);
@@ -84,7 +85,8 @@ extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
-extern void _PyAST_Fini(PyThreadState *tstate);
+extern void _PyAST_Fini(PyInterpreterState *interp);
+extern void _PyAtExit_Fini(PyInterpreterState *interp);
 
 extern PyStatus _PyGILState_Init(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyThreadState *tstate);
@@ -108,6 +110,8 @@ PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
 
 PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(PyThreadState *tstate);
+
+extern void _PyAtExit_Call(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

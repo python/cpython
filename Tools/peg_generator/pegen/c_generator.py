@@ -502,6 +502,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 )
                 self.print("p->mark = _mark;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
+                self.print("if (p->error_indicator)")
+                with self.indent():
+                    self.print("return NULL;")
                 self.print("if (_raw == NULL || p->mark <= _resmark)")
                 with self.indent():
                     self.print("break;")
@@ -736,7 +739,10 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def visit_Alt(
         self, node: Alt, is_loop: bool, is_gather: bool, rulename: Optional[str]
     ) -> None:
-        self.print(f"{{ // {node}")
+        if len(node.items) == 1 and str(node.items[0]).startswith('invalid_'):
+            self.print(f"if (p->call_invalid_rules) {{ // {node}")
+        else:
+            self.print(f"{{ // {node}")
         with self.indent():
             self._check_for_errors()
             node_str = str(node).replace('"', '\\"')

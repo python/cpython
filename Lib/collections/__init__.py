@@ -51,22 +51,6 @@ except ImportError:
     pass
 
 
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3, "
-                      "and in 3.10 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
-
 ################################################################################
 ### OrderedDict
 ################################################################################
@@ -574,7 +558,7 @@ class Counter(dict):
     #   http://en.wikipedia.org/wiki/Multiset
     #   http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html
     #   http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
-    #   https://github.com/ActiveState/code/tree/master/recipes/Python/259174_bag_collection_class/recipe-259174.py
+    #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
     def __init__(self, iterable=None, /, **kwds):
@@ -1001,7 +985,7 @@ class ChainMap(_collections_abc.MutableMapping):
     def __iter__(self):
         d = {}
         for mapping in reversed(self.maps):
-            d.update(mapping)                   # reuses stored hash values if possible
+            d.update(dict.fromkeys(mapping))    # reuses stored hash values if possible
         return iter(d)
 
     def __contains__(self, key):

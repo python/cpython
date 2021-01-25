@@ -1673,6 +1673,18 @@ test case
                 with self.assertLogs(level='WARNING'):
                     log_foo.info("1")
 
+    def testAssertLogsFailureLevelTooHigh_FilterInRootLogger(self):
+        # Failure due to level too high - message propagated to root
+        with self.assertNoStderr():
+            oldLevel = log_foo.level
+            log_foo.setLevel(logging.INFO)
+            try:
+                with self.assertRaises(self.failureException):
+                    with self.assertLogs(level='WARNING'):
+                        log_foo.info("1")
+            finally:
+                log_foo.setLevel(oldLevel)
+
     def testAssertLogsFailureMismatchingLogger(self):
         # Failure due to mismatching logger (and the logged message is
         # passed through)

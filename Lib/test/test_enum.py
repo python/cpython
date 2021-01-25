@@ -5,7 +5,7 @@ import sys
 import unittest
 import threading
 from collections import OrderedDict
-from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
+from enum import Enum, IntEnum, StrEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -48,14 +48,9 @@ except Exception as exc:
     FlagStooges = exc
 
 # for pickle test and subclass tests
-try:
-    class StrEnum(str, Enum):
-        'accepts only string values'
-    class Name(StrEnum):
-        BDFL = 'Guido van Rossum'
-        FLUFL = 'Barry Warsaw'
-except Exception as exc:
-    Name = exc
+class Name(StrEnum):
+    BDFL = 'Guido van Rossum'
+    FLUFL = 'Barry Warsaw'
 
 try:
     Question = Enum('Question', 'who what when where why', module=__name__)
@@ -215,6 +210,18 @@ class TestEnum(unittest.TestCase):
                 set(dir(SubEnum.sample)),
                 set(['__class__', '__doc__', '__module__', 'name', 'value', 'invisible']),
                 )
+
+    def test_dir_on_sub_with_behavior_including_instance_dict_on_super(self):
+        # see issue40084
+        class SuperEnum(IntEnum):
+            def __new__(cls, value, description=""):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.description = description
+                return obj
+        class SubEnum(SuperEnum):
+            sample = 5
+        self.assertTrue({'description'} <= set(dir(SubEnum.sample)))
 
     def test_enum_in_enum_out(self):
         Season = self.Season
@@ -422,7 +429,7 @@ class TestEnum(unittest.TestCase):
     def test_reserved__sunder_(self):
         with self.assertRaisesRegex(
                 ValueError,
-                '_sunder_ names, such as "_bad_", are reserved',
+                "_sunder_ names, such as '_bad_', are reserved",
             ):
             class Bad(Enum):
                 _bad_ = 1
@@ -578,12 +585,15 @@ class TestEnum(unittest.TestCase):
         class Test1Enum(MyMethodEnum, int, MyStrEnum):
             One = 1
             Two = 2
+        self.assertTrue(Test1Enum._member_type_ is int)
         self.assertEqual(str(Test1Enum.One), 'MyStr')
+        self.assertEqual(format(Test1Enum.One, ''), 'MyStr')
         #
         class Test2Enum(MyStrEnum, MyMethodEnum):
             One = 1
             Two = 2
         self.assertEqual(str(Test2Enum.One), 'MyStr')
+        self.assertEqual(format(Test1Enum.One, ''), 'MyStr')
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -653,14 +663,13 @@ class TestEnum(unittest.TestCase):
             tau = 'Tau'
         self.assertTrue(phy.pi < phy.tau)
 
-    def test_strenum_inherited(self):
-        class StrEnum(str, Enum):
-            pass
+    def test_strenum_inherited_methods(self):
         class phy(StrEnum):
             pi = 'Pi'
             tau = 'Tau'
         self.assertTrue(phy.pi < phy.tau)
-
+        self.assertEqual(phy.pi.upper(), 'PI')
+        self.assertEqual(phy.tau.count('a'), 1)
 
     def test_intenum(self):
         class WeekDay(IntEnum):
@@ -1140,6 +1149,7 @@ class TestEnum(unittest.TestCase):
         class auto_enum(type(Enum)):
             def __new__(metacls, cls, bases, classdict):
                 temp = type(classdict)()
+                temp._cls_name = cls
                 names = set(classdict._member_names)
                 i = 0
                 for k in classdict._member_names:
@@ -1667,6 +1677,13 @@ class TestEnum(unittest.TestCase):
         class Test(Base):
             test = 1
         self.assertEqual(Test.test.test, 'dynamic')
+        class Base2(Enum):
+            @enum.property
+            def flash(self):
+                return 'flashy dynamic'
+        class Test(Base2):
+            flash = 1
+        self.assertEqual(Test.flash.flash, 'flashy dynamic')
 
     def test_no_duplicates(self):
         class UniqueEnum(Enum):
@@ -2002,13 +2019,6 @@ class TestEnum(unittest.TestCase):
         self.assertTrue(issubclass(ReformedColor, int))
 
     def test_multiple_inherited_mixin(self):
-        class StrEnum(str, Enum):
-            def __new__(cls, *args, **kwargs):
-                for a in args:
-                    if not isinstance(a, str):
-                        raise TypeError("Enumeration '%s' (%s) is not"
-                                        " a string" % (a, type(a).__name__))
-                return str.__new__(cls, *args, **kwargs)
         @unique
         class Decision1(StrEnum):
             REVERT = "REVERT"
@@ -2022,6 +2032,32 @@ class TestEnum(unittest.TestCase):
             REVERT_ALL = "REVERT_ALL"
             RETRY = "RETRY"
 
+    def test_multiple_mixin_inherited(self):
+        class MyInt(int):
+            def __new__(cls, value):
+                return super().__new__(cls, value)
+
+        class HexMixin:
+            def __repr__(self):
+                return hex(self)
+
+        class MyIntEnum(HexMixin, MyInt, enum.Enum):
+            pass
+
+        class Foo(MyIntEnum):
+            TEST = 1
+        self.assertTrue(isinstance(Foo.TEST, MyInt))
+        self.assertEqual(repr(Foo.TEST), "0x1")
+
+        class Fee(MyIntEnum):
+            TEST = 1
+            def __new__(cls, value):
+                value += 1
+                member = int.__new__(cls, value)
+                member._value_ = value
+                return member
+        self.assertEqual(Fee.TEST, 2)
+
     def test_empty_globals(self):
         # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
         # when using compile and exec because f_globals is empty
@@ -2030,6 +2066,124 @@ class TestEnum(unittest.TestCase):
         global_ns = {}
         local_ls = {}
         exec(code, global_ns, local_ls)
+
+    def test_strenum(self):
+        class GoodStrEnum(StrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        self.assertEqual(GoodStrEnum.one, '1')
+        self.assertEqual(str(GoodStrEnum.one), '1')
+        self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
+        self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, StrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, StrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(HelloEnum.eight, str(HelloEnum.eight))
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, StrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(GoodbyeEnum.nine, str(GoodbyeEnum.nine))
+        #
+        with self.assertRaisesRegex(TypeError, '1 is not a string'):
+            class FirstFailedStrEnum(StrEnum):
+                one = 1
+                two = '2'
+        with self.assertRaisesRegex(TypeError, "2 is not a string"):
+            class SecondFailedStrEnum(StrEnum):
+                one = '1'
+                two = 2,
+                three = '3'
+        with self.assertRaisesRegex(TypeError, '2 is not a string'):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = 2
+        with self.assertRaisesRegex(TypeError, 'encoding must be a string, not %r' % (sys.getdefaultencoding, )):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
+
+
+
+    @unittest.skipUnless(
+            sys.version_info[:2] == (3, 9),
+            'private variables are now normal attributes',
+            )
+    def test_warning_for_private_variables(self):
+        with self.assertWarns(DeprecationWarning):
+            class Private(Enum):
+                __corporal = 'Radar'
+        self.assertEqual(Private._Private__corporal.value, 'Radar')
+        try:
+            with self.assertWarns(DeprecationWarning):
+                class Private(Enum):
+                    __major_ = 'Hoolihan'
+        except ValueError:
+            pass
+
+    def test_private_variable_is_normal_attribute(self):
+        class Private(Enum):
+            __corporal = 'Radar'
+            __major_ = 'Hoolihan'
+        self.assertEqual(Private._Private__corporal, 'Radar')
+        self.assertEqual(Private._Private__major_, 'Hoolihan')
+
+    def test_strenum_auto(self):
+        class Strings(StrEnum):
+            ONE = auto()
+            TWO = auto()
+        self.assertEqual([Strings.ONE, Strings.TWO], ['one', 'two'])
+
+
+    def test_dynamic_members_with_static_methods(self):
+        #
+        foo_defines = {'FOO_CAT': 'aloof', 'BAR_DOG': 'friendly', 'FOO_HORSE': 'big'}
+        class Foo(Enum):
+            vars().update({
+                    k: v
+                    for k, v in foo_defines.items()
+                    if k.startswith('FOO_')
+                    })
+            def upper(self):
+                return self.value.upper()
+        self.assertEqual(list(Foo), [Foo.FOO_CAT, Foo.FOO_HORSE])
+        self.assertEqual(Foo.FOO_CAT.value, 'aloof')
+        self.assertEqual(Foo.FOO_HORSE.upper(), 'BIG')
+        #
+        with self.assertRaisesRegex(TypeError, "'FOO_CAT' already defined as: 'aloof'"):
+            class FooBar(Enum):
+                vars().update({
+                        k: v
+                        for k, v in foo_defines.items()
+                        if k.startswith('FOO_')
+                        },
+                        **{'FOO_CAT': 'small'},
+                        )
+                def upper(self):
+                    return self.value.upper()
 
 
 class TestOrder(unittest.TestCase):
@@ -2167,6 +2321,11 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(~Open.AC), '<Open.CE: 524288>')
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC: 3>')
         self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: 2>')
+
+    def test_format(self):
+        Perm = self.Perm
+        self.assertEqual(format(Perm.R, ''), 'Perm.R')
+        self.assertEqual(format(Perm.R | Perm.X, ''), 'Perm.R|X')
 
     def test_or(self):
         Perm = self.Perm
@@ -2482,6 +2641,42 @@ class TestFlag(unittest.TestCase):
                 'at least one thread failed while creating composite members')
         self.assertEqual(256, len(seen), 'too many composite members created')
 
+    def test_init_subclass(self):
+        class MyEnum(Flag):
+            def __init_subclass__(cls, **kwds):
+                super().__init_subclass__(**kwds)
+                self.assertFalse(cls.__dict__.get('_test', False))
+                cls._test1 = 'MyEnum'
+        #
+        class TheirEnum(MyEnum):
+            def __init_subclass__(cls, **kwds):
+                super(TheirEnum, cls).__init_subclass__(**kwds)
+                cls._test2 = 'TheirEnum'
+        class WhoseEnum(TheirEnum):
+            def __init_subclass__(cls, **kwds):
+                pass
+        class NoEnum(WhoseEnum):
+            ONE = 1
+        self.assertEqual(TheirEnum.__dict__['_test1'], 'MyEnum')
+        self.assertEqual(WhoseEnum.__dict__['_test1'], 'MyEnum')
+        self.assertEqual(WhoseEnum.__dict__['_test2'], 'TheirEnum')
+        self.assertFalse(NoEnum.__dict__.get('_test1', False))
+        self.assertFalse(NoEnum.__dict__.get('_test2', False))
+        #
+        class OurEnum(MyEnum):
+            def __init_subclass__(cls, **kwds):
+                cls._test2 = 'OurEnum'
+        class WhereEnum(OurEnum):
+            def __init_subclass__(cls, **kwds):
+                pass
+        class NeverEnum(WhereEnum):
+            ONE = 1
+        self.assertEqual(OurEnum.__dict__['_test1'], 'MyEnum')
+        self.assertFalse(WhereEnum.__dict__.get('_test1', False))
+        self.assertEqual(WhereEnum.__dict__['_test2'], 'OurEnum')
+        self.assertFalse(NeverEnum.__dict__.get('_test1', False))
+        self.assertFalse(NeverEnum.__dict__.get('_test2', False))
+
 
 class TestIntFlag(unittest.TestCase):
     """Tests of the IntFlags."""
@@ -2507,6 +2702,7 @@ class TestIntFlag(unittest.TestCase):
 
     def test_type(self):
         Perm = self.Perm
+        self.assertTrue(Perm._member_type_ is int)
         Open = self.Open
         for f in Perm:
             self.assertTrue(isinstance(f, Perm))
@@ -2585,6 +2781,11 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.RO | Open.CE)), '<Open.AC|RW|WO: -524289>')
         self.assertEqual(repr(~(Open.WO | Open.CE)), '<Open.RW: -524290>')
         self.assertEqual(repr(Open(~4)), '<Open.CE|AC|RW|WO: -5>')
+
+    def test_format(self):
+        Perm = self.Perm
+        self.assertEqual(format(Perm.R, ''), '4')
+        self.assertEqual(format(Perm.R | Perm.X, ''), '5')
 
     def test_or(self):
         Perm = self.Perm
@@ -3075,7 +3276,7 @@ class TestStdLib(unittest.TestCase):
                 ('value', Enum.__dict__['value']),
                 ))
         result = dict(inspect.getmembers(self.Color))
-        self.assertEqual(values.keys(), result.keys())
+        self.assertEqual(set(values.keys()), set(result.keys()))
         failed = False
         for k in values.keys():
             if result[k] != values[k]:
@@ -3112,6 +3313,10 @@ class TestStdLib(unittest.TestCase):
         values.sort(key=lambda item: item.name)
         result = list(inspect.classify_class_attrs(self.Color))
         result.sort(key=lambda item: item.name)
+        self.assertEqual(
+                len(values), len(result),
+                "%s != %s" % ([a.name for a in values], [a.name for a in result])
+                )
         failed = False
         for v, r in zip(values, result):
             if r != v:

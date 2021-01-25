@@ -302,7 +302,14 @@ class DateHeader:
             kwds['parse_tree'] = parser.TokenList()
             return
         if isinstance(value, str):
-            value = utils.parsedate_to_datetime(value)
+            kwds['decoded'] = value
+            try:
+                value = utils.parsedate_to_datetime(value)
+            except ValueError:
+                kwds['defects'].append(errors.InvalidDateDefect('Invalid date value or format'))
+                kwds['datetime'] = None
+                kwds['parse_tree'] = parser.TokenList()
+                return
         kwds['datetime'] = value
         kwds['decoded'] = utils.format_datetime(kwds['datetime'])
         kwds['parse_tree'] = cls.value_parser(kwds['decoded'])

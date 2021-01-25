@@ -2519,19 +2519,17 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
 
     codecEnabled = False
 
-    @classmethod
-    def lookupTestDecoder(cls, name):
-        if cls.codecEnabled and name == 'test_decoder':
-            latin1 = codecs.lookup('latin-1')
-            return codecs.CodecInfo(
-                name='test_decoder', encode=latin1.encode, decode=None,
-                incrementalencoder=None,
-                streamreader=None, streamwriter=None,
-                incrementaldecoder=cls)
 
-# Register the previous decoder for testing.
-# Disabled by default, tests will enable it.
-codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
+# bpo-41919: This method is separated from StatefulIncrementalDecoder to avoid a resource leak
+# when registering codecs and cleanup functions.
+def lookupTestDecoder(name):
+    if StatefulIncrementalDecoder.codecEnabled and name == 'test_decoder':
+        latin1 = codecs.lookup('latin-1')
+        return codecs.CodecInfo(
+            name='test_decoder', encode=latin1.encode, decode=None,
+            incrementalencoder=None,
+            streamreader=None, streamwriter=None,
+            incrementaldecoder=StatefulIncrementalDecoder)
 
 
 class StatefulIncrementalDecoderTest(unittest.TestCase):
@@ -2583,6 +2581,8 @@ class TextIOWrapperTest(unittest.TestCase):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ascii")
         os_helper.unlink(os_helper.TESTFN)
+        codecs.register(lookupTestDecoder)
+        self.addCleanup(codecs.unregister, lookupTestDecoder)
 
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)

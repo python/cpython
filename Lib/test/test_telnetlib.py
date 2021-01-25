@@ -16,7 +16,7 @@ def server(evt, serv):
     try:
         conn, addr = serv.accept()
         conn.close()
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.close()
