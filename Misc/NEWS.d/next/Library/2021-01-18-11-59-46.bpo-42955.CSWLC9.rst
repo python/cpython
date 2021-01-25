@@ -1,2 +1,2 @@
-Add :data:`sys.module_names`, containing the list of the standard library
+Add :data:`sys.stdlib_module_names`, containing the list of the standard library
 module names. Patch by Victor Stinner.
