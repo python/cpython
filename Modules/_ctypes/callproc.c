@@ -1449,7 +1449,7 @@ static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *ar
      PyObject *name, *name2;
      char *name_str;
 
-     if (__builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)) {
+     if (__builtin_available(macOS 10.16, iOS 14.0, tvOS 14.0, watchOS 7.0, *)) {
          int r;
 
          if (!PyArg_ParseTuple(args, "O", &name))
