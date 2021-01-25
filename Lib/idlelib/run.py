@@ -3,6 +3,7 @@ import linecache
 import queue
 import sys
 import signal
+import textwrap
 import time
 import traceback
 import _thread as thread
@@ -443,7 +444,7 @@ class MyHandler(rpc.RPCHandler):
         quitting = True
         thread.interrupt_main()
 
-class Executive(object):
+class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
