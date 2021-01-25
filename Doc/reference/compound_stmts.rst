@@ -254,7 +254,8 @@ present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if it is the class or a base class of the exception
-object or a tuple containing an item compatible with the exception.
+object, or a tuple containing an item that is the class or a base class of
+the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
@@ -301,9 +302,27 @@ Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  :func:`sys.exc_info`
-values are restored to their previous values (before the call) when returning
-from a function that handled an exception.
+the point in the program where the exception occurred.  The details about the
+exception accessed via :func:`sys.exc_info` are restored to their previous values
+when leaving an exception handler::
+
+   >>> print(sys.exc_info())
+   (None, None, None)
+   >>> try:
+   ...     raise TypeError
+   ... except:
+   ...     print(sys.exc_info())
+   ...     try:
+   ...          raise ValueError
+   ...     except:
+   ...         print(sys.exc_info())
+   ...     print(sys.exc_info())
+   ...
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   >>> print(sys.exc_info())
+   (None, None, None)
 
 .. index::
    keyword: else
@@ -610,13 +629,9 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.  If the ``annotations`` import from
-:mod:`__future__` is used, annotations are preserved as strings at runtime which
-enables postponed evaluation.  Otherwise, they are evaluated when the function
-definition is executed.  In this case annotations may be evaluated in
-a different order than they appear in the source code.
+semantics of a function.  The annotation values are available as string values
+in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.
 
 .. index:: pair: lambda; expression
 
@@ -772,10 +787,8 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
-``async`` identifiers become reserved keywords; :keyword:`await` expressions,
-:keyword:`async for` and :keyword:`async with` can only be used in
-coroutine function bodies.
+(see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
+:keyword:`async with` can only be used in the body of a coroutine function.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
@@ -789,6 +802,9 @@ An example of a coroutine function::
         do_stuff()
         await some_coroutine()
 
+.. versionchanged:: 3.7
+   ``await`` and ``async`` are now keywords; previously they were only
+   treated as such inside the body of a coroutine function.
 
 .. index:: statement: async for
 .. _`async for`:
@@ -799,12 +815,12 @@ The :keyword:`!async for` statement
 .. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
-An :term:`asynchronous iterable` is able to call asynchronous code in its
-*iter* implementation, and :term:`asynchronous iterator` can call asynchronous
-code in its *next* method.
+An :term:`asynchronous iterable` provides an ``__aiter__`` method that directly
+returns an :term:`asynchronous iterator`, which can call asynchronous code in
+its ``__anext__`` method.
 
 The ``async for`` statement allows convenient iteration over asynchronous
-iterators.
+iterables.
 
 The following code::
 

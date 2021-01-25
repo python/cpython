@@ -440,9 +440,18 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
         self.assertEqual(par[2], P('.'))
+        self.assertEqual(par[-1], P('.'))
+        self.assertEqual(par[-2], P('a'))
+        self.assertEqual(par[-3], P('a/b'))
+        self.assertEqual(par[0:1], (P('a/b'),))
+        self.assertEqual(par[:2], (P('a/b'), P('a')))
+        self.assertEqual(par[:-1], (P('a/b'), P('a')))
+        self.assertEqual(par[1:], (P('a'), P('.')))
+        self.assertEqual(par[::2], (P('a/b'), P('.')))
+        self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
         self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
-            par[-1]
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
         with self.assertRaises(TypeError):
@@ -454,6 +463,12 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[0:1], (P('/a/b'),))
+        self.assertEqual(par[:2], (P('/a/b'), P('/a')))
+        self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
+        self.assertEqual(par[1:], (P('/a'), P('/')))
+        self.assertEqual(par[::2], (P('/a/b'), P('/')))
+        self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
         with self.assertRaises(IndexError):
             par[3]
@@ -905,6 +920,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:a'))
         self.assertEqual(par[1], P('z:'))
+        self.assertEqual(par[0:1], (P('z:a'),))
+        self.assertEqual(par[:-1], (P('z:a'),))
+        self.assertEqual(par[:2], (P('z:a'), P('z:')))
+        self.assertEqual(par[1:], (P('z:'),))
+        self.assertEqual(par[::2], (P('z:a'),))
+        self.assertEqual(par[::-1], (P('z:'), P('z:a')))
         self.assertEqual(list(par), [P('z:a'), P('z:')])
         with self.assertRaises(IndexError):
             par[2]
@@ -913,6 +934,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:/a'))
         self.assertEqual(par[1], P('z:/'))
+        self.assertEqual(par[0:1], (P('z:/a'),))
+        self.assertEqual(par[0:-1], (P('z:/a'),))
+        self.assertEqual(par[:2], (P('z:/a'), P('z:/')))
+        self.assertEqual(par[1:], (P('z:/'),))
+        self.assertEqual(par[::2], (P('z:/a'),))
+        self.assertEqual(par[::-1], (P('z:/'), P('z:/a'),))
         self.assertEqual(list(par), [P('z:/a'), P('z:/')])
         with self.assertRaises(IndexError):
             par[2]
@@ -921,6 +948,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('//a/b/c'))
         self.assertEqual(par[1], P('//a/b'))
+        self.assertEqual(par[0:1], (P('//a/b/c'),))
+        self.assertEqual(par[0:-1], (P('//a/b/c'),))
+        self.assertEqual(par[:2], (P('//a/b/c'), P('//a/b')))
+        self.assertEqual(par[1:], (P('//a/b'),))
+        self.assertEqual(par[::2], (P('//a/b/c'),))
+        self.assertEqual(par[::-1], (P('//a/b'), P('//a/b/c')))
         self.assertEqual(list(par), [P('//a/b/c'), P('//a/b')])
         with self.assertRaises(IndexError):
             par[2]
@@ -1509,6 +1542,26 @@ class _BasePathTest(object):
         # Check that trying to write bytes does not truncate the file.
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
         self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
+
+    def test_write_text_with_newlines(self):
+        p = self.cls(BASE)
+        # Check that `\n` character change nothing
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\n')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\nfghlk\n\rmnopq')
+        # Check that `\r` character replaces `\n`
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\rfghlk\r\rmnopq')
+        # Check that `\r\n` character replaces `\n`
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r\n')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\r\nfghlk\r\n\rmnopq')
+        # Check that no argument passed will change `\n` to `os.linesep`
+        os_linesep_byte = bytes(os.linesep, encoding='ascii')
+        (p / 'fileA').write_text('abcde\nfghlk\n\rmnopq')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                          b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
 
     def test_iterdir(self):
         P = self.cls
@@ -2166,6 +2219,8 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         try:
@@ -2412,6 +2467,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
     def test_expanduser(self):
         P = self.cls
         import_helper.import_module('pwd')

@@ -2321,7 +2321,8 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
     /* If this is a subclass of MemoryError, we don't need to
      * do anything in the free-list*/
     if (!Py_IS_TYPE(self, (PyTypeObject *) PyExc_MemoryError)) {
-        return Py_TYPE(self)->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free((PyObject *)self);
+        return;
     }
 
     _PyObject_GC_UNTRACK(self);
@@ -2546,8 +2547,10 @@ _PyExc_Init(PyThreadState *tstate)
     do { \
         PyObject *_code = PyLong_FromLong(CODE); \
         assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
-        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) \
+        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) { \
+            Py_XDECREF(_code); \
             return _PyStatus_ERR("errmap insertion problem."); \
+        } \
         Py_DECREF(_code); \
     } while (0)
 

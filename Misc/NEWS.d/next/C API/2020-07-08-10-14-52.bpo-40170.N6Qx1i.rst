@@ -1,4 +1,0 @@
-Revert :c:func:`PyType_HasFeature` change: it reads again directly the
-:c:member:`PyTypeObject.tp_flags` member when the limited C API is not used,
-rather than always calling :c:func:`PyType_GetFlags` which hides implementation
-details.

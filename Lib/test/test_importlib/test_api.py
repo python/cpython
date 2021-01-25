@@ -20,7 +20,7 @@ class ImportModuleTests:
 
     def test_module_import(self):
         # Test importing a top-level module.
-        with test_util.mock_modules('top_level') as mock:
+        with test_util.mock_spec('top_level') as mock:
             with test_util.import_state(meta_path=[mock]):
                 module = self.init.import_module('top_level')
                 self.assertEqual(module.__name__, 'top_level')
@@ -30,7 +30,7 @@ class ImportModuleTests:
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         name = '{0}.mod'.format(pkg_name)
-        with test_util.mock_modules(pkg_long_name, name) as mock:
+        with test_util.mock_spec(pkg_long_name, name) as mock:
             with test_util.import_state(meta_path=[mock]):
                 module = self.init.import_module(name)
                 self.assertEqual(module.__name__, name)
@@ -42,7 +42,7 @@ class ImportModuleTests:
         module_name = 'mod'
         absolute_name = '{0}.{1}'.format(pkg_name, module_name)
         relative_name = '.{0}'.format(module_name)
-        with test_util.mock_modules(pkg_long_name, absolute_name) as mock:
+        with test_util.mock_spec(pkg_long_name, absolute_name) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module(pkg_name)
                 module = self.init.import_module(relative_name, pkg_name)
@@ -50,7 +50,7 @@ class ImportModuleTests:
 
     def test_deep_relative_package_import(self):
         modules = ['a.__init__', 'a.b.__init__', 'a.c']
-        with test_util.mock_modules(*modules) as mock:
+        with test_util.mock_spec(*modules) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module('a')
                 self.init.import_module('a.b')
@@ -63,7 +63,7 @@ class ImportModuleTests:
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         name = '{0}.mod'.format(pkg_name)
-        with test_util.mock_modules(pkg_long_name, name) as mock:
+        with test_util.mock_spec(pkg_long_name, name) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module(pkg_name)
                 module = self.init.import_module(name, pkg_name)
@@ -88,7 +88,7 @@ class ImportModuleTests:
             b_load_count += 1
         code = {'a': load_a, 'a.b': load_b}
         modules = ['a.__init__', 'a.b']
-        with test_util.mock_modules(*modules, module_code=code) as mock:
+        with test_util.mock_spec(*modules, module_code=code) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module('a.b')
         self.assertEqual(b_load_count, 1)
@@ -212,8 +212,8 @@ class ReloadTests:
             module = type(sys)('top_level')
             module.spam = 3
             sys.modules['top_level'] = module
-        mock = test_util.mock_modules('top_level',
-                                      module_code={'top_level': code})
+        mock = test_util.mock_spec('top_level',
+                                   module_code={'top_level': code})
         with mock:
             with test_util.import_state(meta_path=[mock]):
                 module = self.init.import_module('top_level')

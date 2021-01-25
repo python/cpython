@@ -1,4 +1,4 @@
-This is Python version 3.10.0 alpha 0
+This is Python version 3.10.0 alpha 4
 =====================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
@@ -22,7 +22,7 @@ This is Python version 3.10.0 alpha 0
    :target: https://python.zulipchat.com
 
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -244,13 +244,13 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`596` for Python 3.9 release details.
+See :pep:`619` for Python 3.10 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

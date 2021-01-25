@@ -1,2 +1,0 @@
-Fixed :meth:`turtle.Vec2D.__rmul__` for arguments which are not int or
-float.

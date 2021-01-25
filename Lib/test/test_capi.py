@@ -405,6 +405,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
         self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
 
+    def test_null_type_doc(self):
+        self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
+
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -543,6 +546,45 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
+
+    def check_fatal_error(self, code, expected, not_expected=()):
+        with support.SuppressCrashReport():
+            rc, out, err = assert_python_failure('-sSI', '-c', code)
+
+        err = err.replace(b'\r', b'').decode('ascii', 'replace')
+        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
+                      err)
+
+        match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
+                          err, re.MULTILINE)
+        if not match:
+            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
+        modules = set(match.group(1).strip().split(', '))
+        total = int(match.group(2))
+
+        for name in expected:
+            self.assertIn(name, modules)
+        for name in not_expected:
+            self.assertNotIn(name, modules)
+        self.assertEqual(len(modules), total)
+
+    def test_fatal_error(self):
+        # By default, stdlib extension modules are ignored,
+        # but not test modules.
+        expected = ('_testcapi',)
+        not_expected = ('sys',)
+        code = 'import _testcapi, sys; _testcapi.fatal_error(b"MESSAGE")'
+        self.check_fatal_error(code, expected, not_expected)
+
+        # Mark _testcapi as stdlib module, but not sys
+        expected = ('sys',)
+        not_expected = ('_testcapi',)
+        code = textwrap.dedent('''
+            import _testcapi, sys
+            sys.module_names = frozenset({"_testcapi"})
+            _testcapi.fatal_error(b"MESSAGE")
+        ''')
+        self.check_fatal_error(code, expected)
 
 
 class TestPendingCalls(unittest.TestCase):

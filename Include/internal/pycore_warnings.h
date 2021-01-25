@@ -17,7 +17,7 @@ struct _warnings_runtime_state {
     long filters_version;
 };
 
-extern PyStatus _PyWarnings_InitState(PyThreadState *tstate);
+extern int _PyWarnings_InitState(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

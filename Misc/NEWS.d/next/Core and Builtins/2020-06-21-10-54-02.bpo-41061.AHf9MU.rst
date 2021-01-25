@@ -1,1 +1,0 @@
-Fix incorrect expressions and asserts in hashtable code and tests.

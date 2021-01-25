@@ -143,10 +143,7 @@ class _RandomNameSequence:
         return self
 
     def __next__(self):
-        c = self.characters
-        choose = self.rng.choice
-        letters = [choose(c) for dummy in range(8)]
-        return ''.join(letters)
+        return ''.join(self.rng.choices(self.characters, k=8))
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which

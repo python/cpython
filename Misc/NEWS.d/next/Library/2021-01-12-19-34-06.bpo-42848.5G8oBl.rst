@@ -1,0 +1,1 @@
+Removed recursion from :class:`~traceback.TracebackException` to allow it to handle long exception chains.

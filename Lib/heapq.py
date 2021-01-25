@@ -456,7 +456,7 @@ def merge(*iterables, key=None, reverse=False):
 # 2) Made multiple passes over the data.
 # 3) Made more comparisons in common cases (small k, large n, semi-random input).
 # See the more detailed comparison of approach at:
-# https://github.com/ActiveState/code/tree/master/recipes/Python/577573_Compare_algorithms/recipe-577573.py
+# http://code.activestate.com/recipes/577573-compare-algorithms-for-heapqsmallest
 
 def nsmallest(n, iterable, key=None):
     """Find the n smallest elements in a dataset.

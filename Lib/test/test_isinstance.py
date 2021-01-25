@@ -303,6 +303,16 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
 
         self.assertEqual(True, issubclass(B(), int))
 
+    def test_infinite_recursion_in_bases(self):
+        class X:
+            @property
+            def __bases__(self):
+                return self.__bases__
+
+        self.assertRaises(RecursionError, issubclass, X(), int)
+        self.assertRaises(RecursionError, issubclass, int, X())
+        self.assertRaises(RecursionError, isinstance, 1, X())
+
 
 def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its

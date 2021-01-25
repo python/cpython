@@ -289,7 +289,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     }
 
     if (is_oldtable_malloced)
-        PyMem_DEL(oldtable);
+        PyMem_Free(oldtable);
     return 0;
 }
 
@@ -424,7 +424,7 @@ set_clear_internal(PySetObject *so)
     }
 
     if (table_is_malloced)
-        PyMem_DEL(table);
+        PyMem_Free(table);
     return 0;
 }
 
@@ -484,7 +484,7 @@ set_dealloc(PySetObject *so)
         }
     }
     if (so->table != so->smalltable)
-        PyMem_DEL(so->table);
+        PyMem_Free(so->table);
     Py_TYPE(so)->tp_free(so);
     Py_TRASHCAN_END
 }
@@ -1498,7 +1498,7 @@ set_difference(PySetObject *so, PyObject *other)
         while (set_next(so, &pos, &entry)) {
             key = entry->key;
             hash = entry->hash;
-            rv = _PyDict_Contains(other, key, hash);
+            rv = _PyDict_Contains_KnownHash(other, key, hash);
             if (rv < 0) {
                 Py_DECREF(result);
                 return NULL;

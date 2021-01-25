@@ -750,7 +750,7 @@ PyDoc_STRVAR(bytes_hex__doc__,
 "hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
-"Create a str of hexadecimal numbers from a bytes object.\n"
+"Create a string of hexadecimal numbers from a bytes object.\n"
 "\n"
 "  sep\n"
 "    An optional single character or byte to separate hex bytes.\n"
@@ -878,4 +878,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6101b417d6a6a717 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b3f0ec2753246b9c input=a9049054013a1b77]*/
