@@ -1,0 +1,5 @@
+[Enum] Flags consisting of a single bit are now considered canonical, and
+will be the only flags returned from listing and iterating over a Flag class
+or a Flag member.  Multi-bit flags are considered aliases; they will be
+returned from lookups and operations that result in their value.
+Iteration for both Flag and Flag members is in definition order.
