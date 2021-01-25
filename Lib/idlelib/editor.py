@@ -12,7 +12,7 @@ import webbrowser
 from tkinter import *
 from tkinter.font import Font
 from tkinter.ttk import Scrollbar
-import tkinter.simpledialog as tkSimpleDialog
+from tkinter import simpledialog
 import tkinter.messagebox as tkMessageBox
 
 from idlelib.config import idleConf
@@ -295,8 +295,8 @@ class EditorWindow:
             window.register_callback(self.postwindowsmenu)
 
         # Some abstractions so IDLE extensions are cross-IDE
+        self.askinteger = simpledialog.askinteger
         self.askyesno = tkMessageBox.askyesno
-        self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
 
         # Add pseudoevents for former extension fixed keys.

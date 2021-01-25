@@ -5,7 +5,7 @@ import sys
 import tempfile
 import tokenize
 
-import tkinter.filedialog as tkFileDialog
+from tkinter import filedialog
 import tkinter.messagebox as tkMessageBox
 from tkinter.simpledialog import askstring
 
@@ -358,7 +358,7 @@ class IOBinding:
     def askopenfile(self):
         dir, base = self.defaultfilename("open")
         if not self.opendialog:
-            self.opendialog = tkFileDialog.Open(parent=self.text,
+            self.opendialog = filedialog.Open(parent=self.text,
                                                 filetypes=self.filetypes)
         filename = self.opendialog.show(initialdir=dir, initialfile=base)
         return filename
@@ -378,7 +378,7 @@ class IOBinding:
     def asksavefile(self):
         dir, base = self.defaultfilename("save")
         if not self.savedialog:
-            self.savedialog = tkFileDialog.SaveAs(
+            self.savedialog = filedialog.SaveAs(
                     parent=self.text,
                     filetypes=self.filetypes,
                     defaultextension=self.defaultextension)
