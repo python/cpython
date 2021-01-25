@@ -41,7 +41,6 @@ config.py         # Load, fetch, and save configuration (nim).
 configdialog.py   # Display user configuration dialogs.
 config_help.py    # Specify help source in configdialog.
 config_key.py     # Change keybindings.
-dynoption.py      # Define mutable OptionMenu widget (nim).
 debugobj.py       # Define class used in stackviewer.
 debugobj_r.py     # Communicate objects between processes with rpc (nim).
 debugger.py       # Debug code run from shell or editor; show window.
