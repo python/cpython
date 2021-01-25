@@ -18,8 +18,8 @@ from tkinter import (Toplevel, Listbox, Scale, Canvas,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
-import tkinter.colorchooser as tkColorChooser
-import tkinter.font as tkFont
+from tkinter import colorchooser
+import tkinter.font as tkfont
 from tkinter import messagebox
 
 from idlelib.config import idleConf, ConfigChanges
@@ -609,7 +609,7 @@ class FontPage(Frame):
         font_bold  = configured_font[2]=='bold'
 
         # Set sorted no-duplicate editor font selection list and font_name.
-        fonts = sorted(set(tkFont.families(self)))
+        fonts = sorted(set(tkfont.families(self)))
         for font in fonts:
             self.fontlist.insert(END, font)
         self.font_name.set(font_name)
@@ -663,7 +663,7 @@ class FontPage(Frame):
         Updates font_sample and highlight page highlight_sample.
         """
         font_name = self.font_name.get()
-        font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
+        font_weight = tkfont.BOLD if self.font_bold.get() else tkfont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
         self.font_sample['font'] = new_font
         self.highlight_sample['font'] = new_font
@@ -1100,7 +1100,7 @@ class HighPage(Frame):
         target = self.highlight_target.get()
         prev_color = self.style.lookup(self.frame_color_set['style'],
                                        'background')
-        rgbTuplet, color_string = tkColorChooser.askcolor(
+        rgbTuplet, color_string = colorchooser.askcolor(
                 parent=self, title='Pick new color for : '+target,
                 initialcolor=prev_color)
         if color_string and (color_string != prev_color):

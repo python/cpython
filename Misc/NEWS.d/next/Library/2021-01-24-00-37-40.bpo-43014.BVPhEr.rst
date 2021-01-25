@@ -1,0 +1,1 @@
+Improve performance of :mod:`tokenize` by 20-30%.  Patch by Anthony Sottile.
