@@ -1670,14 +1670,14 @@ def bœr():
         """)
         commands = 'c\nq'
 
-        with os_helper.temp_cwd() as cwd:
+        with support.temp_cwd() as cwd:
             expected = f'(Pdb) sys.path[0] is {os.path.realpath(cwd)}'
 
             stdout, stderr = self.run_pdb_script(script, commands)
 
             self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
 
-    @os_helper.skip_unless_symlink
+    @support.skip_unless_symlink
     def test_issue42384_symlink(self):
         '''When running `python foo.py` sys.path[0] resolves symlinks. `python -m pdb foo.py` should behave the same'''
         script = textwrap.dedent("""
@@ -1686,7 +1686,7 @@ def bœr():
         """)
         commands = 'c\nq'
 
-        with os_helper.temp_cwd() as cwd:
+        with support.temp_cwd() as cwd:
             cwd = os.path.realpath(cwd)
             dir_one = os.path.join(cwd, 'dir_one')
             dir_two = os.path.join(cwd, 'dir_two')
