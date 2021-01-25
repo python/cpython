@@ -1077,7 +1077,7 @@ always available.
 
    See also the :attr:`sys.builtin_module_names` list.
 
-   .. versionchanged:: 3.10
+   .. versionadded:: 3.10
 
 
 .. data:: modules
