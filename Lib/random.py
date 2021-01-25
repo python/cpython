@@ -303,17 +303,15 @@ class Random(_random.Random):
         try:
             istart = _index(start)
         except TypeError:
-            if int(start) == start:
-                istart = int(start)
-                _warn('Float arguments to randrange() have been deprecated\n'
-                      'since Python 3.10 and will be removed in a subsequent '
-                      'version.',
-                      DeprecationWarning, 2)
-            else:
+            istart = int(start)
+            if istart != start:
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer arg 1 for randrange()")
-
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
+                  DeprecationWarning, 2)
         if stop is None:
             # We don't check for "step != 1" because it hasn't been
             # type checked and converted to an integer yet.
@@ -327,31 +325,29 @@ class Random(_random.Random):
         try:
             istop = _index(stop)
         except TypeError:
-            if int(stop) == stop:
-                istop = int(stop)
-                _warn('Float arguments to randrange() have been deprecated\n'
-                      'since Python 3.10 and will be removed in a subsequent '
-                      'version.',
-                      DeprecationWarning, 2)
-            else:
+            istop = int(stop)
+            if istop != stop:
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer stop for randrange()")
-
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
+                  DeprecationWarning, 2)
+        width = istop - istart
         try:
             istep = _index(step)
         except TypeError:
-            if int(step) == step:
-                istep = int(step)
-                _warn('Float arguments to randrange() have been deprecated\n'
-                      'since Python 3.10 and will be removed in a subsequent '
-                      'version.',
-                      DeprecationWarning, 2)
-            else:
+            istep = int(step)
+            if istep != step:
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer step for randrange()")
-        width = istop - istart
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
+                  DeprecationWarning, 2)
+        # Fast path.
         if istep == 1:
             if width > 0:
                 return istart + self._randbelow(width)
