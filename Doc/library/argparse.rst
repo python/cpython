@@ -754,7 +754,7 @@ this:
 
 .. code-block:: shell-session
 
-   $ python fruits.py --color green apple pear kiwi --color brown banana
+   $ python fruits.py --color green apple pear kiwi --color yellow banana
    green apple
    plain pear
    plain kiwi
