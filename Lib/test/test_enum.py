@@ -2135,7 +2135,30 @@ class TestEnum(unittest.TestCase):
                 one = '1'
                 two = b'2', 'ascii', 9
 
-
+    def test_missing_value_error(self):
+        with self.assertRaisesRegex(TypeError, "_value_ not set in __new__"):
+            class Combined(str, Enum):
+                #
+                def __new__(cls, value, sequence):
+                    enum = str.__new__(cls, value)
+                    if '(' in value:
+                        fis_name, segment = value.split('(', 1)
+                        segment = segment.strip(' )')
+                    else:
+                        fis_name = value
+                        segment = None
+                    enum.fis_name = fis_name
+                    enum.segment = segment
+                    enum.sequence = sequence
+                    return enum
+                #
+                def __repr__(self):
+                    return "<%s.%s>" % (self.__class__.__name__, self._name_)
+                #
+                key_type      = 'An$(1,2)', 0
+                company_id    = 'An$(3,2)', 1
+                code          = 'An$(5,1)', 2
+                description   = 'Bn$',      3
 
     @unittest.skipUnless(
             sys.version_info[:2] == (3, 9),
@@ -2580,7 +2603,6 @@ class TestFlag(unittest.TestCase):
 
     def test_number_reset_and_order_cleanup(self):
         class Confused(Flag):
-            _settings_ = AutoValue
             _order_ = 'ONE TWO FOUR DOS EIGHT SIXTEEN'
             ONE = auto()
             TWO = auto()

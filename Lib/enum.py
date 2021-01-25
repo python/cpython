@@ -194,7 +194,12 @@ class _proto_member:
                 if enum_class._member_type_ is object:
                     enum_member._value_ = value
                 else:
-                    enum_member._value_ = enum_class._member_type_(*args)
+                    try:
+                        enum_member._value_ = enum_class._member_type_(*args)
+                    except Exception as exc:
+                        raise TypeError(
+                                '_value_ not set in __new__, unable to create it'
+                                ) from None
         value = enum_member._value_
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
@@ -478,11 +483,17 @@ class EnumMeta(type):
             enum_class.__new__ = Enum.__new__
         #
         # py3 support for definition order (helps keep py2/py3 code in sync)
+        #
+        # _order_ checking is spread out into three/four steps
+        # - if enum_class is a Flag:
+        #   - remove any non-single-bit flags from _order_
+        # - remove any aliases from _order_
+        # - check that _order_ and _member_names_ match
+        #
+        # step 1: ensure we have a list
         if _order_ is not None:
             if isinstance(_order_, str):
                 _order_ = _order_.replace(',', ' ').split()
-            if _order_ != enum_class._member_names_:
-                raise TypeError('member order does not match _order_')
         #
         # remove Flag structures if final class is not a Flag
         if (
@@ -505,7 +516,6 @@ class EnumMeta(type):
                     # multi-bit flags are considered aliases
                     multi_bit_total |= flag_value
             if enum_class._boundary_ is not KEEP:
-                # missed_bits = multi_bit_total & ~single_bit_total
                 missed = list(_iter_bits_lsb(multi_bit_total & ~single_bit_total))
                 if missed:
                     raise TypeError(
@@ -518,6 +528,30 @@ class EnumMeta(type):
             member_list = [m._value_ for m in enum_class]
             if member_list != sorted(member_list):
                 enum_class._iter_member_ = enum_class._iter_member_by_def_
+            if _order_:
+                # _order_ step 2: remove any items from _order_ that are not single-bit
+                _order_ = [
+                        o
+                        for o in _order_
+                        if o not in enum_class._member_map_ or _is_single_bit(enum_class[o]._value_)
+                        ]
+        #
+        if _order_:
+            # _order_ step 3: remove aliases from _order_
+            _order_ = [
+                    o
+                    for o in _order_
+                    if (
+                        o not in enum_class._member_map_
+                        or
+                        (o in enum_class._member_map_ and o in enum_class._member_names_)
+                        )]
+            # _order_ step 4: verify that _order_ and _member_names_ match
+            if _order_ != enum_class._member_names_:
+                raise TypeError(
+                        'member order does not match _order_:\n%r\n%r'
+                        % (enum_class._member_names_, _order_)
+                        )
         #
         return enum_class
 
