@@ -12,8 +12,8 @@ import webbrowser
 from tkinter import *
 from tkinter.font import Font
 from tkinter.ttk import Scrollbar
-import tkinter.simpledialog as tkSimpleDialog
-import tkinter.messagebox as tkMessageBox
+from tkinter import simpledialog
+from tkinter import messagebox
 
 from idlelib.config import idleConf
 from idlelib import configdialog
@@ -295,9 +295,9 @@ class EditorWindow:
             window.register_callback(self.postwindowsmenu)
 
         # Some abstractions so IDLE extensions are cross-IDE
-        self.askyesno = tkMessageBox.askyesno
-        self.askinteger = tkSimpleDialog.askinteger
-        self.showerror = tkMessageBox.showerror
+        self.askinteger = simpledialog.askinteger
+        self.askyesno = messagebox.askyesno
+        self.showerror = messagebox.showerror
 
         # Add pseudoevents for former extension fixed keys.
         # (This probably needs to be done once in the process.)
@@ -596,7 +596,7 @@ class EditorWindow:
             try:
                 os.startfile(self.help_url)
             except OSError as why:
-                tkMessageBox.showerror(title='Document Start Failure',
+                messagebox.showerror(title='Document Start Failure',
                     message=str(why), parent=self.text)
         else:
             webbrowser.open(self.help_url)
@@ -927,7 +927,7 @@ class EditorWindow:
                 try:
                     os.startfile(helpfile)
                 except OSError as why:
-                    tkMessageBox.showerror(title='Document Start Failure',
+                    messagebox.showerror(title='Document Start Failure',
                         message=str(why), parent=self.text)
             else:
                 webbrowser.open(helpfile)
@@ -963,7 +963,7 @@ class EditorWindow:
             except OSError as err:
                 if not getattr(self.root, "recentfiles_message", False):
                     self.root.recentfiles_message = True
-                    tkMessageBox.showwarning(title='IDLE Warning',
+                    messagebox.showwarning(title='IDLE Warning',
                         message="Cannot save Recent Files list to disk.\n"
                                 f"  {err}\n"
                                 "Select OK to continue.",
