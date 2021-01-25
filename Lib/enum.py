@@ -1131,9 +1131,6 @@ class Flag(Enum, boundary=STRICT):
         if not hasattr(pseudo_member, 'value'):
             pseudo_member._value_ = value
         if member_value:
-            # pseudo_member._name_ = '|'.join([m._name_ for m in members])
-            # if unknown:
-            #     pseudo_member._name_ += '|0x%x' % unknown
             pseudo_member._name_ = '|'.join([
                 m._name_ for m in cls._iter_member_(member_value)
                 ])
