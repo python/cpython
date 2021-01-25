@@ -998,7 +998,7 @@ complete list of changes, or look through the CVS logs for all the details.
   that lets you perform a limited number of passes through the polling loop.  The
   default is still to loop forever.
 
-* The :mod:`base64` module now has more complete RFC 3548 support for Base64,
+* The :mod:`base64` module now has more complete :rfc:`3548` support for Base64,
   Base32, and Base16 encoding and decoding, including optional case folding and
   optional alternative alphabets. (Contributed by Barry Warsaw.)
 

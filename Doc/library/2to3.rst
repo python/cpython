@@ -9,9 +9,7 @@
 of *fixers* to transform it into valid Python 3.x code.  The standard library
 contains a rich set of fixers that will handle almost all code.  2to3 supporting
 library :mod:`lib2to3` is, however, a flexible and generic library, so it is
-possible to write your own fixers for 2to3.  :mod:`lib2to3` could also be
-adapted to custom applications in which Python code needs to be edited
-automatically.
+possible to write your own fixers for 2to3.
 
 
 .. _2to3-using:
@@ -102,7 +100,7 @@ presence of the ``from __future__ import print_function`` compiler directive, it
 modifies its internal grammar to interpret :func:`print` as a function.  This
 change can also be enabled manually with the :option:`!-p` flag.  Use
 :option:`!-p` to run fixers on code that already has had its print statements
-converted.
+converted. Also :option:`!-e` can be used to make :func:`exec` a function.
 
 The :option:`!-o` or :option:`!--output-dir` option allows specification of an
 alternate directory for processed output files to be written to.  The
@@ -385,7 +383,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: reload
 
-   Converts :func:`reload` to :func:`imp.reload`.
+   Converts :func:`reload` to :func:`importlib.reload`.
 
 .. 2to3fixer:: renames
 
@@ -456,7 +454,7 @@ and off individually.  They are described here in more detail.
 -------------------------------
 
 .. module:: lib2to3
-   :synopsis: the 2to3 library
+   :synopsis: The 2to3 library
 
 .. moduleauthor:: Guido van Rossum
 .. moduleauthor:: Collin Winter
@@ -466,9 +464,17 @@ and off individually.  They are described here in more detail.
 
 --------------
 
+.. deprecated:: 3.10
+   Python 3.9 will switch to a PEG parser (see :pep:`617`), and Python 3.10 may
+   include new language syntax that is not parsable by lib2to3's LL(1) parser.
+   The ``lib2to3`` module may be removed from the standard library in a future
+   Python version. Consider third-party alternatives such as `LibCST`_ or
+   `parso`_.
+
 .. note::
 
    The :mod:`lib2to3` API should be considered unstable and may change
    drastically in the future.
 
-.. XXX What is the public interface anyway?
+.. _LibCST: https://libcst.readthedocs.io/
+.. _parso: https://parso.readthedocs.io/

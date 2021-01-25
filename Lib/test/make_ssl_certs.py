@@ -69,7 +69,7 @@ req_template = """
     dir = cadir
     database  = $dir/index.txt
     crlnumber = $dir/crl.txt
-    default_md = sha1
+    default_md = sha256
     default_days = 3600
     default_crl_days = 3600
     certificate = pycacert.pem
@@ -108,7 +108,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 def make_cert_key(hostname, sign=False, extra_san='',
-                  ext='req_x509_extensions_full', key='rsa:2048'):
+                  ext='req_x509_extensions_full', key='rsa:3072'):
     print("creating cert for " + hostname)
     tempnames = []
     for i in range(3):
@@ -174,7 +174,7 @@ def make_ca():
         t.flush()
         with tempfile.NamedTemporaryFile() as f:
             args = ['req', '-new', '-days', '3650', '-extensions', 'v3_ca', '-nodes',
-                    '-newkey', 'rsa:2048', '-keyout', 'pycakey.pem',
+                    '-newkey', 'rsa:3072', '-keyout', 'pycakey.pem',
                     '-out', f.name,
                     '-subj', '/C=XY/L=Castle Anthrax/O=Python Software Foundation CA/CN=our-ca-server']
             check_call(['openssl'] + args)
@@ -206,8 +206,8 @@ if __name__ == '__main__':
     with open('ssl_key.pem', 'w') as f:
         f.write(key)
     print("password protecting ssl_key.pem in ssl_key.passwd.pem")
-    check_call(['openssl','rsa','-in','ssl_key.pem','-out','ssl_key.passwd.pem','-des3','-passout','pass:somepass'])
-    check_call(['openssl','rsa','-in','ssl_key.pem','-out','keycert.passwd.pem','-des3','-passout','pass:somepass'])
+    check_call(['openssl','pkey','-in','ssl_key.pem','-out','ssl_key.passwd.pem','-aes256','-passout','pass:somepass'])
+    check_call(['openssl','pkey','-in','ssl_key.pem','-out','keycert.passwd.pem','-aes256','-passout','pass:somepass'])
 
     with open('keycert.pem', 'w') as f:
         f.write(key)

@@ -1,19 +1,17 @@
-""" Test idlelib.pathbrowser.
-"""
+"Test pathbrowser, coverage 95%."
 
+from idlelib import pathbrowser
+import unittest
+from test.support import requires
+from tkinter import Tk
 
 import os.path
 import pyclbr  # for _modules
 import sys  # for sys.path
-from tkinter import Tk
 
-from test.support import requires
-import unittest
 from idlelib.idle_test.mock_idle import Func
-
 import idlelib  # for __file__
 from idlelib import browser
-from idlelib import pathbrowser
 from idlelib.tree import TreeNode
 
 

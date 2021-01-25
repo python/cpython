@@ -9,6 +9,12 @@ Unit tests are in test_collections.
 from abc import ABCMeta, abstractmethod
 import sys
 
+GenericAlias = type(list[int])
+EllipsisType = type(...)
+def _f(): pass
+FunctionType = type(_f)
+del _f
+
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
            "Hashable", "Iterable", "Iterator", "Generator", "Reversible",
@@ -110,6 +116,8 @@ class Awaitable(metaclass=ABCMeta):
             return _check_methods(C, "__await__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 class Coroutine(Awaitable):
 
@@ -168,6 +176,8 @@ class AsyncIterable(metaclass=ABCMeta):
         if cls is AsyncIterable:
             return _check_methods(C, "__aiter__")
         return NotImplemented
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class AsyncIterator(AsyncIterable):
@@ -255,6 +265,8 @@ class Iterable(metaclass=ABCMeta):
             return _check_methods(C, "__iter__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 class Iterator(Iterable):
 
@@ -273,6 +285,7 @@ class Iterator(Iterable):
         if cls is Iterator:
             return _check_methods(C, '__iter__', '__next__')
         return NotImplemented
+
 
 Iterator.register(bytes_iterator)
 Iterator.register(bytearray_iterator)
@@ -353,6 +366,7 @@ class Generator(Iterator):
                                   'send', 'throw', 'close')
         return NotImplemented
 
+
 Generator.register(generator)
 
 
@@ -385,6 +399,9 @@ class Container(metaclass=ABCMeta):
             return _check_methods(C, "__contains__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 class Collection(Sized, Iterable, Container):
 
     __slots__ = ()
@@ -394,6 +411,96 @@ class Collection(Sized, Iterable, Container):
         if cls is Collection:
             return _check_methods(C,  "__len__", "__iter__", "__contains__")
         return NotImplemented
+
+
+class _CallableGenericAlias(GenericAlias):
+    """ Represent `Callable[argtypes, resulttype]`.
+
+    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
+    followed by ``resulttype``.
+
+    Example: ``Callable[[int, str], float]`` sets ``__args__`` to
+    ``(int, str, float)``.
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, origin, args):
+        return cls.__create_ga(origin, args)
+
+    @classmethod
+    def __create_ga(cls, origin, args):
+        if not isinstance(args, tuple) or len(args) != 2:
+            raise TypeError(
+                "Callable must be used as Callable[[arg, ...], result].")
+        t_args, t_result = args
+        if isinstance(t_args, (list, tuple)):
+            ga_args = tuple(t_args) + (t_result,)
+        # This relaxes what t_args can be on purpose to allow things like
+        # PEP 612 ParamSpec.  Responsibility for whether a user is using
+        # Callable[...] properly is deferred to static type checkers.
+        else:
+            ga_args = args
+        return super().__new__(cls, origin, ga_args)
+
+    def __repr__(self):
+        if _has_special_args(self.__args__):
+            return super().__repr__()
+        return (f'collections.abc.Callable'
+                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{_type_repr(self.__args__[-1])}]')
+
+    def __reduce__(self):
+        args = self.__args__
+        if not _has_special_args(args):
+            args = list(args[:-1]), args[-1]
+        return _CallableGenericAlias, (Callable, args)
+
+    def __getitem__(self, item):
+        # Called during TypeVar substitution, returns the custom subclass
+        # rather than the default types.GenericAlias object.
+        ga = super().__getitem__(item)
+        args = ga.__args__
+        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
+        if not isinstance(ga.__args__[0], tuple):
+            t_result = ga.__args__[-1]
+            t_args = ga.__args__[:-1]
+            args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, args)
+
+
+def _has_special_args(args):
+    """Checks if args[0] matches either ``...``, ``ParamSpec`` or
+    ``_ConcatenateGenericAlias`` from typing.py
+    """
+    if len(args) != 2:
+        return False
+    obj = args[0]
+    if obj is Ellipsis:
+        return True
+    obj = type(obj)
+    names = ('ParamSpec', '_ConcatenateGenericAlias')
+    return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
+
+
+def _type_repr(obj):
+    """Return the repr() of an object, special-casing types (internal helper).
+
+    Copied from :mod:`typing` since collections.abc
+    shouldn't depend on that module.
+    """
+    if isinstance(obj, GenericAlias):
+        return repr(obj)
+    if isinstance(obj, type):
+        if obj.__module__ == 'builtins':
+            return obj.__qualname__
+        return f'{obj.__module__}.{obj.__qualname__}'
+    if obj is Ellipsis:
+        return '...'
+    if isinstance(obj, FunctionType):
+        return obj.__name__
+    return repr(obj)
+
 
 class Callable(metaclass=ABCMeta):
 
@@ -409,12 +516,13 @@ class Callable(metaclass=ABCMeta):
             return _check_methods(C, "__call__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(_CallableGenericAlias)
+
 
 ### SETS ###
 
 
 class Set(Collection):
-
     """A set is a finite, iterable container.
 
     This class provides concrete generic implementations of all
@@ -550,6 +658,7 @@ class Set(Collection):
             h = 590923713
         return h
 
+
 Set.register(frozenset)
 
 
@@ -632,6 +741,7 @@ class MutableSet(Set):
                 self.discard(value)
         return self
 
+
 MutableSet.register(set)
 
 
@@ -639,16 +749,14 @@ MutableSet.register(set)
 
 
 class Mapping(Collection):
-
-    __slots__ = ()
-
     """A Mapping is a generic container for associating key/value
     pairs.
 
     This class provides concrete generic implementations of all
     methods except for __getitem__, __iter__, and __len__.
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __getitem__(self, key):
@@ -688,6 +796,7 @@ class Mapping(Collection):
 
     __reversed__ = None
 
+
 Mapping.register(mappingproxy)
 
 
@@ -704,6 +813,8 @@ class MappingView(Sized):
     def __repr__(self):
         return '{0.__class__.__name__}({0._mapping!r})'.format(self)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 class KeysView(MappingView, Set):
 
@@ -718,6 +829,7 @@ class KeysView(MappingView, Set):
 
     def __iter__(self):
         yield from self._mapping
+
 
 KeysView.register(dict_keys)
 
@@ -743,6 +855,7 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
+
 ItemsView.register(dict_items)
 
 
@@ -761,21 +874,20 @@ class ValuesView(MappingView, Collection):
         for key in self._mapping:
             yield self._mapping[key]
 
+
 ValuesView.register(dict_values)
 
 
 class MutableMapping(Mapping):
-
-    __slots__ = ()
-
     """A MutableMapping is a generic container for associating
     key/value pairs.
 
     This class provides concrete generic implementations of all
     methods except for __getitem__, __setitem__, __delitem__,
     __iter__, and __len__.
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, key, value):
@@ -821,30 +933,21 @@ class MutableMapping(Mapping):
         except KeyError:
             pass
 
-    def update(*args, **kwds):
+    def update(self, other=(), /, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
             If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
             If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
             In either case, this is followed by: for k, v in F.items(): D[k] = v
         '''
-        if not args:
-            raise TypeError("descriptor 'update' of 'MutableMapping' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('update expected at most 1 arguments, got %d' %
-                            len(args))
-        if args:
-            other = args[0]
-            if isinstance(other, Mapping):
-                for key in other:
-                    self[key] = other[key]
-            elif hasattr(other, "keys"):
-                for key in other.keys():
-                    self[key] = other[key]
-            else:
-                for key, value in other:
-                    self[key] = value
+        if isinstance(other, Mapping):
+            for key in other:
+                self[key] = other[key]
+        elif hasattr(other, "keys"):
+            for key in other.keys():
+                self[key] = other[key]
+        else:
+            for key, value in other:
+                self[key] = value
         for key, value in kwds.items():
             self[key] = value
 
@@ -856,6 +959,7 @@ class MutableMapping(Mapping):
             self[key] = default
         return default
 
+
 MutableMapping.register(dict)
 
 
@@ -863,7 +967,6 @@ MutableMapping.register(dict)
 
 
 class Sequence(Reversible, Collection):
-
     """All the operations on a read-only sequence.
 
     Concrete subclasses must override __new__ or __init__,
@@ -923,6 +1026,7 @@ class Sequence(Reversible, Collection):
         'S.count(value) -> integer -- return number of occurrences of value'
         return sum(1 for v in self if v is value or v == value)
 
+
 Sequence.register(tuple)
 Sequence.register(str)
 Sequence.register(range)
@@ -930,7 +1034,6 @@ Sequence.register(memoryview)
 
 
 class ByteString(Sequence):
-
     """This unifies bytes and bytearray.
 
     XXX Should add all their methods.
@@ -943,15 +1046,13 @@ ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
-
-    __slots__ = ()
-
     """All the operations on a read-write sequence.
 
     Concrete subclasses must provide __new__ or __init__,
     __getitem__, __setitem__, __delitem__, __len__, and insert().
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, index, value):
@@ -986,6 +1087,8 @@ class MutableSequence(Sequence):
 
     def extend(self, values):
         'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        if values is self:
+            values = list(values)
         for v in values:
             self.append(v)
 
@@ -1006,6 +1109,7 @@ class MutableSequence(Sequence):
     def __iadd__(self, values):
         self.extend(values)
         return self
+
 
 MutableSequence.register(list)
 MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString

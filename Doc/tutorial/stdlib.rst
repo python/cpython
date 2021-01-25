@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python38'
+   'C:\\Python310'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -72,9 +72,22 @@ three`` at the command line::
    >>> print(sys.argv)
    ['demo.py', 'one', 'two', 'three']
 
-The :mod:`getopt` module processes *sys.argv* using the conventions of the Unix
-:func:`getopt` function.  More powerful and flexible command line processing is
-provided by the :mod:`argparse` module.
+The :mod:`argparse` module provides a more sophisticated mechanism to process
+command line arguments.  The following script extracts one or more filenames
+and an optional number of lines to be displayed::
+
+    import argparse
+
+    parser = argparse.ArgumentParser(prog = 'top',
+        description = 'Show top lines from each file')
+    parser.add_argument('filenames', nargs='+')
+    parser.add_argument('-l', '--lines', type=int, default=10)
+    args = parser.parse_args()
+    print(args)
+
+When run at the command line with ``python top.py --lines=5 alpha.txt
+beta.txt``, the script sets ``args.lines`` to ``5`` and ``args.filenames``
+to ``['alpha.txt', 'beta.txt']``.
 
 
 .. _tut-stderr:
@@ -317,7 +330,7 @@ sophisticated and robust capabilities of its larger packages. For example:
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including
-  MIME and other RFC 2822-based message documents. Unlike :mod:`smtplib` and
+  MIME and other :rfc:`2822`-based message documents. Unlike :mod:`smtplib` and
   :mod:`poplib` which actually send and receive messages, the email package has
   a complete toolset for building or decoding complex message structures
   (including attachments) and for implementing internet encoding and header

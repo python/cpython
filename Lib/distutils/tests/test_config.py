@@ -60,6 +60,7 @@ class BasePyPIRCCommandTestCase(support.TempdirManager,
         super(BasePyPIRCCommandTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
         os.environ['HOME'] = self.tmp_dir
+        os.environ['USERPROFILE'] = self.tmp_dir
         self.rc = os.path.join(self.tmp_dir, '.pypirc')
         self.dist = Distribution()
 

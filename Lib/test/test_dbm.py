@@ -2,17 +2,18 @@
 
 import unittest
 import glob
-import test.support
+from test.support import import_helper
+from test.support import os_helper
 
 # Skip tests if dbm module doesn't exist.
-dbm = test.support.import_module('dbm')
+dbm = import_helper.import_module('dbm')
 
 try:
     from dbm import ndbm
 except ImportError:
     ndbm = None
 
-_fname = test.support.TESTFN
+_fname = os_helper.TESTFN
 
 #
 # Iterates over every database module supported by dbm currently available,
@@ -33,13 +34,12 @@ def dbm_iterator():
 def delete_files():
     # we don't know the precise name the underlying database uses
     # so we use glob to locate all names
-    for f in glob.glob(_fname + "*"):
-        test.support.unlink(f)
+    for f in glob.glob(glob.escape(_fname) + "*"):
+        os_helper.unlink(f)
 
 
 class AnyDBMTestCase:
-    _dict = {'0': b'',
-             'a': b'Python:',
+    _dict = {'a': b'Python:',
              'b': b'Programming',
              'c': b'the',
              'd': b'way',
@@ -75,29 +75,50 @@ class AnyDBMTestCase:
 
     def test_anydbm_creation_n_file_exists_with_invalid_contents(self):
         # create an empty file
-        test.support.create_empty_file(_fname)
-
-        f = dbm.open(_fname, 'n')
-        self.addCleanup(f.close)
-        self.assertEqual(len(f), 0)
+        os_helper.create_empty_file(_fname)
+        with dbm.open(_fname, 'n') as f:
+            self.assertEqual(len(f), 0)
 
     def test_anydbm_modification(self):
         self.init_db()
         f = dbm.open(_fname, 'c')
         self._dict['g'] = f[b'g'] = b"indented"
         self.read_helper(f)
+        # setdefault() works as in the dict interface
+        self.assertEqual(f.setdefault(b'xxx', b'foo'), b'foo')
+        self.assertEqual(f[b'xxx'], b'foo')
         f.close()
 
     def test_anydbm_read(self):
         self.init_db()
         f = dbm.open(_fname, 'r')
         self.read_helper(f)
+        # get() works as in the dict interface
+        self.assertEqual(f.get(b'a'), self._dict['a'])
+        self.assertEqual(f.get(b'xxx', b'foo'), b'foo')
+        self.assertIsNone(f.get(b'xxx'))
+        with self.assertRaises(KeyError):
+            f[b'xxx']
         f.close()
 
     def test_anydbm_keys(self):
         self.init_db()
         f = dbm.open(_fname, 'r')
         keys = self.keys_helper(f)
+        f.close()
+
+    def test_empty_value(self):
+        if getattr(dbm._defaultmod, 'library', None) == 'Berkeley DB':
+            self.skipTest("Berkeley DB doesn't distinguish the empty value "
+                          "from the absent one")
+        f = dbm.open(_fname, 'c')
+        self.assertEqual(f.keys(), [])
+        f[b'empty'] = b''
+        self.assertEqual(f.keys(), [b'empty'])
+        self.assertIn(b'empty', f)
+        self.assertEqual(f[b'empty'], b'')
+        self.assertEqual(f.get(b'empty'), b'')
+        self.assertEqual(f.setdefault(b'empty'), b'')
         f.close()
 
     def test_anydbm_access(self):
@@ -140,7 +161,7 @@ class WhichDBTestCase(unittest.TestCase):
             # and test that we can find it
             self.assertIn(b"1", f)
             # and read it
-            self.assertTrue(f[b"1"] == b"1")
+            self.assertEqual(f[b"1"], b"1")
             f.close()
             self.assertEqual(name, self.dbm.whichdb(_fname))
 
@@ -149,7 +170,7 @@ class WhichDBTestCase(unittest.TestCase):
         # Issue 17198: check that ndbm which is referenced in whichdb is defined
         db_file = '{}_ndbm.db'.format(_fname)
         with open(db_file, 'w'):
-            self.addCleanup(test.support.unlink, db_file)
+            self.addCleanup(os_helper.unlink, db_file)
         self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
 
     def tearDown(self):
@@ -157,10 +178,10 @@ class WhichDBTestCase(unittest.TestCase):
 
     def setUp(self):
         delete_files()
-        self.filename = test.support.TESTFN
+        self.filename = os_helper.TESTFN
         self.d = dbm.open(self.filename, 'c')
         self.d.close()
-        self.dbm = test.support.import_fresh_module('dbm')
+        self.dbm = import_helper.import_fresh_module('dbm')
 
     def test_keys(self):
         self.d = dbm.open(self.filename, 'c')
