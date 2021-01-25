@@ -581,7 +581,7 @@ class CAPITest(unittest.TestCase):
         not_expected = ('_testcapi',)
         code = textwrap.dedent('''
             import _testcapi, sys
-            sys.module_names = frozenset({"_testcapi"})
+            sys.stdlib_module_names = frozenset({"_testcapi"})
             _testcapi.fatal_error(b"MESSAGE")
         ''')
         self.check_fatal_error(code, expected)
