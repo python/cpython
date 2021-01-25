@@ -1364,7 +1364,7 @@ The code sample::
     True
 
 There is a new boundary mechanism that controls how out-of-range / invalid
-bits are handled: ``STRICT``, ``CONFORM``, ``EJECT`', and ``KEEP``:
+bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
 
   * STRICT --> raises an exception when presented with invalid values
   * CONFORM --> discards any invalid bits
