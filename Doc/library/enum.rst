@@ -1175,6 +1175,14 @@ Supported ``_sunder_`` names
   :class:`auto` to get an appropriate value for an enum member; may be
   overridden
 
+    .. note::
+
+    For standard :class:`Enum` classes the next value chosen is the last value seen
+    incremented by one.
+
+    For :class:`Flag`-type classes the next value chosen will be the next highest
+    power-of-two, regardless of the last value seen.
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
 
