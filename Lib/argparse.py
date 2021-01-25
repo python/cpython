@@ -1697,7 +1697,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  add_help=True,
                  allow_abbrev=True,
                  exit_on_error=True,
-                 greedy_star=False):
+                 greedy=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1717,7 +1717,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
-        self.greedy_star = greedy_star
+        self.greedy = greedy
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2021,8 +2021,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 args = arg_strings[start_index: start_index + arg_count]
                 start_index += arg_count
                 take_action(action, args)
-                # positional action is '*', never remove it from list
-                if not self.greedy_star or action.nargs != ZERO_OR_MORE:
+                # if greedy is on and positional action nargs is '*',
+                # never remove it from actions list
+                if not self.greedy or action.nargs != ZERO_OR_MORE:
                     action_index += 1
 
             # slice off the Positionals that we just parsed and return the

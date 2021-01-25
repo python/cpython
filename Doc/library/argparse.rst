@@ -142,7 +142,8 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True, exit_on_error=True)
+                          add_help=True, allow_abbrev=True, exit_on_error=True, \
+                          greedy=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -182,6 +183,10 @@ ArgumentParser objects
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
      error info when an error occurs. (default: ``True``)
 
+   * greedy_ - Allows positional arguments with ``nargs='*'`` to consume
+     multiple groups of command-line arguments, interspersed with optional
+     arguments. (default: ``False``)
+
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
@@ -191,6 +196,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.9
       *exit_on_error* parameter was added.
+
+   .. versionchanged:: 3.10
+      *greedy* parameter was added.
 
 The following sections describe how each of these are used.
 
@@ -673,6 +681,86 @@ If the user would like catch errors manually, the feature can be enable by setti
    Catching an argumentError
 
 .. versionadded:: 3.9
+
+
+greedy
+^^^^^^
+
+
+By default, positional argument with ``nargs='*'`` will only consume one group
+of command-line arguments, up to first encountered optional argument::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo', action='store_true')
+   >>> parser.add_argument('bar', nargs='*')
+   >>> parser.parse_args('arg1 arg2 --foo arg3 arg4'.split())
+   usage: [-h] [--foo] [bar ...]
+   : error: unrecognized arguments: arg3 arg4
+
+In some cases it may be desirable to collect unspecified number of positional
+arguments and still allow to intersperse them with optional arguments. This can
+be achieved by setting ``greedy`` to ``True``::
+
+   >>> parser = argparse.ArgumentParser(greedy=True)
+   >>> parser.add_argument('--foo', action='store_true')
+   >>> parser.add_argument('bar', nargs='*', action='extend')
+   >>> parser.parse_args('arg1 arg2 --foo arg3 arg4'.split())
+   Namespace(foo=True, bar=['arg1', 'arg2', 'arg3', 'arg4'])
+
+Note that since action associated with the positional argument is executed for
+each consecutive group of command-line arguments, using default ``store`` action
+will likely not give expected results - it would just contain the last group of
+arguments (``arg3`` and  ``arg4`` in the example above).
+
+Conversely, here is an example which requires ``greedy`` not set::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('foo', nargs='*')
+   >>> parser.add_argument('last')
+   >>> parser.parse_args('first second third'.split())
+   Namespace(foo=['first', 'second'], last='third')
+
+If ``greedy`` was set in the example above, argument parsing would always fail,
+because argument ``last`` could never match command-line argument.
+As a rule, if ``greedy`` is set, positional argument with ``nargs='*'``, if
+present, must be the last positional argument.
+
+Example below combines ``greedy`` with custom :ref:`Action class<action-classes>`
+to allow providing additional properties for each positional argument::
+
+   import argparse
+
+   DEFAULT_COLOR="plain"
+
+   class AddFruitAction(argparse.Action):
+      def __call__(self, parser, namespace, values, option_string=None):
+         for fruit in values:
+            namespace.fruits.append({'name': fruit, 'color': namespace.color})
+            namespace.color = DEFAULT_COLOR
+
+   def show_fruits(fruits):
+      for fruit in fruits:
+         print(f"{fruit['color']} {fruit['name']}")
+
+   parser = argparse.ArgumentParser(greedy=True)
+   parser.add_argument('--color', default=DEFAULT_COLOR)
+   parser.add_argument('fruits', nargs='*', action=AddFruitAction, default=[])
+   args = parser.parse_args()
+   show_fruits(args.fruits)
+
+
+If the code above was saved to file ``fruits.py``, it could be executed like
+this:
+
+.. code-block:: shell-session
+
+   $ python fruits.py --color green apple pear kiwi --color brown banana
+   green apple
+   plain pear
+   plain kiwi
+   yellow banana
+
+.. versionadded:: 3.10
 
 
 The add_argument() method
@@ -1341,6 +1429,8 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+.. _action-classes:
 
 Action classes
 ^^^^^^^^^^^^^^
