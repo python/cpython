@@ -1175,7 +1175,7 @@ Supported ``_sunder_`` names
   :class:`auto` to get an appropriate value for an enum member; may be
   overridden
 
-    .. note::
+.. note::
 
     For standard :class:`Enum` classes the next value chosen is the last value seen
     incremented by one.
