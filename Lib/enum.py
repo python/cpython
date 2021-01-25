@@ -498,11 +498,12 @@ class EnumMeta(type):
             single_bit_total = 0
             multi_bit_total = 0
             for flag in enum_class._member_map_.values():
-                if _is_single_bit(flag._value_):
-                    single_bit_total |= flag._value_
+                flag_value = flag._value_
+                if _is_single_bit(flag_value):
+                    single_bit_total |= flag_value
                 else:
                     # multi-bit flags are considered aliases
-                    multi_bit_total |= flag._value_
+                    multi_bit_total |= flag_value
             if enum_class._boundary_ is not KEEP:
                 # missed_bits = multi_bit_total & ~single_bit_total
                 missed = list(_iter_bits_lsb(multi_bit_total & ~single_bit_total))
@@ -1064,10 +1065,10 @@ class Flag(Enum, boundary=STRICT):
         """
         Extract all members from the value in definition order.
         """
-        members = list(cls._iter_member_by_value_(value))
-        members.sort(key=lambda m: m._sort_order_)
-        for member in members:
-            yield member
+        yield from sorted(
+                cls._iter_member_by_value_(value),
+                key=lambda m: m._sort_order_,
+                )
 
     @classmethod
     def _missing_(cls, value):
@@ -1082,25 +1083,27 @@ class Flag(Enum, boundary=STRICT):
         # - value must be in range (e.g. -16 <-> +15, i.e. ~15 <-> 15)
         # - value must not include any skipped flags (e.g. if bit 2 is not
         #   defined, then 0d10 is invalid)
+        flag_mask = cls._flag_mask_
+        all_bits = cls._all_bits_
         neg_value = None
         if (
-                not ~cls._all_bits_ <= value <= cls._all_bits_
-                or value & (cls._all_bits_ ^ cls._flag_mask_)
+                not ~all_bits <= value <= all_bits
+                or value & (all_bits ^ flag_mask)
             ):
             if cls._boundary_ is STRICT:
-                max_bits = max(value.bit_length(), cls._flag_mask_.bit_length())
+                max_bits = max(value.bit_length(), flag_mask.bit_length())
                 raise ValueError(
                         "%s: invalid value: %r\n    given %s\n  allowed %s" % (
-                            cls.__name__, value, bin(value, max_bits), bin(cls._flag_mask_, max_bits),
+                            cls.__name__, value, bin(value, max_bits), bin(flag_mask, max_bits),
                             ))
             elif cls._boundary_ is CONFORM:
-                value = value & cls._flag_mask_
+                value = value & flag_mask
             elif cls._boundary_ is EJECT:
                 return value
             elif cls._boundary_ is KEEP:
                 if value < 0:
                     value = (
-                            max(cls._all_bits_+1, 2**(value.bit_length()))
+                            max(all_bits+1, 2**(value.bit_length()))
                             + value
                             )
             else:
@@ -1109,10 +1112,10 @@ class Flag(Enum, boundary=STRICT):
                         )
         if value < 0:
             neg_value = value
-            value = cls._all_bits_ + 1 + value
+            value = all_bits + 1 + value
         # get members and unknown
-        unknown = value & ~cls._flag_mask_
-        members = list(cls._iter_member_(value))
+        unknown = value & ~flag_mask
+        member_value = value & flag_mask
         if unknown and cls._boundary_ is not KEEP:
             raise ValueError(
                     '%s(%r) -->  unknown values %r [%s]'
@@ -1127,8 +1130,13 @@ class Flag(Enum, boundary=STRICT):
             pseudo_member = (__new__ or cls._member_type_.__new__)(cls, value)
         if not hasattr(pseudo_member, 'value'):
             pseudo_member._value_ = value
-        if members:
-            pseudo_member._name_ = '|'.join([m._name_ for m in members])
+        if member_value:
+            # pseudo_member._name_ = '|'.join([m._name_ for m in members])
+            # if unknown:
+            #     pseudo_member._name_ += '|0x%x' % unknown
+            pseudo_member._name_ = '|'.join([
+                m._name_ for m in cls._iter_member_(member_value)
+                ])
             if unknown:
                 pseudo_member._name_ += '|0x%x' % unknown
         else:
