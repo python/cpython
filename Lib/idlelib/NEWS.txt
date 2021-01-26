@@ -1,5 +1,5 @@
-What's New in IDLE 3.8.7
-Released on 2020-12-??
+What's New in IDLE 3.8.8
+Released on 2021-02-15?
 ======================================
 
 
@@ -11,6 +11,10 @@ work; add docstrings and tests with 100% coverage.
 bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
 that prevented running files with shortcuts when using new universal2
 installers built on macOS 11.
+
+What's New in IDLE 3.8.7
+Released on 2020-12-27
+======================================
 
 bpo-42426: Fix reporting offset of the RE error in searchengine.
 
