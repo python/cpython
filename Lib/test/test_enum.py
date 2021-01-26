@@ -16,14 +16,14 @@ from test.support import ALWAYS_EQ
 from test.support import threading_helper
 from datetime import timedelta
 
-if os.path.exists('../../Doc/library/enum.rst'):
-    def load_tests(loader, tests, ignore):
-        tests.addTests(doctest.DocTestSuite(enum))
+def load_tests(loader, tests, ignore):
+    tests.addTests(doctest.DocTestSuite(enum))
+    if os.path.exists('../../Doc/library/enum.rst'):
         tests.addTests(doctest.DocFileSuite(
                 '../../Doc/library/enum.rst',
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
-        return tests
+    return tests
 
 # for pickle tests
 try:
