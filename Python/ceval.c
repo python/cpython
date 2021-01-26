@@ -4599,11 +4599,20 @@ PyFrameObject *
 _PyEval_MakeFrameVector(PyThreadState *tstate,
            PyFrameConstructor *desc,
            PyObject *const *args, Py_ssize_t argcount,
-           PyObject *const *kwnames, PyObject *const *kwargs,
-           Py_ssize_t kwcount)
+           PyObject *kwnames, PyObject *const *kwargs)
 {
+    PyObject *const *names;
+    Py_ssize_t kwcount;
+    if (kwnames == NULL) {
+        names = NULL;
+        kwcount = 0;
+    }
+    else {
+        names = &PyTuple_GET_ITEM(kwnames, 0);
+        kwcount = PyTuple_GET_SIZE(kwnames);
+    }
     return _PyEval_MakeFrame(tstate, desc,
-                             args, argcount, kwnames,
+                             args, argcount, names,
                              kwargs, kwcount, 1);
 }
 
@@ -4682,10 +4691,9 @@ PyObject *
 _PyEval_Vector(PyThreadState *tstate,
            PyFrameConstructor *desc,
             PyObject* const* args, size_t argcount,
-            PyObject *const *kwnames, PyObject *const *kwargs,
-            Py_ssize_t kwcount)
+            PyObject *kwnames, PyObject *const *kwargs)
 {
-    PyFrameObject *f = _PyEval_MakeFrameVector(tstate, desc, args, argcount, kwnames, kwargs, kwcount);
+    PyFrameObject *f = _PyEval_MakeFrameVector(tstate, desc, args, argcount, kwnames, kwargs);
     if (f == NULL) {
         return NULL;
     }
