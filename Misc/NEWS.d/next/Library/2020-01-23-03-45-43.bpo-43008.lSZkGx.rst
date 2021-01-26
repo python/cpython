@@ -1,1 +1,0 @@
-Fix: IDLE now correctly invokes :func:`sys.excepthook` in normal, 2-process mode.
