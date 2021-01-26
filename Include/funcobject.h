@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     COMMON_FIELDS(func_)
+            PyObject *func_locals;
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
