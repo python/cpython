@@ -1858,7 +1858,7 @@ Callable.__doc__ = \
     values: the argument list and the return type.  The argument list
     must be a list of types or ellipsis; the return type must be a single type.
 
-    There is no syntax to indicate optional or keyword arguments,
+    There is no syntax to indicate optional or keyword arguments;
     such function types are rarely used as callback types.
     """
 AbstractSet = _alias(collections.abc.Set, 1, name='AbstractSet')
