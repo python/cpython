@@ -2570,7 +2570,7 @@ def _url_handler(url, content_type="text/html"):
                 if path == sourcepath:
                     return
         else:
-            raise ValueError('not found')
+            raise ValueError('not found {found}')
 
     def html_getfile(path):
         """Get and display a source file listing safely."""

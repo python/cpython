@@ -1,0 +1,3 @@
+The ``/getfile?key=`` route of the :mod:`pydoc` Web server checks now that
+the argument is the file path of the source of one of modules. It prevents
+reading arbitrary files.

@@ -1381,8 +1381,15 @@ class PydocUrlHandlerTest(PydocBaseTest):
             for url, title in requests:
                 self.call_url_handler(url, title)
 
-            path = string.__file__
+            # File in restricted walk_packages path.
+            path = __file__
             title = "Pydoc: getfile " + path
+            url = "getfile?key=" + path
+            self.call_url_handler(url, title)
+
+            # File outside of restricted walk_packages path.
+            path = pydoc.__file__
+            title = "Pydoc: Error - getfile?key=" + path
             url = "getfile?key=" + path
             self.call_url_handler(url, title)
 
