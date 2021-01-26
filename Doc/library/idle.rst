@@ -250,7 +250,7 @@ View Last Restart
   Scroll the shell window to the last Shell restart.
 
 Restart Shell
-  Restart the shell to clean the environment.
+  Restart the shell to clean the environment and reset display and exception handling.
 
 Previous History
   Cycle through earlier commands in history which match the current entry.
