@@ -815,8 +815,9 @@ Porting to Python 3.10
   bugs like ``if (PyList_SET_ITEM (a, b, c) < 0) ...`` test.
   (Contributed by Zackery Spytz and Victor Stinner in :issue:`30459`.)
 
-* Convert the ``PyCurses_API`` capi from the pointer array to a struct and
-  remove the ``PyCurses_API_pointers`` in py_curses.h.
+* Convert the ``PyCurses_API`` C API (``_curses._C_API`` capsule) from
+  a pointer array to a structure and remove the ``PyCurses_API_pointers``
+  macro.
   (Contributed by Hai Shi in :issue:`43009`.)
 
 Deprecated

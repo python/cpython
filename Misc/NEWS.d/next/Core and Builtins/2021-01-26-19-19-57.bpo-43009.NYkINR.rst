@@ -1,2 +1,3 @@
-Port the curses capi pointer array to a struct and
-remove the ``PyCurses_API_pointers`` in py_curses.h.
+Convert the ``PyCurses_API`` C API (``_curses._C_API`` capsule) from
+a pointer array to a structure and remove the ``PyCurses_API_pointers``
+macro.
