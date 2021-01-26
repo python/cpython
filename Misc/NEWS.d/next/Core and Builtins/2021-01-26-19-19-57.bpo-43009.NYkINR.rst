@@ -1,0 +1,2 @@
+Port the curses capi pointer array to a struct and
+remove the ``PyCurses_API_pointers`` in py_curses.h.

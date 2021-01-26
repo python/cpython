@@ -4758,7 +4758,7 @@ PyInit__curses(void)
         PyErr_NoMemory();
         return NULL;
     }
-    /* Initialize the C API struct pointer */
+    /* Initialize the C API struct */
     PyCurses_API->window_type = (PyTypeObject *)Py_NewRef(
         &PyCursesWindow_Type);
     PyCurses_API->setup_term_called = func_PyCursesSetupTermCalled;
