@@ -262,6 +262,12 @@ class TestLongMessage(unittest.TestCase):
                              r'^None unexpectedly found in \[None\]$',
                              r'^None unexpectedly found in \[None\] : oops$'])
 
+    def testAssertUniqueIn(self):
+        self.assertMessages('assertUniqueIn', ([1, 1]),
+                            [r'Element ^None is not unique in list$', "^oops$",
+                             r'Element ^None is not unique in list$',
+                             r'Element ^None is not unique in list : oops$'])
+
     def testAssertDictEqual(self):
         self.assertMessages('assertDictEqual', ({}, {'key': 'value'}),
                             [r"\+ \{'key': 'value'\}$", "^oops$",

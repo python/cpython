@@ -1112,6 +1112,15 @@ class TestCase(object):
                                                         safe_repr(container))
             self.fail(self._formatMessage(msg, standardMsg))
 
+    def assertUniqueIn(self, container, msg=None):
+        """Check that the members of list are unique"""
+        elements = []
+        for element in container:
+            if element in elements:
+                standardMsg = "Element %s is not unique in list" % safe_repr(element)
+                self.fail(self._formatMessage(msg, standardMsg))
+            elements.append(element)
+
     def assertIs(self, expr1, expr2, msg=None):
         """Just like self.assertTrue(a is b), but with a nicer default message."""
         if expr1 is not expr2:
