@@ -55,21 +55,21 @@ struct TransitionRuleType {
 
 typedef struct {
     TransitionRuleType base;
-    uint8_t month;
-    uint8_t week;
-    uint8_t day;
-    int16_t hour;
-    int8_t minute;
-    int8_t second;
+    uint8_t month;      /* 1 - 12 */
+    uint8_t week;       /* 1 - 5 */
+    uint8_t day;        /* 0 - 6 */
+    int16_t hour;       /* -167 - 167, RFC 8536 §3.3.1 */
+    int8_t minute;      /* signed 2 digits */
+    int8_t second;      /* signed 2 digits */
 } CalendarRule;
 
 typedef struct {
     TransitionRuleType base;
-    uint8_t julian;
-    uint16_t day;
-    int16_t hour;
-    int8_t minute;
-    int8_t second;
+    uint8_t julian;     /* 0, 1 */
+    uint16_t day;       /* 0 - 365 */
+    int16_t hour;       /* -167 - 167, RFC 8536 §3.3.1 */
+    int8_t minute;      /* signed 2 digits */
+    int8_t second;      /* signed 2 digits */
 } DayRule;
 
 struct StrongCacheNode {
@@ -1199,8 +1199,8 @@ calendarrule_year_to_timestamp(TransitionRuleType *base_self, int year)
     }
 
     int64_t ordinal = ymd_to_ord(year, self->month, month_day) - EPOCHORDINAL;
-    return ((ordinal * 86400L) + (int64_t)(self->hour * 3600L) +
-            (int64_t)(self->minute * 60) + (int64_t)(self->second));
+    return ordinal * 86400 + (int64_t)self->hour * 3600 +
+            (int64_t)self->minute * 60 + self->second;
 }
 
 /* Constructor for CalendarRule. */
@@ -1289,8 +1289,8 @@ dayrule_year_to_timestamp(TransitionRuleType *base_self, int year)
         day += 1;
     }
 
-    return ((days_before_year + day) * 86400L) + (self->hour * 3600L) +
-           (self->minute * 60) + self->second;
+    return (days_before_year + day) * 86400 + (int64_t)self->hour * 3600 +
+           (int64_t)self->minute * 60 + self->second;
 }
 
 /* Constructor for DayRule. */
@@ -1571,6 +1571,7 @@ error:
 static int
 parse_digits(const char **p, int min, int max, int *value)
 {
+    assert(max <= 3);
     *value = 0;
     for (int i = 0; i < max; i++, (*p)++) {
         if (!isdigit(**p)) {
