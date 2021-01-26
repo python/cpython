@@ -1,6 +1,7 @@
 import enum
 import doctest
 import inspect
+import os
 import pydoc
 import sys
 import unittest
@@ -17,10 +18,11 @@ from datetime import timedelta
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    tests.addTests(doctest.DocFileSuite(
-            '../../Doc/library/enum.rst',
-            optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
-            ))
+    if os.path.exists('../../Doc/library/enum.rst'):
+        tests.addTests(doctest.DocFileSuite(
+                '../../Doc/library/enum.rst',
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                ))
     return tests
 
 # for pickle tests
