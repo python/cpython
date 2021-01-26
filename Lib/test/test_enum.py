@@ -1,6 +1,7 @@
 import enum
 import doctest
 import inspect
+import os
 import pydoc
 import sys
 import unittest
@@ -15,13 +16,14 @@ from test.support import ALWAYS_EQ
 from test.support import threading_helper
 from datetime import timedelta
 
-def load_tests(loader, tests, ignore):
-    tests.addTests(doctest.DocTestSuite(enum))
-    tests.addTests(doctest.DocFileSuite(
-            '../../Doc/library/enum.rst',
-            optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
-            ))
-    return tests
+if os.path.exists('../../Doc/library/enum.rst'):
+    def load_tests(loader, tests, ignore):
+        tests.addTests(doctest.DocTestSuite(enum))
+        tests.addTests(doctest.DocFileSuite(
+                '../../Doc/library/enum.rst',
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                ))
+        return tests
 
 # for pickle tests
 try:
