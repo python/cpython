@@ -72,6 +72,59 @@ New Features
 
 .. _whatsnew310-pep563:
 
+Parenthesized context managers
+------------------------------
+
+Using enclosing parentheses for continuation across multiple lines
+in context managers is now supported. This allows formatting a long
+collection of context managers in multiple lines in a similar way
+as it was previously possible with import statements. For instance,
+all these examples are now valid:
+
+.. code-block:: python
+
+    with (CtxManager() as example):
+        ...
+
+    with (
+        CtxManager1(),
+        CtxManager2()
+    ):
+        ...
+
+    with (CtxManager1() as example,
+          CtxManager2()):
+        ...
+
+    with (CtxManager1(),
+          CtxManager2() as example):
+        ...
+
+    with (
+        CtxManager1() as example1,
+        CtxManager2() as example2
+    ):
+        ...
+
+it is also possible to use a trailing comma at the end of the
+enclosed group:
+
+.. code-block:: python
+
+    with (
+        CtxManager1() as example1,
+        CtxManager2() as example2,
+        CtxManager3() as example3,
+    ):
+        ...
+
+This new syntax uses the non LL(1) capacities of the new parser.
+Check :pep:`617` for more details.
+
+(Contributed by Guido van Rossum, Pablo Galindo and Lysandros Nikolaou
+in :issue:`12782` and :issue:`40334`.)
+
+
 PEP 563: Postponed Evaluation of Annotations Becomes Default
 ------------------------------------------------------------
 
@@ -396,6 +449,10 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+Add :data:`sys.stdlib_module_names`, containing the list of the standard library
+module names.
+(Contributed by Victor Stinner in :issue:`42955`.)
+
 threading
 ---------
 
@@ -525,6 +582,10 @@ Deprecated
   :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
   as appropriate to help identify code which needs updating during
   this transition.
+
+* Non-integer arguments to :func:`random.randrange` are deprecated.
+  The :exc:`ValueError` is deprecated in favor of a :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka and Raymond Hettinger in :issue:`37319`.)
 
 * The various ``load_module()`` methods of :mod:`importlib` have been
   documented as deprecated since Python 3.6, but will now also trigger

@@ -898,8 +898,6 @@ compiler_next_instr(basicblock *b)
    * 1 -- when jump
    * -1 -- maximal
  */
-/* XXX Make the stack effect of WITH_CLEANUP_START and
-   WITH_CLEANUP_FINISH deterministic. */
 static int
 stack_effect(int opcode, int oparg, int jump)
 {

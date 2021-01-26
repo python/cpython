@@ -569,11 +569,22 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(len(modules), total)
 
     def test_fatal_error(self):
+        # By default, stdlib extension modules are ignored,
+        # but not test modules.
         expected = ('_testcapi',)
-        not_expected = ('sys', 'builtins', '_imp', '_thread', '_weakref',
-                        '_io', 'marshal', '_signal', '_abc')
-        code = 'import _testcapi; _testcapi.fatal_error(b"MESSAGE")'
+        not_expected = ('sys',)
+        code = 'import _testcapi, sys; _testcapi.fatal_error(b"MESSAGE")'
         self.check_fatal_error(code, expected, not_expected)
+
+        # Mark _testcapi as stdlib module, but not sys
+        expected = ('sys',)
+        not_expected = ('_testcapi',)
+        code = textwrap.dedent('''
+            import _testcapi, sys
+            sys.stdlib_module_names = frozenset({"_testcapi"})
+            _testcapi.fatal_error(b"MESSAGE")
+        ''')
+        self.check_fatal_error(code, expected)
 
 
 class TestPendingCalls(unittest.TestCase):

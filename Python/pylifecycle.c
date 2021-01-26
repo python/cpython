@@ -18,8 +18,6 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
-#include "module_names.h"         // _Py_module_names
-
 #include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
@@ -2499,7 +2497,7 @@ fatal_error_exit(int status)
 
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
-// (_Py_module_names), into fd file descriptor.
+// (sys.stdlib_module_names), into fd file descriptor.
 //
 // This function is called by a signal handler in faulthandler: avoid memory
 // allocations and keep the implementation simple. For example, the list is not
@@ -2515,10 +2513,31 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         return;
     }
 
+    Py_ssize_t pos;
+    PyObject *key, *value;
+
+    // Avoid PyDict_GetItemString() which calls PyUnicode_FromString(),
+    // memory cannot be allocated on the heap in a signal handler.
+    // Iterate on the dict instead.
+    PyObject *stdlib_module_names = NULL;
+    pos = 0;
+    while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+        if (PyUnicode_Check(key)
+           && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+            stdlib_module_names = value;
+            break;
+        }
+    }
+    // If we failed to get sys.stdlib_module_names or it's not a frozenset,
+    // don't exclude stdlib modules.
+    if (stdlib_module_names != NULL && !PyFrozenSet_Check(stdlib_module_names)) {
+        stdlib_module_names = NULL;
+    }
+
+    // List extensions
     int header = 1;
     Py_ssize_t count = 0;
-    Py_ssize_t pos = 0;
-    PyObject *key, *value;
+    pos = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
         if (!PyUnicode_Check(key)) {
             continue;
@@ -2526,22 +2545,26 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         if (!_PyModule_IsExtension(value)) {
             continue;
         }
-
-        // Check if it is a stdlib extension module.
         // Use the module name from the sys.modules key,
         // don't attempt to get the module object name.
-        const Py_ssize_t names_len = Py_ARRAY_LENGTH(_Py_module_names);
-        int is_stdlib_mod = 0;
-        for (Py_ssize_t i=0; i < names_len; i++) {
-            const char *name = _Py_module_names[i];
-            if (PyUnicode_CompareWithASCIIString(key, name) == 0) {
-                is_stdlib_mod = 1;
-                break;
+        if (stdlib_module_names != NULL) {
+            int is_stdlib_ext = 0;
+
+            Py_ssize_t i = 0;
+            PyObject *item;
+            Py_hash_t hash;
+            while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
+                if (PyUnicode_Check(item)
+                    && PyUnicode_Compare(key, item) == 0)
+                {
+                    is_stdlib_ext = 1;
+                    break;
+                }
             }
-        }
-        if (is_stdlib_mod) {
-            // Ignore stdlib extension module.
-            continue;
+            if (is_stdlib_ext) {
+                // Ignore stdlib extension
+                continue;
+            }
         }
 
         if (header) {

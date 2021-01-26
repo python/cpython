@@ -334,8 +334,9 @@ class FaultHandlerTests(unittest.TestCase):
     def test_dump_ext_modules(self):
         code = """
             import faulthandler
-            # _testcapi is a test module and not considered as a stdlib module
-            import _testcapi
+            import sys
+            # Don't filter stdlib module names
+            sys.stdlib_module_names = frozenset()
             faulthandler.enable()
             faulthandler._sigsegv()
             """
@@ -346,7 +347,8 @@ class FaultHandlerTests(unittest.TestCase):
         if not match:
             self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
         modules = set(match.group(1).strip().split(', '))
-        self.assertIn('_testcapi', modules)
+        for name in ('sys', 'faulthandler'):
+            self.assertIn(name, modules)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr
