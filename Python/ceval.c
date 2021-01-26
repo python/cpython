@@ -4673,21 +4673,6 @@ eval_frame(PyThreadState *tstate, PyFrameConstructor *desc, PyFrameObject *f)
 }
 
 PyObject *
-_PyEval_EvalCode(PyThreadState *tstate,
-           PyFrameConstructor *desc,
-           PyObject *const *args, Py_ssize_t argcount,
-           PyObject *const *kwnames, PyObject *const *kwargs,
-           Py_ssize_t kwcount, int kwstep)
-{
-
-    PyFrameObject *f = _PyEval_MakeFrame(tstate, desc, args, argcount, kwnames, kwargs, kwcount, kwstep);
-    if (f == NULL) {
-        return NULL;
-    }
-    return eval_frame(tstate, desc, f);
-}
-
-PyObject *
 _PyEval_Vector(PyThreadState *tstate,
            PyFrameConstructor *desc,
             PyObject* const* args, size_t argcount,
@@ -4702,13 +4687,11 @@ _PyEval_Vector(PyThreadState *tstate,
 
 /* Legacy API */
 PyObject *
-_PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
-           PyObject *const *args, Py_ssize_t argcount,
-           PyObject *const *kwnames, PyObject *const *kwargs,
-           Py_ssize_t kwcount, int kwstep,
-           PyObject *const *defs, Py_ssize_t defcount,
-           PyObject *kwdefs, PyObject *closure,
-           PyObject *name, PyObject *qualname)
+PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
+                  PyObject *const *args, int argcount,
+                  PyObject *const *kws, int kwcount,
+                  PyObject *const *defs, int defcount,
+                  PyObject *kwdefs, PyObject *closure)
 {
     PyObject *defaults = _PyTuple_FromArray(defs, defcount);
     if (defaults == NULL) {
@@ -4738,31 +4721,12 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *res = _PyEval_EvalCode(tstate, &constr,
                                     args, argcount,
-                                    kwnames, kwargs,
-                                    kwcount, kwstep);
+                                    kwnames, kwargs);
     Py_DECREF(defaults);
     Py_DECREF(builtins);
     return res;
 }
 
-/* Legacy API */
-PyObject *
-PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
-                  PyObject *const *args, int argcount,
-                  PyObject *const *kws, int kwcount,
-                  PyObject *const *defs, int defcount,
-                  PyObject *kwdefs, PyObject *closure)
-{
-    return _PyEval_EvalCodeWithName(
-        _co, globals, locals,
-        args, argcount,
-        kws, kws != NULL ? kws + 1 : NULL,
-        kwcount, 2,
-        defs, defcount,
-        kwdefs, closure,
-        ((PyCodeObject *)_co)->co_name,
-        ((PyCodeObject *)_co)->co_name);
-}
 
 static PyObject *
 special_lookup(PyThreadState *tstate, PyObject *o, _Py_Identifier *id)
