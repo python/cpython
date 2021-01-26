@@ -816,12 +816,11 @@ frame_alloc(PyCodeObject *code)
 
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
-                     PyObject *globals, PyObject *builtins, PyObject *locals)
+_PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *desc)
 {
 #ifdef Py_DEBUG
-    if (code == NULL || globals == NULL || builtins == NULL ||
-        (locals != NULL && !PyMapping_Check(locals))) {
+    if (desc == NULL || desc->code == NULL ||
+        (desc->locals != NULL && !PyMapping_Check(desc->locals))) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -829,38 +828,21 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
 
     PyFrameObject *back = tstate->frame;
 
-    PyFrameObject *f = frame_alloc(code);
+    PyFrameObject *f = frame_alloc((PyCodeObject *)desc->code);
     if (f == NULL) {
         return NULL;
     }
 
     f->f_stackdepth = 0;
-    Py_INCREF(builtins);
-    f->f_builtins = builtins;
+    Py_INCREF(desc->builtins);
+    f->f_builtins = desc->builtins;
     Py_XINCREF(back);
     f->f_back = back;
-    Py_INCREF(code);
-    Py_INCREF(globals);
-    f->f_globals = globals;
-    /* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
-    if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) ==
-        (CO_NEWLOCALS | CO_OPTIMIZED))
-        ; /* f_locals = NULL; will be set by PyFrame_FastToLocals() */
-    else if (code->co_flags & CO_NEWLOCALS) {
-        locals = PyDict_New();
-        if (locals == NULL) {
-            Py_DECREF(f);
-            return NULL;
-        }
-        f->f_locals = locals;
-    }
-    else {
-        if (locals == NULL) {
-            locals = globals;
-        }
-        Py_INCREF(locals);
-        f->f_locals = locals;
-    }
+    Py_INCREF(desc->code);
+    Py_INCREF(desc->globals);
+    f->f_globals = desc->globals;
+    Py_XINCREF(desc->locals);
+    f->f_locals = desc->locals;
 
     f->f_lasti = -1;
     f->f_lineno = 0;
@@ -880,7 +862,18 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
     PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, code, globals, builtins, locals);
+    PyFrameConstructor desc = {
+        .globals = globals,
+        .builtins = builtins,
+        .name = code->co_name,
+        .qualname = code->co_name,
+        .code = (PyObject *)code,
+        .defaults = NULL,
+        .kwdefaults = NULL,
+        .closure = NULL,
+        .locals = locals
+    };
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc);
     Py_DECREF(builtins);
     if (f)
         _PyObject_GC_TRACK(f);

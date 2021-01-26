@@ -4351,13 +4351,9 @@ fail:
 
 }
 
-/* This is gonna seem *real weird*, but if you put some other code between
-   PyEval_EvalFrame() and _PyEval_EvalFrameDefault() you will need to adjust
-   the test in the if statements in Misc/gdbinit (pystack and pystackv). */
-
-PyObject *
-_PyEval_EvalCode(PyThreadState *tstate,
-           PyFrameConstructor *con, PyObject *locals,
+PyFrameObject *
+_PyEval_MakeFrame(PyThreadState *tstate,
+           PyFrameConstructor *con,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep)
@@ -4366,11 +4362,10 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     PyCodeObject *co = (PyCodeObject*)con->fc_code;
     assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
-    PyObject *retval = NULL;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
 
     /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, con->fc_globals, con->fc_builtins, locals);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, con);
     if (f == NULL) {
         return NULL;
     }
@@ -4579,34 +4574,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
     }
 
-    /* Handle generator/coroutine/asynchronous generator */
-    if (co->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        PyObject *gen;
-        int is_coro = co->co_flags & CO_COROUTINE;
-
-        /* Don't need to keep the reference to f_back, it will be set
-         * when the generator is resumed. */
-        Py_CLEAR(f->f_back);
-
-        /* Create a new generator that owns the ready to run frame
-         * and return that as the value. */
-        if (is_coro) {
-            gen = PyCoro_New(f, con->fc_name, con->fc_qualname);
-        } else if (co->co_flags & CO_ASYNC_GENERATOR) {
-            gen = PyAsyncGen_New(f, con->fc_name, con->fc_qualname);
-        } else {
-            gen = PyGen_NewWithQualName(f, con->fc_name, con->fc_qualname);
-        }
-        if (gen == NULL) {
-            return NULL;
-        }
-
-        _PyObject_GC_TRACK(f);
-
-        return gen;
-    }
-
-    retval = _PyEval_EvalFrame(tstate, f, 0);
+    return f;
 
 fail: /* Jump here from prelude on failure */
 
@@ -4624,7 +4592,104 @@ fail: /* Jump here from prelude on failure */
         Py_DECREF(f);
         --tstate->recursion_depth;
     }
+    return NULL;
+}
+
+PyFrameObject *
+_PyEval_MakeFrameVector(PyThreadState *tstate,
+           PyFrameConstructor *desc,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
+           Py_ssize_t kwcount)
+{
+    return _PyEval_MakeFrame(tstate, desc,
+                             args, argcount, kwnames,
+                             kwargs, kwcount, 1);
+}
+
+static PyObject *
+make_coro(PyFrameConstructor *desc, PyFrameObject *f)
+{
+    assert (((PyCodeObject *)desc->code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
+    PyObject *gen;
+    int is_coro = ((PyCodeObject *)desc->code)->co_flags & CO_COROUTINE;
+
+    /* Don't need to keep the reference to f_back, it will be set
+        * when the generator is resumed. */
+    Py_CLEAR(f->f_back);
+
+    /* Create a new generator that owns the ready to run frame
+        * and return that as the value. */
+    if (is_coro) {
+            gen = PyCoro_New(f, con->fc_name, con->fc_qualname);
+    } else if (((PyCodeObject *)desc->code)->co_flags & CO_ASYNC_GENERATOR) {
+            gen = PyAsyncGen_New(f, con->fc_name, con->fc_qualname);
+    } else {
+            gen = PyGen_NewWithQualName(f, con->fc_name, con->fc_qualname);
+    }
+    if (gen == NULL) {
+        return NULL;
+    }
+
+    _PyObject_GC_TRACK(f);
+
+    return gen;
+}
+
+static PyObject *
+eval_frame(PyThreadState *tstate, PyFrameConstructor *desc, PyFrameObject *f)
+{
+    /* Handle generator/coroutine/asynchronous generator */
+    if (((PyCodeObject *)desc->code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        return make_coro(desc, f);
+    }
+
+    PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
+
+    /* decref'ing the frame can cause __del__ methods to get invoked,
+       which can call back into Python.  While we're done with the
+       current Python frame (f), the associated C stack is still in use,
+       so recursion_depth must be boosted for the duration.
+    */
+    if (Py_REFCNT(f) > 1) {
+        Py_DECREF(f);
+        _PyObject_GC_TRACK(f);
+    }
+    else {
+        ++tstate->recursion_depth;
+        Py_DECREF(f);
+        --tstate->recursion_depth;
+    }
     return retval;
+}
+
+PyObject *
+_PyEval_EvalCode(PyThreadState *tstate,
+           PyFrameConstructor *desc,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
+           Py_ssize_t kwcount, int kwstep)
+{
+
+    PyFrameObject *f = _PyEval_MakeFrame(tstate, desc, args, argcount, kwnames, kwargs, kwcount, kwstep);
+    if (f == NULL) {
+        return NULL;
+    }
+    return eval_frame(tstate, desc, f);
+}
+
+PyObject *
+_PyEval_Vector(PyThreadState *tstate,
+           PyFrameConstructor *desc,
+            PyObject* const* args, size_t argcount,
+            PyObject *const *kwnames, PyObject *const *kwargs,
+            Py_ssize_t kwcount)
+{
+    PyFrameObject *f = _PyEval_MakeFrameVector(tstate, desc, args, argcount, kwnames, kwargs, kwcount);
+    if (f == NULL) {
+        return NULL;
+    }
+    return eval_frame(tstate, desc, f);
 }
 
 /* Legacy API */
@@ -4646,6 +4711,11 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         Py_DECREF(defaults);
         return NULL;
     }
+    PyCodeObject *code = (PyCodeObject *)_co;
+    assert ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 0);
+    if (locals == NULL) {
+        locals = globals;
+    }
     PyFrameConstructor constr = {
         .fc_globals = globals,
         .fc_builtins = builtins,
@@ -4654,10 +4724,11 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_code = _co,
         .fc_defaults = defaults,
         .fc_kwdefaults = kwdefs,
-        .fc_closure = closure
+        .fc_closure = closure,
+        .locals = locals
     };
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *res = _PyEval_EvalCode(tstate, &constr, locals,
+    PyObject *res = _PyEval_EvalCode(tstate, &constr,
                                     args, argcount,
                                     kwnames, kwargs,
                                     kwcount, kwstep);

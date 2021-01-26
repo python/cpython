@@ -336,11 +336,7 @@ function_code_fastcall(PyThreadState *tstate, PyCodeObject *co,
     assert(tstate != NULL);
     assert(func != NULL);
 
-    /* XXX Perhaps we should create a specialized
-       _PyFrame_New_NoTrack() that doesn't take locals, but does
-       take builtins without sanity checking them.
-       */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, func->func_globals, func->func_builtins, NULL);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &func->func_descr);
     if (f == NULL) {
         return NULL;
     }
@@ -401,7 +397,7 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
     }
 
     return _PyEval_EvalCode(tstate,
-                PyFunction_AS_FRAME_CONSTRUCTOR(func), (PyObject *)NULL,
+                PyFunction_AS_FRAME_CONSTRUCTOR(func),
                 stack, nargs,
                 nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
                 stack + nargs,

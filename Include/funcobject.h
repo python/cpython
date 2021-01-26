@@ -16,7 +16,8 @@ extern "C" {
     PyObject *PREFIX ## code;        /* A code object, the __code__ attribute */ \
     PyObject *PREFIX ## defaults;    /* NULL or a tuple */ \
     PyObject *PREFIX ## kwdefaults;  /* NULL or a dict */ \
-    PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */
+    PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */ \
+    PyObject *PREFIX ## locals;
 
 typedef struct {
     COMMON_FIELDS(fc_)
