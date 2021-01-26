@@ -889,12 +889,28 @@ static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
-    return PyEval_EvalCodeEx(co,
-                      globals, locals,
-                      (PyObject **)NULL, 0,
-                      (PyObject **)NULL, 0,
-                      (PyObject **)NULL, 0,
-                      NULL, NULL);
+    if (locals == NULL) {
+        locals = globals;
+    }
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    if (builtins == NULL) {
+        return NULL;
+    }
+    PyFrameConstructor desc = {
+        .globals = globals,
+        .builtins = builtins,
+        .name = ((PyCodeObject *)co)->co_name,
+        .qualname = ((PyCodeObject *)co)->co_name,
+        .code = co,
+        .defaults = NULL,
+        .kwdefaults = NULL,
+        .closure = NULL,
+        .locals = locals
+    };
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject *res =_PyEval_Vector(tstate, &desc, NULL, 0, NULL, NULL);
+    Py_DECREF(builtins);
+    return res;
 }
 
 
@@ -4673,8 +4689,7 @@ eval_frame(PyThreadState *tstate, PyFrameConstructor *desc, PyFrameObject *f)
 }
 
 PyObject *
-_PyEval_Vector(PyThreadState *tstate,
-           PyFrameConstructor *desc,
+_PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *desc,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames, PyObject *const *kwargs)
 {
