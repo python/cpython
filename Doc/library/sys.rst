@@ -1575,9 +1575,10 @@ always available.
    All module kinds are listed: pure Python, built-in, frozen and extension
    modules. Test modules are excluded.
 
-   For packages, only sub-packages are listed, not sub-modules. For example,
-   ``concurrent`` package and ``concurrent.futures`` sub-package are listed,
-   but not ``concurrent.futures.base`` sub-module.
+   For packages, only the main package is listed: sub-packages and sub-modules
+   are not listed. For example, the ``email`` package is listed, but the
+   ``email.mime`` sub-package and the ``email.message`` sub-module are not
+   listed.
 
    See also the :attr:`sys.builtin_module_names` list.
 
