@@ -2629,6 +2629,9 @@ static int
 zoneinfomodule_exec(PyObject *m)
 {
     PyDateTime_IMPORT;
+    if (PyDateTimeAPI == NULL) {
+        goto error;
+    }
     PyZoneInfo_ZoneInfoType.tp_base = PyDateTimeAPI->TZInfoType;
     if (PyType_Ready(&PyZoneInfo_ZoneInfoType) < 0) {
         goto error;
