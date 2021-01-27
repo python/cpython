@@ -1,11 +1,12 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
-#include "pycore_unionobject.h"      // _Py_UnionType && _Py_Union()
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_object.h"        // _Py_CheckSlotResult()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unionobject.h"   // _Py_UnionType && _Py_Union()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
 #include "longintrepr.h"
@@ -61,7 +62,7 @@ PyObject_Size(PyObject *o)
     m = Py_TYPE(o)->tp_as_sequence;
     if (m && m->sq_length) {
         Py_ssize_t len = m->sq_length(o);
-        assert(len >= 0 || PyErr_Occurred());
+        assert(_Py_CheckSlotResult(o, "__len__", len >= 0));
         return len;
     }
 
@@ -160,7 +161,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     m = Py_TYPE(o)->tp_as_mapping;
     if (m && m->mp_subscript) {
         PyObject *item = m->mp_subscript(o, key);
-        assert((item != NULL) ^ (PyErr_Occurred() != NULL));
+        assert(_Py_CheckSlotResult(o, "__getitem__", item != NULL));
         return item;
     }
 
@@ -1564,7 +1565,7 @@ PySequence_Size(PyObject *s)
     m = Py_TYPE(s)->tp_as_sequence;
     if (m && m->sq_length) {
         Py_ssize_t len = m->sq_length(s);
-        assert(len >= 0 || PyErr_Occurred());
+        assert(_Py_CheckSlotResult(s, "__len__", len >= 0));
         return len;
     }
 
@@ -1708,8 +1709,8 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
+                assert(_Py_CheckSlotResult(s, "__len__", l >= 0));
                 if (l < 0) {
-                    assert(PyErr_Occurred());
                     return NULL;
                 }
                 i += l;
@@ -1762,8 +1763,8 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
+                assert(_Py_CheckSlotResult(s, "__len__", l >= 0));
                 if (l < 0) {
-                    assert(PyErr_Occurred());
                     return -1;
                 }
                 i += l;
@@ -1795,8 +1796,8 @@ PySequence_DelItem(PyObject *s, Py_ssize_t i)
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
+                assert(_Py_CheckSlotResult(s, "__len__", l >= 0));
                 if (l < 0) {
-                    assert(PyErr_Occurred());
                     return -1;
                 }
                 i += l;
@@ -2145,7 +2146,7 @@ PyMapping_Size(PyObject *o)
     m = Py_TYPE(o)->tp_as_mapping;
     if (m && m->mp_length) {
         Py_ssize_t len = m->mp_length(o);
-        assert(len >= 0 || PyErr_Occurred());
+        assert(_Py_CheckSlotResult(o, "__len__", len >= 0));
         return len;
     }
 
