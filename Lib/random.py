@@ -238,7 +238,7 @@ class Random(_random.Random):
                 break
 
     def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Returns 0 if n==0."
+        "Return a random int in the range [0,n).  Returns 0 if n<=1."
 
         if n <= 1:
             return 0
@@ -250,7 +250,7 @@ class Random(_random.Random):
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Returns 0 if n==0.
+        """Return a random int in the range [0,n).  Returns 0 if n<=1.
 
         The implementation does not use getrandbits, but only random.
         """
