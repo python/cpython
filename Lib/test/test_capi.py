@@ -2,6 +2,8 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
+import importlib.machinery
+import importlib.util
 import os
 import pickle
 import random
@@ -13,8 +15,6 @@ import threading
 import time
 import unittest
 import weakref
-import importlib.machinery
-import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
@@ -33,6 +33,10 @@ import _testinternalcapi
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
+
+
+def decode_stderr(err):
+    return err.decode('utf-8', 'replace').replace('\r', '')
 
 
 def testfunction(self):
@@ -207,23 +211,22 @@ class CAPITest(unittest.TestCase):
                     _testcapi.return_null_without_error()
             """)
             rc, out, err = assert_python_failure('-c', code)
-            self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: _Py_CheckFunctionResult: '
-                                br'a function returned NULL '
-                                br'without setting an error\n'
-                             br'Python runtime state: initialized\n'
-                             br'SystemError: <built-in function '
-                                 br'return_null_without_error> returned NULL '
-                                 br'without setting an error\n'
-                             br'\n'
-                             br'Current thread.*:\n'
-                             br'  File .*", line 6 in <module>')
+            err = decode_stderr(err)
+            self.assertRegex(err,
+                r'Fatal Python error: _Py_CheckFunctionResult: '
+                    r'a function returned NULL without setting an exception\n'
+                r'Python runtime state: initialized\n'
+                r'SystemError: <built-in function return_null_without_error> '
+                    r'returned NULL without setting an exception\n'
+                r'\n'
+                r'Current thread.*:\n'
+                r'  File .*", line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
                 _testcapi.return_null_without_error()
             self.assertRegex(str(cm.exception),
                              'return_null_without_error.* '
-                             'returned NULL without setting an error')
+                             'returned NULL without setting an exception')
 
     def test_return_result_with_error(self):
         # Issue #23571: A function must not return a result with an error set
@@ -236,28 +239,58 @@ class CAPITest(unittest.TestCase):
                     _testcapi.return_result_with_error()
             """)
             rc, out, err = assert_python_failure('-c', code)
-            self.assertRegex(err.replace(b'\r', b''),
-                             br'Fatal Python error: _Py_CheckFunctionResult: '
-                                 br'a function returned a result '
-                                 br'with an error set\n'
-                             br'Python runtime state: initialized\n'
-                             br'ValueError\n'
-                             br'\n'
-                             br'The above exception was the direct cause '
-                                br'of the following exception:\n'
-                             br'\n'
-                             br'SystemError: <built-in '
-                                br'function return_result_with_error> '
-                                br'returned a result with an error set\n'
-                             br'\n'
-                             br'Current thread.*:\n'
-                             br'  File .*, line 6 in <module>')
+            err = decode_stderr(err)
+            self.assertRegex(err,
+                    r'Fatal Python error: _Py_CheckFunctionResult: '
+                        r'a function returned a result with an exception set\n'
+                    r'Python runtime state: initialized\n'
+                    r'ValueError\n'
+                    r'\n'
+                    r'The above exception was the direct cause '
+                        r'of the following exception:\n'
+                    r'\n'
+                    r'SystemError: <built-in '
+                        r'function return_result_with_error> '
+                        r'returned a result with an exception set\n'
+                    r'\n'
+                    r'Current thread.*:\n'
+                    r'  File .*, line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
                 _testcapi.return_result_with_error()
             self.assertRegex(str(cm.exception),
                              'return_result_with_error.* '
-                             'returned a result with an error set')
+                             'returned a result with an exception set')
+
+    def test_getitem_with_error(self):
+        # Test _Py_CheckSlotResult(). Raise an exception and then calls
+        # PyObject_GetItem(): check that the assertion catchs the bug.
+        # PyObject_GetItem() must not be called with an exception set.
+        code = textwrap.dedent("""
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.getitem_with_error({1: 2}, 1)
+        """)
+        rc, out, err = assert_python_failure('-c', code)
+        err = decode_stderr(err)
+        if 'SystemError: ' not in err:
+            self.assertRegex(err,
+                    r'Fatal Python error: _Py_CheckSlotResult: '
+                        r'Slot __getitem__ of type dict succeeded '
+                        r'with an exception set\n'
+                    r'Python runtime state: initialized\n'
+                    r'ValueError: bug\n'
+                    r'\n'
+                    r'Current thread .* \(most recent call first\):\n'
+                    r'  File .*, line 6 in <module>\n'
+                    r'\n'
+                    r'Extension modules: _testcapi \(total: 1\)\n')
+        else:
+            # Python built with NDEBUG macro defined:
+            # test _Py_CheckFunctionResult() instead.
+            self.assertIn('returned a result with an exception set', err)
 
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
@@ -551,7 +584,7 @@ class CAPITest(unittest.TestCase):
         with support.SuppressCrashReport():
             rc, out, err = assert_python_failure('-sSI', '-c', code)
 
-        err = err.replace(b'\r', b'').decode('ascii', 'replace')
+        err = decode_stderr(err)
         self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
                       err)
 
