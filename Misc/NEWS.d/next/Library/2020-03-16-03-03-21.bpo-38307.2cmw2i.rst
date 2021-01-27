@@ -1,4 +1,3 @@
-Adds end line no in class' use: generating dependency.
-: `end_lineno` is added to denote the scope of a class and a function
-along with `lineno` which was already present in the codebase.
-Patch by Aviral Srivastava.
+Add an `end_lineno` attribute to the Class and Function objects that appear in the
+tree returned by pyclbr functions.  This completes the existing (start) `lineno`
+attribute to define the extent of class and def statements.  Patch by Aviral Srivastava.
