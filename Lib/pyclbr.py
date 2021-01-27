@@ -81,11 +81,11 @@ class Class(_Object):
 
 # These 2 functions are used in these tests
 # Lib/test/test_pyclbr, Lib/idlelib/idle_test/test_browser.py
-def _nest_function(ob, func_name, lineno, is_async=False):
+def _nest_function(ob, func_name, lineno, end_lineno, is_async=False):
     "Return a Function after nesting within ob."
     return Function(ob.module, func_name, ob.file, lineno, end_lineno, ob, is_async)
 
-def _nest_class(ob, class_name, lineno, super=None):
+def _nest_class(ob, class_name, lineno, end_lineno, super=None):
     "Return a Class after nesting within ob."
     return Class(ob.module, class_name, super, ob.file, lineno, end_lineno, ob)
 
