@@ -73,9 +73,11 @@ def _find_module(name, path=None):
     if spec.loader is importlib.machinery.FrozenImporter:
         return None, None, ("", "", _PY_FROZEN)
 
-    if spec.loader is None:
-        # A namespace package has no loader
-        return None, None, ("", "", _NSP_DIRECTORY)
+    if spec.loader is None and spec.submodule_search_locations:
+        return (
+            None, os.path.dirname(str(spec.submodule_search_locations)),
+            ("", "", _NSP_DIRECTORY)
+        )
 
     file_path = spec.origin
 
