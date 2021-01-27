@@ -791,7 +791,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         # If randrange uses getrandbits, it should pick getrandbits(100)
         # when called with a 100-bits stop argument.
         self.assertEqual(self.gen.randrange(2**99),
-                         97904845777343510404718956115)
+                         18676683263079172811175005779)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
