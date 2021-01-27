@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 # Keys for get_config_var() that are never converted to Python integers.
-_ALLWAYS_STR = {
+_ALWAYS_STR = {
     'MACOSX_DEPLOYMENT_TARGET',
 }
 
@@ -257,7 +257,7 @@ def _parse_makefile(filename, vars=None):
                 notdone[n] = v
             else:
                 try:
-                    if n in _ALLWAYS_STR: 
+                    if n in _ALWAYS_STR:
                         raise ValueError
 
                     v = int(v)
@@ -318,7 +318,7 @@ def _parse_makefile(filename, vars=None):
                         notdone[name] = value
                     else:
                         try:
-                            if name in _ALLWAYS_STR: 
+                            if name in _ALWAYS_STR:
                                 raise ValueError
                             value = int(value)
                         except ValueError:
@@ -482,7 +482,7 @@ def parse_config_h(fp, vars=None):
         if m:
             n, v = m.group(1, 2)
             try:
-                if n in _ALLWAYS_STR: 
+                if n in _ALWAYS_STR:
                     raise ValueError
                 v = int(v)
             except ValueError:
