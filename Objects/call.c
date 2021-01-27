@@ -85,8 +85,6 @@ _Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
     PyThreadState *tstate = _PyThreadState_GET();
     if (!success) {
         if (!_PyErr_Occurred(tstate)) {
-            /* Ensure that the bug is caught in debug mode.
-               Py_FatalError() logs the SystemError exception raised above. */
             _Py_FatalErrorFormat(__func__,
                                  "Slot %s of type %s failed "
                                  "without setting an exception",
@@ -95,8 +93,6 @@ _Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
     }
     else {
         if (_PyErr_Occurred(tstate)) {
-            /* Ensure that the bug is caught in debug mode.
-               Py_FatalError() logs the SystemError exception raised above. */
             _Py_FatalErrorFormat(__func__,
                                  "Slot %s of type %s succeeded "
                                  "with an exception set",
