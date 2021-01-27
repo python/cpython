@@ -1,1 +1,0 @@
-Added new parameter ``greedy`` to :class:`ArgumentParser` constructor which allows positional arguments with ``nargs='*'`` to match positional arguments interspersed with optional arguments.

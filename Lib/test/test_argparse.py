@@ -5022,9 +5022,9 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(first=['arg1', 'arg2'], second='arg3'), args)
 
     def test_greedy(self):
-        parser = argparse.ArgumentParser(greedy=True)
+        parser = argparse.ArgumentParser()
         parser.add_argument('--foo', action='store')
-        parser.add_argument('first', nargs='*', action='extend')
+        parser.add_argument('first', nargs='**', action='extend')
 
         argv = ['arg1', 'arg2', '--foo', 'bar', 'arg3', 'arg4']
         args = parser.parse_args(argv)
