@@ -6532,7 +6532,7 @@ fi
 $as_echo_n "checking PROFILE_TASK... " >&6; }
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo'
+	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 $as_echo "$PROFILE_TASK" >&6; }
