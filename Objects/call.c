@@ -82,15 +82,13 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
 int
 _Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
 {
-    assert(slot_name != NULL);
-
     PyThreadState *tstate = _PyThreadState_GET();
     if (!success) {
         if (!_PyErr_Occurred(tstate)) {
             /* Ensure that the bug is caught in debug mode.
                Py_FatalError() logs the SystemError exception raised above. */
             _Py_FatalErrorFormat(__func__,
-                                 "Slot %s of type %s returned NULL "
+                                 "Slot %s of type %s failed "
                                  "without setting an exception",
                                  slot_name, Py_TYPE(obj)->tp_name);
         }

@@ -10,7 +10,6 @@ import random
 import re
 import subprocess
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
