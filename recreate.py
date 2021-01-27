@@ -1,10 +1,17 @@
 # Todo
 
-# clean up server.js code
+# global vars in a module
+# delete global
+# nonlocal set variable
+# support for slices (ascii_draw.py)
+# when a call expression is spread over multiple lines, step into fails
+# should step forward when it pops a stack, come back to the beginning of the state of the line in parent scope,
+#  or after?
+# ability to filter tracing only to the code you choose
+# should we make stack variables heap objects the same way Python does it? 
+#    So that del var statements can work naturally
 # get classes to work as objects
 # log exceptions
-# learn how frozen works
-# make log file same prefix name as program name
 # get pygame working
 # get ascii draw working
 # get flask working
@@ -17,6 +24,10 @@
 # optimization: use low level iteration methods whenever possible
 # optimization: perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
 
+# make log file same prefix name as program name (done)
+# global variables not showing for convert_points.py (done)
+# when last line in a program is a function call, you don't get to step to the end of the program (shape_calculator.py) (done)
+# clean up server.js code (done)
 # bug in rpg game __doc__ = --------------- (done)
 # bug in rpg game where step over but actually step into (done)
 # make modules work (done)
@@ -80,6 +91,7 @@ import sqlite3
 import os
 import os.path
 import re
+import sys
 
 def define_schema(conn):
     c = conn.cursor()
@@ -140,7 +152,9 @@ def define_schema(conn):
     conn.commit()
 
 NUMBER_REGEX = r"-?(?:(?:[1-9][0-9]*)|[0-9])(?:\.[0-9]+)?"
-STRING_REGEX = r"(?:'(?:[^'\\]|(?:\\['\\nt]))*')|(?:\"(?:[^\"\\]|(?:\\[\"\\nt]))*\")"
+CHAR_REGEX = r"[^'\\]|(?:\\(?:['\\ntr]|x[0-9A-Fa-f]{2}))"
+CHAR2_REGEX = r"[^\"\\]|(?:\\(?:[\"\\ntr]|x[0-9A-Fa-f]{2}))"
+STRING_REGEX = r"(?:'(?:%s)*')|(?:\"(?:%s)*\")" % (CHAR_REGEX, CHAR2_REGEX)
 BOOLEAN_REGEX = r"True|False"
 REF_REGEX = r"\*[0-9]+"
 NONE_REGEX = r"None"
@@ -215,7 +229,7 @@ class FunCall(object):
     def __repr__(self):
         return "<" + str(self.id) + ">" + self.name + "(" + str(self.varnames) + ")"
 
-def recreate_past(conn):
+def recreate_past(conn, filename):
 
     fun_lookup = {}
 
@@ -244,6 +258,9 @@ def recreate_past(conn):
 
         def serialize(self):
             return serialize(self.vars_dict)
+        
+        def __repr__(self):
+            return self.serialize()
 
     class StackFrame(object):
         def __init__(self, fun_call, frame_vars):
@@ -254,7 +271,7 @@ def recreate_past(conn):
             return '{ "funCall": ' + str(self.fun_call.id) + ', "variables": *' + str(immut_id(self.frame_vars)) + '}'
         
         def __repr__(self):
-            return "Frame<" + repr(self.fun_call) + ">"
+            return "Frame<" + repr(self.fun_call) + ", " + repr(self.frame_vars) + ">"
 
     def quote(value):
         return '"' + value.replace('"', '\\"') + '"'
@@ -417,7 +434,7 @@ def recreate_past(conn):
         cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
             new_snapshot_id(), 
             stack and stack[0].fun_call.id, 
-            immut_id(stack), 
+            stack and immut_id(stack) or None, 
             immut_id(heap),
             None,
             line_no,
@@ -441,7 +458,6 @@ def recreate_past(conn):
     def process_store_fast(index, value):
         nonlocal stack
         assert stack is not None
-        print("store fast into", stack)
         new_frame_vars = stack[0].frame_vars.update_local(index, value)
         save_object(new_frame_vars)
         new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
@@ -450,6 +466,30 @@ def recreate_past(conn):
         save_object(stack)
     
     fun_lookup["STORE_FAST"] = process_store_fast
+
+    def process_store_global(name, value):
+        nonlocal stack
+        def update_stack_for_store(s, name, value):
+            if s is None:
+                return None
+            if s[0].fun_call.name == "<module>":
+                frame = s[0]
+                new_frame_vars = frame.frame_vars.update_by_name(name, value)
+                save_object(new_frame_vars)
+                new_frame = StackFrame(frame.fun_call, new_frame_vars)
+                save_object(new_frame)
+                new_stack = [new_frame, s[1]]
+                save_object(new_stack)
+                return new_stack
+            else:
+                new_stack = [s[0], update_stack_for_store(s[1], name, value)]
+                save_object(new_stack)
+                return new_stack
+        
+        new_stack = update_stack_for_store(stack, name, value)
+        stack = new_stack
+
+    fun_lookup["STORE_GLOBAL"] = process_store_global
     
     def process_return_value(ret_val, *extra_params):
         nonlocal stack
@@ -479,9 +519,15 @@ def recreate_past(conn):
     def process_pop_frame(filename, name):
         nonlocal stack
         fun_call = stack[0].fun_call
-        assert stack[0].fun_call.filename == filename
-        assert stack[0].fun_call.name == name
-        stack = stack[1]
+        try:
+            assert stack[0].fun_call.filename == filename
+            assert stack[0].fun_call.name == name
+            stack = stack[1]
+        except:
+            print(log_line_no, curr_line_no, line)
+            print("expected:", filename, name)
+            print("Got:", stack[0].fun_call)
+            raise "stack function names not matching"
     
     fun_lookup["POP_FRAME"] = process_pop_frame
     
@@ -491,7 +537,6 @@ def recreate_past(conn):
     fun_lookup["NEW_LIST"] = process_new_list
     
     def process_new_string(heap_id, string):
-        print("process_new_string", heap_id, string)
         update_heap_object(heap_id, string)
     
     fun_lookup["NEW_STRING"] = process_new_string
@@ -517,6 +562,25 @@ def recreate_past(conn):
     
     fun_lookup["NEW_TUPLE"] = process_new_tuple
 
+    def process_list_store_subscript(heap_id, index, value):
+        obj = heap_id_to_object_dict[heap_id]
+        new_list = obj.copy()
+        new_list[index] = value
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_STORE_SUBSCRIPT"] = process_list_store_subscript
+
+    def process_list_store_subscript_slice(heap_id, start, stop, step, value):
+        a_list = heap_id_to_object_dict[heap_id]
+        new_list = a_list = a_list.copy()
+        a_slice = slice(start, stop, step)
+        if isinstance(value, HeapRef):
+            value = heap_id_to_object_dict[value.id]
+        new_list[a_slice] = value
+        update_heap_object(heap_id, new_list)
+    
+    fun_lookup["LIST_STORE_SUBSCRIPT_SLICE"] = process_list_store_subscript_slice
+
     def process_list_delete_subscript(heap_id, index):
         obj = heap_id_to_object_dict[heap_id]
         new_obj = obj.copy()
@@ -525,13 +589,14 @@ def recreate_past(conn):
     
     fun_lookup["LIST_DELETE_SUBSCRIPT"] = process_list_delete_subscript
 
-    def process_list_store_subscript(heap_id, index, value):
-        obj = heap_id_to_object_dict[heap_id]
-        new_list = obj.copy()
-        new_list[index] = value
+    def process_list_delete_subscript_slice(heap_id, start, stop, step):
+        a_list = heap_id_to_object_dict[heap_id]
+        new_list = a_list = a_list.copy()
+        a_slice = slice(start, stop, step)
+        del new_list[a_slice]
         update_heap_object(heap_id, new_list)
-    
-    fun_lookup["LIST_STORE_SUBSCRIPT"] = process_list_store_subscript
+
+    fun_lookup["LIST_DELETE_SUBSCRIPT_SLICE"] = process_list_delete_subscript_slice
 
     def process_list_insert(heap_id, index, value):
         obj = heap_id_to_object_dict[heap_id]
@@ -621,6 +686,14 @@ def recreate_past(conn):
     fun_lookup["DICT_POP"] = process_dict_pop
     fun_lookup["DICT_POP_ITEM"] = process_dict_pop
 
+    def process_dict_setdefault(heap_id, key, value):
+        a_dict = heap_id_to_object_dict[heap_id]
+        new_dict = a_dict.copy()
+        new_dict.setdefault(key, value)
+        update_heap_object(heap_id, new_dict)
+    
+    fun_lookup["DICT_SET_DEFAULT"] = process_dict_setdefault
+
     def process_dealloc(heap_id):
         nonlocal heap
         if heap_id in heap_id_to_object_dict:
@@ -702,10 +775,10 @@ def recreate_past(conn):
     curr_line_no = None
     log_line_no = 0
     
-    file = open("rewind.log", "r")
+    file = open(filename, "r")
     for line in file:
         log_line_no += 1
-        print(log_line_no, line)
+        print("\r line " + str(log_line_no), end='')
         if line.startswith("--"):
             continue
         command = parse_line(line)
@@ -713,13 +786,26 @@ def recreate_past(conn):
             print("Warning: no process function for command %s on line %d" % (command[0], log_line_no))
             continue
         fun = fun_lookup[command[0]]
-        fun(*command[1])
+        try:
+            fun(*command[1])
+        except Exception as e:
+            print("Exception caught on line", log_line_no, line)
+            raise e
+    print("Complete")
 
 def main():
-    if os.path.isfile("rewind.sqlite"):
-        os.remove("rewind.sqlite")
-    conn = sqlite3.connect('rewind.sqlite')
+    if len(sys.argv) < 2:
+        print("Please provide a .rewind file.")
+        return
+    filename = sys.argv[1]
+    
+    sqlite_filename = re.sub("\.rewind$", ".sqlite", filename)
+    print("Reading from " + filename)
+    print("Recreating past states into " + sqlite_filename)
+    if os.path.isfile(sqlite_filename):
+        os.remove(sqlite_filename)
+    conn = sqlite3.connect(sqlite_filename)
     define_schema(conn)
-    recreate_past(conn)
+    recreate_past(conn, filename)
 
 main()

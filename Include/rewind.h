@@ -1,6 +1,6 @@
 #include "Python.h"
 
-void Rewind_Activate(void);
+void Rewind_Activate(const wchar_t * filename);
 
 void Rewind_Deactivate(void);
 
@@ -8,7 +8,7 @@ int Rewind_isSimpleType(PyObject *obj);
 
 void Rewind_Cleanup(void);
 
-void Rewind_PushFrame(PyCodeObject *code, PyFrameObject *frame);
+void Rewind_PushFrame(PyFrameObject *frame);
 
 void Rewind_PopFrame(PyFrameObject *frame);
 
@@ -48,6 +48,8 @@ void Rewind_DictPop(PyDictObject *dict, PyObject *key);
 
 void Rewind_DictPopItem(PyDictObject *dict, PyObject *key);
 
+void Rewind_DictSetDefault(PyDictObject *dict, PyObject *key, PyObject *value);
+
 void Rewind_SetAdd(PySetObject *set, PyObject *newItem);
 
 void Rewind_SetDiscard(PySetObject *set, PyObject *item);
@@ -61,6 +63,10 @@ void Rewind_YieldValue(PyObject *retval);
 void Rewind_StoreName(PyObject *name, PyObject *value);
 
 void Rewind_StoreFast(int index, PyObject *value);
+
+void Rewind_StoreGlobal(PyObject *name, PyObject *value);
+
+void Rewind_DeleteGlobal(PyObject *name);
 
 void Rewind_ReturnValue(PyObject *retval);
 

@@ -1379,6 +1379,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         return NULL;
     }
 
+    Rewind_PushFrame(f);
+
     tstate->frame = f;
 
     if (tstate->use_tracing) {
@@ -1498,8 +1500,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
 #endif
-
-    Rewind_PushFrame(co, f);
 
 main_loop:
     for (;;) {
@@ -2696,6 +2696,7 @@ main_loop:
             PyObject *v = POP();
             int err;
             err = PyDict_SetItem(f->f_globals, name, v);
+            Rewind_StoreGlobal(name, v);
             Py_DECREF(v);
             if (err != 0)
                 goto error;
@@ -2707,6 +2708,7 @@ main_loop:
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(f->f_globals, name);
+            Rewind_DeleteGlobal(name);
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     format_exc_check_arg(tstate, PyExc_NameError,

@@ -27,3 +27,8 @@ for sub_list in d_list:
     e_list.append(sub_list[0] + sub_list[1])
 
 e_list.sort()
+
+f_list = [1, 2, 3, 4, 5, 6]
+sub_list = f_list[2:4]
+f_list[2:4] = [1]
+del f_list[2:4]

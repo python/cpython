@@ -310,6 +310,7 @@ static int
 pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
 {
     const wchar_t *filename = config->run_filename;
+    Rewind_Activate(filename);
     if (PySys_Audit("cpython.run_file", "u", filename) < 0) {
         return pymain_exit_err_print();
     }
@@ -554,8 +555,6 @@ pymain_run_python(int *exitcode)
 
     pymain_header(config);
     pymain_import_readline(config);
-
-    Rewind_Activate();
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command, &cf);

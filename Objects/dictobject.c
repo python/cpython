@@ -3131,7 +3131,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 }
 
 PyObject *
-PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
+_PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj, char rewindLog)
 {
     PyDictObject *mp = (PyDictObject *)d;
     PyObject *value;
@@ -3151,6 +3151,9 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         if (insert_to_emptydict(mp, key, hash, defaultobj) < 0) {
             return NULL;
+        }
+        if (rewindLog) {
+            Rewind_DictSetDefault(mp, key, defaultobj);
         }
         return defaultobj;
     }
@@ -3202,6 +3205,9 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
+        if (rewindLog) {
+            Rewind_DictSetDefault(mp, key, value);
+        }
     }
     else if (value == NULL) {
         value = defaultobj;
@@ -3212,10 +3218,18 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         mp->ma_values[ix] = value;
         mp->ma_used++;
         mp->ma_version_tag = DICT_NEXT_VERSION();
+        if (rewindLog) {
+            Rewind_DictSetDefault(mp, key, value);
+        }
     }
 
     ASSERT_CONSISTENT(mp);
     return value;
+}
+
+PyObject *
+PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj) {
+    return _PyDict_SetDefault(d, key, defaultobj, 0);
 }
 
 /*[clinic input]
@@ -3237,7 +3251,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 {
     PyObject *val;
 
-    val = PyDict_SetDefault((PyObject *)self, key, default_value);
+    val = _PyDict_SetDefault((PyObject *)self, key, default_value, 1);
     Py_XINCREF(val);
     return val;
 }
