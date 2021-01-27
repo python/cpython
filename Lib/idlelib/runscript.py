@@ -159,7 +159,7 @@ class ScriptBinding:
             _os.chdir({dirname!r})
             del _sys, argv, _basename, _os
             \n""")
-        interp.prepend_syspath(filename)
+        interp.prepend_path(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still
         #         go to __stderr__.  With subprocess, they go to the shell.
         #         Need to change streams in pyshell.ModifiedInterpreter.

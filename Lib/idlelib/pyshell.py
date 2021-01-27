@@ -694,8 +694,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         linecache.cache[filename] = len(source)+1, 0, lines, filename
         return filename
 
-    def prepend_syspath(self, filename):
-        "Prepend sys.path with file's directory if not already included"
+    def prepend_path(self, filename):
+        """Prepend sys.path with file's directory if not already included.
+
+        Run from runscript and main (-s).
+        """
         self.runcommand(f"""if 1:
             import sys as _sys
             from os.path import dirname as _dirname
@@ -750,7 +753,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
         Targets include sys.argv, sys.path, and current directory.
         Run without debugger; must not raise an exception!
-        Called from transfer_path, prepend_syspath, main, and
+        Called from transfer_path, prepend_path, main, and
         runscript.run_module_event.
         """
         if self.tkconsole.executing:
@@ -1553,7 +1556,7 @@ def main():
         if cmd:
             shell.interp.execsource(cmd)
         elif script:
-            shell.interp.prepend_syspath(script)
+            shell.interp.prepend_path(script)
             shell.interp.execfile(script)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
