@@ -9,5 +9,10 @@ used from a setup script as
 """
 
 import sys
+import warnings
 
 __version__ = sys.version[:sys.version.index(' ')]
+
+warnings.warn("distutils is deprecated and slated for removal in "
+              "Python 3.12. Use setuptools or try PEP 632 for "
+              "potential alternatives", DeprecationWarning)
