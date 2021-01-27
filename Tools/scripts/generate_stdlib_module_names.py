@@ -57,29 +57,17 @@ def list_python_modules(names):
         names.add(name)
 
 
-def _list_sub_packages(path, names, parent=None):
-    for name in os.listdir(path):
+# Packages in Lib/
+def list_packages(names):
+    for name in os.listdir(STDLIB_PATH):
         if name in IGNORE:
             continue
-        package_path = os.path.join(path, name)
+        package_path = os.path.join(STDLIB_PATH, name)
         if not os.path.isdir(package_path):
             continue
-        if not any(package_file.endswith(".py")
-                   for package_file in os.listdir(package_path)):
-            continue
-        if parent:
-            qualname = f"{parent}.{name}"
-        else:
-            qualname = name
-        if qualname in IGNORE:
-            continue
-        names.add(qualname)
-        _list_sub_packages(package_path, names, qualname)
-
-
-# Packages and sub-packages
-def list_packages(names):
-    _list_sub_packages(STDLIB_PATH, names)
+        if any(package_file.endswith(".py")
+               for package_file in os.listdir(package_path)):
+            names.add(name)
 
 
 # Extension modules built by setup.py
