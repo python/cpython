@@ -53,11 +53,12 @@ _modules = {}  # Initialize cache of modules we've seen.
 
 class _Object:
     "Information about Python class or function."
-    def __init__(self, module, name, file, lineno, parent):
+    def __init__(self, module, name, file, lineno, end_lineno, parent):
         self.module = module
         self.name = name
         self.file = file
         self.lineno = lineno
+        self.end_lineno = end_lineno
         self.parent = parent
         self.children = {}
         if parent is not None:
@@ -65,16 +66,16 @@ class _Object:
 
 class Function(_Object):
     "Information about a Python function, including methods."
-    def __init__(self, module, name, file, lineno, parent=None, is_async=False):
-        super().__init__(module, name, file, lineno, parent)
+    def __init__(self, module, name, file, lineno, end_lineno, parent=None, is_async=False):
+        super().__init__(module, name, file, lineno, end_lineno, parent)
         self.is_async = is_async
         if isinstance(parent, Class):
             parent.methods[name] = lineno
 
 class Class(_Object):
     "Information about a Python class."
-    def __init__(self, module, name, super_, file, lineno, parent=None):
-        super().__init__(module, name, file, lineno, parent)
+    def __init__(self, module, name, super_, file, lineno, end_lineno, parent=None):
+        super().__init__(module, name, file, lineno, end_lineno, parent)
         self.super = super_ or []
         self.methods = {}
 
@@ -82,11 +83,11 @@ class Class(_Object):
 # Lib/test/test_pyclbr, Lib/idlelib/idle_test/test_browser.py
 def _nest_function(ob, func_name, lineno, is_async=False):
     "Return a Function after nesting within ob."
-    return Function(ob.module, func_name, ob.file, lineno, ob, is_async)
+    return Function(ob.module, func_name, ob.file, lineno, end_lineno, ob, is_async)
 
 def _nest_class(ob, class_name, lineno, super=None):
     "Return a Class after nesting within ob."
-    return Class(ob.module, class_name, super, ob.file, lineno, ob)
+    return Class(ob.module, class_name, super, ob.file, lineno, end_lineno, ob)
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -200,7 +201,7 @@ class _ModuleBrowser(ast.NodeVisitor):
 
         parent = self.stack[-1] if self.stack else None
         class_ = Class(
-            self.module, node.name, bases, self.file, node.lineno, parent
+            self.module, node.name, bases, self.file, node.lineno, node.end_lineno, parent
         )
         if parent is None:
             self.tree[node.name] = class_
@@ -211,7 +212,7 @@ class _ModuleBrowser(ast.NodeVisitor):
     def visit_FunctionDef(self, node, *, is_async=False):
         parent = self.stack[-1] if self.stack else None
         function = Function(
-            self.module, node.name, self.file, node.lineno, parent, is_async
+            self.module, node.name, self.file, node.lineno, node.end_lineno, parent, is_async
         )
         if parent is None:
             self.tree[node.name] = function
