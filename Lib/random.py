@@ -240,7 +240,7 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Returns 0 if n==0."
 
-        if n <= 1:
+        if not n:
             return 0
         getrandbits = self.getrandbits
         k = (n-1).bit_length()
@@ -261,7 +261,7 @@ class Random(_random.Random):
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
             return _floor(random() * n)
-        if n <= 1:
+        if not n:
             return 0
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
