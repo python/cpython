@@ -29,7 +29,7 @@ Data members:
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
-#include "module_names.h"         // _Py_module_names
+#include "stdlib_module_names.h"  // _Py_stdlib_module_names
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -2054,16 +2054,16 @@ error:
 
 
 static PyObject *
-list_module_names(void)
+list_stdlib_module_names(void)
 {
-    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_module_names);
+    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
     PyObject *names = PyTuple_New(len);
     if (names == NULL) {
         return NULL;
     }
 
     for (Py_ssize_t i = 0; i < len; i++) {
-        PyObject *name = PyUnicode_FromString(_Py_module_names[i]);
+        PyObject *name = PyUnicode_FromString(_Py_stdlib_module_names[i]);
         if (name == NULL) {
             Py_DECREF(names);
             return NULL;
@@ -2784,7 +2784,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("hash_info", get_hash_info(tstate));
     SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
     SET_SYS("builtin_module_names", list_builtin_module_names());
-    SET_SYS("module_names", list_module_names());
+    SET_SYS("stdlib_module_names", list_stdlib_module_names());
 #if PY_BIG_ENDIAN
     SET_SYS_FROM_STRING("byteorder", "big");
 #else

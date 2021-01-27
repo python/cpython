@@ -197,7 +197,7 @@ Having two enum members with the same name is invalid::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: Attempted to reuse key: 'SQUARE'
+    TypeError: 'SQUARE' already defined as: 2
 
 However, two enum members are allowed to have the same value.  Given two members
 A and B with the same value (and A defined first), B is an alias to A.  By-value
@@ -422,7 +422,7 @@ any members.  So this is forbidden::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: Cannot extend enumerations
+    TypeError: MoreColor: cannot extend enumeration 'Color'
 
 But this is allowed::
 
@@ -617,6 +617,7 @@ by extension, string enumerations of different types can also be compared
 to each other.  :class:`StrEnum` exists to help avoid the problem of getting
 an incorrect member::
 
+    >>> from enum import StrEnum
     >>> class Directions(StrEnum):
     ...     NORTH = 'north',    # notice the trailing comma
     ...     SOUTH = 'south'
@@ -638,12 +639,22 @@ IntFlag
 The next variation of :class:`Enum` provided, :class:`IntFlag`, is also based
 on :class:`int`.  The difference being :class:`IntFlag` members can be combined
 using the bitwise operators (&, \|, ^, ~) and the result is still an
-:class:`IntFlag` member.  However, as the name implies, :class:`IntFlag`
+:class:`IntFlag` member, if possible.  However, as the name implies, :class:`IntFlag`
 members also subclass :class:`int` and can be used wherever an :class:`int` is
-used.  Any operation on an :class:`IntFlag` member besides the bit-wise
-operations will lose the :class:`IntFlag` membership.
+used.
+
+.. note::
+
+    Any operation on an :class:`IntFlag` member besides the bit-wise operations will
+    lose the :class:`IntFlag` membership.
+
+.. note::
+
+    Bit-wise operations that result in invalid :class:`IntFlag` values will lose the
+    :class:`IntFlag` membership.
 
 .. versionadded:: 3.6
+.. versionchanged:: 3.10
 
 Sample :class:`IntFlag` class::
 
@@ -671,21 +682,41 @@ It is also possible to name the combinations::
     >>> Perm.RWX
     <Perm.RWX: 7>
     >>> ~Perm.RWX
-    <Perm.-8: -8>
+    <Perm: 0>
+    >>> Perm(7)
+    <Perm.RWX: 7>
+
+.. note::
+
+    Named combinations are considered aliases.  Aliases do not show up during
+    iteration, but can be returned from by-value lookups.
+
+.. versionchanged:: 3.10
 
 Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
 
     >>> Perm.R & Perm.X
-    <Perm.0: 0>
+    <Perm: 0>
     >>> bool(Perm.R & Perm.X)
     False
 
 Because :class:`IntFlag` members are also subclasses of :class:`int` they can
-be combined with them::
+be combined with them (but may lose :class:`IntFlag` membership::
+
+    >>> Perm.X | 4
+    <Perm.R|X: 5>
 
     >>> Perm.X | 8
-    <Perm.8|X: 9>
+    9
+
+.. note::
+
+    The negation operator, ``~``, always returns an :class:`IntFlag` member with a
+    positive value::
+
+        >>> (~Perm.X).value == (Perm.R|Perm.W).value == 6
+        True
 
 :class:`IntFlag` members can also be iterated over::
 
@@ -717,7 +748,7 @@ flags being set, the boolean evaluation is :data:`False`::
     ...     GREEN = auto()
     ...
     >>> Color.RED & Color.GREEN
-    <Color.0: 0>
+    <Color: 0>
     >>> bool(Color.RED & Color.GREEN)
     False
 
@@ -751,7 +782,7 @@ value::
 
     >>> purple = Color.RED | Color.BLUE
     >>> list(purple)
-    [<Color.BLUE: 2>, <Color.RED: 1>]
+    [<Color.RED: 1>, <Color.BLUE: 2>]
 
 .. versionadded:: 3.10
 
@@ -953,7 +984,7 @@ to handle any extra arguments::
     ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
     ...
     >>> Swatch.SEA_GREEN
-    <Swatch.SEA_GREEN: 2>
+    <Swatch.SEA_GREEN>
     >>> Swatch.SEA_GREEN.pantone
     '1246'
     >>> Swatch.BLEACHED_CORAL.pantone
@@ -1144,6 +1175,14 @@ Supported ``_sunder_`` names
   :class:`auto` to get an appropriate value for an enum member; may be
   overridden
 
+.. note::
+
+    For standard :class:`Enum` classes the next value chosen is the last value seen
+    incremented by one.
+
+    For :class:`Flag`-type classes the next value chosen will be the next highest
+    power-of-two, regardless of the last value seen.
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
 
@@ -1159,7 +1198,9 @@ and raise an error if the two do not match::
     ...
     Traceback (most recent call last):
     ...
-    TypeError: member order does not match _order_
+    TypeError: member order does not match _order_:
+    ['RED', 'BLUE', 'GREEN']
+    ['RED', 'GREEN', 'BLUE']
 
 .. note::
 
@@ -1179,11 +1220,9 @@ Private names are not converted to Enum members, but remain normal attributes.
 """"""""""""""""""""
 
 :class:`Enum` members are instances of their :class:`Enum` class, and are
-normally accessed as ``EnumClass.member``.  Under certain circumstances they
-can also be accessed as ``EnumClass.member.member``, but you should never do
-this as that lookup may fail or, worse, return something besides the
-:class:`Enum` member you are looking for (this is another good reason to use
-all-uppercase names for members)::
+normally accessed as ``EnumClass.member``.  In Python versions ``3.5`` to
+``3.9`` you could access members from other members -- this practice was
+discouraged, and in ``3.10`` :class:`Enum` has returned to not allowing it::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -1191,11 +1230,12 @@ all-uppercase names for members)::
     ...     size = 2
     ...
     >>> FieldTypes.value.size
-    <FieldTypes.size: 2>
-    >>> FieldTypes.size.value
-    2
+    Traceback (most recent call last):
+    ...
+    AttributeError: FieldTypes: no attribute 'size'
 
 .. versionchanged:: 3.5
+.. versionchanged:: 3.10
 
 
 Creating members that are mixed with other data types
@@ -1237,14 +1277,14 @@ but not of the class::
     >>> dir(Planet)
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
     >>> dir(Planet.EARTH)
-    ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
+    ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
 
 
 Combining members of ``Flag``
 """""""""""""""""""""""""""""
 
-If a combination of Flag members is not named, the :func:`repr` will include
-all named flags and all named combinations of flags that are in the value::
+Iterating over a combination of Flag members will only return the members that
+are comprised of a single bit::
 
     >>> class Color(Flag):
     ...     RED = auto()
@@ -1254,10 +1294,10 @@ all named flags and all named combinations of flags that are in the value::
     ...     YELLOW = RED | GREEN
     ...     CYAN = GREEN | BLUE
     ...
-    >>> Color(3)  # named combination
+    >>> Color(3)
     <Color.YELLOW: 3>
-    >>> Color(7)      # not named combination
-    <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
+    >>> Color(7)
+    <Color.RED|GREEN|BLUE: 7>
 
 ``StrEnum`` and :meth:`str.__str__`
 """""""""""""""""""""""""""""""""""
@@ -1269,3 +1309,71 @@ parts of Python will read the string data directly, while others will call
 :meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
 ``str(StrEnum.member) == StrEnum.member`` is true.
 
+``Flag`` and ``IntFlag`` minutia
+""""""""""""""""""""""""""""""""
+
+The code sample::
+
+    >>> class Color(IntFlag):
+    ...     BLACK = 0
+    ...     RED = 1
+    ...     GREEN = 2
+    ...     BLUE = 4
+    ...     PURPLE = RED | BLUE
+    ...     WHITE = RED | GREEN | BLUE
+    ...
+
+- single-bit flags are canonical
+- multi-bit and zero-bit flags are aliases
+- only canonical flags are returned during iteration::
+
+    >>> list(Color.WHITE)
+    [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
+
+- negating a flag or flag set returns a new flag/flag set with the
+  corresponding positive integer value::
+
+    >>> Color.GREEN
+    <Color.GREEN: 2>
+
+    >>> ~Color.GREEN
+    <Color.PURPLE: 5>
+
+- names of pseudo-flags are constructed from their members' names::
+
+    >>> (Color.RED | Color.GREEN).name
+    'RED|GREEN'
+
+- multi-bit flags, aka aliases, can be returned from operations::
+
+    >>> Color.RED | Color.BLUE
+    <Color.PURPLE: 5>
+
+    >>> Color(7)  # or Color(-1)
+    <Color.WHITE: 7>
+
+- membership / containment checking has changed slightly -- zero valued flags
+  are never considered to be contained::
+
+    >>> Color.BLACK in Color.WHITE
+    False
+
+  otherwise, if all bits of one flag are in the other flag, True is returned::
+
+    >>> Color.PURPLE in Color.WHITE
+    True
+
+There is a new boundary mechanism that controls how out-of-range / invalid
+bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
+
+  * STRICT --> raises an exception when presented with invalid values
+  * CONFORM --> discards any invalid bits
+  * EJECT --> lose Flag status and become a normal int with the given value
+  * KEEP --> keep the extra bits
+           - keeps Flag status and extra bits
+           - extra bits do not show up in iteration
+           - extra bits do show up in repr() and str()
+
+The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``DISCARD``,
+and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an
+example of when ``KEEP`` is needed).

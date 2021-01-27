@@ -360,7 +360,7 @@
     <ClInclude Include="..\Python\importdl.h">
       <Filter>Python</Filter>
     </ClInclude>
-    <ClInclude Include="..\Python\module_names.h">
+    <ClInclude Include="..\Python\stdlib_module_names.h">
       <Filter>Python</Filter>
     </ClInclude>
     <ClInclude Include="..\Python\thread_nt.h">

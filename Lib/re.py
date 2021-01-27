@@ -142,7 +142,7 @@ __all__ = [
 
 __version__ = "2.2.1"
 
-class RegexFlag(enum.IntFlag):
+class RegexFlag(enum.IntFlag, boundary=enum.KEEP):
     ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
     IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
     LOCALE = L = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
@@ -155,26 +155,17 @@ class RegexFlag(enum.IntFlag):
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
 
     def __repr__(self):
-        if self._name_ is not None:
-            return f're.{self._name_}'
-        value = self._value_
-        members = []
-        negative = value < 0
-        if negative:
-            value = ~value
-        for m in self.__class__:
-            if value & m._value_:
-                value &= ~m._value_
-                members.append(f're.{m._name_}')
-        if value:
-            members.append(hex(value))
-        res = '|'.join(members)
-        if negative:
-            if len(members) > 1:
-                res = f'~({res})'
-            else:
-                res = f'~{res}'
+        res = ''
+        if self._name_:
+            member_names = self._name_.split('|')
+            constant = None
+            if member_names[-1].startswith('0x'):
+                constant = member_names.pop()
+            res = 're.' + '|re.'.join(member_names)
+            if constant:
+                res += '|%s' % constant
         return res
+
     __str__ = object.__str__
 
 globals().update(RegexFlag.__members__)
