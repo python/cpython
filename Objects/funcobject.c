@@ -40,20 +40,20 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
 
     op->func_weakreflist = NULL;
     Py_INCREF(code);
-    op->func_descr.code = code;
+    op->func_code = code;
     assert(globals != NULL);
     Py_INCREF(globals);
-    op->func_descr.globals = globals;
+    op->func_globals = globals;
     PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
     if (builtins == NULL) {
         return NULL;
     }
-    op->func_descr.builtins = builtins;
-    op->func_descr.name = ((PyCodeObject *)code)->co_name;
-    Py_INCREF(op->func_descr.name);
-    op->func_descr.defaults = NULL; /* No default arguments */
-    op->func_descr.kwdefaults = NULL; /* No keyword only defaults */
-    op->func_descr.closure = NULL;
+    op->func_builtins = builtins;
+    op->func_name = ((PyCodeObject *)code)->co_name;
+    Py_INCREF(op->func_name);
+    op->func_defaults = NULL; /* No default arguments */
+    op->func_kwdefaults = NULL; /* No keyword only defaults */
+    op->func_closure = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_module = module;
 
@@ -72,10 +72,10 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_annotations = NULL;
 
     if (qualname)
-        op->func_descr.qualname = qualname;
+        op->func_qualname = qualname;
     else
-        op->func_descr.qualname = op->func_descr.name;
-    Py_INCREF(op->func_descr.qualname);
+        op->func_qualname = op->func_name;
+    Py_INCREF(op->func_qualname);
 
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
@@ -94,7 +94,7 @@ PyFunction_GetCode(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_descr.code;
+    return ((PyFunctionObject *) op) -> func_code;
 }
 
 PyObject *
@@ -104,7 +104,7 @@ PyFunction_GetGlobals(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_descr.globals;
+    return ((PyFunctionObject *) op) -> func_globals;
 }
 
 PyObject *
@@ -124,7 +124,7 @@ PyFunction_GetDefaults(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_descr.defaults;
+    return ((PyFunctionObject *) op) -> func_defaults;
 }
 
 int
@@ -143,7 +143,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    Py_XSETREF(((PyFunctionObject *)op)->func_descr.defaults, defaults);
+    Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
 
@@ -154,7 +154,7 @@ PyFunction_GetKwDefaults(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_descr.kwdefaults;
+    return ((PyFunctionObject *) op) -> func_kwdefaults;
 }
 
 int
@@ -174,7 +174,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
-    Py_XSETREF(((PyFunctionObject *)op)->func_descr.kwdefaults, defaults);
+    Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
 
@@ -185,7 +185,7 @@ PyFunction_GetClosure(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_descr.closure;
+    return ((PyFunctionObject *) op) -> func_closure;
 }
 
 int
@@ -206,7 +206,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
-    Py_XSETREF(((PyFunctionObject *)op)->func_descr.closure, closure);
+    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
 
@@ -246,9 +246,9 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_descr.closure), READONLY},
+    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
     {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   T_OBJECT,     OFF(func_descr.globals), READONLY},
+    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
     {NULL}  /* Sentinel */
 };
@@ -260,8 +260,8 @@ func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
         return NULL;
     }
 
-    Py_INCREF(op->func_descr.code);
-    return op->func_descr.code;
+    Py_INCREF(op->func_code);
+    return op->func_code;
 }
 
 static int
@@ -283,26 +283,26 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     nfree = PyCode_GetNumFree((PyCodeObject *)value);
-    nclosure = (op->func_descr.closure == NULL ? 0 :
-            PyTuple_GET_SIZE(op->func_descr.closure));
+    nclosure = (op->func_closure == NULL ? 0 :
+            PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
                      " not %zd",
-                     op->func_descr.name,
+                     op->func_name,
                      nclosure, nfree);
         return -1;
     }
     Py_INCREF(value);
-    Py_XSETREF(op->func_descr.code, value);
+    Py_XSETREF(op->func_code, value);
     return 0;
 }
 
 static PyObject *
 func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    Py_INCREF(op->func_descr.name);
-    return op->func_descr.name;
+    Py_INCREF(op->func_name);
+    return op->func_name;
 }
 
 static int
@@ -316,15 +316,15 @@ func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_INCREF(value);
-    Py_XSETREF(op->func_descr.name, value);
+    Py_XSETREF(op->func_name, value);
     return 0;
 }
 
 static PyObject *
 func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    Py_INCREF(op->func_descr.qualname);
-    return op->func_descr.qualname;
+    Py_INCREF(op->func_qualname);
+    return op->func_qualname;
 }
 
 static int
@@ -338,7 +338,7 @@ func_set_qualname(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
         return -1;
     }
     Py_INCREF(value);
-    Py_XSETREF(op->func_descr.qualname, value);
+    Py_XSETREF(op->func_qualname, value);
     return 0;
 }
 
@@ -348,11 +348,11 @@ func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     if (PySys_Audit("object.__getattr__", "Os", op, "__defaults__") < 0) {
         return NULL;
     }
-    if (op->func_descr.defaults == NULL) {
+    if (op->func_defaults == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(op->func_descr.defaults);
-    return op->func_descr.defaults;
+    Py_INCREF(op->func_defaults);
+    return op->func_defaults;
 }
 
 static int
@@ -378,7 +378,7 @@ func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
     }
 
     Py_XINCREF(value);
-    Py_XSETREF(op->func_descr.defaults, value);
+    Py_XSETREF(op->func_defaults, value);
     return 0;
 }
 
@@ -389,11 +389,11 @@ func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
                     op, "__kwdefaults__") < 0) {
         return NULL;
     }
-    if (op->func_descr.kwdefaults == NULL) {
+    if (op->func_kwdefaults == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(op->func_descr.kwdefaults);
-    return op->func_descr.kwdefaults;
+    Py_INCREF(op->func_kwdefaults);
+    return op->func_kwdefaults;
 }
 
 static int
@@ -419,7 +419,7 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
     }
 
     Py_XINCREF(value);
-    Py_XSETREF(op->func_descr.kwdefaults, value);
+    Py_XSETREF(op->func_kwdefaults, value);
     return 0;
 }
 
@@ -580,15 +580,15 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     if (name != Py_None) {
         Py_INCREF(name);
-        Py_SETREF(newfunc->func_descr.name, name);
+        Py_SETREF(newfunc->func_name, name);
     }
     if (defaults != Py_None) {
         Py_INCREF(defaults);
-        newfunc->func_descr.defaults  = defaults;
+        newfunc->func_defaults  = defaults;
     }
     if (closure != Py_None) {
         Py_INCREF(closure);
-        newfunc->func_descr.closure = closure;
+        newfunc->func_closure = closure;
     }
 
     return (PyObject *)newfunc;
@@ -597,17 +597,17 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 static int
 func_clear(PyFunctionObject *op)
 {
-    Py_CLEAR(op->func_descr.code);
-    Py_CLEAR(op->func_descr.globals);
-    Py_CLEAR(op->func_descr.builtins);
-    Py_CLEAR(op->func_descr.name);
-    Py_CLEAR(op->func_descr.qualname);
+    Py_CLEAR(op->func_code);
+    Py_CLEAR(op->func_globals);
+    Py_CLEAR(op->func_builtins);
+    Py_CLEAR(op->func_name);
+    Py_CLEAR(op->func_qualname);
     Py_CLEAR(op->func_module);
-    Py_CLEAR(op->func_descr.defaults);
-    Py_CLEAR(op->func_descr.kwdefaults);
+    Py_CLEAR(op->func_defaults);
+    Py_CLEAR(op->func_kwdefaults);
     Py_CLEAR(op->func_doc);
     Py_CLEAR(op->func_dict);
-    Py_CLEAR(op->func_descr.closure);
+    Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
     return 0;
 }
@@ -627,24 +627,24 @@ static PyObject*
 func_repr(PyFunctionObject *op)
 {
     return PyUnicode_FromFormat("<function %U at %p>",
-                               op->func_descr.qualname, op);
+                               op->func_qualname, op);
 }
 
 static int
 func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
-    Py_VISIT(f->func_descr.code);
-    Py_VISIT(f->func_descr.globals);
-    Py_VISIT(f->func_descr.builtins);
+    Py_VISIT(f->func_code);
+    Py_VISIT(f->func_globals);
+    Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
-    Py_VISIT(f->func_descr.defaults);
-    Py_VISIT(f->func_descr.kwdefaults);
+    Py_VISIT(f->func_defaults);
+    Py_VISIT(f->func_kwdefaults);
     Py_VISIT(f->func_doc);
-    Py_VISIT(f->func_descr.name);
+    Py_VISIT(f->func_name);
     Py_VISIT(f->func_dict);
-    Py_VISIT(f->func_descr.closure);
+    Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
-    Py_VISIT(f->func_descr.qualname);
+    Py_VISIT(f->func_qualname);
     return 0;
 }
 

@@ -8,15 +8,18 @@ extern "C" {
 #endif
 
 
+#define COMMON_FIELDS(PREFIX) \
+    PyObject *PREFIX ## globals; \
+    PyObject *PREFIX ## builtins; \
+    PyObject *PREFIX ## name; \
+    PyObject *PREFIX ## qualname; \
+    PyObject *PREFIX ## code;        /* A code object, the __code__ attribute */ \
+    PyObject *PREFIX ## defaults;    /* NULL or a tuple */ \
+    PyObject *PREFIX ## kwdefaults;  /* NULL or a dict */ \
+    PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */
+
 typedef struct {
-    PyObject *globals;
-    PyObject *builtins;
-    PyObject *name;
-    PyObject *qualname;
-    PyObject *code;        /* A code object, the __code__ attribute */
-    PyObject *defaults;    /* NULL or a tuple */
-    PyObject *kwdefaults;  /* NULL or a dict */
-    PyObject *closure;     /* NULL or a tuple of cell objects */
+    COMMON_FIELDS()
 } PyFrameConstructor;
 
 /* Function objects and code objects should not be confused with each other:
@@ -32,21 +35,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    union {
-        PyFrameConstructor func_descr;  /* Frame descriptor fields for this function */
-        /* This struct is for backward compatibility of code using the old func_* fields;
-         Note that the order of fields must match PyFrameConstructor *exactly*. */
-        struct {
-            PyObject *func_globals;
-            PyObject *func_builtins;
-            PyObject *func_name;
-            PyObject *func_qualname;
-            PyObject *func_code;
-            PyObject *func_defaults;
-            PyObject *func_kwdefaults;
-            PyObject *func_closure;
-        };
-    };
+    COMMON_FIELDS(func_)
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
@@ -103,6 +92,9 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
         (((PyFunctionObject *)func) -> func_closure)
 #define PyFunction_GET_ANNOTATIONS(func) \
         (((PyFunctionObject *)func) -> func_annotations)
+
+#define PyFunction_AS_FRAME_CONSTRUCTOR(func) \
+        ((PyFrameConstructor *)&((PyFunctionObject *)(func))->func_globals)
 
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;

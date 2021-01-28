@@ -3888,7 +3888,7 @@ main_loop:
 
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(TOP()));
-                func->func_descr.closure = POP();
+                func->func_closure = POP();
             }
             if (oparg & 0x04) {
                 assert(PyTuple_CheckExact(TOP()));
@@ -3896,11 +3896,11 @@ main_loop:
             }
             if (oparg & 0x02) {
                 assert(PyDict_CheckExact(TOP()));
-                func->func_descr.kwdefaults = POP();
+                func->func_kwdefaults = POP();
             }
             if (oparg & 0x01) {
                 assert(PyTuple_CheckExact(TOP()));
-                func->func_descr.defaults = POP();
+                func->func_defaults = POP();
             }
 
             PUSH((PyObject *)func);
@@ -5276,7 +5276,7 @@ PyEval_GetFuncName(PyObject *func)
     if (PyMethod_Check(func))
         return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
     else if (PyFunction_Check(func))
-        return PyUnicode_AsUTF8(((PyFunctionObject*)func)->func_descr.name);
+        return PyUnicode_AsUTF8(((PyFunctionObject*)func)->func_name);
     else if (PyCFunction_Check(func))
         return ((PyCFunctionObject*)func)->m_ml->ml_name;
     else
