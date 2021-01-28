@@ -192,6 +192,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.clipboard_get()
 
+    def test_winfo_rgb(self):
+        root = self.root
+        rgb = root.winfo_rgb
+
+        # Color name.
+        self.assertEqual(rgb('red'), (65535, 0, 0))
+        self.assertEqual(rgb('dark slate blue'), (18504, 15677, 35723))
+        # #RGB - extends each 4-bit hex value to be 16-bit.
+        self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
+        # #RRGGBB - extends each 8-bit hex value to be 16-bit.
+        self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
+        # #RRRRGGGGBBBB
+        self.assertEqual(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
+        # Invalid string.
+        with self.assertRaises(tkinter.TclError):
+            rgb('#123456789a')
+        # RGB triplet is invalid input.
+        with self.assertRaises(tkinter.TclError):
+            rgb((111, 78, 55))
+
     def test_event_repr_defaults(self):
         e = tkinter.Event()
         e.serial = 12345

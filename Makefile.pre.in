@@ -146,6 +146,8 @@ CONFINCLUDEDIR=	$(exec_prefix)/include
 PLATLIBDIR=	@PLATLIBDIR@
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
 ABIFLAGS=	@ABIFLAGS@
+# Variable used by ensurepip
+WHEEL_PKG_DIR=	@WHEEL_PKG_DIR@
 
 # Detailed destination directories
 BINLIBDEST=	@BINLIBDEST@
@@ -252,7 +254,7 @@ PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
-UPDATE_FILE=@PYTHON_FOR_REGEN@ $(srcdir)/Tools/scripts/update_file.py
+UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
@@ -755,8 +757,10 @@ regen-limited-abi: all
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-importlib clinic \
+	regen-token regen-ast regen-keyword regen-importlib clinic \
 	regen-pegen-metaparser regen-pegen
+	@echo
+	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -895,6 +899,15 @@ regen-keyword:
 		$(srcdir)/Grammar/Tokens \
 		$(srcdir)/Lib/keyword.py.new
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
+
+.PHONY: regen-stdlib-module-names
+regen-stdlib-module-names: build_all
+	# Regenerate Python/stdlib_module_names.h
+	# using Tools/scripts/generate_stdlib_module_names.py
+	$(RUNSHARED) ./$(BUILDPYTHON) \
+		$(srcdir)/Tools/scripts/generate_stdlib_module_names.py \
+		> $(srcdir)/Python/stdlib_module_names.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/stdlib_module_names.h $(srcdir)/Python/stdlib_module_names.h.new
 
 Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/Python-ast.h
 
@@ -1145,7 +1158,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
-		$(DTRACE_HEADERS)
+		$(DTRACE_HEADERS) \
+		\
+		$(srcdir)/Python/stdlib_module_names.h
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 

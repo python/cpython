@@ -822,14 +822,15 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
 /*[clinic input]
 _sqlite3.Cursor.fetchmany as pysqlite_cursor_fetchmany
 
-    size as maxrows: int(c_default='self->arraysize') = cursor.arraysize
+    size as maxrows: int(c_default='self->arraysize') = 1
+        The default value is set by the Cursor.arraysize attribute.
 
 Fetches several rows from the resultset.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
-/*[clinic end generated code: output=a8ef31fea64d0906 input=d80ff999a7701ffb]*/
+/*[clinic end generated code: output=a8ef31fea64d0906 input=c26e6ca3f34debd0]*/
 {
     PyObject* row;
     PyObject* list;

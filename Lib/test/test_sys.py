@@ -986,6 +986,11 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip().splitlines(), expected,
                          proc)
 
+    def test_module_names(self):
+        self.assertIsInstance(sys.stdlib_module_names, frozenset)
+        for name in sys.stdlib_module_names:
+            self.assertIsInstance(name, str)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):

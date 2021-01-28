@@ -39,16 +39,16 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
         if (!_PyErr_Occurred(tstate)) {
             if (callable)
                 _PyErr_Format(tstate, PyExc_SystemError,
-                              "%R returned NULL without setting an error",
+                              "%R returned NULL without setting an exception",
                               callable);
             else
                 _PyErr_Format(tstate, PyExc_SystemError,
-                              "%s returned NULL without setting an error",
+                              "%s returned NULL without setting an exception",
                               where);
 #ifdef Py_DEBUG
             /* Ensure that the bug is caught in debug mode.
                Py_FatalError() logs the SystemError exception raised above. */
-            Py_FatalError("a function returned NULL without setting an error");
+            Py_FatalError("a function returned NULL without setting an exception");
 #endif
             return NULL;
         }
@@ -60,22 +60,46 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
             if (callable) {
                 _PyErr_FormatFromCauseTstate(
                     tstate, PyExc_SystemError,
-                    "%R returned a result with an error set", callable);
+                    "%R returned a result with an exception set", callable);
             }
             else {
                 _PyErr_FormatFromCauseTstate(
                     tstate, PyExc_SystemError,
-                    "%s returned a result with an error set", where);
+                    "%s returned a result with an exception set", where);
             }
 #ifdef Py_DEBUG
             /* Ensure that the bug is caught in debug mode.
                Py_FatalError() logs the SystemError exception raised above. */
-            Py_FatalError("a function returned a result with an error set");
+            Py_FatalError("a function returned a result with an exception set");
 #endif
             return NULL;
         }
     }
     return result;
+}
+
+
+int
+_Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!success) {
+        if (!_PyErr_Occurred(tstate)) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Slot %s of type %s failed "
+                                 "without setting an exception",
+                                 slot_name, Py_TYPE(obj)->tp_name);
+        }
+    }
+    else {
+        if (_PyErr_Occurred(tstate)) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Slot %s of type %s succeeded "
+                                 "with an exception set",
+                                 slot_name, Py_TYPE(obj)->tp_name);
+        }
+    }
+    return 1;
 }
 
 
