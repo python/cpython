@@ -991,7 +991,7 @@ class PyShell(OutputWindow):
 
     def debug_menu_postcommand(self):
         state = 'disabled' if self.executing else 'normal'
-        self.update_menu_state('debug', '*Stack Viewer', state)
+        self.update_menu_state('debug', '*tack*iewer', state)
 
     def beginexecuting(self):
         "Helper for ModifiedInterpreter"
