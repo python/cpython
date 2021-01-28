@@ -3174,9 +3174,10 @@ main_loop:
                     la = &co_opcache->u.la;
                     if (la->type == type && la->tp_version_tag == type->tp_version_tag)
                     {
-                        // Hint >= 0 is a dict index; hint < 0 is an inverted slot index.
-                        if (la->hint < 0) {
-                            /* Even faster path -- slot hint */
+                        // Hint >= 0 is a dict index; hint == -1 is a dict miss.
+                        // Hint < -1 is an inverted slot offset (offsets are never 0).
+                        if (la->hint < -1) {
+                            // Even faster path -- slot hint.
                             Py_ssize_t offset = ~la->hint;
                             // fprintf(stderr, "Using hint for offset %zd\n", offset);
                             char *addr = (char *)owner + offset;
@@ -3190,7 +3191,7 @@ main_loop:
                             // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
                             // Don't DEOPT, since the slot is still there.
                         } else {
-                            // Fast path for dict
+                            // Fast path for dict.
                             assert(type->tp_dict != NULL);
                             assert(type->tp_dictoffset > 0);
 
@@ -3204,11 +3205,11 @@ main_loop:
 
                                 if (res != NULL) {
                                     if (la->hint == hint && hint >= 0) {
-                                        /* Our hint has helped -- cache hit. */
+                                        // Our hint has helped -- cache hit.
                                         OPCACHE_STAT_ATTR_HIT();
                                     } else {
-                                        /* The hint we provided didn't work.
-                                        Maybe next time? */
+                                        // The hint we provided didn't work.
+                                        // Maybe next time?
                                         OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
                                     }
 
@@ -3218,13 +3219,13 @@ main_loop:
                                     Py_DECREF(dict);
                                     DISPATCH();
                                 } else {
-                                    // This attribute can be missing sometimes -- we
-                                    // don't want to optimize this lookup.
+                                    // This attribute can be missing sometimes;
+                                    // we don't want to optimize this lookup.
                                     OPCACHE_DEOPT_LOAD_ATTR();
                                     Py_DECREF(dict);
                                 }
                             } else {
-                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
                                 OPCACHE_DEOPT_LOAD_ATTR();
                             }
                         }
@@ -3236,7 +3237,7 @@ main_loop:
                     OPCACHE_STAT_ATTR_MISS();
                 }
 
-                if (co_opcache != NULL && /* co_opcache can be NULL after a DEOPT() call. */
+                if (co_opcache != NULL && // co_opcache can be NULL after a DEOPT() call.
                     type->tp_getattro == PyObject_GenericGetAttr)
                 {
                     if (type->tp_dict == NULL) {
@@ -3255,6 +3256,7 @@ main_loop:
                             struct PyMemberDef *dmem = member->d_member;
                             if (dmem->type == T_OBJECT_EX) {
                                 Py_ssize_t offset = dmem->offset;
+                                assert(offset > 0);  // 0 would be confused with dict hint == -1 (miss).
 
                                 if (co_opcache->optimized == 0) {
                                     // First time we optimize this opcode.
@@ -3291,7 +3293,7 @@ main_loop:
                         if (dict != NULL && PyDict_CheckExact(dict)) {
                             Py_INCREF(dict);
                             res = NULL;
-                            Py_ssize_t ret = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
+                            Py_ssize_t hint = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
                             if (res != NULL) {
                                 Py_INCREF(res);
                                 Py_DECREF(dict);
@@ -3307,17 +3309,17 @@ main_loop:
                                 la = &co_opcache->u.la;
                                 la->type = type;
                                 la->tp_version_tag = type->tp_version_tag;
-                                la->hint = ret;
+                                la->hint = hint;
 
                                 DISPATCH();
                             }
                             Py_DECREF(dict);
                         } else {
-                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
                             OPCACHE_DEOPT_LOAD_ATTR();
                         }
                     } else {
-                        // The object's class does not have a tp_dictoffset we can use
+                        // The object's class does not have a tp_dictoffset we can use.
                         OPCACHE_DEOPT_LOAD_ATTR();
                     }
                 } else if (type->tp_getattro != PyObject_GenericGetAttr) {
@@ -3325,7 +3327,7 @@ main_loop:
                 }
             }
 
-            /* slow path */
+            // Slow path.
             res = PyObject_GetAttr(owner, name);
             Py_DECREF(owner);
             SET_TOP(res);
