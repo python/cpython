@@ -2545,32 +2545,36 @@ def _url_handler(url, content_type="text/html"):
         return 'Search Results', contents
 
     def validate_source_path(path):
-        for importer, modname, ispkg in pkgutil.walk_packages():
-            try:
-                spec = pkgutil._get_spec(importer, modname)
-            except SyntaxError:
-                # raised by tests for bad coding cookies or BOM
-                continue
-            loader = spec.loader
-            if hasattr(loader, 'get_source'):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore') # ignore problems during import
+            def onerror(modname):
+                pass
+            for importer, modname, ispkg in pkgutil.walk_packages(onerror=onerror):
                 try:
-                    source = loader.get_source(modname)
-                except Exception:
+                    spec = pkgutil._get_spec(importer, modname)
+                except SyntaxError:
+                    # raised by tests for bad coding cookies or BOM
                     continue
-                if hasattr(loader, 'get_filename'):
-                    sourcepath = loader.get_filename(modname)
+                loader = spec.loader
+                if hasattr(loader, 'get_source'):
+                    try:
+                        source = loader.get_source(modname)
+                    except Exception:
+                        continue
+                    if hasattr(loader, 'get_filename'):
+                        sourcepath = loader.get_filename(modname)
+                        if path == sourcepath:
+                            return
+                else:
+                    try:
+                        module = importlib._bootstrap._load(spec)
+                    except ImportError:
+                        continue
+                    sourcepath = getattr(module, '__file__', None)
                     if path == sourcepath:
                         return
             else:
-                try:
-                    module = importlib._bootstrap._load(spec)
-                except ImportError:
-                    continue
-                sourcepath = getattr(module, '__file__', None)
-                if path == sourcepath:
-                    return
-        else:
-            raise ValueError('not found {found}')
+                raise ValueError('not found {found}')
 
     def html_getfile(path):
         """Get and display a source file listing safely."""
