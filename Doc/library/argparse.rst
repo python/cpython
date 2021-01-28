@@ -680,7 +680,8 @@ The add_argument() method
 
 .. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
                            [const], [default], [type], [choices], [required], \
-                           [help], [metavar], [dest])
+                           [help], [metavar], [dest], [capture], \
+                           [capture_reset], [key])
 
    Define how a single command-line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
