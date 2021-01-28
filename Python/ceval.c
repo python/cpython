@@ -3175,7 +3175,8 @@ main_loop:
                     if (la->type == type && la->tp_version_tag == type->tp_version_tag)
                     {
                         // Hint >= 0 is a dict index; hint == -1 is a dict miss.
-                        // Hint < -1 is an inverted slot offset (offsets are never 0).
+                        // Hint < -1 is an inverted slot offset: offset is strictly > 0,
+                        // so ~offset is strictly < -1 (assuming 2's complement).
                         if (la->hint < -1) {
                             // Even faster path -- slot hint.
                             Py_ssize_t offset = ~la->hint;
