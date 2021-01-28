@@ -625,7 +625,7 @@ class SSLContext(_SSLContext):
         The message callback provides a debugging hook to analyze TLS
         connections. The callback is called for any TLS protocol message
         (header, handshake, alert, and more), but not for application data.
-        Due to technical  limitations, the callback can't be used to filter
+        Due to technical limitations, the callback can't be used to filter
         traffic or to abort a connection. Any exception raised in the
         callback is delayed until the handshake, read, or write operation
         has been performed.
@@ -1480,7 +1480,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
     context = _create_stdlib_context(ssl_version,
                                      cert_reqs=cert_reqs,
                                      cafile=ca_certs)
-    with  create_connection(addr) as sock:
+    with create_connection(addr) as sock:
         with context.wrap_socket(sock) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)
