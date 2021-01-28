@@ -32,7 +32,21 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    PyFrameConstructor func_descr;  /* Frame descriptor fields for this function */
+    union {
+        PyFrameConstructor func_descr;  /* Frame descriptor fields for this function */
+        /* This struct is for backward compatibility of code using the old func_* fields;
+         Note that the order of fields must match PyFrameConstructor *exactly*. */
+        struct {
+            PyObject *func_globals;
+            PyObject *func_builtins;
+            PyObject *func_name;
+            PyObject *func_qualname;
+            PyObject *func_code;
+            PyObject *func_defaults;
+            PyObject *func_kwdefaults;
+            PyObject *func_closure;
+        };
+    };
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
@@ -76,17 +90,17 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyFunction_GET_CODE(func) \
-        (((PyFunctionObject *)func) -> func_descr.code)
+        (((PyFunctionObject *)func) -> func_code)
 #define PyFunction_GET_GLOBALS(func) \
-        (((PyFunctionObject *)func) -> func_descr.globals)
+        (((PyFunctionObject *)func) -> func_globals)
 #define PyFunction_GET_MODULE(func) \
         (((PyFunctionObject *)func) -> func_module)
 #define PyFunction_GET_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_descr.defaults)
+        (((PyFunctionObject *)func) -> func_defaults)
 #define PyFunction_GET_KW_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_descr.kwdefaults)
+        (((PyFunctionObject *)func) -> func_kwdefaults)
 #define PyFunction_GET_CLOSURE(func) \
-        (((PyFunctionObject *)func) -> func_descr.closure)
+        (((PyFunctionObject *)func) -> func_closure)
 #define PyFunction_GET_ANNOTATIONS(func) \
         (((PyFunctionObject *)func) -> func_annotations)
 
