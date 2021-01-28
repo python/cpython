@@ -1,0 +1,1 @@
+Optimize ``randrange()`` (and anything that uses it like ``randint()``) when the range is a power of 2 so ``getrandbits()`` is only called once, and only for as many bits as are needed. This reduces the number of random bits consumed, changing the repeatability of random data using a fixed seed.
