@@ -229,7 +229,7 @@ SyntaxError: cannot assign to function call
 
 >>> with a as b
 Traceback (most recent call last):
-SyntaxError: expected one of: ':' ','
+SyntaxError: expected one of: ':', ','
 
 >>> p = p =
 Traceback (most recent call last):
@@ -760,22 +760,22 @@ leading to spurious errors.
    >>> with blech as something
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: expected one of: ':' ','
+   SyntaxError: expected one of: ':', ','
 
    >>> with blech
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: expected one of: ':' ','
+   SyntaxError: expected one of: ':', ','
 
    >>> with blech, block as something
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: expected one of: ':' ','
+   SyntaxError: expected one of: ':', ','
 
    >>> with blech, block as something, bluch
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: expected one of: ':' ','
+   SyntaxError: expected one of: ':', ','
 
    >>> with (blech as something)
    ...   pass

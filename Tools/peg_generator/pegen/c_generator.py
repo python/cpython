@@ -271,7 +271,7 @@ class CCallMakerVisitor(GrammarVisitor):
                 arguments=["p", type, f'"{val}"'],
                 nodetype=NodeTypes.GENERIC_TOKEN,
                 return_type="Token *",
-                comment=f"token='{val}'",
+                comment=f"forced_token='{val}'",
             )
         raise NotImplementedError("Forced tokens do not work with generic tokens")
 

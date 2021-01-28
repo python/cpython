@@ -719,12 +719,12 @@ invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
 invalid_with_item:
-    | e=expression 'as' !(a=t_primary {(void*)a}) t=star_target !(',' | ')' | ':') {
-        RAISE_SYNTAX_ERROR("expected one of: ':' ','")}
+    | e=expression 'as' !(a=t_primary { (void*)a }) t=star_target !(',' | ')' | ':') {
+        RAISE_SYNTAX_ERROR("expected one of: ':', ','")}
     | expression 'as' a=expression {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | e=expression !(',' | ')' | ':') {
-        RAISE_SYNTAX_ERROR("expected one of: ':' ','")}
+        RAISE_SYNTAX_ERROR("expected one of: ':', ','")}
 
 invalid_for_target:
     | ASYNC? 'for' a=star_expressions {
@@ -736,5 +736,4 @@ invalid_group:
 invalid_import_from_targets:
     | import_from_as_names ',' {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
-
 
