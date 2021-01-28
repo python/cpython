@@ -1,0 +1,1 @@
+`_dyld_shared_cache_contains_path` now works with SYSTEM_VERSION_COMPAT=1
