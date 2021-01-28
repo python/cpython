@@ -1902,6 +1902,7 @@ class TestActionExtend(ParserTestCase):
         ('--foo f1 --foo f2 f3 f4', NS(foo=['f1', 'f2', 'f3', 'f4'])),
     ]
 
+
 class TestActionAppendCapture(ParserTestCase):
     argument_signatures = [
         Sig('--color', default='red'),
@@ -1920,10 +1921,11 @@ class TestActionAppendCapture(ParserTestCase):
             extras=['cheap', 'with-print']))
     ]
 
+
 class TestActionAppendCaptureConst(ParserTestCase):
     argument_signatures = [
         Sig('--color', default='red'),
-        Sig('--item', const='something', nargs='?', action="append_capture", 
+        Sig('--item', const='something', nargs='?', action="append_capture",
             capture_reset='color')
     ]
     failures = ()
@@ -1933,6 +1935,7 @@ class TestActionAppendCaptureConst(ParserTestCase):
                   {'color': 'red', 'item': 'something'}],
             color='red'))
     ]
+
 
 class TestActionExtendCapture(ParserTestCase):
     argument_signatures = [
@@ -1950,6 +1953,7 @@ class TestActionExtendCapture(ParserTestCase):
             exec_addr=None,
             replace=True))
     ]
+
 
 PR24259_MERGED = False
 if PR24259_MERGED:
@@ -1992,6 +1996,7 @@ class TestActionStoreCapture(ParserTestCase):
         )
     ]
 
+
 class TestActionStoreCaptureConst(ParserTestCase):
     argument_signatures = [
         Sig('--param', default=None),
@@ -2007,6 +2012,7 @@ class TestActionStoreCaptureConst(ParserTestCase):
             item2={'item2': 'item2', 'param': 'p2'},
             param=None))
     ]
+
 
 class TestActionCapture(ParserTestCase):
     argument_signatures = [
