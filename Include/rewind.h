@@ -82,6 +82,8 @@ void Rewind_TrackObject(PyObject *obj);
 
 void Rewind_serializeObject(FILE *file, PyObject *obj);
 
+void Rewind_Log(char *message);
+
 void printObject(FILE *file, PyObject *obj);
 
 void printStack(FILE *file, PyObject **stack_pointer, int level);

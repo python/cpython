@@ -3,7 +3,6 @@
 # global vars in a module
 # delete global
 # nonlocal set variable
-# support for slices (ascii_draw.py)
 # when a call expression is spread over multiple lines, step into fails
 # should step forward when it pops a stack, come back to the beginning of the state of the line in parent scope,
 #  or after?
@@ -22,8 +21,9 @@
 # have a flag to turn on debug mode
 # try it on a "real" app
 # optimization: use low level iteration methods whenever possible
-# optimization: perf of recreate.py (probably transactions) https://docs.python.org/3/library/profile.html#module-cProfile
 
+# optimization: perf of recreate.py (probably transactions) (done)
+# support for slices (ascii_draw.py) (done)
 # make log file same prefix name as program name (done)
 # global variables not showing for convert_points.py (done)
 # when last line in a program is a function call, you don't get to step to the end of the program (shape_calculator.py) (done)
@@ -139,6 +139,18 @@ def define_schema(conn):
             id integer primary key,
             file_path text,
             source text
+        );
+    """)
+
+    c.execute("""
+        create table HeapRef (
+            id integer,
+            heap_version integer,
+            object_id integer,
+
+            constraint HeapRef_pk PRIMARY KEY (id, heap_version)
+            constraint HeapRef_fk_object_id foreign key (object_id)
+                references Object(id)
         );
     """)
 
@@ -274,7 +286,7 @@ def recreate_past(conn, filename):
             return "Frame<" + repr(self.fun_call) + ", " + repr(self.frame_vars) + ">"
 
     def quote(value):
-        return '"' + value.replace('"', '\\"') + '"'
+        return '"' + value.replace('"', '\\"').replace('\\', '\\\\') + '"'
 
     def new_obj_id():
         nonlocal next_object_id
@@ -344,27 +356,52 @@ def recreate_past(conn, filename):
 
     def save_object(obj):
         nonlocal object_id_to_immutable_id_dict
+        oid = None
+        if obj == []:
+            oid = empty_list_oid
+        if obj == {}:
+            oid =  empty_dict_oid
+        if obj == empty_set:
+            oid =  empty_set_oid
+        if isinstance(obj, StackFrameVars) and obj.vars_dict == {}:
+            oid = empty_dict_oid
 
-        oid = new_obj_id()
+        if oid is None:
+            oid = new_obj_id()
+            object_id_to_immutable_id_dict[id(obj)] = oid
+            cursor.execute("INSERT INTO Object VALUES (?, ?)", (
+                oid,
+                serialize(obj)
+            ))
+        else:
+            object_id_to_immutable_id_dict[id(obj)] = oid
+
+        return oid
+
+    def _save_object(obj, oid):
+        nonlocal object_id_to_immutable_id_dict
         
         object_id_to_immutable_id_dict[id(obj)] = oid
-        # print("saving object", oid, serialize(obj))
         cursor.execute("INSERT INTO Object VALUES (?, ?)", (
             oid,
             serialize(obj)
         ))
-        conn.commit()
         return oid
     
     def update_heap_object(heap_id, new_obj):
-        nonlocal heap
+        nonlocal heap_version
         nonlocal heap_id_to_object_dict
+
+        heap_version += 1
 
         heap_id_to_object_dict[heap_id] = new_obj
         oid = save_object(new_obj)
-        
-        heap = { **heap, str(heap_id): ObjectRef(oid) }
-        save_object(heap)
+
+        cursor.execute("INSERT INTO HeapRef VALUES (?, ?, ?)", (
+            heap_id,
+            heap_version,
+            oid
+        ))
 
     def ensure_code_file_saved(filename, name):
         nonlocal activate_snapshots
@@ -383,7 +420,6 @@ def recreate_past(conn, filename):
                 filename,
                 content
             ))
-            conn.commit()
             code_files[filename] = code_file_id
 
     def process_push_frame(filename, name, num_varnames, *rest):
@@ -421,7 +457,6 @@ def recreate_past(conn, filename):
             code_file_id
         ))
 
-        conn.commit()
     
     fun_lookup["PUSH_FRAME"] = process_push_frame
 
@@ -435,12 +470,11 @@ def recreate_past(conn, filename):
             new_snapshot_id(), 
             stack and stack[0].fun_call.id, 
             stack and immut_id(stack) or None, 
-            immut_id(heap),
+            heap_version,
             None,
             line_no,
             None
         ))
-        conn.commit()
     
     fun_lookup["VISIT"] = process_visit
 
@@ -506,12 +540,11 @@ def recreate_past(conn, filename):
             new_snapshot_id(), 
             stack and stack[0].fun_call.id, 
             immut_id(stack), 
-            immut_id(heap),
+            heap_version,
             None,
             curr_line_no, 
             None
         ))
-        conn.commit()
 
     fun_lookup["RETURN_VALUE"] = process_return_value
     fun_lookup["YIELD_VALUE"] = process_return_value
@@ -695,15 +728,16 @@ def recreate_past(conn, filename):
     fun_lookup["DICT_SET_DEFAULT"] = process_dict_setdefault
 
     def process_dealloc(heap_id):
-        nonlocal heap
-        if heap_id in heap_id_to_object_dict:
-            obj = heap_id_to_object_dict[heap_id]
-            del heap_id_to_object_dict[heap_id]
-            del object_id_to_immutable_id_dict[id(obj)]
-            new_heap = heap.copy()
-            del new_heap[str(heap_id)]
-            heap = new_heap
-            save_object(heap)
+        # nonlocal heap
+        # if heap_id in heap_id_to_object_dict:
+        #     obj = heap_id_to_object_dict[heap_id]
+        #     del heap_id_to_object_dict[heap_id]
+        #     del object_id_to_immutable_id_dict[id(obj)]
+        #     new_heap = heap.copy()
+        #     del new_heap[str(heap_id)]
+        #     heap = new_heap
+        #     save_object(heap)
+        pass
     
     fun_lookup["DEALLOC"] = process_dealloc
 
@@ -769,16 +803,20 @@ def recreate_past(conn, filename):
     # memory address in this program => immutable object ID
     object_id_to_immutable_id_dict = {}
     # memory address in original program (heap ID) => immutable object ID
-    heap = {}
+    heap_version = 1
 
-    save_object(heap)
     curr_line_no = None
     log_line_no = 0
+    empty_list_oid = _save_object([], new_obj_id())
+    empty_dict_oid = _save_object({}, new_obj_id())
+    empty_set = set()
+    empty_set_oid = _save_object(empty_set, new_obj_id())
     
     file = open(filename, "r")
     for line in file:
         log_line_no += 1
-        print("\r line " + str(log_line_no), end='')
+        if log_line_no % 100 == 0:
+            print("\rLine " + str(log_line_no), end='')
         if line.startswith("--"):
             continue
         command = parse_line(line)
@@ -788,9 +826,14 @@ def recreate_past(conn, filename):
         fun = fun_lookup[command[0]]
         try:
             fun(*command[1])
+            if log_line_no % 500 == 0:
+                conn.commit()
         except Exception as e:
+            print()
             print("Exception caught on line", log_line_no, line)
             raise e
+    conn.commit()
+    print()
     print("Complete")
 
 def main():

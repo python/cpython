@@ -571,6 +571,12 @@ void Rewind_Dealloc(PyObject *obj) {
     // }
 }
 
+void Rewind_Log(char *message) {
+    if (!rewindActive) return;
+
+    fprintf(rewindLog, "-- %s", message);
+}
+
 void printObject(FILE *file, PyObject *obj) {
     PyObject *type = PyObject_Type(obj);
     if (type == (PyObject *)&PyUnicode_Type || 
@@ -623,5 +629,5 @@ void logOp(char *label, PyObject **stack_pointer, int level, PyFrameObject *fram
         lastLine = lineNo;
     }
     // printStack(rewindLog, stack_pointer, level);
-    // fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
+    fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
 }
