@@ -102,7 +102,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         code = "[i := 0, j := 1 for i, j in [(1, 2), (3, 4)]]"
 
         with self.assertRaisesRegex(SyntaxError,
-                "did you forgot parentheses around the comprehension target?"):
+                "did you forget parentheses around the comprehension target?"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_in_class_body(self):

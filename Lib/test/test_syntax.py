@@ -240,15 +240,15 @@ should produce a specialized error message:
 
 >>> [x,y for x,y in range(100)]
 Traceback (most recent call last):
-SyntaxError: did you forgot parentheses around the comprehension target?
+SyntaxError: did you forget parentheses around the comprehension target?
 
 >>> {x,y for x,y in range(100)}
 Traceback (most recent call last):
-SyntaxError: did you forgot parentheses around the comprehension target?
+SyntaxError: did you forget parentheses around the comprehension target?
 
 >>> {x,y: None for x,y in range(100)}
 Traceback (most recent call last):
-SyntaxError: did you forgot parentheses around the comprehension target?
+SyntaxError: did you forget parentheses around the comprehension target?
 
 From compiler_complex_args():
 

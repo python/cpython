@@ -15240,7 +15240,7 @@ invalid_comprehension_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions?"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "did you forgot parentheses around the comprehension target?" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "did you forget parentheses around the comprehension target?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
