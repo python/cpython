@@ -339,7 +339,7 @@ class EditorWindow:
             text.bind("<<toggle-code-context>>",
                       self.code_context.toggle_code_context_event)
         else:
-            self.update_menu_state('options', '*Code Context', 'disabled')
+            self.update_menu_state('options', '*ode*ontext', 'disabled')
         if self.allow_line_numbers:
             self.line_numbers = self.LineNumbers(self)
             if idleConf.GetOption('main', 'EditorWindow',
@@ -347,7 +347,7 @@ class EditorWindow:
                 self.toggle_line_numbers_event()
             text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
-            self.update_menu_state('options', '*Line Numbers', 'disabled')
+            self.update_menu_state('options', '*ine*umbers', 'disabled')
 
     def handle_winconfig(self, event=None):
         self.set_width()
@@ -450,7 +450,9 @@ class EditorWindow:
         self.menudict = menudict = {}
         for name, label in self.menu_specs:
             underline, label = prepstr(label)
-            menudict[name] = menu = Menu(mbar, name=name, tearoff=0)
+            postcommand = getattr(self, f'{name}_menu_postcommand', None)
+            menudict[name] = menu = Menu(mbar, name=name, tearoff=0,
+                                         postcommand=postcommand)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
         if macosx.isCarbonTk():
             # Insert the application menu
@@ -1527,7 +1529,7 @@ class EditorWindow:
         else:
             self.line_numbers.show_sidebar()
             menu_label = "Hide"
-        self.update_menu_label(menu='options', index='*Line Numbers',
+        self.update_menu_label(menu='options', index='*ine*umbers',
                                label=f'{menu_label} Line Numbers')
 
 # "line.col" -> line, as an int
