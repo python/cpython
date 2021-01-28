@@ -102,7 +102,7 @@ import re
 import sys
 import traceback
 import unittest
-from io import StringIO
+from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
 
 TestResults = namedtuple('TestResults', 'failed attempted')
@@ -212,11 +212,8 @@ def _normalize_module(module, depth=2):
         raise TypeError("Expected a module, string, or None")
 
 def _newline_convert(data):
-    # We have two cases to cover and we need to make sure we do
-    # them in the right order
-    for newline in ('\r\n', '\r'):
-        data = data.replace(newline, '\n')
-    return data
+    # The IO module provides a handy decoder for universal newline conversion
+    return IncrementalNewlineDecoder(None, True).decode(data, True)
 
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
