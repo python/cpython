@@ -130,14 +130,30 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
 
         # what did we send ?
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2162')
+        self.assertGreaterEqual(int(headers['Content-length']), 2162)
         content_type = headers['Content-type']
         self.assertTrue(content_type.startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')
         expected_url = 'https://upload.pypi.org/legacy/'
         self.assertEqual(self.last_open.req.get_full_url(), expected_url)
-        self.assertTrue(b'xxx' in self.last_open.req.data)
-        self.assertIn(b'protocol_version', self.last_open.req.data)
+        data = self.last_open.req.data
+        self.assertIn(b'xxx',data)
+        self.assertIn(b'protocol_version', data)
+        self.assertIn(b'sha256_digest', data)
+        self.assertIn(
+            b'cd2eb0837c9b4c962c22d2ff8b5441b7b45805887f051d39bf133b583baf'
+            b'6860',
+            data
+        )
+        if b'md5_digest' in data:
+            self.assertIn(b'f561aaf6ef0bf14d4208bb46a4ccb3ad', data)
+        if b'blake2_256_digest' in data:
+            self.assertIn(
+                b'b6f289a27d4fe90da63c503bfe0a9b761a8f76bb86148565065f040be'
+                b'6d1c3044cf7ded78ef800509bccb4b648e507d88dc6383d67642aadcc'
+                b'ce443f1534330a',
+                data
+            )
 
         # The PyPI response body was echoed
         results = self.get_logs(INFO)
@@ -166,7 +182,7 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
         cmd.run()
 
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2172')
+        self.assertGreaterEqual(int(headers['Content-length']), 2172)
         self.assertIn(b'long description\r', self.last_open.req.data)
 
     def test_upload_fails(self):

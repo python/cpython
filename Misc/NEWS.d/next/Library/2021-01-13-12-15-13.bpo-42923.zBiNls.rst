@@ -1,0 +1,2 @@
+The :c:func:`Py_FatalError` function and the :mod:`faulthandler` module now
+dump the list of extension modules on a fatal error.

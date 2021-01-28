@@ -173,46 +173,40 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     return cfile
 
 
-def main(args=None):
-    """Compile several source files.
+def main():
+    import argparse
 
-    The files named in 'args' (or on the command line, if 'args' is
-    not specified) are compiled and the resulting bytecode is cached
-    in the normal manner.  This function does not search a directory
-    structure to locate source files; it only compiles files named
-    explicitly.  If '-' is the only parameter in args, the list of
-    files is taken from standard input.
-
-    """
-    if args is None:
-        args = sys.argv[1:]
-    rv = 0
-    if args == ['-']:
-        while True:
-            filename = sys.stdin.readline()
-            if not filename:
-                break
-            filename = filename.rstrip('\n')
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                rv = 1
-                if quiet < 2:
-                    sys.stderr.write("%s\n" % error.msg)
-            except OSError as error:
-                rv = 1
-                if quiet < 2:
-                    sys.stderr.write("%s\n" % error)
+    description = 'A simple command-line interface for py_compile module.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        help='Suppress error output',
+    )
+    parser.add_argument(
+        'filenames',
+        nargs='+',
+        help='Files to compile',
+    )
+    args = parser.parse_args()
+    if args.filenames == ['-']:
+        filenames = sys.stdin.readlines()
     else:
-        for filename in args:
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                # return value to indicate at least one failure
-                rv = 1
-                if quiet < 2:
-                    sys.stderr.write("%s\n" % error.msg)
-    return rv
+        filenames = args.filenames
+    for filename in filenames:
+        try:
+            compile(filename, doraise=True)
+        except PyCompileError as error:
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, error.msg)
+        except OSError as error:
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, str(error))
+
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

@@ -1,2 +1,0 @@
-Add a ``total_nframe`` field to the traces collected by the tracemalloc module.
-This field indicates the original number of frames before it was truncated.

@@ -1,8 +1,9 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_getopt.h"
-#include "pycore_pystate.h"   /* _PyRuntime_Initialize() */
-#include <locale.h>       /* setlocale() */
+#include "pycore_getopt.h"        // _PyOS_GetOpt()
+#include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
+#include "pycore_runtime.h"       // _PyRuntime_Initialize()
+#include <locale.h>               // setlocale()
 
 
 #define DECODE_LOCALE_ERR(NAME, LEN) \
@@ -18,11 +19,6 @@ preconfig_copy(PyPreConfig *config, const PyPreConfig *config2);
 
 /* --- File system encoding/errors -------------------------------- */
 
-/* The filesystem encoding is chosen by config_init_fs_encoding(),
-   see also initfsencoding().
-
-   Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   are encoded to UTF-8. */
 const char *Py_FileSystemDefaultEncoding = NULL;
 int Py_HasFileSystemDefaultEncoding = 0;
 const char *Py_FileSystemDefaultEncodeErrors = NULL;
@@ -43,7 +39,10 @@ _Py_ClearFileSystemEncoding(void)
 
 
 /* Set Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors
-   global configuration variables. */
+   global configuration variables to PyConfig.filesystem_encoding and
+   PyConfig.filesystem_errors (encoded to UTF-8).
+
+   Function called by _PyUnicode_InitEncodings(). */
 int
 _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 {
@@ -290,7 +289,17 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
     config->coerce_c_locale_warn = 0;
 
     config->dev_mode = -1;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    /* bpo-40512: pymalloc is not compatible with subinterpreters,
+       force usage of libc malloc() which is thread-safe. */
+#ifdef Py_DEBUG
+    config->allocator = PYMEM_ALLOCATOR_MALLOC_DEBUG;
+#else
+    config->allocator = PYMEM_ALLOCATOR_MALLOC;
+#endif
+#else
     config->allocator = PYMEM_ALLOCATOR_NOT_SET;
+#endif
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = -1;
 #endif
@@ -818,13 +827,6 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
     int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
 #endif
 
-    if (args) {
-        status = _PyPreCmdline_SetArgv(&cmdline, args);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-    }
-
     int locale_coerced = 0;
     int loops = 0;
 
@@ -835,7 +837,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         loops++;
         if (loops == 3) {
             status = _PyStatus_ERR("Encoding changed twice while "
-                               "reading the configuration");
+                                   "reading the configuration");
             goto done;
         }
 
@@ -845,6 +847,15 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 #ifdef MS_WINDOWS
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
+
+        if (args) {
+            // Set command line arguments at each iteration. If they are bytes
+            // strings, they are decoded from the new encoding.
+            status = _PyPreCmdline_SetArgv(&cmdline, args);
+            if (_PyStatus_EXCEPTION(status)) {
+                goto done;
+            }
+        }
 
         status = preconfig_read(config, &cmdline);
         if (_PyStatus_EXCEPTION(status)) {
@@ -885,7 +896,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         }
 
         /* Reset the configuration before reading again the configuration,
-           just keep UTF-8 Mode value. */
+           just keep UTF-8 Mode and coerce C locale value. */
         int new_utf8_mode = config->utf8_mode;
         int new_coerce_c_locale = config->coerce_c_locale;
         preconfig_copy(config, &save_config);

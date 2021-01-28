@@ -10,30 +10,8 @@ import operator
 import re
 import sys
 
-__all__ = ['Fraction', 'gcd']
+__all__ = ['Fraction']
 
-
-
-def gcd(a, b):
-    """Calculate the Greatest Common Divisor of a and b.
-
-    Unless b==0, the result will have the same sign as b (so that when
-    b is divided by it, the result comes out positive).
-    """
-    import warnings
-    warnings.warn('fractions.gcd() is deprecated. Use math.gcd() instead.',
-                  DeprecationWarning, 2)
-    if type(a) is int is type(b):
-        if (b or a) < 0:
-            return -math.gcd(a, b)
-        return math.gcd(a, b)
-    return _gcd(a, b)
-
-def _gcd(a, b):
-    # Supports non-integers for backward compatibility.
-    while b:
-        a, b = b, a%b
-    return a
 
 # Constants related to the hash implementation;  hash(x) is based
 # on the reduction of x modulo the prime _PyHASH_MODULUS.
@@ -177,13 +155,9 @@ class Fraction(numbers.Rational):
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         if _normalize:
-            if type(numerator) is int is type(denominator):
-                # *very* normal case
-                g = math.gcd(numerator, denominator)
-                if denominator < 0:
-                    g = -g
-            else:
-                g = _gcd(numerator, denominator)
+            g = math.gcd(numerator, denominator)
+            if denominator < 0:
+                g = -g
             numerator //= g
             denominator //= g
         self._numerator = numerator
@@ -647,7 +621,9 @@ class Fraction(numbers.Rational):
 
     def __bool__(a):
         """a != 0"""
-        return a._numerator != 0
+        # bpo-39274: Use bool() because (a._numerator != 0) can return an
+        # object which is not a bool.
+        return bool(a._numerator)
 
     # support for pickling, copy, and deepcopy
 

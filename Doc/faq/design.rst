@@ -148,6 +148,8 @@ variables and instance variables live in two different namespaces, and you need
 to tell Python which namespace to use.
 
 
+.. _why-can-t-i-use-an-assignment-in-an-expression:
+
 Why can't I use an assignment in an expression?
 -----------------------------------------------
 
@@ -571,8 +573,7 @@ whether an instance or a class implements a particular ABC.  The
 :class:`~collections.abc.MutableMapping`.
 
 For Python, many of the advantages of interface specifications can be obtained
-by an appropriate test discipline for components.  There is also a tool,
-PyChecker, which can be used to find problems due to subclassing.
+by an appropriate test discipline for components.
 
 A good test suite for a module can both provide a regression test and serve as a
 module interface specification and a set of examples.  Many Python modules can
@@ -649,7 +650,7 @@ Why doesn't Python have a "with" statement for attribute assignments?
 ---------------------------------------------------------------------
 
 Python has a 'with' statement that wraps the execution of a block, calling code
-on the entrance and exit from the block.  Some language have a construct that
+on the entrance and exit from the block.  Some languages have a construct that
 looks like this::
 
    with obj:

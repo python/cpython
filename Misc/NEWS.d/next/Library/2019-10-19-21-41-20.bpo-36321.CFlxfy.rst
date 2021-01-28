@@ -1,2 +1,0 @@
-Remove misspelled attribute.  The 3.8 changelog noted that this would be
-removed in 3.9.

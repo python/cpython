@@ -1,3 +1,0 @@
-When exiting IDLE, catch any AttributeError.  One happens when
-EditorWindow.close is called twice.  Printing a traceback, when IDLE is run
-from a terminal, is useless and annoying.

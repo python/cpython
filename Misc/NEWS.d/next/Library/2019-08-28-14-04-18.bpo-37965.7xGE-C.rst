@@ -1,1 +1,0 @@
-Fix C compiler warning caused by distutils.ccompiler.CCompiler.has_function.

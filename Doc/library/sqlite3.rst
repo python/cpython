@@ -18,7 +18,8 @@ application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
 The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
-compliant with the DB-API 2.0 specification described by :pep:`249`.
+compliant with the DB-API 2.0 specification described by :pep:`249`, and
+requires SQLite 3.7.15 or newer.
 
 To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
@@ -165,9 +166,10 @@ Module functions and constants
    that 'mytype' is the type of the column. It will try to find an entry of
    'mytype' in the converters dictionary and then use the converter function found
    there to return the value. The column name found in :attr:`Cursor.description`
-   is only the first word of the column name, i.  e. if you use something like
-   ``'as "x [datetime]"'`` in your SQL, then we will parse out everything until the
-   first blank for the column name: the column name would simply be "x".
+   does not include the type, i. e. if you use something like
+   ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
+   everything until the first ``'['`` for the column name and strip
+   the preceeding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
@@ -196,7 +198,9 @@ Module functions and constants
 
    *detect_types* defaults to 0 (i. e. off, no type detection), you can set it to
    any combination of :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES` to turn
-   type detection on.
+   type detection on. Due to SQLite behaviour, types can't be detected for generated
+   fields (for example ``max(data)``), even when *detect_types* parameter is set. In
+   such case, the returned type is :class:`str`.
 
    By default, *check_same_thread* is :const:`True` and only the creating thread may
    use the connection. If set :const:`False`, the returned connection may be shared
@@ -542,7 +546,7 @@ Connection Objects
          con.close()
 
 
-   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       This method makes a backup of a SQLite database even while it's being accessed
       by other clients, or concurrently by the same connection.  The copy will be
@@ -589,8 +593,6 @@ Connection Objects
          source = sqlite3.connect('existing_db.db')
          dest = sqlite3.connect(':memory:')
          source.backup(dest)
-
-      Availability: SQLite 3.6.11 or higher
 
       .. versionadded:: 3.7
 
@@ -699,9 +701,6 @@ Cursor Objects
       last operation is not determinable by the interface". This includes ``SELECT``
       statements because we cannot determine the number of rows a query produced
       until all rows were fetched.
-
-      With SQLite versions before 3.6.5, :attr:`rowcount` is set to 0 if
-      you make a ``DELETE FROM table`` without any condition.
 
    .. attribute:: lastrowid
 
@@ -927,7 +926,7 @@ a class like this::
            self.x, self.y = x, y
 
 Now you want to store the point in a single SQLite column.  First you'll have to
-choose one of the supported types first to be used for representing the point.
+choose one of the supported types to be used for representing the point.
 Let's just use str and separate the coordinates using a semicolon. Then you need
 to give your class a method ``__conform__(self, protocol)`` which must return
 the converted value. The parameter *protocol* will be :class:`PrepareProtocol`.
@@ -1089,19 +1088,6 @@ committed:
 
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
-
-Common issues
--------------
-
-Multithreading
-^^^^^^^^^^^^^^
-
-Older SQLite versions had issues with sharing connections between threads.
-That's why the Python module disallows sharing connections and cursors between
-threads. If you still try to do so, you will get an exception at runtime.
-
-The only exception is calling the :meth:`~Connection.interrupt` method, which
-only makes sense to call from a different thread.
 
 .. rubric:: Footnotes
 
