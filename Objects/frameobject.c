@@ -22,7 +22,6 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-
 static struct _Py_frame_state *
 get_frame_state(void)
 {
@@ -44,7 +43,7 @@ int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_trace) {
+    if (f->f_lineno != 0) {
         return f->f_lineno;
     }
     else {
@@ -476,8 +475,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_block_stack = pop_block(start_block_stack);
     }
 
-    /* Finally set the new f_lineno and f_lasti and return OK. */
-    f->f_lineno = new_lineno;
+    /* Finally set the new f_lasti and return OK. */
+    f->f_lineno = 0;
     f->f_lasti = best_addr;
     return 0;
 }
@@ -498,11 +497,9 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    /* We rely on f_lineno being accurate when f_trace is set. */
-    f->f_lineno = PyFrame_GetLineNumber(f);
-
-    if (v == Py_None)
+    if (v == Py_None) {
         v = NULL;
+    }
     Py_XINCREF(v);
     Py_XSETREF(f->f_trace, v);
 
@@ -818,54 +815,12 @@ frame_alloc(PyCodeObject *code)
 }
 
 
-static inline PyObject *
-frame_get_builtins(PyFrameObject *back, PyObject *globals)
-{
-    PyObject *builtins;
-
-    if (back != NULL && back->f_globals == globals) {
-        /* If we share the globals, we share the builtins.
-           Save a lookup and a call. */
-        builtins = back->f_builtins;
-        assert(builtins != NULL);
-        Py_INCREF(builtins);
-        return builtins;
-    }
-
-    builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
-    if (builtins != NULL && PyModule_Check(builtins)) {
-        builtins = PyModule_GetDict(builtins);
-        assert(builtins != NULL);
-    }
-    if (builtins != NULL) {
-        Py_INCREF(builtins);
-        return builtins;
-    }
-
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
-    /* No builtins! Make up a minimal one.
-       Give them 'None', at least. */
-    builtins = PyDict_New();
-    if (builtins == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(builtins, "None", Py_None) < 0) {
-        Py_DECREF(builtins);
-        return NULL;
-    }
-    return builtins;
-}
-
-
 PyFrameObject* _Py_HOT_FUNCTION
 _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
-                     PyObject *globals, PyObject *locals)
+                     PyObject *globals, PyObject *builtins, PyObject *locals)
 {
 #ifdef Py_DEBUG
-    if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
+    if (code == NULL || globals == NULL || builtins == NULL ||
         (locals != NULL && !PyMapping_Check(locals))) {
         PyErr_BadInternalCall();
         return NULL;
@@ -873,18 +828,14 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
 #endif
 
     PyFrameObject *back = tstate->frame;
-    PyObject *builtins = frame_get_builtins(back, globals);
-    if (builtins == NULL) {
-        return NULL;
-    }
 
     PyFrameObject *f = frame_alloc(code);
     if (f == NULL) {
-        Py_DECREF(builtins);
         return NULL;
     }
 
     f->f_stackdepth = 0;
+    Py_INCREF(builtins);
     f->f_builtins = builtins;
     Py_XINCREF(back);
     f->f_back = back;
@@ -904,8 +855,9 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
         f->f_locals = locals;
     }
     else {
-        if (locals == NULL)
+        if (locals == NULL) {
             locals = globals;
+        }
         Py_INCREF(locals);
         f->f_locals = locals;
     }
@@ -927,7 +879,9 @@ PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, code, globals, locals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, code, globals, builtins, locals);
+    Py_DECREF(builtins);
     if (f)
         _PyObject_GC_TRACK(f);
     return f;
@@ -1224,4 +1178,29 @@ PyFrame_GetBack(PyFrameObject *frame)
     PyFrameObject *back = frame->f_back;
     Py_XINCREF(back);
     return back;
+}
+
+PyObject *_PyEval_BuiltinsFromGlobals(PyObject *globals) {
+    PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    if (builtins) {
+        if (PyModule_Check(builtins)) {
+            builtins = PyModule_GetDict(builtins);
+            assert(builtins != NULL);
+        }
+    }
+    if (builtins == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        /* No builtins!              Make up a minimal one
+            Give them 'None', at least. */
+        builtins = PyDict_New();
+        if (builtins == NULL ||
+            PyDict_SetItemString(
+                builtins, "None", Py_None) < 0)
+            return NULL;
+    }
+    else
+        Py_INCREF(builtins);
+    return builtins;
 }

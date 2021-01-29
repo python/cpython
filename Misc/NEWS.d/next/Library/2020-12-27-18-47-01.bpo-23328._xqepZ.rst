@@ -1,1 +1,0 @@
-Allow / character in username, password fields on _PROXY envars.

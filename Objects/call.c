@@ -39,16 +39,16 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
         if (!_PyErr_Occurred(tstate)) {
             if (callable)
                 _PyErr_Format(tstate, PyExc_SystemError,
-                              "%R returned NULL without setting an error",
+                              "%R returned NULL without setting an exception",
                               callable);
             else
                 _PyErr_Format(tstate, PyExc_SystemError,
-                              "%s returned NULL without setting an error",
+                              "%s returned NULL without setting an exception",
                               where);
 #ifdef Py_DEBUG
             /* Ensure that the bug is caught in debug mode.
                Py_FatalError() logs the SystemError exception raised above. */
-            Py_FatalError("a function returned NULL without setting an error");
+            Py_FatalError("a function returned NULL without setting an exception");
 #endif
             return NULL;
         }
@@ -60,22 +60,46 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
             if (callable) {
                 _PyErr_FormatFromCauseTstate(
                     tstate, PyExc_SystemError,
-                    "%R returned a result with an error set", callable);
+                    "%R returned a result with an exception set", callable);
             }
             else {
                 _PyErr_FormatFromCauseTstate(
                     tstate, PyExc_SystemError,
-                    "%s returned a result with an error set", where);
+                    "%s returned a result with an exception set", where);
             }
 #ifdef Py_DEBUG
             /* Ensure that the bug is caught in debug mode.
                Py_FatalError() logs the SystemError exception raised above. */
-            Py_FatalError("a function returned a result with an error set");
+            Py_FatalError("a function returned a result with an exception set");
 #endif
             return NULL;
         }
     }
     return result;
+}
+
+
+int
+_Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!success) {
+        if (!_PyErr_Occurred(tstate)) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Slot %s of type %s failed "
+                                 "without setting an exception",
+                                 slot_name, Py_TYPE(obj)->tp_name);
+        }
+    }
+    else {
+        if (_PyErr_Occurred(tstate)) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Slot %s of type %s succeeded "
+                                 "with an exception set",
+                                 slot_name, Py_TYPE(obj)->tp_name);
+        }
+    }
+    return 1;
 }
 
 
@@ -307,16 +331,16 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 static PyObject* _Py_HOT_FUNCTION
 function_code_fastcall(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *const *args, Py_ssize_t nargs,
-                       PyObject *globals)
+                       PyFunctionObject *func)
 {
     assert(tstate != NULL);
-    assert(globals != NULL);
+    assert(func != NULL);
 
     /* XXX Perhaps we should create a specialized
        _PyFrame_New_NoTrack() that doesn't take locals, but does
        take builtins without sanity checking them.
        */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, func->func_globals, func->func_builtins, NULL);
     if (f == NULL) {
         return NULL;
     }
@@ -357,14 +381,13 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
 
     PyThreadState *tstate = _PyThreadState_GET();
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(tstate, co, stack, nargs, globals);
+            return function_code_fastcall(tstate, co, stack, nargs, (PyFunctionObject *)func);
         }
         else if (nargs == 0 && argdefs != NULL
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
@@ -373,34 +396,16 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
             stack = _PyTuple_ITEMS(argdefs);
             return function_code_fastcall(tstate, co,
                                           stack, PyTuple_GET_SIZE(argdefs),
-                                          globals);
+                                          (PyFunctionObject *)func);
         }
     }
 
-    PyObject *kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    PyObject *closure = PyFunction_GET_CLOSURE(func);
-    PyObject *name = ((PyFunctionObject *)func) -> func_name;
-    PyObject *qualname = ((PyFunctionObject *)func) -> func_qualname;
-
-    PyObject **d;
-    Py_ssize_t nd;
-    if (argdefs != NULL) {
-        d = _PyTuple_ITEMS(argdefs);
-        nd = PyTuple_GET_SIZE(argdefs);
-        assert(nd <= INT_MAX);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
     return _PyEval_EvalCode(tstate,
-                (PyObject*)co, globals, (PyObject *)NULL,
+                PyFunction_AS_FRAME_CONSTRUCTOR(func), (PyObject *)NULL,
                 stack, nargs,
                 nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
                 stack + nargs,
-                nkwargs, 1,
-                d, (int)nd, kwdefs,
-                closure, name, qualname);
+                nkwargs, 1);
 }
 
 

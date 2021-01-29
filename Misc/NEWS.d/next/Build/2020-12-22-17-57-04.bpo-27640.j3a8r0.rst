@@ -1,3 +1,0 @@
-Added ``--disable-test-modules`` option to the ``configure`` script:
-don't build nor install test modules.
-Patch by Xavier de Gaye, Thomas Petazzoni and Peixing Xin.

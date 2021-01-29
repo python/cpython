@@ -1,0 +1,2 @@
+Use :meth:`unittest.TestLoader().loadTestsFromTestCase` instead of
+:meth:`unittest.makeSuite` in :mod:`sqlite3` tests. Patch by Erlend E.  Aasland.

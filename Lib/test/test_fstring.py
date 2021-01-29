@@ -661,7 +661,7 @@ x = (
                             ["f'{3)+(4}'",
                              ])
 
-        self.assertAllRaise(SyntaxError, 'EOL while scanning string literal',
+        self.assertAllRaise(SyntaxError, 'unterminated string literal',
                             ["f'{\n}'",
                              ])
 

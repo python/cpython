@@ -32,7 +32,6 @@ class TestUntestedModules(unittest.TestCase):
                 import distutils.command.bdist_msi
             import distutils.command.bdist
             import distutils.command.bdist_rpm
-            import distutils.command.bdist_wininst
             import distutils.command.build_clib
             import distutils.command.build_ext
             import distutils.command.build

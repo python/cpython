@@ -185,7 +185,7 @@ StreamReader
       can be read.  Use the :attr:`IncompleteReadError.partial`
       attribute to get the partially read data.
 
-   .. coroutinemethod:: readuntil(separator=b'\n')
+   .. coroutinemethod:: readuntil(separator=b'\\n')
 
       Read data from the stream until *separator* is found.
 

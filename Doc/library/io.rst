@@ -964,7 +964,7 @@ Text I/O
       .. versionadded:: 3.7
 
 
-.. class:: StringIO(initial_value='', newline='\n')
+.. class:: StringIO(initial_value='', newline='\\n')
 
    A text stream using an in-memory text buffer.  It inherits
    :class:`TextIOBase`.

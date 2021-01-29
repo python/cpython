@@ -986,6 +986,11 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip().splitlines(), expected,
                          proc)
 
+    def test_module_names(self):
+        self.assertIsInstance(sys.stdlib_module_names, frozenset)
+        for name in sys.stdlib_module_names:
+            self.assertIsInstance(name, str)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
@@ -1275,7 +1280,7 @@ class SizeofTest(unittest.TestCase):
         check(x, vsize('4Pi2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
-        check(func, size('13P'))
+        check(func, size('14P'))
         class c():
             @staticmethod
             def foo():

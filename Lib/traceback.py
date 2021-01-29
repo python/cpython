@@ -110,8 +110,8 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     value, tb = _parse_value_tb(exc, value, tb)
     if file is None:
         file = sys.stderr
-    for line in TracebackException(
-            type(value), value, tb, limit=limit).format(chain=chain):
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    for line in te.format(chain=chain):
         print(line, file=file, end="")
 
 
@@ -126,8 +126,8 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     printed as does print_exception().
     """
     value, tb = _parse_value_tb(exc, value, tb)
-    return list(TracebackException(
-        type(value), value, tb, limit=limit).format(chain=chain))
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    return list(te.format(chain=chain))
 
 
 def format_exception_only(exc, /, value=_sentinel):
@@ -146,8 +146,8 @@ def format_exception_only(exc, /, value=_sentinel):
     """
     if value is _sentinel:
         value = exc
-    return list(TracebackException(
-        type(value), value, None).format_exception_only())
+    te = TracebackException(type(value), value, None, compact=True)
+    return list(te.format_exception_only())
 
 
 # -- not official API but folk probably use these two functions.
@@ -476,44 +476,17 @@ class TracebackException:
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
-            lookup_lines=True, capture_locals=False, _seen=None):
+            lookup_lines=True, capture_locals=False, compact=False,
+            _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
+        is_recursive_call = _seen is not None
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
-        # Gracefully handle (the way Python 2.4 and earlier did) the case of
-        # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
-            and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            cause = None
-        if (exc_value and exc_value.__context__ is not None
-            and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            context = None
-        self.__cause__ = cause
-        self.__context__ = context
-        self.__suppress_context__ = \
-            exc_value.__suppress_context__ if exc_value else False
+
         # TODO: locals.
         self.stack = StackSummary.extract(
             walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
@@ -532,6 +505,50 @@ class TracebackException:
             self.msg = exc_value.msg
         if lookup_lines:
             self._load_lines()
+        self.__suppress_context__ = \
+            exc_value.__suppress_context__ if exc_value is not None else False
+
+        # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
+        # queue to avoid recursion (only the top-level call gets _seen == None)
+        if not is_recursive_call:
+            queue = [(self, exc_value)]
+            while queue:
+                te, e = queue.pop()
+                if (e and e.__cause__ is not None
+                    and id(e.__cause__) not in _seen):
+                    cause = TracebackException(
+                        type(e.__cause__),
+                        e.__cause__,
+                        e.__cause__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        _seen=_seen)
+                else:
+                    cause = None
+
+                if compact:
+                    need_context = cause is None and not e.__suppress_context__
+                else:
+                    need_context = True
+                if (e and e.__context__ is not None
+                    and need_context and id(e.__context__) not in _seen):
+                    context = TracebackException(
+                        type(e.__context__),
+                        e.__context__,
+                        e.__context__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        _seen=_seen)
+                else:
+                    context = None
+                te.__cause__ = cause
+                te.__context__ = context
+                if cause:
+                    queue.append((te.__cause__, e.__cause__))
+                if context:
+                    queue.append((te.__context__, e.__context__))
 
     @classmethod
     def from_exception(cls, exc, *args, **kwargs):
@@ -542,10 +559,6 @@ class TracebackException:
         """Private API. force all lines in the stack to be loaded."""
         for frame in self.stack:
             frame.line
-        if self.__context__:
-            self.__context__._load_lines()
-        if self.__cause__:
-            self.__cause__._load_lines()
 
     def __eq__(self, other):
         if isinstance(other, TracebackException):
@@ -622,15 +635,32 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
-        if chain:
-            if self.__cause__ is not None:
-                yield from self.__cause__.format(chain=chain)
-                yield _cause_message
-            elif (self.__context__ is not None and
-                not self.__suppress_context__):
-                yield from self.__context__.format(chain=chain)
-                yield _context_message
-        if self.stack:
-            yield 'Traceback (most recent call last):\n'
-            yield from self.stack.format()
-        yield from self.format_exception_only()
+
+        output = []
+        exc = self
+        while exc:
+            if chain:
+                if exc.__cause__ is not None:
+                    chained_msg = _cause_message
+                    chained_exc = exc.__cause__
+                elif (exc.__context__  is not None and
+                      not exc.__suppress_context__):
+                    chained_msg = _context_message
+                    chained_exc = exc.__context__
+                else:
+                    chained_msg = None
+                    chained_exc = None
+
+                output.append((chained_msg, exc))
+                exc = chained_exc
+            else:
+                output.append((None, exc))
+                exc = None
+
+        for msg, exc in reversed(output):
+            if msg is not None:
+                yield msg
+            if exc.stack:
+                yield 'Traceback (most recent call last):\n'
+                yield from exc.stack.format()
+            yield from exc.format_exception_only()

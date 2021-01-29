@@ -1,1 +1,0 @@
-Restore compatibility for ``uname_result`` around deepcopy and _replace.
