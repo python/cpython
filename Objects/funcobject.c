@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "frameobject.h"
 #include "code.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -40,8 +41,14 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_weakreflist = NULL;
     Py_INCREF(code);
     op->func_code = code;
+    assert(globals != NULL);
     Py_INCREF(globals);
     op->func_globals = globals;
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    if (builtins == NULL) {
+        return NULL;
+    }
+    op->func_builtins = builtins;
     op->func_name = ((PyCodeObject *)code)->co_name;
     Py_INCREF(op->func_name);
     op->func_defaults = NULL; /* No default arguments */
@@ -592,15 +599,16 @@ func_clear(PyFunctionObject *op)
 {
     Py_CLEAR(op->func_code);
     Py_CLEAR(op->func_globals);
-    Py_CLEAR(op->func_module);
+    Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_name);
+    Py_CLEAR(op->func_qualname);
+    Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
     Py_CLEAR(op->func_doc);
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
-    Py_CLEAR(op->func_qualname);
     return 0;
 }
 
@@ -627,6 +635,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->func_code);
     Py_VISIT(f->func_globals);
+    Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
     Py_VISIT(f->func_defaults);
     Py_VISIT(f->func_kwdefaults);
