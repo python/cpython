@@ -1,1 +1,2 @@
 Make IDLE invoke :func:`sys.excepthook` in normal, 2-process mode.
+Patch by Ken Hilton.
