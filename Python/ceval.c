@@ -4641,14 +4641,20 @@ make_coro(PyFrameConstructor *con, PyFrameObject *f)
     return gen;
 }
 
-static PyObject *
-eval_frame(PyThreadState *tstate, PyFrameConstructor *con, PyFrameObject *f)
+PyObject *
+_PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
+               PyObject *locals,
+               PyObject* const* args, size_t argcount,
+               PyObject *kwnames)
 {
-    /* Handle generator/coroutine/asynchronous generator */
+    PyFrameObject *f = _PyEval_MakeFrameVector(
+        tstate, con, locals, args, argcount, kwnames);
+    if (f == NULL) {
+        return NULL;
+    }
     if (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         return make_coro(con, f);
     }
-
     PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
 
     /* decref'ing the frame can cause __del__ methods to get invoked,
@@ -4666,20 +4672,6 @@ eval_frame(PyThreadState *tstate, PyFrameConstructor *con, PyFrameObject *f)
         --tstate->recursion_depth;
     }
     return retval;
-}
-
-PyObject *
-_PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *desc,
-               PyObject *locals,
-               PyObject* const* args, size_t argcount,
-               PyObject *kwnames)
-{
-    PyFrameObject *f = _PyEval_MakeFrameVector(
-        tstate, desc, locals, args, argcount, kwnames);
-    if (f == NULL) {
-        return NULL;
-    }
-    return eval_frame(tstate, desc, f);
 }
 
 /* Legacy API */
