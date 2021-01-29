@@ -2692,8 +2692,10 @@ compiler_lambda(struct compiler *c, expr_ty e)
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (co == NULL) {
+        Py_DECREF(qualname);
         return 0;
+    }
 
     compiler_make_closure(c, co, funcflags, qualname);
     Py_DECREF(qualname);
