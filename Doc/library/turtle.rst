@@ -2048,7 +2048,7 @@ Methods specific to Screen, not inherited from TurtleScreen
 
 .. function:: exitonclick()
 
-   Bind bye() method to mouse clicks on the Screen.
+   Bind ``bye()`` method to mouse clicks on the Screen.
 
 
    If the value "using_IDLE" in the configuration dictionary is ``False``
