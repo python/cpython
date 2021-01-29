@@ -219,7 +219,7 @@ class HeapRef(object):
         self.id = id
 
     def serialize_member(self):
-        return '{ "id": ' + str(self.id) + ' }'
+        return '^' + str(self.id)
 
     def __repr__(self):
         return f"HeapRef({self.id})"
@@ -275,12 +275,19 @@ def recreate_past(conn, filename):
             return self.serialize()
 
     class StackFrame(object):
-        def __init__(self, fun_call, frame_vars):
+        def __init__(self, fun_call, frame_vars, parent):
             self.fun_call = fun_call
             self.frame_vars = frame_vars
+            self.parent = parent
 
         def serialize(self):
-            return '{ "funCall": ' + str(self.fun_call.id) + ', "variables": *' + str(immut_id(self.frame_vars)) + '}'
+            parent = "null"
+            if self.parent:
+                parent = "*" + str(immut_id(self.parent))
+            return ('{"funCall": ' + str(self.fun_call.id) + 
+                ', "variables": *' + str(immut_id(self.frame_vars)) + 
+                ', "parent": ' + parent +
+                '}')
         
         def __repr__(self):
             return "Frame<" + repr(self.fun_call) + ", " + repr(self.frame_vars) + ">"
@@ -436,7 +443,7 @@ def recreate_past(conn, filename):
 
         parent_id = None
         if stack is not None:
-            parent_id = stack[0].fun_call.id
+            parent_id = stack.fun_call.id
         
         ensure_code_file_saved(filename, name)
 
@@ -444,9 +451,7 @@ def recreate_past(conn, filename):
         fun_call = FunCall(new_fun_call_id(), filename, code_file_id, name, varnames, locals)
         frame_vars = StackFrameVars(locals, varnames)
         save_object(frame_vars)
-        frame = StackFrame(fun_call, frame_vars)
-        save_object(frame)
-        stack = [frame, stack]
+        stack = StackFrame(fun_call, frame_vars, stack)
         save_object(stack)
 
         cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?, ?)", (
@@ -468,7 +473,7 @@ def recreate_past(conn, filename):
             return
         cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
             new_snapshot_id(), 
-            stack and stack[0].fun_call.id, 
+            stack and stack.fun_call.id, 
             stack and immut_id(stack) or None, 
             heap_version,
             None,
@@ -480,11 +485,9 @@ def recreate_past(conn, filename):
 
     def process_store_name(name, value):
         nonlocal stack
-        new_frame_vars = stack[0].frame_vars.update_by_name(name, value)
+        new_frame_vars = stack.frame_vars.update_by_name(name, value)
         save_object(new_frame_vars)
-        new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
-        save_object(new_frame)
-        stack = [new_frame, stack[1]]
+        stack = StackFrame(stack.fun_call, new_frame_vars, stack.parent)
         save_object(stack)
 
     fun_lookup["STORE_NAME"] = process_store_name
@@ -492,11 +495,9 @@ def recreate_past(conn, filename):
     def process_store_fast(index, value):
         nonlocal stack
         assert stack is not None
-        new_frame_vars = stack[0].frame_vars.update_local(index, value)
+        new_frame_vars = stack.frame_vars.update_local(index, value)
         save_object(new_frame_vars)
-        new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
-        save_object(new_frame)
-        stack = [new_frame, stack[1]]
+        stack = StackFrame(stack.fun_call, new_frame_vars, stack.parent)
         save_object(stack)
     
     fun_lookup["STORE_FAST"] = process_store_fast
@@ -507,16 +508,14 @@ def recreate_past(conn, filename):
             if s is None:
                 return None
             if s[0].fun_call.name == "<module>":
-                frame = s[0]
-                new_frame_vars = frame.frame_vars.update_by_name(name, value)
+                new_frame_vars = s.frame_vars.update_by_name(name, value)
                 save_object(new_frame_vars)
-                new_frame = StackFrame(frame.fun_call, new_frame_vars)
-                save_object(new_frame)
-                new_stack = [new_frame, s[1]]
+                new_stack = StackFrame(s.fun_call, new_frame_vars, s.parent)
                 save_object(new_stack)
                 return new_stack
             else:
-                new_stack = [s[0], update_stack_for_store(s[1], name, value)]
+                new_parent = update_stack_for_store(s.parent, name, value)
+                new_stack = StackFrame(s.fun_call, s.frame_vars, new_parent)
                 save_object(new_stack)
                 return new_stack
         
@@ -529,16 +528,14 @@ def recreate_past(conn, filename):
         nonlocal stack
         if not activate_snapshots:
             return
-        new_frame_vars = stack[0].frame_vars.update_by_name("<ret val>", ret_val)
+        new_frame_vars = stack.frame_vars.update_by_name("<ret val>", ret_val)
         save_object(new_frame_vars)
-        new_frame = StackFrame(stack[0].fun_call, new_frame_vars)
-        save_object(new_frame)
-        stack = [new_frame, stack[1]]
+        stack = StackFrame(stack.fun_call, new_frame_vars, stack.parent)
         save_object(stack)
 
         cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
             new_snapshot_id(), 
-            stack and stack[0].fun_call.id, 
+            stack and stack.fun_call.id, 
             immut_id(stack), 
             heap_version,
             None,
@@ -551,11 +548,11 @@ def recreate_past(conn, filename):
 
     def process_pop_frame(filename, name):
         nonlocal stack
-        fun_call = stack[0].fun_call
+        fun_call = stack.fun_call
         try:
-            assert stack[0].fun_call.filename == filename
-            assert stack[0].fun_call.name == name
-            stack = stack[1]
+            assert stack.fun_call.filename == filename
+            assert stack.fun_call.name == name
+            stack = stack.parent
         except:
             print(log_line_no, curr_line_no, line)
             print("expected:", filename, name)

@@ -5,5 +5,7 @@ def fib(n):
     b = fib(n - 2)
     return a + b
 
-result = fib(5)
-print(result)
+
+def main():
+    result = fib(5)
+    print(result)

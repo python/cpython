@@ -84,17 +84,17 @@ class AsciiBuffer(object):
         return "ASCII Buffer:\n" + self.serialize()
             
 if __name__ == '__main__':
-    import os
+    # import os
     b = AsciiBuffer()
-    file = open("alpha.txt")
-    content = file.read()
-    file.close()
-    tsize = os.get_terminal_size()
-    b.deserialize(content, tsize)
-    #b.set(2, 4, "E")
-    #b.set(2, 5, "D")
-    #b.set(2, 6, "C")
-    #b.set(3, 6, "B")
-    #b.set(4, 6, "A")
+    # file = open("alpha.txt")
+    # content = file.read()
+    # file.close()
+    # tsize = os.get_terminal_size()
+    # b.deserialize(content, tsize)
+    b.set(2, 4, "E")
+    b.set(2, 5, "D")
+    b.set(2, 6, "C")
+    b.set(3, 6, "B")
+    b.set(4, 6, "A")
     print(b.serialize())
             

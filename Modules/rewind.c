@@ -629,5 +629,5 @@ void logOp(char *label, PyObject **stack_pointer, int level, PyFrameObject *fram
         lastLine = lineNo;
     }
     // printStack(rewindLog, stack_pointer, level);
-    fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
+    // fprintf(rewindLog, "-- %s(%d) on #%d\n", label, oparg, lineNo);
 }
