@@ -4129,6 +4129,32 @@ class TestHelpTupleMetavar(HelpTestCase):
     version = ''
 
 
+class TestHelpCustomIndent(HelpTestCase):
+    """Test that no errors occur if no help is specified"""
+
+    cust_format = argparse.CustomHelpFormat()
+    cust_format.indent_increment = 4
+    parser_signature = Sig(prog='PROG', formatter_class=cust_format)
+    argument_signatures = [
+        Sig('--foo'),
+        Sig('spam'),
+    ]
+    argument_group_signatures = []
+    usage = '''\
+        usage: PROG [-h] [--foo FOO] spam
+        '''
+    help = usage + '''\
+
+        positional arguments:
+            spam
+
+        options:
+            -h, --help  show this help message and exit
+            --foo FOO
+        '''
+    version = ''
+
+
 class TestHelpRawText(HelpTestCase):
     """Test the RawTextHelpFormatter"""
 
@@ -4176,6 +4202,21 @@ class TestHelpRawText(HelpTestCase):
           --bar BAR   bar help
         '''
     version = ''
+
+
+class TestCustomHelpRawText(TestHelpRawText):
+    """Test the CustomHelpFormat with raw_text"""
+    # Argument signatures and expected output inherited from TestHelpRawText
+
+    cust_format = argparse.CustomHelpFormat()
+    cust_format.raw_text = True
+    cust_format.raw_description = True
+    parser_signature = Sig(
+        prog='PROG', formatter_class=cust_format,
+        description='Keep the formatting\n'
+                    '    exactly as it is written\n'
+                    '\n'
+                    'here\n')
 
 
 class TestHelpRawDescription(HelpTestCase):
@@ -4226,6 +4267,21 @@ class TestHelpRawDescription(HelpTestCase):
     version = ''
 
 
+class TestCustomHelpRawDescription(TestHelpRawDescription):
+    """Test the CustomHelpFormat with raw_description"""
+    # Argument signatures and expected output inherited from
+    # TestHelpRawDescription
+
+    cust_format = argparse.CustomHelpFormat()
+    cust_format.raw_description = True
+    parser_signature = Sig(
+        prog='PROG', formatter_class=cust_format,
+        description='Keep the formatting\n'
+                    '    exactly as it is written\n'
+                    '\n'
+                    'here\n')
+
+
 class TestHelpArgumentDefaults(HelpTestCase):
     """Test the ArgumentDefaultsHelpFormatter"""
 
@@ -4265,6 +4321,19 @@ class TestHelpArgumentDefaults(HelpTestCase):
           --baz BAZ   baz help (default: 42)
         '''
     version = ''
+
+
+class TestCustomHelpArgumentDefaults(TestHelpArgumentDefaults):
+    """Test the CustomHelpFormat with arg_defaults"""
+    # Argument signatures and expected output inherited from
+    # TestHelpArgumentDefaults
+
+    cust_format = argparse.CustomHelpFormat()
+    cust_format.arg_defaults = True
+    parser_signature = Sig(
+        prog='PROG', formatter_class=cust_format,
+        description='description')
+
 
 class TestHelpVersionAction(HelpTestCase):
     """Test the default help for the version action"""
@@ -4340,6 +4409,7 @@ class TestHelpSubparsersOrdering(HelpTestCase):
         0.1
         '''
 
+
 class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
     """Test ordering of subcommands in help matches the code"""
     parser_signature = Sig(prog='PROG',
@@ -4382,7 +4452,6 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
         '''
 
 
-
 class TestHelpMetavarTypeFormatter(HelpTestCase):
 
     def custom_type(string):
@@ -4411,6 +4480,85 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
         '''
     version = ''
 
+
+class TestCustomHelpMetavarTypeFormatter(TestHelpMetavarTypeFormatter):
+    """Test the CustomHelpFormat with arg_defaults"""
+    # Argument signatures and expected output inherited from
+    # TestHelpMetavarTypeFormatter
+
+    cust_format = argparse.CustomHelpFormat()
+    cust_format.metavar_type = True
+    parser_signature = Sig(
+        prog='PROG', formatter_class=cust_format,
+        description='description')
+
+
+class TestCustomHelpAll(TestHelpMetavarTypeFormatter):
+    """Test the CustomHelpFormat with all options on"""
+
+    def custom_type(string):
+        return string
+
+    cust_format = argparse.CustomHelpFormat()
+    cust_format.indent_increment = 4
+    cust_format.width = 100
+    cust_format.raw_text = True
+    cust_format.raw_description = True
+    cust_format.arg_defaults = True
+    cust_format.metavar_type = True
+
+    parser_signature = Sig(
+        prog='PROG', formatter_class=cust_format,
+        description='Keep the formatting\n'
+                    '    exactly as it is written\n'
+                    '\n'
+                    'here\n')
+
+    argument_signatures = [
+        Sig('-b', type=custom_type),
+        Sig('-c', type=float, metavar='SOME FLOAT'),
+        Sig('--foo', type=int, help='foo help - oh and by the way, %(default)s'),
+        Sig('--baz', action='store_true', help='    baz help should also\n'
+                                               'appear as given here'),
+        Sig('spam', type=str, help='spam help'),
+        Sig('badger', type=str, nargs='?', default='wooden', help='badger help')
+    ]
+    argument_group_signatures = [
+        (Sig('title', description='    This text\n'
+                                  '  should be indented\n'
+                                  '    exactly like it is here\n'),
+         [Sig('--foz', type=int, default=42, help='foz help')]),
+    ]
+    usage = '''\
+        usage: PROG [-h] [-b custom_type] [-c SOME FLOAT] [--foo int] [--baz] [--foz int] str [str]
+        '''
+    help = usage + '''\
+
+        Keep the formatting
+            exactly as it is written
+
+        here
+
+        positional arguments:
+            str             spam help
+            str             badger help (default: wooden)
+
+        options:
+            -h, --help      show this help message and exit
+            -b custom_type
+            -c SOME FLOAT
+            --foo int       foo help - oh and by the way, None
+            --baz               baz help should also
+                            appear as given here (default: False)
+
+        title:
+                This text
+              should be indented
+                exactly like it is here
+
+            --foz int       foz help (default: 42)
+        '''
+    version = ''
 
 # =====================================
 # Optional/Positional constructor tests

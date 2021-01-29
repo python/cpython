@@ -74,6 +74,7 @@ __all__ = [
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
     'MetavarTypeHelpFormatter',
+    'CustomHelpFormat',
     'Namespace',
     'Action',
     'ONE_OR_MORE',
@@ -707,11 +708,72 @@ class MetavarTypeHelpFormatter(HelpFormatter):
     """
 
     def _get_default_metavar_for_optional(self, action):
+        if action.type is None:
+            return "None"
         return action.type.__name__
 
     def _get_default_metavar_for_positional(self, action):
+        if action.type is None:
+            return "None"
         return action.type.__name__
 
+
+class _CustomizableHelpFormatter(RawTextHelpFormatter,
+                                ArgumentDefaultsHelpFormatter,
+                                MetavarTypeHelpFormatter):
+
+    def __init__(self, raw_description, raw_text,
+            arg_defaults, metavar_type,
+            **kwargs):
+        super(_CustomizableHelpFormatter, self).__init__(**kwargs)
+        if not raw_description:
+            self.disable_raw_description()
+        if not raw_text:
+            self.disable_raw_text()
+        if not arg_defaults:
+            self.disable_arg_defaults()
+        if not metavar_type:
+            self.disable_metavar_type()
+
+    def bind_sub(self, method):
+        """Bind method from super to self."""
+        setattr(self, method.__name__, method.__get__(self))
+
+    def disable_raw_description(self):
+        self.bind_sub(HelpFormatter._fill_text)
+
+    def disable_raw_text(self):
+        self.bind_sub(HelpFormatter._split_lines)
+
+    def disable_arg_defaults(self):
+        self.bind_sub(HelpFormatter._get_help_string)
+
+    def disable_metavar_type(self):
+        self.bind_sub(HelpFormatter._get_default_metavar_for_optional)
+        self.bind_sub(HelpFormatter._get_default_metavar_for_positional)
+
+
+class CustomHelpFormat:
+    """Customizable help formatter factory."""
+
+    def __init__(self):
+        self.indent_increment = 2
+        self.max_help_position = 24
+        self.width = None
+        self.raw_description = False
+        self.raw_text = False
+        self.arg_defaults = False
+        self.metavar_type = False
+
+    def __call__(self, prog):
+        return _CustomizableHelpFormatter(prog=prog,
+                                          indent_increment=self.indent_increment,
+                                          max_help_position=self.max_help_position,
+                                          width=self.width,
+                                          raw_description=self.raw_description,
+                                          raw_text=self.raw_text,
+                                          arg_defaults=self.arg_defaults,
+                                          metavar_type=self.metavar_type)
 
 
 # =====================
