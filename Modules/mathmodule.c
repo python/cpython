@@ -3474,10 +3474,10 @@ math_nextafter_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(y);
     }
     if (Py_IS_NAN(x)) {
-        return x;
+        return PyFloat_FromDouble(x);
     }
     if (Py_IS_NAN(y)) {
-        return y;
+        return PyFloat_FromDouble(y);
     }
 #endif
     return PyFloat_FromDouble(nextafter(x, y));
