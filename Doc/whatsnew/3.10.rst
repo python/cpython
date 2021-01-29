@@ -346,7 +346,7 @@ they are provided by the underlying curses library.
 distutils
 ---------
 
-The entire ``distutils`` namespace is deprecated, to be removed in Python
+The entire ``distutils`` package is deprecated, to be removed in Python
 3.12. Its functionality for specifying package builds has already been
 completely replaced by third-party packages ``setuptools`` and
 ``packaging``, and most other commonly used APIs are available elsewhere

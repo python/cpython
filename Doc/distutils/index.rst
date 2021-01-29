@@ -14,9 +14,9 @@
 
 .. note::
 
-   The ``distutils`` namespace has been deprecated and will be removed in
-   Python 3.12. This documentation is retained as a reference only, and
-   will be removed with the package. See the
+   The entire ``distutils`` package has been deprecated and will be
+   removed in Python 3.12. This documentation is retained as a
+   reference only, and will be removed with the package. See the
    :ref:`What's New <distutils-deprecated>` entry for more information.
 
 .. include:: ./_setuptools_disclaimer.rst
