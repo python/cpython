@@ -377,7 +377,7 @@ formatter_class
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
 specifying an alternate formatting class or a :class:`CustomHelpFormat` object.
-Currently, there are alternate formatting classes:
+Currently, there are four alternate formatting classes:
 
 .. class:: RawDescriptionHelpFormatter
            RawTextHelpFormatter
