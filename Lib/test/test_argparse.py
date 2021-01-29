@@ -4130,7 +4130,7 @@ class TestHelpTupleMetavar(HelpTestCase):
 
 
 class TestHelpCustomIndent(HelpTestCase):
-    """Test that no errors occur if no help is specified"""
+    """Test CustomHelpFormat with changed indent_increment"""
 
     cust_format = argparse.CustomHelpFormat()
     cust_format.indent_increment = 4

@@ -2155,7 +2155,7 @@ Custom help format
    The default is two spaces per indentation level.
 
    * max_help_position - Sets maximum indentation of the parameters description
-   column. The default is calculated automatically from the terminal width.
+   block. The default is 24.
 
    * width - Set width of the terminal for line-wrapping. In most cases it's best
    to leave this attribute `None` to allow argparse determine the width
