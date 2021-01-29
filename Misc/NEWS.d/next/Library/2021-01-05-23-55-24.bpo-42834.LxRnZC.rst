@@ -1,2 +1,1 @@
-Convert static internal caches in the ``_json.c`` module to work with
-subinterpreters.
+Make internal caches of the ``_json`` module compatible with subinterpreters.

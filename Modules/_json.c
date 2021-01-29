@@ -1316,8 +1316,7 @@ _encoded_const(PyObject *obj)
         if (s_null == NULL) {
             return NULL;
         }
-        Py_INCREF(s_null);
-        return s_null;
+        return Py_NewRef(s_null);
     }
     else if (obj == Py_True) {
         _Py_static_string(PyId_true, "true");
@@ -1325,8 +1324,7 @@ _encoded_const(PyObject *obj)
         if (s_true == NULL) {
             return NULL;
         }
-        Py_INCREF(s_true);
-        return s_true;
+        return Py_NewRef(s_true);
     }
     else if (obj == Py_False) {
         _Py_static_string(PyId_false, "false");
@@ -1334,8 +1332,7 @@ _encoded_const(PyObject *obj)
         if (s_false == NULL) {
             return NULL;
         }
-        Py_INCREF(s_false);
-        return s_false;
+        return Py_NewRef(s_false);
     }
     else {
         PyErr_SetString(PyExc_ValueError, "not a const");
@@ -1499,9 +1496,9 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
-    _Py_static_string(PyId_open_dict, "{");
-    _Py_static_string(PyId_close_dict, "}");
-    _Py_static_string(PyId_empty_dict, "{}");
+    _Py_static_string(PyId_open_dict, "{");    // borrowed ref
+    _Py_static_string(PyId_close_dict, "}");   // borrowed ref
+    _Py_static_string(PyId_empty_dict, "{}");  // borrowed ref
     PyObject *open_dict = _PyUnicode_FromId(&PyId_open_dict);
     PyObject *close_dict = _PyUnicode_FromId(&PyId_close_dict);
     PyObject *empty_dict = _PyUnicode_FromId(&PyId_empty_dict);
@@ -1655,9 +1652,9 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *seq, Py_ssize_t indent_level)
 {
     /* Encode Python list seq to a JSON term */
-    _Py_static_string(PyId_open_array, "[");
-    _Py_static_string(PyId_close_array, "]");
-    _Py_static_string(PyId_empty_array, "[]");
+    _Py_static_string(PyId_open_array, "[");    // borrowed ref
+    _Py_static_string(PyId_close_array, "]");   // borrowed ref
+    _Py_static_string(PyId_empty_array, "[]");  // borrowed ref
     PyObject *open_array = _PyUnicode_FromId(&PyId_open_array);
     PyObject *close_array = _PyUnicode_FromId(&PyId_close_array);
     PyObject *empty_array = _PyUnicode_FromId(&PyId_empty_array);
