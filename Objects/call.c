@@ -331,16 +331,16 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 static PyObject* _Py_HOT_FUNCTION
 function_code_fastcall(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *const *args, Py_ssize_t nargs,
-                       PyObject *globals)
+                       PyFunctionObject *func)
 {
     assert(tstate != NULL);
-    assert(globals != NULL);
+    assert(func != NULL);
 
     /* XXX Perhaps we should create a specialized
        _PyFrame_New_NoTrack() that doesn't take locals, but does
        take builtins without sanity checking them.
        */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, func->func_globals, func->func_builtins, NULL);
     if (f == NULL) {
         return NULL;
     }
@@ -381,14 +381,13 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
 
     PyThreadState *tstate = _PyThreadState_GET();
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(tstate, co, stack, nargs, globals);
+            return function_code_fastcall(tstate, co, stack, nargs, (PyFunctionObject *)func);
         }
         else if (nargs == 0 && argdefs != NULL
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
@@ -397,34 +396,16 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
             stack = _PyTuple_ITEMS(argdefs);
             return function_code_fastcall(tstate, co,
                                           stack, PyTuple_GET_SIZE(argdefs),
-                                          globals);
+                                          (PyFunctionObject *)func);
         }
     }
 
-    PyObject *kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    PyObject *closure = PyFunction_GET_CLOSURE(func);
-    PyObject *name = ((PyFunctionObject *)func) -> func_name;
-    PyObject *qualname = ((PyFunctionObject *)func) -> func_qualname;
-
-    PyObject **d;
-    Py_ssize_t nd;
-    if (argdefs != NULL) {
-        d = _PyTuple_ITEMS(argdefs);
-        nd = PyTuple_GET_SIZE(argdefs);
-        assert(nd <= INT_MAX);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
     return _PyEval_EvalCode(tstate,
-                (PyObject*)co, globals, (PyObject *)NULL,
+                PyFunction_AS_FRAME_CONSTRUCTOR(func), (PyObject *)NULL,
                 stack, nargs,
                 nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
                 stack + nargs,
-                nkwargs, 1,
-                d, (int)nd, kwdefs,
-                closure, name, qualname);
+                nkwargs, 1);
 }
 
 
