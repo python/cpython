@@ -904,11 +904,10 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_code = co,
         .fc_defaults = NULL,
         .fc_kwdefaults = NULL,
-        .fc_closure = NULL,
-        .fc_locals = locals
+        .fc_closure = NULL
     };
     PyThreadState *tstate = PyThreadState_GET();
-    PyObject *res =_PyEval_Vector(tstate, &desc, NULL, 0, NULL, NULL);
+    PyObject *res =_PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
     Py_DECREF(builtins);
     return res;
 }
@@ -4370,9 +4369,9 @@ fail:
 
 PyFrameObject *
 _PyEval_MakeFrameVector(PyThreadState *tstate,
-           PyFrameConstructor *con,
+           PyFrameConstructor *con, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
-           PyObject *kwnames, PyObject *const *kwargs)
+           PyObject *kwnames)
 {
     assert(is_tstate_valid(tstate));
 
@@ -4381,7 +4380,7 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
 
     /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, con);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, con, locals);
     if (f == NULL) {
         return NULL;
     }
@@ -4434,7 +4433,7 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
         for (i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
-            PyObject *value = kwargs[i];
+            PyObject *value = args[i+argcount];
             Py_ssize_t j;
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
@@ -4671,10 +4670,12 @@ eval_frame(PyThreadState *tstate, PyFrameConstructor *con, PyFrameObject *f)
 
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *desc,
-            PyObject* const* args, size_t argcount,
-            PyObject *kwnames, PyObject *const *kwargs)
+               PyObject *locals,
+               PyObject* const* args, size_t argcount,
+               PyObject *kwnames)
 {
-    PyFrameObject *f = _PyEval_MakeFrameVector(tstate, desc, args, argcount, kwnames, kwargs);
+    PyFrameObject *f = _PyEval_MakeFrameVector(
+        tstate, desc, locals, args, argcount, kwnames);
     if (f == NULL) {
         return NULL;
     }
@@ -4704,10 +4705,34 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *kwnames  = PyTuple_New(kwcount);
-    if (kwnames == NULL) {
-        res = NULL;
-        goto fail;
+    PyObject *kwnames;
+    PyObject *const *allargs;
+    PyObject **newargs;
+    if (kwcount == 0) {
+        allargs = args;
+        kwnames = NULL;
+    }
+    else {
+        kwnames = PyTuple_New(kwcount);
+        if (kwnames == NULL) {
+            res = NULL;
+            goto fail;
+        }
+        newargs = PyMem_Malloc(sizeof(PyObject *)*(kwcount+argcount));
+        if (newargs == NULL) {
+            res = NULL;
+            Py_DECREF(kwnames);
+            goto fail;
+        }
+        for (int i = 0; i < argcount; i++) {
+            newargs[i] = args[i];
+        }
+        for (int i = 0; i < kwcount; i++) {
+            Py_INCREF(kws[2*i]);
+            PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
+            newargs[argcount+i] = kws[2*i+1];
+        }
+        allargs = newargs;
     }
     PyObject **kwargs = PyMem_Malloc(sizeof(PyObject *)*kwcount);
     if (kwargs == NULL) {
@@ -4728,15 +4753,16 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_code = _co,
         .fc_defaults = defaults,
         .fc_kwdefaults = kwdefs,
-        .fc_closure = closure,
-        .fc_locals = locals
+        .fc_closure = closure
     };
     PyThreadState *tstate = _PyThreadState_GET();
-    res = _PyEval_Vector(tstate, &constr,
-                                    args, argcount,
-                                    kwnames, kwargs);
-    Py_DECREF(kwnames);
-    PyMem_Free(kwargs);
+    res = _PyEval_Vector(tstate, &constr, locals,
+                                    allargs, argcount,
+                                    kwnames);
+    if (kwcount) {
+        Py_DECREF(kwnames);
+        PyMem_Free(newargs);
+    }
 fail:
     Py_DECREF(defaults);
     Py_DECREF(builtins);

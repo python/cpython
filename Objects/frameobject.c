@@ -816,11 +816,11 @@ frame_alloc(PyCodeObject *code)
 
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con)
+_PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
 #ifdef Py_DEBUG
     if (con == NULL || con->fc_code == NULL ||
-        (con->fc_locals != NULL && !PyMapping_Check(con->fc_locals))) {
+        (locals != NULL && !PyMapping_Check(locals))) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -841,8 +841,8 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con)
     Py_INCREF(con->fc_code);
     Py_INCREF(con->fc_globals);
     f->f_globals = con->fc_globals;
-    Py_XINCREF(con->fc_locals);
-    f->f_locals = con->fc_locals;
+    Py_XINCREF(locals);
+    f->f_locals = locals;
 
     f->f_lasti = -1;
     f->f_lineno = 0;
@@ -871,10 +871,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_code = (PyObject *)code,
         .fc_defaults = NULL,
         .fc_kwdefaults = NULL,
-        .fc_closure = NULL,
-        .fc_locals = locals
+        .fc_closure = NULL
     };
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc, locals);
     Py_DECREF(builtins);
     if (f)
         _PyObject_GC_TRACK(f);
