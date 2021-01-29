@@ -54,7 +54,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_defaults = NULL; /* No default arguments */
     op->func_kwdefaults = NULL; /* No keyword only defaults */
     op->func_closure = NULL;
-    op->func_descr.locals = NULL;
+    op->func_locals = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_module = module;
 
@@ -581,7 +581,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     }
     if ((code->co_flags & CO_OPTIMIZED) == 0) {
         Py_INCREF(globals);
-        newfunc->func_descr.locals = globals;
+        newfunc->func_locals = globals;
     }
     if (name != Py_None) {
         Py_INCREF(name);

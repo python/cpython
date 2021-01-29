@@ -333,7 +333,7 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                        size_t nargsf, PyObject *kwnames)
 {
     assert(PyFunction_Check(func));
-    PyFrameConstructor *f = &((PyFunctionObject *)func)->func_descr;
+    PyFrameConstructor *f = PyFunction_AS_FRAME_CONSTRUCTOR(func);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs >= 0);
     PyThreadState *tstate = _PyThreadState_GET();

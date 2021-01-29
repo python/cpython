@@ -220,8 +220,8 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                      Py_TYPE(ns)->tp_name);
         goto error;
     }
-    PyFrameConstructor f = ((PyFunctionObject *)func)->func_descr;
-    f.locals = ns;
+    PyFrameConstructor f =  *PyFunction_AS_FRAME_CONSTRUCTOR(func);
+    f.fc_locals = ns;
     PyThreadState *tstate = PyThreadState_GET();
     cell = _PyEval_Vector(tstate, &f, NULL, 0, NULL, NULL);
     if (cell != NULL) {

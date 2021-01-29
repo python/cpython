@@ -897,15 +897,15 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         return NULL;
     }
     PyFrameConstructor desc = {
-        .globals = globals,
-        .builtins = builtins,
-        .name = ((PyCodeObject *)co)->co_name,
-        .qualname = ((PyCodeObject *)co)->co_name,
-        .code = co,
-        .defaults = NULL,
-        .kwdefaults = NULL,
-        .closure = NULL,
-        .locals = locals
+        .fc_globals = globals,
+        .fc_builtins = builtins,
+        .fc_name = ((PyCodeObject *)co)->co_name,
+        .fc_qualname = ((PyCodeObject *)co)->co_name,
+        .fc_code = co,
+        .fc_defaults = NULL,
+        .fc_kwdefaults = NULL,
+        .fc_closure = NULL,
+        .fc_locals = locals
     };
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *res =_PyEval_Vector(tstate, &desc, NULL, 0, NULL, NULL);
@@ -4614,11 +4614,11 @@ fail: /* Jump here from prelude on failure */
 }
 
 static PyObject *
-make_coro(PyFrameConstructor *desc, PyFrameObject *f)
+make_coro(PyFrameConstructor *con, PyFrameObject *f)
 {
-    assert (((PyCodeObject *)desc->code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
+    assert (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
     PyObject *gen;
-    int is_coro = ((PyCodeObject *)desc->code)->co_flags & CO_COROUTINE;
+    int is_coro = ((PyCodeObject *)con->fc_code)->co_flags & CO_COROUTINE;
 
     /* Don't need to keep the reference to f_back, it will be set
         * when the generator is resumed. */
@@ -4628,7 +4628,7 @@ make_coro(PyFrameConstructor *desc, PyFrameObject *f)
         * and return that as the value. */
     if (is_coro) {
             gen = PyCoro_New(f, con->fc_name, con->fc_qualname);
-    } else if (((PyCodeObject *)desc->code)->co_flags & CO_ASYNC_GENERATOR) {
+    } else if (((PyCodeObject *)con->fc_code)->co_flags & CO_ASYNC_GENERATOR) {
             gen = PyAsyncGen_New(f, con->fc_name, con->fc_qualname);
     } else {
             gen = PyGen_NewWithQualName(f, con->fc_name, con->fc_qualname);
@@ -4643,11 +4643,11 @@ make_coro(PyFrameConstructor *desc, PyFrameObject *f)
 }
 
 static PyObject *
-eval_frame(PyThreadState *tstate, PyFrameConstructor *desc, PyFrameObject *f)
+eval_frame(PyThreadState *tstate, PyFrameConstructor *con, PyFrameObject *f)
 {
     /* Handle generator/coroutine/asynchronous generator */
-    if (((PyCodeObject *)desc->code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
-        return make_coro(desc, f);
+    if (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        return make_coro(con, f);
     }
 
     PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
@@ -4689,6 +4689,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                   PyObject *const *defs, int defcount,
                   PyObject *kwdefs, PyObject *closure)
 {
+    PyObject *res;
     PyObject *defaults = _PyTuple_FromArray(defs, defcount);
     if (defaults == NULL) {
         return NULL;
@@ -4703,21 +4704,40 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (locals == NULL) {
         locals = globals;
     }
+    PyObject *kwnames  = PyTuple_New(kwcount);
+    if (kwnames == NULL) {
+        res = NULL;
+        goto fail;
+    }
+    PyObject **kwargs = PyMem_Malloc(sizeof(PyObject *)*kwcount);
+    if (kwargs == NULL) {
+        res = NULL;
+        Py_DECREF(kwnames);
+        goto fail;
+    }
+    for (int i = 0; i < kwcount; i++) {
+        Py_INCREF(kws[2*i]);
+        PyTuple_SET_ITEM(kwnames, i, kws[2*i]);
+        kwargs[i] = kws[2*i+1];
+    }
     PyFrameConstructor constr = {
         .fc_globals = globals,
         .fc_builtins = builtins,
-        .fc_name = name,
-        .fc_qualname = qualname,
+        .fc_name = ((PyCodeObject *)_co)->co_name,
+        .fc_qualname = ((PyCodeObject *)_co)->co_name,
         .fc_code = _co,
         .fc_defaults = defaults,
         .fc_kwdefaults = kwdefs,
         .fc_closure = closure,
-        .locals = locals
+        .fc_locals = locals
     };
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *res = _PyEval_EvalCode(tstate, &constr,
+    res = _PyEval_Vector(tstate, &constr,
                                     args, argcount,
                                     kwnames, kwargs);
+    Py_DECREF(kwnames);
+    PyMem_Free(kwargs);
+fail:
     Py_DECREF(defaults);
     Py_DECREF(builtins);
     return res;
