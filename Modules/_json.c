@@ -1144,6 +1144,7 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"string", "idx", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:scan_once", kwlist, &pystr, &idx))
         return NULL;
+
     if (PyUnicode_Check(pystr)) {
         rval = scan_once_unicode(self, pystr, idx, &next_idx);
     }
@@ -1498,19 +1499,18 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
-    PyObject *kstr = NULL;
-    PyObject *ident = NULL;
-    PyObject *it = NULL;
-    PyObject *items;
-    PyObject *item = NULL;
-    Py_ssize_t idx;
-
     _Py_static_string(PyId_open_dict, "{");
     _Py_static_string(PyId_close_dict, "}");
     _Py_static_string(PyId_empty_dict, "{}");
     PyObject *open_dict = _PyUnicode_FromId(&PyId_open_dict);
     PyObject *close_dict = _PyUnicode_FromId(&PyId_close_dict);
     PyObject *empty_dict = _PyUnicode_FromId(&PyId_empty_dict);
+    PyObject *kstr = NULL;
+    PyObject *ident = NULL;
+    PyObject *it = NULL;
+    PyObject *items;
+    PyObject *item = NULL;
+    Py_ssize_t idx;
 
     if (open_dict == NULL || close_dict == NULL || empty_dict == NULL) {
         return -1;
@@ -1655,16 +1655,15 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *seq, Py_ssize_t indent_level)
 {
     /* Encode Python list seq to a JSON term */
-    PyObject *ident = NULL;
-    PyObject *s_fast = NULL;
-    Py_ssize_t i;
-
     _Py_static_string(PyId_open_array, "[");
     _Py_static_string(PyId_close_array, "]");
     _Py_static_string(PyId_empty_array, "[]");
     PyObject *open_array = _PyUnicode_FromId(&PyId_open_array);
     PyObject *close_array = _PyUnicode_FromId(&PyId_close_array);
     PyObject *empty_array = _PyUnicode_FromId(&PyId_empty_array);
+    PyObject *ident = NULL;
+    PyObject *s_fast = NULL;
+    Py_ssize_t i;
 
     if (open_array == NULL || close_array == NULL || empty_array == NULL) {
         return -1;
