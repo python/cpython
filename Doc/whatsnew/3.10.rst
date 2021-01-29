@@ -341,8 +341,20 @@ The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
 they are provided by the underlying curses library.
 (Contributed by Zackery Spytz in :issue:`39273`.)
 
+.. _distutils-deprecated:
+
 distutils
 ---------
+
+The entire ``distutils`` package is deprecated, to be removed in Python
+3.12. Its functionality for specifying package builds has already been
+completely replaced by third-party packages ``setuptools`` and
+``packaging``, and most other commonly used APIs are available elsewhere
+in the standard library (such as :mod:`platform`, :mod:`shutil`,
+:mod:`subprocess` or :mod:`sysconfig`). There are no plans to migrate
+any other functionality from ``distutils``, and applications that are
+using other functions should plan to make private copies of the code.
+Refer to :pep:`632` for discussion.
 
 The ``bdist_wininst`` command deprecated in Python 3.8 has been removed.
 The ``bdist_wheel`` command is now recommended to distribute binary packages
@@ -582,6 +594,10 @@ Deprecated
   :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
   as appropriate to help identify code which needs updating during
   this transition.
+
+* The entire ``distutils`` namespace is deprecated, to be removed in
+  Python 3.12. Refer to the :ref:`module changes <distutils-deprecated>`
+  section for more information.
 
 * Non-integer arguments to :func:`random.randrange` are deprecated.
   The :exc:`ValueError` is deprecated in favor of a :exc:`TypeError`.
