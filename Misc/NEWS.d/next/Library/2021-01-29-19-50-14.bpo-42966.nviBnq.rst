@@ -1,0 +1,1 @@
+Added :class:`argparse.CustomHelpFormat` to :mod:`argparse` for easy basic customization of help text format.
