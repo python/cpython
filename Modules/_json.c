@@ -1496,12 +1496,12 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *dct, Py_ssize_t indent_level)
 {
     /* Encode Python dict dct a JSON term */
-    _Py_static_string(PyId_open_dict, "{");    // borrowed ref
-    _Py_static_string(PyId_close_dict, "}");   // borrowed ref
-    _Py_static_string(PyId_empty_dict, "{}");  // borrowed ref
-    PyObject *open_dict = _PyUnicode_FromId(&PyId_open_dict);
-    PyObject *close_dict = _PyUnicode_FromId(&PyId_close_dict);
-    PyObject *empty_dict = _PyUnicode_FromId(&PyId_empty_dict);
+    _Py_static_string(PyId_open_dict, "{");
+    _Py_static_string(PyId_close_dict, "}");
+    _Py_static_string(PyId_empty_dict, "{}");
+    PyObject *open_dict = _PyUnicode_FromId(&PyId_open_dict);    // borrowed ref
+    PyObject *close_dict = _PyUnicode_FromId(&PyId_close_dict);  // borrowed ref
+    PyObject *empty_dict = _PyUnicode_FromId(&PyId_empty_dict);  // borrowed ref
     PyObject *kstr = NULL;
     PyObject *ident = NULL;
     PyObject *it = NULL;
@@ -1652,12 +1652,12 @@ encoder_listencode_list(PyEncoderObject *s, _PyAccu *acc,
                         PyObject *seq, Py_ssize_t indent_level)
 {
     /* Encode Python list seq to a JSON term */
-    _Py_static_string(PyId_open_array, "[");    // borrowed ref
-    _Py_static_string(PyId_close_array, "]");   // borrowed ref
-    _Py_static_string(PyId_empty_array, "[]");  // borrowed ref
-    PyObject *open_array = _PyUnicode_FromId(&PyId_open_array);
-    PyObject *close_array = _PyUnicode_FromId(&PyId_close_array);
-    PyObject *empty_array = _PyUnicode_FromId(&PyId_empty_array);
+    _Py_static_string(PyId_open_array, "[");
+    _Py_static_string(PyId_close_array, "]");
+    _Py_static_string(PyId_empty_array, "[]");
+    PyObject *open_array = _PyUnicode_FromId(&PyId_open_array);   // borrowed ref
+    PyObject *close_array = _PyUnicode_FromId(&PyId_close_array); // borrowed ref
+    PyObject *empty_array = _PyUnicode_FromId(&PyId_empty_array); // borrowed ref
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
     Py_ssize_t i;
