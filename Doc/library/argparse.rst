@@ -2158,19 +2158,19 @@ Custom help format
      block. The default is 24.
 
    * width - Set width of the terminal for line-wrapping. In most cases it's best
-     to leave this attribute `None` to allow argparse determine the width
+     to leave this attribute ``None`` to allow argparse determine the width
      automatically.
 
-   * raw_description - Setting `raw_description` to `True` disables formatting of 
+   * raw_description - Setting ``raw_description`` to ``True`` disables formatting of
      parser description_ and epilog_, as with :class:`RawDescriptionHelpFormatter`.
 
-   * raw_text - Setting this attribute to `True` disables formatting of parameters
+   * raw_text - Setting this attribute to ``True`` disables formatting of parameters
      help text, as with :class:`RawTextHelpFormatter`.
 
-   * arg_defaults - Setting this attribute to `True` adds information about default
+   * arg_defaults - Setting this attribute to ``True`` adds information about default
      values, as with :class:`ArgumentDefaultsHelpFormatter`.
 
-   * metavar_type - Setting this attribute to `True` enabled using the name of the
+   * metavar_type - Setting this attribute to ``True`` enabled using the name of the
      type_ argument passed to :meth:`ArgumentParser.add_argument` function as the
      display name, as with :class:`MetavarTypeHelpFormatter`.
 
