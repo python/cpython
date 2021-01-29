@@ -4357,20 +4357,20 @@ fail:
 
 PyObject *
 _PyEval_EvalCode(PyThreadState *tstate,
-           PyFrameConstructor *desc, PyObject *locals,
+           PyFrameConstructor *con, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep)
 {
     assert(is_tstate_valid(tstate));
 
-    PyCodeObject *co = (PyCodeObject*)desc->code;
-    assert(desc->defaults == NULL || PyTuple_CheckExact(desc->defaults));
+    PyCodeObject *co = (PyCodeObject*)con->fc_code;
+    assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
     PyObject *retval = NULL;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
 
     /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, desc->globals, desc->builtins, locals);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, con->fc_globals, con->fc_builtins, locals);
     if (f == NULL) {
         return NULL;
     }
@@ -4428,7 +4428,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         if (keyword == NULL || !PyUnicode_Check(keyword)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() keywords must be strings",
-                          desc->qualname);
+                          con->fc_qualname);
             goto fail;
         }
 
@@ -4460,14 +4460,14 @@ _PyEval_EvalCode(PyThreadState *tstate,
             if (co->co_posonlyargcount
                 && positional_only_passed_as_keyword(tstate, co,
                                                      kwcount, kwnames,
-                                                     desc->qualname))
+                                                     con->fc_qualname))
             {
                 goto fail;
             }
 
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() got an unexpected keyword argument '%S'",
-                          desc->qualname, keyword);
+                          con->fc_qualname, keyword);
             goto fail;
         }
 
@@ -4480,7 +4480,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         if (GETLOCAL(j) != NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "%U() got multiple values for argument '%S'",
-                          desc->qualname, keyword);
+                          con->fc_qualname, keyword);
             goto fail;
         }
         Py_INCREF(value);
@@ -4489,14 +4489,14 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        too_many_positional(tstate, co, argcount, desc->defaults, fastlocals,
-                            desc->qualname);
+        too_many_positional(tstate, co, argcount, con->fc_defaults, fastlocals,
+                            con->fc_qualname);
         goto fail;
     }
 
     /* Add missing positional arguments (copy default values from defs) */
     if (argcount < co->co_argcount) {
-        Py_ssize_t defcount = desc->defaults == NULL ? 0 : PyTuple_GET_SIZE(desc->defaults);
+        Py_ssize_t defcount = con->fc_defaults == NULL ? 0 : PyTuple_GET_SIZE(con->fc_defaults);
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
@@ -4506,7 +4506,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         }
         if (missing) {
             missing_arguments(tstate, co, missing, defcount, fastlocals,
-                              desc->qualname);
+                              con->fc_qualname);
             goto fail;
         }
         if (n > m)
@@ -4514,7 +4514,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         else
             i = 0;
         if (defcount) {
-            PyObject **defs = &PyTuple_GET_ITEM(desc->defaults, 0);
+            PyObject **defs = &PyTuple_GET_ITEM(con->fc_defaults, 0);
             for (; i < defcount; i++) {
                 if (GETLOCAL(m+i) == NULL) {
                     PyObject *def = defs[i];
@@ -4532,8 +4532,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             if (GETLOCAL(i) != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_varnames, i);
-            if (desc->kwdefaults != NULL) {
-                PyObject *def = PyDict_GetItemWithError(desc->kwdefaults, varname);
+            if (con->fc_kwdefaults != NULL) {
+                PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
                 if (def) {
                     Py_INCREF(def);
                     SETLOCAL(i, def);
@@ -4547,7 +4547,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
         }
         if (missing) {
             missing_arguments(tstate, co, missing, -1, fastlocals,
-                              desc->qualname);
+                              con->fc_qualname);
             goto fail;
         }
     }
@@ -4574,7 +4574,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     /* Copy closure variables to free variables */
     for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
-        PyObject *o = PyTuple_GET_ITEM(desc->closure, i);
+        PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
         Py_INCREF(o);
         freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
     }
@@ -4591,11 +4591,11 @@ _PyEval_EvalCode(PyThreadState *tstate,
         /* Create a new generator that owns the ready to run frame
          * and return that as the value. */
         if (is_coro) {
-            gen = PyCoro_New(f, desc->name, desc->qualname);
+            gen = PyCoro_New(f, con->fc_name, con->fc_qualname);
         } else if (co->co_flags & CO_ASYNC_GENERATOR) {
-            gen = PyAsyncGen_New(f, desc->name, desc->qualname);
+            gen = PyAsyncGen_New(f, con->fc_name, con->fc_qualname);
         } else {
-            gen = PyGen_NewWithQualName(f, desc->name, desc->qualname);
+            gen = PyGen_NewWithQualName(f, con->fc_name, con->fc_qualname);
         }
         if (gen == NULL) {
             return NULL;
@@ -4646,18 +4646,18 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         Py_DECREF(defaults);
         return NULL;
     }
-    PyFrameConstructor desc = {
-        .globals = globals,
-        .builtins = builtins,
-        .name = name,
-        .qualname = qualname,
-        .code = _co,
-        .defaults = defaults,
-        .kwdefaults = kwdefs,
-        .closure = closure
+    PyFrameConstructor constr = {
+        .fc_globals = globals,
+        .fc_builtins = builtins,
+        .fc_name = name,
+        .fc_qualname = qualname,
+        .fc_code = _co,
+        .fc_defaults = defaults,
+        .fc_kwdefaults = kwdefs,
+        .fc_closure = closure
     };
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *res = _PyEval_EvalCode(tstate, &desc, locals,
+    PyObject *res = _PyEval_EvalCode(tstate, &constr, locals,
                                     args, argcount,
                                     kwnames, kwargs,
                                     kwcount, kwstep);

@@ -19,7 +19,7 @@ extern "C" {
     PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */
 
 typedef struct {
-    COMMON_FIELDS()
+    COMMON_FIELDS(fc_)
 } PyFrameConstructor;
 
 /* Function objects and code objects should not be confused with each other:
