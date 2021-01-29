@@ -26,9 +26,8 @@ import sys
 import threading
 import unittest
 
-from test.support import check_disallow_instantiation
+from test.support import check_disallow_instantiation, threading_helper
 from test.support.os_helper import TESTFN, unlink
-from test.support import threading_helper
 
 
 # Helper for tests using TESTFN
@@ -109,6 +108,10 @@ class ModuleTests(unittest.TestCase):
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
         check_disallow_instantiation(self, type(cx("select 1")))
+
+    def test_complete_statement(self):
+        self.assertFalse(sqlite.complete_statement("select t"))
+        self.assertTrue(sqlite.complete_statement("create table t(t);"))
 
 
 class ConnectionTests(unittest.TestCase):
