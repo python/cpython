@@ -10,6 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "_iomodule.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -516,7 +517,7 @@ Helper function to choose the text encoding.
 
 When encoding is not None, just return it.
 Otherwise, return the default text encoding ("locale" for now)
-and raise a DeprecationWarning in dev mode.
+and raise a EncodingWarning in dev mode.
 
 This function can be used in APIs having encoding=None option.
 But please consider encoding="utf-8" for new APIs.
@@ -524,12 +525,12 @@ But please consider encoding="utf-8" for new APIs.
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=46b896c6a7111a95]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=f6a73a49e0f1a2f4]*/
 {
     if (encoding == NULL || encoding == Py_None) {
-        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-        if (interp->config.dev_mode) {
-            PyErr_WarnEx(PyExc_DeprecationWarning,
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
+            PyErr_WarnEx(PyExc_EncodingWarning,
                 "'encoding' option is not specified. The default encoding "
                 "will be changed to 'utf-8' in the future",
                 stacklevel + 1);

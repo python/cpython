@@ -3697,6 +3697,11 @@ class TextIOWrapperTest(unittest.TestCase):
         t.write('x')
         t.tell()
 
+    def test_encoding_warning(self):
+        with support.check_warnings(('encoding=None', EncodingWarning)):
+            t = self.TextIOWrapper(self.BytesIO(b'test'), encoding=None)
+            t.close()
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
@@ -4241,9 +4246,9 @@ class MiscIOTest(unittest.TestCase):
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 2)
         self.assertTrue(
-            warnings[0].startswith(b"<string>:5: DeprecationWarning: "))
+            warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[1].startswith(b"<string>:8: DeprecationWarning: "))
+            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
 
 class CMiscIOTest(MiscIOTest):

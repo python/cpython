@@ -46,7 +46,7 @@ def text_encoding(encoding, stacklevel=1):
 
     When encoding is not None, just return it.
     Otherwise, return the default text encoding ("locale" for now)
-    and raise a DeprecationWarning in dev mode.
+    and raise a EncodingWarning in dev mode.
 
     This function can be used in APIs having encoding=None option.
     But please consider encoding="utf-8" for new APIs.
@@ -57,7 +57,7 @@ def text_encoding(encoding, stacklevel=1):
             warnings.warn(
                     "'encoding' option is not specified. The default encoding "
                     "will be changed to 'utf-8' in the future",
-                    DeprecationWarning, stacklevel + 2)
+                    EncodingWarning, stacklevel + 2)
         encoding = "locale"
     return encoding
 
