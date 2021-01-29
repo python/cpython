@@ -662,7 +662,7 @@ Tell Turtle's state
 
    Return the angle between the line from turtle position to position specified
    by (x,y), the vector or the other turtle.  This depends on the turtle's start
-   orientation which depends on the mode - "standard"/"world" or "logo").
+   orientation which depends on the mode - "standard"/"world" or "logo".
 
    .. doctest::
       :skipif: _tkinter is None
