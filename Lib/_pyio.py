@@ -45,14 +45,16 @@ def text_encoding(encoding, stacklevel=1):
     Helper function to choose the text encoding.
 
     When encoding is not None, just return it.
-    Otherwise, return the default text encoding ("locale" for now)
-    and raise a EncodingWarning in dev mode.
+    Otherwise, return the default text encoding (i.e. "locale").
+
+    This function emits EncodingWarning if *encoding* is None and
+    sys.flags.encoding_warning is true.
 
     This function can be used in APIs having encoding=None option.
     But please consider encoding="utf-8" for new APIs.
     """
     if encoding is None:
-        if sys.flags.dev_mode:
+        if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn(
                     "'encoding' option is not specified. The default encoding "

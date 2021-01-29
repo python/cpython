@@ -2407,13 +2407,6 @@ SimpleExtendsException(PyExc_Warning, UserWarning,
 
 
 /*
- *    EncodingWarning extends Warning
- */
-SimpleExtendsException(PyExc_Warning, EncodingWarning,
-                       "Base class for warnings about encodings.");
-
-
-/*
  *    DeprecationWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, DeprecationWarning,
@@ -2426,6 +2419,13 @@ SimpleExtendsException(PyExc_Warning, DeprecationWarning,
 SimpleExtendsException(PyExc_Warning, PendingDeprecationWarning,
     "Base class for warnings about features which will be deprecated\n"
     "in the future.");
+
+
+/*
+ *    EncodingWarning extends Warning
+ */
+SimpleExtendsException(PyExc_DeprecationWarning, EncodingWarning,
+                       "Base class for warnings about encodings.");
 
 
 /*

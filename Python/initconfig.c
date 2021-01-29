@@ -94,6 +94,7 @@ static const char usage_3[] = "\
              otherwise activate automatically)\n\
          -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
              given directory instead of to the code tree\n\
+         -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
 \n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
@@ -129,7 +130,8 @@ static const char usage_6[] =
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
-"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n";
+"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
+"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n";
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -589,6 +591,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
+    assert(config->warn_default_encoding >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->hash_seed <= MAX_HASH_SEED);
@@ -690,6 +693,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->isolated = -1;
     config->use_environment = -1;
     config->dev_mode = -1;
+    config->warn_default_encoding = -1;
     config->install_signal_handlers = 1;
     config->use_hash_seed = -1;
     config->faulthandler = -1;
@@ -765,6 +769,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->use_environment = 0;
     config->user_site_directory = 0;
     config->dev_mode = 0;
+    config->warn_default_encoding = 0;
     config->install_signal_handlers = 0;
     config->use_hash_seed = 0;
     config->faulthandler = 0;
@@ -873,6 +878,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
+    COPY_ATTR(warn_default_encoding);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -977,6 +983,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
+    SET_ITEM_INT(warn_default_encoding);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -1249,6 +1256,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(isolated);
     GET_UINT(use_environment);
     GET_UINT(dev_mode);
+    GET_UINT(warn_default_encoding);
     GET_UINT(install_signal_handlers);
     GET_UINT(use_hash_seed);
     if (config_dict_get_ulong(dict, "hash_seed", &config->hash_seed) < 0) {
@@ -2134,6 +2142,10 @@ config_read(PyConfig *config, int compute_path_config)
     // Only parse arguments once.
     if (config->parse_argv == 1) {
         config->parse_argv = 2;
+    }
+
+    if (config->warn_default_encoding < 0) {
+        config->warn_default_encoding = 0;
     }
 
     return _PyStatus_OK();

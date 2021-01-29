@@ -1125,10 +1125,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (encoding == NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
-            PyErr_WarnEx(PyExc_DeprecationWarning,
-                "'encoding' option is not specified. The default encoding "
-                "will be changed to 'utf-8' in the future", 1);
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            PyErr_WarnEx(PyExc_EncodingWarning,
+                         "'encoding' option is omitted", 1);
         }
     }
     else if (strcmp(encoding, "locale") == 0) {

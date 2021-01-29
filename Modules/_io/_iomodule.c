@@ -516,8 +516,10 @@ _io.text_encoding
 Helper function to choose the text encoding.
 
 When encoding is not None, just return it.
-Otherwise, return the default text encoding ("locale" for now)
-and raise a EncodingWarning in dev mode.
+Otherwise, return the default text encoding (i.e. "locale").
+
+This function emits EncodingWarning if *encoding* is None and
+sys.flags.encoding_warning is true.
 
 This function can be used in APIs having encoding=None option.
 But please consider encoding="utf-8" for new APIs.
@@ -529,11 +531,9 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
             PyErr_WarnEx(PyExc_EncodingWarning,
-                "'encoding' option is not specified. The default encoding "
-                "will be changed to 'utf-8' in the future",
-                stacklevel + 1);
+                         "'encoding' option is omitted", stacklevel + 1);
         }
         Py_INCREF(_PyIO_str_locale);
         return _PyIO_str_locale;

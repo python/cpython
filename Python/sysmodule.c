@@ -2506,6 +2506,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"isolated",                "-I"},
     {"dev_mode",                "-X dev"},
     {"utf8_mode",               "-X utf8"},
+    {"warn_default_encoding",   "-X warndefaultencoding"},
     {0}
 };
 
@@ -2513,7 +2514,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    15
+    16
 };
 
 static int
@@ -2552,6 +2553,7 @@ set_flags_from_config(PyObject *flags, PyThreadState *tstate)
     SetFlag(config->use_hash_seed == 0 || config->hash_seed != 0);
     SetFlag(config->isolated);
     SetFlagObj(PyBool_FromLong(config->dev_mode));
+    SetFlagObj(PyBool_FromLong(config->warn_default_encoding));
     SetFlag(preconfig->utf8_mode);
 #undef SetFlagObj
 #undef SetFlag
