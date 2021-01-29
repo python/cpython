@@ -667,25 +667,29 @@ compiler_enter_scope(struct compiler *c, identifier name,
 static void
 compiler_exit_scope(struct compiler *c)
 {
-    Py_ssize_t n;
-    PyObject *capsule;
+    // Don't call PySequence_DelItem() with an exception raised
+    PyObject *exc_type, *exc_val, *exc_tb;
+    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
 
     c->c_nestlevel--;
     compiler_unit_free(c->u);
     /* Restore c->u to the parent unit. */
-    n = PyList_GET_SIZE(c->c_stack) - 1;
+    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
     if (n >= 0) {
-        capsule = PyList_GET_ITEM(c->c_stack, n);
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
         c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
-        if (PySequence_DelItem(c->c_stack, n) < 0)
-            Py_FatalError("compiler_exit_scope()");
+        if (PySequence_DelItem(c->c_stack, n) < 0) {
+            Py_FatalError("PySequence_DelItem failed");
+        }
         compiler_unit_check(c->u);
     }
-    else
+    else {
         c->u = NULL;
+    }
 
+    PyErr_Restore(exc_type, exc_val, exc_tb);
 }
 
 static int
