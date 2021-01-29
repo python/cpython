@@ -1821,7 +1821,7 @@ Using screen events
    existing bindings are removed.
 
    Example for a TurtleScreen instance named ``screen`` and a Turtle instance
-   named turtle:
+   named ``turtle``:
 
    .. doctest::
       :skipif: _tkinter is None
