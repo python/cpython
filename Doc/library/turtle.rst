@@ -1513,7 +1513,7 @@ Special Turtle methods
 
    :param size: an integer or ``None``
 
-   Set or disable undobuffer.  If *size* is an integer an empty undobuffer of
+   Set or disable undobuffer.  If *size* is an integer, an empty undobuffer of
    given size is installed.  *size* gives the maximum number of turtle actions
    that can be undone by the :func:`undo` method/function.  If *size* is
    ``None``, the undobuffer is disabled.
