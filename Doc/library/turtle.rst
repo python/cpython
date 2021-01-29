@@ -1330,7 +1330,7 @@ Appearance
    matrix as a tuple of 4 elements.
    Otherwise set the given elements and transform the turtleshape
    according to the matrix consisting of first row t11, t12 and
-   second row t21, 22. The determinant t11 * t22 - t12 * t21 must not be
+   second row t21, t22. The determinant t11 * t22 - t12 * t21 must not be
    zero, otherwise an error is raised.
    Modify stretchfactor, shearfactor and tiltangle according to the
    given matrix.
