@@ -478,8 +478,8 @@ Encoders and Decoders
       object for *o*, or calls the base implementation (to raise a
       :exc:`TypeError`).
 
-      For example, to support arbitrary iterators, you could implement default
-      like this::
+      For example, to support arbitrary iterators, you could implement
+      :meth:`default` like this::
 
          def default(self, o):
             try:
