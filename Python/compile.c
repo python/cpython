@@ -2300,6 +2300,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (!compiler_make_closure(c, co, funcflags, qualname)) {
+        Py_DECREF(qualname);
+        Py_DECREF(co);
         return 0;
     }
     Py_DECREF(qualname);
@@ -6690,4 +6692,3 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
-
