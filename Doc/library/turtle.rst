@@ -2349,7 +2349,7 @@ Short explanation of selected entries:
   auto``.
 - If you set e.g. ``language = italian`` the docstringdict
   :file:`turtle_docstringdict_italian.py` will be loaded at import time (if
-  present on the import path, e.g. in the same directory as :mod:`turtle`.
+  present on the import path, e.g. in the same directory as :mod:`turtle`).
 - The entries *exampleturtle* and *examplescreen* define the names of these
   objects as they occur in the docstrings.  The transformation of
   method-docstrings to function-docstrings will delete these names from the
