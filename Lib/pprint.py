@@ -35,6 +35,7 @@ saferepr()
 """
 
 import collections as _collections
+import dataclasses as _dataclasses
 import re
 import sys as _sys
 import types as _types
@@ -176,7 +177,21 @@ class PrettyPrinter:
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
+            elif _dataclasses.is_dataclass(object) and not isinstance(object, type):
+                context[objid] = 1
+                self._pprint_dataclass(object, stream, indent, allowance, context, level + 1)
+                del context[objid]
+                return
         stream.write(rep)
+
+    def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
+        cls_name = object.__class__.__name__
+        indent += len(cls_name) + 1
+        items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object)]
+        stream.write(cls_name + '(')
+        if items:
+            self._format_namespace_items(items, stream, indent, allowance, context, level)
+        stream.write(')')
 
     _dispatch = {}
 
@@ -344,21 +359,10 @@ class PrettyPrinter:
         else:
             cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
-        delimnl = ',\n' + ' ' * indent
         items = object.__dict__.items()
-        last_index = len(items) - 1
-
         stream.write(cls_name + '(')
-        for i, (key, ent) in enumerate(items):
-            stream.write(key)
-            stream.write('=')
-
-            last = i == last_index
-            self._format(ent, stream, indent + len(key) + 1,
-                         allowance if last else 1,
-                         context, level)
-            if not last:
-                stream.write(delimnl)
+        if items:
+            self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(')')
 
     _dispatch[_types.SimpleNamespace.__repr__] = _pprint_simplenamespace
@@ -375,6 +379,20 @@ class PrettyPrinter:
             write(rep)
             write(': ')
             self._format(ent, stream, indent + len(rep) + 2,
+                         allowance if last else 1,
+                         context, level)
+            if not last:
+                write(delimnl)
+
+    def _format_namespace_items(self, items, stream, indent, allowance, context, level):
+        write = stream.write
+        delimnl = ',\n' + ' ' * indent
+        last_index = len(items) - 1
+        for i, (key, ent) in enumerate(items):
+            last = i == last_index
+            write(key)
+            write('=')
+            self._format(ent, stream, indent + len(key) + 1,
                          allowance if last else 1,
                          context, level)
             if not last:

@@ -415,7 +415,7 @@ mappingproxy(OrderedDict([('the', 0),
             lazy=7,
             dog=8,
         )
-        formatted = pprint.pformat(ns, width=60)
+        formatted = pprint.pformat(ns, width=60, indent=4)
         self.assertEqual(formatted, """\
 namespace(the=0,
           quick=1,
