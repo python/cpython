@@ -1955,7 +1955,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
             if (arg == -1) {
                 PyErr_Format(PyExc_SystemError,
                     "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
-                    "freevars of code %R: %R",
+                    "freevars of code %S: %R",
                     name,
                     reftype,
                     c->u->u_name,
