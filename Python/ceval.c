@@ -4429,7 +4429,7 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
 
     /* Handle keyword arguments */
     if (kwnames != NULL) {
-        int kwcount = PyTuple_GET_SIZE(kwnames);
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
