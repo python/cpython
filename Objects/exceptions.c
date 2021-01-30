@@ -2422,13 +2422,6 @@ SimpleExtendsException(PyExc_Warning, PendingDeprecationWarning,
 
 
 /*
- *    EncodingWarning extends Warning
- */
-SimpleExtendsException(PyExc_DeprecationWarning, EncodingWarning,
-                       "Base class for warnings about encodings.");
-
-
-/*
  *    SyntaxWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, SyntaxWarning,
@@ -2471,6 +2464,13 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
 SimpleExtendsException(PyExc_Warning, BytesWarning,
     "Base class for warnings about bytes and buffer related problems, mostly\n"
     "related to conversion from str or comparing to str.");
+
+
+/*
+ *    EncodingWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, EncodingWarning,
+                       "Base class for warnings about encodings.");
 
 
 /*
