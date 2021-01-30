@@ -144,7 +144,6 @@ PyAPI_DATA(PyObject *) PyExc_WindowsError;
 /* Predefined warning categories */
 PyAPI_DATA(PyObject *) PyExc_Warning;
 PyAPI_DATA(PyObject *) PyExc_UserWarning;
-PyAPI_DATA(PyObject *) PyExc_EncodingWarning;
 PyAPI_DATA(PyObject *) PyExc_DeprecationWarning;
 PyAPI_DATA(PyObject *) PyExc_PendingDeprecationWarning;
 PyAPI_DATA(PyObject *) PyExc_SyntaxWarning;
@@ -153,6 +152,7 @@ PyAPI_DATA(PyObject *) PyExc_FutureWarning;
 PyAPI_DATA(PyObject *) PyExc_ImportWarning;
 PyAPI_DATA(PyObject *) PyExc_UnicodeWarning;
 PyAPI_DATA(PyObject *) PyExc_BytesWarning;
+PyAPI_DATA(PyObject *) PyExc_EncodingWarning;
 PyAPI_DATA(PyObject *) PyExc_ResourceWarning;
 
 

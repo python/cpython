@@ -3698,7 +3698,7 @@ class TextIOWrapperTest(unittest.TestCase):
         t.tell()
 
     def test_encoding_warning(self):
-        with support.check_warnings(('encoding=None', EncodingWarning)):
+        with warnings_helper.check_warnings(('encoding=None', EncodingWarning)):
             t = self.TextIOWrapper(self.BytesIO(b'test'), encoding=None)
             t.close()
 
@@ -4242,7 +4242,7 @@ class MiscIOTest(unittest.TestCase):
 
             pathlib.Path({filename!r}).read_text()  # line 8
         ''')
-        proc = assert_python_ok('-X', 'encoding_warning', '-c', code)
+        proc = assert_python_ok('-X', 'warn_encoding', '-c', code)
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 2)
         self.assertTrue(

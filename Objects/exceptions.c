@@ -2470,7 +2470,7 @@ SimpleExtendsException(PyExc_Warning, BytesWarning,
  *    EncodingWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, EncodingWarning,
-                       "Base class for warnings about encodings.");
+    "Base class for warnings about encodings.");
 
 
 /*
