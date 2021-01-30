@@ -1938,7 +1938,7 @@ Settings and special methods
    :param cmode: one of the values 1.0 or 255
 
    Return the colormode or set it to 1.0 or 255.  Subsequently *r*, *g*, *b*
-   values of color triples have to be in the range 0..\ *cmode*.
+   values of color triples have to be in the range 0..*cmode*.
 
    .. doctest::
       :skipif: _tkinter is None
