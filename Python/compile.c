@@ -5577,9 +5577,8 @@ assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
         if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
             return 0;
     }
-    unsigned char *lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-
+    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(a->a_lnotab);
+    lnotab += a->a_lnotab_off;
     a->a_lnotab_off += 2;
     *lnotab++ = bdelta;
     *lnotab++ = ldelta;
