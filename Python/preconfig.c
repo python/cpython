@@ -169,7 +169,7 @@ _PyPreCmdline_SetConfig(const _PyPreCmdline *cmdline, PyConfig *config)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
-    COPY_ATTR(warn_default_encoding);
+    COPY_ATTR(encoding_warning);
     return _PyStatus_OK();
 
 #undef COPY_ATTR
@@ -258,21 +258,21 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
         cmdline->dev_mode = 0;
     }
 
-    // warn_default_encoding
-    if ((cmdline->warn_default_encoding < 0)
-        && (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
-            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING")))
+    // encoding_warning
+    if ((cmdline->encoding_warning < 0)
+        && (_Py_get_xoption(&cmdline->xoptions, L"warn_encoding")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNENCODING")))
     {
-        cmdline->warn_default_encoding = 1;
+        cmdline->encoding_warning = 1;
     }
-    if (cmdline->warn_default_encoding < 0) {
-        cmdline->warn_default_encoding = 0;
+    if (cmdline->encoding_warning < 0) {
+        cmdline->encoding_warning = 0;
     }
 
     assert(cmdline->use_environment >= 0);
     assert(cmdline->isolated >= 0);
     assert(cmdline->dev_mode >= 0);
-    assert(cmdline->warn_default_encoding >= 0);
+    assert(cmdline->encoding_warning >= 0);
 
     return _PyStatus_OK();
 }

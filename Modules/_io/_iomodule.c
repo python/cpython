@@ -531,7 +531,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+        if (_PyInterpreterState_GetConfig(interp)->encoding_warning) {
             PyErr_WarnEx(PyExc_EncodingWarning,
                          "'encoding' option is omitted", stacklevel + 1);
         }

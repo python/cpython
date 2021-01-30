@@ -134,7 +134,6 @@ typedef struct PyConfig {
     int isolated;
     int use_environment;
     int dev_mode;
-    int warn_default_encoding;
     int install_signal_handlers;
     int use_hash_seed;
     unsigned long hash_seed;
@@ -154,6 +153,7 @@ typedef struct PyConfig {
     PyWideStringList warnoptions;
     int site_import;
     int bytes_warning;
+    int encoding_warning;
     int inspect;
     int interactive;
     int optimization_level;

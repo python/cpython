@@ -1125,7 +1125,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     if (encoding == NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+        if (_PyInterpreterState_GetConfig(interp)->encoding_warning) {
             PyErr_WarnEx(PyExc_EncodingWarning,
                          "'encoding' option is omitted", 1);
         }
