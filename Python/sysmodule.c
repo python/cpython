@@ -2554,7 +2554,7 @@ set_flags_from_config(PyObject *flags, PyThreadState *tstate)
     SetFlag(config->isolated);
     SetFlagObj(PyBool_FromLong(config->dev_mode));
     SetFlag(preconfig->utf8_mode);
-    SetFlagObj(PyBool_FromLong(config->encoding_warning));
+    SetFlag(config->encoding_warning);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
