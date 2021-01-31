@@ -507,7 +507,7 @@ strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _Py_List(a, Load, EXTRA) }
 listcomp[expr_ty]:
-    | '[' a=named_expression ~ b=for_if_clauses ']' { _Py_ListComp(a, b, EXTRA) }
+    | '[' a=named_expression b=for_if_clauses ']' { _Py_ListComp(a, b, EXTRA) }
     | invalid_comprehension
 tuple[expr_ty]:
     | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
@@ -516,11 +516,11 @@ group[expr_ty]:
     | '(' a=(yield_expr | named_expression) ')' { a }
     | invalid_group
 genexp[expr_ty]:
-    | '(' a=named_expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
+    | '(' a=named_expression b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
 set[expr_ty]: '{' a=star_named_expressions '}' { _Py_Set(a, EXTRA) }
 setcomp[expr_ty]:
-    | '{' a=named_expression ~ b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
+    | '{' a=named_expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
     | '{' a=[double_starred_kvpairs] '}' {
@@ -692,6 +692,8 @@ invalid_primary:
 invalid_comprehension:
     | ('[' | '(' | '{') a=starred_expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
+    | ('[' | '{') a=star_named_expression ',' [star_named_expressions] {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "did you forget parentheses around the comprehension target?") }
 invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
