@@ -240,13 +240,21 @@ class TestCurses(unittest.TestCase):
 
     def test_output_character(self):
         stdscr = self.stdscr
+        encoding = stdscr.encoding
         # addch()
         stdscr.refresh()
         stdscr.move(0, 0)
         stdscr.addch('A')
         stdscr.addch(b'A')
         stdscr.addch(65)
-        stdscr.addch('\u20ac')
+        c = '\u20ac'
+        try:
+            stdscr.addch(c)
+        except UnicodeEncodeError:
+            self.assertRaises(UnicodeEncodeError, c.encode, encoding)
+        except OverflowError:
+            encoded = c.encode(encoding)
+            self.assertNotEqual(len(encoded), 1, repr(encoded))
         stdscr.addch('A', curses.A_BOLD)
         stdscr.addch(1, 2, 'A')
         stdscr.addch(2, 3, 'A', curses.A_BOLD)
@@ -258,19 +266,25 @@ class TestCurses(unittest.TestCase):
         stdscr.echochar('A')
         stdscr.echochar(b'A')
         stdscr.echochar(65)
-        self.assertRaises(OverflowError, stdscr.echochar, '\u20ac')
+        with self.assertRaises((UnicodeEncodeError, OverflowError)):
+            stdscr.echochar('\u20ac')
         stdscr.echochar('A', curses.A_BOLD)
         self.assertIs(stdscr.is_wintouched(), False)
 
     def test_output_string(self):
         stdscr = self.stdscr
+        encoding = stdscr.encoding
         # addstr()/insstr()
         for func in [stdscr.addstr, stdscr.insstr]:
             with self.subTest(func.__qualname__):
                 stdscr.move(0, 0)
                 func('abcd')
                 func(b'abcd')
-                func('àßçđ')
+                s = 'àßçđ'
+                try:
+                    func(s)
+                except UnicodeEncodeError:
+                    self.assertRaises(UnicodeEncodeError, s.encode, encoding)
                 func('abcd', curses.A_BOLD)
                 func(1, 2, 'abcd')
                 func(2, 3, 'abcd', curses.A_BOLD)
@@ -281,7 +295,11 @@ class TestCurses(unittest.TestCase):
                 stdscr.move(0, 0)
                 func('1234', 3)
                 func(b'1234', 3)
-                func('\u0661\u0662\u0663\u0664', 3)
+                s = '\u0661\u0662\u0663\u0664'
+                try:
+                    func(s, 3)
+                except UnicodeEncodeError:
+                    self.assertRaises(UnicodeEncodeError, s.encode, encoding)
                 func('1234', 5)
                 func('1234', 3, curses.A_BOLD)
                 func(1, 2, '1234', 3)
@@ -471,7 +489,7 @@ class TestCurses(unittest.TestCase):
         win = curses.newwin(5, 15, 5, 2)
         win.addstr(0, 0, 'Lorem ipsum')
 
-        self.assertEqual(win.getbkgd(), 0)
+        self.assertIn(win.getbkgd(), (0, 32))
 
         # bkgdset()
         win.bkgdset('_')
