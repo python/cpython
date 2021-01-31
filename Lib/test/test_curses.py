@@ -362,7 +362,7 @@ class TestCurses(unittest.TestCase):
     def test_insert_delete(self):
         win = curses.newwin(5, 15, 5, 2)
         lorem_ipsum(win)
-        
+
         win.move(0, 2)
         win.delch()
         self.assertEqual(win.instr(0, 0), b'Loem ipsum     ')
