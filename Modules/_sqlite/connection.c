@@ -1704,7 +1704,11 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
                                   (callable != Py_None) ? callable : NULL,
                                   (callable != Py_None) ? pysqlite_collation_callback : NULL);
     if (rc != SQLITE_OK) {
-        PyDict_DelItem(self->collations, uppercase_name);
+        if (callable != Py_None) {
+            if (PyDict_DelItem(self->collations, uppercase_name) < 0) {
+                PyErr_Clear();
+            }
+        }
         _pysqlite_seterror(self->db, NULL);
         goto finally;
     }
