@@ -2097,10 +2097,21 @@ class TestMove(BaseTest, unittest.TestCase):
         # if the source directory cannot be removed.
         try:
             os.mkdir(TESTFN_SRC)
+            os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
+
+            # Testing on an empty immutable directory
+            # TESTFN_DST should not exist if shutil.move failed
+            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
+            self.assertFalse(TESTFN_DST in os.listdir())
+
+            # Create a file and keep the directory immutable
+            os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
             os_helper.create_empty_file(os.path.join(TESTFN_SRC, 'child'))
             os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
-            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
+
+            # Testing on a non-empty immutable directory
             # TESTFN_DST should not exist if shutil.move failed
+            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
             self.assertFalse(TESTFN_DST in os.listdir())
         finally:
             if os.path.exists(TESTFN_SRC):
