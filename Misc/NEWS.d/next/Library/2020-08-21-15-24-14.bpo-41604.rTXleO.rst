@@ -1,0 +1,2 @@
+Don't decrement the reference count of the previous user_ptr when
+set_panel_userptr fails.

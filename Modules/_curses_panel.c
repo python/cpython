@@ -433,7 +433,9 @@ _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyObject *obj)
         /* In case of an ncurses error, decref the new object again */
         Py_DECREF(obj);
     }
-    Py_XDECREF(oldobj);
+    else {
+        Py_XDECREF(oldobj);
+    }
     return PyCursesCheckERR(rc, "set_panel_userptr");
 }
 
