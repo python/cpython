@@ -664,6 +664,9 @@ x = (
         self.assertAllRaise(SyntaxError, 'unterminated string literal',
                             ["f'{\n}'",
                              ])
+    def test_newlines_before_syntax_error(self):
+        self.assertAllRaise(SyntaxError, "invalid syntax",
+                ["f'{.}'", "\nf'{.}'", "\n\nf'{.}'"])
 
     def test_backslashes_in_string_part(self):
         self.assertEqual(f'\t', '\t')
