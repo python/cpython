@@ -1,0 +1,2 @@
+Fixed a compiler warning in :c:func:`Py_UNICODE_ISSPACE()` on platforms with
+signed ``wchar_t``.
