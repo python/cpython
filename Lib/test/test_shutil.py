@@ -2084,21 +2084,21 @@ class TestMove(BaseTest, unittest.TestCase):
         finally:
             os.rmdir(dst_dir)
 
+
+    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                     'non-root user required')
     def test_move_dir_permission_denied(self):
-        # Move a dir to another location on the same filesystem.
-        os.setuid(0)
-        '''
-        dst_dir = tempfile.mktemp(dir=self.mkdtemp())
+        # bpo-42782: shutil.move should not create destination directories
+        # if the source directory cannot be removed.
+        parent_dir = self.mkdtemp()
+        dst_dir = os.path.join(parent_dir, 'dst_dir')
         try:
-            shutil.chown(self.src_dir, user=0)
-            # os.setuid(1000)
-            os.setuid(0)
-            with self.assertRaises(PermissionError) as pe:
-                self._check_move_dir(self.src_dir, dst_dir, dst_dir)
-            # self.assertEqual(cm.exception.filename, filename)
-        finally:
-            os_helper.rmtree(dst_dir)
-        '''
+            self.assertRaises(PermissionError, shutil.move, '/opt', dst_dir)
+        except OSError:
+            self.skipTest("cannot copy test source directory")
+        self.assertFalse(os.listdir(parent_dir))  # dst_dir should not exist
+        os_helper.rmtree(dst_dir)
+        os_helper.rmtree(parent_dir)
 
 
 class TestCopyFile(unittest.TestCase):
