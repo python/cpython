@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import dataclasses
 import io
 import itertools
 import pprint
@@ -65,6 +66,12 @@ class dict3(dict):
 class dict_custom_repr(dict):
     def __repr__(self):
         return '*'*len(dict.__repr__(self))
+
+@dataclasses.dataclass
+class dataclass1:
+    field1: str
+    field2: int
+    field3: bool = False
 
 class Unorderable:
     def __repr__(self):
@@ -451,6 +458,27 @@ AdvancedNamespace(the=0,
                   a=6,
                   lazy=7,
                   dog=8)""")
+
+    def test_empty_dataclass(self):
+        dc = dataclasses.make_dataclass("MyDataclass", ())()
+        formatted = pprint.pformat(dc)
+        self.assertEqual(formatted, "MyDataclass()")
+
+    def test_small_dataclass(self):
+        dc = dataclass1("text", 123)
+        formatted = pprint.pformat(dc)
+        self.assertEqual(formatted, "dataclass1(field1='text', field2=123, field3=False)")
+
+    def test_larger_dataclass(self):
+        dc = dataclass1("some fairly long text", int(1e10), True)
+        formatted = pprint.pformat([dc, dc], width=60, indent=4)
+        self.assertEqual(formatted, """\
+[   dataclass1(field1='some fairly long text',
+               field2=10000000000,
+               field3=True),
+    dataclass1(field1='some fairly long text',
+               field2=10000000000,
+               field3=True)]""")
 
     def test_subclassing(self):
         # length(repr(obj)) > width
