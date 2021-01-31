@@ -454,7 +454,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            does not physically exist */
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
 
-        if (p->tok->lineno == lineno) {
+        if (p->tok->lineno <= lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         }
