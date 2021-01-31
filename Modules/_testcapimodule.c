@@ -4736,6 +4736,18 @@ return_result_with_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject*
+getitem_with_error(PyObject *self, PyObject *args)
+{
+    PyObject *map, *key;
+    if (!PyArg_ParseTuple(args, "OO", &map, &key)) {
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_ValueError, "bug");
+    return PyObject_GetItem(map, key);
+}
+
 static PyObject *
 test_pytime_fromseconds(PyObject *self, PyObject *args)
 {
@@ -5901,10 +5913,9 @@ static PyMethodDef TestMethods[] = {
         pymarshal_read_last_object_from_file, METH_VARARGS},
     {"pymarshal_read_object_from_file",
         pymarshal_read_object_from_file, METH_VARARGS},
-    {"return_null_without_error",
-        return_null_without_error, METH_NOARGS},
-    {"return_result_with_error",
-        return_result_with_error, METH_NOARGS},
+    {"return_null_without_error", return_null_without_error, METH_NOARGS},
+    {"return_result_with_error", return_result_with_error, METH_NOARGS},
+    {"getitem_with_error", getitem_with_error, METH_VARARGS},
     {"PyTime_FromSeconds", test_pytime_fromseconds,  METH_VARARGS},
     {"PyTime_FromSecondsObject", test_pytime_fromsecondsobject,  METH_VARARGS},
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},

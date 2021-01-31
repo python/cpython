@@ -72,7 +72,7 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
 
 /* only internal use */
 PyFrameObject* _PyFrame_New_NoTrack(PyThreadState *, PyCodeObject *,
-                                    PyObject *, PyObject *);
+                                    PyObject *, PyObject *, PyObject *);
 
 
 /* The rest of the interface is specific for frame objects */
@@ -92,3 +92,5 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
+
+PyObject *_PyEval_BuiltinsFromGlobals(PyObject *globals);

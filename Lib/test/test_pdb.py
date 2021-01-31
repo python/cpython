@@ -1703,6 +1703,29 @@ def bœr():
 
             self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
 
+    def test_issue42383(self):
+        with os_helper.temp_cwd() as cwd:
+            with open('foo.py', 'w') as f:
+                s = textwrap.dedent("""
+                    print('The correct file was executed')
+
+                    import os
+                    os.chdir("subdir")
+                """)
+                f.write(s)
+
+            subdir = os.path.join(cwd, 'subdir')
+            os.mkdir(subdir)
+            os.mkdir(os.path.join(subdir, 'subdir'))
+            wrong_file = os.path.join(subdir, 'foo.py')
+
+            with open(wrong_file, 'w') as f:
+                f.write('print("The wrong file was executed")')
+
+            stdout, stderr = self._run_pdb(['foo.py'], 'c\nc\nq')
+            expected = '(Pdb) The correct file was executed'
+            self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
+
 
 def load_tests(*args):
     from test import test_pdb
