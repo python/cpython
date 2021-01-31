@@ -27,6 +27,17 @@ def requires_curses_func(name):
     return unittest.skipUnless(hasattr(curses, name),
                                'requires curses.%s' % name)
 
+def requires_curses_window_meth(name):
+    def deco(test):
+        @functools.wraps(test)
+        def wrapped(self, *args, **kwargs):
+            if not hasattr(self.stdscr, name):
+                raise unittest.SkipTest('requires curses.window.%s' % name)
+            test(self, *args, **kwargs)
+        return wrapped
+    return deco
+
+
 def requires_colors(test):
     @functools.wraps(test)
     def wrapped(self, *args, **kwargs):
@@ -425,10 +436,8 @@ class TestCurses(unittest.TestCase):
         win.standout()
         win.standend()
 
+    @requires_curses_window_meth('chgat')
     def test_chgat(self):
-        if not hasattr(self.stdscr, 'chgat'):
-            self.skipTest('requires curses.window.chgat')
-
         win = curses.newwin(5, 15, 5, 2)
         win.addstr(2, 0, 'Lorem ipsum')
         win.addstr(3, 0, 'dolor sit amet')
@@ -528,18 +537,16 @@ class TestCurses(unittest.TestCase):
         win.refresh()
         curses.doupdate()
 
+    @requires_curses_window_meth('resize')
     def test_resize(self):
-        if not hasattr(self.stdscr, 'resize'):
-            self.skipTest('requires curses.window.resize')
         win = curses.newwin(5, 15, 2, 5)
         win.resize(4, 20)
         self.assertEqual(win.getmaxyx(), (4, 20))
         win.resize(5, 15)
         self.assertEqual(win.getmaxyx(), (5, 15))
 
+    @requires_curses_window_meth('enclose')
     def test_enclose(self):
-        if not hasattr(self.stdscr, 'enclose'):
-            self.skipTest('requires curses.window.enclose')
         win = curses.newwin(5, 15, 2, 5)
         # TODO: Return bool instead of 1/0
         self.assertTrue(win.enclose(2, 5))
@@ -1130,13 +1137,12 @@ class TestCurses(unittest.TestCase):
         human_readable_signature = stdscr.addch.__doc__.split("\n")[0]
         self.assertIn("[y, x,]", human_readable_signature)
 
+    @requires_curses_window_meth('resize')
     def test_issue13051(self):
-        stdscr = self.stdscr
-        if not hasattr(stdscr, 'resize'):
-            raise unittest.SkipTest('requires curses.window.resize')
-        box = curses.textpad.Textbox(stdscr, insert_mode=True)
-        lines, cols = stdscr.getmaxyx()
-        stdscr.resize(lines-2, cols-2)
+        win = curses.newwin(5, 15, 2, 5)
+        box = curses.textpad.Textbox(win, insert_mode=True)
+        lines, cols = win.getmaxyx()
+        win.resize(lines-2, cols-2)
         # this may cause infinite recursion, leading to a RuntimeError
         box._insert_printable_char('a')
 
