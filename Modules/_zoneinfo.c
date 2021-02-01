@@ -2525,7 +2525,11 @@ zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
         return NULL;
     }
 
-    PyObject_SetAttrString((PyObject *)cls, "_weak_cache", weak_cache);
+    if (PyObject_SetAttrString((PyObject *)cls, "_weak_cache",
+                               weak_cache) < 0) {
+        Py_DECREF(weak_cache);
+        return NULL;
+    }
     Py_DECREF(weak_cache);
     Py_RETURN_NONE;
 }
@@ -2625,6 +2629,9 @@ static int
 zoneinfomodule_exec(PyObject *m)
 {
     PyDateTime_IMPORT;
+    if (PyDateTimeAPI == NULL) {
+        goto error;
+    }
     PyZoneInfo_ZoneInfoType.tp_base = PyDateTimeAPI->TZInfoType;
     if (PyType_Ready(&PyZoneInfo_ZoneInfoType) < 0) {
         goto error;

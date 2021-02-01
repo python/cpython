@@ -168,6 +168,12 @@ _PyObject_IS_GC(PyObject *obj)
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
+// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL)));
+extern int _Py_CheckSlotResult(
+    PyObject *obj,
+    const char *slot_name,
+    int success);
+
 #ifdef __cplusplus
 }
 #endif
