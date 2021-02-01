@@ -373,22 +373,22 @@ be found in any statistics text.
 Alternative Generator
 ---------------------
 
-.. class:: Random([seed])
+.. class:: Random([x])
 
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
 
    .. deprecated:: 3.9
-      In the future, the *seed* must be one of the following types:
+      In the future, *x* must be one of the following types:
       :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
-.. class:: SystemRandom([seed])
+.. class:: SystemRandom([x])
 
    Class that uses the :func:`os.urandom` function for generating random numbers
    from sources provided by the operating system. Not available on all systems.
    Does not rely on software state, and sequences are not reproducible. Accordingly,
-   the :meth:`seed` method has no effect and is ignored.
+   *x* and the :meth:`seed` method have no effect and are ignored.
    The :meth:`getstate` and :meth:`setstate` methods raise
    :exc:`NotImplementedError` if called.
 
