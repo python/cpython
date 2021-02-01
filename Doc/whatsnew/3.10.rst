@@ -606,7 +606,7 @@ New Features
 * The :c:func:`PyType_GetSlot` function can accept static types.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
-* Add a new :c:func:`PyType_GetName` function to get type's name.
+* Add a new :c:func:`PyType_GetName` function to get type's short name.
   (Contributed by Hai Shi in :issue:`42035`.)
 
 

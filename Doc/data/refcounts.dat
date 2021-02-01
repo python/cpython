@@ -2309,7 +2309,7 @@ PyType_GenericNew:PyObject*:kwds:0:
 PyType_GetFlags:unsigned long:::
 PyType_GetFlags:PyTypeObject*:type:0:
 
-PyType_GetName:const char*:::
+PyType_GetName:PyObject*::+1:
 PyType_GetName:PyTypeObject*:type:0:
 
 PyType_GetSlot:void*:::

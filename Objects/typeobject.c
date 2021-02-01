@@ -3152,15 +3152,16 @@ PyType_FromSpec(PyType_Spec *spec)
     return PyType_FromSpecWithBases(spec, NULL);
 }
 
-const char *
+PyObject *
 PyType_GetName(PyTypeObject *type)
 {
     assert(PyType_Check(type));
     if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        PyTypeObject ht_type = ((PyHeapTypeObject *)type)->ht_type;
-        return ht_type.tp_name;
+        PyHeapTypeObject *ht_type = (PyHeapTypeObject *)type;
+        Py_INCREF(ht_type->ht_name);
+        return ht_type->ht_name;
     }
-    return type->tp_name;
+    return PyUnicode_FromString(_PyType_Name(type));
 }
 
 void *

@@ -1078,18 +1078,21 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    const char *tp_name = PyType_GetName(&PyLong_Type);
-    assert(strcmp(tp_name, "int") == 0);
+    PyObject *tp_name = PyType_GetName(&PyLong_Type);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "int") == 0);
+    Py_DECREF(tp_name);
 
     tp_name = PyType_GetName(&PyModule_Type);
-    assert(strcmp(tp_name, "module") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
+    Py_DECREF(tp_name);
 
     PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
     if (HeapTypeNameType == NULL) {
         Py_RETURN_NONE;
     }
     tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(tp_name, "_testcapi.HeapTypeNameType") == 0);
+    assert(strcmp(PyUnicode_AsUTF8(tp_name), "HeapTypeNameType") == 0);
+    Py_DECREF(tp_name);
 
     Py_DECREF(HeapTypeNameType);
     Py_RETURN_NONE;

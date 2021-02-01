@@ -233,7 +233,7 @@ PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
-PyAPI_FUNC(const char *) PyType_GetName(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 #endif
 
 /* Generic type check */

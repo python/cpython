@@ -1,1 +1,1 @@
-Add a new :c:func:`PyType_GetName` function to get type's name.
+Add a new :c:func:`PyType_GetName` function to get type's short name.

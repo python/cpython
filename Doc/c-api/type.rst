@@ -95,11 +95,9 @@ Type Objects
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
-.. c:function:: const char* PyType_GetName(PyTypeObject *type)
+.. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name. The returned pointer includes the module name
-   if type's name have a prefix of module name.
-   Callers can hold this pointer until the type has been deallocated.
+   Return the type's name. The returned object haven't a prefix of module name.
 
    .. versionadded:: 3.10
 
