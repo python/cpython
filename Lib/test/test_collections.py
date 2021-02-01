@@ -24,6 +24,7 @@ from collections.abc import Hashable, Iterable, Iterator, Generator, Reversible
 from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
+from collections.abc import MappingWithOr, MutableMappingWithIor
 from collections.abc import Sequence, MutableSequence
 from collections.abc import ByteString
 
@@ -1798,6 +1799,45 @@ class TestCollectionABCs(ABCTestCase):
                 return iter(())
         self.validate_comparison(MyMapping())
         self.assertRaises(TypeError, reversed, MyMapping())
+
+    def test_MappingWithOr(self):
+        class MyMapping(MappingWithOr):
+            def __init__(self, data=None):
+                self.data = data or {}
+            def __getitem__(self, key):
+                return self.data[key]
+            def __len__(self):
+                return len(self.data)
+            def __iter__(self):
+                return iter(self.data)
+
+        result = MyMapping({1: 2}) | {3: 4}
+        self.assertIsInstance(result, MyMapping)
+        self.assertEqual(result, {1: 2, 3: 4})
+
+    def test_MutableMappingWithIor(self):
+        class MyMutableMappingWithIor(MutableMappingWithIor):
+            def __init__(self, *args, **kwargs):
+                self.data = {}
+                self.update(*args, **kwargs)
+            def __setitem__(self, key, value):
+                self.data[key] = value
+            def __delitem__(self, key):
+                del self.data[key]
+            def __getitem__(self, key):
+                return self.data[key]
+            def __len__(self):
+                return len(self.data)
+            def __iter__(self):
+                return iter(self.data)
+
+        result = MyMutableMappingWithIor({1: 2}) | {3: 4}
+        self.assertIsInstance(result, MyMutableMappingWithIor)
+        self.assertEqual(result, {1: 2, 3: 4})
+
+        result |= {5: 6}
+        self.assertIsInstance(result, MyMutableMappingWithIor)
+        self.assertEqual(result, {1: 2, 3: 4, 5: 6})
 
     def test_MutableMapping(self):
         for sample in [dict]:

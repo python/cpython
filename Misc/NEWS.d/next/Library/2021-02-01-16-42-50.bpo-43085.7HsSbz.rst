@@ -1,0 +1,4 @@
+Add ``collections.abc.MappingWithOr`` and
+``collections.abc.MutableMappingWithIor`` classes that provide default
+implementation of ``__or__`` and ``__ior__`` methods. Patch provided by
+Yurii Karabas.

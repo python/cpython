@@ -21,6 +21,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Sized", "Container", "Callable", "Collection",
            "Set", "MutableSet",
            "Mapping", "MutableMapping",
+           "MappingWithOr", "MutableMappingWithIor",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
            "ByteString",
@@ -800,6 +801,26 @@ class Mapping(Collection):
 Mapping.register(mappingproxy)
 
 
+class MappingWithOr(Mapping):
+
+    @classmethod
+    def _from_mapping(cls, mapping):
+        """Construct an instance of the class from any mapping input.
+        Must override this method if the class constructor signature
+        does not accept an mapping for an input.
+        """
+        return cls(mapping)
+
+    def __or__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+
+        return self._from_mapping({**self, **other})
+
+
+MappingWithOr.register(mappingproxy)
+
+
 class MappingView(Sized):
 
     __slots__ = '_mapping',
@@ -962,6 +983,15 @@ class MutableMapping(Mapping):
 
 MutableMapping.register(dict)
 
+
+class MutableMappingWithIor(MappingWithOr, MutableMapping):
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+
+MutableMappingWithIor.register(dict)
 
 ### SEQUENCES ###
 
