@@ -1,0 +1,1 @@
+Make internal caches of the ``_json`` module compatible with subinterpreters.
