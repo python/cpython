@@ -817,6 +817,12 @@ class MappingWithOr(Mapping):
 
         return self._from_mapping({**self, **other})
 
+    def __ror__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+
+        return self._from_mapping({**other, **self})
+
 
 MappingWithOr.register(mappingproxy)
 
