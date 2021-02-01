@@ -1,0 +1,3 @@
+Ensure that the value of
+sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') is always a string,
+even in when the value is parsable as an integer.
