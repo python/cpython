@@ -255,13 +255,7 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def visit_Forced(self, node: Forced) -> FunctionCall:
         call = self.generate_call(node.node)
-        if call.nodetype == NodeTypes.NAME_TOKEN:
-            raise NotImplementedError("Forced tokens do not work with name tokens")
-        elif call.nodetype == NodeTypes.SOFT_KEYWORD:
-            raise NotImplementedError("Forced tokens do not work with soft keywords")
-        elif call.nodetype == NodeTypes.KEYWORD:
-            raise NotImplementedError("Forced tokens do not work with keywords")
-        elif call.nodetype == NodeTypes.GENERIC_TOKEN:
+        if call.nodetype == NodeTypes.GENERIC_TOKEN:
             val = ast.literal_eval(node.node.value)
             assert val in self.exact_tokens, f"{node.value} is not a known literal"
             type = self.exact_tokens[val]
@@ -273,7 +267,9 @@ class CCallMakerVisitor(GrammarVisitor):
                 return_type="Token *",
                 comment=f"forced_token='{val}'",
             )
-        raise NotImplementedError("Forced tokens do not work with generic tokens")
+        else:
+            raise NotImplementedError(
+                    f"Forced tokens don't work with {call.nodetype} tokens")
 
     def visit_Opt(self, node: Opt) -> FunctionCall:
         call = self.generate_call(node.node)
