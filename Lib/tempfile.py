@@ -46,6 +46,7 @@ from random import Random as _Random
 import sys as _sys
 import types as _types
 import weakref as _weakref
+import platform as _platform
 import _thread
 _allocate_lock = _thread.allocate_lock
 
@@ -276,7 +277,7 @@ tempdir = None
 
 def gettempdir():
     """Accessor for tempfile.tempdir."""
-    if platform.system() == 'Darwin':
+    if _platform.system() == 'Darwin':
         return '/tmp'
     global tempdir
     if tempdir is None:
