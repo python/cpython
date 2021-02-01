@@ -15741,7 +15741,7 @@ invalid_with_item_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression 'as' !(t_primary) star_target !(',' | ')' | ':')"));
-            _res = RAISE_SYNTAX_ERROR ( "expected one of: ':', ','" );
+            _res = RAISE_SYNTAX_ERROR ( "expected one of: ':' ','" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -15797,7 +15797,7 @@ invalid_with_item_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression !(',' | ')' | ':')"));
-            _res = RAISE_SYNTAX_ERROR ( "expected one of: ':', ','" );
+            _res = RAISE_SYNTAX_ERROR ( "expected one of: ':' ','" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

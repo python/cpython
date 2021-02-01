@@ -720,11 +720,11 @@ invalid_double_type_comments:
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
 invalid_with_item:
     | e=expression 'as' !(a=t_primary { (void*)a }) t=star_target !(',' | ')' | ':') {
-        RAISE_SYNTAX_ERROR("expected one of: ':', ','")}
+        RAISE_SYNTAX_ERROR("expected one of: ':' ','")}
     | expression 'as' a=expression {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | e=expression !(',' | ')' | ':') {
-        RAISE_SYNTAX_ERROR("expected one of: ':', ','")}
+        RAISE_SYNTAX_ERROR("expected one of: ':' ','")}
 
 invalid_for_target:
     | ASYNC? 'for' a=star_expressions {
