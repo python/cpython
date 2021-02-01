@@ -1,0 +1,2 @@
+Fix HTMLParser parsing rules for element attributes containing
+commas with spaces. Patch by Karl Dubost.
