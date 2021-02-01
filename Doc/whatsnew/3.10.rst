@@ -435,6 +435,14 @@ py_compile
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
 
+pyclbr
+------
+
+Added an ``end_lineno`` attribute to the ``Function`` and ``Class``
+objects in the tree returned by :func:`pyclbr.readline` and
+:func:`pyclbr.readline_ex`.  It matches the existing (start) ``lineno``.
+(Contributed by Aviral Srivastava in :issue:`38307`.)
+
 shelve
 ------
 
