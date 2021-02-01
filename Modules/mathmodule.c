@@ -1795,13 +1795,29 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     for (int s = c_bit_length - 6; s >= 0; --s) {
-        PyObject *q;
+        PyObject *q, *t;
         size_t e = d;
 
         d = c >> s;
 
-        /* q = (n >> 2*c - e - d + 1) // a */
+        /* t = a * a << d - e - 1 */
+        t = PyNumber_Multiply(a, a);
+        if (t == NULL) {
+            goto error;
+        }
+        Py_SETREF(t, _PyLong_Lshift(t, d - 1U - e));
+        if (t == NULL) {
+            goto error;
+        }
+
+        /* q = ((n >> 2*c - e - d + 1) - t) // a */
         q = _PyLong_Rshift(n, 2U*c - d - e + 1U);
+        if (q == NULL) {
+            Py_DECREF(t);
+            goto error;
+        }
+        Py_SETREF(q, PyNumber_Subtract(q, t));
+        Py_DECREF(t);
         if (q == NULL) {
             goto error;
         }
@@ -1810,8 +1826,8 @@ math_isqrt(PyObject *module, PyObject *n)
             goto error;
         }
 
-        /* a = (a << d - 1 - e) + q */
-        Py_SETREF(a, _PyLong_Lshift(a, d - 1U - e));
+        /* a = (a << d - e) + q */
+        Py_SETREF(a, _PyLong_Lshift(a, d - e));
         if (a == NULL) {
             Py_DECREF(q);
             goto error;
