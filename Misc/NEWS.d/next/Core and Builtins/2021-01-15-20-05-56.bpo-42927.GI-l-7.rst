@@ -1,0 +1,2 @@
+The inline cache for ``LOAD_ATTR`` now also optimizes access to attributes defined by ``__slots__``.
+This makes reading such attribute up to 30% faster.

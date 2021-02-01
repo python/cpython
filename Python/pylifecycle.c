@@ -2496,10 +2496,12 @@ fatal_error_exit(int status)
 }
 
 
-// Dump the list of extension modules of sys.modules into fd file descriptor.
+// Dump the list of extension modules of sys.modules, excluding stdlib modules
+// (sys.stdlib_module_names), into fd file descriptor.
+//
 // This function is called by a signal handler in faulthandler: avoid memory
-// allocations and keep the implementation simple. For example, the list
-// is not sorted on purpose.
+// allocations and keep the implementation simple. For example, the list is not
+// sorted on purpose.
 void
 _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
 {
@@ -2507,15 +2509,35 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         return;
     }
     PyObject *modules = interp->modules;
-    if (!PyDict_Check(modules)) {
+    if (modules == NULL || !PyDict_Check(modules)) {
         return;
     }
 
-    PUTS(fd, "\nExtension modules: ");
-
-    Py_ssize_t pos = 0;
+    Py_ssize_t pos;
     PyObject *key, *value;
-    int comma = 0;
+
+    // Avoid PyDict_GetItemString() which calls PyUnicode_FromString(),
+    // memory cannot be allocated on the heap in a signal handler.
+    // Iterate on the dict instead.
+    PyObject *stdlib_module_names = NULL;
+    pos = 0;
+    while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+        if (PyUnicode_Check(key)
+           && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+            stdlib_module_names = value;
+            break;
+        }
+    }
+    // If we failed to get sys.stdlib_module_names or it's not a frozenset,
+    // don't exclude stdlib modules.
+    if (stdlib_module_names != NULL && !PyFrozenSet_Check(stdlib_module_names)) {
+        stdlib_module_names = NULL;
+    }
+
+    // List extensions
+    int header = 1;
+    Py_ssize_t count = 0;
+    pos = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
         if (!PyUnicode_Check(key)) {
             continue;
@@ -2523,15 +2545,46 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         if (!_PyModule_IsExtension(value)) {
             continue;
         }
+        // Use the module name from the sys.modules key,
+        // don't attempt to get the module object name.
+        if (stdlib_module_names != NULL) {
+            int is_stdlib_ext = 0;
 
-        if (comma) {
+            Py_ssize_t i = 0;
+            PyObject *item;
+            Py_hash_t hash;
+            while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
+                if (PyUnicode_Check(item)
+                    && PyUnicode_Compare(key, item) == 0)
+                {
+                    is_stdlib_ext = 1;
+                    break;
+                }
+            }
+            if (is_stdlib_ext) {
+                // Ignore stdlib extension
+                continue;
+            }
+        }
+
+        if (header) {
+            PUTS(fd, "\nExtension modules: ");
+            header = 0;
+        }
+        else {
             PUTS(fd, ", ");
         }
-        comma = 1;
 
         _Py_DumpASCII(fd, key);
+        count++;
     }
-    PUTS(fd, "\n");
+
+    if (count) {
+        PUTS(fd, " (total: ");
+        _Py_DumpDecimal(fd, count);
+        PUTS(fd, ")");
+        PUTS(fd, "\n");
+    }
 }
 
 

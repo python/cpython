@@ -1649,10 +1649,10 @@ def bœr():
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',
-            '(Pdb) *** SyntaxError: unexpected EOF while parsing',
+            '(Pdb) *** SyntaxError: \'(\' was never closed',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
-            '*** SyntaxError: unexpected EOF while parsing',
+            '*** SyntaxError: \'(\' was never closed',
             'LEAVING RECURSIVE DEBUGGER',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
@@ -1661,6 +1661,71 @@ def bœr():
             'LEAVING RECURSIVE DEBUGGER',
             '(Pdb) ',
         ])
+
+
+    def test_issue42384(self):
+        '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''
+        script = textwrap.dedent("""
+            import sys
+            print('sys.path[0] is', sys.path[0])
+        """)
+        commands = 'c\nq'
+
+        with os_helper.temp_cwd() as cwd:
+            expected = f'(Pdb) sys.path[0] is {os.path.realpath(cwd)}'
+
+            stdout, stderr = self.run_pdb_script(script, commands)
+
+            self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
+
+    @os_helper.skip_unless_symlink
+    def test_issue42384_symlink(self):
+        '''When running `python foo.py` sys.path[0] resolves symlinks. `python -m pdb foo.py` should behave the same'''
+        script = textwrap.dedent("""
+            import sys
+            print('sys.path[0] is', sys.path[0])
+        """)
+        commands = 'c\nq'
+
+        with os_helper.temp_cwd() as cwd:
+            cwd = os.path.realpath(cwd)
+            dir_one = os.path.join(cwd, 'dir_one')
+            dir_two = os.path.join(cwd, 'dir_two')
+            expected = f'(Pdb) sys.path[0] is {dir_one}'
+
+            os.mkdir(dir_one)
+            with open(os.path.join(dir_one, 'foo.py'), 'w') as f:
+                f.write(script)
+            os.mkdir(dir_two)
+            os.symlink(os.path.join(dir_one, 'foo.py'), os.path.join(dir_two, 'foo.py'))
+
+            stdout, stderr = self._run_pdb([os.path.join('dir_two', 'foo.py')], commands)
+
+            self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
+
+    def test_issue42383(self):
+        with os_helper.temp_cwd() as cwd:
+            with open('foo.py', 'w') as f:
+                s = textwrap.dedent("""
+                    print('The correct file was executed')
+
+                    import os
+                    os.chdir("subdir")
+                """)
+                f.write(s)
+
+            subdir = os.path.join(cwd, 'subdir')
+            os.mkdir(subdir)
+            os.mkdir(os.path.join(subdir, 'subdir'))
+            wrong_file = os.path.join(subdir, 'foo.py')
+
+            with open(wrong_file, 'w') as f:
+                f.write('print("The wrong file was executed")')
+
+            stdout, stderr = self._run_pdb(['foo.py'], 'c\nc\nq')
+            expected = '(Pdb) The correct file was executed'
+            self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
+
 
 def load_tests(*args):
     from test import test_pdb

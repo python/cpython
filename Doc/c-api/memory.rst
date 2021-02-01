@@ -304,6 +304,12 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
+.. note::
+    There is no guarantee that the memory returned by these allocators can be
+    succesfully casted to a Python object when intercepting the allocating
+    functions in this domain by the methods described in
+    the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
+
 The :ref:`default object allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`.
 
@@ -385,6 +391,7 @@ Legend:
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`
 * "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`
 
+.. _customize-memory-allocators:
 
 Customize Memory Allocators
 ===========================

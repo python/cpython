@@ -630,6 +630,7 @@ OPENSSL_INCLUDES
 ENSUREPIP
 SRCDIRS
 THREADHEADERS
+WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
@@ -847,6 +848,7 @@ with_libm
 with_libc
 enable_big_digits
 with_platlibdir
+with_wheel_pkg_dir
 with_computed_gotos
 with_ensurepip
 with_openssl
@@ -1576,6 +1578,9 @@ Optional Packages:
                           system-dependent)
   --with-platlibdir=DIRNAME
                           Python library directory name (default is "lib")
+  --with-wheel-pkg-dir=PATH
+                          Directory of wheel packages used by ensurepip
+                          (default: none)
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
   --with-ensurepip[=install|upgrade|no]
@@ -6527,7 +6532,7 @@ fi
 $as_echo_n "checking PROFILE_TASK... " >&6; }
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo'
+	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PROFILE_TASK" >&5
 $as_echo "$PROFILE_TASK" >&6; }
@@ -15490,6 +15495,29 @@ if test x$PLATFORM_TRIPLET = x; then
   LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}"
 else
   LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+fi
+
+
+# Check for --with-wheel-pkg-dir=PATH
+
+WHEEL_PKG_DIR=""
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-wheel-pkg-dir" >&5
+$as_echo_n "checking for --with-wheel-pkg-dir... " >&6; }
+
+# Check whether --with-wheel-pkg-dir was given.
+if test "${with_wheel_pkg_dir+set}" = set; then :
+  withval=$with_wheel_pkg_dir;
+if test -n "$withval"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  WHEEL_PKG_DIR="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 
