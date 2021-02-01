@@ -276,6 +276,8 @@ tempdir = None
 
 def gettempdir():
     """Accessor for tempfile.tempdir."""
+    if platform.system() == 'Darwin':
+        return '/tmp'
     global tempdir
     if tempdir is None:
         _once_lock.acquire()
