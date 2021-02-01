@@ -40,12 +40,11 @@ _PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     return tstate->interp->eval_frame(tstate, f, throwflag);
 }
 
-extern PyObject *_PyEval_EvalCode(
-    PyThreadState *tstate,
-    PyFrameConstructor *desc, PyObject *locals,
-    PyObject *const *args, Py_ssize_t argcount,
-    PyObject *const *kwnames, PyObject *const *kwargs,
-    Py_ssize_t kwcount, int kwstep);
+extern PyObject *
+_PyEval_Vector(PyThreadState *tstate,
+            PyFrameConstructor *desc, PyObject *locals,
+            PyObject* const* args, size_t argcount,
+            PyObject *kwnames);
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);

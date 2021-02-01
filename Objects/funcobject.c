@@ -575,9 +575,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
                                                  globals);
-    if (newfunc == NULL)
+    if (newfunc == NULL) {
         return NULL;
-
+    }
     if (name != Py_None) {
         Py_INCREF(name);
         Py_SETREF(newfunc->func_name, name);
