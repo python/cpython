@@ -837,9 +837,6 @@ _PyPegen_expect_token(Parser *p, int type)
 
 Token *
 _PyPegen_expect_forced_token(Parser *p, int type, const char* expected) {
-    if (!p->call_invalid_rules) {
-        return _PyPegen_expect_token(p, type);
-    }
 
     if (p->error_indicator == 1) {
         return NULL;
