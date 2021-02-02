@@ -1,14 +1,9 @@
 # Todo
 
-# global vars in a module
-# delete global
-# nonlocal set variable
 # when a call expression is spread over multiple lines, step into fails
 # should step forward when it pops a stack, come back to the beginning of the state of the line in parent scope,
 #  or after?
 # ability to filter tracing only to the code you choose
-# should we make stack variables heap objects the same way Python does it? 
-#    So that del var statements can work naturally
 # get classes to work as objects
 # log exceptions
 # get pygame working
@@ -22,6 +17,11 @@
 # try it on a "real" app
 # optimization: use low level iteration methods whenever possible
 
+# should we make stack variables heap objects the same way Python does it? (done)
+#    So that del var statements can work naturally (done)
+# global vars in a module (done)
+# delete global (done)
+# nonlocal set variable (done)
 # optimization: perf of recreate.py (probably transactions) (done)
 # support for slices (ascii_draw.py) (done)
 # make log file same prefix name as program name (done)
@@ -100,9 +100,7 @@ def define_schema(conn):
         create table Snapshot (
             id integer primary key,
             fun_call_id integer,
-            stack integer,
             heap integer,
-            interop integer,
             line_no integer,
             error_id integer,
             constraint Snapshot_fk_fun_call_id foreign key (fun_call_id)
@@ -123,7 +121,10 @@ def define_schema(conn):
         create table FunCall (
             id integer primary key,
             fun_name text,
-            parameters integer,
+            locals integer, -- heap ID
+            globals integer, -- heap ID
+            closure_cellvars text, -- json-like object
+            closure_freevars text, -- json-like object
             parent_id integer,
             code_file_id integer,
             
@@ -230,67 +231,45 @@ class HeapRef(object):
     def __hash__(self):
         return self.id
 
-class FunCall(object):
-    def __init__(self, id, filename, code_file_id, name, varnames, locals):
-        self.id = id
-        self.filename = filename
-        self.code_file_id = code_file_id
-        self.name = name
-        self.varnames = varnames
-
-    def __repr__(self):
-        return "<" + str(self.id) + ">" + self.name + "(" + str(self.varnames) + ")"
 
 def recreate_past(conn, filename):
 
     fun_lookup = {}
-
-    class StackFrameVars(object):
-        def __init__(self, stack_locals, varnames, extra_vars = None):
-            self.varnames = varnames
-            self.stack_locals = stack_locals
-            self.init_vars_dict(stack_locals)
-            if extra_vars:
-                self.vars_dict.update(extra_vars)
-
-        def init_vars_dict(self, stack_locals):
-            self.vars_dict = {}
-            for i in range(len(self.varnames)):
-                varname = self.varnames[i]
-                value = stack_locals[i]
-                self.vars_dict[varname] = value
-        
-        def update_local(self, idx, value):
-            new_stack_locals = self.stack_locals.copy()
-            new_stack_locals[idx] = value
-            return StackFrameVars(new_stack_locals, self.varnames)
-        
-        def update_by_name(self, varname, value):
-            return StackFrameVars(self.stack_locals, self.varnames, { **self.vars_dict, varname: value })
-
-        def serialize(self):
-            return serialize(self.vars_dict)
-        
-        def __repr__(self):
-            return self.serialize()
-
-    class StackFrame(object):
-        def __init__(self, fun_call, frame_vars, parent):
-            self.fun_call = fun_call
-            self.frame_vars = frame_vars
+    
+    class FunCall(object):
+        def __init__(self, 
+            id, name, 
+            local_varnames, 
+            local_vars_id,
+            global_vars_id, 
+            cell_vars,
+            free_vars,
+            parent,
+            code_file_id):
+            self.id = id
+            self.name = name
+            self.local_varnames = local_varnames
+            self.local_vars_id = local_vars_id
+            self.global_vars_id = global_vars_id
+            self.cell_vars = cell_vars
+            self.free_vars = free_vars
             self.parent = parent
+            self.code_file_id = code_file_id
 
-        def serialize(self):
-            parent = "null"
-            if self.parent:
-                parent = "*" + str(immut_id(self.parent))
-            return ('{"funCall": ' + str(self.fun_call.id) + 
-                ', "variables": *' + str(immut_id(self.frame_vars)) + 
-                ', "parent": ' + parent +
-                '}')
-        
+        def save(self, cursor):
+            cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (
+                self.id,
+                self.name,
+                self.local_vars_id,
+                self.global_vars_id,
+                serialize(self.cell_vars),
+                serialize(self.free_vars),
+                self.parent and self.parent.id,
+                self.code_file_id
+            ))
+
         def __repr__(self):
-            return "Frame<" + repr(self.fun_call) + ", " + repr(self.frame_vars) + ">"
+            return "<" + str(self.id) + ">" + self.name + "(" + str(self.varnames) + ")"
 
     def quote(value):
         return '"' + value.replace('"', '\\"').replace('\\', '\\\\') + '"'
@@ -370,12 +349,12 @@ def recreate_past(conn, filename):
             oid =  empty_dict_oid
         if obj == empty_set:
             oid =  empty_set_oid
-        if isinstance(obj, StackFrameVars) and obj.vars_dict == {}:
-            oid = empty_dict_oid
 
         if oid is None:
             oid = new_obj_id()
             object_id_to_immutable_id_dict[id(obj)] = oid
+            if isinstance(obj, dict) and "global_test_module" in obj:
+                raise "here"
             cursor.execute("INSERT INTO Object VALUES (?, ?)", (
                 oid,
                 serialize(obj)
@@ -429,116 +408,115 @@ def recreate_past(conn, filename):
             ))
             code_files[filename] = code_file_id
 
-    def process_push_frame(filename, name, num_varnames, *rest):
+    def grab_var_args(a_list):
+        num_args = a_list[0]
+        args = a_list[1:1 + num_args]
+        rest = a_list[1 + num_args:]
+        return num_args, args, rest
+
+    def gen_var_dict(varnames, values):
+        var_dict = {}
+        for i in range(len(varnames)):
+            varname = varnames[i]
+            value = values[i]
+            var_dict[varname] = value
+        return var_dict
+
+    def process_push_frame(filename, name, global_vars_id, local_vars_id, *rest):
         nonlocal stack
-        nonlocal next_code_file_id
-        nonlocal activate_snapshots
         
-        varnames = []
-        locals = []
-        for i in range(num_varnames):
-            varnames.append(rest[i])
-        for i in range(num_varnames, len(rest)):
-            locals.append(rest[i])
+        num_local_vars, local_varnames, rest = grab_var_args(rest)
+        num_cell_vars, cell_varnames, rest = grab_var_args(rest)
+        num_free_vars, free_varnames, rest = grab_var_args(rest)
 
-        parent_id = None
-        if stack is not None:
-            parent_id = stack.fun_call.id
-        
+        local_vars = rest[0:num_local_vars]
+        rest = rest[num_local_vars:]
+        cell_vars = rest[0:num_cell_vars]
+        free_vars = rest[num_cell_vars:]
+
+        local_var_dict = gen_var_dict(local_varnames, local_vars)
+        cell_var_dict = gen_var_dict(cell_varnames, cell_vars)
+        free_var_dict = gen_var_dict(free_varnames, free_vars)
+
+        #print("push_frame", name, "cell_var_dict", cell_var_dict, "free_var_dict", free_var_dict)
+
         ensure_code_file_saved(filename, name)
-
         code_file_id = code_files.get(filename)
-        fun_call = FunCall(new_fun_call_id(), filename, code_file_id, name, varnames, locals)
-        frame_vars = StackFrameVars(locals, varnames)
-        save_object(frame_vars)
-        stack = StackFrame(fun_call, frame_vars, stack)
-        save_object(stack)
 
-        cursor.execute("INSERT INTO FunCall VALUES (?, ?, ?, ?, ?)", (
-            fun_call.id,
+        update_heap_object(local_vars_id, local_var_dict)
+
+        fun_call = FunCall(
+            new_fun_call_id(),
             name,
-            immut_id(frame_vars),
-            parent_id,
+            local_varnames,
+            local_vars_id,
+            global_vars_id,
+            cell_var_dict,
+            free_var_dict,
+            stack,
             code_file_id
-        ))
+        )
+        fun_call.save(cursor)
 
+        stack = fun_call
     
     fun_lookup["PUSH_FRAME"] = process_push_frame
 
     def process_visit(line_no):
         nonlocal curr_line_no
-
         curr_line_no = line_no
         if not activate_snapshots:
             return
-        cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
+        cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?)", (
             new_snapshot_id(), 
-            stack and stack.fun_call.id, 
-            stack and immut_id(stack) or None, 
+            stack and stack.id, 
             heap_version,
-            None,
             line_no,
             None
         ))
     
     fun_lookup["VISIT"] = process_visit
 
-    def process_store_name(name, value):
-        nonlocal stack
-        new_frame_vars = stack.frame_vars.update_by_name(name, value)
-        save_object(new_frame_vars)
-        stack = StackFrame(stack.fun_call, new_frame_vars, stack.parent)
-        save_object(stack)
+    def process_store_name(heap_id, name, value):
+        ns = heap_id_to_object_dict[heap_id]
+        new_ns = ns.copy()
+        new_ns[name] = value
+        update_heap_object(heap_id, new_ns)
 
     fun_lookup["STORE_NAME"] = process_store_name
+    fun_lookup["STORE_GLOBAL"] = process_store_name
     
     def process_store_fast(index, value):
-        nonlocal stack
-        assert stack is not None
-        new_frame_vars = stack.frame_vars.update_local(index, value)
-        save_object(new_frame_vars)
-        stack = StackFrame(stack.fun_call, new_frame_vars, stack.parent)
-        save_object(stack)
+        varname = stack.local_varnames[index]
+        local_vars = heap_id_to_object_dict[stack.local_vars_id]
+        new_local_vars = local_vars.copy()
+        new_local_vars[varname] = value
+        update_heap_object(stack.local_vars_id, new_local_vars)
     
     fun_lookup["STORE_FAST"] = process_store_fast
 
-    def process_store_global(name, value):
-        nonlocal stack
-        def update_stack_for_store(s, name, value):
-            if s is None:
-                return None
-            if s[0].fun_call.name == "<module>":
-                new_frame_vars = s.frame_vars.update_by_name(name, value)
-                save_object(new_frame_vars)
-                new_stack = StackFrame(s.fun_call, new_frame_vars, s.parent)
-                save_object(new_stack)
-                return new_stack
-            else:
-                new_parent = update_stack_for_store(s.parent, name, value)
-                new_stack = StackFrame(s.fun_call, s.frame_vars, new_parent)
-                save_object(new_stack)
-                return new_stack
-        
-        new_stack = update_stack_for_store(stack, name, value)
-        stack = new_stack
+    def process_store_deref(heap_id, value):
+        cell = heap_id_to_object_dict[heap_id]
+        new_cell = cell.copy()
+        new_cell["ob_ref"] = value
+        update_heap_object(heap_id, new_cell)
 
-    fun_lookup["STORE_GLOBAL"] = process_store_global
+    fun_lookup["STORE_DEREF"] = process_store_deref
     
     def process_return_value(ret_val, *extra_params):
-        nonlocal stack
         if not activate_snapshots:
             return
-        new_frame_vars = stack.frame_vars.update_by_name("<ret val>", ret_val)
-        save_object(new_frame_vars)
-        stack = StackFrame(stack.fun_call, new_frame_vars, stack.parent)
-        save_object(stack)
 
-        cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?, ?, ?)", (
+        heap_id = stack.local_vars_id
+        local_vars = heap_id_to_object_dict[heap_id]
+        new_local_vars = local_vars.copy()
+        new_local_vars["<ret val>"] = ret_val
+        update_heap_object(heap_id, new_local_vars)
+
+        cursor.execute("INSERT INTO Snapshot VALUES (?, ?, ?, ?, ?)", (
             new_snapshot_id(), 
-            stack and stack.fun_call.id, 
-            immut_id(stack), 
+            stack and stack.id, 
             heap_version,
-            None,
             curr_line_no, 
             None
         ))
@@ -548,10 +526,8 @@ def recreate_past(conn, filename):
 
     def process_pop_frame(filename, name):
         nonlocal stack
-        fun_call = stack.fun_call
         try:
-            assert stack.fun_call.filename == filename
-            assert stack.fun_call.name == name
+            assert stack.name == name
             stack = stack.parent
         except:
             print(log_line_no, curr_line_no, line)
@@ -572,10 +548,9 @@ def recreate_past(conn, filename):
     fun_lookup["NEW_STRING"] = process_new_string
     
     def process_list_append(heap_id, item):
-        if heap_id in heap_id_to_object_dict:
-            a_list = heap_id_to_object_dict[heap_id]
-            a_list = a_list + [item]
-            update_heap_object(heap_id, a_list)
+        a_list = heap_id_to_object_dict[heap_id]
+        a_list = a_list + [item]
+        update_heap_object(heap_id, a_list)
     
     fun_lookup["LIST_APPEND"] = process_list_append
     
@@ -696,8 +671,7 @@ def recreate_past(conn, filename):
     def process_dict_delete_subscript(heap_id, key):
         a_dict = heap_id_to_object_dict[heap_id]
         new_dict = a_dict.copy()
-        if key in new_dict:
-            del new_dict[key]
+        del new_dict[key]
         update_heap_object(heap_id, new_dict)
     
     fun_lookup["DICT_DELETE_SUBSCRIPT"] = process_dict_delete_subscript
@@ -723,20 +697,6 @@ def recreate_past(conn, filename):
         update_heap_object(heap_id, new_dict)
     
     fun_lookup["DICT_SET_DEFAULT"] = process_dict_setdefault
-
-    def process_dealloc(heap_id):
-        # nonlocal heap
-        # if heap_id in heap_id_to_object_dict:
-        #     obj = heap_id_to_object_dict[heap_id]
-        #     del heap_id_to_object_dict[heap_id]
-        #     del object_id_to_immutable_id_dict[id(obj)]
-        #     new_heap = heap.copy()
-        #     del new_heap[str(heap_id)]
-        #     heap = new_heap
-        #     save_object(heap)
-        pass
-    
-    fun_lookup["DEALLOC"] = process_dealloc
 
     def process_new_set(heap_id, *items):
         a_set = set(items)
@@ -766,11 +726,7 @@ def recreate_past(conn, filename):
 
     fun_lookup["SET_DISCARD"] = process_set_discard
 
-    def process_new_object(heap_id, type_name, type_object):
-        if type_name == 'type':
-            # this is the definition of a custom class
-            # do don't track anything here
-            return
+    def process_new_object(heap_id, type_object):
         # represent an object simply with a dict
         update_heap_object(heap_id, {})
     

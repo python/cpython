@@ -1,5 +1,3 @@
-def draw(cursor, color, buffer, data):
-            log_file.write("Input: (" + repr(data) + ")\n"
-            log_file.flush()
-main()
-    
+import re
+
+ARGUMENT_REGEX = re.compile(r"|([0-9A-Fa-f])")

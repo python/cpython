@@ -2586,7 +2586,7 @@ main_loop:
             else
                 err = PyObject_SetItem(ns, name, v);
             
-            Rewind_StoreName(name, v);
+            Rewind_StoreName(ns, name, v);
             
             Py_DECREF(v);
             if (err != 0)
@@ -2696,7 +2696,9 @@ main_loop:
             PyObject *v = POP();
             int err;
             err = PyDict_SetItem(f->f_globals, name, v);
-            Rewind_StoreGlobal(name, v);
+
+            Rewind_StoreGlobal(f->f_globals, name, v);
+            
             Py_DECREF(v);
             if (err != 0)
                 goto error;
@@ -2708,7 +2710,9 @@ main_loop:
             PyObject *name = GETITEM(names, oparg);
             int err;
             err = PyDict_DelItem(f->f_globals, name);
-            Rewind_DeleteGlobal(name);
+
+            Rewind_DeleteGlobal(f->f_globals, name);
+            
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     format_exc_check_arg(tstate, PyExc_NameError,
@@ -2965,6 +2969,8 @@ main_loop:
             PyObject *v = POP();
             PyObject *cell = freevars[oparg];
             PyObject *oldobj = PyCell_GET(cell);
+            
+            Rewind_StoreDeref(cell, v);
             PyCell_SET(cell, v);
             Py_XDECREF(oldobj);
             DISPATCH();

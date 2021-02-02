@@ -1664,6 +1664,7 @@ _PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value, char rewindLog)
     }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
+        Rewind_DictStoreSubscript(mp, key, value);
         return insert_to_emptydict(mp, key, hash, value);
     }
     /* insertdict() handles any resizing that might be necessary */

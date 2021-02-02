@@ -32,14 +32,38 @@ void Rewind_Deactivate() {
     fclose(rewindLog);
 }
 
+void Rewind_PrintStringTuple(FILE *file, PyObject *stringTuple) {
+    Py_ssize_t length = PyTuple_GET_SIZE(stringTuple);
+    fprintf(file, ", %lu", length);
+    for (int i = 0; i < length; i++) {
+        PyObject *item = PyTuple_GET_ITEM(stringTuple, i);
+        fprintf(file, ", ");
+        PyObject_Print(item, file, 0);
+    }
+}
+
+/*
+PUSH_FRAME(
+    filename, func_name, 
+    globals, 
+    num_local_vars, *local_varnames, 
+    num_cell_vars, *cell_varnames,
+    num_free_vars, *free_varnames,
+    *local_vars,
+    *cell_vars,
+    *free_vars
+)
+*/
 void Rewind_PushFrame(PyFrameObject *frame) {
     if (!rewindActive) return;
 
     PyCodeObject *code = frame->f_code;
+    // when constructor (__init__) is invoked, track the object being built
     if (equalstr(code->co_name, "__init__")) {
         Rewind_TrackObject(*frame->f_localsplus);
     }
     PyObject **valuestack = frame->f_valuestack;
+    // track all arguments, cellvars, and freevars
     for (PyObject **p = frame->f_localsplus; p < valuestack; p++) {
         PyObject *obj = *p;
         if (obj != NULL) {
@@ -52,27 +76,19 @@ void Rewind_PushFrame(PyFrameObject *frame) {
     PyObject_Print(code->co_filename, rewindLog, 0);
     fprintf(rewindLog, ", ");
     PyObject_Print(code->co_name, rewindLog, 0);
+    fprintf(rewindLog, ", %lu", (unsigned long)frame->f_globals);
+    fprintf(rewindLog, ", %lu", (unsigned long)frame->f_localsplus);
     
-    PyTupleObject *varnames = (PyTupleObject *)code->co_varnames;
-    Py_ssize_t numVarnames = Py_SIZE(varnames);
-    fprintf(rewindLog, ", %lu", numVarnames);
-
-    for (int i = 0; i < numVarnames; i++) {
-        PyObject *item = varnames->ob_item[i];
-        fprintf(rewindLog, ", ");
-        PyObject_Print(item, rewindLog, 0);
-    }
+    Rewind_PrintStringTuple(rewindLog, code->co_varnames);
+    Rewind_PrintStringTuple(rewindLog, frame->f_code->co_cellvars);
+    Rewind_PrintStringTuple(rewindLog, frame->f_code->co_freevars);
     
+    // serialize all arguments, cellvars, and freevars
     PyObject **p = frame->f_localsplus;
     while (p < valuestack) {
         fprintf(rewindLog, ", ");
         PyObject *obj = *p;
-        if (obj == NULL) {
-            fprintf(rewindLog, "None");
-        } else {
-            
-            Rewind_serializeObject(rewindLog, obj);
-        }
+        Rewind_serializeObject(rewindLog, obj);
         p++;
     }
     fprintf(rewindLog, ")");
@@ -87,6 +103,16 @@ void Rewind_PopFrame(PyFrameObject *frame) {
     PyObject_Print(code->co_filename, rewindLog, 0);
     fprintf(rewindLog, ", ");
     PyObject_Print(code->co_name, rewindLog, 0);
+    fprintf(rewindLog, ")\n");
+}
+
+void Rewind_StoreDeref(PyObject *cell, PyObject *value) {
+    if (!rewindActive) return;
+
+    Rewind_TrackObject(cell);
+    Rewind_TrackObject(value);
+    fprintf(rewindLog, "STORE_DEREF(%lu, ", (unsigned long)cell);
+    Rewind_serializeObject(rewindLog, value);
     fprintf(rewindLog, ")\n");
 }
 
@@ -339,14 +365,15 @@ void Rewind_YieldValue(PyObject *retval) {
     fprintf(rewindLog, ")\n");
 }
 
-void Rewind_StoreName(PyObject *name, PyObject *value) {
+void Rewind_StoreName(PyObject *ns, PyObject *name, PyObject *value) {
     if (!rewindActive) return;
 
+    Rewind_TrackObject(ns);
     Rewind_TrackObject(value);
-    fprintf(rewindLog, "STORE_NAME(");
-    PyObject_Print(name, rewindLog, 0);
+    Rewind_TrackObject(name);
+    fprintf(rewindLog, "STORE_NAME(%lu, ", (unsigned long)ns);
+    Rewind_serializeObject(rewindLog, name);
     fprintf(rewindLog, ", ");
-    
     Rewind_serializeObject(rewindLog, value);
     fprintf(rewindLog, ")\n");
 }
@@ -360,21 +387,23 @@ void Rewind_StoreFast(int index, PyObject *value) {
     fprintf(rewindLog, ")\n");
 }
 
-void Rewind_StoreGlobal(PyObject *name, PyObject *value) {
+void Rewind_StoreGlobal(PyObject *ns, PyObject *name, PyObject *value) {
     if (!rewindActive) return;
 
+    Rewind_TrackObject(ns);
     Rewind_TrackObject(value);
-    fprintf(rewindLog, "STORE_GLOBAL(");
-    PyObject_Print(name, rewindLog, 0);
+    Rewind_TrackObject(name);
+    fprintf(rewindLog, "STORE_GLOBAL(%lu, ", (unsigned long)ns);
+    Rewind_serializeObject(rewindLog, name);
     fprintf(rewindLog, ", ");
     Rewind_serializeObject(rewindLog, value);
     fprintf(rewindLog, ")\n");
 }
 
-void Rewind_DeleteGlobal(PyObject *name) {
+void Rewind_DeleteGlobal(PyObject *ns, PyObject *name) {
     if (!rewindActive) return;
 
-    fprintf(rewindLog, "DELETE_GLOBAL(");
+    fprintf(rewindLog, "DELETE_GLOBAL(%lu, ", (unsigned long)ns);
     PyObject_Print(name, rewindLog, 0);
     fprintf(rewindLog, ")\n");
 }
@@ -534,9 +563,9 @@ void Rewind_TrackObject(PyObject *obj) {
 
         fprintf(rewindLog, "NEW_OBJECT(%lu, ", (unsigned long)obj);
         PyObject *type = PyObject_Type(obj);
-        PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__qualname__"));
-        PyObject_Print(typeName, rewindLog, 0);
-        fprintf(rewindLog, ", ");
+        //PyObject *typeName = PyObject_GetAttr(type, PyUnicode_FromString("__qualname__"));
+        //PyObject_Print(typeName, rewindLog, 0);
+        //fprintf(rewindLog, ", ");
         Rewind_serializeObject(rewindLog, type);
         fprintf(rewindLog, ")\n");
     }
@@ -564,11 +593,8 @@ void Rewind_serializeObject(FILE *file, PyObject *obj) {
 void Rewind_Dealloc(PyObject *obj) {
     if (!rewindActive) return;
 
-    // PyObject *id = PyLong_FromLong((long)obj);
-    // if (PySet_Contains(knownObjectIds, id)) {
-    //     PySet_Discard(knownObjectIds, id);
-    //     fprintf(rewindLog, "DEALLOC(%lu)\n", (unsigned long)obj);
-    // }
+    PyObject *id = PyLong_FromLong((long)obj);
+    PySet_Discard(knownObjectIds, id);
 }
 
 void Rewind_Log(char *message) {

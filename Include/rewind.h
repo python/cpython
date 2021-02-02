@@ -12,6 +12,8 @@ void Rewind_PushFrame(PyFrameObject *frame);
 
 void Rewind_PopFrame(PyFrameObject *frame);
 
+void Rewind_StoreDeref(PyObject *cell, PyObject *value);
+
 void Rewind_BuildList(PyObject *list);
 
 void Rewind_ListAppend(PyListObject *list, PyObject *value);
@@ -60,13 +62,13 @@ void Rewind_SetUpdate(PySetObject *set);
 
 void Rewind_YieldValue(PyObject *retval);
 
-void Rewind_StoreName(PyObject *name, PyObject *value);
+void Rewind_StoreName(PyObject *ns, PyObject *name, PyObject *value);
 
 void Rewind_StoreFast(int index, PyObject *value);
 
-void Rewind_StoreGlobal(PyObject *name, PyObject *value);
+void Rewind_StoreGlobal(PyObject *ns, PyObject *name, PyObject *value);
 
-void Rewind_DeleteGlobal(PyObject *name);
+void Rewind_DeleteGlobal(PyObject *ns, PyObject *name);
 
 void Rewind_ReturnValue(PyObject *retval);
 
