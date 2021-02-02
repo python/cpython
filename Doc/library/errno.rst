@@ -637,3 +637,6 @@ defined by the module.  The specific list of defined symbols is available as
 
    Quota exceeded
 
+.. data:: EQFULL
+
+   Interface output queue is full
