@@ -1,2 +1,0 @@
-Fix parser crash when reporting syntax errors in f-string with newlines.
-Patch by Pablo Galindo.
