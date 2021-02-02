@@ -624,6 +624,8 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 TEST_MODULES
+LIBRARY_DEPS
+STATIC_LIBPYTHON
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
 OPENSSL_INCLUDES
@@ -856,6 +858,7 @@ with_openssl
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
+with_static_libpython
 enable_test_modules
 '
       ac_precious_vars='build_alias
@@ -1602,6 +1605,9 @@ Optional Packages:
   --with-experimental-isolated-subinterpreters
                           better isolate subinterpreters, experimental build
                           mode (default is no)
+  --without-static-libpython
+                          do not build libpythonMAJOR.MINOR.a and do not
+                          install python.o (default is yes)
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -17774,6 +17780,40 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
+
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-static-libpython" >&5
+$as_echo_n "checking for --with-static-libpython... " >&6; }
+
+# Check whether --with-static-libpython was given.
+if test "${with_static_libpython+set}" = set; then :
+  withval=$with_static_libpython;
+if test "$withval" = no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+  STATIC_LIBPYTHON=0
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+if test "$PY_ENABLE_SHARED" = 1; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+else
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+fi
+
 
 
 # Check whether to disable test modules. Once set, setup.py will not build
