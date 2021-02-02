@@ -388,6 +388,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         *bytes = obj;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_DECREF(obj);
             return 0;
         }
         return 1;
@@ -828,8 +829,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
 #endif
-    if (strtype == 0)
+    if (strtype == 0) {
         return NULL;
+    }
     if (use_attr) {
         attr_old = getattrs(self->win);
         (void)wattrset(self->win,attr);
