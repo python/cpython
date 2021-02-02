@@ -162,22 +162,22 @@ dotted_name[expr_ty]:
     | NAME
 
 if_stmt[stmt_ty]:
-    | 'if' a=named_expression ':' b=block c=elif_stmt {
+    | 'if' a=named_expression &&':' b=block c=elif_stmt {
         _Py_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
-    | 'if' a=named_expression ':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
+    | 'if' a=named_expression &&':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
 elif_stmt[stmt_ty]:
-    | 'elif' a=named_expression ':' b=block c=elif_stmt {
+    | 'elif' a=named_expression &&':' b=block c=elif_stmt {
         _Py_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
-    | 'elif' a=named_expression ':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
-else_block[asdl_stmt_seq*]: 'else' ':' b=block { b }
+    | 'elif' a=named_expression &&':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
+else_block[asdl_stmt_seq*]: 'else' &&':' b=block { b }
 
 while_stmt[stmt_ty]:
-    | 'while' a=named_expression ':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
+    | 'while' a=named_expression &&':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
-    | 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _Py_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(stmt_ty, 5, "Async for loops are", _Py_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
@@ -190,18 +190,20 @@ with_stmt[stmt_ty]:
        CHECK_VERSION(stmt_ty, 5, "Async with statements are", _Py_AsyncWith(a, b, NULL, EXTRA)) }
     | ASYNC 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(stmt_ty, 5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+    | invalid_with_stmt
+
 with_item[withitem_ty]:
     | e=expression 'as' t=star_target &(',' | ')' | ':') { _Py_withitem(e, t, p->arena) }
     | invalid_with_item
     | e=expression { _Py_withitem(e, NULL, p->arena) }
 
 try_stmt[stmt_ty]:
-    | 'try' ':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
-    | 'try' ':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _Py_Try(b, ex, el, f, EXTRA) }
+    | 'try' &&':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
+    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _Py_Try(b, ex, el, f, EXTRA) }
 except_block[excepthandler_ty]:
-    | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
+    | 'except' e=expression t=['as' z=NAME { z }] &&':' b=block {
         _Py_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
-    | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
+    | 'except' &&':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_stmt_seq*]: 'finally' ':' a=block { a }
 
 return_stmt[stmt_ty]:
@@ -216,11 +218,11 @@ function_def[stmt_ty]:
     | function_def_raw
 
 function_def_raw[stmt_ty]:
-    | 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
+    | 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
         _Py_FunctionDef(n->v.Name.id,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                         b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] ':' tc=[func_type_comment] b=block {
+    | ASYNC 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
         CHECK_VERSION(
             stmt_ty,
             5,
@@ -300,7 +302,7 @@ class_def[stmt_ty]:
     | a=decorators b=class_def_raw { _PyPegen_class_def_decorators(p, a, b) }
     | class_def_raw
 class_def_raw[stmt_ty]:
-    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] ':' c=block {
+    | 'class' a=NAME b=['(' z=[arguments] ')' { z }] &&':' c=block {
         _Py_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
@@ -718,7 +720,7 @@ invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
 invalid_with_item:
-    | expression 'as' a=expression {
+    | expression 'as' a=expression &(',' | ')' | ':') {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
 
 invalid_for_target:
@@ -731,3 +733,7 @@ invalid_group:
 invalid_import_from_targets:
     | import_from_as_names ',' {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
+
+invalid_with_stmt:
+    | [ASYNC] 'with' ','.(expression ['as' star_target])+ &&':'
+    | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
