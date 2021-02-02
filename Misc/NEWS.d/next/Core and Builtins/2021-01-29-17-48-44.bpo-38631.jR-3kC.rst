@@ -1,2 +1,0 @@
-Replace :c:func:`Py_FatalError` calls in the compiler with regular
-:exc:`SystemError` exceptions. Patch by Victor Stinner.
