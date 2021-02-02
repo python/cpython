@@ -1,4 +1,0 @@
-Added the ``compact`` parameter to the constructor of
-:class:`traceback.TracebackException` to reduce time and memory
-for use cases that only need to call :func:`TracebackException.format`
-and :func:`TracebackException.format_exception_only`.

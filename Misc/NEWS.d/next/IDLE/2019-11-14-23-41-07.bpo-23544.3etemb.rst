@@ -1,2 +1,0 @@
-Disable Debug=>Stack Viewer when user code is running or Debugger
-is active, to prevent hang or crash.  Patch by Zackery Spytz.
