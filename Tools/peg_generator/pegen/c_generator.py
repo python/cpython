@@ -8,6 +8,7 @@ from pegen import grammar
 from pegen.grammar import (
     Alt,
     Cut,
+    Forced,
     Gather,
     GrammarVisitor,
     Group,
@@ -251,6 +252,24 @@ class CCallMakerVisitor(GrammarVisitor):
 
     def visit_NegativeLookahead(self, node: NegativeLookahead) -> FunctionCall:
         return self.lookahead_call_helper(node, 0)
+
+    def visit_Forced(self, node: Forced) -> FunctionCall:
+        call = self.generate_call(node.node)
+        if call.nodetype == NodeTypes.GENERIC_TOKEN:
+            val = ast.literal_eval(node.node.value)
+            assert val in self.exact_tokens, f"{node.value} is not a known literal"
+            type = self.exact_tokens[val]
+            return FunctionCall(
+                assigned_variable="_literal",
+                function=f"_PyPegen_expect_forced_token",
+                arguments=["p", type, f'"{val}"'],
+                nodetype=NodeTypes.GENERIC_TOKEN,
+                return_type="Token *",
+                comment=f"forced_token='{val}'",
+            )
+        else:
+            raise NotImplementedError(
+                    f"Forced tokens don't work with {call.nodetype} tokens")
 
     def visit_Opt(self, node: Opt) -> FunctionCall:
         call = self.generate_call(node.node)
