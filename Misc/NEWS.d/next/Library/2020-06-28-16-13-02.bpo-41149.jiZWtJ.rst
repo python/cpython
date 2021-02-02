@@ -1,1 +1,1 @@
-Fix a bug that can cause threads to fail to start. Patch contributed by Barney Stratford.
+Allow executing callables that have a boolean value of ``False`` when passed to :class:`Threading.thread` as the target. Patch contributed by Barney Stratford.
