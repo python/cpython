@@ -6586,27 +6586,14 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            if (b_last_instr->i_opcode == POP_JUMP_IF_FALSE ||
-                b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
-                b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+            if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
-                    switch(b_last_instr->i_opcode) {
-                        case POP_JUMP_IF_FALSE:
-                        case POP_JUMP_IF_TRUE:
-                            b_last_instr->i_opcode = POP_TOP;
-                            b_last_instr->i_target = NULL;
-                            b_last_instr->i_oparg = 0;
-                            break;
-                        case JUMP_ABSOLUTE:
-                        case JUMP_FORWARD:
-                            b_last_instr->i_opcode = NOP;
-                            clean_basic_block(b, -1);
-                            maybe_empty_blocks = 1;
-                            break;
-                    }
+                    b_last_instr->i_opcode = NOP;
+                    clean_basic_block(b, -1);
+                    maybe_empty_blocks = 1;
                 }
             }
         }
