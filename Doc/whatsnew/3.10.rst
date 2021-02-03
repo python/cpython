@@ -411,6 +411,10 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
+Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
+and :data:`~os.O_NOFOLLOW_ANY` for macOS.
+(Contributed by Dong-hee Na in :issue:`43106`.)
+
 pathlib
 -------
 
