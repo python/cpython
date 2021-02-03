@@ -1,0 +1,2 @@
+Calling the ``put`` method of an unbounded ``asyncio.Queue`` will now yield
+to other coroutines.
