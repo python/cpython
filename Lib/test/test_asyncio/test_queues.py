@@ -496,6 +496,18 @@ class QueuePutTests(_QueueTestBase):
         self.loop.run_until_complete(q.put('a'))
         self.assertEqual(self.loop.run_until_complete(t), 'a')
 
+    def test_infinite_put_with_waiting_getters(self):
+        q = asyncio.Queue()
+        async def put_forever():
+            while True:
+                await q.put('a')
+        put_task = self.loop.create_task(put_forever())
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(self.loop.run_until_complete(q.get()), 'a')
+        put_task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(put_task)
+
     def test_why_are_putters_waiting(self):
         # From issue #265.
         asyncio.set_event_loop(self.loop)

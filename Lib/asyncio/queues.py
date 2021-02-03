@@ -5,6 +5,7 @@ import heapq
 
 from . import locks
 from . import mixins
+from . import tasks
 
 
 class QueueEmpty(Exception):
@@ -133,7 +134,11 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._putters)
                 raise
-        return self.put_nowait(item)
+        self.put_nowait(item)
+        if self._maxsize <= 0:
+            # If the queue is unbounded then it will never be full. Add a
+            # preemption point to give getters a chance.
+            await tasks.sleep(0)
 
     def put_nowait(self, item):
         """Put an item into the queue without blocking.
