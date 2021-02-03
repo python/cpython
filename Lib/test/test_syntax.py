@@ -246,9 +246,24 @@ SyntaxError: did you forget parentheses around the comprehension target?
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
 
->>> {x,y: None for x,y in range(100)}
+# Missing commas in non comprehension do not produce special
+# error messages
+
+>>> [1, 2 3]
 Traceback (most recent call last):
-SyntaxError: did you forget parentheses around the comprehension target?
+SyntaxError: invalid syntax
+
+>>> {1, 2 3}
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> {1:2, 2:5 3:12}
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> (1, 2 3)
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 From compiler_complex_args():
 
