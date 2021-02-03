@@ -694,7 +694,7 @@ invalid_primary:
 invalid_comprehension:
     | ('[' | '(' | '{') a=starred_expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
-    | ('[' | '{') a=star_named_expression ',' [star_named_expressions] {
+    | ('[' | '{') a=star_named_expression ',' [star_named_expressions] for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "did you forget parentheses around the comprehension target?") }
 invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
