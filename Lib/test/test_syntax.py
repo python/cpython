@@ -246,8 +246,9 @@ SyntaxError: did you forget parentheses around the comprehension target?
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
 
-# Missing commas in non comprehension do not produce special
-# error messages
+# Missing commas in literals collections should not
+# produce special error messages regarding missing
+# parentheses
 
 >>> [1, 2 3]
 Traceback (most recent call last):
