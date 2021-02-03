@@ -15302,6 +15302,7 @@ all_ins(PyObject *m)
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
     if (PyModule_AddIntMacro(m, O_EVTONLY)) return -1;
+    if (PyModule_AddIntMacro(m, O_FSYNC)) return -1;
 #endif
 
 #ifdef MS_WINDOWS

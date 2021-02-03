@@ -1091,11 +1091,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The above constants are only available on Windows.
 
 .. data:: O_EVTONLY
-
+          O_FSYNC
    The above constants are only available on macOS.
 
    .. versionchanged:: 3.10
-      Add :data:`O_EVTONLY` constant.
+      Add :data:`O_EVTONLY` and :data:`O_FSYNC` constants.
+
 
 .. data:: O_ASYNC
           O_DIRECT
