@@ -1093,17 +1093,18 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. data:: O_EVTONLY
           O_FSYNC
           O_SYMLINK
+          O_NOFOLLOW_ANY
 
    The above constants are only available on macOS.
 
    .. versionchanged:: 3.10
-      Add :data:`O_EVTONLY`, :data:`O_FSYNC` and :data:`O_SYMLINK` constants.
+      Add :data:`O_EVTONLY`, :data:`O_FSYNC`, :data:`O_SYMLINK`
+      and :data:`O_NOFOLLOW_ANY` constants.
 
 .. data:: O_ASYNC
           O_DIRECT
           O_DIRECTORY
           O_NOFOLLOW
-          O_NOFOLLOW_ANY
           O_NOATIME
           O_PATH
           O_TMPFILE
@@ -1117,9 +1118,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Add :data:`O_PATH` on systems that support it.
       Add :data:`O_TMPFILE`, only available on Linux Kernel 3.11
         or newer.
-
-   .. versionchanged:: 3.10
-      Add :data:`O_NOFOLLOW_ANY` on systems that support it.
 
 
 .. function:: openpty()
