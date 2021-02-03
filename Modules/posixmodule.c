@@ -14951,6 +14951,9 @@ all_ins(PyObject *m)
     /* Do not follow links.      */
     if (PyModule_AddIntMacro(m, O_NOFOLLOW)) return -1;
 #endif
+#ifdef O_NOFOLLOW_ANY
+    if (PyModule_AddIntMacro(m, O_NOFOLLOW_ANY)) return -1;
+#endif
 #ifdef O_NOLINKS
     /* Fails if link count of the named file is greater than 1 */
     if (PyModule_AddIntMacro(m, O_NOLINKS)) return -1;
@@ -15303,6 +15306,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
     if (PyModule_AddIntMacro(m, O_EVTONLY)) return -1;
     if (PyModule_AddIntMacro(m, O_FSYNC)) return -1;
+    if (PyModule_AddIntMacro(m, O_SYMLINK)) return -1;
 #endif
 
 #ifdef MS_WINDOWS
