@@ -14901,7 +14901,15 @@ all_ins(PyObject *m)
 #ifdef O_ACCMODE
     if (PyModule_AddIntMacro(m, O_ACCMODE)) return -1;
 #endif
-
+#ifdef O_EVTONLY
+    if (PyModule_AddIntMacro(m, O_EVTONLY)) return -1;
+#endif
+#ifdef O_FSYNC
+    if (PyModule_AddIntMacro(m, O_FSYNC)) return -1;
+#endif
+#ifdef O_SYMLINK
+    if (PyModule_AddIntMacro(m, O_SYMLINK)) return -1;
+#endif
 
 #ifdef SEEK_HOLE
     if (PyModule_AddIntMacro(m, SEEK_HOLE)) return -1;
@@ -15304,9 +15312,6 @@ all_ins(PyObject *m)
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
-    if (PyModule_AddIntMacro(m, O_EVTONLY)) return -1;
-    if (PyModule_AddIntMacro(m, O_FSYNC)) return -1;
-    if (PyModule_AddIntMacro(m, O_SYMLINK)) return -1;
 #endif
 
 #ifdef MS_WINDOWS
