@@ -1,2 +1,0 @@
-Pass ``--timeout=$(TESTTIMEOUT)`` option to the default profile task
-``./python -m test --pgo`` command.
