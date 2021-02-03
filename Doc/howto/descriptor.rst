@@ -497,7 +497,7 @@ Definition and introduction
 
 In general, a descriptor is an attribute value that has one of the methods in
 the descriptor protocol.  Those methods are :meth:`__get__`, :meth:`__set__`,
-and :meth:`__delete__`.  If any of those methods are defined for an the
+and :meth:`__delete__`.  If any of those methods are defined for an
 attribute, it is said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
