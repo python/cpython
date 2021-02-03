@@ -1,0 +1,2 @@
+Added :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`, :const:`LOG_INSTALL`,
+:const:`LOG_RAS`, and :const:`LOG_LAUNCHD` tot the :mod:`syslog` module.
