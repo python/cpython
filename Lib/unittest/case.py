@@ -864,8 +864,12 @@ class TestCase(object):
         if first == second:
             # shortcut
             return
-        if delta is not None and places is not None:
-            raise TypeError("specify delta or places not both")
+
+        if delta is not None:
+            if delta < 0:
+                raise ValueError("delta cannot be negative")
+            if places is not None:
+                raise TypeError("specify delta or places not both")
 
         diff = abs(first - second)
         if delta is not None:
