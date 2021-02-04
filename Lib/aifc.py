@@ -461,7 +461,7 @@ class Aifc_read:
             self._adpcmstate = None
         data, self._adpcmstate = audioop.adpcm2lin(data, 2, self._adpcmstate)
         return data
-    
+
     def _sowt2lin(self, data):
         import audioop
         return audioop.byteswap(data, 2)
