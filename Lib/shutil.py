@@ -231,16 +231,22 @@ def _stat(fn):
 def _islink(fn):
     return fn.is_symlink() if isinstance(fn, os.DirEntry) else os.path.islink(fn)
 
-def copyfile(src, dst, *, follow_symlinks=True):
+def copyfile(src, dst, *, follow_symlinks=True, same_file=False):
     """Copy data from src to dst in the most efficient way possible.
 
     If follow_symlinks is not set and src is a symbolic link, a new
     symlink will be created instead of copying the file it points to.
 
+    If same_file is not set and src is the same file, a "SameFileError"
+    exception will be raise. If the same_file is set the method do noting
+    and returns dst.
+
     """
     sys.audit("shutil.copyfile", src, dst)
 
     if _samefile(src, dst):
+        if same_file:
+            return dst
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
     file_size = 0
