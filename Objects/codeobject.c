@@ -408,8 +408,8 @@ emit_pair(PyObject **bytes, int *offset, int a, int b)
         if (_PyBytes_Resize(bytes, len * 2) < 0)
             return 0;
     }
-    unsigned char *lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(*bytes) + *offset;
+    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(*bytes);
+    lnotab += *offset;
     *lnotab++ = a;
     *lnotab++ = b;
     *offset += 2;
@@ -1261,7 +1261,8 @@ PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRang
     range->lo_next = linetable;
     range->ar_start = -1;
     range->ar_end = 0;
-    range->ar_computed_line = range->ar_line = firstlineno;
+    range->ar_computed_line = firstlineno;
+    range->ar_line = -1;
 }
 
 int

@@ -1,6 +1,0 @@
-In ``importlib.metadata``: -  ``EntryPoint`` objects now expose a ``.dist``
-object referencing the ``Distribution`` when constructed from a
-``Distribution``. - Add support for package discovery under package
-normalization rules. - The object returned by ``metadata()`` now has a
-formally-defined protocol called ``PackageMetadata`` with declared support
-for the ``.get_all()`` method. - Synced with importlib_metadata 3.3.

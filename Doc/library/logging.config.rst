@@ -218,18 +218,29 @@ custom instantiation is required.  If so, the mechanism described in
 :ref:`logging-config-dict-userdef` below is used to create an instance;
 otherwise, the context is used to determine what to instantiate.
 
+.. _logging-config-dictschema-formatters:
+
 * *formatters* - the corresponding value will be a dict in which each
   key is a formatter id and each value is a dict describing how to
   configure the corresponding :class:`~logging.Formatter` instance.
 
-  The configuring dict is searched for keys ``format`` and ``datefmt``
-  (with defaults of ``None``) and these are used to construct a
-  :class:`~logging.Formatter` instance.
+  The configuring dict is searched for the following optional keys
+  which correspond to the arguments passed to create a
+  :class:`~logging.Formatter` object:
 
-  .. versionchanged:: 3.8
-     a ``validate`` key (with default of ``True``) can be added into
-     the ``formatters`` section of the configuring dict, this is to
-     validate the format.
+   * ``format``
+   * ``datefmt``
+   * ``style``
+   * ``validate`` (since version >=3.8)
+
+  An optional ``class`` key indicates the name of the formatter's
+  class (as a dotted module and class name).  The instantiation
+  arguments are as for :class:`~logging.Formatter`, thus this key is
+  most useful for instantiating a customised subclass of
+  :class:`~logging.Formatter`.  For example, the alternative class
+  might present exception tracebacks in an expanded or condensed
+  format.  If your formatter requires different or extra configuration
+  keys, you should use :ref:`logging-config-dict-userdef`.
 
 * *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
@@ -791,20 +802,13 @@ Sections which specify formatter configuration are typified by the following.
    [formatter_form01]
    format=F1 %(asctime)s %(levelname)s %(message)s
    datefmt=
+   style='%'
+   validate=True
    class=logging.Formatter
 
-The ``format`` entry is the overall format string, and the ``datefmt`` entry is
-the :func:`strftime`\ -compatible date/time format string.  If empty, the
-package substitutes something which is almost equivalent to specifying the date
-format string ``'%Y-%m-%d %H:%M:%S'``.  This format also specifies milliseconds,
-which are appended to the result of using the above format string, with a comma
-separator.  An example time in this format is ``2003-01-23 00:29:50,411``.
-
-The ``class`` entry is optional.  It indicates the name of the formatter's class
-(as a dotted module and class name.)  This option is useful for instantiating a
-:class:`~logging.Formatter` subclass.  Subclasses of
-:class:`~logging.Formatter` can present exception tracebacks in an expanded or
-condensed format.
+The arguments for the formatter configuration are the same as the keys
+in the dictionary schema :ref:`formatters section
+<logging-config-dictschema-formatters>`.
 
 .. note::
 

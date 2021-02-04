@@ -10,6 +10,13 @@
 
 .. TODO: Fill in XXX comments
 
+.. note::
+
+   The entire ``distutils`` package has been deprecated and will be
+   removed in Python 3.12. This documentation is retained as a
+   reference only, and will be removed with the package. See the
+   :ref:`What's New <distutils-deprecated>` entry for more information.
+
 .. seealso::
 
    :ref:`installing-index`

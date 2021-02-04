@@ -1,3 +1,0 @@
-Make :c:func:`_PyUnicode_FromId` function compatible with subinterpreters.
-Each interpreter now has an array of identifier objects (interned strings
-decoded from UTF-8). Patch by Victor Stinner.
