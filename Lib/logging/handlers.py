@@ -159,10 +159,14 @@ class RotatingFileHandler(BaseRotatingHandler):
         """
         Do a rollover, as described in __init__().
         """
+        stream_sz = 0
         if self.stream:
+            stream_sz = self.stream.tell()
             self.stream.close()
             self.stream = None
-        if self.backupCount > 0:
+        # Since possible other process may have opened a new ...
+        base_sz = os.stat(self.baseFilename).st_size
+        if self.backupCount > 0 and stream_sz <= base_sz:
             for i in range(self.backupCount - 1, 0, -1):
                 sfn = self.rotation_filename("%s.%d" % (self.baseFilename, i))
                 dfn = self.rotation_filename("%s.%d" % (self.baseFilename,
