@@ -5208,6 +5208,78 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
         rh.close()
 
+    def test_intertwining_threads(self):
+        backupCount = 2
+        self.clean_children(backupCount)
+        self.threads_success = [False, False]
+        thds = []
+        for ti in (0, 1):
+            thd = threading.Thread(target=self.wrsync, args=(ti, backupCount))
+            thds.append(thd)
+            thd.start()
+        for ti in (0, 1):
+            thds[ti].join()
+            self.assertTrue(self.threads_success[ti])
+        log_dot1_fn = self.fn + '.1'
+        log_dot1_sz = os.stat(log_dot1_fn).st_size
+        self.assertTrue(log_dot1_sz > 20)
+        self.clean_children(backupCount)
+
+    def clean_children(self, backupCount):
+        for bi in range(backupCount + 1):
+            fnr = self.fn if bi == 0 else ('%s.%d' % (self.fn, bi))
+            if os.path.exists(fnr):
+                os.unlink(fnr)
+
+    def wrsync(self, ti, backupCount):
+        """ together, the 2 threads expected to write:
+        leader:0
+        chaser:0
+        leader:1
+        chaser:1
+        leader:2
+        chaser:2
+        leader:3
+        chaser:3
+        """
+        kls = RotatingFileHandlerTest
+        ti_peer = 1 - ti
+        child_names = ['leader', 'chaser']
+        name = child_names[ti]
+        peer = child_names[ti_peer]
+        rh = logging.handlers.RotatingFileHandler(
+            self.fn, backupCount=backupCount, maxBytes=40)
+        ok = True
+        for i in range(4):
+            if ok:
+                if (ti > 0) or (i > 0):
+                    ipeer = i - ti_peer # [0]= -,0,1,2  [1]= 0,1,2,3
+                    peer_msg = '%s:%d' % (peer, ipeer)
+                    found = self.wait_grep(name, self.fn, backupCount, peer_msg)
+                    if not found:
+                        ok = False
+                msg = '%s:%d' % (name, i)
+                rec = logging.LogRecord('n', logging.DEBUG, 'p', 1, msg,
+                                        None, None, None)
+                rh.emit(rec)
+        self.threads_success[ti] = ok
+
+    def wait_grep(self, name, fn, backupCount, msg):
+        t0 = int(time.time())
+        found = False
+        while (not found) and (int(time.time()) - t0 <= 2):
+            for bi in range(backupCount + 1):
+                if not found:
+                    fnr = fn if bi == 0 else ('%s.%d' % (fn, bi))
+                    try:
+                        f = open(fnr, 'r')
+                    except Exception:
+                        f = None
+                    if f is not None:
+                        found = any(map(lambda line: msg in line, f.readlines()))
+                        f.close()
+        return found
+
     def test_namer_rotator_inheritance(self):
         class HandlerWithNamerAndRotator(logging.handlers.RotatingFileHandler):
             def namer(self, name):
