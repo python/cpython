@@ -96,7 +96,7 @@ Allocator Domains
 =================
 
 All allocating functions belong to one of three different "domains" (see also
-:c:type`PyMemAllocatorDomain`). These domains represent different allocation
+:c:type:`PyMemAllocatorDomain`). These domains represent different allocation
 strategies and are optimized for different purposes. The specific details on
 how every domain allocates memory or what internal functions each domain calls
 is considered an implementation detail, but for debugging purposes a simplified

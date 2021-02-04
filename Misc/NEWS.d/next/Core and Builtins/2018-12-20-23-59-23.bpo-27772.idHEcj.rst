@@ -1,2 +1,0 @@
-In string formatting, preceding the *width* field by ``'0'`` no longer
-affects the default alignment for strings.

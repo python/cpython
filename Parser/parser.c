@@ -17592,7 +17592,7 @@ invalid_primary_rule(Parser *p)
 
 // invalid_comprehension:
 //     | ('[' | '(' | '{') starred_expression for_if_clauses
-//     | ('[' | '{') star_named_expression ',' star_named_expressions?
+//     | ('[' | '{') star_named_expression ',' star_named_expressions? for_if_clauses
 static void *
 invalid_comprehension_rule(Parser *p)
 {
@@ -17633,17 +17633,18 @@ invalid_comprehension_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_comprehension[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '(' | '{') starred_expression for_if_clauses"));
     }
-    { // ('[' | '{') star_named_expression ',' star_named_expressions?
+    { // ('[' | '{') star_named_expression ',' star_named_expressions? for_if_clauses
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions?"));
+        D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions? for_if_clauses"));
         Token * _literal;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         void *_tmp_148_var;
         expr_ty a;
+        asdl_comprehension_seq* for_if_clauses_var;
         if (
             (_tmp_148_var = _tmp_148_rule(p))  // '[' | '{'
             &&
@@ -17652,9 +17653,11 @@ invalid_comprehension_rule(Parser *p)
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
             (_opt_var = star_named_expressions_rule(p), 1)  // star_named_expressions?
+            &&
+            (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions?"));
+            D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions? for_if_clauses"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "did you forget parentheses around the comprehension target?" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -17665,7 +17668,7 @@ invalid_comprehension_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_comprehension[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions?"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '{') star_named_expression ',' star_named_expressions? for_if_clauses"));
     }
     _res = NULL;
   done:
