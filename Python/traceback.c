@@ -628,12 +628,12 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
    This function is signal safe. */
 
 void
-_Py_DumpDecimal(int fd, unsigned long value)
+_Py_DumpDecimal(int fd, size_t value)
 {
     /* maximum number of characters required for output of %lld or %p.
        We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
        plus 1 for the null byte.  53/22 is an upper bound for log10(256). */
-    char buffer[1 + (sizeof(unsigned long)*53-1) / 22 + 1];
+    char buffer[1 + (sizeof(size_t)*53-1) / 22 + 1];
     char *ptr, *end;
 
     end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
@@ -649,15 +649,12 @@ _Py_DumpDecimal(int fd, unsigned long value)
     _Py_write_noraise(fd, ptr, end - ptr);
 }
 
-/* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
-   and write it into the file fd.
-
-   This function is signal safe. */
-
+/* Format an integer as hexadecimal with width digits into fd file descriptor.
+   The function is signal safe. */
 void
-_Py_DumpHexadecimal(int fd, unsigned long value, Py_ssize_t width)
+_Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
 {
-    char buffer[sizeof(unsigned long) * 2 + 1], *ptr, *end;
+    char buffer[sizeof(uintptr_t) * 2 + 1], *ptr, *end;
     const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
@@ -770,7 +767,7 @@ dump_frame(int fd, PyFrameObject *frame)
     int lineno = PyCode_Addr2Line(code, frame->f_lasti);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
-        _Py_DumpDecimal(fd, (unsigned long)lineno);
+        _Py_DumpDecimal(fd, (size_t)lineno);
     }
     else {
         PUTS(fd, "???");

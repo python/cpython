@@ -1,2 +1,0 @@
-:func:`typing.get_args` and :func:`typing.get_origin` now support :pep:`604`
-union types and :pep:`612` additions to ``Callable``.

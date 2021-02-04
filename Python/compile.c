@@ -22,6 +22,7 @@
  */
 
 #include "Python.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 
 #include "Python-ast.h"
@@ -95,7 +96,8 @@ typedef struct basicblock_ {
     struct basicblock_ *b_next;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
-    unsigned b_reachable : 1;
+    /* Number of predecssors that a block has. */
+    int b_predecessors;
     /* Basic block has no fall through (it ends with a return, raise or jump) */
     unsigned b_nofallthrough : 1;
     /* Basic block exits scope (it ends with a return or raise) */
@@ -193,12 +195,6 @@ struct compiler {
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
-    int c_do_not_emit_bytecode;  /* The compiler won't emit any bytecode
-                                    if this value is different from zero.
-                                    This can be used to temporarily visit
-                                    nodes without emitting bytecode to
-                                    check only errors. */
-
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
     struct compiler_unit *u; /* compiler state for current block */
@@ -213,6 +209,7 @@ static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *);
+static int compiler_addop_j_noline(struct compiler *, int, basicblock *);
 static int compiler_error(struct compiler *, const char *);
 static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
@@ -379,7 +376,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
-    c.c_do_not_emit_bytecode = 0;
 
     _PyASTOptimizeState state;
     state.optimize = c.c_optimize;
@@ -525,9 +521,7 @@ compiler_unit_check(struct compiler_unit *u)
 {
     basicblock *block;
     for (block = u->u_blocks; block != NULL; block = block->b_list) {
-        assert((uintptr_t)block != 0xcbcbcbcbU);
-        assert((uintptr_t)block != 0xfbfbfbfbU);
-        assert((uintptr_t)block != 0xdbdbdbdbU);
+        assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
             assert(block->b_iused >= 0);
@@ -672,25 +666,30 @@ compiler_enter_scope(struct compiler *c, identifier name,
 static void
 compiler_exit_scope(struct compiler *c)
 {
-    Py_ssize_t n;
-    PyObject *capsule;
+    // Don't call PySequence_DelItem() with an exception raised
+    PyObject *exc_type, *exc_val, *exc_tb;
+    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
 
     c->c_nestlevel--;
     compiler_unit_free(c->u);
     /* Restore c->u to the parent unit. */
-    n = PyList_GET_SIZE(c->c_stack) - 1;
+    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
     if (n >= 0) {
-        capsule = PyList_GET_ITEM(c->c_stack, n);
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
         c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
-        if (PySequence_DelItem(c->c_stack, n) < 0)
-            Py_FatalError("compiler_exit_scope()");
+        if (PySequence_DelItem(c->c_stack, n) < 0) {
+            _PyErr_WriteUnraisableMsg("on removing the last compiler "
+                                      "stack item", NULL);
+        }
         compiler_unit_check(c->u);
     }
-    else
+    else {
         c->u = NULL;
+    }
 
+    PyErr_Restore(exc_type, exc_val, exc_tb);
 }
 
 static int
@@ -831,6 +830,7 @@ compiler_copy_block(struct compiler *c, basicblock *block)
         result->b_instr[n] = block->b_instr[i];
     }
     result->b_exit = block->b_exit;
+    result->b_nofallthrough = 1;
     return result;
 }
 
@@ -902,8 +902,6 @@ compiler_next_instr(basicblock *b)
    * 1 -- when jump
    * -1 -- maximal
  */
-/* XXX Make the stack effect of WITH_CLEANUP_START and
-   WITH_CLEANUP_FINISH deterministic. */
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
@@ -1175,15 +1173,12 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
 */
 
 static int
-compiler_addop(struct compiler *c, int opcode)
+compiler_addop_line(struct compiler *c, int opcode, int line)
 {
     basicblock *b;
     struct instr *i;
     int off;
     assert(!HAS_ARG(opcode));
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
     off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
@@ -1193,9 +1188,22 @@ compiler_addop(struct compiler *c, int opcode)
     i->i_oparg = 0;
     if (opcode == RETURN_VALUE)
         b->b_return = 1;
-    i->i_lineno = c->u->u_lineno;
+    i->i_lineno = line;
     return 1;
 }
+
+static int
+compiler_addop(struct compiler *c, int opcode)
+{
+    return compiler_addop_line(c, opcode, c->u->u_lineno);
+}
+
+static int
+compiler_addop_noline(struct compiler *c, int opcode)
+{
+    return compiler_addop_line(c, opcode, -1);
+}
+
 
 static Py_ssize_t
 compiler_add_o(PyObject *dict, PyObject *o)
@@ -1337,10 +1345,6 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 0;
-    }
-
     PyObject *key = merge_consts_recursive(c, o);
     if (key == NULL) {
         return -1;
@@ -1354,10 +1358,6 @@ compiler_add_const(struct compiler *c, PyObject *o)
 static int
 compiler_addop_load_const(struct compiler *c, PyObject *o)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
-
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
@@ -1368,10 +1368,6 @@ static int
 compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
                      PyObject *o)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
-
     Py_ssize_t arg = compiler_add_o(dict, o);
     if (arg < 0)
         return 0;
@@ -1383,10 +1379,6 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
                     PyObject *o)
 {
     Py_ssize_t arg;
-
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
 
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
@@ -1407,10 +1399,6 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 {
     struct instr *i;
     int off;
-
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
 
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1452,10 +1440,13 @@ static int add_jump_to_block(basicblock *b, int opcode, int lineno, basicblock *
 static int
 compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
-    if (c->c_do_not_emit_bytecode) {
-        return 1;
-    }
     return add_jump_to_block(c->u->u_curblock, opcode, c->u->u_lineno, b);
+}
+
+static int
+compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
+{
+    return add_jump_to_block(c->u->u_curblock, opcode, -1, b);
 }
 
 /* NEXT_BLOCK() creates an implicit jump from the current block
@@ -1471,6 +1462,11 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 
 #define ADDOP(C, OP) { \
     if (!compiler_addop((C), (OP))) \
+        return 0; \
+}
+
+#define ADDOP_NOLINE(C, OP) { \
+    if (!compiler_addop_noline((C), (OP))) \
         return 0; \
 }
 
@@ -1525,6 +1521,14 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 
 #define ADDOP_JUMP(C, OP, O) { \
     if (!compiler_addop_j((C), (OP), (O))) \
+        return 0; \
+}
+
+/* Add a jump with no line number.
+ * Used for artificial jumps that have no corresponding
+ * token in the source code. */
+#define ADDOP_JUMP_NOLINE(C, OP, O) { \
+    if (!compiler_addop_j_noline((C), (OP), (O))) \
         return 0; \
 }
 
@@ -1894,17 +1898,15 @@ get_ref_type(struct compiler *c, PyObject *name)
         return CELL;
     scope = PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
-        _Py_FatalErrorFormat(__func__,
-           "unknown scope for %.100s in %.100s(%s)\n"
-           "symbols: %s\nlocals: %s\nglobals: %s",
-           PyUnicode_AsUTF8(name),
-           PyUnicode_AsUTF8(c->u->u_name),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names)));
+        PyErr_Format(PyExc_SystemError,
+                     "PyST_GetScope(name=%R) failed: "
+                     "unknown scope in unit %S (%R); "
+                     "symbols: %R; locals: %R; globals: %R",
+                     name,
+                     c->u->u_name, c->u->u_ste->ste_id,
+                     c->u->u_ste->ste_symbols, c->u->u_varnames, c->u->u_names);
+        return -1;
     }
-
     return scope;
 }
 
@@ -1919,7 +1921,8 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 }
 
 static int
-compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, PyObject *qualname)
+compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
+                      PyObject *qualname)
 {
     Py_ssize_t i, free = PyCode_GetNumFree(co);
     if (qualname == NULL)
@@ -1931,7 +1934,6 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
             PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
-            int arg, reftype;
 
             /* Special case: If a class contains a method with a
                free variable that has the same name as a method,
@@ -1939,20 +1941,27 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                class.  It should be handled by the closure, as
                well as by the normal name lookup logic.
             */
-            reftype = get_ref_type(c, name);
-            if (reftype == CELL)
+            int reftype = get_ref_type(c, name);
+            if (reftype == -1) {
+                return 0;
+            }
+            int arg;
+            if (reftype == CELL) {
                 arg = compiler_lookup_arg(c->u->u_cellvars, name);
-            else /* (reftype == FREE) */
+            }
+            else {
                 arg = compiler_lookup_arg(c->u->u_freevars, name);
+            }
             if (arg == -1) {
-                _Py_FatalErrorFormat(__func__,
-                    "lookup %s in %s %d %d\n"
-                    "freevars of %s: %s\n",
-                    PyUnicode_AsUTF8(PyObject_Repr(name)),
-                    PyUnicode_AsUTF8(c->u->u_name),
-                    reftype, arg,
-                    PyUnicode_AsUTF8(co->co_name),
-                    PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
+                PyErr_Format(PyExc_SystemError,
+                    "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
+                    "freevars of code %S: %R",
+                    name,
+                    reftype,
+                    c->u->u_name,
+                    co->co_name,
+                    co->co_freevars);
+                return 0;
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
         }
@@ -2290,7 +2299,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    compiler_make_closure(c, co, funcflags, qualname);
+    if (!compiler_make_closure(c, co, funcflags, qualname)) {
+        Py_DECREF(qualname);
+        Py_DECREF(co);
+        return 0;
+    }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -2369,6 +2382,8 @@ compiler_class(struct compiler *c, stmt_ty s)
             compiler_exit_scope(c);
             return 0;
         }
+        /* The following code is artificial */
+        c->u->u_lineno = -1;
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
@@ -2413,7 +2428,10 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    compiler_make_closure(c, co, 0, NULL);
+    if (!compiler_make_closure(c, co, 0, NULL)) {
+        Py_DECREF(co);
+        return 0;
+    }
     Py_DECREF(co);
 
     /* 4. load class name */
@@ -2560,7 +2578,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             return 0;
         if (!compiler_jump_if(c, e->v.IfExp.body, next, cond))
             return 0;
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next2);
         if (!compiler_jump_if(c, e->v.IfExp.orelse, next, cond))
             return 0;
@@ -2593,11 +2611,11 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
-            ADDOP_JUMP(c, JUMP_FORWARD, end);
+            ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
             compiler_use_next_block(c, cleanup);
             ADDOP(c, POP_TOP);
             if (!cond) {
-                ADDOP_JUMP(c, JUMP_FORWARD, next);
+                ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, next);
             }
             compiler_use_next_block(c, end);
             return 1;
@@ -2632,7 +2650,7 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     if (!compiler_jump_if(c, e->v.IfExp.test, next, 0))
         return 0;
     VISIT(c, expr, e->v.IfExp.body);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, next);
     VISIT(c, expr, e->v.IfExp.orelse);
     compiler_use_next_block(c, end);
@@ -2686,10 +2704,16 @@ compiler_lambda(struct compiler *c, expr_ty e)
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (co == NULL) {
+        Py_DECREF(qualname);
         return 0;
+    }
 
-    compiler_make_closure(c, co, funcflags, qualname);
+    if (!compiler_make_closure(c, co, funcflags, qualname)) {
+        Py_DECREF(qualname);
+        Py_DECREF(co);
+        return 0;
+    }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -2719,7 +2743,7 @@ compiler_if(struct compiler *c, stmt_ty s)
     }
     VISIT_SEQ(c, stmt, s->v.If.body);
     if (asdl_seq_LEN(s->v.If.orelse)) {
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
         VISIT_SEQ(c, stmt, s->v.If.orelse);
     }
@@ -2973,12 +2997,10 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     else {
         VISIT_SEQ(c, stmt, s->v.Try.body);
     }
-    /* Mark code as artificial */
-    c->u->u_lineno = -1;
-    ADDOP(c, POP_BLOCK);
+    ADDOP_NOLINE(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP_JUMP(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
     /* `finally` block */
     compiler_use_next_block(c, end);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
@@ -3037,9 +3059,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
-    ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, TRY_EXCEPT, body);
-    ADDOP_JUMP(c, JUMP_FORWARD, orelse);
+    ADDOP_NOLINE(c, POP_BLOCK);
+    ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
     /* Runtime will push a block here, so we need to account for that */
@@ -3127,6 +3149,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
                 return 0;
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
+            /* name = None; del name; # Mark as artificial */
+            c->u->u_lineno = -1;
             ADDOP(c, POP_EXCEPT);
             ADDOP_JUMP(c, JUMP_FORWARD, end);
         }
@@ -3940,7 +3964,7 @@ compiler_compare(struct compiler *c, expr_ty e)
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
+        ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, cleanup);
         ADDOP(c, ROT_TWO);
         ADDOP(c, POP_TOP);
@@ -4652,8 +4676,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (co == NULL)
         goto error;
 
-    if (!compiler_make_closure(c, co, 0, qualname))
+    if (!compiler_make_closure(c, co, 0, qualname)) {
         goto error;
+    }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -4941,6 +4966,9 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     else if (!compiler_with(c, s, pos))
             return 0;
 
+
+    /* Mark all following code as artificial */
+    c->u->u_lineno = -1;
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, WITH, block);
 
@@ -5457,8 +5485,10 @@ stackdepth(struct compiler *c)
             struct instr *instr = &b->b_instr[i];
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
-                _Py_FatalErrorFormat(__func__,
-                    "opcode = %d", instr->i_opcode);
+                PyErr_Format(PyExc_SystemError,
+                             "compiler stack_effect(opcode=%d, arg=%i) failed",
+                             instr->i_opcode, instr->i_oparg);
+                return -1;
             }
             int new_depth = depth + effect;
             if (new_depth > maxdepth) {
@@ -5547,9 +5577,8 @@ assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
         if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
             return 0;
     }
-    unsigned char *lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-
+    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(a->a_lnotab);
+    lnotab += a->a_lnotab_off;
     a->a_lnotab_off += 2;
     *lnotab++ = bdelta;
     *lnotab++ = ldelta;
@@ -6323,10 +6352,9 @@ error:
 
 
 static void
-clean_basic_block(basicblock *bb) {
-    /* Remove NOPs. */
+clean_basic_block(basicblock *bb, int prev_lineno) {
+    /* Remove NOPs when legal to do so. */
     int dest = 0;
-    int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
         int lineno = bb->b_instr[src].i_lineno;
         if (bb->b_instr[src].i_opcode == NOP) {
@@ -6412,22 +6440,24 @@ mark_reachable(struct assembler *a) {
     if (stack == NULL) {
         return -1;
     }
-    a->a_entry->b_reachable = 1;
+    a->a_entry->b_predecessors = 1;
     *sp++ = a->a_entry;
     while (sp > stack) {
         basicblock *b = *(--sp);
-        if (b->b_next && !b->b_nofallthrough && b->b_next->b_reachable == 0) {
-            b->b_next->b_reachable = 1;
-            *sp++ = b->b_next;
+        if (b->b_next && !b->b_nofallthrough) {
+            if (b->b_next->b_predecessors == 0) {
+                *sp++ = b->b_next;
+            }
+            b->b_next->b_predecessors++;
         }
         for (int i = 0; i < b->b_iused; i++) {
             basicblock *target;
             if (is_jump(&b->b_instr[i])) {
                 target = b->b_instr[i].i_target;
-                if (target->b_reachable == 0) {
-                    target->b_reachable = 1;
+                if (target->b_predecessors == 0) {
                     *sp++ = target;
                 }
+                target->b_predecessors++;
             }
         }
     }
@@ -6435,13 +6465,46 @@ mark_reachable(struct assembler *a) {
     return 0;
 }
 
+static void
+eliminate_empty_basic_blocks(basicblock *entry) {
+    /* Eliminate empty blocks */
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        basicblock *next = b->b_next;
+        if (next) {
+            while (next->b_iused == 0 && next->b_next) {
+                next = next->b_next;
+            }
+            b->b_next = next;
+        }
+    }
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        if (b->b_iused == 0) {
+            continue;
+        }
+        if (is_jump(&b->b_instr[b->b_iused-1])) {
+            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+            while (target->b_iused == 0) {
+                target = target->b_next;
+            }
+            b->b_instr[b->b_iused-1].i_target = target;
+        }
+    }
+}
+
+
 /* If an instruction has no line number, but it's predecessor in the BB does,
- * then copy the line number. This reduces the size of the line number table,
+ * then copy the line number. If a successor block has no line number, and only
+ * one predecessor, then inherit the line number.
+ * This ensures that all exit blocks (with one predecessor) receive a line number.
+ * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
 static void
-minimize_lineno_table(struct assembler *a) {
+propogate_line_numbers(struct assembler *a) {
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (b->b_iused == 0) {
+            continue;
+        }
         int prev_lineno = -1;
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_lineno < 0) {
@@ -6451,7 +6514,27 @@ minimize_lineno_table(struct assembler *a) {
                 prev_lineno = b->b_instr[i].i_lineno;
             }
         }
-
+        if (!b->b_nofallthrough && b->b_next->b_predecessors == 1) {
+            assert(b->b_next->b_iused);
+            if (b->b_next->b_instr[0].i_lineno < 0) {
+                b->b_next->b_instr[0].i_lineno = prev_lineno;
+            }
+        }
+        if (is_jump(&b->b_instr[b->b_iused-1])) {
+            switch (b->b_instr[b->b_iused-1].i_opcode) {
+                /* Note: Only actual jumps, not exception handlers */
+                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
+                case SETUP_FINALLY:
+                    continue;
+            }
+            basicblock *target = b->b_instr[b->b_iused-1].i_target;
+            if (target->b_predecessors == 1) {
+                if (target->b_instr[0].i_lineno < 0) {
+                    target->b_instr[0].i_lineno = prev_lineno;
+                }
+            }
+        }
     }
 }
 
@@ -6471,61 +6554,54 @@ optimize_cfg(struct assembler *a, PyObject *consts)
         if (optimize_basic_block(b, consts)) {
             return -1;
         }
-        clean_basic_block(b);
-        assert(b->b_reachable == 0);
+        clean_basic_block(b, -1);
+        assert(b->b_predecessors == 0);
     }
     if (mark_reachable(a)) {
         return -1;
     }
     /* Delete unreachable instructions */
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-       if (b->b_reachable == 0) {
+       if (b->b_predecessors == 0) {
             b->b_iused = 0;
             b->b_nofallthrough = 0;
        }
     }
+    basicblock *pred = NULL;
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        int prev_lineno = -1;
+        if (pred && pred->b_iused) {
+            prev_lineno = pred->b_instr[pred->b_iused-1].i_lineno;
+        }
+        clean_basic_block(b, prev_lineno);
+        pred = b->b_nofallthrough ? NULL : b;
+    }
+    eliminate_empty_basic_blocks(a->a_entry);
     /* Delete jump instructions made redundant by previous step. If a non-empty
        block ends with a jump instruction, check if the next non-empty block
        reached through normal flow control is the target of that jump. If it
        is, then the jump instruction is redundant and can be deleted.
     */
+    int maybe_empty_blocks = 0;
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            if (b_last_instr->i_opcode == POP_JUMP_IF_FALSE ||
-                b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
-                b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+            if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
-                basicblock *b_next_act = b->b_next;
-                while (b_next_act != NULL && b_next_act->b_iused == 0) {
-                    b_next_act = b_next_act->b_next;
-                }
-                if (b_last_instr->i_target == b_next_act) {
+                if (b_last_instr->i_target == b->b_next) {
+                    assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
-                    switch(b_last_instr->i_opcode) {
-                        case POP_JUMP_IF_FALSE:
-                        case POP_JUMP_IF_TRUE:
-                            b_last_instr->i_opcode = POP_TOP;
-                            b_last_instr->i_target = NULL;
-                            b_last_instr->i_oparg = 0;
-                            break;
-                        case JUMP_ABSOLUTE:
-                        case JUMP_FORWARD:
-                            b_last_instr->i_opcode = NOP;
-                            clean_basic_block(b);
-                            break;
-                    }
-                    /* The blocks after this one are now reachable through it */
-                    b_next_act = b->b_next;
-                    while (b_next_act != NULL && b_next_act->b_iused == 0) {
-                        b_next_act->b_reachable = 1;
-                        b_next_act = b_next_act->b_next;
-                    }
+                    b_last_instr->i_opcode = NOP;
+                    clean_basic_block(b, -1);
+                    maybe_empty_blocks = 1;
                 }
             }
         }
     }
-    minimize_lineno_table(a);
+    if (maybe_empty_blocks) {
+        eliminate_empty_basic_blocks(a->a_entry);
+    }
+    propogate_line_numbers(a);
     return 0;
 }
 
@@ -6574,6 +6650,12 @@ ensure_exits_have_lineno(struct compiler *c)
     if (is_exit_without_lineno(entry)) {
         entry->b_instr[0].i_lineno = c->u->u_firstlineno;
     }
+    /* Eliminate empty blocks */
+    for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        while (b->b_next && b->b_next->b_iused == 0) {
+            b->b_next = b->b_next->b_next;
+        }
+    }
     /* Any remaining reachable exit blocks without line number can only be reached by
      * fall through, and thus can only have a single predecessor */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
@@ -6598,4 +6680,3 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
-

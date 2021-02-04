@@ -162,7 +162,7 @@ class BackupTests(unittest.TestCase):
 
 
 def suite():
-    return unittest.makeSuite(BackupTests)
+    return unittest.TestLoader().loadTestsFromTestCase(BackupTests)
 
 if __name__ == "__main__":
     unittest.main()

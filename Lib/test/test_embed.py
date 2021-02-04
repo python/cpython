@@ -1472,5 +1472,11 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
 
+class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
+    def test_unicode_id_init(self):
+        # bpo-42882: Test that _PyUnicode_FromId() works
+        # when Python is initialized multiples times.
+        self.run_embedded_interpreter("test_unicode_id_init")
+
 if __name__ == "__main__":
     unittest.main()
