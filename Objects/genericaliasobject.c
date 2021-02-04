@@ -244,37 +244,40 @@ tupleify_lists(PyObject *args) {
     }
     for (Py_ssize_t i = 0; i < len; ++i) {
         PyObject *arg = PyTuple_GET_ITEM(result, i);
-        int is_list = PyList_CheckExact(arg);
-        int is_tuple = PyTuple_CheckExact(arg);
-        if (is_list || is_tuple) {
-            // In case there are lists nested inside tuples.
-            PyObject *new_arg = is_list ? PyList_AsTuple(arg) : arg;
+        if (arg == NULL) {
+            goto error;
+        }
+        PyObject *new_arg = NULL;
+        if (PyList_CheckExact(arg)) {
+            new_arg = PyList_AsTuple(arg);
             if (new_arg == NULL) {
                 goto error;
             }
-            if (is_list) {
-                // Discard old arg since AsTuple gives a new reference.
-                Py_DECREF(arg);
-            }
-            if (Py_EnterRecursiveCall(" while converting lists to tuples in "
-                "GenericAlias' __args__")) {
-                goto error;
-            }
-            PyObject *new_arg_tupled = tupleify_lists(new_arg);
-            Py_LeaveRecursiveCall();
-            Py_DECREF(new_arg);
-            if (new_arg_tupled == NULL) {
-                goto error;
-            }
-            PyTuple_SET_ITEM(result, i, new_arg_tupled);
-            continue;
-
-        error:
-            Py_DECREF(result);
-            return NULL;
+            Py_DECREF(arg);
         }
+        else if (PyTuple_CheckExact(arg)) {
+            new_arg = arg;
+        }
+        else {
+            continue;
+        }
+        if (Py_EnterRecursiveCall(" while converting lists to tuples in "
+            "GenericAlias' __args__")) {
+            goto error;
+        }
+        PyObject *new_arg_tupled = tupleify_lists(new_arg);
+        Py_DECREF(new_arg);
+        Py_LeaveRecursiveCall();
+        if (new_arg_tupled == NULL) {
+            goto error;
+        }
+        PyTuple_SET_ITEM(result, i, new_arg_tupled);
     }
     return result;
+
+error:
+    Py_DECREF(result);
+    return NULL;
 }
 
 static PyObject *
