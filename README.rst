@@ -67,7 +67,7 @@ This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS case-insensitive file systems and on Cygwin,
-the executable is called ``python.exe``; elsewhere it's just ``python``.
+the executable is called ``python3``; elsewhere it's just ``python``.
 
 Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
