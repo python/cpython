@@ -1242,7 +1242,12 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaises(Error, shutil.copyfile, src_file, src_file)
         # Make sure file is not corrupted.
         self.assertEqual(read_file(src_file), 'foo')
-
+        # If the "same_file" is set the "SameFileError" exception should be raised.
+        ret = shutil.copyfile(src_file, src_file, same_file=True)
+        # The return value should be the dst
+        self.assertEqual(ret, src_file)
+        # Make sure file is not corrupted.
+        self.assertEqual(read_file(src_file), 'foo')
 
 class TestArchives(BaseTest, unittest.TestCase):
 
