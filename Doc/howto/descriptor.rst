@@ -42,8 +42,8 @@ add new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor that always returns the constant ``10``
-from its :meth:`__get__` method:
+The :class:`Ten` class is a descriptor whose :meth:`__get__` method always
+returns the constant ``10``:
 
 .. testcode::
 
@@ -70,10 +70,10 @@ and descriptor lookup:
     >>> a.y                         # Descriptor lookup
     10
 
-In the ``a.x`` attribute lookup, the dot operator finds the key ``x`` and the
-value ``5`` in the class dictionary.  In the ``a.y`` lookup, the dot operator
-finds a descriptor instance, recognized by its ``__get__`` method, and calls
-that method which returns ``10``.
+In the ``a.x`` attribute lookup, the dot operator finds ``'x': 5``
+in the class dictionary.  In the ``a.y`` lookup, the dot operator
+finds a descriptor instance, recognized by its ``__get__`` method.
+Calling that method returns ``10``.
 
 Note that the value ``10`` is not stored in either the class dictionary or the
 instance dictionary.  Instead, the value ``10`` is computed on demand.
@@ -300,7 +300,7 @@ used in cases where a descriptor needs to know either the class where it was
 created or the name of class variable it was assigned to.  (This method, if
 present, is called even if the class is not a descriptor.)
 
-Descriptors get invoked by the dot "operator" during attribute lookup.  If a
+Descriptors get invoked by the dot operator during attribute lookup.  If a
 descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
 the descriptor instance is returned without invoking it.
 
