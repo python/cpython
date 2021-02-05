@@ -881,7 +881,7 @@ def _test_generator(n, func, args):
     from time import perf_counter
 
     t0 = perf_counter()
-    data = [func(*args) for i in range(n)]
+    data = [func(*args) for i in _repeat(None, n)]
     t1 = perf_counter()
 
     xbar = mean(data)
