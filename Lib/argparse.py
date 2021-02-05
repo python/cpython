@@ -681,7 +681,7 @@ class FlexiHelpFormatter(HelpFormatter):
         """Return line indent level and "sub_indent" for bullet list text."""
 
         indent = len(_re.match(r"( *)", line).group(1))
-        list_match = _re.match(r"( *)(([*-+>]+|\w+\)|\w+\.) +)", line)
+        list_match = _re.match(r"( *)(([*\-+>]+|\w+\)|\w+\.) +)", line)
         if list_match:
             sub_indent = indent + len(list_match.group(2))
         else:
