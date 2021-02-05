@@ -681,6 +681,11 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(np.x, 1)
         self.assertEqual(np.y, 2)
 
+    def test_new_builtins_issue_43102(self):
+        self.assertEqual(
+            namedtuple('C', ()).__new__.__globals__['__builtins__'],
+            {})
+
     def test_match_args(self):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__match_args__, ('x', 'y'))
