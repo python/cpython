@@ -163,7 +163,7 @@ is_leap_year(int year);
 static size_t
 _bisect(const int64_t value, const int64_t *arr, size_t size);
 
-static void
+static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key);
 static void
 clear_strong_cache(const PyTypeObject *const type);
@@ -265,7 +265,7 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     PyObject *instance = zone_from_strong_cache(type, key);
-    if (instance != NULL) {
+    if (instance != NULL || PyErr_Occurred()) {
         return instance;
     }
 
@@ -428,7 +428,10 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
 
         while ((item = PyIter_Next(iter))) {
             // Remove from strong cache
-            eject_from_strong_cache(type, item);
+            if (eject_from_strong_cache(type, item) < 0) {
+                Py_DECREF(item);
+                break;
+            }
 
             // Remove from weak cache
             PyObject *tmp = PyObject_CallMethodObjArgs(weak_cache, pop, item,
@@ -2347,7 +2350,11 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 {
     const StrongCacheNode *node = root;
     while (node != NULL) {
-        if (PyObject_RichCompareBool(key, node->key, Py_EQ)) {
+        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
+        if (rv < 0) {
+            return NULL;
+        }
+        if (rv) {
             return (StrongCacheNode *)node;
         }
 
@@ -2361,11 +2368,11 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
  *
  * This function is used to enable the per-key functionality in clear_cache.
  */
-static void
+static int
 eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 {
     if (type != &PyZoneInfo_ZoneInfoType) {
-        return;
+        return 0;
     }
 
     StrongCacheNode *node = find_in_strong_cache(ZONEINFO_STRONG_CACHE, key);
@@ -2374,6 +2381,10 @@ eject_from_strong_cache(const PyTypeObject *const type, PyObject *key)
 
         strong_cache_node_free(node);
     }
+    else if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
 }
 
 /* Moves a node to the front of the LRU cache.
