@@ -3,6 +3,7 @@
 import collections
 import itertools
 import linecache
+import warnings
 import sys
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
@@ -490,14 +491,19 @@ class TracebackException:
             cause = None
         if (exc_value and exc_value.__context__ is not None
             and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
+            try:
+                context = TracebackException(
+                    type(exc_value.__context__),
+                    exc_value.__context__,
+                    exc_value.__context__.__traceback__,
+                    limit=limit,
+                    lookup_lines=False,
+                    capture_locals=capture_locals,
+                    _seen=_seen)
+            except RecursionError:
+                warnings.warn(
+                    'A RecursionError occurred while processing an exception; truncating traceback.');
+                context = None
         else:
             context = None
         self.__cause__ = cause
