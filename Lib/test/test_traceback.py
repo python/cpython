@@ -105,12 +105,47 @@ class TracebackCases(unittest.TestCase):
 
         try:
             f()
-        except RecursionError as e:
+        except RecursionError:
             # Creating this exception should not fail if internally
             # the traceback exception is constructed safely with respect
             # to recursion context (since TracebackExceptions are used
             # for printing and formatting exceptions we should allow their
             # creation even for RecursionErrors with long chains).
+            exc_info = sys.exc_info()
+            traceback.TracebackException(exc_info[0], exc_info[1], exc_info[2])
+
+    def test_traceback_cause_recursionerror(self):
+        # Same as test_traceback_context_recursionerror, but with
+        # a __cause__ chain.
+
+        def f():
+            e = None
+            try:
+                f()
+            except Exception as exc:
+                e = exc
+            raise Exception from e
+
+        try:
+            f()
+        except Exception:
+            exc_info = sys.exc_info()
+            traceback.TracebackException(exc_info[0], exc_info[1], exc_info[2])
+
+    def test_traceback_cause_context_recursionerror(self):
+        # Same as test_traceback_context_recursionerror, but with
+        # both a __cause__ and __context__ chain.
+
+        def f():
+            e = None
+            try:
+                f()
+            except Exception as exc:
+                raise RuntimeException() from exc
+
+        try:
+            f()
+        except Exception:
             exc_info = sys.exc_info()
             traceback.TracebackException(exc_info[0], exc_info[1], exc_info[2])
 

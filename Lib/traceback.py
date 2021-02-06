@@ -476,16 +476,24 @@ class TracebackException:
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
+        self._truncated_cause = False
         if (exc_value and exc_value.__cause__ is not None
             and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
+            try:
+                cause = TracebackException(
+                    type(exc_value.__cause__),
+                    exc_value.__cause__,
+                    exc_value.__cause__.__traceback__,
+                    limit=limit,
+                    lookup_lines=False,
+                    capture_locals=capture_locals,
+                    _seen=_seen)
+            except RecursionError:
+                # The recursive call to the constructor in the try above
+                # may result in a stack overflow for long exception chains,
+                # so we must truncate.
+                self._truncated_cause = True
+                cause = None
         else:
             cause = None
         self._truncated_context = False
@@ -625,6 +633,12 @@ class TracebackException:
                 not self.__suppress_context__):
                 yield from self.__context__.format(chain=chain)
                 yield _context_message
+            if self._truncated_cause:
+                yield (
+                    'Warning: the above exception was the cause of other '
+                    'exceptions, but those were truncated to avoid '
+                    'stack overflow in the exception handler. '
+                    'See https://bugs.python.org/issue43048 for details.\n')
             if self._truncated_context:
                 yield (
                     'Warning: during handling of the above exception, '
