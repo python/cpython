@@ -506,8 +506,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi2.archive, TEMP_ZIP)
         self.assertEqual(zi2.prefix, TESTPACK + os.sep)
 
-        # test _get_files() method
-        self.assertEqual(zi._get_files().keys(), files.keys())
+        # Test invalidate_caches() method
+        self.assertEqual(zi._files.keys(), files.keys())
+        # Check that the file information remains accurate after reloading
+        zi.invalidate_caches()
+        self.assertEqual(zi._files.keys(), files.keys())
         # Add a new file to the ZIP archive
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -517,38 +520,17 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 zinfo.compress_type = self.compression
                 zinfo.comment = b"spam"
                 z.writestr(zinfo, data)
-        # Tweak the mtime of the ZIP archive to check that
-        # _get_files() reloads the file information
-        s = os.stat(TEMP_ZIP)
-        os.utime(TEMP_ZIP, (s.st_atime, s.st_mtime-100000000))
-        self.assertEqual(zi._get_files().keys(), files.keys())
+        # Check that we can detect the new file after invalidating the cache
+        zi.invalidate_caches()
+        self.assertEqual(zi._files.keys(), files.keys())
         spec = zi.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
-
-        # Test invalidate_caches() method.
-        # Add a new file to the ZIP archive
-        newfile = {"spam3" + pyc_ext: (NOW, test_pyc)}
-        files.update(newfile)
-        with ZipFile(TEMP_ZIP, "a") as z:
-            for name, (mtime, data) in newfile.items():
-                zinfo = ZipInfo(name, time.localtime(mtime))
-                zinfo.compress_type = self.compression
-                zinfo.comment = b"spam"
-                z.writestr(zinfo, data)
-        # Tweak the mtime of the ZIP archive to be that same
-        # as the previously recorded mtime, so we have to call
-        # invalidate_caches() to update the cache
-        os.utime(TEMP_ZIP, (s.st_atime, zi._archive_mtime))
+        # Check that the cached data is removed if the file is deleted
+        os.remove(TEMP_ZIP)
         zi.invalidate_caches()
-        self.assertEqual(zi._get_files().keys(), files.keys())
-        spec = zi.find_spec('spam3')
-        self.assertIsNotNone(spec)
-        self.assertIsInstance(spec.loader, zipimport.zipimporter)
-
-        zi._archive_mtime = 42
-        zi.invalidate_caches()
-        self.assertEqual(zi._archive_mtime, -1)
+        self.assertIsNone(zi._files)
+        self.assertIsNone(zipimport._zip_directory_cache.get(zi.archive))
 
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
