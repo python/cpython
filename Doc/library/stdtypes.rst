@@ -1472,7 +1472,7 @@ multiple fragments.
    printable string representation of *object*.  For string objects, this is
    the string itself.  If *object* does not have a :meth:`~object.__str__`
    method, then :func:`str` falls back to returning
-   :meth:`repr(object) <repr>`.
+   :func:`repr(object) <repr>`.
 
    .. index::
       single: buffer protocol; str (built-in class)
