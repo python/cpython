@@ -1,0 +1,1 @@
+Do not add duplicate FDs to list in duplicate_for_child() in order to avoid ValueError: bad value(s) in fds_to_keep
