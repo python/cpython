@@ -1547,8 +1547,8 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is described in section 3.13 of the Unicode
-   Standard.
+   The casefolding algorithm is described in section 3.13 of the `Unicode 
+   Standard <https://unicode.org/standard>`_.
 
    .. versionadded:: 3.3
 
@@ -1702,7 +1702,8 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the "Alphabetic" property defined in the Unicode Standard.
+   from the "Alphabetic" property defined in the `Unicode Standard
+   <https://unicode.org/standard>`_.
 
 
 .. method:: str.isascii()
@@ -1834,8 +1835,8 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The lowercasing algorithm used is described in section 3.13 of the `Unicode 
+   Standard <https://unicode.org/standard>`_.
 
 
 .. method:: str.lstrip([chars])
@@ -2175,8 +2176,8 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
+   The uppercasing algorithm used is described in section 3.13 of the `Unicode 
+   Standard <https://unicode.org/standard>`_.
 
 
 .. method:: str.zfill(width)
