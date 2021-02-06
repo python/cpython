@@ -32,7 +32,8 @@ class Popen(popen_fork.Popen):
         super().__init__(process_obj)
 
     def duplicate_for_child(self, fd):
-        self._fds.append(fd)
+        if fd not in self._fds:
+            self._fds.append(fd)
         return fd
 
     def _launch(self, process_obj):
