@@ -94,7 +94,6 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         except KeyError:
             files = _read_directory(path)
             _zip_directory_cache[path] = files
-
         self._files = files
         self.archive = path
         # a prefix directory following the ZIP file path.
