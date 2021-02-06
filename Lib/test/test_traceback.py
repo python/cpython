@@ -137,11 +137,10 @@ class TracebackCases(unittest.TestCase):
         # both a __cause__ and __context__ chain.
 
         def f():
-            e = None
             try:
                 f()
             except Exception as exc:
-                raise RuntimeException() from exc
+                raise Exception() from exc
 
         try:
             f()
