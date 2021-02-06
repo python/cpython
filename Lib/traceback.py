@@ -3,7 +3,6 @@
 import collections
 import itertools
 import linecache
-import warnings
 import sys
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
@@ -489,6 +488,7 @@ class TracebackException:
                 _seen=_seen)
         else:
             cause = None
+        self._truncated_context = False
         if (exc_value and exc_value.__context__ is not None
             and id(exc_value.__context__) not in _seen):
             try:
@@ -501,8 +501,7 @@ class TracebackException:
                     capture_locals=capture_locals,
                     _seen=_seen)
             except RecursionError:
-                warnings.warn(
-                    'A RecursionError occurred while processing an exception; truncating traceback.');
+                self._truncated_context = True
                 context = None
         else:
             context = None
@@ -626,6 +625,12 @@ class TracebackException:
                 not self.__suppress_context__):
                 yield from self.__context__.format(chain=chain)
                 yield _context_message
+            if self._truncated_context:
+                yield (
+                    'Warning: during handling of the above exception, '
+                    'more exceptions occurred, but were truncated to avoid '
+                    'stack overflow in the exception handler. '
+                    'See https://bugs.python.org/issue43048 for details.\n')
         if self.stack:
             yield 'Traceback (most recent call last):\n'
             yield from self.stack.format()

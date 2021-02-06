@@ -92,7 +92,7 @@ class TracebackCases(unittest.TestCase):
         lst = traceback.format_exception_only(e.__class__, e)
         self.assertEqual(lst, ['KeyboardInterrupt\n'])
 
-    def test_traceback_recursionerror(self):
+    def test_traceback_context_recursionerror(self):
         # Test that for long traceback chains traceback does not itself
         # raise a recursion error while printing (Issue43048)
 
