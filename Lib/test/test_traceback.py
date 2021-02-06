@@ -142,7 +142,7 @@ class TracebackCases(unittest.TestCase):
             f()
         except Exception:
             exc_info = sys.exc_info()
-            traceback.TracebackException(exc_info[0], exc_info[1], exc_info[2])
+            traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
     def test_format_exception_only_bad__str__(self):
         class X(Exception):

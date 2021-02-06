@@ -465,6 +465,9 @@ class TracebackException:
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 
+    def hello(self, exc_value):
+        return id(exc_value) and exc_value
+
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
@@ -476,6 +479,8 @@ class TracebackException:
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
+
+        self.hello(exc_value)
         self._truncated_cause = False
         if (exc_value and exc_value.__cause__ is not None
             and id(exc_value.__cause__) not in _seen):
