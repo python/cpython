@@ -477,7 +477,7 @@ class TracebackException:
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
 
-        self._truncated_cause = False
+        self._truncated = False
         if (exc_value and exc_value.__cause__ is not None
             and id(exc_value.__cause__) not in _seen):
             try:
@@ -493,11 +493,10 @@ class TracebackException:
                 # The recursive call to the constructor in the try above
                 # may result in a stack overflow for long exception chains,
                 # so we must truncate.
-                self._truncated_cause = True
+                self._truncated = True
                 cause = None
         else:
             cause = None
-        self._truncated_context = False
         if (exc_value and exc_value.__context__ is not None
             and id(exc_value.__context__) not in _seen):
             try:
@@ -510,7 +509,7 @@ class TracebackException:
                     capture_locals=capture_locals,
                     _seen=_seen)
             except RecursionError:
-                self._truncated_context = True
+                self._truncated = True
                 context = None
         else:
             context = None
@@ -634,13 +633,9 @@ class TracebackException:
                 not self.__suppress_context__):
                 yield from self.__context__.format(chain=chain)
                 yield _context_message
-            if self._truncated_cause:
+            if self._truncated:
                 yield (
-                    'Explicitly chained exceptions have been truncated to avoid '
-                    'stack overflow in traceback formatting:\n')
-            if self._truncated_context:
-                yield (
-                    'Implicitly chained exceptions have been truncated to avoid '
+                    'Chained exceptions have been truncated to avoid '
                     'stack overflow in traceback formatting:\n')
         if self.stack:
             yield 'Traceback (most recent call last):\n'
