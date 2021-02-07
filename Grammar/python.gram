@@ -201,9 +201,10 @@ try_stmt[stmt_ty]:
     | 'try' &&':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _Py_Try(b, ex, el, f, EXTRA) }
 except_block[excepthandler_ty]:
-    | 'except' e=expression t=['as' z=NAME { z }] &&':' b=block {
+    | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
         _Py_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
-    | 'except' &&':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
+    | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
+    | invalid_except_block
 finally_block[asdl_stmt_seq*]: 'finally' ':' a=block { a }
 
 return_stmt[stmt_ty]:
@@ -737,3 +738,9 @@ invalid_import_from_targets:
 invalid_with_stmt:
     | [ASYNC] 'with' ','.(expression ['as' star_target])+ &&':'
     | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
+
+invalid_except_block:
+    | 'except' a=expression ',' expressions ['as' NAME ] ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "exception group must be parenthesized") }
+    | 'except' expression ['as' NAME ] &&':'
+    | 'except' &&':' 
