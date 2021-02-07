@@ -1,0 +1,1 @@
+Fix: return expected type (str), not original value (bytes) in Lib/email/base64mime.py
