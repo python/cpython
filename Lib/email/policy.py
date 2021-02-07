@@ -139,7 +139,7 @@ class EmailPolicy(Policy):
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
-        if len(name.splitlines()) > 1:
+        if isinstance(name, str) and len(name.splitlines()) > 1:
             # XXX this error message isn't quite right when we use splitlines
             # (see issue 22233), but I'm not sure what should happen here.
             raise ValueError("Header name may not contain linefeed "
