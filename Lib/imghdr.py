@@ -36,7 +36,7 @@ tests = []
 
 def test_jpeg(h, f):
     """JPEG data in JFIF or Exif format"""
-    if h[6:10] in (b'JFIF', b'Exif'):
+    if h[6:10] in (b'JFIF', b'Exif', b'JFXX'):
         return 'jpeg'
 
 tests.append(test_jpeg)
