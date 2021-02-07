@@ -1082,10 +1082,6 @@ class LMTP(SMTP):
         # Handle Unix-domain sockets.
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-<<<<<<< HEAD
-
-=======
->>>>>>> 3bf05327c2b25d42b92795d9d280288c22a0963d
             if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
                 self.sock.settimeout(self.timeout)
             self.file = None
