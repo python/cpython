@@ -114,9 +114,12 @@ class MockSocket:
 def socket(family=None, type=None, proto=None):
     return MockSocket(family)
 
-
 def create_connection(address, timeout=socket_module._GLOBAL_DEFAULT_TIMEOUT,
                       source_address=None):
+    try:
+        int_port = int(address[1])
+    except ValueError:
+        raise error
     ms = MockSocket()
     if timeout is socket_module._GLOBAL_DEFAULT_TIMEOUT:
         timeout = getdefaulttimeout()
@@ -155,7 +158,6 @@ error = socket_module.error
 _GLOBAL_DEFAULT_TIMEOUT = socket_module._GLOBAL_DEFAULT_TIMEOUT
 AF_INET = socket_module.AF_INET
 AF_INET6 = socket_module.AF_INET6
-AF_UNIX = socket_module.AF_UNIX
 SOCK_STREAM = socket_module.SOCK_STREAM
 SOL_SOCKET = None
 SO_REUSEADDR = None

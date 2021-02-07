@@ -182,7 +182,6 @@ class LMTPGeneralTests(GeneralTests, unittest.TestCase):
         with self.assertRaises(ValueError):
             self.client(local_host, timeout=0)
 
-
 # Test server thread using the specified SMTP server class
 def debugging_server(serv, serv_evt, client_evt):
     serv_evt.set()
