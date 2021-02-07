@@ -1,0 +1,1 @@
+Raise ValueError if an email header name includes linefeed or carriage return characters.
