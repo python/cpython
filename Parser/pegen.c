@@ -454,7 +454,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            does not physically exist */
         assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
 
-        if (p->tok->lineno == lineno) {
+        if (p->tok->lineno <= lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
             error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         }
@@ -782,7 +782,6 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
-
 int
 _PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
 {
@@ -830,6 +829,28 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     Token *t = p->tokens[p->mark];
     if (t->type != type) {
+        return NULL;
+    }
+    p->mark += 1;
+    return t;
+}
+
+Token *
+_PyPegen_expect_forced_token(Parser *p, int type, const char* expected) {
+
+    if (p->error_indicator == 1) {
+        return NULL;
+    }
+
+    if (p->mark == p->fill) {
+        if (_PyPegen_fill_token(p) < 0) {
+            p->error_indicator = 1;
+            return NULL;
+        }
+    }
+    Token *t = p->tokens[p->mark];
+    if (t->type != type) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(t, "expected '%s'", expected);
         return NULL;
     }
     p->mark += 1;

@@ -172,7 +172,7 @@ before_script:
   - eval "$(pyenv init -)"
   - pyenv global 3.8
   - PYTHON_FOR_REGEN=python3.8 make -j4 regen-all
-  - make regen-module-names
+  - make regen-stdlib-module-names
   - changes=`git status --porcelain`
   - |
       # Check for changes in regenerated files

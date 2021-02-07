@@ -760,7 +760,7 @@ regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-importlib clinic \
 	regen-pegen-metaparser regen-pegen
 	@echo
-	@echo "Note: make regen-module-names and autoconf should be run manually"
+	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -900,14 +900,14 @@ regen-keyword:
 		$(srcdir)/Lib/keyword.py.new
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
-.PHONY: regen-module-names
-regen-module-names: build_all
-	# Regenerate Python/module_names.h
-	# using Tools/scripts/generate_module_names.py
+.PHONY: regen-stdlib-module-names
+regen-stdlib-module-names: build_all
+	# Regenerate Python/stdlib_module_names.h
+	# using Tools/scripts/generate_stdlib_module_names.py
 	$(RUNSHARED) ./$(BUILDPYTHON) \
-		$(srcdir)/Tools/scripts/generate_module_names.py \
-		> $(srcdir)/Python/module_names.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/module_names.h $(srcdir)/Python/module_names.h.new
+		$(srcdir)/Tools/scripts/generate_stdlib_module_names.py \
+		> $(srcdir)/Python/stdlib_module_names.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/stdlib_module_names.h $(srcdir)/Python/stdlib_module_names.h.new
 
 Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/Python-ast.h
 
@@ -1160,7 +1160,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS) \
 		\
-		$(srcdir)/Python/module_names.h
+		$(srcdir)/Python/stdlib_module_names.h
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 

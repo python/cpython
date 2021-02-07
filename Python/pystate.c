@@ -56,7 +56,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
     // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
     // is called multiple times.
-    int64_t unicode_next_index = runtime->unicode_ids.next_index;
+    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
 
     memset(runtime, 0, sizeof(*runtime));
 

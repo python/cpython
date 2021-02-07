@@ -526,7 +526,8 @@ are always available.  They are listed here in alphabetical order.
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
    the code that's executed is expected to be valid as file input (see the
    section "File input" in the Reference Manual). Be aware that the
-   :keyword:`return` and :keyword:`yield` statements may not be used outside of
+   :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
+   statements may not be used outside of
    function definitions even within the context of code passed to the
    :func:`exec` function. The return value is ``None``.
 
@@ -692,6 +693,13 @@ are always available.  They are listed here in alphabetical order.
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
+
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, one must manually mangle a private attribute's
+      (attributes with two leading underscores) name in order to retrieve it with
+      :func:`getattr`.
 
 
 .. function:: globals()
@@ -1334,7 +1342,7 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\n', file=sys.stdout, flush=False)
+.. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
    by *end*.  *sep*, *end*, *file* and *flush*, if present, must be given as keyword
@@ -1511,6 +1519,13 @@ are always available.  They are listed here in alphabetical order.
    new attribute.  The function assigns the value to the attribute, provided the
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
+
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, one must manually mangle a private attribute's
+      (attributes with two leading underscores) name in order to set it with
+      :func:`setattr`.
 
 
 .. class:: slice(stop)
