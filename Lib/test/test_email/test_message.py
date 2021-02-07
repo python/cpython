@@ -500,6 +500,29 @@ class TestEmailMessageBase:
             self.args = args
             self.kw = kw
 
+    def test_add_valid_header(self):
+        m = self._str_msg('')
+        header_name = 'CUSTOM-HEADER'
+        header_value = 'data'
+        m.add_header(header_name, header_value)
+        self.assertEqual(m.get(header_name), header_value)
+
+    def test_throws_on_add_invalid_header_name(self):
+        m = self._str_msg('')
+        header_name = 'CUSTOM\nHEADER'
+        header_value = 'data'
+
+        with self.assertRaises(ValueError):
+            m.add_header(header_name, header_value)
+
+    def test_throws_on_add_invalid_header_value(self):
+        m = self._str_msg('')
+        header_name = 'CUSTOM-HEADER'
+        header_value = 'data\ncontinued'
+
+        with self.assertRaises(ValueError):
+            m.add_header(header_name, header_value)
+
     def test_get_content_with_cm(self):
         m = self._str_msg('')
         cm = self._TestContentManager()

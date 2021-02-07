@@ -134,13 +134,17 @@ class EmailPolicy(Policy):
         attribute and it matches the name ignoring case, the value is returned
         unchanged.  Otherwise the name and value are passed to header_factory
         method, and the resulting custom header object is returned as the
-        value.  In this case a ValueError is raised if the input value contains
-        CR or LF characters.
-
+        value.  In this case a ValueError is raised if the input name or value
+        contains CR or LF characters.
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
-        if isinstance(value, str) and len(value.splitlines())>1:
+        if len(name.splitlines()) > 1:
+            # XXX this error message isn't quite right when we use splitlines
+            # (see issue 22233), but I'm not sure what should happen here.
+            raise ValueError("Header name may not contain linefeed "
+                             "or carriage return characters")
+        if isinstance(value, str) and len(value.splitlines()) > 1:
             # XXX this error message isn't quite right when we use splitlines
             # (see issue 22233), but I'm not sure what should happen here.
             raise ValueError("Header values may not contain linefeed "
