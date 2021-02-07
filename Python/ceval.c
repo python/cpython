@@ -4744,8 +4744,10 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         Py_DECREF(defaults);
         return NULL;
     }
+#ifdef Py_DEBUG
     PyCodeObject *code = (PyCodeObject *)_co;
     assert ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 0);
+#endif
     if (locals == NULL) {
         locals = globals;
     }
