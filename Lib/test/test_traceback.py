@@ -107,7 +107,8 @@ class TracebackCases(unittest.TestCase):
             f()
         except RecursionError:
             exc_info = sys.exc_info()
-            traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
+
+        traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
     def test_traceback_cause_recursionerror(self):
         # Same as test_traceback_context_recursionerror, but with
@@ -125,24 +126,8 @@ class TracebackCases(unittest.TestCase):
             f()
         except Exception:
             exc_info = sys.exc_info()
-            traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
-    def test_traceback_cause_context_recursionerror(self):
-        # Same as test_traceback_context_recursionerror, but with
-        # both a __cause__ and __context__ chain.
-
-        def f():
-            try:
-                f()
-            except Exception as exc:
-                # exc is both the cause and context of this new fresh exception
-                raise Exception() from exc
-
-        try:
-            f()
-        except Exception:
-            exc_info = sys.exc_info()
-            traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
+        traceback.format_exception(exc_info[0], exc_info[1], exc_info[2])
 
     def test_format_exception_only_bad__str__(self):
         class X(Exception):

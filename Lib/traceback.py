@@ -640,16 +640,12 @@ class TracebackException:
                 yield _context_message
             if self._truncated_cause:
                 yield (
-                    'Warning: the above exception was the cause of other '
-                    'exceptions, but those were truncated to avoid '
-                    'stack overflow in the exception handler. '
-                    'See https://bugs.python.org/issue43048 for details.\n')
+                    'Explicitly chained exceptions have been truncated to avoid '
+                    'stack overflow in traceback formatting:\n')
             if self._truncated_context:
                 yield (
-                    'Warning: during handling of the above exception, '
-                    'more exceptions occurred, but were truncated to avoid '
-                    'stack overflow in the exception handler. '
-                    'See https://bugs.python.org/issue43048 for details.\n')
+                    'Implicitly chained exceptions have been truncated to avoid '
+                    'stack overflow in traceback formatting:\n')
         if self.stack:
             yield 'Traceback (most recent call last):\n'
             yield from self.stack.format()
