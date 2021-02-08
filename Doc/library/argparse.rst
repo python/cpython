@@ -2132,7 +2132,7 @@ Custom help format
    an instantiated object is passed to the :class:`ArgumentParser` constructor,
    not a class type.
 
-   Selection of help format is done by setting either passing keyword arguments 
+   Selection of help format is done by setting either passing keyword arguments
    to the constructor or setting attributes of the instantiated
    :class:`CustomHelpFormat` object, before passing it to the
    :class:`ArgumentParser` constructor::
