@@ -2670,10 +2670,10 @@ zoneinfomodule_exec(PyObject *m)
     }
 
     int rc = PyModule_AddObjectRef(m, "ZoneInfo", (PyObject *)PyZoneInfo_ZoneInfoType);
+    Py_DECREF(PyZoneInfo_ZoneInfoType);
     if (rc < 0) {
         goto error;
     }
-    Py_DECREF(PyZoneInfo_ZoneInfoType);
 
     /* Populate imports */
     PyObject *_tzpath_module = PyImport_ImportModule("zoneinfo._tzpath");
