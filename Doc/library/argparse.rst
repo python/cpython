@@ -2116,9 +2116,9 @@ remaining unparsed argument strings.
 Custom help format
 ^^^^^^^^^^^^^^^^^^
 
-.. class:: CustomHelpFormat(indent_increment=2, max_help_position=24,
-                            width=None, raw_description=False,
-                            raw_text=False, arg_defaults=False,
+.. class:: CustomHelpFormat(indent_increment=2, max_help_position=24, \
+                            width=None, raw_description=False, \
+                            raw_text=False, arg_defaults=False, \
                             metavar_type=False, **kwargs)
 
    A :class:`CustomHelpFormat` object can be passed as formatter_class_ parameter
