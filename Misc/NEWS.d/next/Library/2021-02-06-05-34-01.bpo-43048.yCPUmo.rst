@@ -1,1 +1,1 @@
-When traceback is formatting a RecursionError with a long __context__ chain it runs the risk of itself raising a RecursionError. This patch catches the corresponding recursive call's RecursionError, truncates the traceback and emits a warning instead.
+Handle `RecursionError`s in :class:`~traceback.TracebackException`'s constructor, so that long exceptions chains are truncated instead of causing traceback formatting to fail.
