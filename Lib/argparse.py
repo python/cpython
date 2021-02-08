@@ -1219,6 +1219,13 @@ class _ExtendAction(_AppendAction):
         items.extend(values)
         setattr(namespace, self.dest, items)
 
+class _ExtendConstAction(_AppendConstAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest, None)
+        items = _copy_items(items)
+        items.extend(self.const)
+        setattr(namespace, self.dest, items)
+
 # ==============
 # Type classes
 # ==============
@@ -1328,6 +1335,7 @@ class _ActionsContainer(object):
         self.register('action', 'version', _VersionAction)
         self.register('action', 'parsers', _SubParsersAction)
         self.register('action', 'extend', _ExtendAction)
+        self.register('action', 'extend_const', _ExtendConstAction)
 
         # raise an exception if the conflict handler is invalid
         self._get_handler()
