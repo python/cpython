@@ -1,0 +1,2 @@
+The :func:`shutil.copyfile` supports the same files with new *same_file*
+argument. If the *same_file* is set the function returns *dst*.
