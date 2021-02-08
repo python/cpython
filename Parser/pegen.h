@@ -102,10 +102,7 @@ typedef struct {
     arg_ty kwarg;
 } StarEtc;
 
-typedef struct {
-    operator_ty kind;
-} AugOperator;
-
+typedef struct { operator_ty kind; } AugOperator; 
 typedef struct {
     void *element;
     int is_keyword;
@@ -118,12 +115,14 @@ int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
+
 int _PyPegen_lookahead_with_name(int, expr_ty (func)(Parser *), Parser *);
 int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int);
 int _PyPegen_lookahead_with_string(int , expr_ty (func)(Parser *, const char*), Parser *, const char*);
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 
 Token *_PyPegen_expect_token(Parser *p, int type);
+Token *_PyPegen_expect_forced_token(Parser *p, int type, const char* expected);
 expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
@@ -263,7 +262,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
-int _PyPegen_check_barry_as_flufl(Parser *);
+int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 
 // Error reporting helpers

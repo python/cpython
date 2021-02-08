@@ -27,6 +27,9 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags & feature) != 0);
 }
 
+extern void _PyType_InitCache(PyInterpreterState *interp);
+
+
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
    _PyObject_InitVar() is the fast version of PyObject_InitVar().
@@ -164,6 +167,12 @@ _PyObject_IS_GC(PyObject *obj)
 
 // Fast inlined version of PyType_IS_GC()
 #define _PyType_IS_GC(t) _PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
+
+// Usage: assert(_Py_CheckSlotResult(obj, "__getitem__", result != NULL)));
+extern int _Py_CheckSlotResult(
+    PyObject *obj,
+    const char *slot_name,
+    int success);
 
 #ifdef __cplusplus
 }

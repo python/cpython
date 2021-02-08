@@ -262,12 +262,27 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
-.. data:: GenericAlias
+.. class:: GenericAlias(t_origin, t_args)
 
    The type of :ref:`parameterized generics <types-genericalias>` such as
    ``list[int]``.
 
+   ``t_origin`` should be a non-parameterized generic class, such as ``list``,
+   ``tuple`` or ``dict``.  ``t_args`` should be a :class:`tuple` (possibly of
+   length 1) of types which parameterize ``t_origin``::
+
+      >>> from types import GenericAlias
+
+      >>> list[int] == GenericAlias(list, (int,))
+      True
+      >>> dict[str, int] == GenericAlias(dict, (str, int))
+      True
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.9.2
+      This type can now be subclassed.
+
 
 .. data:: Union
 
@@ -398,7 +413,9 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               return self.__dict__ == other.__dict__
+               if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+                  return self.__dict__ == other.__dict__
+               return NotImplemented
 
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`

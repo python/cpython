@@ -40,15 +40,11 @@ _PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     return tstate->interp->eval_frame(tstate, f, throwflag);
 }
 
-extern PyObject *_PyEval_EvalCode(
-    PyThreadState *tstate,
-    PyObject *_co, PyObject *globals, PyObject *locals,
-    PyObject *const *args, Py_ssize_t argcount,
-    PyObject *const *kwnames, PyObject *const *kwargs,
-    Py_ssize_t kwcount, int kwstep,
-    PyObject *const *defs, Py_ssize_t defcount,
-    PyObject *kwdefs, PyObject *closure,
-    PyObject *name, PyObject *qualname);
+extern PyObject *
+_PyEval_Vector(PyThreadState *tstate,
+            PyFrameConstructor *desc, PyObject *locals,
+            PyObject* const* args, size_t argcount,
+            PyObject *kwnames);
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
@@ -92,24 +88,8 @@ static inline int _Py_EnterRecursiveCall_inline(const char *where) {
 
 #define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
 
-/* Compute the "lower-water mark" for a recursion limit. When
- * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
- * the overflowed flag is reset to 0. */
-static inline int _Py_RecursionLimitLowerWaterMark(int limit) {
-    if (limit > 200) {
-        return (limit - 50);
-    }
-    else {
-        return (3 * (limit >> 2));
-    }
-}
-
 static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
     tstate->recursion_depth--;
-    int limit = tstate->interp->ceval.recursion_limit;
-    if (tstate->recursion_depth < _Py_RecursionLimitLowerWaterMark(limit)) {
-        tstate->overflowed = 0;
-    }
 }
 
 static inline void _Py_LeaveRecursiveCall_inline(void)  {

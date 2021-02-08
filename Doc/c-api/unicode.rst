@@ -91,13 +91,13 @@ access internal read-only data of Unicode objects:
 .. c:function:: int PyUnicode_Check(PyObject *o)
 
    Return true if the object *o* is a Unicode object or an instance of a Unicode
-   subtype.
+   subtype.  This function always succeeds.
 
 
 .. c:function:: int PyUnicode_CheckExact(PyObject *o)
 
    Return true if the object *o* is a Unicode object, but not an instance of a
-   subtype.
+   subtype.  This function always succeeds.
 
 
 .. c:function:: int PyUnicode_READY(PyObject *o)
@@ -783,7 +783,7 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
-   This function ignores the Python UTF-8 mode.
+   This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. seealso::
 
@@ -819,7 +819,7 @@ system.
    :c:data:`Py_FileSystemDefaultEncoding` (the locale encoding read at
    Python startup).
 
-   This function ignores the Python UTF-8 mode.
+   This function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    .. seealso::
 
@@ -878,8 +878,7 @@ conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
-   Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
-   :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+   Decode a string from the :term:`filesystem encoding and error handler`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -899,8 +898,8 @@ conversion function:
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
 
-   Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
-   and the :c:data:`Py_FileSystemDefaultEncodeErrors` error handler.
+   Decode a null-terminated string from the :term:`filesystem encoding and
+   error handler`.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.

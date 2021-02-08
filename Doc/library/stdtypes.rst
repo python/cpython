@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length, byteorder, \*, signed=False)
+.. method:: int.to_bytes(length, byteorder, *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -531,7 +531,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
-.. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -4764,10 +4764,20 @@ Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
 
+Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union <types-union>`
+===============================================================================================
+
+.. index::
+   single: annotation; type annotation; type hint
+
+The core built-in types for :term:`type annotations <annotation>` are
+:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
+
+
 .. _types-genericalias:
 
 Generic Alias Type
-==================
+------------------
 
 .. index::
    object: GenericAlias
@@ -4793,7 +4803,8 @@ The ``GenericAlias`` object acts as a proxy for :term:`generic types
 of a generic which provides the types for container elements.
 
 The user-exposed type for the ``GenericAlias`` object can be accessed from
-:data:`types.GenericAlias` and used for :func:`isinstance` checks.
+:class:`types.GenericAlias` and used for :func:`isinstance` checks.  It can
+also be used to create ``GenericAlias`` objects directly.
 
 .. describe:: T[X, Y, ...]
 
@@ -4869,7 +4880,7 @@ in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 
 
 Standard Generic Collections
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These standard library collections support parameterized generics.
 
@@ -4914,7 +4925,7 @@ These standard library collections support parameterized generics.
 
 
 Special Attributes of Generic Alias
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All parameterized generics implement special read-only attributes.
 
@@ -4948,6 +4959,11 @@ All parameterized generics implement special read-only attributes.
       (~T,)
 
 
+   .. note::
+      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
+      have correct ``__parameters__`` after substitution because
+      :class:`typing.ParamSpec` is intended primarily for static type checking.
+
 .. seealso::
 
    * :pep:`585` -- "Type Hinting Generics In Standard Collections"
@@ -4960,22 +4976,23 @@ All parameterized generics implement special read-only attributes.
 .. _types-union:
 
 Union Type
-==========
+----------
 
 .. index::
    object: Union
    pair: union; type
 
 A union object holds the value of the ``|`` (bitwise or) operation on
-multiple :ref:`type objects<bltin-type-objects>`.  These types are intended
-primarily for type annotations. The union type expression enables cleaner
-type hinting syntax compared to :data:`typing.Union`.
+multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
+primarily for :term:`type annotations <annotation>`. The union type expression
+enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
 .. describe:: X | Y | ...
 
    Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
    means either X or Y.  It is equivalent to ``typing.Union[X, Y]``.
-   Example::
+   For example, the following function expects an argument of type
+   :class:`int` or :class:`float`::
 
       def square(number: int | float) -> int | float:
           return number ** 2
@@ -4984,15 +5001,15 @@ type hinting syntax compared to :data:`typing.Union`.
 
    Union objects can be tested for equality with other union objects.  Details:
 
-   * Unions of unions are flattened, e.g.::
+   * Unions of unions are flattened::
 
        (int | str) | float == int | str | float
 
-   * Redundant types are removed, e.g.::
+   * Redundant types are removed::
 
        int | str | int == int | str
 
-   * When comparing unions, the order is ignored, e.g.::
+   * When comparing unions, the order is ignored::
 
       int | str == str | int
 
@@ -5011,14 +5028,8 @@ type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   ..
-      At the time of writing this, there is no documentation for parameterized
-      generics or PEP 585. Thus the link currently points to PEP 585 itself.
-      Please change the link for parameterized generics to reference the correct
-      documentation once documentation for PEP 585 becomes available.
-
-   However, union objects containing `parameterized generics
-   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
+   However, union objects containing :ref:`parameterized generics
+   <types-genericalias>` cannot be used::
 
       >>> isinstance(1, int | list[int])
       Traceback (most recent call last):
@@ -5032,20 +5043,16 @@ type hinting syntax compared to :data:`typing.Union`.
       >>> issubclass(bool, int | str)
       True
 
-   ..
-      Once again, please change the link below for parameterized generics to
-      reference the correct documentation once documentation for PEP 585
-      becomes available.
-
-   However, union objects containing `parameterized generics
-   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
+   However, union objects containing :ref:`parameterized generics
+   <types-genericalias>` cannot be used::
 
       >>> issubclass(bool, bool | list[str])
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
       TypeError: issubclass() argument 2 cannot contain a parameterized generic
 
-The type of a union object is :data:`types.Union`.  An object cannot be
+The user-exposed type for the union object can be accessed from
+:data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
 instantiated from the type::
 
    >>> import types
@@ -5063,7 +5070,7 @@ instantiated from the type::
 
       >>> class M(type):
       ...     def __or__(self, other):
-      ...     return "Hello"
+      ...         return "Hello"
       ...
       >>> class C(metaclass=M):
       ...     pass
@@ -5351,8 +5358,8 @@ types, where they are relevant.  Some of these are not reported by the
 .. method:: class.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.
-   Example::
+   method returns a list of all those references still alive.  The list is in
+   definition order.  Example::
 
       >>> int.__subclasses__()
       [<class 'bool'>]

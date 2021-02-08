@@ -282,7 +282,7 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
         Py_DECREF(po->wo);
         remove_lop(po);
     }
-    PyObject_DEL(po);
+    PyObject_Free(po);
     Py_DECREF(tp);
 }
 
@@ -456,7 +456,9 @@ _curses_panel_panel_set_userptr_impl(PyCursesPanelObject *self,
         /* In case of an ncurses error, decref the new object again */
         Py_DECREF(obj);
     }
-    Py_XDECREF(oldobj);
+    else {
+        Py_XDECREF(oldobj);
+    }
 
     _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, rc, "set_panel_userptr");
@@ -654,6 +656,7 @@ _curses_panel_exec(PyObject *mod)
     if (state->PyCursesPanel_Type == NULL) {
         return -1;
     }
+    ((PyTypeObject *)state->PyCursesPanel_Type)->tp_new = NULL;
 
     if (PyModule_AddType(mod, state->PyCursesPanel_Type) < 0) {
         return -1;

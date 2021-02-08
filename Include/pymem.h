@@ -53,18 +53,6 @@ PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
-/* Macros. */
-
-/* PyMem_MALLOC(0) means malloc(1). Some systems would return NULL
-   for malloc(0), which would be treated as an error. Some platforms
-   would return a pointer with no memory behind it, which would break
-   pymalloc. To solve these problems, allocate an extra byte. */
-/* Returns NULL to indicate error if a negative size or size larger than
-   Py_ssize_t can represent is supplied.  Helps prevents security holes. */
-#define PyMem_MALLOC(n)         PyMem_Malloc(n)
-#define PyMem_REALLOC(p, n)     PyMem_Realloc(p, n)
-#define PyMem_FREE(p)           PyMem_Free(p)
-
 /*
  * Type-oriented memory interface
  * ==============================
@@ -78,9 +66,6 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #define PyMem_New(type, n) \
   ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :      \
         ( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
-#define PyMem_NEW(type, n) \
-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :      \
-        ( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
 
 /*
  * The value of (p) is always clobbered by this macro regardless of success.
@@ -91,15 +76,18 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #define PyMem_Resize(p, type, n) \
   ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :        \
         (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
-#define PyMem_RESIZE(p, type, n) \
-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :        \
-        (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
 
-/* PyMem{Del,DEL} are left over from ancient days, and shouldn't be used
- * anymore.  They're just confusing aliases for PyMem_{Free,FREE} now.
- */
-#define PyMem_Del               PyMem_Free
-#define PyMem_DEL               PyMem_FREE
+
+// Deprecated aliases only kept for backward compatibility.
+// PyMem_Del and PyMem_DEL are defined with no parameter to be able to use
+// them as function pointers (ex: dealloc = PyMem_Del).
+#define PyMem_MALLOC(n)           PyMem_Malloc(n)
+#define PyMem_NEW(type, n)        PyMem_New(type, n)
+#define PyMem_REALLOC(p, n)       PyMem_Realloc(p, n)
+#define PyMem_RESIZE(p, type, n)  PyMem_Resize(p, type, n)
+#define PyMem_FREE(p)             PyMem_Free(p)
+#define PyMem_Del                 PyMem_Free
+#define PyMem_DEL                 PyMem_Free
 
 
 #ifndef Py_LIMITED_API

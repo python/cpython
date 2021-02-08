@@ -2113,9 +2113,6 @@ Changes in the C API
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
 
-* The :c:func:`PyCode_New` has a new parameter in the second position (*posonlyargcount*)
-  to support :pep:`570`, indicating the number of positional-only arguments.
-
 * The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 

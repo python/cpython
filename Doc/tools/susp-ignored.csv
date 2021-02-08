@@ -5,7 +5,7 @@ c-api/sequence,,:i2,o[i1:i2]
 c-api/tuple,,:high,p[low:high]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
-distutils/examples,267,`,This is the description of the ``foobar`` package.
+distutils/examples,,`,This is the description of the ``foobar`` package.
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
@@ -168,6 +168,7 @@ library/ipaddress,,::,2001:db00::0/24
 library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
 library/ipaddress,,::,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
+library/itertools,,::,kernel = tuple(kernel)[::-1]
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]

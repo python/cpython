@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "frameobject.h"
 #include "code.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -40,8 +41,14 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_weakreflist = NULL;
     Py_INCREF(code);
     op->func_code = code;
+    assert(globals != NULL);
     Py_INCREF(globals);
     op->func_globals = globals;
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    if (builtins == NULL) {
+        return NULL;
+    }
+    op->func_builtins = builtins;
     op->func_name = ((PyCodeObject *)code)->co_name;
     Py_INCREF(op->func_name);
     op->func_defaults = NULL; /* No default arguments */
@@ -424,6 +431,25 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
+    if (PyTuple_CheckExact(op->func_annotations)) {
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
+
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
+
+            if (err < 0)
+                return NULL;
+        }
+        Py_SETREF(op->func_annotations, ann_dict);
+    }
     Py_INCREF(op->func_annotations);
     return op->func_annotations;
 }
@@ -549,9 +575,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
                                                  globals);
-    if (newfunc == NULL)
+    if (newfunc == NULL) {
         return NULL;
-
+    }
     if (name != Py_None) {
         Py_INCREF(name);
         Py_SETREF(newfunc->func_name, name);
@@ -573,15 +599,16 @@ func_clear(PyFunctionObject *op)
 {
     Py_CLEAR(op->func_code);
     Py_CLEAR(op->func_globals);
-    Py_CLEAR(op->func_module);
+    Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_name);
+    Py_CLEAR(op->func_qualname);
+    Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
     Py_CLEAR(op->func_doc);
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
-    Py_CLEAR(op->func_qualname);
     return 0;
 }
 
@@ -608,6 +635,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->func_code);
     Py_VISIT(f->func_globals);
+    Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
     Py_VISIT(f->func_defaults);
     Py_VISIT(f->func_kwdefaults);

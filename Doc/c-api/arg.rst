@@ -482,7 +482,8 @@ API Functions
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
    arguments must be passed to the function, each of which should be a pointer to a
    :c:type:`PyObject*` variable; these will be filled in with the values from
-   *args*; they will contain borrowed references.  The variables which correspond
+   *args*; they will contain :term:`borrowed references <borrowed reference>`.
+   The variables which correspond
    to optional parameters not given by *args* will not be filled in; these should
    be initialized by the caller. This function returns true on success and false if
    *args* is not a tuple or contains the wrong number of elements; an exception

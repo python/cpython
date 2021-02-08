@@ -163,6 +163,8 @@ def _parse(srclines, anon_name):
 
 
 def _iter_source(lines, *, maxtext=20_000, maxlines=700, showtext=False):
+    maxtext = maxtext if maxtext and maxtext > 0 else None
+    maxlines = maxlines if maxlines and maxlines > 0 else None
     filestack = []
     allinfo = {}
     # "lines" should be (fileinfo, data), as produced by the preprocessor code.
@@ -181,9 +183,7 @@ def _iter_source(lines, *, maxtext=20_000, maxlines=700, showtext=False):
 
         _logger.debug(f'-> {line}')
         srcinfo._add_line(line, fileinfo.lno)
-        if len(srcinfo.text) > maxtext:
-            break
-        if srcinfo.end - srcinfo.start > maxlines:
+        if srcinfo.too_much(maxtext, maxlines):
             break
         while srcinfo._used():
             yield srcinfo

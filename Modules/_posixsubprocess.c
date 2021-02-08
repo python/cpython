@@ -55,7 +55,7 @@
 # endif
 #endif
 
-#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__))
+#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
 # define FD_DIR "/dev/fd"
 #else
 # define FD_DIR "/proc/self/fd"
@@ -85,11 +85,9 @@ get_posixsubprocess_state(PyObject *module)
     return (_posixsubprocessstate *)state;
 }
 
-#define _posixsubprocessstate_global get_posixsubprocess_state(PyState_FindModule(&_posixsubprocessmodule))
-
-/* If gc was disabled, call gc.enable().  Return 0 on success. */
-static int
-_enable_gc(int need_to_reenable_gc, PyObject *gc_module)
+/* If gc was disabled, call gc.enable(). Ignore errors. */
+static void
+_enable_gc(int need_to_reenable_gc, PyObject *gc_module, _posixsubprocessstate *state)
 {
     PyObject *result;
     PyObject *exctype, *val, *tb;
@@ -97,16 +95,18 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
         result = PyObject_CallMethodNoArgs(
-            gc_module, _posixsubprocessstate_global->enable);
+            gc_module, state->enable);
+        if (result == NULL) {
+            /* We might have created a child process at this point, we
+             * we have no good way to handle a failure to reenable GC
+             * and return information about the child process. */
+            PyErr_Print();
+        }
+        Py_XDECREF(result);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
         }
-        if (result == NULL) {
-            return 1;
-        }
-        Py_DECREF(result);
     }
-    return 0;
 }
 
 
@@ -125,9 +125,9 @@ _pos_int_from_ascii(const char *name)
 }
 
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 /* When /dev/fd isn't mounted it is often a static directory populated
- * with 0 1 2 or entries for 0 .. 63 on FreeBSD, NetBSD and OpenBSD.
+ * with 0 1 2 or entries for 0 .. 63 on FreeBSD, NetBSD, OpenBSD and DragonFlyBSD.
  * NetBSD and OpenBSD have a /proc fs available (though not necessarily
  * mounted) and do not have fdescfs for /dev/fd.  MacOS X has a devfs
  * that properly supports /dev/fd.
@@ -375,7 +375,7 @@ _close_open_fds_maybe_unsafe(long start_fd, PyObject* py_fds_to_keep)
     ++start_fd;
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
     if (!_is_fdescfs_mounted_on_dev_fd())
         proc_fd_dir = NULL;
     else
@@ -756,7 +756,7 @@ do_fork_exec(char *const exec_array[],
 
 
 static PyObject *
-subprocess_fork_exec(PyObject* self, PyObject *args)
+subprocess_fork_exec(PyObject *module, PyObject *args)
 {
     PyObject *gc_module = NULL;
     PyObject *executable_list, *py_fds_to_keep;
@@ -774,12 +774,13 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int child_umask;
     PyObject *cwd_obj, *cwd_obj2 = NULL;
     const char *cwd;
-    pid_t pid;
+    pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t arg_num, num_groups = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
+    _posixsubprocessstate *state = get_posixsubprocess_state(module);
 
     if (!PyArg_ParseTuple(
             args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
@@ -825,7 +826,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         if (gc_module == NULL)
             return NULL;
         result = PyObject_CallMethodNoArgs(
-            gc_module, _posixsubprocessstate_global->isenabled);
+            gc_module, state->isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -837,7 +838,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             return NULL;
         }
         result = PyObject_CallMethodNoArgs(
-            gc_module, _posixsubprocessstate_global->disable);
+            gc_module, state->disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -899,7 +900,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (groups_list != Py_None) {
 #ifdef HAVE_SETGROUPS
         Py_ssize_t i;
-        unsigned long gid;
+        gid_t gid;
 
         if (!PyList_Check(groups_list)) {
             PyErr_SetString(PyExc_TypeError,
@@ -933,10 +934,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                 Py_DECREF(elem);
                 goto cleanup;
             } else {
-                /* In posixmodule.c UnsignedLong is used as a fallback value
-                * if the value provided does not fit in a Long. Since we are
-                * already doing the bounds checking on the Python side, we
-                * can go directly to an UnsignedLong here. */
                 if (!_Py_Gid_Converter(elem, &gid)) {
                     Py_DECREF(elem);
                     PyErr_SetString(PyExc_ValueError, "invalid group id");
@@ -1010,8 +1007,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         sigset_t all_sigs;
         sigfillset(&all_sigs);
         if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
-            errno = saved_errno;
-            PyErr_SetFromErrno(PyExc_OSError);
             goto cleanup;
         }
         old_sigmask = &old_sigs;
@@ -1050,50 +1045,33 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     }
 #endif
 
-    Py_XDECREF(cwd_obj2);
-
     if (need_after_fork)
         PyOS_AfterFork_Parent();
-    if (envp)
-        _Py_FreeCharPArray(envp);
-    if (argv)
-        _Py_FreeCharPArray(argv);
-    _Py_FreeCharPArray(exec_array);
 
-    /* Reenable gc in the parent process (or if fork failed). */
-    if (_enable_gc(need_to_reenable_gc, gc_module)) {
-        pid = -1;
-    }
-    PyMem_RawFree(groups);
-    Py_XDECREF(preexec_fn_args_tuple);
-    Py_XDECREF(gc_module);
-
-    if (pid == -1) {
+cleanup:
+    if (saved_errno != 0) {
         errno = saved_errno;
         /* We can't call this above as PyOS_AfterFork_Parent() calls back
          * into Python code which would see the unreturned error. */
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;  /* fork() failed. */
     }
 
-    return PyLong_FromPid(pid);
-
-cleanup:
+    Py_XDECREF(preexec_fn_args_tuple);
+    PyMem_RawFree(groups);
     Py_XDECREF(cwd_obj2);
     if (envp)
         _Py_FreeCharPArray(envp);
+    Py_XDECREF(converted_args);
+    Py_XDECREF(fast_args);
     if (argv)
         _Py_FreeCharPArray(argv);
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
 
-    PyMem_RawFree(groups);
-    Py_XDECREF(converted_args);
-    Py_XDECREF(fast_args);
-    Py_XDECREF(preexec_fn_args_tuple);
-    _enable_gc(need_to_reenable_gc, gc_module);
+    _enable_gc(need_to_reenable_gc, gc_module, state);
     Py_XDECREF(gc_module);
-    return NULL;
+
+    return pid == -1 ? NULL : PyLong_FromPid(pid);
 }
 
 
@@ -1130,12 +1108,38 @@ Raises: Only on an error in the parent process.\n\
 PyDoc_STRVAR(module_doc,
 "A POSIX helper for the subprocess module.");
 
+static int
+_posixsubprocess_exec(PyObject *module)
+{
+    _posixsubprocessstate *state = get_posixsubprocess_state(module);
+
+    state->disable = PyUnicode_InternFromString("disable");
+    if (state->disable == NULL) {
+        return -1;
+    }
+
+    state->enable = PyUnicode_InternFromString("enable");
+    if (state->enable == NULL) {
+        return -1;
+    }
+
+    state->isenabled = PyUnicode_InternFromString("isenabled");
+    if (state->isenabled == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
 
 static PyMethodDef module_methods[] = {
     {"fork_exec", subprocess_fork_exec, METH_VARARGS, subprocess_fork_exec_doc},
     {NULL, NULL}  /* sentinel */
 };
 
+static PyModuleDef_Slot _posixsubprocess_slots[] = {
+    {Py_mod_exec, _posixsubprocess_exec},
+    {0, NULL}
+};
 
 static int _posixsubprocess_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(get_posixsubprocess_state(m)->disable);
@@ -1157,36 +1161,18 @@ static void _posixsubprocess_free(void *m) {
 
 static struct PyModuleDef _posixsubprocessmodule = {
         PyModuleDef_HEAD_INIT,
-        "_posixsubprocess",
-        module_doc,
-        sizeof(_posixsubprocessstate),
-        module_methods,
-        NULL,
-        _posixsubprocess_traverse,
-        _posixsubprocess_clear,
-        _posixsubprocess_free,
+        .m_name = "_posixsubprocess",
+        .m_doc = module_doc,
+        .m_size = sizeof(_posixsubprocessstate),
+        .m_methods = module_methods,
+        .m_slots = _posixsubprocess_slots,
+        .m_traverse = _posixsubprocess_traverse,
+        .m_clear = _posixsubprocess_clear,
+        .m_free = _posixsubprocess_free,
 };
 
 PyMODINIT_FUNC
 PyInit__posixsubprocess(void)
 {
-    PyObject* m;
-
-    m = PyState_FindModule(&_posixsubprocessmodule);
-    if (m != NULL) {
-      Py_INCREF(m);
-      return m;
-    }
-
-    m = PyModule_Create(&_posixsubprocessmodule);
-    if (m == NULL) {
-      return NULL;
-    }
-
-    get_posixsubprocess_state(m)->disable = PyUnicode_InternFromString("disable");
-    get_posixsubprocess_state(m)->enable = PyUnicode_InternFromString("enable");
-    get_posixsubprocess_state(m)->isenabled = PyUnicode_InternFromString("isenabled");
-
-    PyState_AddModule(m, &_posixsubprocessmodule);
-    return m;
+    return PyModuleDef_Init(&_posixsubprocessmodule);
 }

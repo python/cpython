@@ -10,6 +10,7 @@
 #include "Python.h"
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_object.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "structmember.h"         // PyMemberDef
@@ -27,7 +28,6 @@ _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(decode);
 _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(getpreferredencoding);
 _Py_IDENTIFIER(isatty);
 _Py_IDENTIFIER(mode);
 _Py_IDENTIFIER(name);
@@ -1155,29 +1155,11 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
-        PyObject *locale_module = _PyIO_get_locale_module(state);
-        if (locale_module == NULL)
-            goto catch_ImportError;
-        self->encoding = _PyObject_CallMethodIdOneArg(
-            locale_module, &PyId_getpreferredencoding, Py_False);
-        Py_DECREF(locale_module);
+        self->encoding = _Py_GetLocaleEncodingObject();
         if (self->encoding == NULL) {
-          catch_ImportError:
-            /*
-             Importing locale can raise an ImportError because of
-             _functools, and locale.getpreferredencoding can raise an
-             ImportError if _locale is not available.  These will happen
-             during module building.
-            */
-            if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-                PyErr_Clear();
-                self->encoding = PyUnicode_FromString("ascii");
-            }
-            else
-                goto error;
+            goto error;
         }
-        else if (!PyUnicode_Check(self->encoding))
-            Py_CLEAR(self->encoding);
+        assert(PyUnicode_Check(self->encoding));
     }
     if (self->encoding != NULL) {
         encoding = PyUnicode_AsUTF8(self->encoding);
