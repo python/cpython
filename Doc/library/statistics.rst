@@ -162,15 +162,14 @@ However, for reading convenience, most of the examples show sorted sequences.
    real-valued numbers.  If *weights* is omitted or *None*, then
    equal weighting is assumed.
 
-   The harmonic mean, sometimes called the subcontrary mean, is the
-   reciprocal of the arithmetic :func:`mean` of the reciprocals of the
-   data. For example, the harmonic mean of three values *a*, *b* and *c*
-   will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the values
-   is zero, the result will be zero.
+   The harmonic mean is the reciprocal of the arithmetic :func:`mean` of the
+   reciprocals of the data. For example, the harmonic mean of three values *a*,
+   *b* and *c* will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the
+   values is zero, the result will be zero.
 
    The harmonic mean is a type of average, a measure of the central
    location of the data.  It is often appropriate when averaging
-   rates or ratios, for example speeds.
+   ratios or rates, for example speeds.
 
    Suppose a car travels 10 km at 40 km/hr, then another 10 km at 60 km/hr.
    What is the average speed?
