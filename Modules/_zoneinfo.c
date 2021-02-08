@@ -2619,7 +2619,6 @@ static PyType_Spec zoneinfo_spec = {
     .basicsize = sizeof(PyZoneInfo_ZoneInfo),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = zoneinfo_slots,
-    /* .doc = zoneinfo_doc, */
 };
 
 /////
