@@ -180,7 +180,7 @@ typedef int Py_ssize_clean_t;
  */
 
 #if defined(_MSC_VER)
-#  if defined(PY_LOCAL_AGGRESSIVE)
+#  if defined(PY_LOCAL_AGGRESSIVE) && !defined(Py_DEBUG)
    /* enable more aggressive optimization for visual studio */
 #  pragma optimize("agtw", on)
 #endif
