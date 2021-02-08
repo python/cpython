@@ -238,7 +238,7 @@ def copyfile(src, dst, *, follow_symlinks=True, same_file=False):
     symlink will be created instead of copying the file it points to.
 
     If same_file is not set and src and dst are the same file, a "SameFileError"
-    exception will be raised. If the same_file is set the method does noting
+    exception will be raised. If the same_file is set the function does noting
     and returns dst.
 
     """
