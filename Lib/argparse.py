@@ -756,14 +756,22 @@ class _CustomizableHelpFormatter(RawTextHelpFormatter,
 class CustomHelpFormat:
     """Customizable help formatter factory."""
 
-    def __init__(self):
-        self.indent_increment = 2
-        self.max_help_position = 24
-        self.width = None
-        self.raw_description = False
-        self.raw_text = False
-        self.arg_defaults = False
-        self.metavar_type = False
+    def __init__(self, *,
+                 indent_increment=2,
+                 max_help_position=24,
+                 width=None,
+                 raw_description=False,
+                 raw_text=False,
+                 arg_defaults=False,
+                 metavar_type=False,
+                 **kwargs):
+        self.indent_increment = indent_increment
+        self.max_help_position = max_help_position
+        self.width = width
+        self.raw_description = raw_description
+        self.raw_text = raw_text
+        self.arg_defaults = arg_defaults
+        self.metavar_type = metavar_type
 
     def __call__(self, prog):
         return _CustomizableHelpFormatter(prog=prog,

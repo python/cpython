@@ -4499,14 +4499,10 @@ class TestCustomHelpAll(TestHelpMetavarTypeFormatter):
     def custom_type(string):
         return string
 
-    cust_format = argparse.CustomHelpFormat()
-    cust_format.indent_increment = 4
-    cust_format.width = 100
-    cust_format.raw_text = True
-    cust_format.raw_description = True
-    cust_format.arg_defaults = True
-    cust_format.metavar_type = True
-
+    cust_format = argparse.CustomHelpFormat(indent_increment=4, width=100,
+                                            raw_text=True, raw_description=True,
+                                            arg_defaults=True,
+                                            metavar_type=True)
     parser_signature = Sig(
         prog='PROG', formatter_class=cust_format,
         description='Keep the formatting\n'

@@ -2116,7 +2116,10 @@ remaining unparsed argument strings.
 Custom help format
 ^^^^^^^^^^^^^^^^^^
 
-.. class:: CustomHelpFormat()
+.. class:: CustomHelpFormat(indent_increment=2, max_help_position=24,
+                            width=None, raw_description=False,
+                            raw_text=False, arg_defaults=False,
+                            metavar_type=False, **kwargs)
 
    A :class:`CustomHelpFormat` object can be passed as formatter_class_ parameter
    to the :class:`ArgumentParser` constructor instead of a formatter class.
@@ -2129,7 +2132,8 @@ Custom help format
    an instantiated object is passed to the :class:`ArgumentParser` constructor,
    not a class type.
 
-   Selection of help format is done by setting attributes of the instantiated
+   Selection of help format is done by setting either passing keyword arguments 
+   to the constructor or setting attributes of the instantiated
    :class:`CustomHelpFormat` object, before passing it to the
    :class:`ArgumentParser` constructor::
 
@@ -2149,7 +2153,7 @@ Custom help format
          -h, --help  show this help message and exit
          --foo FOO   FOO! (default: 42)
 
-   Attributes or :class:`CustomHelpFormat` are:
+   Keyword arguments and attributes of the :class:`CustomHelpFormat` class are:
 
    * indent_increment - Sets number of spaces added for each indentation level.
      The default is two spaces per indentation level.
@@ -2173,6 +2177,8 @@ Custom help format
    * metavar_type - Setting this attribute to ``True`` enabled using the name of the
      type_ argument passed to :meth:`ArgumentParser.add_argument` function as the
      display name, as with :class:`MetavarTypeHelpFormatter`.
+
+   Unknown keyword arguments passed to the class constructor are ignored.
 
    .. versionadded:: 3.10
 
