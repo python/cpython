@@ -1576,7 +1576,7 @@ and classes for traversing abstract syntax trees:
    Safely evaluate an expression node or a string containing a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
-   dicts, sets, booleans, and ``None``.
+   dicts, sets, booleans, ``None`` and ``Ellipsis``.
 
    This can be used for safely evaluating strings containing Python values from
    untrusted sources without the need to parse the values oneself.  It is not
@@ -1587,6 +1587,10 @@ and classes for traversing abstract syntax trees:
       It is possible to crash the Python interpreter with a
       sufficiently large/complex string due to stack depth limitations
       in Python's AST compiler.
+
+      It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
+      :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
+      input.
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.

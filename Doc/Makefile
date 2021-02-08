@@ -202,6 +202,7 @@ dist:
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
+	$(PYTHON) tools/rstlint.py ../Misc/NEWS.d/next/
 
 serve:
 	$(PYTHON) ../Tools/scripts/serve.py build/html
@@ -216,7 +217,6 @@ serve:
 # for development releases: always build
 autobuild-dev:
 	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
-	-make suspicious
 
 # for quick rebuilds (HTML only)
 autobuild-dev-html:

@@ -56,12 +56,12 @@ created.  Socket addresses are represented as follows:
   bytes-like object can be used for either type of address when
   passing it as an argument.
 
-   .. versionchanged:: 3.3
-      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
-      encoding.
+  .. versionchanged:: 3.3
+     Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+     encoding.
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+  .. versionchanged:: 3.5
+     Writable :term:`bytes-like object` is now accepted.
 
 .. _host_port:
 
@@ -283,6 +283,8 @@ Exceptions
 
 .. exception:: timeout
 
+   A deprecated alias of :exc:`TimeoutError`.
+
    A subclass of :exc:`OSError`, this exception is raised when a timeout
    occurs on a socket which has had timeouts enabled via a prior call to
    :meth:`~socket.settimeout` (or implicitly through
@@ -291,6 +293,9 @@ Exceptions
 
    .. versionchanged:: 3.3
       This class was made a subclass of :exc:`OSError`.
+
+   .. versionchanged:: 3.10
+      This class was made an alias of :exc:`TimeoutError`.
 
 
 Constants
@@ -902,11 +907,9 @@ The :mod:`socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 2-byte swap operation.
 
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   .. versionchanged:: 3.10
+      Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
+      integer.
 
 
 .. function:: htonl(x)
@@ -922,11 +925,9 @@ The :mod:`socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 2-byte swap operation.
 
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   .. versionchanged:: 3.10
+      Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
+      integer.
 
 
 .. function:: inet_aton(ip_string)
@@ -1208,7 +1209,7 @@ to sockets.
    address family --- see above.)
 
    If the connection is interrupted by a signal, the method waits until the
-   connection completes, or raise a :exc:`socket.timeout` on timeout, if the
+   connection completes, or raise a :exc:`TimeoutError` on timeout, if the
    signal handler doesn't raise an exception and the socket is blocking or has
    a timeout. For non-blocking sockets, the method raises an
    :exc:`InterruptedError` exception if the connection is interrupted by a

@@ -254,8 +254,6 @@ set_last_error(PyObject *self, PyObject *args)
     return set_error_internal(self, args, 1);
 }
 
-PyObject *ComError;
-
 static WCHAR *FormatError(DWORD code)
 {
     WCHAR *lpMsgBuf;
@@ -477,7 +475,7 @@ static void
 PyCArg_dealloc(PyCArgObject *self)
 {
     Py_XDECREF(self->obj);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static int
@@ -489,58 +487,47 @@ is_literal_char(unsigned char c)
 static PyObject *
 PyCArg_repr(PyCArgObject *self)
 {
-    char buffer[256];
     switch(self->tag) {
     case 'b':
     case 'B':
-        sprintf(buffer, "<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
             self->tag, self->value.b);
-        break;
     case 'h':
     case 'H':
-        sprintf(buffer, "<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
             self->tag, self->value.h);
-        break;
     case 'i':
     case 'I':
-        sprintf(buffer, "<cparam '%c' (%d)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%d)>",
             self->tag, self->value.i);
-        break;
     case 'l':
     case 'L':
-        sprintf(buffer, "<cparam '%c' (%ld)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%ld)>",
             self->tag, self->value.l);
-        break;
 
     case 'q':
     case 'Q':
-        sprintf(buffer,
-#ifdef MS_WIN32
-            "<cparam '%c' (%I64d)>",
-#else
-            "<cparam '%c' (%lld)>",
-#endif
+        return PyUnicode_FromFormat("<cparam '%c' (%lld)>",
             self->tag, self->value.q);
-        break;
     case 'd':
-        sprintf(buffer, "<cparam '%c' (%f)>",
-            self->tag, self->value.d);
-        break;
-    case 'f':
-        sprintf(buffer, "<cparam '%c' (%f)>",
-            self->tag, self->value.f);
-        break;
-
+    case 'f': {
+        PyObject *f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
+        if (f == NULL) {
+            return NULL;
+        }
+        PyObject *result = PyUnicode_FromFormat("<cparam '%c' (%R)>", self->tag, f);
+        Py_DECREF(f);
+        return result;
+    }
     case 'c':
         if (is_literal_char((unsigned char)self->value.c)) {
-            sprintf(buffer, "<cparam '%c' ('%c')>",
+            return PyUnicode_FromFormat("<cparam '%c' ('%c')>",
                 self->tag, self->value.c);
         }
         else {
-            sprintf(buffer, "<cparam '%c' ('\\x%02x')>",
+            return PyUnicode_FromFormat("<cparam '%c' ('\\x%02x')>",
                 self->tag, (unsigned char)self->value.c);
         }
-        break;
 
 /* Hm, are these 'z' and 'Z' codes useful at all?
    Shouldn't they be replaced by the functionality of c_string
@@ -549,22 +536,20 @@ PyCArg_repr(PyCArgObject *self)
     case 'z':
     case 'Z':
     case 'P':
-        sprintf(buffer, "<cparam '%c' (%p)>",
+        return PyUnicode_FromFormat("<cparam '%c' (%p)>",
             self->tag, self->value.p);
         break;
 
     default:
         if (is_literal_char((unsigned char)self->tag)) {
-            sprintf(buffer, "<cparam '%c' at %p>",
+            return PyUnicode_FromFormat("<cparam '%c' at %p>",
                 (unsigned char)self->tag, (void *)self);
         }
         else {
-            sprintf(buffer, "<cparam 0x%02x at %p>",
+            return PyUnicode_FromFormat("<cparam 0x%02x at %p>",
                 (unsigned char)self->tag, (void *)self);
         }
-        break;
     }
-    return PyUnicode_FromString(buffer);
 }
 
 static PyMemberDef PyCArgType_members[] = {
@@ -715,7 +700,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
     }
 
-#ifdef CTYPES_UNICODE
     if (PyUnicode_Check(obj)) {
         pa->ffi_type = &ffi_type_pointer;
         pa->value.p = PyUnicode_AsWideCharString(obj, NULL);
@@ -728,7 +712,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         }
         return 0;
     }
-#endif
 
     {
         _Py_IDENTIFIER(_as_parameter_);
@@ -1471,14 +1454,14 @@ static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *ar
 
          if (!PyArg_ParseTuple(args, "O", &name))
              return NULL;
-    
+
          if (name == Py_None)
              Py_RETURN_FALSE;
-    
+
          if (PyUnicode_FSConverter(name, &name2) == 0)
              return NULL;
          name_str = PyBytes_AS_STRING(name2);
-    
+
          r = _dyld_shared_cache_contains_path(name_str);
          Py_DECREF(name2);
 

@@ -29,6 +29,7 @@ Data members:
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
+#include "stdlib_module_names.h"  // _Py_stdlib_module_names
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -1181,7 +1182,6 @@ static PyObject *
 sys_setrecursionlimit_impl(PyObject *module, int new_limit)
 /*[clinic end generated code: output=35e1c64754800ace input=b0f7a23393924af3]*/
 {
-    int mark;
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (new_limit < 1) {
@@ -1199,8 +1199,7 @@ sys_setrecursionlimit_impl(PyObject *module, int new_limit)
        Reject too low new limit if the current recursion depth is higher than
        the new low-water mark. Otherwise it may not be possible anymore to
        reset the overflowed flag to 0. */
-    mark = _Py_RecursionLimitLowerWaterMark(new_limit);
-    if (tstate->recursion_depth >= mark) {
+    if (tstate->recursion_depth >= new_limit) {
         _PyErr_Format(tstate, PyExc_RecursionError,
                       "cannot set the recursion limit to %i at "
                       "the recursion depth %i: the limit is too low",
@@ -1909,12 +1908,12 @@ sys__debugmallocstats_impl(PyObject *module)
 }
 
 #ifdef Py_TRACE_REFS
-/* Defined in objects.c because it uses static globals if that file */
+/* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
-/* Defined in ceval.c because it uses static globals if that file */
+/* Defined in ceval.c because it uses static globals in that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 #endif
 
@@ -2022,32 +2021,62 @@ static PyMethodDef sys_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+
 static PyObject *
 list_builtin_module_names(void)
 {
     PyObject *list = PyList_New(0);
-    int i;
-    if (list == NULL)
+    if (list == NULL) {
         return NULL;
-    for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(
-            PyImport_Inittab[i].name);
-        if (name == NULL)
-            break;
-        PyList_Append(list, name);
+    }
+    for (Py_ssize_t i = 0; PyImport_Inittab[i].name != NULL; i++) {
+        PyObject *name = PyUnicode_FromString(PyImport_Inittab[i].name);
+        if (name == NULL) {
+            goto error;
+        }
+        if (PyList_Append(list, name) < 0) {
+            Py_DECREF(name);
+            goto error;
+        }
         Py_DECREF(name);
     }
     if (PyList_Sort(list) != 0) {
-        Py_DECREF(list);
-        list = NULL;
+        goto error;
     }
-    if (list) {
-        PyObject *v = PyList_AsTuple(list);
-        Py_DECREF(list);
-        list = v;
-    }
-    return list;
+    PyObject *tuple = PyList_AsTuple(list);
+    Py_DECREF(list);
+    return tuple;
+
+error:
+    Py_DECREF(list);
+    return NULL;
 }
+
+
+static PyObject *
+list_stdlib_module_names(void)
+{
+    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
+    PyObject *names = PyTuple_New(len);
+    if (names == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *name = PyUnicode_FromString(_Py_stdlib_module_names[i]);
+        if (name == NULL) {
+            Py_DECREF(names);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(names, i, name);
+    }
+
+    PyObject *set = PyObject_CallFunction((PyObject *)&PyFrozenSet_Type,
+                                          "(O)", names);
+    Py_DECREF(names);
+    return set;
+}
+
 
 /* Pre-initialization support for sys.warnoptions and sys._xoptions
  *
@@ -2755,6 +2784,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("hash_info", get_hash_info(tstate));
     SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
     SET_SYS("builtin_module_names", list_builtin_module_names());
+    SET_SYS("stdlib_module_names", list_stdlib_module_names());
 #if PY_BIG_ENDIAN
     SET_SYS_FROM_STRING("byteorder", "big");
 #else
@@ -2841,6 +2871,11 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
         }
     }
 
+    /* adding sys.path_hooks and sys.path_importer_cache */
+    SET_SYS("meta_path", PyList_New(0));
+    SET_SYS("path_importer_cache", PyDict_New());
+    SET_SYS("path_hooks", PyList_New(0));
+
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }
@@ -2922,17 +2957,22 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #define SET_SYS_FROM_WSTR(KEY, VALUE) \
         SET_SYS(KEY, PyUnicode_FromWideChar(VALUE, -1));
 
+#define COPY_WSTR(SYS_ATTR, WSTR) \
+    if (WSTR != NULL) { \
+        SET_SYS_FROM_WSTR(SYS_ATTR, WSTR); \
+    }
+
     if (config->module_search_paths_set) {
         COPY_LIST("path", config->module_search_paths);
     }
 
-    SET_SYS_FROM_WSTR("executable", config->executable);
-    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
-    SET_SYS_FROM_WSTR("prefix", config->prefix);
-    SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
-    SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
-    SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
-    SET_SYS_FROM_WSTR("platlibdir", config->platlibdir);
+    COPY_WSTR("executable", config->executable);
+    COPY_WSTR("_base_executable", config->base_executable);
+    COPY_WSTR("prefix", config->prefix);
+    COPY_WSTR("base_prefix", config->base_prefix);
+    COPY_WSTR("exec_prefix", config->exec_prefix);
+    COPY_WSTR("base_exec_prefix", config->base_exec_prefix);
+    COPY_WSTR("platlibdir", config->platlibdir);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2946,8 +2986,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 
     SET_SYS("_xoptions", sys_create_xoptions_dict(config));
 
-#undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
+#undef COPY_LIST
+#undef COPY_WSTR
 
     // sys.flags
     PyObject *flags = _PySys_GetObject(tstate, "flags");  // borrowed ref

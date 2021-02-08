@@ -160,7 +160,6 @@ class CodeopTests(unittest.TestCase):
         ai("","eval")
         ai("\n","eval")
         ai("(","eval")
-        ai("(\n\n\n","eval")
         ai("(9+","eval")
         ai("9+ \\","eval")
         ai("lambda z: \\","eval")

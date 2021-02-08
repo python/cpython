@@ -29,8 +29,8 @@
 #include "microprotocols.h"
 #include "row.h"
 
-#if SQLITE_VERSION_NUMBER < 3007003
-#error "SQLite 3.7.3 or higher required"
+#if SQLITE_VERSION_NUMBER < 3007015
+#error "SQLite 3.7.15 or higher required"
 #endif
 
 #include "clinic/module.c.h"
@@ -120,17 +120,11 @@ static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 /*[clinic end generated code: output=e55f1ff1952df558 input=f6b24996b31c5c33]*/
 {
-    PyObject* result;
-
     if (sqlite3_complete(statement)) {
-        result = Py_True;
+        return Py_NewRef(Py_True);
     } else {
-        result = Py_False;
+        return Py_NewRef(Py_False);
     }
-
-    Py_INCREF(result);
-
-    return result;
 }
 
 /*[clinic input]
@@ -219,8 +213,7 @@ pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
         goto error;
     }
 
-    Py_INCREF(Py_None);
-    retval = Py_None;
+    retval = Py_NewRef(Py_None);
 error:
     Py_XDECREF(name);
     return retval;
@@ -372,8 +365,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module;
 
-    if (sqlite3_libversion_number() < 3007003) {
-        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.3 or higher required");
+    if (sqlite3_libversion_number() < 3007015) {
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.15 or higher required");
         return NULL;
     }
 
@@ -411,15 +404,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError, pysqlite_DatabaseError);
     ADD_EXCEPTION(module, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
     ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
-
-    /* In Python 2.x, setting Connection.text_factory to
-       OptimizedUnicode caused Unicode objects to be returned for
-       non-ASCII data and bytestrings to be returned for ASCII data.
-       Now OptimizedUnicode is an alias for str, so it has no
-       effect. */
-    if (PyModule_AddObjectRef(module, "OptimizedUnicode", (PyObject*)&PyUnicode_Type) < 0) {
-        goto error;
-    }
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {

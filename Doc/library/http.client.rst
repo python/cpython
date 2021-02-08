@@ -99,6 +99,11 @@ The module provides the following classes:
       :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
       when *cert_file* is passed with a custom *context*.
 
+   .. versionchanged:: 3.10
+      This class now sends an ALPN extension with protocol indicator
+      ``http/1.1`` when no *context* is given. Custom *context* should set
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+
    .. deprecated:: 3.6
 
        *key_file* and *cert_file* are deprecated in favor of *context*.

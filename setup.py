@@ -9,6 +9,7 @@ import re
 import sys
 import sysconfig
 from glob import glob, escape
+import _osx_support
 
 
 try:
@@ -40,10 +41,13 @@ from distutils.spawn import find_executable
 
 
 # Compile extensions used to test Python?
-TEST_EXTENSIONS = True
+TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
 
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
+
+# --list-module-names option used by Tools/scripts/generate_module_names.py
+LIST_MODULE_NAMES = False
 
 
 def get_platform():
@@ -178,32 +182,9 @@ def macosx_sdk_root():
         MACOS_SDK_ROOT = m.group(1)
         MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
-        MACOS_SDK_ROOT = '/'
+        MACOS_SDK_ROOT = _osx_support._default_sysroot(
+            sysconfig.get_config_var('CC'))
         MACOS_SDK_SPECIFIED = False
-        cc = sysconfig.get_config_var('CC')
-        tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
-        try:
-            os.unlink(tmpfile)
-        except:
-            pass
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
-        in_incdirs = False
-        try:
-            if ret == 0:
-                with open(tmpfile) as fp:
-                    for line in fp.readlines():
-                        if line.startswith("#include <...>"):
-                            in_incdirs = True
-                        elif line.startswith("End of search list"):
-                            in_incdirs = False
-                        elif in_incdirs:
-                            line = line.strip()
-                            if line == '/usr/include':
-                                MACOS_SDK_ROOT = '/'
-                            elif line.endswith(".sdk/usr/include"):
-                                MACOS_SDK_ROOT = line[:-12]
-        finally:
-            os.unlink(tmpfile)
 
     return MACOS_SDK_ROOT
 
@@ -241,7 +222,7 @@ def is_macosx_sdk_path(path):
 
 def grep_headers_for(function, headers):
     for header in headers:
-        with open(header, 'r') as f:
+        with open(header, 'r', errors='surrogateescape') as f:
             if function in f.read():
                 return True
     return False
@@ -469,11 +450,19 @@ class PyBuildExt(build_ext):
         # Detect which modules should be compiled
         self.detect_modules()
 
-        self.remove_disabled()
+        if not LIST_MODULE_NAMES:
+            self.remove_disabled()
 
         self.update_sources_depends()
         mods_built, mods_disabled = self.remove_configured_extensions()
         self.set_compiler_executables()
+
+        if LIST_MODULE_NAMES:
+            for ext in self.extensions:
+                print(ext.name)
+            for name in self.missing:
+                print(name)
+            return
 
         build_ext.build_extensions(self)
 
@@ -693,6 +682,51 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
+    def add_wrcc_search_dirs(self):
+        # add library search path by wr-cc, the compiler wrapper
+
+        def convert_mixed_path(path):
+            # convert path like C:\folder1\folder2/folder3/folder4
+            # to msys style /c/folder1/folder2/folder3/folder4
+            drive = path[0].lower()
+            left = path[2:].replace("\\", "/")
+            return "/" + drive + left
+
+        def add_search_path(line):
+            # On Windows building machine, VxWorks does
+            # cross builds under msys2 environment.
+            pathsep = (";" if sys.platform == "msys" else ":")
+            for d in line.strip().split("=")[1].split(pathsep):
+                d = d.strip()
+                if sys.platform == "msys":
+                    # On Windows building machine, compiler
+                    # returns mixed style path like:
+                    # C:\folder1\folder2/folder3/folder4
+                    d = convert_mixed_path(d)
+                d = os.path.normpath(d)
+                add_dir_to_list(self.compiler.library_dirs, d)
+
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = os.path.join(self.build_temp, 'wrccpaths')
+        os.makedirs(self.build_temp, exist_ok=True)
+        try:
+            ret = run_command('%s --print-search-dirs >%s' % (cc, tmpfile))
+            if ret:
+                return
+            with open(tmpfile) as fp:
+                # Parse paths in libraries line. The line is like:
+                # On Linux, "libraries: = path1:path2:path3"
+                # On Windows, "libraries: = path1;path2;path3"
+                for line in fp:
+                    if not line.startswith("libraries"):
+                        continue
+                    add_search_path(line)
+        finally:
+            try:
+                os.unlink(tmpfile)
+            except OSError:
+                pass
+
     def add_cross_compiling_paths(self):
         cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
@@ -725,6 +759,9 @@ class PyBuildExt(build_ext):
                                             line.strip())
         finally:
             os.unlink(tmpfile)
+
+        if VXWORKS:
+            self.add_wrcc_search_dirs()
 
     def add_ldflags_cppflags(self):
         # Add paths specified in the environment variables LDFLAGS and
@@ -876,8 +913,6 @@ class PyBuildExt(build_ext):
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
-        # atexit
-        self.add(Extension("atexit", ["atexitmodule.c"]))
         # _json speedups
         self.add(Extension("_json", ["_json.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -1142,6 +1177,7 @@ class PyBuildExt(build_ext):
             # bpo-31904: crypt() function is not provided by VxWorks.
             # DES_crypt() OpenSSL provides is too weak to implement
             # the encryption.
+            self.missing.append('_crypt')
             return
 
         if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
@@ -1149,23 +1185,16 @@ class PyBuildExt(build_ext):
         else:
             libs = []
 
-        self.add(Extension('_crypt', ['_cryptmodule.c'],
-                               libraries=libs))
+        self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
     def detect_socket(self):
         # socket(2)
-        if not VXWORKS:
-            kwargs = {'depends': ['socketmodule.h']}
-            if MACOS:
-                # Issue #35569: Expose RFC 3542 socket options.
-                kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
+        kwargs = {'depends': ['socketmodule.h']}
+        if MACOS:
+            # Issue #35569: Expose RFC 3542 socket options.
+            kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
 
-            self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
-        elif self.compiler.find_library_file(self.lib_dirs, 'net'):
-            libs = ['net']
-            self.add(Extension('_socket', ['socketmodule.c'],
-                               depends=['socketmodule.h'],
-                               libraries=libs))
+        self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
 
     def detect_dbm_gdbm(self):
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -1474,8 +1503,7 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        # We need to find >= sqlite version 3.7.3, for sqlite3_create_function_v2()
-        MIN_SQLITE_VERSION_NUMBER = (3, 7, 3)
+        MIN_SQLITE_VERSION_NUMBER = (3, 7, 15)  # Issue 40810
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -1766,26 +1794,28 @@ class PyBuildExt(build_ext):
         if MS_WINDOWS:
             multiprocessing_srcs = ['_multiprocessing/multiprocessing.c',
                                     '_multiprocessing/semaphore.c']
-
         else:
             multiprocessing_srcs = ['_multiprocessing/multiprocessing.c']
             if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
-            if (sysconfig.get_config_var('HAVE_SHM_OPEN') and
-                sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-                posixshmem_srcs = ['_multiprocessing/posixshmem.c']
-                libs = []
-                if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
-                    # need to link with librt to get shm_open()
-                    libs.append('rt')
-                self.add(Extension('_posixshmem', posixshmem_srcs,
-                                   define_macros={},
-                                   libraries=libs,
-                                   include_dirs=["Modules/_multiprocessing"]))
-
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
                            include_dirs=["Modules/_multiprocessing"]))
+
+        if (not MS_WINDOWS and
+           sysconfig.get_config_var('HAVE_SHM_OPEN') and
+           sysconfig.get_config_var('HAVE_SHM_UNLINK')):
+            posixshmem_srcs = ['_multiprocessing/posixshmem.c']
+            libs = []
+            if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
+                # need to link with librt to get shm_open()
+                libs.append('rt')
+            self.add(Extension('_posixshmem', posixshmem_srcs,
+                               define_macros={},
+                               libraries=libs,
+                               include_dirs=["Modules/_multiprocessing"]))
+        else:
+            self.missing.append('_posixshmem')
 
     def detect_uuid(self):
         # Build the _uuid module if possible
@@ -1831,8 +1861,16 @@ class PyBuildExt(build_ext):
 ##         self.add(Extension('xx', ['xxmodule.c']))
 
         if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
+            # Non-debug mode: Build xxlimited with limited API
             self.add(Extension('xxlimited', ['xxlimited.c'],
+                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
+            self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
                                define_macros=[('Py_LIMITED_API', '0x03050000')]))
+        else:
+            # Debug mode: Build xxlimited with the full API
+            # (which is compatible with the limited one)
+            self.add(Extension('xxlimited', ['xxlimited.c']))
+            self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter_explicitly(self):
         # Build _tkinter using explicit locations for Tcl/Tk.
@@ -2572,6 +2610,12 @@ class PyBuildScripts(build_scripts):
 
 
 def main():
+    global LIST_MODULE_NAMES
+
+    if "--list-module-names" in sys.argv:
+        LIST_MODULE_NAMES = True
+        sys.argv.remove("--list-module-names")
+
     set_compiler_flags('CFLAGS', 'PY_CFLAGS_NODIST')
     set_compiler_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
 

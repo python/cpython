@@ -469,6 +469,34 @@ class ThreadTests(BaseTestCase):
         t = threading.Thread(daemon=True)
         self.assertTrue(t.daemon)
 
+    @unittest.skipUnless(hasattr(os, 'fork'), 'needs os.fork()')
+    def test_fork_at_exit(self):
+        # bpo-42350: Calling os.fork() after threading._shutdown() must
+        # not log an error.
+        code = textwrap.dedent("""
+            import atexit
+            import os
+            import sys
+            from test.support import wait_process
+
+            # Import the threading module to register its "at fork" callback
+            import threading
+
+            def exit_handler():
+                pid = os.fork()
+                if not pid:
+                    print("child process ok", file=sys.stderr, flush=True)
+                    # child process
+                else:
+                    wait_process(pid, exitcode=0)
+
+            # exit_handler() will be called after threading._shutdown()
+            atexit.register(exit_handler)
+        """)
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out, b'')
+        self.assertEqual(err.rstrip(), b'child process ok')
+
     @unittest.skipUnless(hasattr(os, 'fork'), 'test needs fork()')
     def test_dummy_thread_after_fork(self):
         # Issue #14308: a dummy thread in the active list doesn't mess up
@@ -826,6 +854,26 @@ class ThreadTests(BaseTestCase):
             atexit = Atexit()
         """)
         self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
+
+    def test_boolean_target(self):
+        # bpo-41149: A thread that had a boolean value of False would not
+        # run, regardless of whether it was callable. The correct behaviour
+        # is for a thread to do nothing if its target is None, and to call
+        # the target otherwise.
+        class BooleanTarget(object):
+            def __init__(self):
+                self.ran = False
+            def __bool__(self):
+                return False
+            def __call__(self):
+                self.ran = True
+
+        target = BooleanTarget()
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join()
+        self.assertTrue(target.ran)
+
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
@@ -1351,6 +1399,27 @@ class ExceptHookTests(BaseTestCase):
         self.assertEqual(stderr.getvalue(),
                          'Exception in threading.excepthook:\n')
         self.assertEqual(err_str, 'threading_hook failed')
+
+    def test_original_excepthook(self):
+        def run_thread():
+            with support.captured_output("stderr") as output:
+                thread = ThreadRunFail(name="excepthook thread")
+                thread.start()
+                thread.join()
+            return output.getvalue()
+
+        def threading_hook(args):
+            print("Running a thread failed", file=sys.stderr)
+
+        default_output = run_thread()
+        with support.swap_attr(threading, 'excepthook', threading_hook):
+            custom_hook_output = run_thread()
+            threading.excepthook = threading.__excepthook__
+            recovered_output = run_thread()
+
+        self.assertEqual(default_output, recovered_output)
+        self.assertNotEqual(default_output, custom_hook_output)
+        self.assertEqual(custom_hook_output, "Running a thread failed\n")
 
 
 class TimerTests(BaseTestCase):

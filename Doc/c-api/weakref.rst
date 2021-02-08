@@ -13,17 +13,18 @@ as much as it can.
 
 .. c:function:: int PyWeakref_Check(ob)
 
-   Return true if *ob* is either a reference or proxy object.
+   Return true if *ob* is either a reference or proxy object.  This function
+   always succeeds.
 
 
 .. c:function:: int PyWeakref_CheckRef(ob)
 
-   Return true if *ob* is a reference object.
+   Return true if *ob* is a reference object.  This function always succeeds.
 
 
 .. c:function:: int PyWeakref_CheckProxy(ob)
 
-   Return true if *ob* is a proxy object.
+   Return true if *ob* is a proxy object.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyWeakref_NewRef(PyObject *ob, PyObject *callback)
@@ -59,7 +60,7 @@ as much as it can.
 
       This function returns a :term:`borrowed reference` to the referenced object.
       This means that you should always call :c:func:`Py_INCREF` on the object
-      except it cannot be destroyed before the last usage of the borrowed
+      except when it cannot be destroyed before the last usage of the borrowed
       reference.
 
 

@@ -897,8 +897,7 @@ Test cases
    .. method:: assertIs(first, second, msg=None)
                assertIsNot(first, second, msg=None)
 
-      Test that *first* and *second* evaluate (or don't evaluate) to the
-      same object.
+      Test that *first* and *second* are (or are not) the same object.
 
       .. versionadded:: 3.1
 
@@ -1499,11 +1498,11 @@ Test cases
       after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
 
       It is responsible for calling all the cleanup functions added by
-      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      :meth:`addClassCleanup`. If you need cleanup functions to be called
       *prior* to :meth:`tearDownClass` then you can call
-      :meth:`doCleanupsClass` yourself.
+      :meth:`doClassCleanups` yourself.
 
-      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      :meth:`doClassCleanups` pops methods off the stack of cleanup
       functions one at a time, so it can be called at any time.
 
       .. versionadded:: 3.8

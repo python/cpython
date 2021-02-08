@@ -52,7 +52,7 @@ def _find_executable(executable, path=None):
         return executable
 
 
-def _read_output(commandstring):
+def _read_output(commandstring, capture_stderr=False):
     """Output from successful command execution or None"""
     # Similar to os.popen(commandstring, "r").read(),
     # but without actually using os.popen because that
@@ -67,7 +67,10 @@ def _read_output(commandstring):
             os.getpid(),), "w+b")
 
     with contextlib.closing(fp) as fp:
-        cmd = "%s 2>/dev/null >'%s'" % (commandstring, fp.name)
+        if capture_stderr:
+            cmd = "%s >'%s' 2>&1" % (commandstring, fp.name)
+        else:
+            cmd = "%s 2>/dev/null >'%s'" % (commandstring, fp.name)
         return fp.read().decode('utf-8').strip() if not os.system(cmd) else None
 
 
@@ -128,7 +131,7 @@ def _get_system_version_tuple():
                 _SYSTEM_VERSION_TUPLE = ()
 
     return _SYSTEM_VERSION_TUPLE
-   
+
 
 def _remove_original_values(_config_vars):
     """Remove original unmodified values for testing"""
@@ -144,6 +147,33 @@ def _save_modified_value(_config_vars, cv, newvalue):
     if (oldvalue != newvalue) and (_INITPRE + cv not in _config_vars):
         _config_vars[_INITPRE + cv] = oldvalue
     _config_vars[cv] = newvalue
+
+
+_cache_default_sysroot = None
+def _default_sysroot(cc):
+    """ Returns the root of the default SDK for this system, or '/' """
+    global _cache_default_sysroot
+
+    if _cache_default_sysroot is not None:
+        return _cache_default_sysroot
+   
+    contents = _read_output('%s -c -E -v - </dev/null' % (cc,), True)
+    in_incdirs = False   
+    for line in contents.splitlines():
+        if line.startswith("#include <...>"):
+            in_incdirs = True
+        elif line.startswith("End of search list"):
+            in_incdirs = False
+        elif in_incdirs:
+            line = line.strip()
+            if line == '/usr/include':
+                _cache_default_sysroot = '/'
+            elif line.endswith(".sdk/usr/include"):
+                _cache_default_sysroot = line[:-12]
+    if _cache_default_sysroot is None:
+        _cache_default_sysroot = '/'
+
+    return _cache_default_sysroot
 
 def _supports_universal_builds():
     """Returns True if universal builds are supported on this system"""
@@ -357,7 +387,7 @@ def compiler_fixup(compiler_so, cc_args):
 
     elif not _supports_arm64_builds():
         # Look for "-arch arm64" and drop that
-        for idx in range(len(compiler_so)):
+        for idx in reversed(range(len(compiler_so))):
             if compiler_so[idx] == '-arch' and compiler_so[idx+1] == "arm64":
                 del compiler_so[idx:idx+2]
 

@@ -23,12 +23,14 @@ Type Objects
 
    Return non-zero if the object *o* is a type object, including instances of
    types derived from the standard type object.  Return 0 in all other cases.
+   This function always succeeds.
 
 
 .. c:function:: int PyType_CheckExact(PyObject *o)
 
-   Return non-zero if the object *o* is a type object, but not a subtype of the
-   standard type object.  Return 0 in all other cases.
+   Return non-zero if the object *o* is a type object, but not a subtype of
+   the standard type object.  Return 0 in all other cases.  This function
+   always succeeds.
 
 
 .. c:function:: unsigned int PyType_ClearCache()
@@ -105,9 +107,11 @@ Type Objects
 
    See :c:member:`PyType_Slot.slot` for possible values of the *slot* argument.
 
-   An exception is raised if *type* is not a heap type.
-
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.10
+      :c:func:`PyType_GetSlot` can now accept all types.
+      Previously, it was limited to heap types.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -152,10 +156,10 @@ The following functions and structs are used to create
    Creates and returns a heap type object from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
 
-   If *bases* is a tuple, the created heap type contains all types contained
-   in it as base types.
-
-   If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
+   The *bases* argument can be used to specify base classes; it can either
+   be only one class or a tuple of classes.
+   If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
+   If that also is ``NULL``, the *Py_tp_base* slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
    The *module* argument can be used to record the module in which the new
@@ -171,7 +175,8 @@ The following functions and structs are used to create
 
    .. versionchanged:: 3.10
 
-      The function now accepts NULL ``tp_doc`` slot.
+      The function now accepts a single class as the *bases* argument and
+      ``NULL`` as the ``tp_doc`` slot.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -251,7 +256,8 @@ The following functions and structs are used to create
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 
-      Setting :c:data:`Py_tp_bases` may be problematic on some platforms.
+      Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
+      problematic on some platforms.
       To avoid issues, use the *bases* argument of
       :py:func:`PyType_FromSpecWithBases` instead.
 
@@ -263,3 +269,5 @@ The following functions and structs are used to create
 
       The desired value of the slot. In most cases, this is a pointer
       to a function.
+
+      Slots other than ``Py_tp_doc`` may not be ``NULL``.

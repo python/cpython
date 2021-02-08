@@ -1234,6 +1234,13 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             return 0;
         }
 
+#ifdef __linux__
+        if (errno == EBADF) {
+            // On Linux, ioctl(FIOCLEX) will fail with EBADF for O_PATH file descriptors
+            // Fall through to the fcntl() path
+        }
+        else
+#endif
         if (errno != ENOTTY && errno != EACCES) {
             if (raise)
                 PyErr_SetFromErrno(PyExc_OSError);
@@ -1455,33 +1462,6 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen().
-
-   The file descriptor is created non-inheritable.
-
-   If interrupted by a signal, fail with EINTR. */
-FILE*
-_Py_fopen(const char *pathname, const char *mode)
-{
-    PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
-    if (pathname_obj == NULL) {
-        return NULL;
-    }
-    if (PySys_Audit("open", "Osi", pathname_obj, mode, 0) < 0) {
-        Py_DECREF(pathname_obj);
-        return NULL;
-    }
-    Py_DECREF(pathname_obj);
-
-    FILE *f = fopen(pathname, mode);
-    if (f == NULL)
-        return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
-        fclose(f);
-        return NULL;
-    }
-    return f;
-}
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
    encoding and call fopen() otherwise.
@@ -2070,7 +2050,9 @@ _Py_get_blocking(int fd)
 int
 _Py_set_blocking(int fd, int blocking)
 {
-#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)
+/* bpo-41462: On VxWorks, ioctl(FIONBIO) only works on sockets.
+   Use fcntl() instead. */
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO) && !defined(__VXWORKS__)
     int arg = !blocking;
     if (ioctl(fd, FIONBIO, &arg) < 0)
         goto error;

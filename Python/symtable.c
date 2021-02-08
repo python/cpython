@@ -128,7 +128,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
-    PyObject_Del(ste);
+    PyObject_Free(ste);
 }
 
 #define OFF(x) offsetof(PySTEntryObject, x)

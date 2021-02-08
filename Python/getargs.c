@@ -202,7 +202,7 @@ static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
     if (ptr) {
-        PyMem_FREE(ptr);
+        PyMem_Free(ptr);
     }
     return 0;
 }
@@ -246,7 +246,7 @@ cleanreturn(int retval, freelist_t *freelist)
       }
     }
     if (freelist->entries_malloced)
-        PyMem_FREE(freelist->entries);
+        PyMem_Free(freelist->entries);
     return retval;
 }
 

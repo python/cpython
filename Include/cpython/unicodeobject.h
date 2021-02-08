@@ -22,7 +22,7 @@
 
  */
 #define Py_UNICODE_ISSPACE(ch) \
-    ((ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
+    ((Py_UCS4)(ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
 
 #define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
 #define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)
@@ -737,13 +737,6 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
 
    Use of this API is DEPRECATED since no size information can be
    extracted from the returned data.
-
-   *** This API is for interpreter INTERNAL USE ONLY and will likely
-   *** be removed or changed for Python 3.1.
-
-   *** If you need to access the Unicode object as UTF-8 bytes string,
-   *** please use PyUnicode_AsUTF8String() instead.
-
 */
 
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
