@@ -102,10 +102,17 @@ def _maybe_compile(compiler, source, filename, symbol):
     try:
         if code:
             return code
-        if not code1 and repr(err1) == repr(err2):
+        if not code1 and _is_syntax_error(err1, err2):
             raise err1
     finally:
         err1 = err2 = None
+
+def _is_syntax_error(err1, err2):
+    if all("was never closed" in repr(err) for err in (err1, err2)):
+        return False
+    if repr(err1) == repr(err2):
+        return True
+    return False
 
 def _compile(source, filename, symbol):
     return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT)
