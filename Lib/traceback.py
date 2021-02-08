@@ -476,7 +476,7 @@ class TracebackException:
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
-
+        self.__suppress_context__ = False
         self._truncated = False
         if (exc_value and exc_value.__cause__ is not None
             and id(exc_value.__cause__) not in _seen):
@@ -495,6 +495,9 @@ class TracebackException:
                 # so we must truncate.
                 self._truncated = True
                 cause = None
+                # Suppress the context during printing, so that even when
+                # a cause is truncated we don't print the context.
+                self.__suppress_context__ = True
         else:
             cause = None
         if (exc_value and exc_value.__context__ is not None
@@ -515,8 +518,8 @@ class TracebackException:
             context = None
         self.__cause__ = cause
         self.__context__ = context
-        self.__suppress_context__ = \
-            exc_value.__suppress_context__ if exc_value else False
+        self.__suppress_context__ = self.__suppress_context__ or (
+            exc_value.__suppress_context__ if exc_value else False)
         # TODO: locals.
         self.stack = StackSummary.extract(
             walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
