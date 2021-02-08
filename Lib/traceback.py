@@ -511,8 +511,8 @@ class TracebackException:
             context = None
         self.__cause__ = cause
         self.__context__ = context
-        self.__suppress_context__ = (
-            exc_value.__suppress_context__ if exc_value else False)
+        self.__suppress_context__ = \
+            exc_value.__suppress_context__ if exc_value else False
         # TODO: locals.
         self.stack = StackSummary.extract(
             walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
