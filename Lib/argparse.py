@@ -138,8 +138,9 @@ class _AttributeHolder(object):
 def _copy_items(items):
     if items is None:
         return []
-    # The copy module is used only in the 'append' and 'append_const'
-    # actions, and it is needed only when the default value isn't a list.
+    # The copy module is used in the 'append', 'append_const', 'extend', and
+    # 'extend_const' actions, and it is needed only when the default value
+    # isn't a list.
     # Delay its import for speeding up the common case.
     if type(items) is list:
         return items[:]
