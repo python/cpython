@@ -250,10 +250,10 @@ Module functions and constants
    float, str or bytes.
 
 
-.. function:: complete_statement(sql)
+.. function:: complete_statement(statement)
 
-   Returns :const:`True` if the string *sql* contains one or more complete SQL
-   statements terminated by semicolons. It does not verify that the SQL is
+   Returns :const:`True` if the string *statement* contains one or more complete
+   SQL statements terminated by semicolons. It does not verify that the SQL is
    syntactically correct, only that there are no unclosed string literals and the
    statement is terminated by a semicolon.
 
