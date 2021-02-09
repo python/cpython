@@ -28,10 +28,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#if SQLITE_VERSION_NUMBER >= 3007004
-#define HAVE_SQLITE3_STMT_READONLY
-#endif
-
 /* prototypes */
 static int pysqlite_check_remaining_sql(const char* tail);
 
@@ -57,7 +53,6 @@ static int pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
     const char* p;
     int is_dml = 0;
 
-#ifdef HAVE_SQLITE3_STMT_READONLY
     is_dml = !sqlite3_stmt_readonly(statement);
     if (is_dml) {
         /* Retain backwards-compatibility, as sqlite3_stmt_readonly will return
@@ -81,26 +76,6 @@ static int pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
             break;
         }
     }
-#else
-    /* Determine if the statement is a DML statement. SELECT is the only
-     * exception. This is a fallback for older versions of SQLite which do not
-     * support the sqlite3_stmt_readonly() API. */
-    for (p = sql; *p != 0; p++) {
-        switch (*p) {
-            case ' ':
-            case '\r':
-            case '\n':
-            case '\t':
-                continue;
-        }
-
-        is_dml = (PyOS_strnicmp(p, "insert", 6) == 0)
-              || (PyOS_strnicmp(p, "update", 6) == 0)
-              || (PyOS_strnicmp(p, "delete", 6) == 0)
-              || (PyOS_strnicmp(p, "replace", 7) == 0);
-        break;
-    }
-#endif
     return is_dml;
 }
 
