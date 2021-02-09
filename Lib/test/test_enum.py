@@ -18,7 +18,7 @@ from datetime import timedelta
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    if os.path.exists('../../Doc/library/enum.rst'):
+    if os.path.exists('Doc/library/enum.rst'):
         tests.addTests(doctest.DocFileSuite(
                 '../../Doc/library/enum.rst',
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
