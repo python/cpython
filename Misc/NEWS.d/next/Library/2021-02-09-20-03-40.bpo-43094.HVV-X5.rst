@@ -1,0 +1,2 @@
+Update :mod:`sqlite3` documentation and docstrings to match implementation.
+Patch by Erlend E. Aasland.
