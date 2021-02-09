@@ -181,7 +181,8 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_adapt__doc__,
-"adapt($module, obj, proto=PrepareProtocolType, alt=<unrepresentable>, /)\n"
+"adapt($module, obj, protocol=PrepareProtocolType,\n"
+"      alternate=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Adapt given object to given protocol. Non-standard.");
@@ -219,4 +220,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=622f545d589fa736 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35569d190153173b input=a9049054013a1b77]*/

@@ -241,8 +241,8 @@ pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
 _sqlite3.adapt as pysqlite_adapt
 
     obj: object
-    proto: object(c_default='(PyObject*)pysqlite_PrepareProtocolType') = PrepareProtocolType
-    alt: object = NULL
+    protocol as proto: object(c_default='(PyObject*)pysqlite_PrepareProtocolType') = PrepareProtocolType
+    alternate as alt: object = NULL
     /
 
 Adapt given object to given protocol. Non-standard.
@@ -251,7 +251,7 @@ Adapt given object to given protocol. Non-standard.
 static PyObject *
 pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
-/*[clinic end generated code: output=0c3927c5fcd23dd9 input=a58ab77fb5ae22dd]*/
+/*[clinic end generated code: output=0c3927c5fcd23dd9 input=e2389971eae0c359]*/
 {
     return pysqlite_microprotocols_adapt(obj, proto, alt);
 }
