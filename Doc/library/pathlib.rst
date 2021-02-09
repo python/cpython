@@ -143,7 +143,7 @@ we also call *flavours*:
       >>> PurePath('foo/../bar')
       PurePosixPath('foo/../bar')
 
-   (a naïve approach would make ``PurePosixPath('foo/../bar')`` equivalent
+   (a naive approach would make ``PurePosixPath('foo/../bar')`` equivalent
    to ``PurePosixPath('bar')``, which is wrong if ``foo`` is a symbolic link
    to another directory)
 
