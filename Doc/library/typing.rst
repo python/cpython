@@ -1020,7 +1020,7 @@ The module defines the following classes, functions and decorators:
    ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
-  .. versionadded:: 3.7.4
+   .. versionadded:: 3.7.4
 
 .. function:: NewType(name, tp)
 
