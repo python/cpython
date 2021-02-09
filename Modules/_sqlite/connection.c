@@ -1702,7 +1702,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
 _sqlite3.Connection.create_collation as pysqlite_connection_create_collation
 
     name: unicode
-    callback as callable: object
+    callable: object
     /
 
 Creates a collation function. Non-standard.
@@ -1711,7 +1711,7 @@ Creates a collation function. Non-standard.
 static PyObject *
 pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
                                           PyObject *name, PyObject *callable)
-/*[clinic end generated code: output=0f63b8995565ae22 input=5c3898813a776cf2]*/
+/*[clinic end generated code: output=0f63b8995565ae22 input=4ec50c4866fd1f30]*/
 {
     PyObject* uppercase_name = 0;
     Py_ssize_t i, len;

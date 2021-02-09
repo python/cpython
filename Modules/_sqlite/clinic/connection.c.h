@@ -620,7 +620,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_connection_create_collation__doc__,
-"create_collation($self, name, callback, /)\n"
+"create_collation($self, name, callable, /)\n"
 "--\n"
 "\n"
 "Creates a collation function. Non-standard.");
@@ -719,4 +719,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=7cb13d491a5970aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05a4311700956cfb input=a9049054013a1b77]*/
