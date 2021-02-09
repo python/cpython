@@ -222,7 +222,7 @@ error:
 /*[clinic input]
 _sqlite3.enable_callback_tracebacks as pysqlite_enable_callback_trace
 
-    enable: int
+    flag as enable: int
     /
 
 Enable or disable callback functions throwing errors to stderr.
@@ -230,7 +230,7 @@ Enable or disable callback functions throwing errors to stderr.
 
 static PyObject *
 pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
-/*[clinic end generated code: output=4ff1d051c698f194 input=cb79d3581eb77c40]*/
+/*[clinic end generated code: output=4ff1d051c698f194 input=50b5bf5224c327e9]*/
 {
     _pysqlite_enable_callback_tracebacks = enable;
 

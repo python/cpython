@@ -153,7 +153,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_enable_callback_trace__doc__,
-"enable_callback_tracebacks($module, enable, /)\n"
+"enable_callback_tracebacks($module, flag, /)\n"
 "--\n"
 "\n"
 "Enable or disable callback functions throwing errors to stderr.");
@@ -219,4 +219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=450c444476ad31e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=622f545d589fa736 input=a9049054013a1b77]*/
