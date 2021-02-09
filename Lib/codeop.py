@@ -108,9 +108,11 @@ def _maybe_compile(compiler, source, filename, symbol):
         err1 = err2 = None
 
 def _is_syntax_error(err1, err2):
-    if all("was never closed" in repr(err) for err in (err1, err2)):
+    rep1 = repr(err1)
+    rep2 = repr(err2)
+    if "was never closed" in rep1 and"was never closed" in rep2:
         return False
-    if repr(err1) == repr(err2):
+    if rep1 == rep2:
         return True
     return False
 
