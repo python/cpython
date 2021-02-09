@@ -4891,92 +4891,124 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
+AC_ARG_WITH([readline],
+  [AS_HELP_STRING([--with(out)-readline@<:@=editline@:>@],
+    [use Editline for backend or disable readline module])],
+    [],
+    [with_readline=yes])
+
 # check where readline lives
+py_cv_lib_readline=no
 # save the value of LIBS so we don't actually link Python with readline
 LIBS_no_readline=$LIBS
 
-# On some systems we need to link readline to a termcap compatible
-# library.  NOTE: Keep the precedence of listed libraries synchronised
-# with setup.py.
-py_cv_lib_readline=no
-AC_MSG_CHECKING([how to link readline libs])
-for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
-  if test -z "$py_libtermcap"; then
-    READLINE_LIBS="-lreadline"
+if test "$with_readline" != no; then
+  case "$with_readline" in
+  editline|edit)
+    LIBREADLINE=edit
+    AC_DEFINE(WITH_EDITLINE, 1,
+      [Define to build the readline module against Editline.])
+    ;;
+  yes|readline)
+    LIBREADLINE=readline
+    ;;
+  *)
+    AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline@:>@])
+    ;;
+  esac
+
+  # On some systems we need to link readline to a termcap compatible
+  # library.  NOTE: Keep the precedence of listed libraries synchronised
+  # with setup.py.
+  AC_MSG_CHECKING([how to link readline libs])
+  for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
+    if test -z "$py_libtermcap"; then
+      READLINE_LIBS="-l$LIBREADLINE"
+    else
+      READLINE_LIBS="-l$LIBREADLINE -l$py_libtermcap"
+    fi
+    LIBS="$READLINE_LIBS $LIBS_no_readline"
+    AC_LINK_IFELSE(
+      [AC_LANG_CALL([],[readline])],
+      [py_cv_lib_readline=yes])
+    if test $py_cv_lib_readline = yes; then
+      break
+    fi
+  done
+
+  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
+  #AC_SUBST([READLINE_LIBS])
+  if test $py_cv_lib_readline = no; then
+    AC_MSG_RESULT([none])
   else
-    READLINE_LIBS="-lreadline -l$py_libtermcap"
+    AC_MSG_RESULT([$READLINE_LIBS])
+    AC_DEFINE(HAVE_LIBREADLINE, 1,
+      [Define to build the readline module.])
   fi
-  LIBS="$READLINE_LIBS $LIBS_no_readline"
-  AC_LINK_IFELSE(
-    [AC_LANG_CALL([],[readline])],
-    [py_cv_lib_readline=yes])
-  if test $py_cv_lib_readline = yes; then
-    break
-  fi
-done
-# Uncomment this line if you want to use READINE_LIBS in Makefile or scripts
-#AC_SUBST([READLINE_LIBS])
-if test $py_cv_lib_readline = no; then
-  AC_MSG_RESULT([none])
-else
-  AC_MSG_RESULT([$READLINE_LIBS])
-  AC_DEFINE(HAVE_LIBREADLINE, 1,
-    [Define if you have the readline library (-lreadline).])
 fi
 
-# check for readline 2.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_completion_append_character;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
-  [Define if you have readline 2.2]), )
-  AC_EGREP_HEADER([extern int rl_completion_suppress_append;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
-  [Define if you have rl_completion_suppress_append]), )
+if test "$py_cv_lib_readline" = yes; then
+  # check for readline 2.2
+  AC_CHECK_DECL(rl_completion_append_character,
+    AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
+      [Define if you have readline 2.2]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+  AC_CHECK_DECL(rl_completion_suppress_append,
+    AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
+      [Define if you have rl_completion_suppress_append]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  # check for readline 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_pre_input_hook,
+    AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_display_matches_hook,
+    AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0, but not in editline
+  AC_CHECK_LIB($LIBREADLINE, rl_resize_terminal,
+    AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # check for readline 4.2
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_matches,
+    AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
+      [Define if you have readline 4.2]),,$READLINE_LIBS)
+
+  # also in readline 4.2
+  AC_CHECK_DECL(rl_catch_signals,
+    AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
+      [Define if you can turn off readline's signal handling.]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  AC_CHECK_LIB($LIBREADLINE, append_history,
+    AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
+      [Define if readline supports append_history]),,$READLINE_LIBS)
 fi
-
-# check for readline 4.0
-AC_CHECK_LIB(readline, rl_pre_input_hook,
-	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0
-AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
-	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0, but not in editline
-AC_CHECK_LIB(readline, rl_resize_terminal,
-	AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# check for readline 4.2
-AC_CHECK_LIB(readline, rl_completion_matches,
-	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]), ,$READLINE_LIBS)
-
-# also in readline 4.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_catch_signals;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
-  [Define if you can turn off readline's signal handling.]), )
-fi
-
-AC_CHECK_LIB(readline, append_history,
-	AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
-        [Define if readline supports append_history]), ,$READLINE_LIBS)
 
 # End of readline checks: restore LIBS
 LIBS=$LIBS_no_readline
