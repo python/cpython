@@ -157,7 +157,7 @@ pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
 _sqlite3.register_adapter as pysqlite_register_adapter
 
     type: object(type='PyTypeObject *')
-    caster: object
+    callable as caster: object
     /
 
 Registers an adapter with pysqlite's adapter registry. Non-standard.
@@ -166,7 +166,7 @@ Registers an adapter with pysqlite's adapter registry. Non-standard.
 static PyObject *
 pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
                                PyObject *caster)
-/*[clinic end generated code: output=a287e8db18e8af23 input=839dad90e2492725]*/
+/*[clinic end generated code: output=a287e8db18e8af23 input=439a2d0779f8174d]*/
 {
     int rc;
 

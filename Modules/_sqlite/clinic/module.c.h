@@ -84,7 +84,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_register_adapter__doc__,
-"register_adapter($module, type, caster, /)\n"
+"register_adapter($module, type, callable, /)\n"
 "--\n"
 "\n"
 "Registers an adapter with pysqlite\'s adapter registry. Non-standard.");
@@ -219,4 +219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=de2f7b78d6f52499 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0ccdbd197db93bf input=a9049054013a1b77]*/
