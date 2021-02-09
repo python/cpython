@@ -139,12 +139,22 @@ class property(DynamicClassAttribute):
                 return ownerclass._member_map_[self.name]
             except KeyError:
                 raise AttributeError(
-                        '%s: no attribute %r' % (ownerclass.__name__, self.name)
+                        '%s: no class attribute %r' % (ownerclass.__name__, self.name)
                         )
         else:
             if self.fget is None:
+                # check for member
+                if self.name in ownerclass._member_map_:
+                    import warnings
+                    warnings.warn(
+                            "accessing one member from another is not supported, "
+                            " and will be disabled in 3.11",
+                            DeprecationWarning,
+                            stacklevel=2,
+                            )
+                    return ownerclass._member_map_[self.name]
                 raise AttributeError(
-                        '%s: no attribute %r' % (ownerclass.__name__, self.name)
+                        '%s: no instance attribute %r' % (ownerclass.__name__, self.name)
                         )
             else:
                 return self.fget(instance)
@@ -152,7 +162,7 @@ class property(DynamicClassAttribute):
     def __set__(self, instance, value):
         if self.fset is None:
             raise AttributeError(
-                    "%s: cannot set attribute %r" % (self.clsname, self.name)
+                    "%s: cannot set instance attribute %r" % (self.clsname, self.name)
                     )
         else:
             return self.fset(instance, value)
@@ -160,7 +170,7 @@ class property(DynamicClassAttribute):
     def __delete__(self, instance):
         if self.fdel is None:
             raise AttributeError(
-                    "%s: cannot delete attribute %r" % (self.clsname, self.name)
+                    "%s: cannot delete instance attribute %r" % (self.clsname, self.name)
                     )
         else:
             return self.fdel(instance)
