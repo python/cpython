@@ -150,4 +150,7 @@ third-party distributors.
 Contents of Limited API
 =======================
 
-XXX: to be generated automatically
+
+Currently, the Limited API includes the following items:
+
+.. include:: limited_api.inc
