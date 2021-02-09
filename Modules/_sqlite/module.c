@@ -187,8 +187,8 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
 /*[clinic input]
 _sqlite3.register_converter as pysqlite_register_converter
 
-    name as orig_name: unicode
-    converter as callable: object
+    typename as orig_name: unicode
+    callable: object
     /
 
 Registers a converter with pysqlite. Non-standard.
@@ -197,7 +197,7 @@ Registers a converter with pysqlite. Non-standard.
 static PyObject *
 pysqlite_register_converter_impl(PyObject *module, PyObject *orig_name,
                                  PyObject *callable)
-/*[clinic end generated code: output=a2f2bfeed7230062 input=e074cf7f4890544f]*/
+/*[clinic end generated code: output=a2f2bfeed7230062 input=438c60d0fadae4b1]*/
 {
     PyObject* name = NULL;
     PyObject* retval = NULL;

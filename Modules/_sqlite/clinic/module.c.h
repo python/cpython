@@ -115,7 +115,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_register_converter__doc__,
-"register_converter($module, name, converter, /)\n"
+"register_converter($module, typename, callable, /)\n"
 "--\n"
 "\n"
 "Registers a converter with pysqlite. Non-standard.");
@@ -219,4 +219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d87990f941c209fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de2f7b78d6f52499 input=a9049054013a1b77]*/
