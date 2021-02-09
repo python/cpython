@@ -339,11 +339,11 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func, *, deterministic=False)
+   .. method:: create_function(name, narg, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
-      statements under the function name *name*. *num_params* is the number of
-      parameters the function accepts (if *num_params* is -1, the function may
+      statements under the function name *name*. *narg* is the number of
+      parameters the function accepts (if *narg* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
       called as the SQL function. If *deterministic* is true, the created function
       is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
@@ -362,12 +362,12 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/md5func.py
 
 
-   .. method:: create_aggregate(name, num_params, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class)
 
       Creates a user-defined aggregate function.
 
       The aggregate class must implement a ``step`` method, which accepts the number
-      of parameters *num_params* (if *num_params* is -1, the function may take
+      of parameters *n_arg* (if *n_arg* is -1, the function may take
       any number of arguments), and a ``finalize`` method which will return the
       final result of the aggregate.
 
