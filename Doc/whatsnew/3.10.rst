@@ -193,7 +193,13 @@ Type hints can now be written in a more succinct manner::
        return number ** 2
 
 
-See :pep:`604` for more details.
+This new syntax is also accepted as the second argument to :func:`isinstance`
+and :func:`issubclass`::
+
+   >>> isinstance(1, int | str)
+   True
+
+See :ref:`types-union` and :pep:`604` for more details.
 
 (Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
