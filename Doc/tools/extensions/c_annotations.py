@@ -10,8 +10,10 @@
 
     * stable API annotations
 
-    Usage: Set the `refcount_file` config value to the path to the reference
+    Usage:
+    * Set the `refcount_file` config value to the path to the reference
     count data file.
+    * Set the `stable_abi_file` config value to the path to stable ABI list.
 
     :copyright: Copyright 2007-2014 by Georg Brandl.
     :license: Python license.
@@ -33,12 +35,10 @@ class RCEntry:
         self.result_refs = None
 
 
-class Annotations(dict):
-    @classmethod
-    def fromfile(cls, filename):
-        d = cls()
-        fp = open(filename, 'r')
-        try:
+class Annotations:
+    def __init__(self, refcount_filename, stable_abi_file):
+        self.refcount_data = {}
+        with open(refcount_filename, 'r') as fp:
             for line in fp:
                 line = line.strip()
                 if line[:1] in ("", "#"):
@@ -50,9 +50,9 @@ class Annotations(dict):
                 function, type, arg, refcount, comment = parts
                 # Get the entry, creating it if needed:
                 try:
-                    entry = d[function]
+                    entry = self.refcount_data[function]
                 except KeyError:
-                    entry = d[function] = RCEntry(function)
+                    entry = self.refcount_data[function] = RCEntry(function)
                 if not refcount or refcount == "null":
                     refcount = None
                 else:
@@ -64,27 +64,53 @@ class Annotations(dict):
                 else:
                     entry.result_type = type
                     entry.result_refs = refcount
-        finally:
-            fp.close()
-        return d
+
+        self.stable_abi_data = {}
+        with open(stable_abi_file, 'r') as fp:
+            for line in fp:
+                if line.startswith('#') or not line.strip():
+                    # ignore comments and blanks
+                    continue
+                objtype, name, added = line.split()
+                self.stable_abi_data.setdefault(objtype, {})[name] = added
 
     def add_annotations(self, app, doctree):
         for node in doctree.traverse(addnodes.desc_content):
             par = node.parent
             if par['domain'] != 'c':
                 continue
-            if par['stableabi']:
-                node.insert(0, nodes.emphasis(' Part of the stable ABI.',
-                                              ' Part of the stable ABI.',
-                                              classes=['stableabi']))
-            if par['objtype'] != 'function':
-                continue
             if not par[0].has_key('ids') or not par[0]['ids']:
                 continue
             name = par[0]['ids'][0]
             if name.startswith("c."):
                 name = name[2:]
-            entry = self.get(name)
+
+            objtype = par['objtype']
+
+            # Stable ABI annotation. These have two forms:
+            #   Part of the [Stable ABI](link).
+            #   Part of the [Stable ABI](link) since version X.Y.
+            stable_added = self.stable_abi_data.get(objtype, {}).get(name)
+            if stable_added:
+                message = ' Part of the '
+                emph_node = nodes.emphasis(message, message,
+                                           classes=['stableabi'])
+                ref_node = addnodes.pending_xref(
+                    'Stable ABI', refdomain="std", reftarget='stable',
+                    reftype='ref', refexplicit="False")
+                ref_node += nodes.Text('Stable ABI')
+                emph_node += ref_node
+                if stable_added == '3.2':
+                    # Stable ABI was introduced in 3.2.
+                    emph_node += nodes.Text('.')
+                else:
+                    emph_node += nodes.Text(f' since version {stable_added}.')
+                node.insert(0, emph_node)
+
+            # Return value annotation
+            if objtype != 'function':
+                continue
+            entry = self.refcount_data.get(name)
             if not entry:
                 continue
             elif not entry.result_type.endswith("Object*"):
@@ -99,13 +125,16 @@ class Annotations(dict):
 
 
 def init_annotations(app):
-    refcounts = Annotations.fromfile(
-        path.join(app.srcdir, app.config.refcount_file))
+    refcounts = Annotations(
+        path.join(app.srcdir, app.config.refcount_file),
+        path.join(app.srcdir, app.config.stable_abi_file),
+    )
     app.connect('doctree-read', refcounts.add_annotations)
 
 
 def setup(app):
     app.add_config_value('refcount_file', '', True)
+    app.add_config_value('stable_abi_file', '', True)
     app.connect('builder-inited', init_annotations)
 
     # monkey-patch C object...
