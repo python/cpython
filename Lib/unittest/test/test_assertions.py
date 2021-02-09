@@ -5,7 +5,7 @@ import unittest
 from itertools import product
 
 
-class Test_Assertions(unittest.TestCase):
+class TestAssertions(unittest.TestCase):
     def test_AlmostEqual(self):
         self.assertAlmostEqual(1.00000001, 1.0)
         self.assertNotAlmostEqual(1.0000001, 1.0)
@@ -29,7 +29,7 @@ class Test_Assertions(unittest.TestCase):
         self.assertRaises(self.failureException, self.assertNotAlmostEqual,
                           float('inf'), float('inf'))
 
-    def test_AmostEqualWithDelta(self):
+    def test_AlmostEqualWithDelta(self):
         self.assertAlmostEqual(1.1, 1.0, delta=0.5)
         self.assertAlmostEqual(1.0, 1.1, delta=0.5)
         self.assertNotAlmostEqual(1.1, 1.0, delta=0.05)
@@ -106,7 +106,6 @@ class Test_Assertions(unittest.TestCase):
         wr = None
 
         class Foo(unittest.TestCase):
-
             def foo(self):
                 nonlocal wr
                 a = A()
@@ -344,7 +343,6 @@ class TestLongMessage(unittest.TestCase):
                              "^Regex matched:",
                              "^Regex matched: (.*) : oops$"])
 
-
     def assertMessagesCM(self, methodName, args, func, errors):
         """
         Check that the correct error messages are raised while executing:
@@ -399,9 +397,13 @@ class TestLongMessage(unittest.TestCase):
                               ['^UserWarning not triggered$', '^oops$',
                                '^UserWarning not triggered$',
                                '^UserWarning not triggered : oops$'])
-        # test warning raised but with wrong message
+
         def raise_wrong_message():
+            """
+            test warning raised but with wrong message
+            """
             warnings.warn('foo')
+
         self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'regex'),
                               raise_wrong_message,
                               ['^"regex" does not match "foo"$', '^oops$',

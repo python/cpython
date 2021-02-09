@@ -80,6 +80,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
     #
     # Make sure it really is optional, and that it defaults to the proper
     # thing.
+
     def test_init__no_test_name(self):
         class Test(unittest.TestCase):
             def runTest(self): raise MyException()
