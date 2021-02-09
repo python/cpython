@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(pysqlite_complete_statement__doc__,
-"complete_statement($module, /, statement)\n"
+"complete_statement($module, /, sql)\n"
 "--\n"
 "\n"
 "Checks if a string contains a complete SQL statement. Non-standard.");
@@ -18,7 +18,7 @@ static PyObject *
 pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"statement", NULL};
+    static const char * const _keywords[] = {"sql", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "complete_statement", 0};
     PyObject *argsbuf[1];
     const char *statement;
@@ -28,7 +28,7 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("complete_statement", "argument 'statement'", "str", args[0]);
+        _PyArg_BadArgument("complete_statement", "argument 'sql'", "str", args[0]);
         goto exit;
     }
     Py_ssize_t statement_length;
@@ -219,4 +219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c0ccdbd197db93bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=450c444476ad31e5 input=a9049054013a1b77]*/

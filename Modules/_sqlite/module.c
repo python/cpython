@@ -111,14 +111,14 @@ RAM instead of on disk.");
 /*[clinic input]
 _sqlite3.complete_statement as pysqlite_complete_statement
 
-    statement: str
+    sql as statement: str
 
 Checks if a string contains a complete SQL statement. Non-standard.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement)
-/*[clinic end generated code: output=e55f1ff1952df558 input=f6b24996b31c5c33]*/
+/*[clinic end generated code: output=e55f1ff1952df558 input=3ed6064706d8647d]*/
 {
     if (sqlite3_complete(statement)) {
         return Py_NewRef(Py_True);
