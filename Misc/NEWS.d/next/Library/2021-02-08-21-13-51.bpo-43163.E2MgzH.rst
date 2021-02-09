@@ -1,0 +1,2 @@
+Fix a bug in :mod:`codeop` that was causing it to not ask for more input
+when multi-line snippets have unclosed parentheses. Patch by Pablo Galindo

@@ -135,6 +135,10 @@ class CodeopTests(unittest.TestCase):
         ai("a = {")
         ai("b + {")
 
+        ai("print([1,\n2,")
+        ai("print({1:1,\n2:3,")
+        ai("print((1,\n2,")
+
         ai("if 9==3:\n   pass\nelse:")
         ai("if 9==3:\n   pass\nelse:\n")
         ai("if 9==3:\n   pass\nelse:\n   pass")
