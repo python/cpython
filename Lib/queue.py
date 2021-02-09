@@ -229,9 +229,6 @@ class PriorityQueue(Queue):
     def _init(self, maxsize):
         self.queue = []
 
-    def _qsize(self):
-        return len(self.queue)
-
     def _put(self, item):
         heappush(self.queue, item)
 
@@ -244,9 +241,6 @@ class LifoQueue(Queue):
 
     def _init(self, maxsize):
         self.queue = []
-
-    def _qsize(self):
-        return len(self.queue)
 
     def _put(self, item):
         self.queue.append(item)
