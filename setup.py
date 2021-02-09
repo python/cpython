@@ -1022,7 +1022,6 @@ class PyBuildExt(build_ext):
 
     def detect_readline_curses(self):
         # readline
-        do_readline = self.compiler.find_library_file(self.lib_dirs, 'readline')
         readline_termcap_library = ""
         curses_library = ""
         # Cannot use os.popen here in py3k.
@@ -1030,7 +1029,13 @@ class PyBuildExt(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         # Determine if readline is already linked against curses or tinfo.
-        if do_readline:
+        if sysconfig.get_config_var('HAVE_LIBREADLINE'):
+            if sysconfig.get_config_var('WITH_EDITLINE'):
+                readline_lib = 'edit'
+            else:
+                readline_lib = 'readline'
+            do_readline = self.compiler.find_library_file(self.lib_dirs,
+                readline_lib)
             if CROSS_COMPILING:
                 ret = run_command("%s -d %s | grep '(NEEDED)' > %s"
                                 % (sysconfig.get_config_var('READELF'),
@@ -1053,6 +1058,8 @@ class PyBuildExt(build_ext):
                             break
             if os.path.exists(tmpfile):
                 os.unlink(tmpfile)
+        else:
+            do_readline = False
         # Issue 7384: If readline is already linked against curses,
         # use the same library for the readline and curses modules.
         if 'curses' in readline_termcap_library:
@@ -1092,7 +1099,7 @@ class PyBuildExt(build_ext):
             else:
                 readline_extra_link_args = ()
 
-            readline_libs = ['readline']
+            readline_libs = [readline_lib]
             if readline_termcap_library:
                 pass # Issue 7384: Already linked against curses or tinfo.
             elif curses_library:
