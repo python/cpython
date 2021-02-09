@@ -1,1 +1,1 @@
-Handle `RecursionError`s in :class:`~traceback.TracebackException`'s constructor, so that long exceptions chains are truncated instead of causing traceback formatting to fail.
+Handle `RecursionError` in :class:`~traceback.TracebackException`'s constructor, so that long exceptions chains are truncated instead of causing traceback formatting to fail.
