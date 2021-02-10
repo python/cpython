@@ -1,0 +1,1 @@
+Make the compiler merges same co_code and co_linetable objects in a module like already did for co_consts.

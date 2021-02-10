@@ -870,9 +870,13 @@ are always available.  They are listed here in alphabetical order.
    class>`) subclass thereof.  If *object* is not
    an object of the given type, the function always returns ``False``.
    If *classinfo* is a tuple of type objects (or recursively, other such
-   tuples), return ``True`` if *object* is an instance of any of the types.
+   tuples) or a :ref:`types-union` of multiple types, return ``True`` if
+   *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
+
+   .. versionchanged:: 3.10
+      *classinfo* can be a :ref:`types-union`.
 
 
 .. function:: issubclass(class, classinfo)
@@ -880,8 +884,12 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects, in which case every entry in *classinfo* will be checked. In any other
+   objects or a :ref:`types-union`, in which case every entry in *classinfo*
+   will be checked. In any other
    case, a :exc:`TypeError` exception is raised.
+
+   .. versionchanged:: 3.10
+      *classinfo* can be a :ref:`types-union`.
 
 
 .. function:: iter(object[, sentinel])
