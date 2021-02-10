@@ -67,7 +67,8 @@ extern char **completion_matches(char *, CPFunction *);
 static int using_libedit_emulation = 0;
 static const char libedit_version_tag[] = "EditLine wrapper";
 
-static int libedit_history_start = 0;
+static int8_t libedit_history_start = 0;
+static int8_t libedit_append_replace_history_offset = 0;
 
 #ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
 static void
@@ -320,7 +321,8 @@ readline_append_history_file_impl(PyObject *module, int nelements,
         filename_bytes = NULL;
         filename = NULL;
     }
-    errno = err = append_history(nelements, filename);
+    errno = err = append_history(
+        nelements - libedit_append_replace_history_offset, filename);
     if (!err && _history_length >= 0)
         history_truncate_file(filename, _history_length);
     Py_XDECREF(filename_bytes);
@@ -593,6 +595,7 @@ readline.remove_history_item
     /
 
 Remove history item given by its position.
+pos is zero-based.
 [clinic start generated code]*/
 
 static PyObject *
@@ -626,6 +629,7 @@ readline.replace_history_item
     /
 
 Replaces history item given by its position with contents of line.
+pos is zero-based.
 [clinic start generated code]*/
 
 static PyObject *
@@ -645,7 +649,9 @@ readline_replace_history_item_impl(PyObject *module, int entry_number,
     if (encoded == NULL) {
         return NULL;
     }
-    old_entry = replace_history_entry(entry_number, PyBytes_AS_STRING(encoded), (void *)NULL);
+    old_entry = replace_history_entry(
+        entry_number + libedit_append_replace_history_offset,
+        PyBytes_AS_STRING(encoded), (void *)NULL);
     Py_DECREF(encoded);
     if (!old_entry) {
         PyErr_Format(PyExc_ValueError,
@@ -787,6 +793,7 @@ readline.get_history_item
     /
 
 Return the current contents of history item at index.
+index is one-based.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1190,6 +1197,22 @@ setup_readline(readlinestate *mod_state)
         libedit_history_start = 0;
     } else {
         libedit_history_start = 1;
+    }
+    /* Some libedit implementations use 1 based indexing on
+     * replace_history_entry where libreadline uses 0 based.
+     * The API our module presents is supposed to be 0 based.
+     * It's a mad mad mad mad world.
+     */
+    {
+        add_history("2");
+        HIST_ENTRY *old_entry = replace_history_entry(1, "X", NULL);
+        _py_free_history_entry(old_entry);
+        HIST_ENTRY *item = history_get(libedit_history_start);
+        if (item && item->line && strcmp(item->line, "X")) {
+            libedit_append_replace_history_offset = 0;
+        } else {
+            libedit_append_replace_history_offset = 1;
+        }
     }
     clear_history();
 
