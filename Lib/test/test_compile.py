@@ -632,6 +632,17 @@ if 1:
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
+    # Merging equal co_linetable and co_code is not a strict requirement
+    # for the Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_merge_code_attrs(self):
+        # See https://bugs.python.org/issue42217
+        f1 = lambda x: x.y.z
+        f2 = lambda a: a.b.c
+
+        self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
+        self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
+
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
     # that peephole optimization was actually done though that isn't an
