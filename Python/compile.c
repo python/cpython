@@ -1600,8 +1600,8 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 }
 
 #define RETURN_IF_FALSE(X)  \
-    if (!(X)) {   \
-        return 0; \
+    if (!(X)) {             \
+        return 0;           \
     }
 
 /* Search if variable annotations are present statically in a block. */
@@ -5783,7 +5783,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         if (!i) {
             // If this is the first alternative, save its stores as a "control"
-            // for the others (they can't bind a different set names):
+            // for the others (they can't bind a different set of names):
             control = pc->stores;
             continue;
         }
