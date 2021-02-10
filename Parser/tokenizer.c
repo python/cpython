@@ -849,7 +849,7 @@ tok_nextc(struct tok_state *tok)
             return Py_CHARMASK(*tok->cur++);
         }
         if (tok->prompt != NULL) {
-            char *newtok = PyOS_Readline(tok->fp? tok->fp : stdin, stdout, tok->prompt);
+            char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
             if (newtok != NULL) {
                 char *translated = translate_newlines(newtok, 0, tok);
                 PyMem_FREE(newtok);
