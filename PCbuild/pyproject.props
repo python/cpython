@@ -55,6 +55,9 @@
     <ClCompile Condition="$(ICCBuild) == 'true'">
       <FloatingPointModel>Strict</FloatingPointModel>
     </ClCompile>
+    <ClCompile>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
