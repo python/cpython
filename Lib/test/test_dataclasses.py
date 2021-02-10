@@ -2605,7 +2605,7 @@ class TestFrozen(unittest.TestCase):
             class D(C):
                 j: int
 
-    def test_inherit_nonfrozen_from_empty_(self):
+    def test_inherit_nonfrozen_from_empty(self):
         @dataclass
         class C:
             pass
