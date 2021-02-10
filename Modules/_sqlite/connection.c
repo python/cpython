@@ -1582,7 +1582,7 @@ finally:
 /*[clinic input]
 _sqlite3.Connection.backup as pysqlite_connection_backup
 
-    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType') = NULL
+    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
     *
     pages: int = -1
     progress: object = None
@@ -1597,7 +1597,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
                                 double sleep)
-/*[clinic end generated code: output=306a3e6a38c36334 input=2f3497ea530144b1]*/
+/*[clinic end generated code: output=306a3e6a38c36334 input=30ae45fc420bfd3b]*/
 {
     int rc;
     int callback_error = 0;
