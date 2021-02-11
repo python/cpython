@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <errcode.h>
+#include <errno.h>
 #include "tokenizer.h"
 
 #include "pegen.h"

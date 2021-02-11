@@ -64,6 +64,10 @@ Copyright (c) Corporation for National Research Initiatives.
 /* Python 3.x requires unicode */
 #define Py_USING_UNICODE
 
+#ifdef __CYGWIN__
+#define SIZEOF_WCHAR_T 2
+#endif
+
 #ifndef SIZEOF_WCHAR_T
 #error Must define SIZEOF_WCHAR_T
 #endif

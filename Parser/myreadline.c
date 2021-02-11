@@ -11,6 +11,7 @@
 
 #include "Python.h"
 #include "pycore_pystate.h"   // _PyThreadState_GET()
+#include <errno.h>
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include "windows.h"

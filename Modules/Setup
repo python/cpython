@@ -359,7 +359,7 @@ xxsubtype xxsubtype.c
 # Uncommenting the following line tells makesetup that all following modules
 # are not built (see above for more detail).
 #
-#*disabled*
+*disabled*
 #
-#_sqlite3 _tkinter _curses pyexpat
+pydoc _tkinter idlelib lib2to3 python-config
 #_codecs_jp _codecs_kr _codecs_tw unicodedata
