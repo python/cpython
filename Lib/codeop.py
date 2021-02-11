@@ -80,8 +80,7 @@ def _maybe_compile(compiler, source, filename, symbol):
     code1 = code2 = None
 
     try:
-        code = compiler(source, filename, symbol)
-        return code
+        return compiler(source, filename, symbol)
     except SyntaxError:
         pass
 
