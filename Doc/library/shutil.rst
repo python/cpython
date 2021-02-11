@@ -48,7 +48,7 @@ Directory and files operations
    be copied.
 
 
-.. function:: copyfile(src, dst, *, follow_symlinks=True, same_file=False)
+.. function:: copyfile(src, dst, *, follow_symlinks=True, ignore_same_file=False)
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst* in the most efficient way possible.
@@ -67,9 +67,9 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
-   If *same_file* is false and *src* and *dst* are the same file,
+   If *ignore_same_file* is false and *src* and *dst* are the same file,
    :exc:`SameFileError` exception will be raised.
-   If the same_file is is true, the function does noting and returns *dst*.
+   If the *ignore_same_file* is is true, the function does noting and returns *dst*.
 
    .. audit-event:: shutil.copyfile src,dst shutil.copyfile
 
@@ -88,7 +88,7 @@ Directory and files operations
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
    .. versionchanged:: 3.10
-      Added *same_file* argument to support the same files.
+      Added *ignore_same_file* argument to support the same files.
 
 .. exception:: SameFileError
 
