@@ -1,1 +1,1 @@
-Windows build now uses ``/utf8`` compiler option.
+Windows build now uses ``/utf-8`` compiler option.
