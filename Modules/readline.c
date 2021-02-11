@@ -594,8 +594,7 @@ readline.remove_history_item
     pos as entry_number: int
     /
 
-Remove history item given by its position.
-pos is zero-based.
+Remove history item given by its zero-based position.
 [clinic start generated code]*/
 
 static PyObject *
@@ -629,6 +628,7 @@ readline.replace_history_item
     /
 
 Replaces history item given by its position with contents of line.
+
 pos is zero-based.
 [clinic start generated code]*/
 
@@ -792,8 +792,7 @@ readline.get_history_item
     index as idx: int
     /
 
-Return the current contents of history item at index.
-index is one-based.
+Return the current contents of history item at one-based index.
 [clinic start generated code]*/
 
 static PyObject *
