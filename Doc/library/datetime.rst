@@ -357,7 +357,7 @@ Notes:
    This is exact and cannot overflow.
 
 (3)
-   Division by ``0`` raises :exc:`ZeroDivisionError`.
+   Division by zero raises :exc:`ZeroDivisionError`.
 
 (4)
    ``-timedelta.max`` is not representable as a :class:`.timedelta` object.
