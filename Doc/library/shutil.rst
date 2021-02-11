@@ -89,6 +89,8 @@ Directory and files operations
 
    .. versionchanged:: 3.10
       Added *ignore_same_file* argument to support the same files.
+      if *ignore_same_file* is True the :exc:`SameFileError` won't be raised
+      in case of same files.
 
 .. exception:: SameFileError
 
