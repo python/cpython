@@ -5469,24 +5469,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 
 static int
-pattern_helper_load_attr(struct compiler *c, expr_ty p, pattern_context *pc)
-{
-    assert(p->kind == Attribute_kind);
-    assert(p->v.Attribute.ctx == Load);
-    if (p->v.Attribute.value->kind == Attribute_kind) {
-        RETURN_IF_FALSE(pattern_helper_load_attr(c, p->v.Attribute.value, pc));
-    }
-    else {
-        assert(p->v.Attribute.value->kind == Name_kind);
-        assert(p->v.Attribute.value->v.Name.ctx == Load);
-        RETURN_IF_FALSE(compiler_nameop(c, p->v.Attribute.value->v.Name.id, Load));
-    }
-    ADDOP_NAME(c, LOAD_ATTR, p->v.Attribute.attr, names);
-    return 1;
-}
-
-
-static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
     assert(!_PyUnicode_EqualToASCIIString(n, "_"));
@@ -5571,15 +5553,7 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
     RETURN_IF_FALSE(!validate_keywords(c, kwargs));
     basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
-    // The name of the class can only be an (optionally dotted) name:
-    if (p->v.Call.func->kind == Attribute_kind) {
-        RETURN_IF_FALSE(pattern_helper_load_attr(c, p->v.Call.func, pc));
-    }
-    else {
-        assert(p->v.Call.func->kind == Name_kind);
-        assert(p->v.Call.func->v.Name.ctx == Load);
-        RETURN_IF_FALSE(compiler_nameop(c, p->v.Call.func->v.Name.id, Load));
-    }
+    VISIT(c, expr, p->v.Call.func);
     PyObject *kwnames;
     RETURN_IF_FALSE(kwnames = PyTuple_New(nkwargs));
     Py_ssize_t i;
@@ -5685,13 +5659,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
                             "(consider moving to end)";
             return compiler_error(c, e);
         }
-        if (key->kind == Attribute_kind) {
-            RETURN_IF_FALSE(pattern_helper_load_attr(c, key, pc));
-        }
-        else {
-            assert(key->kind == Constant_kind);
-            ADDOP_LOAD_CONST(c, key->v.Constant.value);
-        }
+        VISIT(c, expr, key);
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP_I(c, MATCH_KEYS, star);
@@ -5914,7 +5882,7 @@ compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->kind == Attribute_kind);
     assert(p->v.Attribute.ctx == Load);
     ADDOP(c, DUP_TOP);
-    RETURN_IF_FALSE(pattern_helper_load_attr(c, p, pc));
+    VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
     return 1;
 }
