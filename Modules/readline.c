@@ -599,7 +599,7 @@ Remove history item given by its zero-based position.
 
 static PyObject *
 readline_remove_history_item_impl(PyObject *module, int entry_number)
-/*[clinic end generated code: output=ab114f029208c7e8 input=c8520ac3da50224e]*/
+/*[clinic end generated code: output=ab114f029208c7e8 input=f248beb720ff1838]*/
 {
     HIST_ENTRY *entry;
 
@@ -635,7 +635,7 @@ pos is zero-based.
 static PyObject *
 readline_replace_history_item_impl(PyObject *module, int entry_number,
                                    PyObject *line)
-/*[clinic end generated code: output=f8cec2770ca125eb input=b7ccef0780ae041b]*/
+/*[clinic end generated code: output=f8cec2770ca125eb input=368bb66fe5ee5222]*/
 {
     PyObject *encoded;
     HIST_ENTRY *old_entry;
@@ -797,7 +797,7 @@ Return the current contents of history item at one-based index.
 
 static PyObject *
 readline_get_history_item_impl(PyObject *module, int idx)
-/*[clinic end generated code: output=83d3e53ea5f34b3d input=63fff0c3c4323269]*/
+/*[clinic end generated code: output=83d3e53ea5f34b3d input=8adf5c80e6c7ff2b]*/
 {
     HIST_ENTRY *hist_ent;
 
