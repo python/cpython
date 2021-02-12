@@ -768,7 +768,7 @@ astfold_pattern_negative(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
            PyFloat_CheckExact(value) ||
            PyLong_CheckExact(value));
     PyObject *negated = PyNumber_Negative(value);
-    if (!negated) {
+    if (negated == NULL) {
         return 0;
     }
     assert(PyComplex_CheckExact(negated) ||
@@ -803,7 +803,7 @@ astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
         assert(node_->v.BinOp.op == Sub);
         new = PyNumber_Subtract(left->v.Constant.value, right->v.Constant.value);
     }
-    if (!new) {
+    if (new == NULL) {
         return 0;
     }
     assert(PyComplex_CheckExact(new));

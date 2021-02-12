@@ -5340,18 +5340,18 @@ compiler_error(struct compiler *c, const char *format, ...)
 #endif
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
-    if (!msg) {
+    if (msg == NULL) {
         return 0;
     }
     PyObject *loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_lineno);
-    if (!loc) {
+    if (loc == NULL) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
     PyObject *args = Py_BuildValue("O(OiiO)", msg, c->c_filename,
                                    c->u->u_lineno, c->u->u_col_offset + 1, loc);
     Py_DECREF(msg);
-    if (!args) {
+    if (args == NULL) {
         goto exit;
     }
     PyErr_SetObject(PyExc_SyntaxError, args);
@@ -5491,7 +5491,7 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
     assert(!_PyUnicode_EqualToASCIIString(n, "_"));
     // Can't assign to the same name twice:
-    if (!pc->stores) {
+    if (pc->stores == NULL) {
         RETURN_IF_FALSE(pc->stores = PySet_New(NULL));
     }
     else {
@@ -5680,7 +5680,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     // dotted names or literals:
     for (Py_ssize_t i = 0; i < size - star; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
-        if (!key) {
+        if (key == NULL) {
             const char *e = "can't use starred name here "
                             "(consider moving to end)";
             return compiler_error(c, e);
@@ -5758,7 +5758,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         pc->allow_irrefutable = allow_irrefutable && (i == size - 1);
         SET_LOC(c, alt);
         // The actual control flow is simple:
-        if (!pc->stores ||
+        if (pc->stores == NULL ||
             !compiler_pattern(c, alt, pc) ||
             !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end) ||
             !compiler_next_block(c))
@@ -5774,7 +5774,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         if (PySet_GET_SIZE(pc->stores) || PySet_GET_SIZE(control)) {
             // Otherwise, check to see if we differ from the control set:
             PyObject *diff = PyNumber_InPlaceXor(pc->stores, control);
-            if (!diff) {
+            if (diff == NULL) {
                 goto fail;
             }
             if (PySet_GET_SIZE(diff)) {
@@ -5995,7 +5995,7 @@ compiler_match(struct compiler *c, stmt_ty s)
         RETURN_IF_FALSE(next = compiler_new_block(c));
         // If pc.allow_irrefutable is 0, any name captures against our subject
         // will raise. Irrefutable cases must be either guarded, last, or both:
-        pc.allow_irrefutable = !!m->guard || (i == cases - 1);
+        pc.allow_irrefutable = m->guard != NULL || i == cases - 1;
         int result = compiler_pattern(c, m->pattern, &pc);
         Py_CLEAR(pc.stores);
         RETURN_IF_FALSE(result);

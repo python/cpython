@@ -902,22 +902,22 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     //   collections.defaultdict that define __missing__ (or similar).
     _Py_IDENTIFIER(get);
     PyObject *get = _PyObject_GetAttrId(map, &PyId_get);
-    if (!get) {
+    if (get == NULL) {
         return NULL;
     }
     PyObject *seen = NULL;
     PyObject *values = NULL;
     // dummy = object()
     PyObject *dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
-    if (!dummy) {
+    if (dummy == NULL) {
         goto fail;
     }
     seen = PySet_New(NULL);
-    if (!seen) {
+    if (seen == NULL) {
         goto fail;
     }
     values = PyTuple_New(nkeys);
-    if (!values) {
+    if (values == NULL) {
         goto fail;
     }
     for (Py_ssize_t i = 0; i < nkeys; i++) {
@@ -931,7 +931,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             goto fail;
         }
         PyObject *value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
-        if (!value || value == dummy) {
+        if (value == NULL || value == dummy) {
             // Key not in map.
             Py_XDECREF(value);
             goto fail;
@@ -959,7 +959,7 @@ dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     //     del copy[key]
     // return copy
     PyObject *copy = PyDict_New();
-    if (!copy || PyDict_Update(copy, map)) {
+    if (copy == NULL || PyDict_Update(copy, map)) {
         Py_XDECREF(copy);
         return NULL;
     }
@@ -990,7 +990,7 @@ get_match_args(PyThreadState *tstate, PyObject *type, PyObject **match_args,
     //     elif match_args.__class__ is not tuple:
     //         raise TypeError
     *match_args = PyObject_GetAttrString(type, "__match_args__");
-    if (!*match_args) {
+    if (*match_args == NULL) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
             _PyErr_Clear(tstate);
             // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
@@ -1039,7 +1039,7 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
         return NULL;
     }
     PyObject *attr = PyObject_GetAttr(subject, name);
-    if (!attr && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+    if (attr == NULL && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
         _PyErr_Clear(tstate);
     }
     return attr;
@@ -1063,11 +1063,11 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     }
     // So far so good:
     PyObject *attrs = PyTuple_New(nargs + PyTuple_GET_SIZE(kwargs));
-    if (!attrs) {
+    if (attrs == NULL) {
         return NULL;
     }
     PyObject *seen = PySet_New(NULL);
-    if (!seen) {
+    if (seen == NULL) {
         Py_DECREF(attrs);
         return NULL;
     }
@@ -1108,7 +1108,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 }
                 PyObject *attr = match_class_attr(tstate, subject, type, name,
                                                   seen);
-                if (!attr) {
+                if (attr == NULL) {
                     goto fail;
                 }
                 PyTuple_SET_ITEM(attrs, i, attr);
@@ -1120,7 +1120,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwargs); i++) {
         PyObject *name = PyTuple_GET_ITEM(kwargs, i);
         PyObject *attr = match_class_attr(tstate, subject, type, name, seen);
-        if (!attr) {
+        if (attr == NULL) {
             goto fail;
         }
         PyTuple_SET_ITEM(attrs, nargs + i, attr);
@@ -3873,7 +3873,7 @@ main_loop:
                 goto error;
             }
             PyObject *len_o = PyLong_FromSsize_t(len_i);
-            if (!len_o) {
+            if (len_o == NULL) {
                 goto error;
             }
             PUSH(len_o);
@@ -3914,13 +3914,13 @@ main_loop:
             // Lazily import _collections_abc.Mapping, and keep it handy on the
             // PyInterpreterState struct (it gets cleaned up at exit):
             PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp->map_abc) {
+            if (interp->map_abc == NULL) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (!abc) {
+                if (abc == NULL) {
                     goto error;
                 }
                 interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
-                if (!interp->map_abc) {
+                if (interp->map_abc == NULL) {
                     goto error;
                 }
             }
@@ -3958,13 +3958,13 @@ main_loop:
             // Lazily import _collections_abc.Sequence, and keep it handy on the
             // PyInterpreterState struct (it gets cleaned up at exit):
             PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp->seq_abc) {
+            if (interp->seq_abc == NULL) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (!abc) {
+                if (abc == NULL) {
                     goto error;
                 }
                 interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
-                if (!interp->seq_abc) {
+                if (interp->seq_abc == NULL) {
                     goto error;
                 }
             }
@@ -3983,7 +3983,7 @@ main_loop:
             PyObject *subject = SECOND();
             assert(PyTuple_CheckExact(keys));
             PyObject *values = match_keys(tstate, subject, keys);
-            if (!values) {
+            if (values == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
                 }
@@ -3996,7 +3996,7 @@ main_loop:
                 // If oparg is nonzero, collect the remaining items into a dict
                 // and put it on the stack where the subject used to be:
                 PyObject *rest = dict_without_keys(tstate, subject, keys);
-                if (!rest) {
+                if (rest == NULL) {
                     goto error;
                 }
                 assert(PyDict_CheckExact(rest));
@@ -4013,7 +4013,7 @@ main_loop:
         case TARGET(GET_INDEX): {
             // PUSH(TOS[oparg])
             PyObject *item = PySequence_GetItem(TOP(), oparg);
-            if (!item) {
+            if (item == NULL) {
                 goto error;
             }
             PUSH(item);
@@ -4034,7 +4034,7 @@ main_loop:
             }
             assert(0 <= len - 1 - oparg);
             PyObject *item = PySequence_GetItem(TOP(), len - 1 - oparg);
-            if (!item) {
+            if (item == NULL) {
                 goto error;
             }
             PUSH(item);
@@ -4054,7 +4054,7 @@ main_loop:
             Py_ssize_t size = len - (oparg >> 8) - start;
             assert(0 <= size);
             PyObject *slice = PyList_New(size);
-            if (!slice) {
+            if (slice == NULL) {
                 goto error;
             }
             PyObject *subject = TOP();
@@ -4065,7 +4065,7 @@ main_loop:
             // subjects. A fast path could pay off, if so.
             for (Py_ssize_t i = 0; i < size; i++) {
                 PyObject *item = PySequence_GetItem(subject, start + i);
-                if (!item) {
+                if (item == NULL) {
                     Py_DECREF(slice);
                     goto error;
                 }
