@@ -896,6 +896,9 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
         // No keys means no items.
         return PyTuple_New(0);
     }
+    PyObject *seen = NULL;
+    PyObject *dummy = NULL;
+    PyObject *values = NULL;
     // We use the two argument form of map.get(key, default) for two reasons:
     // - Atomically check for a key and get its value without error handling.
     // - Don't cause key creation or resizing in dict subclasses like
@@ -903,17 +906,15 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     _Py_IDENTIFIER(get);
     PyObject *get = _PyObject_GetAttrId(map, &PyId_get);
     if (get == NULL) {
-        return NULL;
-    }
-    PyObject *seen = NULL;
-    PyObject *values = NULL;
-    // dummy = object()
-    PyObject *dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
-    if (dummy == NULL) {
         goto fail;
     }
     seen = PySet_New(NULL);
     if (seen == NULL) {
+        goto fail;
+    }
+    // dummy = object()
+    dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    if (dummy == NULL) {
         goto fail;
     }
     values = PyTuple_New(nkeys);
@@ -931,20 +932,27 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             goto fail;
         }
         PyObject *value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
-        if (value == NULL || value == dummy) {
-            // Key not in map.
-            Py_XDECREF(value);
+        if (value == NULL) {
             goto fail;
+        }
+        if (value == dummy) {
+            // key not in map!
+            Py_DECREF(value);
+            Py_DECREF(values);
+            // Return None:
+            Py_INCREF(Py_None);
+            values = Py_None;
+            break;
         }
         PyTuple_SET_ITEM(values, i, value);
     }
-    // Success.
+    // Success:
     Py_DECREF(get);
     Py_DECREF(dummy);
     Py_DECREF(seen);
     return values;
 fail:
-    Py_DECREF(get);
+    Py_XDECREF(get);
     Py_XDECREF(dummy);
     Py_XDECREF(seen);
     Py_XDECREF(values);
@@ -956,10 +964,10 @@ get_match_args(PyThreadState *tstate, PyObject *type, PyObject **match_args,
                int *match_self)
 {
     // try:
-    //    match_args = type.__match_args__
+    //     match_args = type.__match_args__
     // except AttributeError:
-    //    match_self = type.__flags__ & _Py_TPFLAGS_MATCH_SELF
-    //    match_args = ()
+    //     match_self = type.__flags__ & _Py_TPFLAGS_MATCH_SELF
+    //     match_args = ()
     // else:
     //     match_self = 0
     //     if match_args.__class__ is list:
@@ -3958,20 +3966,19 @@ main_loop:
             // Otherwise, PUSH(None) and PUSH(False).
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
-            PyObject *values = match_keys(tstate, subject, keys);
-            if (values) {
-                Py_INCREF(Py_True);
-                PUSH(values);
-                PUSH(Py_True);
-                DISPATCH();
-            }
-            if (_PyErr_Occurred(tstate)) {
+            PyObject *values_or_none = match_keys(tstate, subject, keys);
+            if (values_or_none == NULL) {
                 goto error;
             }
-            Py_INCREF(Py_None);
-            Py_INCREF(Py_False);
-            PUSH(Py_None);
-            PUSH(Py_False);
+            PUSH(values_or_none);
+            if (values_or_none == Py_None) {
+                Py_INCREF(Py_False);
+                PUSH(Py_False);
+                DISPATCH();
+            }
+            assert(PyTuple_CheckExact(values_or_none));
+            Py_INCREF(Py_True);
+            PUSH(Py_True);
             DISPATCH();
         }
 
