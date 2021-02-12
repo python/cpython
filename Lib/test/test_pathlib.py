@@ -1509,10 +1509,30 @@ class _BasePathTest(object):
             self.assertIs(True, (p / 'linkB').exists())
             self.assertIs(True, (p / 'linkB' / 'fileB').exists())
             self.assertIs(False, (p / 'linkA' / 'bah').exists())
+            self.assertIs(False, (p / 'brokenLink').exists())
+            self.assertIs(False, (p / 'brokenLinkLoop').exists())
+            self.assertIs(True, (p / 'brokenLink').exists(
+                follow_symlinks=False))
+            self.assertIs(True, (p / 'brokenLinkLoop').exists(
+                follow_symlinks=False))
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
         self.assertIs(False, P(BASE + '\udfff').exists())
         self.assertIs(False, P(BASE + '\x00').exists())
+
+    @os_helper.skip_unless_symlink
+    def test_exists_follow_symlinks(self):
+        P = self.cls
+        p = P(BASE)
+        self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
+        self.assertIs(True, (p / 'brokenLinkLoop').exists(follow_symlinks=False))
+
+    @os_helper.skip_unless_symlink
+    def test_lexists(self):
+        P = self.cls
+        p = P(BASE)
+        self.assertIs(True, (p / 'brokenLink').lexists())
+        self.assertIs(True, (p / 'brokenLinkLoop').lexists())
 
     def test_open_common(self):
         p = self.cls(BASE)

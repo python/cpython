@@ -1,0 +1,4 @@
+Add the *follow_symlinks* parameter in :meth:`pathlib.Path.exists` and
+:meth:`pathlib.Path.lexists` as a wrapper analogous to
+:func:`os.stat` ./. :func:`os.lstat` and
+:func:`os.path.exists` ./. :func:`os.path.lexists`.

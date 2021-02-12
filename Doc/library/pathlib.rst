@@ -739,7 +739,7 @@ call fails (for example because the path doesn't exist).
       33060
 
 
-.. method:: Path.exists()
+.. method:: Path.exists(*, follow_symlinks=True)
 
    Whether the path points to an existing file or directory::
 
@@ -754,7 +754,11 @@ call fails (for example because the path doesn't exist).
 
    .. note::
       If the path points to a symlink, :meth:`exists` returns whether the
-      symlink *points to* an existing file or directory.
+      symlink *points to* an existing file or directory, unless
+      *follow_symlinks* is False.
+
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.expanduser()
@@ -901,6 +905,14 @@ call fails (for example because the path doesn't exist).
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
    symbolic link's mode is changed rather than its target's.
+
+
+.. method:: Path.lexists()
+
+   Like :meth:`Path.exists` but, if the path points to a symbolic link, return
+   the symbolic link's information rather than its target's.
+
+   .. versionadded:: 3.10
 
 
 .. method:: Path.lstat()
@@ -1219,6 +1231,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.path.lexists`                :meth:`Path.lexists`
 :func:`os.link`                        :meth:`Path.link_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`

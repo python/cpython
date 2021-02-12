@@ -1402,12 +1402,18 @@ class Path(PurePath):
 
     # Convenience functions for querying the stat results
 
-    def exists(self):
+    def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
+
+        Returns False for broken symbolic links unless follow_symlinks is set
+        to False.
         """
         try:
-            self.stat()
+            if follow_symlinks:
+                self.stat()
+            else:
+                self.lstat()
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1548,6 +1554,14 @@ class Path(PurePath):
         except ValueError:
             # Non-encodable path
             return False
+
+    def lexists(self):
+        """
+        Whether this path exists, but don't follow symbolic links.
+
+        Returns True for broken symbolic links.
+        """
+        return self.exists(follow_symlinks=False)
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
