@@ -1,0 +1,3 @@
+Fixed an issue that could cause a crash when accessing an incomplete tuple
+when collecting an iterable into a :class:`tuple` using :c:func:`PySequence_Tuple`.
+Patch by Pablo Galindo.

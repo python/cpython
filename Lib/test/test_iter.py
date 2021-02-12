@@ -2,6 +2,7 @@
 
 import sys
 import unittest
+import gc
 from test.support import run_unittest, cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
@@ -1035,6 +1036,25 @@ class TestCase(unittest.TestCase):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
         self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
+
+    def test_access_result_tuple_while_iterating(self):
+        TAG = object()
+
+        def monitor():
+            lst = [x for x in gc.get_referrers(TAG) if isinstance(x, tuple)]
+            # This would be the result tuple if is accessible mid-iteration
+            t = lst[0]
+            print(t)
+            return t
+
+        def my_iter():
+            yield TAG
+            t = monitor()
+            breakpoint()
+            for x in range(10):
+                yield x
+
+        self.assertRaises(IndexError, tuple, my_iter())
 
 
 def test_main():

@@ -1993,6 +1993,9 @@ PySequence_Tuple(PyObject *v)
     if (result == NULL)
         goto Fail;
 
+    // bpo-15108: Code can access the result tuple while being
+    // incomplete when calling PyIter_Next().
+    PyObject_GC_UnTrack(result);
     /* Fill the tuple. */
     for (j = 0; ; ++j) {
         PyObject *item = PyIter_Next(it);
@@ -2022,9 +2025,16 @@ PySequence_Tuple(PyObject *v)
                 Py_DECREF(item);
                 goto Fail;
             }
+            // Resizing could track the tuple again
+            PyObject_GC_UnTrack(result);
         }
         PyTuple_SET_ITEM(result, j, item);
     }
+
+    // No more calls can go back into Python, so is safe
+    // to re-track the tuple.
+
+    PyObject_GC_Track(result);
 
     /* Cut tuple back if guess was too large. */
     if (j < n &&
