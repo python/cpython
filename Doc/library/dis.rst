@@ -752,6 +752,15 @@ iterations of the loop.
    .. versionadded:: 3.2
 
 
+.. opcode:: COPY_DICT_WITHOUT_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  Replace TOS
+   with a :class:`dict` formed from the items of TOS1, but without any of the
+   keys in TOS.
+
+   .. versionadded:: 3.10
+
+
 .. opcode:: GET_LEN
 
    Push ``len(TOS)`` onto the stack.
@@ -772,6 +781,16 @@ iterations of the loop.
    If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an
    instance of :class:`str`/:class:`bytes`/:class:`bytearray`, push ``True``
    onto the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
+   contains all of the keys in TOS, push a :class:`tuple` containing the
+   corresponding values, followed by ``True``. Otherwise, push ``None``,
+   followed by ``False``.
 
    .. versionadded:: 3.10
 
@@ -1234,18 +1253,6 @@ All of the following opcodes use their arguments.
    If TOS2 is an instance of TOS1 and has the positional and keyword attributes
    required by *count* and TOS, replace TOS with ``True`` and TOS1 with a tuple
    of extracted attributes. Otherwise, replace TOS with ``False``.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_KEYS (copy)
-
-   TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
-   contains all of the keys in TOS, replace TOS with a tuple containing the
-   corresponding values and push ``True``. Otherwise, push ``False``.
-
-   If *copy* is non-zero, gather remaining items into a :class:`dict` and put it
-   on the stack where the subject used to be.
 
    .. versionadded:: 3.10
 

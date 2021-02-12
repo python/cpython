@@ -1158,15 +1158,16 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
-        case GET_LEN:
-            return 1;
+        case COPY_DICT_WITHOUT_KEYS:
         case MATCH_CLASS:
             return 0;
         case GET_INDEX_SLICE:
-        case MATCH_KEYS:
+        case GET_LEN:
         case MATCH_MAPPING:
         case MATCH_SEQUENCE:
             return 1;
+        case MATCH_KEYS:
+            return 2;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -5646,12 +5647,8 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     if (INT_MAX < size - star - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
-    // If we have a starred pattern, MATCH_KEYS *could* replace the subject on
-    // the stack with a dict of remaining keys. Duplicate it so we don't lose
-    // the subject:
-    ADDOP(c, DUP_TOP);
-    // Collect all of the keys into a tuple for MATCH_KEYS. They can either be
-    // dotted names or literals:
+    // Collect all of the keys into a tuple for MATCH_KEYS and
+    // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
     for (Py_ssize_t i = 0; i < size - star; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
@@ -5662,7 +5659,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         VISIT(c, expr, key);
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
-    ADDOP_I(c, MATCH_KEYS, star);
+    ADDOP(c, MATCH_KEYS);
     ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail);
     NEXT_BLOCK(c);
     // So far so good. There's now a tuple of values on the stack to match
@@ -5685,19 +5682,20 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     // If we get this far, it's a match! We're done with that tuple of values.
     ADDOP(c, POP_TOP);
     if (star) {
-        // There's now one of two things on TOS. If we had a starred name, it's
-        // a dict of remaining items to bind:
+        // If we had a starred name, bind a dict of remaining items to it:
+        ADDOP(c, COPY_DICT_WITHOUT_KEYS);
         PyObject *id = asdl_seq_GET(values, size - 1)->v.Name.id;
         RETURN_IF_FALSE(pattern_helper_store_name(c, id, pc));
     }
     else {
-        // Otherwise, it's just another reference to the subject underneath.
+        // Otherwise, we don't care about this tuple of keys anymore:
         ADDOP(c, POP_TOP);
     }
     ADDOP_LOAD_CONST(c, Py_True);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, fail);
-    // The top two items are a tuple of values, and a mapping. Pop them both:
+    // The top two items are a tuple of values or None, followed by a tuple of
+    // keys. Pop them both:
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP_LOAD_CONST(c, Py_False);

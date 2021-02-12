@@ -33,6 +33,8 @@ extern "C" {
 #define GET_LEN                  30
 #define MATCH_MAPPING            31
 #define MATCH_SEQUENCE           32
+#define MATCH_KEYS               33
+#define COPY_DICT_WITHOUT_KEYS   34
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
 #define GET_ANEXT                51
@@ -122,7 +124,6 @@ extern "C" {
 #define LOAD_CLASSDEREF         148
 #define GET_INDEX_SLICE         151
 #define MATCH_CLASS             152
-#define MATCH_KEYS              153
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156

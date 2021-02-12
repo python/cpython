@@ -951,29 +951,6 @@ fail:
     return NULL;
 }
 
-static PyObject*
-dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
-{
-    // copy = dict(map)
-    // for key in keys:
-    //     del copy[key]
-    // return copy
-    PyObject *copy = PyDict_New();
-    if (copy == NULL || PyDict_Update(copy, map)) {
-        Py_XDECREF(copy);
-        return NULL;
-    }
-    // This may seem a bit inefficient, but keys is rarely big enough to
-    // actually impact runtime.
-    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(keys); i++) {
-        if (PyDict_DelItem(copy, PyTuple_GET_ITEM(keys, i))) {
-            Py_DECREF(copy);
-            return NULL;
-        }
-    }
-    return copy;
-}
-
 static int
 get_match_args(PyThreadState *tstate, PyObject *type, PyObject **match_args,
                int *match_self)
@@ -3977,36 +3954,50 @@ main_loop:
         }
 
         case TARGET(MATCH_KEYS): {
-            // Final stage of mapping pattern matches (after Mapping and length
-            // checks): extract the desired values for further destructuring.
+            // On successful match for all keys, PUSH(values) and PUSH(True).
+            // Otherwise, PUSH(None) and PUSH(False).
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
-            assert(PyTuple_CheckExact(keys));
             PyObject *values = match_keys(tstate, subject, keys);
-            if (values == NULL) {
-                if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                Py_INCREF(Py_False);
-                PUSH(Py_False);
+            if (values) {
+                Py_INCREF(Py_True);
+                PUSH(values);
+                PUSH(Py_True);
                 DISPATCH();
             }
-            // Success!
-            if (oparg) {
-                // If oparg is nonzero, collect the remaining items into a dict
-                // and put it on the stack where the subject used to be:
-                PyObject *rest = dict_without_keys(tstate, subject, keys);
-                if (rest == NULL) {
+            if (_PyErr_Occurred(tstate)) {
+                goto error;
+            }
+            Py_INCREF(Py_None);
+            Py_INCREF(Py_False);
+            PUSH(Py_None);
+            PUSH(Py_False);
+            DISPATCH();
+        }
+
+        case TARGET(COPY_DICT_WITHOUT_KEYS): {
+            // rest = dict(TOS1)
+            // for key in TOS:
+            //     del rest[key]
+            // SET_TOP(rest)
+            PyObject *keys = TOP();
+            PyObject *subject = SECOND();
+            PyObject *rest = PyDict_New();
+            if (rest == NULL || PyDict_Update(rest, subject)) {
+                Py_XDECREF(rest);
+                goto error;
+            }
+            // This may seem a bit inefficient, but keys is rarely big enough to
+            // actually impact runtime.
+            assert(PyTuple_CheckExact(keys));
+            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(keys); i++) {
+                if (PyDict_DelItem(rest, PyTuple_GET_ITEM(keys, i))) {
+                    Py_DECREF(rest);
                     goto error;
                 }
-                assert(PyDict_CheckExact(rest));
-                SET_SECOND(rest);
-                Py_DECREF(subject);
             }
-            SET_TOP(values);
             Py_DECREF(keys);
-            Py_INCREF(Py_True);
-            PUSH(Py_True);
+            SET_TOP(rest);
             DISPATCH();
         }
 

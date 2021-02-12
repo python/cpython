@@ -84,6 +84,8 @@ def_op('INPLACE_TRUE_DIVIDE', 29)
 def_op('GET_LEN', 30)
 def_op('MATCH_MAPPING', 31)
 def_op('MATCH_SEQUENCE', 32)
+def_op('MATCH_KEYS', 33)
+def_op('COPY_DICT_WITHOUT_KEYS', 34)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -198,7 +200,7 @@ hasfree.append(148)
 
 def_op('GET_INDEX_SLICE', 151)
 def_op('MATCH_CLASS', 152)
-def_op('MATCH_KEYS', 153)
+
 jrel_op('SETUP_ASYNC_WITH', 154)
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
