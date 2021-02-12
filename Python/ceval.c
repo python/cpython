@@ -4010,41 +4010,13 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(GET_INDEX): {
-            // PUSH(TOS[oparg])
-            PyObject *item = PySequence_GetItem(TOP(), oparg);
-            if (item == NULL) {
-                goto error;
-            }
-            PUSH(item);
-            DISPATCH();
-        }
-
-        case TARGET(GET_INDEX_END): {
-            // PUSH(TOS[TOS1 - 1 - oparg])
-            // NOTE: We can't rely on support for negative indexing!
+        case TARGET(GET_INDEX_SLICE): {
+            // PUSH(list(TOS[oparg & 0xFF: TOS1 - (oparg >> 8)]))
+            // NOTE: We can't rely on support for slicing or negative indexing!
             // Although PySequence_GetItem tries to correct negative indexes, we
             // just use the length we already have at TOS1. In addition to
             // avoiding tons of redundant __len__ calls, this also handles
             // length changes during extraction more intuitively.
-            assert(PyLong_CheckExact(SECOND()));
-            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
-            if (len < 0) {
-                goto error;
-            }
-            assert(0 <= len - 1 - oparg);
-            PyObject *item = PySequence_GetItem(TOP(), len - 1 - oparg);
-            if (item == NULL) {
-                goto error;
-            }
-            PUSH(item);
-            DISPATCH();
-        }
-
-        case TARGET(GET_INDEX_SLICE): {
-            // PUSH(list(TOS[oparg & 0xFF: TOS1 - (oparg >> 8)]))
-            // NOTE: We can't rely on support for slicing or negative indexing!
-            // Ditto GET_INDEX_END's length handling.
             assert(PyLong_CheckExact(SECOND()));
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {

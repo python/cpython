@@ -1162,8 +1162,6 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH_CLASS:
             return 0;
-        case GET_INDEX:
-        case GET_INDEX_END:
         case GET_INDEX_SLICE:
         case MATCH_KEYS:
         case MATCH_MAPPING:
@@ -5581,7 +5579,9 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
             continue;
         }
         // Get the i-th attribute, and match it against the i-th pattern:
-        ADDOP_I(c, GET_INDEX, i);
+        ADDOP(c, DUP_TOP);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+        ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, arg, pc));
         // TOS is True or False, with the attribute beneath. Pop the attribute,
         // we're done with it:
@@ -5666,13 +5666,15 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail);
     NEXT_BLOCK(c);
     // So far so good. There's now a tuple of values on the stack to match
-    // sub-patterns against. Extract them using GET_INDEX:
+    // sub-patterns against:
     for (Py_ssize_t i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (WILDCARD_CHECK(value)) {
             continue;
         }
-        ADDOP_I(c, GET_INDEX, i);
+        ADDOP(c, DUP_TOP);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+        ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
         // TOS is True or False. Don't care about the value underneath anymore:
         ADDOP(c, ROT_TWO);
@@ -5804,7 +5806,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     basicblock *wrong_size;
     RETURN_IF_FALSE(wrong_size = compiler_new_block(c));
-    // Duplicate the length, since both the length check and the GET_INDEX_*
+    // Duplicate the length, since both the length check and the BINARY_SUBSCR
     // instructions need it:
     ADDOP(c, DUP_TOP)
     if (star < 0) {
@@ -5830,7 +5832,9 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
             continue;
         }
         if (star < 0 || i < star) {
-            ADDOP_I(c, GET_INDEX, i);
+            ADDOP(c, DUP_TOP);
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+            ADDOP(c, BINARY_SUBSCR);
         }
         else if (i == star) {
             assert(value->kind == Starred_kind);
@@ -5849,8 +5853,11 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
             ADDOP_I(c, GET_INDEX_SLICE, end_items + i);
         }
         else {
-            // Basically a negative index:
-            ADDOP_I(c, GET_INDEX_END, size - 1 - i);
+            ADDOP(c, DUP_TOP_TWO);
+            ADDOP(c, ROT_TWO);
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - i));
+            ADDOP(c, BINARY_SUBTRACT);
+            ADDOP(c, BINARY_SUBSCR);
         }
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
         // TOS is True or False. We're done with the item underneath:

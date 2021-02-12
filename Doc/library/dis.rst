@@ -1216,21 +1216,6 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: GET_INDEX (i)
-
-   TOS is a sequence.  Push ``TOS[i]`` onto the stack.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: GET_INDEX_END (i)
-
-   TOS is a sequence, and TOS1 is its length.  Push ``TOS[TOS1 - 1 - i]`` onto
-   the stack.
-
-   .. versionadded:: 3.10
-
-
 .. opcode:: GET_INDEX_SLICE (i)
 
    TOS is a sequence, and TOS1 is its length.  Push a list formed from
