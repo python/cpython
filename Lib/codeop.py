@@ -77,10 +77,10 @@ def _maybe_compile(compiler, source, filename, symbol):
             source = "pass"     # Replace it with a 'pass' statement
 
     err = err1 = err2 = None
-    code = code1 = code2 = None
+    code1 = code2 = None
 
     try:
-        code = compiler(source, filename, symbol)
+        return compiler(source, filename, symbol)
     except SyntaxError:
         pass
 
@@ -100,8 +100,6 @@ def _maybe_compile(compiler, source, filename, symbol):
             err2 = e
 
     try:
-        if code:
-            return code
         if not code1 and _is_syntax_error(err1, err2):
             raise err1
     finally:
