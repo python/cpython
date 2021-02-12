@@ -5487,22 +5487,6 @@ pattern_helper_load_attr(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-pattern_helper_load_constant(struct compiler *c, expr_ty p, pattern_context *pc)
-{
-    assert(p->kind == Constant_kind);
-    assert(p->v.Constant.value == Py_None ||
-           PyBool_Check(p->v.Constant.value) ||
-           PyBytes_CheckExact(p->v.Constant.value) ||
-           PyComplex_CheckExact(p->v.Constant.value) ||
-           PyFloat_CheckExact(p->v.Constant.value) ||
-           PyLong_CheckExact(p->v.Constant.value) ||
-           PyUnicode_CheckExact(p->v.Constant.value));
-    ADDOP_LOAD_CONST(c, p->v.Constant.value);
-    return 1;
-}
-
-
-static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
     assert(!_PyUnicode_EqualToASCIIString(n, "_"));
@@ -5647,9 +5631,9 @@ static int
 compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Constant_kind);
-    ADDOP(c, DUP_TOP);
-    RETURN_IF_FALSE(pattern_helper_load_constant(c, p, pc));
     PyObject *v = p->v.Constant.value;
+    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, v);
     // Literal True, False, and None are compared by identity. All others use
     // equality:
     ADDOP_COMPARE(c, (v == Py_None || PyBool_Check(v)) ? Is : Eq);
@@ -5706,7 +5690,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         else {
             assert(key->kind == Constant_kind);
-            RETURN_IF_FALSE(pattern_helper_load_constant(c, key, pc));
+            ADDOP_LOAD_CONST(c, key->v.Constant.value);
         }
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
