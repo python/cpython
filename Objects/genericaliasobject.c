@@ -234,7 +234,8 @@ tuple_copy(PyObject *obj)
 }
 
 // This converts all nested lists in args to a tuple (args should be a tuple).
-// Usually needed to help caching in other libraries.
+// Usually needed to work with typing.py's Union and Optional and help
+// caching in other libraries.
 static inline PyObject *
 tupleify_lists(PyObject *args) {
     Py_ssize_t len = PyTuple_GET_SIZE(args);
@@ -247,7 +248,7 @@ tupleify_lists(PyObject *args) {
         if (arg == NULL) {
             goto error;
         }
-        PyObject *new_arg = NULL;
+        PyObject *new_arg = arg;
         if (PyList_CheckExact(arg)) {
             new_arg = PyList_AsTuple(arg);
             if (new_arg == NULL) {
@@ -255,10 +256,7 @@ tupleify_lists(PyObject *args) {
             }
             Py_DECREF(arg);
         }
-        else if (PyTuple_CheckExact(arg)) {
-            new_arg = arg;
-        }
-        else {
+        else if (!PyTuple_CheckExact(arg)) {
             continue;
         }
         if (Py_EnterRecursiveCall(" while converting lists to tuples in "
