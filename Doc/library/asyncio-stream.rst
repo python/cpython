@@ -51,7 +51,8 @@ and work with streams:
 .. coroutinefunction:: open_connection(host=None, port=None, *, \
                           limit=None, ssl=None, family=0, proto=0, \
                           flags=0, sock=None, local_addr=None, \
-                          server_hostname=None, ssl_handshake_timeout=None)
+                          server_hostname=None, ssl_handshake_timeout=None, \
+                          happy_eyeballs_delay=None, interleave=None)
 
    Establish a network connection and return a pair of
    ``(reader, writer)`` objects.
@@ -65,6 +66,10 @@ and work with streams:
 
    The rest of the arguments are passed directly to
    :meth:`loop.create_connection`.
+
+   .. versionadded:: 3.8
+
+      The *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 
