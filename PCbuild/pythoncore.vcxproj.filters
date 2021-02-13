@@ -204,9 +204,6 @@
     <ClInclude Include="..\Include\pymath.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pytime.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pymacro.h">
       <Filter>Include</Filter>
     </ClInclude>

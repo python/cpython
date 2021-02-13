@@ -82,7 +82,7 @@
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
 #include "pymath.h"
-#include "pytime.h"
+#include "cpython/pytime.h"
 #include "pymem.h"
 
 #include "object.h"

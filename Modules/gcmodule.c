@@ -31,7 +31,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pydtrace.h"
-#include "pytime.h"             // _PyTime_GetMonotonicClock()
+#include "cpython/pytime.h"             // _PyTime_GetMonotonicClock()
 
 typedef struct _gc_runtime_state GCState;
 
