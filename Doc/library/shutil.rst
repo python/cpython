@@ -444,8 +444,8 @@ Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Starting from Python 3.8, all functions involving a file copy
-(:func:`~shutil.copyfile`, :func:`~shutil.copy`, :func:`~shutil.copy2`,
-:func:`~shutil.copytree`, and :func:`~shutil.move`) may use
+(:func:`copyfile`, :func:`~shutil.copy`, :func:`copy2`,
+:func:`copytree`, and :func:`move`) may use
 platform-specific "fast-copy" syscalls in order to copy the file more
 efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding
