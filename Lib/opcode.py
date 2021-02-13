@@ -198,7 +198,6 @@ def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 
-def_op('GET_INDEX_SLICE', 151)
 def_op('MATCH_CLASS', 152)
 
 jrel_op('SETUP_ASYNC_WITH', 154)

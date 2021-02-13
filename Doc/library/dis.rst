@@ -1235,15 +1235,6 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: GET_INDEX_SLICE (i)
-
-   TOS is a sequence, and TOS1 is its length.  Push a list formed from
-   ``TOS[x:TOS1 - 1 - y]`` onto the stack, where *x* is the low byte of *i* and
-   *y* is the high bytes of *i*.
-
-   .. versionadded:: 3.10
-
-
 .. opcode:: MATCH_CLASS (count)
 
    TOS is a tuple of keyword attribute names, TOS1 is the class being matched

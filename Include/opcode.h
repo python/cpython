@@ -122,7 +122,6 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
-#define GET_INDEX_SLICE         151
 #define MATCH_CLASS             152
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
