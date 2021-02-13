@@ -64,24 +64,21 @@ _features = [getattr(__future__, fname)
 
 __all__ = ["compile_command", "Compile", "CommandCompiler"]
 
-PyCF_DONT_IMPLY_DEDENT = 0x200          # Matches pythonrun.h
+PyCF_DONT_IMPLY_DEDENT = 0x200          # Matches pythonrun.h.
 
 def _maybe_compile(compiler, source, filename, symbol):
-    # Check for source consisting of only blank lines and comments
+    # Check for source consisting of only blank lines and comments.
     for line in source.split("\n"):
         line = line.strip()
         if line and line[0] != '#':
-            break               # Leave it alone
+            break               # Leave it alone.
     else:
         if symbol != "eval":
             source = "pass"     # Replace it with a 'pass' statement
 
-    err = err1 = err2 = None
-    code1 = code2 = None
-
     try:
         return compiler(source, filename, symbol)
-    except SyntaxError:
+    except SyntaxError:  # Let other compile() errors propagate.
         pass
 
     # Catch syntax warnings after the first compile
@@ -89,6 +86,7 @@ def _maybe_compile(compiler, source, filename, symbol):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
 
+        code1 = err1 = err2 = None
         try:
             code1 = compiler(source + "\n", filename, symbol)
         except SyntaxError as e:
@@ -102,6 +100,8 @@ def _maybe_compile(compiler, source, filename, symbol):
     try:
         if not code1 and _is_syntax_error(err1, err2):
             raise err1
+        else:
+            return None
     finally:
         err1 = err2 = None
 
