@@ -200,6 +200,13 @@ Content-Length: 3
         parse_semicolon = [
             ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),	
             ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+            (";", ValueError("bad query field: ''")),
+            (";;", ValueError("bad query field: ''")),
+            ("=;a", ValueError("bad query field: 'a'")),
+            (";b=a", ValueError("bad query field: ''")),
+            ("b;=a", ValueError("bad query field: 'b'")),
+            ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+            ("a=a+b;a=b+a", {'a': ['a b', 'b a']}),
         ]
         for orig, expect in parse_semicolon:
             env = {'QUERY_STRING': orig}
