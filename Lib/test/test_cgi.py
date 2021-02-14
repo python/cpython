@@ -196,6 +196,23 @@ Content-Length: 3
                     else:
                         self.assertEqual(fs.getvalue(key), expect_val[0])
 
+    def test_separator(self):
+        parse_semicolon = [
+            ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),	
+            ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+        ]
+        for orig, expect in parse_semicolon:
+            env = {'QUERY_STRING': orig}
+            fs = cgi.FieldStorage(separator=';', environ=env)
+            if isinstance(expect, dict):
+                for key in expect.keys():
+                    expect_val = expect[key]
+                    self.assertIn(key, fs)
+                    if len(expect_val) > 1:
+                        self.assertEqual(fs.getvalue(key), expect_val)
+                    else:
+                        self.assertEqual(fs.getvalue(key), expect_val[0])
+
     def test_log(self):
         cgi.log("Testing")
 
