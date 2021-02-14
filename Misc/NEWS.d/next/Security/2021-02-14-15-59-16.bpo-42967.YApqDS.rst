@@ -1,0 +1,1 @@
+Fix web cache poisoning vulnerability by defaulting the query args separator to ``&``, and allowing the user to choose a custom separator.
