@@ -7,7 +7,7 @@ At large scale, the structure of the module is following:
 * _SpecialForm and its instances (special forms):
   Any, NoReturn, ClassVar, Union, Optional, Concatenate
 * Classes whose instances can be type arguments in addition to types:
-  ForwardRef, TypeVar and ParamSpec
+  ForwardRef, TypeVar, TypeVarTuple and ParamSpec
 * The core of internal generics API: _GenericAlias and _VariadicGenericAlias, the latter is
   currently only used by Tuple and Callable. All subscripted types like X[int], Union[int, str],
   etc., are instances of either of these classes.
@@ -49,7 +49,10 @@ __all__ = [
     'Tuple',
     'Type',
     'TypeVar',
+    'TypeVarTuple',
     'Union',
+    'Unpack',
+    '_UnpackedTypeVarTuple',
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
@@ -158,7 +161,11 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union, ParamSpec)):
+    if isinstance(arg, TypeVarTuple):
+        raise TypeError("Type variable tuple must be unpacked before being "
+                        "used as a type argument")
+    if isinstance(arg, (type, TypeVar, _UnpackedTypeVarTuple, ForwardRef,
+                        types.Union, ParamSpec)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -194,23 +201,82 @@ def _collect_type_vars(types):
     """
     tvars = []
     for t in types:
-        if isinstance(t, _TypeVarLike) and t not in tvars:
+        if isinstance(t, _TypeVarTypes) and t not in tvars:
             tvars.append(t)
         if isinstance(t, (_GenericAlias, GenericAlias)):
             tvars.extend([t for t in t.__parameters__ if t not in tvars])
     return tuple(tvars)
 
 
-def _check_generic(cls, parameters, elen):
-    """Check correct count for parameters of a generic cls (internal helper).
-    This gives a nice error message in case of count mismatch.
+def _check_type_parameter_count(cls,
+                                type_params, expected_num_type_params=None):
+    """Checks for correct count of type parameters of a generic class.
+
+    Gives a nice error message in case of count mismatch.
+
+    Args:
+        cls: The generic class in question.
+        type_parameters: A tuple of the type parameters the user is attempting
+          to use with to the generic class. For example, for 'Tuple[int, str]',
+          `type_parameters` would be `(int, str)`.
+        expected_num_type_params: The exact number of type parameters expected.
+          If `None`, this is determined by inspecting `cls.__parameters__`.
     """
-    if not elen:
-        raise TypeError(f"{cls} is not a generic class")
-    alen = len(parameters)
-    if alen != elen:
-        raise TypeError(f"Too {'many' if alen > elen else 'few'} parameters for {cls};"
-                        f" actual {alen}, expected {elen}")
+    actual_num_type_params = len(type_params)
+
+    # These should have been checked elsewhere.
+    assert not any(isinstance(p, TypeVarTuple) for p in type_params)
+    if expected_num_type_params is not None:
+        assert expected_num_type_params > 0
+
+    if ((expected_num_type_params is not None) and
+        (any(isinstance(p, _UnpackedTypeVarTuple) for p in type_params))):
+        msg = ("Cannot use an unpacked type variable tuple, which can "
+               "represent an arbitrary number of types, as a type "
+               f"parameter for {cls}, "
+               f"which expects exactly {expected_num_type_params} "
+               "type ")
+        if expected_num_type_params > 1:
+            msg += "parameters"
+        else:
+            msg += "parameter"
+        raise TypeError(msg)
+
+    # If all type variables are `TypeVar` or `ParamSpec`, the number
+    # of them should exactly match the number of type variables.
+    if (expected_num_type_params is None and
+        all(isinstance(p, (TypeVar, ParamSpec))
+            for p in cls.__parameters__)):
+        expected_num_type_params = len(cls.__parameters__)
+
+    # Case 1: we know exactly how many type parameters to expect.
+    if expected_num_type_params is not None:
+        if actual_num_type_params > expected_num_type_params:
+            msg = f"Too many parameters for {cls}; "
+        elif actual_num_type_params < expected_num_type_params:
+            msg = f"Too few parameters for {cls}; "
+        else:
+            return
+        msg2 = (f"actual {actual_num_type_params}, "
+                f"expected {expected_num_type_params}")
+        raise TypeError(msg + msg2)
+
+    # Case 2: some of the type variables are `TypeVarTuple`, so we only know
+    # the *minimum* number of type variables to expect.
+    min_num_type_params = len([p for p in cls.__parameters__
+                               if isinstance(p, (TypeVar, ParamSpec))])
+    if actual_num_type_params < min_num_type_params:
+        raise TypeError(f"Too few parameters for {cls}; "
+                        f"actual {actual_num_type_params}, "
+                        f"expected at least {min_num_type_params}")
+
+
+def _check_num_type_variable_tuples(params):
+    if len([p for p in params if isinstance(p, _UnpackedTypeVarTuple)]) > 1:
+        raise TypeError(
+            "Only one unpacked type variable tuple may appear in a "
+            "type parameter list")
+
 
 def _prepare_paramspec_params(cls, params):
     """Prepares the parameters for a Generic containing ParamSpec
@@ -628,12 +694,11 @@ class ForwardRef(_Final, _root=True):
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
 
-class _TypeVarLike:
-    """Mixin for TypeVar-like types (TypeVar and ParamSpec)."""
+
+class _BoundVarianceMixin:
+    """Handles bounds, covariance and contravariance for TypeVar/ParamSpec."""
+
     def __init__(self, bound, covariant, contravariant):
-        """Used to setup TypeVars and ParamSpec's bound, covariant and
-        contravariant attributes.
-        """
         if covariant and contravariant:
             raise ValueError("Bivariant types are not supported.")
         self.__covariant__ = bool(covariant)
@@ -662,7 +727,7 @@ class _TypeVarLike:
         return self.__name__
 
 
-class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
+class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _root=True):
     """Type variable.
 
     Usage::
@@ -727,7 +792,42 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
             self.__module__ = def_mod
 
 
-class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
+class TypeVarTuple(_Final, _root=True):
+
+    def __init__(self, name):
+        self.__name__ = name
+        # All unpacked usages of this TypeVarTuple instance should have
+        # the same identity, so instantiate this here.
+        self._unpacked = _UnpackedTypeVarTuple(self)
+
+    def __iter__(self):
+        yield self._unpacked
+
+    def __repr__(self):
+        return self.__name__
+
+
+class _UnpackedTypeVarTuple:
+
+    def __init__(self, type_var_tuple: TypeVarTuple):
+        self._type_var_tuple = type_var_tuple
+
+    def __repr__(self):
+        return '*' + self._type_var_tuple.__name__
+
+
+class Unpack:
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Cannot instantiate Unpack")
+
+    def __class_getitem__(self, type_var_tuple: TypeVarTuple):
+        if not isinstance(type_var_tuple, TypeVarTuple):
+            raise TypeError("Parameter to Unpack must be a TypeVarTuple")
+        return type_var_tuple._unpacked
+
+
+class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _root=True):
     """Parameter specification variable.
 
     Usage::
@@ -789,6 +889,7 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+_TypeVarTypes = (TypeVar, _UnpackedTypeVarTuple, ParamSpec)
 
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
@@ -900,12 +1001,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
         params = tuple(_type_convert(p) for p in params)
         if any(isinstance(t, ParamSpec) for t in self.__parameters__):
             params = _prepare_paramspec_params(self, params)
-        _check_generic(self, params, len(self.__parameters__))
+        _check_type_parameter_count(self, params)
 
         subst = dict(zip(self.__parameters__, params))
         new_args = []
         for arg in self.__args__:
-            if isinstance(arg, _TypeVarLike):
+            if isinstance(arg, _TypeVarTypes):
                 arg = subst[arg]
             elif isinstance(arg, (_GenericAlias, GenericAlias)):
                 subparams = arg.__parameters__
@@ -974,7 +1075,7 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
             params = (params,)
         msg = "Parameters to generic types must be types."
         params = tuple(_type_check(p, msg) for p in params)
-        _check_generic(self, params, self._nparams)
+        _check_type_parameter_count(self, params, self._nparams)
         return self.copy_with(params)
 
     def copy_with(self, params):
@@ -1065,6 +1166,7 @@ class _TupleType(_SpecialGenericAlias, _root=True):
             return self.copy_with((p, _TypingEllipsis))
         msg = "Tuple[t0, t1, ...]: each t must be a type."
         params = tuple(_type_check(p, msg) for p in params)
+        _check_num_type_variable_tuples(params)
         return self.copy_with(params)
 
 
@@ -1149,12 +1251,18 @@ class Generic:
             raise TypeError(
                 f"Parameter list to {cls.__qualname__}[...] cannot be empty")
         params = tuple(_type_convert(p) for p in params)
+        _check_num_type_variable_tuples(params)
         if cls in (Generic, Protocol):
-            # Generic and Protocol can only be subscripted with unique type variables.
-            if not all(isinstance(p, _TypeVarLike) for p in params):
+            # Generic and Protocol can only be subscripted with unique type
+            # variables or unpacked type variable tuples.
+            if any(isinstance(p, TypeVarTuple) for p in params):
                 raise TypeError(
-                    f"Parameters to {cls.__name__}[...] must all be type variables "
-                    f"or parameter specification variables.")
+                    "Type variable tuples must be unpacked before being used "
+                    f"as parameters to {cls.__name__}[...].")
+            if not all(isinstance(p, _TypeVarTypes) for p in params):
+                raise TypeError(
+                    f"Parameters to {cls.__name__}[...] must all "
+                    "be type variables or parameter specification variables.")
             if len(set(params)) != len(params):
                 raise TypeError(
                     f"Parameters to {cls.__name__}[...] must all be unique")
@@ -1162,7 +1270,7 @@ class Generic:
             # Subscripting a regular Generic subclass.
             if any(isinstance(t, ParamSpec) for t in cls.__parameters__):
                 params = _prepare_paramspec_params(cls, params)
-            _check_generic(cls, params, len(cls.__parameters__))
+            _check_type_parameter_count(cls, params)
         return _GenericAlias(cls, params)
 
     def __init_subclass__(cls, *args, **kwargs):
