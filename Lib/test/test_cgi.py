@@ -198,7 +198,7 @@ Content-Length: 3
 
     def test_separator(self):
         parse_semicolon = [
-            ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),	
+            ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),
             ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
             (";", ValueError("bad query field: ''")),
             (";;", ValueError("bad query field: ''")),
