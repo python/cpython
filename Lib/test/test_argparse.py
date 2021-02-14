@@ -2924,6 +2924,23 @@ class TestMutuallyExclusiveNested(MEMixin, TestCase):
     test_successes_when_not_required = None
     test_successes_when_required = None
 
+class TestMutuallyExclusiveRequiredDefault(TestCase):
+
+    def test_default_arg_passed(self):
+        parser = ErrorRaisingArgumentParser()
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--foo', default='1')
+        group.add_argument('--bar')
+        self.assertEqual(NS(foo='1', bar=None),
+                         parser.parse_args(['--foo', '1']))
+
+    def test_nothing_passed(self):
+        parser = ErrorRaisingArgumentParser()
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--foo', default='1')
+        group.add_argument('--bar')
+        self.assertRaises(ArgumentParserError, parser.parse_args, [])
+
 # =================================================
 # Mutually exclusive group in parent parser tests
 # =================================================
