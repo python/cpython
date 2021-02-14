@@ -4744,8 +4744,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         Py_DECREF(defaults);
         return NULL;
     }
-    PyCodeObject *code = (PyCodeObject *)_co;
-    assert ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 0);
+    assert ((((PyCodeObject *)_co)->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 0);
     if (locals == NULL) {
         locals = globals;
     }
