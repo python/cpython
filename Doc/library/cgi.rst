@@ -303,7 +303,7 @@ algorithms implemented in this module in other circumstances.
       Added the *encoding* and *errors* parameters.  For non-file fields, the
       value is now a list of strings, not bytes.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.9.2
       Added the *separator* parameter.
 
 
