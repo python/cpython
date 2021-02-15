@@ -1,0 +1,2 @@
+Convert :c:func:`PyDescr_IsData` macro to function. Patch by Erlend E.
+Aasland.
