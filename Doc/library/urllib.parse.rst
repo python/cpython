@@ -205,10 +205,10 @@ or on combining URL components into a URL string.
       Added *max_num_fields* parameter.
 
    .. versionchanged:: 3.9.2
-      Added *separator* parameter with the default value of `&`. Python
-      versions earlier than Python 3.9.2 allowed using both ";" and "&" as
+      Added *separator* parameter with the default value of ``&``. Python
+      versions earlier than Python 3.9.2 allowed using both ``;`` and ``&`` as
       query parameter separator. This has been changed to allow only a single
-      separator key, with "&" as the default separator.
+      separator key, with ``&`` as the default separator.
 
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
