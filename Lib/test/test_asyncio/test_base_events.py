@@ -227,7 +227,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_set_default_executor_deprecation_warnings(self):
         executor = mock.Mock()
 
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(RuntimeError):
             self.loop.set_default_executor(executor)
 
         # Avoid cleaning up the executor mock

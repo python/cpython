@@ -1,0 +1,3 @@
+Prohibit passing non-:class:`concurrent.futures.ThreadPoolExecutor`
+executors to :meth:`loop.set_default_executor` following a deprecation in
+Python 3.8. Patch by Illia Volochii.
