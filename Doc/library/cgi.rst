@@ -277,10 +277,10 @@ These are useful if you want more control, or if you want to employ some of the
 algorithms implemented in this module in other circumstances.
 
 
-.. function:: parse(fp=None, environ=os.environ, keep_blank_values=False, strict_parsing=False)
+.. function:: parse(fp=None, environ=os.environ, keep_blank_values=False, strict_parsing=False, separator="&")
 
    Parse a query in the environment or from a file (the file defaults to
-   ``sys.stdin``).  The *keep_blank_values* and *strict_parsing* parameters are
+   ``sys.stdin``).  The *keep_blank_values*, *strict_parsing* and *separator* parameters are
    passed to :func:`urllib.parse.parse_qs` unchanged.
 
 
@@ -296,7 +296,7 @@ algorithms implemented in this module in other circumstances.
    instead. It is maintained here only for backward compatibility.
 
 
-.. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace")
+.. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace", separator="&")
 
    Parse input of type :mimetype:`multipart/form-data` (for  file uploads).
    Arguments are *fp* for the input file, *pdict* for a dictionary containing
@@ -314,6 +314,9 @@ algorithms implemented in this module in other circumstances.
    .. versionchanged:: 3.7
       Added the *encoding* and *errors* parameters.  For non-file fields, the
       value is now a list of strings, not bytes.
+
+   .. versionchanged:: 3.7.10
+      Added the *separator* parameter.
 
 
 .. function:: parse_header(string)
