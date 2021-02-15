@@ -5556,10 +5556,10 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
     }
     // This is where we handle failed sub-patterns. For a sequence pattern like
     // [a, b, c, d], this will look like:
-    // fails[0]: POP_TOP           # <- Jump here if a fails, and fall through.
-    // fails[1]: POP_TOP           # <- Jump here if b fails, and fall through.
-    // fails[2]: POP_TOP           # <- Jump here if c fails, and fall through.
-    // fails[3]: LOAD_CONST False  # <- Jump here if d fails, and fall through.
+    // fails[0]: POP_TOP
+    // fails[1]: POP_TOP
+    // fails[2]: POP_TOP
+    // fails[3]: LOAD_CONST False
     for (Py_ssize_t i = 0; i < size - 1; i++) {
         compiler_use_next_block(c, fails[i]);
         if (!compiler_addop(c, POP_TOP)) {
