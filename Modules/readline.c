@@ -151,6 +151,24 @@ decode(const char *s)
 }
 
 
+/*
+   Explicitly disable bracketed paste mode. This is called both during module
+   initialization and after reading the init file. Even if the version of
+   Readline enables it by default or a user has it set, the Python REPL doesn't
+   support bracketed paste and it injects escape sequences which cause test
+   failures. This keeps the behavior consistent with user expectations for the
+   Python REPL when pasting multi-line strings. See bpo-42819 for more details.
+   This should be removed if bracketed paste mode is implemented (bpo-39820).
+*/
+
+static void
+disable_bracketed_paste(void)
+{
+    if (!using_libedit_emulation) {
+        rl_variable_bind ("enable-bracketed-paste", "off");
+    }
+}
+
 /* Exported function to send one line to readline's init file parser */
 
 /*[clinic input]
@@ -212,9 +230,7 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
         errno = rl_read_init_file(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
-    if (!using_libedit_emulation) {
-        rl_variable_bind ("enable-bracketed-paste", "off");
-    }
+    disable_bracketed_paste();
     Py_RETURN_NONE;
 }
 
@@ -1244,9 +1260,7 @@ setup_readline(readlinestate *mod_state)
     else
         rl_initialize();
 
-    if (!using_libedit_emulation) {
-        rl_variable_bind ("enable-bracketed-paste", "off");
-    }
+    disable_bracketed_paste();
 
     RESTORE_LOCALE(saved_locale)
     return 0;

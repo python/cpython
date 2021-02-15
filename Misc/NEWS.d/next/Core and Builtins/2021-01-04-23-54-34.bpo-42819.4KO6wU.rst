@@ -1,3 +1,7 @@
-Prevents bracketed paste from being enabled in the interactive interpreter,
-even if it's set in the inputrc or is enabled by default (eg GNU Readline
-8.1). Patch by Dustin Rodrigues.
+Explicitly disable bracketed paste in the interactive interpreter, even if it's
+set in the inputrc or is enabled by default (eg GNU Readline 8.1). The Python
+REPL has not implemented bracketed paste support so this prevents Readline
+defaults or global user configuration from causing unexpected behavior within
+Python. It can still be explicitly enabled by calling
+``readline.parse_and_bind("set enable-bracketed-paste on")``. Patch by Dustin
+Rodrigues.
