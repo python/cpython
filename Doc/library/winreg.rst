@@ -131,6 +131,9 @@ This module offers the following functions:
 
    *This method can not delete keys with subkeys.*
 
+   The key identified by the *key* parameter must have been opened with
+   :const:`KEY_SET_VALUE` access.
+
    If the method succeeds, the entire key, including all of its values, is removed.
    If the method fails, an :exc:`OSError` exception is raised.
 
@@ -165,6 +168,9 @@ This module offers the following functions:
 
    *This method can not delete keys with subkeys.*
 
+   The key identified by the *key* parameter must have been opened with
+   :const:`KEY_SET_VALUE` access.
+
    If the method succeeds, the entire key, including all of its values, is
    removed. If the method fails, an :exc:`OSError` exception is raised.
 
@@ -186,6 +192,9 @@ This module offers the following functions:
    :ref:`HKEY_* constants <hkey-constants>`.
 
    *value* is a string that identifies the value to remove.
+
+   The key identified by the *key* parameter must have been opened with
+   :const:`KEY_SET_VALUE` access.
 
    .. audit-event:: winreg.DeleteValue key,value winreg.DeleteValue
 
