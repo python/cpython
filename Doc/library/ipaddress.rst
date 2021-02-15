@@ -675,6 +675,8 @@ dictionaries.
                raise ValueError(
          ValueError: out of address space, cannot make another /24 network
 
+      .. versionadded:: 3.10
+
 .. class:: IPv6Network(address, strict=True)
 
    Construct an IPv6 network definition.  *address* can be one of the following:
