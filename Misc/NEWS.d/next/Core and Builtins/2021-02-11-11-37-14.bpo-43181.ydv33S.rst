@@ -1,0 +1,2 @@
+Convert :c:func:`PyObject_TypeCheck` macro to a static inline function. Patch by
+Erlend E. Aasland.
