@@ -100,10 +100,6 @@ This example uses the iterator form::
 
 .. seealso::
 
-   https://github.com/ghaering/pysqlite
-      The pysqlite web page -- sqlite3 is developed externally under the name
-      "pysqlite".
-
    https://www.sqlite.org
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.

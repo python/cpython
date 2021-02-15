@@ -180,9 +180,9 @@ typedef int Py_ssize_clean_t;
  */
 
 #if defined(_MSC_VER)
-#  if defined(PY_LOCAL_AGGRESSIVE)
-   /* enable more aggressive optimization for visual studio */
-#  pragma optimize("agtw", on)
+#  if defined(PY_LOCAL_AGGRESSIVE) && !defined(Py_DEBUG)
+   /* enable more aggressive optimization for MSVC */
+#  pragma optimize("gt", on)
 #endif
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)

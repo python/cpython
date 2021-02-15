@@ -1,0 +1,2 @@
+Fixed an incorrect :exc:`SyntaxError` message for missing comma in literals.
+Patch by Pablo Galindo.

@@ -14901,7 +14901,15 @@ all_ins(PyObject *m)
 #ifdef O_ACCMODE
     if (PyModule_AddIntMacro(m, O_ACCMODE)) return -1;
 #endif
-
+#ifdef O_EVTONLY
+    if (PyModule_AddIntMacro(m, O_EVTONLY)) return -1;
+#endif
+#ifdef O_FSYNC
+    if (PyModule_AddIntMacro(m, O_FSYNC)) return -1;
+#endif
+#ifdef O_SYMLINK
+    if (PyModule_AddIntMacro(m, O_SYMLINK)) return -1;
+#endif
 
 #ifdef SEEK_HOLE
     if (PyModule_AddIntMacro(m, SEEK_HOLE)) return -1;
@@ -14950,6 +14958,9 @@ all_ins(PyObject *m)
 #ifdef O_NOFOLLOW
     /* Do not follow links.      */
     if (PyModule_AddIntMacro(m, O_NOFOLLOW)) return -1;
+#endif
+#ifdef O_NOFOLLOW_ANY
+    if (PyModule_AddIntMacro(m, O_NOFOLLOW_ANY)) return -1;
 #endif
 #ifdef O_NOLINKS
     /* Fails if link count of the named file is greater than 1 */

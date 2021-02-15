@@ -17,9 +17,11 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
-    def test_bad_target_none(self):
+    def test_bad_target(self):
         with self.assertRaises(TypeError):
             self.cx.backup(None)
+        with self.assertRaises(TypeError):
+            self.cx.backup()
 
     def test_bad_target_filename(self):
         with self.assertRaises(TypeError):
