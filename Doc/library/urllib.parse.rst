@@ -190,7 +190,8 @@ or on combining URL components into a URL string.
    read. If set, then throws a :exc:`ValueError` if there are more than
    *max_num_fields* fields read.
 
-   The optional argument *separator* is the symbol to use for separating the query arguments. It defaults to `&`.
+   The optional argument *separator* is the symbol to use for separating the
+   query arguments. It defaults to ``&``.
 
    Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
    parameter set to ``True``) to convert such dictionaries into query
@@ -204,8 +205,10 @@ or on combining URL components into a URL string.
       Added *max_num_fields* parameter.
 
    .. versionchanged:: 3.10
-      Added *separator* parameter with the default value of `&`. Python versions earlier than Python 3.10 allowed using both ";" and "&" as
-      query parameter separator. This has been changed to allow only a single separator key, with "&" as the default separator.
+      Added *separator* parameter with the default value of ``&``. Python
+      versions earlier than Python 3.10 allowed using both ``;`` and ``&`` as
+      query parameter separator. This has been changed to allow only a single
+      separator key, with ``&`` as the default separator.
 
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
@@ -232,7 +235,8 @@ or on combining URL components into a URL string.
    read. If set, then throws a :exc:`ValueError` if there are more than
    *max_num_fields* fields read.
 
-   The optional argument *separator* is the symbol to use for separating the query arguments. It defaults to `&`.
+   The optional argument *separator* is the symbol to use for separating the
+   query arguments. It defaults to ``&``.
 
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
@@ -244,8 +248,10 @@ or on combining URL components into a URL string.
       Added *max_num_fields* parameter.
 
    .. versionchanged:: 3.10
-      Added *separator* parameter with the default value of `&`. Python versions earlier than Python 3.10 allowed using both ";" and "&" as
-      query parameter separator. This has been changed to allow only a single separator key, with "&" as the default separator.
+      Added *separator* parameter with the default value of ``&``. Python
+      versions earlier than Python 3.10 allowed using both ``;`` and ``&`` as
+      query parameter separator. This has been changed to allow only a single
+      separator key, with ``&`` as the default separator.
 
 
 .. function:: urlunparse(parts)
