@@ -1478,7 +1478,6 @@ class IpaddrUnitTest(unittest.TestCase):
             ipaddress.IPv6Network('2001:dbb8:aaaa:aaab::/88'),
         )
 
-
     def testNextNetworkWithBadPrefix(self):
         self.assertRaises(ValueError, self.ipv4_network.next_network, 0)
         self.assertRaises(ValueError, self.ipv4_network.next_network, 35)
