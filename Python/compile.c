@@ -255,6 +255,8 @@ static int compiler_async_comprehension_generator(
 
 static int compiler_pattern(struct compiler *, expr_ty, pattern_context *);
 static int compiler_match(struct compiler *, stmt_ty);
+static int compiler_pattern_subpattern(struct compiler *, expr_ty,
+                                       pattern_context *);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__, *__annotations__;
@@ -5498,6 +5500,131 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 
 
 static int
+pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
+                               Py_ssize_t star, pattern_context *pc)
+{
+    ADDOP(c, DUP_TOP);
+    RETURN_IF_FALSE(unpack_helper(c, values));
+    // We've now got a bunch of new subjects on the stack. If any of them fail
+    // to match, we need to pop everything else off, then finally push False.
+    // fails is an array of blocks that correspond to the necessary amount of
+    // popping for each element:
+    basicblock **fails;
+    Py_ssize_t size = asdl_seq_LEN(values);
+    fails = (basicblock **)PyObject_Malloc(sizeof(basicblock*) * size);
+    if (fails == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    // NOTE: Can't use our nice returning macros anymore: they'll leak memory!
+    // goto error on error.
+    for (Py_ssize_t i = 0; i < size; i++) {
+        fails[i] = compiler_new_block(c);
+        if (fails[i] == NULL) {
+            goto error;
+        }
+    }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        expr_ty value = asdl_seq_GET(values, i);
+        if (i == star) {
+            assert(value->kind == Starred_kind);
+            value = value->v.Starred.value;
+        }
+        if (WILDCARD_CHECK(value)) {
+            if (!compiler_addop(c, POP_TOP)) {
+                goto error;
+            }
+            continue;
+        }
+        if (!compiler_pattern_subpattern(c, value, pc) ||
+            // TOS is True or False. We're done with the item underneath:
+            !compiler_addop(c, ROT_TWO) ||
+            !compiler_addop(c, POP_TOP) ||
+            !compiler_addop_j(c, POP_JUMP_IF_FALSE, fails[i]) ||
+            compiler_next_block(c) == NULL)
+        {
+            goto error;
+        }
+    }
+    // Success!
+    basicblock *end;
+    RETURN_IF_FALSE(end = compiler_new_block(c));
+    if (!compiler_addop_load_const(c, Py_True) ||
+        !compiler_addop_j(c, JUMP_FORWARD, end))
+    {
+        goto error;
+    }
+    // This is where we handle failed sub-patterns. For a sequence pattern like
+    // [a, b, c, d], this will look like:
+    // fails[0]: POP_TOP           # <- Jump here if a fails, and fall through.
+    // fails[1]: POP_TOP           # <- Jump here if b fails, and fall through.
+    // fails[2]: POP_TOP           # <- Jump here if c fails, and fall through.
+    // fails[3]: LOAD_CONST False  # <- Jump here if d fails, and fall through.
+    for (Py_ssize_t i = 0; i < size - 1; i++) {
+        compiler_use_next_block(c, fails[i]);
+        if (!compiler_addop(c, POP_TOP)) {
+            goto error;
+        }
+    }
+    compiler_use_next_block(c, fails[size - 1]);
+    if (!compiler_addop_load_const(c, Py_False)) {
+        goto error;
+    }
+    compiler_use_next_block(c, end);
+    PyObject_Free(fails);
+    return 1;
+error:
+    PyObject_Free(fails);
+    return 0;
+}
+
+
+static int
+pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
+                               Py_ssize_t star, pattern_context *pc)
+{
+    // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
+    // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
+    // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
+    basicblock *end;
+    RETURN_IF_FALSE(end = compiler_new_block(c));
+    Py_ssize_t size = asdl_seq_LEN(values);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        expr_ty value = asdl_seq_GET(values, i);
+        if (WILDCARD_CHECK(value)) {
+            continue;
+        }
+        if (i == star) {
+            assert(value->kind == Starred_kind);
+            assert(WILDCARD_CHECK(value->v.Starred.value));
+            continue;
+        }
+        ADDOP(c, DUP_TOP);
+        if (i < star) {
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+        }
+        else {
+            // The subject may not support negative indexing! Compute a
+            // nonnegative index:
+            ADDOP(c, GET_LEN);
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - i));
+            ADDOP(c, BINARY_SUBTRACT);
+        }
+        ADDOP(c, BINARY_SUBSCR);
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
+        // TOS is True or False. We're done with the item underneath:
+        ADDOP(c, ROT_TWO);
+        ADDOP(c, POP_TOP);
+        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+        NEXT_BLOCK(c);
+    }
+    ADDOP_LOAD_CONST(c, Py_True);
+    compiler_use_next_block(c, end);
+    return 1;
+}
+
+
+static int
 compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     // Like compiler_pattern, but turn off checks for irrefutability.
@@ -5782,149 +5909,57 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     asdl_expr_seq *values = (p->kind == Tuple_kind) ? p->v.Tuple.elts
                                                     : p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
-    // Find a starred name, if it exists. There may be at most one:
     Py_ssize_t star = -1;
+    int only_wildcard = 1;
     int star_wildcard = 0;
-    int all_wildcard = 1;
-    int needs_len = 0;
+    // Find a starred name, if it exists. There may be at most one:
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
-        if (value->kind != Starred_kind) {
-            int wildcard = WILDCARD_CHECK(value);
-            all_wildcard &= wildcard;
-            needs_len |= 0 <= star && !wildcard;
-            continue;
+        if (value->kind == Starred_kind) {
+            value = value->v.Starred.value;
+            if (star >= 0) {
+                const char *e = "multiple starred names in sequence pattern";
+                return compiler_error(c, e);
+            }
+            star_wildcard = WILDCARD_CHECK(value);
+            star = i;
         }
-        if (0 <= star) {
-            const char *e = "multiple starred names in sequence pattern";
-            return compiler_error(c, e);
-        }
-        star_wildcard = WILDCARD_CHECK(value->v.Starred.value);
-        all_wildcard &= star_wildcard;
-        star = i;
+        only_wildcard &= WILDCARD_CHECK(value);
     }
-    needs_len &= star_wildcard && star != size - 1;
     basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
-    basicblock *needs_len_fail = NULL;
-    if (needs_len) {
-        RETURN_IF_FALSE(needs_len_fail = compiler_new_block(c));
-        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, needs_len_fail);
-    }
-    else {
-        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);  //*
-    }
-
-    NEXT_BLOCK(c);
-    if (size == 1 && 0 <= star) {
-        // [*_] or [*x]
-        if (!star_wildcard) {
-            // [*x]
-            ADDOP_I(c, UNPACK_EX, 0);
-            expr_ty value = asdl_seq_GET(values, 0)->v.Starred.value;
-            RETURN_IF_FALSE(compiler_pattern_capture(c, value, pc));
-        }
-        else {
-            ADDOP_LOAD_CONST(c, Py_True);
-        }
-        compiler_use_next_block(c, end);
-        return 1;
-    }
-    ADDOP(c, GET_LEN);
-    if (needs_len) {
-        // Duplicate the length and put it underneath the subject (at TOS2),
-        // since both the length check and BINARY_SUBSCR need it:
-        ADDOP(c, DUP_TOP);
-        ADDOP(c, ROT_THREE);
-    }
-    if (star < 0) {
-        // No star: len(subject) == size
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
-        ADDOP_COMPARE(c, Eq);
-    }
-    else {
-        // Star: len(subject) >= size - 1
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
-        ADDOP_COMPARE(c, GtE);
-    }
-    if (all_wildcard) {
-        // [], [_], [_, _], [_, *_], [_, _, *_], etc.
-        compiler_use_next_block(c, end);
-        return 1;
-    }
     ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
     NEXT_BLOCK(c);
-    basicblock **fails = NULL;
-    if (!star_wildcard) {
-        ADDOP(c, DUP_TOP);
-        RETURN_IF_FALSE(unpack_helper(c, values));
-        fails = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * (size));
-        for (Py_ssize_t i = 0; i < size; i++) {
-            RETURN_IF_FALSE(fails[i] = compiler_new_block(c));
-        }
-    }
-    for (Py_ssize_t i = 0; i < size; i++) {
-        expr_ty value = asdl_seq_GET(values, i);
-        if (star_wildcard) {
-            if (i == star || WILDCARD_CHECK(value)) {
-                continue;
-            }
-            if (i < star) {
-                ADDOP(c, DUP_TOP);
-                ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-            }
-            else {
-                assert(needs_len);
-                // TOS is subject, length underneath.
-                ADDOP(c, DUP_TOP_TWO);
-                ADDOP(c, ROT_TWO);
-                ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - i));
-                ADDOP(c, BINARY_SUBTRACT);
-            }
-            ADDOP(c, BINARY_SUBSCR);
-        }
-        else if (WILDCARD_CHECK(value)) {
-            ADDOP(c, POP_TOP);
-            continue;
-        }
-        else if (i == star) {
-            assert(value->kind == Starred_kind);
-            value = value->v.Starred.value;
-        }
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
-        // TOS is True or False. We're done with the item underneath:
-        ADDOP(c, ROT_TWO);
-        ADDOP(c, POP_TOP);
-        if (star_wildcard) {
-            ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
-        }
-        else {
-            ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fails[i]);
-        }
+    if (star < 0) {
+        // No star: len(subject) == size
+        ADDOP(c, GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
+        ADDOP_COMPARE(c, Eq);
+        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
         NEXT_BLOCK(c);
     }
-    // Success!
-    ADDOP_LOAD_CONST(c, Py_True);
-    if (!star_wildcard) {
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
-        for (Py_ssize_t i = 0; i < size - 1; i++) {
-            compiler_use_next_block(c, fails[i]);
-            ADDOP(c, POP_TOP);
-        }
-        compiler_use_next_block(c, fails[size - 1]);
-        ADDOP_LOAD_CONST(c, Py_False);
-        PyObject_Free(fails);
+    else if (size > 1) {
+        // Star: len(subject) >= size - 1
+        ADDOP(c, GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
+        ADDOP_COMPARE(c, GtE);
+        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+        NEXT_BLOCK(c);
+    }
+    if (only_wildcard) {
+        // Patterns like: [] / [_] / [_, _] / [*_] / [_, *_] / [_, _, *_] / etc.
+        ADDOP_LOAD_CONST(c, Py_True);
+        compiler_use_next_block(c, end);
+        return 1;
+    }
+    if (star_wildcard) {
+        RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, values, star, pc));
+    }
+    else {
+        RETURN_IF_FALSE(pattern_helper_sequence_unpack(c, values, star, pc));
     }
     compiler_use_next_block(c, end);
-    if (needs_len) {
-        // TOS is True/False, subject underneath, length underneath (at TOS2).
-        // Pop the length:
-        ADDOP(c, ROT_THREE);
-        ADDOP(c, ROT_THREE);
-        ADDOP(c, POP_TOP);
-        compiler_use_next_block(c, needs_len_fail);
-    }
     return 1;
 }
 
