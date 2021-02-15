@@ -154,11 +154,11 @@ decode(const char *s)
 /*
 Explicitly disable bracketed paste in the interactive interpreter, even if it's
 set in the inputrc, is enabled by default (eg GNU Readline 8.1), or a user calls
-``readline.read_init_file()``. The Python REPL has not implemented bracketed
-paste support. Also, bracketed mode writes the `"\x1b[?2004h"` escape sequence
+readline.read_init_file(). The Python REPL has not implemented bracketed
+paste support. Also, bracketed mode writes the "\x1b[?2004h" escape sequence
 into stdout which causes test failures in applications that don't support it.
-It can still be explicitly enabled by calling ``readline.parse_and_bind("set
-enable-bracketed-paste on")``. See bpo-42819 for more details.
+It can still be explicitly enabled by calling readline.parse_and_bind("set
+enable-bracketed-paste on"). See bpo-42819 for more details.
 
 This should be removed if bracketed paste mode is implemented (bpo-39820).
 */
