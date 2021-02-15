@@ -1,4 +1,4 @@
-:mod:`readline`: Explicitly disable bracketed paste in the interactive 
+:mod:`readline`: Explicitly disable bracketed paste in the interactive
 interpreter, even if it's set in the inputrc, is enabled by default (eg GNU
 Readline 8.1), or a user calls ``readline.read_init_file()``. The Python REPL
 has not implemented bracketed paste support. Also, bracketed mode writes the
