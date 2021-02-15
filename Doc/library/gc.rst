@@ -135,10 +135,11 @@ The :mod:`gc` module provides the following functions:
    resulting referrers.  To get only currently live objects, call :func:`collect`
    before calling :func:`get_referrers`.
 
-   Care must be taken when using objects returned by :func:`get_referrers` because
-   some of them could still be under construction and hence in a temporarily
-   invalid state. Avoid using :func:`get_referrers` for any purpose other than
-   debugging.
+   .. warning::
+      Care must be taken when using objects returned by :func:`get_referrers` because
+      some of them could still be under construction and hence in a temporarily
+      invalid state. Avoid using :func:`get_referrers` for any purpose other than
+      debugging.
 
 
 .. function:: get_referents(*objs)
