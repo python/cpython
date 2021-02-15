@@ -820,6 +820,12 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`42856`.)
 
+* The discontinued 31/32-bit Linux s390 platform is no longer supported. The
+  31/32-bit IBM s390 architecture was discontinued in 1998 and superseded by
+  the 64-bit IBM s390x architecture. The 64-bit Linux s390x platform remains
+  supported.
+  (Contributed by Victor Stinner in :issue:`43179`.)
+
 
 C API Changes
 =============

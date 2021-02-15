@@ -5310,8 +5310,6 @@ cat >> conftest.c <<EOF
         powerpc-linux-gnu
 # elif defined(__s390x__)
         s390x-linux-gnu
-# elif defined(__s390__)
-        s390-linux-gnu
 # elif defined(__sh__) && defined(__LITTLE_ENDIAN__)
         sh4-linux-gnu
 # elif defined(__sparc__) && defined(__arch64__)

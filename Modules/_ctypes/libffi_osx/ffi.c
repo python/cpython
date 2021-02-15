@@ -161,8 +161,8 @@ ffi_prep_cif(
 	/* Perform a sanity check on the return type */
 	FFI_ASSERT_VALID_TYPE(cif->rtype);
 
-	/* x86-64 and s390 stack space allocation is handled in prep_machdep.  */
-#if !defined M68K && !defined __x86_64__ && !defined S390 && !defined PA
+	/* x86-64 and s390x stack space allocation is handled in prep_machdep.  */
+#if !defined M68K && !defined __x86_64__ && !defined PA
 	/* Make space for the return structure pointer */
 	if (cif->rtype->type == FFI_TYPE_STRUCT
 #ifdef SPARC
@@ -200,7 +200,7 @@ ffi_prep_cif(
 
 			bytes += STACK_ARG_SIZE((*ptr)->size);
 		}
-#elif !defined __x86_64__ && !defined S390 && !defined PA
+#elif !defined __x86_64__ && !defined PA
 #ifdef SPARC
 		if (((*ptr)->type == FFI_TYPE_STRUCT
 			&& ((*ptr)->size > 16 || cif->abi != FFI_V9))
