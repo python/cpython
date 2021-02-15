@@ -283,6 +283,8 @@ algorithms implemented in this module in other circumstances.
    ``sys.stdin``).  The *keep_blank_values*, *strict_parsing* and *separator* parameters are
    passed to :func:`urllib.parse.parse_qs` unchanged.
 
+   .. versionchanged:: 3.8.8
+      Added the *separator* parameter.
 
 .. function:: parse_multipart(fp, pdict, encoding="utf-8", errors="replace", separator="&")
 
@@ -303,7 +305,7 @@ algorithms implemented in this module in other circumstances.
       Added the *encoding* and *errors* parameters.  For non-file fields, the
       value is now a list of strings, not bytes.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.8.8
       Added the *separator* parameter.
 
 
