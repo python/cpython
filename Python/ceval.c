@@ -959,51 +959,6 @@ fail:
     return NULL;
 }
 
-static int
-get_match_args(PyThreadState *tstate, PyObject *type, PyObject **match_args,
-               int *match_self)
-{
-    // try:
-    //     match_args = type.__match_args__
-    // except AttributeError:
-    //     match_self = type.__flags__ & _Py_TPFLAGS_MATCH_SELF
-    //     match_args = ()
-    // else:
-    //     match_self = 0
-    //     if match_args.__class__ is list:
-    //         match_args = tuple(match_args)
-    //     elif match_args.__class__ is not tuple:
-    //         raise TypeError
-    *match_args = PyObject_GetAttrString(type, "__match_args__");
-    if (*match_args == NULL) {
-        if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-            _PyErr_Clear(tstate);
-            // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
-            // define __match_args__. This is natural behavior for subclasses:
-            // it's as if __match_args__ is some "magic" value that is lost as
-            // soon as they redefine it.
-            *match_self = PyType_HasFeature((PyTypeObject*)type,
-                                            _Py_TPFLAGS_MATCH_SELF);
-            *match_args = PyTuple_New(0);
-            return 0;
-        }
-        return 1;
-    }
-    *match_self = 0;
-    if (PyTuple_CheckExact(*match_args)) {
-        return 0;
-    }
-    if (PyList_CheckExact(*match_args)) {
-        Py_SETREF(*match_args, PyList_AsTuple(*match_args));
-        return 0;
-    }
-    const char *e = "%s.__match_args__ must be a list or tuple (got %s)";
-    _PyErr_Format(tstate, PyExc_TypeError, e, ((PyTypeObject *)type)->tp_name,
-                  Py_TYPE(*match_args)->tp_name);
-    Py_CLEAR(*match_args);
-    return 1;
-}
-
 static PyObject*
 match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
                  PyObject *name, PyObject *seen)
@@ -1060,14 +1015,37 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     PyObject *match_args = NULL;
     // First, the positional subpatterns:
     if (nargs) {
-        int match_self;
-        if (get_match_args(tstate, type, &match_args, &match_self)) {
+        int match_self = 0;
+        match_args = PyObject_GetAttrString(type, "__match_args__");
+        if (match_args) {
+            if (PyList_CheckExact(match_args)) {
+                Py_SETREF(match_args, PyList_AsTuple(match_args));
+            }
+            if (match_args == NULL) {
+                goto fail;
+            }
+            if (!PyTuple_CheckExact(match_args)) {
+                const char *e = "%s.__match_args__ must be a list or tuple "
+                                "(got %s)";
+                _PyErr_Format(tstate, PyExc_TypeError, e,
+                              ((PyTypeObject *)type)->tp_name,
+                              Py_TYPE(match_args)->tp_name);
+                goto fail;
+            }
+        }
+        else if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+            _PyErr_Clear(tstate);
+            // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
+            // define __match_args__. This is natural behavior for subclasses:
+            // it's as if __match_args__ is some "magic" value that is lost as
+            // soon as they redefine it.
+            match_self = PyType_HasFeature((PyTypeObject*)type,
+                                            _Py_TPFLAGS_MATCH_SELF);
+        }
+        else {
             goto fail;
         }
-        assert(PyTuple_CheckExact(match_args));
-        // If match_self, no __match_args__:
-        assert(match_self ? !PyTuple_GET_SIZE(match_args) : 1);
-        Py_ssize_t allowed = PyTuple_GET_SIZE(match_args) + match_self;
+        Py_ssize_t allowed = match_self ? 1 : PyTuple_GET_SIZE(match_args);
         if (allowed < nargs) {
             const char *plural = (allowed == 1) ? "" : "s";
             _PyErr_Format(tstate, PyExc_TypeError,
@@ -1078,7 +1056,6 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            assert(!PyTuple_GET_SIZE(match_args));
             Py_INCREF(subject);
             PyTuple_SET_ITEM(attrs, 0, subject);
         }
