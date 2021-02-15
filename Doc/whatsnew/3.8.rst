@@ -2238,11 +2238,11 @@ details, see the documentation for ``loop.create_datagram_endpoint()``.
 Notable changes in Python 3.8.8
 ===============================
 
-Earlier Python versions allowed using both ";" and "&" as
+Earlier Python versions allowed using both ``;`` and ``&`` as
 query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
-separator key, with "&" as the default.  This change also affects
+separator key, with ``&`` as the default.  This change also affects
 :func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
