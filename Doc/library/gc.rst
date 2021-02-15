@@ -136,10 +136,10 @@ The :mod:`gc` module provides the following functions:
    before calling :func:`get_referrers`.
 
    .. warning::
-       Care must be taken when using objects returned by :func:`get_referrers` because
-       some of them could still be under construction and hence in a temporarily
-       invalid state. Avoid using :func:`get_referrers` for any purpose other than
-       debugging.
+      Care must be taken when using objects returned by :func:`get_referrers` because
+      some of them could still be under construction and hence in a temporarily
+      invalid state. Avoid using :func:`get_referrers` for any purpose other than
+      debugging.
 
 
 .. function:: get_referents(*objs)
