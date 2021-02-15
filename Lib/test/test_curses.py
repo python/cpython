@@ -926,6 +926,13 @@ class TestCurses(unittest.TestCase):
             if (not curses.has_extended_color_support()
                     or (6, 1) <= curses.ncurses_version < (6, 2)):
                 pair_limit = min(pair_limit, SHORT_MAX)
+            # If use_default_colors() is called, the upper limit of the extended
+            # range may be restricted, so we need to check if the limit is still
+            # correct
+            try:
+                curses.init_pair(pair_limit, 0, 0)
+            except ValueError:
+                pair_limit = curses.COLOR_PAIRS
         return pair_limit
 
     @requires_colors
