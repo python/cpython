@@ -930,7 +930,7 @@ class TestCurses(unittest.TestCase):
             # range may be restricted, so we need to check if the limit is still
             # correct
             try:
-                curses.init_pair(pair_limit, 0, 0)
+                curses.init_pair(pair_limit - 1, 0, 0)
             except ValueError:
                 pair_limit = curses.COLOR_PAIRS
         return pair_limit
