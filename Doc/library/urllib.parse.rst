@@ -235,7 +235,7 @@ or on combining URL components into a URL string.
    read. If set, then throws a :exc:`ValueError` if there are more than
    *max_num_fields* fields read.
 
-   The optional argument *separator* is the symbol to use for separating the query arguments. It defaults to `&`.
+   The optional argument *separator* is the symbol to use for separating the query arguments. It defaults to ``&``.
 
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
