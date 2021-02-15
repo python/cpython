@@ -191,7 +191,7 @@ or on combining URL components into a URL string.
    *max_num_fields* fields read.
 
    The optional argument *separator* is the symbol to use for separating the
-   query arguments. It defaults to `&`.
+   query arguments. It defaults to ``&``.
 
    Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
    parameter set to ``True``) to convert such dictionaries into query
