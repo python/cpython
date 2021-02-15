@@ -160,7 +160,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0,
     if environ['REQUEST_METHOD'] == 'POST':
         ctype, pdict = parse_header(environ['CONTENT_TYPE'])
         if ctype == 'multipart/form-data':
-            return parse_multipart(fp, pdict, separator=separator)
+            return parse_multipart(fp, pdict)
         elif ctype == 'application/x-www-form-urlencoded':
             clength = int(environ['CONTENT_LENGTH'])
             if maxlen and clength > maxlen:
