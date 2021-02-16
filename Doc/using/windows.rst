@@ -1149,8 +1149,6 @@ For extension modules, consult :ref:`building-on-windows`.
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
 
-   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
-
 
 Other Platforms
 ===============
