@@ -2,9 +2,6 @@
 #ifndef Py_PYTIME_H
 #define Py_PYTIME_H
 
-#include "pyconfig.h" /* include for defines */
-#include "object.h"
-
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to time related
 functions and constants
