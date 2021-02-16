@@ -1,0 +1,90 @@
+.. bpo: 42967
+.. date: 2021-02-14-15-59-16
+.. nonce: YApqDS
+.. release date: 2021-02-15
+.. section: Security
+
+Fix web cache poisoning vulnerability by defaulting the query args separator
+to ``&``, and allowing the user to choose a custom separator.
+
+..
+
+.. bpo: 42938
+.. date: 2021-01-18-09-27-31
+.. nonce: 4Zn4Mp
+.. section: Security
+
+Avoid static buffers when computing the repr of :class:`ctypes.c_double` and
+:class:`ctypes.c_longdouble` values.
+
+..
+
+.. bpo: 42103
+.. date: 2020-10-23-19-19-30
+.. nonce: cILT66
+.. section: Security
+
+Prevented potential DoS attack via CPU and RAM exhaustion when processing
+malformed Apple Property List files in binary format.
+
+..
+
+.. bpo: 42051
+.. date: 2020-10-19-10-56-27
+.. nonce: EU_B7u
+.. section: Security
+
+The :mod:`plistlib` module no longer accepts entity declarations in XML
+plist files to avoid XML vulnerabilities. This should not affect users as
+entity declarations are not used in regular plist files.
+
+..
+
+.. bpo: 40791
+.. date: 2020-05-28-06-06-47
+.. nonce: QGZClX
+.. section: Security
+
+Add ``volatile`` to the accumulator variable in ``hmac.compare_digest``,
+making constant-time-defeating optimizations less likely.
+
+..
+
+.. bpo: 35560
+.. date: 2018-12-22-22-19-51
+.. nonce: 9vMWSP
+.. section: Core and Builtins
+
+Fix an assertion error in :func:`format` in debug build for floating point
+formatting with "n" format, zero padding and small width. Release build is
+not impacted. Patch by Karthikeyan Singaravelan.
+
+..
+
+.. bpo: 42103
+.. date: 2020-10-23-19-20-14
+.. nonce: C5obK2
+.. section: Library
+
+:exc:`~plistlib.InvalidFileException` and :exc:`RecursionError` are now the
+only errors caused by loading malformed binary Plist file (previously
+ValueError and TypeError could be raised in some specific cases).
+
+..
+
+.. bpo: 42794
+.. date: 2021-01-01-08-52-36
+.. nonce: -7-XGz
+.. section: Tests
+
+Update test_nntplib to use offical group name of news.aioe.org for testing.
+Patch by Dong-hee Na.
+
+..
+
+.. bpo: 41944
+.. date: 2020-10-05-17-43-46
+.. nonce: rf1dYb
+.. section: Tests
+
+Tests for CJK codecs no longer call ``eval()`` on content received via HTTP.
