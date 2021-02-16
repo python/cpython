@@ -1,0 +1,3 @@
+:c:func:`PyIter_Check` is now always declared as a function, in order to hide implementation
+details. The macro accessed :c:member:`PyTypeObject.tp_iternext` directly.
+Patch by Erlend E. Aasland.

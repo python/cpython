@@ -2732,12 +2732,12 @@ PyObject_GetIter(PyObject *o)
     }
 }
 
-#undef PyIter_Check
-
-int PyIter_Check(PyObject *obj)
+int
+PyIter_Check(PyObject *obj)
 {
-    return Py_TYPE(obj)->tp_iternext != NULL &&
-           Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented;
+    PyTypeObject *tp = Py_TYPE(obj);
+    return (tp->tp_iternext != NULL &&
+            tp->tp_iternext != &_PyObject_NextNotImplemented);
 }
 
 /* Return next item.
