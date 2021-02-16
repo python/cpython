@@ -2736,8 +2736,8 @@ int
 PyIter_Check(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    return tp->tp_iternext != NULL &&
-           tp->tp_iternext != &_PyObject_NextNotImplemented;
+    return (tp->tp_iternext != NULL &&
+            tp->tp_iternext != &_PyObject_NextNotImplemented);
 }
 
 /* Return next item.
