@@ -1,0 +1,1 @@
+:c:func:`PyCMethod_New` is now present in ``python3.lib``.

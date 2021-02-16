@@ -40,6 +40,7 @@ EXPORTS
   PyCFunction_GetSelf=python39.PyCFunction_GetSelf
   PyCFunction_New=python39.PyCFunction_New
   PyCFunction_NewEx=python39.PyCFunction_NewEx
+  PyCMethod_New=python39.PyCMethod_New
   PyCFunction_Type=python39.PyCFunction_Type DATA
   PyCallIter_New=python39.PyCallIter_New
   PyCallIter_Type=python39.PyCallIter_Type DATA
