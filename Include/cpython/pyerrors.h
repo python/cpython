@@ -78,10 +78,6 @@ PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, Py
 
 PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 
-/* */
-
-#define PyExceptionClass_Name(x)  (((PyTypeObject*)(x))->tp_name)
-
 /* Convenience functions */
 
 #ifdef MS_WINDOWS
