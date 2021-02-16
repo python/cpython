@@ -235,8 +235,11 @@ PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
-#define PyObject_TypeCheck(ob, tp) \
-    (Py_IS_TYPE(ob, tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
+
+static inline int _PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
+    return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
+}
+#define PyObject_TypeCheck(ob, type) _PyObject_TypeCheck(_PyObject_CAST(ob), type)
 
 PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
