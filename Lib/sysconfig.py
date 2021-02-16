@@ -176,12 +176,6 @@ def is_python_build(check_home=False):
 
 _PYTHON_BUILD = is_python_build(True)
 
-if _PYTHON_BUILD:
-    for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
-        _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
-
-
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
