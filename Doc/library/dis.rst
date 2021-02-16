@@ -1238,12 +1238,12 @@ All of the following opcodes use their arguments.
 .. opcode:: MATCH_CLASS (count)
 
    TOS is a tuple of keyword attribute names, TOS1 is the class being matched
-   against, and TOS2 is the match subject. *count* is the number of positional
+   against, and TOS2 is the match subject.  *count* is the number of positional
    sub-patterns.
 
-   If TOS2 is an instance of TOS1 and has the positional and keyword attributes
-   required by *count* and TOS, replace TOS with ``True`` and TOS1 with a tuple
-   of extracted attributes. Otherwise, replace TOS with ``False``.
+   Pop TOS.  If TOS2 is an instance of TOS1 and has the positional and keyword
+   attributes required by *count* and TOS, set TOS to ``True`` and TOS1 to a
+   tuple of extracted attributes.  Otherwise, set TOS to ``False``.
 
    .. versionadded:: 3.10
 

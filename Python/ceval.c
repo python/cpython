@@ -3843,11 +3843,11 @@ main_loop:
         }
 
         case TARGET(MATCH_CLASS): {
-            // On success, replace TOS with True and TOS1 with a tuple of
-            // attributes. On failure, replace TOS with False.
-            PyObject *names = TOP();
-            PyObject *type = SECOND();
-            PyObject *subject = THIRD();
+            // Pop TOS. On success, set TOS to True and TOS1 to a tuple of
+            // attributes. On failure, set TOS to False.
+            PyObject *names = POP();
+            PyObject *type = TOP();
+            PyObject *subject = SECOND();
             assert(PyTuple_CheckExact(names));
             PyObject *attrs = match_class(tstate, subject, type, oparg, names);
             if (attrs) {
