@@ -1,1 +1,0 @@
-:func:`importlib.resources.path` now works for :term:`package`\ s missing the optional :attr:`__file__` attribute (more specifically, packages whose :attr:`__spec__`\ ``.``\ :attr:`~importlib.machinery.ModuleSpec.origin` :keyword:`is` :data:`None`).

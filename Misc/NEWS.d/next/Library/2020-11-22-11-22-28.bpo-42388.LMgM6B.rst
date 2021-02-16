@@ -1,2 +1,0 @@
-Fix subprocess.check_output(..., input=None) behavior when text=True to be
-consistent with that of the documentation and universal_newlines=True.
