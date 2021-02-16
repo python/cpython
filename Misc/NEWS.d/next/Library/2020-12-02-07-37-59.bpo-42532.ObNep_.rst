@@ -1,1 +1,0 @@
-Remove unexpected call of ``__bool__`` when passing a ``spec_arg`` argument to a Mock.

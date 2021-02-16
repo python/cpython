@@ -1,1 +1,0 @@
-Fix crash in :func:`tracemalloc.Traceback.__repr__` (regressed in Python 3.9).

@@ -1,1 +1,0 @@
-Fix ``Enum.__dir__``: dir(Enum.member) now includes attributes as well as methods.

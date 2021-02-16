@@ -1,1 +1,0 @@
-Fix __builtin_available check on older compilers. Patch by Joshua Root.

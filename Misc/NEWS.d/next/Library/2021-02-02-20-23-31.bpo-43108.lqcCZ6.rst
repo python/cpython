@@ -1,1 +1,0 @@
-Fixed a reference leak in the :mod:`curses` module. Patch by Pablo Galindo
