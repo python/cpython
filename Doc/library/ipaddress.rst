@@ -748,12 +748,8 @@ dictionaries.
    .. method:: supernet(prefixlen_diff=1, new_prefix=None)
    .. method:: subnet_of(other)
    .. method:: supernet_of(other)
-   .. method:: compare_networks(other)
-
-      Refer to the corresponding attribute documentation in
-      :class:`IPv4Network`.
-
    .. method:: next_network(next_prefix=None)
+   .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in
       :class:`IPv4Network`.
