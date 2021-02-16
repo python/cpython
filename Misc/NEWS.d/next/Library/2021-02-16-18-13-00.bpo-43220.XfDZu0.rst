@@ -1,0 +1,1 @@
+Accept explicitly passed default arguments in required argparse groups. Previously short strings that were used as default values in argparse groups would be rejected if they were passed with the same value. Now they are accepted.
