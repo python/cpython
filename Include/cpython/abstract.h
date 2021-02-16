@@ -325,10 +325,6 @@ PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
 /* Releases a Py_buffer obtained from getbuffer ParseTuple's "s*". */
 PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 
-/* ==== Iterators ================================================ */
-
-PyAPI_FUNC(int) PyIter_Check(PyObject *);
-
 /* === Sequence protocol ================================================ */
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
