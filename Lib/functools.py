@@ -298,7 +298,10 @@ class partial:
 
     def __call__(self, /, *args, **keywords):
         keywords = {**self.keywords, **keywords}
-        return self.func(*self.args, *args, **keywords)
+        iargs = iter(args)
+        args = (next(iargs) if arg is ... else arg
+                for arg in self.args)
+        return self.func(*self.args, *args, *iargs, **keywords)
 
     @recursive_repr()
     def __repr__(self):
