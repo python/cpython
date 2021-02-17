@@ -820,6 +820,12 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`42856`.)
 
+* Add a new configure ``--without-static-libpython`` option to not build the
+  ``libpythonMAJOR.MINOR.a`` static library and not install the ``python.o``
+  object file.
+
+  (Contributed by Victor Stinner in :issue:`43103`.)
+
 
 C API Changes
 =============
