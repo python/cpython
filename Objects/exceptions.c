@@ -361,8 +361,32 @@ PyException_GetContext(PyObject *self)
 void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
-    Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
+    assert(PyExceptionInstance_Check(self));
+    assert(context == NULL || PyExceptionInstance_Check(context));
+
+    PyObject *exc = context;
+    PyObject *prev_exc = NULL;
+
+    while (exc != NULL) {
+        if (exc == self) {
+            if (prev_exc != NULL) {
+                /* Move self to the start of the chain. */
+                ((PyBaseExceptionObject *)prev_exc)->context =
+                        ((PyBaseExceptionObject *)self)->context;
+                ((PyBaseExceptionObject *)self)->context = context;
+            }
+            assert(Py_REFCNT(self) > 1);
+            Py_DECREF(self);
+            return;
+        }
+        assert(PyExceptionInstance_Check(exc));
+        prev_exc = exc;
+        exc = ((PyBaseExceptionObject *)exc)->context;
+    }
+
+    Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
 }
+
 
 #undef PyExceptionClass_Name
 

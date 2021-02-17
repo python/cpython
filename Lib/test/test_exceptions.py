@@ -724,6 +724,26 @@ class ExceptionTests(unittest.TestCase):
         obj = wr()
         self.assertIsNone(obj)
 
+    def test_context_loop(self):
+        exc1 = Exception(1)
+        exc1.__context__ = exc1
+        self.assertIsNone(exc1.__context__)
+
+        exc2 = Exception(2)
+        exc2.__context__ = exc1
+        self.assertIs(exc2.__context__, exc1)
+        exc1.__context__ = exc2
+        self.assertIs(exc1.__context__, exc2)
+        self.assertIsNone(exc2.__context__)
+
+        exc3 = Exception(3)
+        exc3.__context__ = exc1
+        self.assertIs(exc3.__context__, exc1)
+        exc1.__context__ = exc3
+        self.assertIs(exc1.__context__, exc3)
+        self.assertIs(exc3.__context__, exc2)
+        self.assertIsNone(exc2.__context__)
+
     def test_exception_target_in_nested_scope(self):
         # issue 4617: This used to raise a SyntaxError
         # "can not delete variable 'e' referenced in nested scope"
