@@ -403,6 +403,24 @@ def NoReturn(self, parameters):
     raise TypeError(f"{self} is not subscriptable")
 
 @_SpecialForm
+def Void(self, parameters):
+    """Special type indicating functions that do not return values.
+    Example::
+
+      from typing import Void, Any
+
+      def nothing() -> Void:
+          pass
+
+      nothing() #passes type checking
+      a: Any = nothing() #fails type checking
+
+    This type is invalid in any context other than a function/method return
+    type annotation, e.g., ``List[Void]`` will fail in static type checkers.
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+@_SpecialForm
 def ClassVar(self, parameters):
     """Special type construct to mark class variables.
 
