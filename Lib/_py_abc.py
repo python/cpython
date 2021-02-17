@@ -11,6 +11,31 @@ def get_cache_token():
     return ABCMeta._abc_invalidation_counter
 
 
+def _abc_strict_init(cls, strict):
+    cls.__is_strict__ = strict
+
+    if strict:
+        return cls
+
+    required_methods = {
+        method
+        for base in cls.__mro__ if getattr(base, "__is_strict__", False)
+        for method in getattr(base, "__abstractmethods__", ())
+    }
+    strict_methods = cls.__abstractmethods__ & required_methods
+
+    if strict_methods:
+        msg = "Can't create class {} with unimplemented strict abstract method{} {}"
+
+        raise TypeError(msg.format(
+            cls.__name__,
+            "s" if len(strict_methods) > 1 else "",
+            ", ".join(sorted(strict_methods)),
+        ))
+
+    return cls
+
+
 class ABCMeta(type):
     """Metaclass for defining Abstract Base Classes (ABCs).
 
@@ -32,7 +57,7 @@ class ABCMeta(type):
     #       external code.
     _abc_invalidation_counter = 0
 
-    def __new__(mcls, name, bases, namespace, /, **kwargs):
+    def __new__(mcls, name, bases, namespace, /, *, strict=False, **kwargs):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
         # Compute set of abstract method names
         abstracts = {name
@@ -49,6 +74,7 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+        _abc_strict_init(cls, strict)
         return cls
 
     def register(cls, subclass):

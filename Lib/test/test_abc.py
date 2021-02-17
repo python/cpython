@@ -650,12 +650,63 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class Receiver(ReceivesClassKwargs, abc_ABC, x=1, y=2, z=3):
                 pass
             self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
-    return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
-TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
-                                                                        abc.get_cache_token)
-TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(_py_abc.ABCMeta,
-                                                                     _py_abc.get_cache_token)
+
+    class TestStrictABC(unittest.TestCase):
+        def test_subclass_strict_cls(self):
+            class A(metaclass=abc_ABCMeta, strict=True):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            with self.assertRaisesRegex(
+                    TypeError,
+                    "^Can't create class B with unimplemented strict abstract method foo$",
+            ):
+                class B(A):
+                    pass
+
+        def test_make_subcls_strict(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(A, strict=True):
+                pass
+
+            with self.assertRaisesRegex(
+                    TypeError,
+                    "^Can't create class C with unimplemented strict abstract method foo$",
+            ):
+                class C(B):
+                    pass
+
+        def test_inherit_from_strict_and_nonstrict_cls(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(metaclass=abc_ABCMeta, strict=True):
+                @abc.abstractmethod
+                def bar(self):
+                    pass
+
+            with self.assertRaisesRegex(
+                    TypeError,
+                    "^Can't create class C with unimplemented strict abstract method bar$",
+            ):
+                class C(B):
+                    pass
+
+    return TestLegacyAPI, TestABC, TestABCWithInitSubclass, TestStrictABC
+
+
+TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py, TestStrictABC_Py = test_factory(abc.ABCMeta,
+                                                                                          abc.get_cache_token)
+TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C, TestStrictABC_C = test_factory(_py_abc.ABCMeta,
+                                                                                      _py_abc.get_cache_token)
 
 if __name__ == "__main__":
     unittest.main()

@@ -68,6 +68,8 @@ except ImportError:
     from _py_abc import ABCMeta, get_cache_token
     ABCMeta.__module__ = 'abc'
 else:
+    from _py_abc import _abc_strict_init
+
     class ABCMeta(type):
         """Metaclass for defining Abstract Base Classes (ABCs).
 
@@ -81,9 +83,10 @@ else:
         implementations defined by the registering ABC be callable (not
         even via super()).
         """
-        def __new__(mcls, name, bases, namespace, **kwargs):
+        def __new__(mcls, name, bases, namespace, *, strict=False, **kwargs):
             cls = super().__new__(mcls, name, bases, namespace, **kwargs)
             _abc_init(cls)
+            _abc_strict_init(cls, strict)
             return cls
 
         def register(cls, subclass):
