@@ -177,13 +177,7 @@
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pyarena.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pycapsule.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pyctype.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pydebug.h">
@@ -437,6 +431,12 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyarena.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyctype.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pyerrors.h">
       <Filter>Include\cpython</Filter>
