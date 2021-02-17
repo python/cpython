@@ -1,1 +1,1 @@
-Fix two recent regressions in None argument handling in :mod:`~traceback` module functions.
+Fix recent regression in None argument handling in :mod:`~traceback` module functions.
