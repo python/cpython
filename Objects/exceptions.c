@@ -364,8 +364,6 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
 }
 
-#undef PyExceptionClass_Name
-
 const char *
 PyExceptionClass_Name(PyObject *ob)
 {
