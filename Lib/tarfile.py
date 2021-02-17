@@ -2009,7 +2009,9 @@ class TarFile(object):
                 blocks += 1
             self.offset += blocks * BLOCKSIZE
 
-        self._dbg(3, "%s, size: %i, mtime: %.0f, mode: %i, uname: %s, gname: %s" % (tarinfo.name, tarinfo.size, tarinfo.mtime, tarinfo.mode, tarinfo.uname, tarinfo.gname))
+        self._dbg(3, "%s, size: %i, mtime: %.0f, mode: %i, uname: %s, gname: %s" \
+            % (tarinfo.name, tarinfo.size, tarinfo.mtime, tarinfo.mode, \
+            tarinfo.uname, tarinfo.gname))
 
         self.members.append(tarinfo)
 
