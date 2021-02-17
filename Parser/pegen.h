@@ -5,7 +5,6 @@
 #include <Python.h>
 #include <token.h>
 #include <Python-ast.h>
-#include <pyarena.h>
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
