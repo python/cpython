@@ -142,6 +142,8 @@
     <ClInclude Include="..\Include\cpython\methodobject.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
+    <ClInclude Include="..\Include\cpython\pyarena.h" />
+    <ClInclude Include="..\Include\cpython\pyctype.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
@@ -226,9 +228,7 @@
     <ClInclude Include="..\Include\parser_interface.h" />
     <ClInclude Include="..\Include\picklebufobject.h" />
     <ClInclude Include="..\Include\py_curses.h" />
-    <ClInclude Include="..\Include\pyarena.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
-    <ClInclude Include="..\Include\pyctype.h" />
     <ClInclude Include="..\Include\pydebug.h" />
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />

@@ -1057,9 +1057,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
 		$(srcdir)/Include/picklebufobject.h \
-		$(srcdir)/Include/pyarena.h \
 		$(srcdir)/Include/pycapsule.h \
-		$(srcdir)/Include/pyctype.h \
 		$(srcdir)/Include/pydebug.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
@@ -1113,6 +1111,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
+		$(srcdir)/Include/cpython/pyarena.h \
+		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \

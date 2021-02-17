@@ -137,7 +137,7 @@
 #include "pystate.h"
 #include "context.h"
 
-#include "pyarena.h"
+#include "cpython/pyarena.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -154,7 +154,7 @@
 
 #include "eval.h"
 
-#include "pyctype.h"
+#include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "fileutils.h"
