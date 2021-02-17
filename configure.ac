@@ -5882,6 +5882,33 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+AC_MSG_CHECKING(for --with-static-libpython)
+AC_ARG_WITH(static-libpython,
+  AS_HELP_STRING([--without-static-libpython],
+                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+  STATIC_LIBPYTHON=0
+else
+  AC_MSG_RESULT(yes);
+fi],
+[AC_MSG_RESULT(yes)])
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+if test "$PY_ENABLE_SHARED" = 1; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+else
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+fi
+AC_SUBST(STATIC_LIBPYTHON)
+AC_SUBST(LIBRARY_DEPS)
+
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.
 AC_MSG_CHECKING(for --disable-test-modules)
