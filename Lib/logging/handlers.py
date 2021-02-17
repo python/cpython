@@ -923,8 +923,8 @@ class SysLogHandler(logging.Handler):
         """
         return self.priority_map.get(levelName, "warning")
 
-    ident = ''          # prepended to all messages
-    append_nul = True   # some old syslog daemons expect a NUL terminator
+    ident = ''                             # prepended to all messages
+    message_separator_character = '\000'   # some old syslog daemons expect a NUL terminator
 
     def emit(self, record):
         """
@@ -937,8 +937,7 @@ class SysLogHandler(logging.Handler):
             msg = self.format(record)
             if self.ident:
                 msg = self.ident + msg
-            if self.append_nul:
-                msg += '\000'
+            msg += message_separator_character
 
             # We need to convert record level to lowercase, maybe this will
             # change in the future.
