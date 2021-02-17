@@ -934,10 +934,9 @@ class SysLogHandler(logging.Handler):
         exception information is present, it is NOT sent to the server.
         """
         try:
-            msg = self.format(record)
+            msg = self.format(record) + message_separator_character
             if self.ident:
                 msg = self.ident + msg
-            msg += message_separator_character
 
             # We need to convert record level to lowercase, maybe this will
             # change in the future.
