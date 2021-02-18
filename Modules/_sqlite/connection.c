@@ -696,7 +696,8 @@ error:
     PyGILState_Release(threadstate);
 }
 
-void _pysqlite_final_callback(sqlite3_context* context)
+static void
+_pysqlite_final_callback(sqlite3_context *context)
 {
     PyObject* function_result;
     PyObject** aggregate_instance;
