@@ -282,7 +282,8 @@ Other Language Changes
 
 * Functions have a new ``__builtins__`` attribute which is used to look for
   builtin symbols when a function is executed, instead of looking into
-  ``__globals__['__builtins__']``.
+  ``__globals__['__builtins__']``. The attribute is initialized from
+  ``__globals__["__builtins__"]`` if it exists, else from the current builtins.
   (Contributed by Mark Shannon in :issue:`42990`.)
 
 
@@ -788,6 +789,14 @@ Changes in the Python API
 
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
+
+* The :data:`types.FunctionType` constructor now inherits the current builtins
+  if the *globals* dictionary has no ``"__builtins__"`` key, rather than using
+  ``{"None": None}`` as builtins: same behavior as :func:`eval` and
+  :func:`exec` functions.  Defining a function with ``def function(...): ...``
+  in Python is not affected, globals cannot be overriden with this syntax: it
+  also inherits the current builtins.
+  (Contributed by Victor Stinner in :issue:`42990`.)
 
 CPython bytecode changes
 ========================
