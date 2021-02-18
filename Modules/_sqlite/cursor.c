@@ -249,7 +249,6 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     PyObject* converted;
     Py_ssize_t nbytes;
     char buf[200];
-    const char* colname;
     PyObject* error_msg;
 
     if (self->reset) {
@@ -311,9 +310,10 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                     converted = PyUnicode_FromStringAndSize(text, nbytes);
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
-                        colname = sqlite3_column_name(self->statement->st, i);
-                        if (!colname) {
-                            colname = "<unknown column name>";
+                        const char *colname = sqlite3_column_name(self->statement->st, i);
+                        if (colname == NULL) {
+                            PyErr_NoMemory();
+                            goto error;
                         }
                         PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column '%s' with text '%s'",
                                      colname , text);
