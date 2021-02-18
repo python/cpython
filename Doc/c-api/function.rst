@@ -61,9 +61,11 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject* PyFunction_GetModule(PyObject *op)
 
-   Return the *__module__* attribute of the function object *op*. This is normally
-   a string containing the module name, but can be set to any other object by
-   Python code.
+   Return a :term:`borrowed reference` to the *__module__* attribute of the
+   function object *op*. It can be *NULL*.
+
+   This is normally a string containing the module name, but can be set to any
+   other object by Python code.
 
 
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
