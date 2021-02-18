@@ -397,7 +397,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     PyObject* result;
     int numcols;
     PyObject* descriptor;
-    PyObject* column_name;
     sqlite_int64 lastrowid;
 
     if (!check_cursor(self)) {
@@ -551,13 +550,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                 if (!descriptor) {
                     goto error;
                 }
-                column_name = _pysqlite_build_column_name(self,
-                                sqlite3_column_name(self->statement->st, i));
-                if (!column_name) {
+                const char *colname = sqlite3_column_name(self->statement->st, i);
+                if (colname == NULL) {
+                    PyErr_NoMemory();
+                    goto error;
+                }
+                PyObject* colname_obj = _pysqlite_build_column_name(self, colname);
+                if (colname_obj == NULL) {
                     Py_DECREF(descriptor);
                     goto error;
                 }
-                PyTuple_SetItem(descriptor, 0, column_name);
+                PyTuple_SetItem(descriptor, 0, colname_obj);
                 PyTuple_SetItem(descriptor, 1, Py_NewRef(Py_None));
                 PyTuple_SetItem(descriptor, 2, Py_NewRef(Py_None));
                 PyTuple_SetItem(descriptor, 3, Py_NewRef(Py_None));
