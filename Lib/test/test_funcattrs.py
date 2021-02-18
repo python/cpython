@@ -73,6 +73,11 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.cannot_set_attr(self.b, '__globals__', 2,
                              (AttributeError, TypeError))
 
+    def test___builtins__(self):
+        self.assertIs(self.b.__builtins__, __builtins__)
+        self.cannot_set_attr(self.b, '__builtins__', 2,
+                             (AttributeError, TypeError))
+
     def test___closure__(self):
         a = 12
         def f(): print(a)

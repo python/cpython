@@ -682,9 +682,10 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(np.y, 2)
 
     def test_new_builtins_issue_43102(self):
-        self.assertEqual(
-            namedtuple('C', ()).__new__.__globals__['__builtins__'],
-            {})
+        obj = namedtuple('C', ())
+        new_func = obj.__new__
+        self.assertEqual(new_func.__globals__['__builtins__'], {})
+        self.assertEqual(new_func.__builtins__, {})
 
 
 ################################################################################

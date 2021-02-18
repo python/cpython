@@ -280,6 +280,11 @@ Other Language Changes
 * Assignment expressions can now be used unparenthesized within set literals
   and set comprehensions, as well as in sequence indexes (but not slices).
 
+* Functions have a new ``__builtins__`` attribute which is used to look for
+  builtin symbols when a function is executed, instead of looking into
+  ``__globals__['__builtins__']``.
+  (Contributed by Mark Shannon in :issue:`42990`.)
+
 
 New Modules
 ===========
