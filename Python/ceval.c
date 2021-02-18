@@ -908,7 +908,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_closure = NULL
     };
     PyThreadState *tstate = PyThreadState_GET();
-    PyObject *res =_PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
+    PyObject *res = _PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
     Py_DECREF(builtins);
     return res;
 }
@@ -4800,8 +4800,8 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     };
     PyThreadState *tstate = _PyThreadState_GET();
     res = _PyEval_Vector(tstate, &constr, locals,
-                                    allargs, argcount,
-                                    kwnames);
+                         allargs, argcount,
+                         kwnames);
     if (kwcount) {
         Py_DECREF(kwnames);
         PyMem_Free(newargs);
