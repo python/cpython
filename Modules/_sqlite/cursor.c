@@ -281,7 +281,8 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         /*
          * Note, sqlite3_column_bytes() must come after sqlite3_column_blob()
          * or sqlite3_column_text().
-         * Ref. https://sqlite.org/c3ref/column_blob.html
+         *
+         * See https://sqlite.org/c3ref/column_blob.html for details.
          */
         if (converter != Py_None) {
             val_str = (const char*)sqlite3_column_blob(self->statement->st, i);
