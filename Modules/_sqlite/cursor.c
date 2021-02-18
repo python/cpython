@@ -278,9 +278,15 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             converter = Py_None;
         }
 
+        /*
+         * Note, sqlite3_column_bytes() must come after sqlite3_column_blob()
+         * or sqlite3_column_text().
+         *
+         * See https://sqlite.org/c3ref/column_blob.html for details.
+         */
         if (converter != Py_None) {
-            nbytes = sqlite3_column_bytes(self->statement->st, i);
             val_str = (const char*)sqlite3_column_blob(self->statement->st, i);
+            nbytes = sqlite3_column_bytes(self->statement->st, i);
             if (!val_str) {
                 converted = Py_NewRef(Py_None);
             } else {
@@ -330,9 +336,13 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 }
             } else {
                 /* coltype == SQLITE_BLOB */
-                nbytes = sqlite3_column_bytes(self->statement->st, i);
-                converted = PyBytes_FromStringAndSize(
-                    sqlite3_column_blob(self->statement->st, i), nbytes);
+                const char *blob = sqlite3_column_blob(self->statement->st, i);
+                if (!blob) {
+                    converted = Py_NewRef(Py_None);
+                } else {
+                    nbytes = sqlite3_column_bytes(self->statement->st, i);
+                    converted = PyBytes_FromStringAndSize(blob, nbytes);
+                }
             }
         }
 
