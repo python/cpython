@@ -11,14 +11,14 @@ Functions for number conversion and formatted string output.
 .. c:function:: int PyOS_snprintf(char *str, size_t size,  const char *format, ...)
 
    Output not more than *size* bytes to *str* according to the format string
-   *format* and the extra arguments. See the Unix man page :manpage:`snprintf(2)`.
+   *format* and the extra arguments. See the Unix man page :manpage:`snprintf(3)`.
 
 
 .. c:function:: int PyOS_vsnprintf(char *str, size_t size, const char *format, va_list va)
 
    Output not more than *size* bytes to *str* according to the format string
    *format* and the variable argument list *va*. Unix man page
-   :manpage:`vsnprintf(2)`.
+   :manpage:`vsnprintf(3)`.
 
 :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf` wrap the Standard C library
 functions :c:func:`snprintf` and :c:func:`vsnprintf`. Their purpose is to
