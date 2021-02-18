@@ -23,7 +23,6 @@ EXCLUDED_HEADERS = {
     "longintrepr.h",
     "parsetok.h",
     "pyatomic.h",
-    "pydebug.h",
     "pytime.h",
     "symtable.h",
     "token.h",
