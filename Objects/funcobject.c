@@ -250,6 +250,7 @@ static PyMemberDef func_memberlist[] = {
     {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
+    {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
     {NULL}  /* Sentinel */
 };
 
