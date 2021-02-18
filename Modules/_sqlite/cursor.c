@@ -135,7 +135,6 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
 {
     int i;
     const char* pos;
-    const char* colname;
     const char* decltype;
     PyObject* converter;
 
@@ -152,21 +151,23 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
         converter = NULL;
 
         if (self->connection->detect_types & PARSE_COLNAMES) {
-            colname = sqlite3_column_name(self->statement->st, i);
-            if (colname) {
-                const char *type_start = NULL;
-                for (pos = colname; *pos != 0; pos++) {
-                    if (*pos == '[') {
-                        type_start = pos + 1;
+            const char *colname = sqlite3_column_name(self->statement->st, i);
+            if (colname == NULL) {
+                PyErr_NoMemory();
+                return -1;
+            }
+            const char *type_start = NULL;
+            for (pos = colname; *pos != 0; pos++) {
+                if (*pos == '[') {
+                    type_start = pos + 1;
+                }
+                else if (*pos == ']' && type_start != NULL) {
+                    converter = _pysqlite_get_converter(type_start, pos - type_start);
+                    if (!converter && PyErr_Occurred()) {
+                        Py_CLEAR(self->row_cast_map);
+                        return -1;
                     }
-                    else if (*pos == ']' && type_start != NULL) {
-                        converter = _pysqlite_get_converter(type_start, pos - type_start);
-                        if (!converter && PyErr_Occurred()) {
-                            Py_CLEAR(self->row_cast_map);
-                            return -1;
-                        }
-                        break;
-                    }
+                    break;
                 }
             }
         }
