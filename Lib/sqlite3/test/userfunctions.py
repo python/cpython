@@ -429,6 +429,11 @@ class AggregateTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 60)
 
+    def test_aggr_no_match(self):
+        cur = self.con.execute("select mysum(i) from (select 1 as i) where i == 0")
+        val = cur.fetchone()[0]
+        self.assertIsNone(val)
+
 class AuthorizerTests(unittest.TestCase):
     @staticmethod
     def authorizer_cb(action, arg1, arg2, dbname, source):
