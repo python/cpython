@@ -430,7 +430,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         PyStatus status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
@@ -627,7 +627,7 @@ static PyStatus
 pycore_init_types(PyThreadState *tstate)
 {
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     status = _PyGC_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1003,7 +1003,7 @@ init_interp_main(PyThreadState *tstate)
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
     PyInterpreterState *interp = tstate->interp;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
@@ -1597,7 +1597,7 @@ finalize_interp_types(PyThreadState *tstate)
 static void
 finalize_interp_clear(PyThreadState *tstate)
 {
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1622,7 +1622,7 @@ finalize_interp_clear(PyThreadState *tstate)
 static void
 finalize_interp_delete(PyThreadState *tstate)
 {
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         /* Cleanup auto-thread-state */
         _PyGILState_Fini(tstate);
     }

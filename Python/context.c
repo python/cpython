@@ -1302,7 +1302,7 @@ _PyContext_ClearFreeList(PyThreadState *tstate)
 void
 _PyContext_Fini(PyThreadState *tstate)
 {
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         Py_CLEAR(_token_missing);
     }
     _PyContext_ClearFreeList(tstate);
