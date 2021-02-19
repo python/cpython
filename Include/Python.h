@@ -82,7 +82,6 @@
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
 #include "pymath.h"
-#include "pytime.h"
 #include "pymem.h"
 
 #include "object.h"
@@ -128,6 +127,7 @@
 #include "structseq.h"
 #include "namespaceobject.h"
 #include "picklebufobject.h"
+#include "cpython/pytime.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
@@ -137,7 +137,7 @@
 #include "pystate.h"
 #include "context.h"
 
-#include "pyarena.h"
+#include "cpython/pyarena.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -154,7 +154,7 @@
 
 #include "eval.h"
 
-#include "pyctype.h"
+#include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "fileutils.h"

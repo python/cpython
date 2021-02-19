@@ -249,7 +249,6 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     PyObject* converter;
     PyObject* converted;
     Py_ssize_t nbytes;
-    const char* val_str;
     char buf[200];
     const char* colname;
     PyObject* error_msg;
@@ -278,13 +277,19 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             converter = Py_None;
         }
 
+        /*
+         * Note, sqlite3_column_bytes() must come after sqlite3_column_blob()
+         * or sqlite3_column_text().
+         *
+         * See https://sqlite.org/c3ref/column_blob.html for details.
+         */
         if (converter != Py_None) {
+            const char *blob = (const char*)sqlite3_column_blob(self->statement->st, i);
             nbytes = sqlite3_column_bytes(self->statement->st, i);
-            val_str = (const char*)sqlite3_column_blob(self->statement->st, i);
-            if (!val_str) {
+            if (!blob) {
                 converted = Py_NewRef(Py_None);
             } else {
-                item = PyBytes_FromStringAndSize(val_str, nbytes);
+                item = PyBytes_FromStringAndSize(blob, nbytes);
                 if (!item)
                     goto error;
                 converted = PyObject_CallOneArg(converter, item);
@@ -301,10 +306,10 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             } else if (coltype == SQLITE_FLOAT) {
                 converted = PyFloat_FromDouble(sqlite3_column_double(self->statement->st, i));
             } else if (coltype == SQLITE_TEXT) {
-                val_str = (const char*)sqlite3_column_text(self->statement->st, i);
+                const char *text = (const char*)sqlite3_column_text(self->statement->st, i);
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
                 if (self->connection->text_factory == (PyObject*)&PyUnicode_Type) {
-                    converted = PyUnicode_FromStringAndSize(val_str, nbytes);
+                    converted = PyUnicode_FromStringAndSize(text, nbytes);
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
                         colname = sqlite3_column_name(self->statement->st, i);
@@ -312,7 +317,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                             colname = "<unknown column name>";
                         }
                         PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column '%s' with text '%s'",
-                                     colname , val_str);
+                                     colname , text);
                         error_msg = PyUnicode_Decode(buf, strlen(buf), "ascii", "replace");
                         if (!error_msg) {
                             PyErr_SetString(pysqlite_OperationalError, "Could not decode to UTF-8");
@@ -322,17 +327,21 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                         }
                     }
                 } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
-                    converted = PyBytes_FromStringAndSize(val_str, nbytes);
+                    converted = PyBytes_FromStringAndSize(text, nbytes);
                 } else if (self->connection->text_factory == (PyObject*)&PyByteArray_Type) {
-                    converted = PyByteArray_FromStringAndSize(val_str, nbytes);
+                    converted = PyByteArray_FromStringAndSize(text, nbytes);
                 } else {
-                    converted = PyObject_CallFunction(self->connection->text_factory, "y#", val_str, nbytes);
+                    converted = PyObject_CallFunction(self->connection->text_factory, "y#", text, nbytes);
                 }
             } else {
                 /* coltype == SQLITE_BLOB */
-                nbytes = sqlite3_column_bytes(self->statement->st, i);
-                converted = PyBytes_FromStringAndSize(
-                    sqlite3_column_blob(self->statement->st, i), nbytes);
+                const char *blob = sqlite3_column_blob(self->statement->st, i);
+                if (!blob) {
+                    converted = Py_NewRef(Py_None);
+                } else {
+                    nbytes = sqlite3_column_bytes(self->statement->st, i);
+                    converted = PyBytes_FromStringAndSize(blob, nbytes);
+                }
             }
         }
 

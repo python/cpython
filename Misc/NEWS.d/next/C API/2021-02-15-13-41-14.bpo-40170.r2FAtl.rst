@@ -1,0 +1,3 @@
+Convert :c:func:`PyDescr_IsData` macro to a function to hide implementation
+details: The macro accessed :c:member:`PyTypeObject.tp_descr_set` directly.
+Patch by Erlend E. Aasland.
