@@ -1640,7 +1640,43 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(len(root.childNodes), 2)
         self.assertEqual(root.toxml(), '<doc><first/><second/></doc>')
 
-# HERE
+    def text_normalize_nested_elements_with_text_nodes(self):
+        """Test that normalize is still working in a more complex tree."""
+        xml = '<doc><first>text</first><second>text</second></doc>'
+        doc = parseString(xml)
+        root = doc.documentElement
+        root.childNodes[0].appendChild(doc.createTextNode('added'))
+        root.childNodes[1].appendChild(doc.createTextNode(''))
+        doc.normalize()
+        self.assertEqual(len(root.childNodes[0]), 1)
+        self.assertEqual(len(root.childNodes[1]), 1)
+        self.assertEqual(
+            root.toxml(),
+            '<doc><first>textadded<first><second>text</second></doc>')
+
+    def test_normalize_on_text_node(self):
+        """Test that normalize on a text Node doesn't fail.
+
+        See https://bugs.python.org/issue777884
+        """
+        doc = parseString("<doc>text</doc>")
+        text = doc.documentElement.childNodes[0]
+        self.assertEqual(text.nodeType, Node.TEXT_NODE)
+        # Should run quietly, doing nothing.
+        text.normalize()
+
+    def test_normalize_unlink_child_node(self):
+        """Test that normalize unlinks empty child nodes.
+
+        See https://bugs.python.org/issue1433694
+        """
+        doc = parseString("<doc><el/>text</doc>")
+        root = doc.documentElement
+        root.childNodes[1].nodeValue = ''
+        doc.normalize()
+        # Final child's .nextSibling should be None
+        self.assertIsNone(root.childNodes[-1].nextSibling)
+
 
 if __name__ == "__main__":
     unittest.main()
