@@ -1489,9 +1489,9 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 
 void
-_PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
+_PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)
 {
-    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+    struct _Py_async_gen_state *state = &interp->async_gen;
 
     while (state->value_numfree) {
         _PyAsyncGenWrappedValue *o;
@@ -1509,11 +1509,11 @@ _PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
 }
 
 void
-_PyAsyncGen_Fini(PyThreadState *tstate)
+_PyAsyncGen_Fini(PyInterpreterState *interp)
 {
-    _PyAsyncGen_ClearFreeLists(tstate);
+    _PyAsyncGen_ClearFreeLists(interp);
 #ifdef Py_DEBUG
-    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+    struct _Py_async_gen_state *state = &interp->async_gen;
     state->value_numfree = -1;
     state->asend_numfree = -1;
 #endif

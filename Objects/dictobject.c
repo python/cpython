@@ -260,9 +260,9 @@ get_dict_state(void)
 
 
 void
-_PyDict_ClearFreeList(PyThreadState *tstate)
+_PyDict_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_dict_state *state = &tstate->interp->dict_state;
+    struct _Py_dict_state *state = &interp->dict_state;
     while (state->numfree) {
         PyDictObject *op = state->free_list[--state->numfree];
         assert(PyDict_CheckExact(op));
@@ -275,11 +275,11 @@ _PyDict_ClearFreeList(PyThreadState *tstate)
 
 
 void
-_PyDict_Fini(PyThreadState *tstate)
+_PyDict_Fini(PyInterpreterState *interp)
 {
-    _PyDict_ClearFreeList(tstate);
+    _PyDict_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_state *state = &interp->dict_state;
     state->numfree = -1;
     state->keys_numfree = -1;
 #endif
