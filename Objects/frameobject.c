@@ -1109,9 +1109,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(PyThreadState *tstate)
+_PyFrame_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     while (state->free_list != NULL) {
         PyFrameObject *f = state->free_list;
         state->free_list = state->free_list->f_back;
@@ -1122,11 +1122,11 @@ _PyFrame_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyFrame_Fini(PyThreadState *tstate)
+_PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(tstate);
+    _PyFrame_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     state->numfree = -1;
 #endif
 }

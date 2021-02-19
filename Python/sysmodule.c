@@ -86,9 +86,9 @@ _PySys_GetObjectId(_Py_Identifier *key)
 }
 
 static PyObject *
-_PySys_GetObject(PyThreadState *tstate, const char *name)
+_PySys_GetObject(PyInterpreterState *interp, const char *name)
 {
-    PyObject *sysdict = tstate->interp->sysdict;
+    PyObject *sysdict = interp->sysdict;
     if (sysdict == NULL) {
         return NULL;
     }
@@ -102,7 +102,7 @@ PySys_GetObject(const char *name)
 
     PyObject *exc_type, *exc_value, *exc_tb;
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
-    PyObject *value = _PySys_GetObject(tstate, name);
+    PyObject *value = _PySys_GetObject(tstate->interp, name);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
@@ -110,12 +110,12 @@ PySys_GetObject(const char *name)
 }
 
 static int
-sys_set_object(PyThreadState *tstate, PyObject *key, PyObject *v)
+sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
 {
     if (key == NULL) {
         return -1;
     }
-    PyObject *sd = tstate->interp->sysdict;
+    PyObject *sd = interp->sysdict;
     if (v == NULL) {
         v = _PyDict_Pop(sd, key, Py_None);
         if (v == NULL) {
@@ -130,24 +130,24 @@ sys_set_object(PyThreadState *tstate, PyObject *key, PyObject *v)
 }
 
 static int
-sys_set_object_id(PyThreadState *tstate, _Py_Identifier *key, PyObject *v)
+sys_set_object_id(PyInterpreterState *interp, _Py_Identifier *key, PyObject *v)
 {
-    return sys_set_object(tstate, _PyUnicode_FromId(key), v);
+    return sys_set_object(interp, _PyUnicode_FromId(key), v);
 }
 
 int
 _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return sys_set_object_id(tstate, key, v);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return sys_set_object_id(interp, key, v);
 }
 
 static int
-sys_set_object_str(PyThreadState *tstate, const char *name, PyObject *v)
+sys_set_object_str(PyInterpreterState *interp, const char *name, PyObject *v)
 {
     PyObject *key = v ? PyUnicode_InternFromString(name)
                       : PyUnicode_FromString(name);
-    int r = sys_set_object(tstate, key, v);
+    int r = sys_set_object(interp, key, v);
     Py_XDECREF(key);
     return r;
 }
@@ -155,22 +155,21 @@ sys_set_object_str(PyThreadState *tstate, const char *name, PyObject *v)
 int
 PySys_SetObject(const char *name, PyObject *v)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return sys_set_object_str(tstate, name, v);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return sys_set_object_str(interp, name, v);
 }
 
 
 static int
-should_audit(PyInterpreterState *is)
+should_audit(PyInterpreterState *interp)
 {
-    /* tstate->interp cannot be NULL, but test it just in case
-       for extra safety */
-    assert(is != NULL);
-    if (!is) {
+    /* interp must not be NULL, but test it just in case for extra safety */
+    assert(interp != NULL);
+    if (!interp) {
         return 0;
     }
-    return (is->runtime->audit_hook_head
-            || is->audit_hooks
+    return (interp->runtime->audit_hook_head
+            || interp->audit_hooks
             || PyDTrace_AUDIT_ENABLED());
 }
 
@@ -455,15 +454,15 @@ sys_addaudithook_impl(PyObject *module, PyObject *hook)
         return NULL;
     }
 
-    PyInterpreterState *is = tstate->interp;
-    if (is->audit_hooks == NULL) {
-        is->audit_hooks = PyList_New(0);
-        if (is->audit_hooks == NULL) {
+    PyInterpreterState *interp = tstate->interp;
+    if (interp->audit_hooks == NULL) {
+        interp->audit_hooks = PyList_New(0);
+        if (interp->audit_hooks == NULL) {
             return NULL;
         }
     }
 
-    if (PyList_Append(is->audit_hooks, hook) < 0) {
+    if (PyList_Append(interp->audit_hooks, hook) < 0) {
         return NULL;
     }
 
@@ -1607,8 +1606,8 @@ static PyObject *
 sys_setdlopenflags_impl(PyObject *module, int new_val)
 /*[clinic end generated code: output=ec918b7fe0a37281 input=4c838211e857a77f]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    tstate->interp->dlopenflags = new_val;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->dlopenflags = new_val;
     Py_RETURN_NONE;
 }
 
@@ -1625,8 +1624,8 @@ static PyObject *
 sys_getdlopenflags_impl(PyObject *module)
 /*[clinic end generated code: output=e92cd1bc5005da6e input=dc4ea0899c53b4b6]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->interp->dlopenflags);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyLong_FromLong(interp->dlopenflags);
 }
 
 #endif  /* HAVE_DLOPEN */
@@ -2217,7 +2216,7 @@ get_warnoptions(PyThreadState *tstate)
         if (warnoptions == NULL) {
             return NULL;
         }
-        if (sys_set_object_id(tstate, &PyId_warnoptions, warnoptions)) {
+        if (sys_set_object_id(tstate->interp, &PyId_warnoptions, warnoptions)) {
             Py_DECREF(warnoptions);
             return NULL;
         }
@@ -2310,7 +2309,7 @@ get_xoptions(PyThreadState *tstate)
         if (xoptions == NULL) {
             return NULL;
         }
-        if (sys_set_object_id(tstate, &PyId__xoptions, xoptions)) {
+        if (sys_set_object_id(tstate->interp, &PyId__xoptions, xoptions)) {
             Py_DECREF(xoptions);
             return NULL;
         }
@@ -2511,9 +2510,8 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static int
-set_flags_from_config(PyObject *flags, PyThreadState *tstate)
+set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 {
-    PyInterpreterState *interp = tstate->interp;
     const PyPreConfig *preconfig = &interp->runtime->preconfig;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
@@ -2554,14 +2552,14 @@ set_flags_from_config(PyObject *flags, PyThreadState *tstate)
 
 
 static PyObject*
-make_flags(PyThreadState *tstate)
+make_flags(PyInterpreterState *interp)
 {
     PyObject *flags = PyStructSequence_New(&FlagsType);
     if (flags == NULL) {
         return NULL;
     }
 
-    if (set_flags_from_config(flags, tstate) < 0) {
+    if (set_flags_from_config(interp, flags) < 0) {
         Py_DECREF(flags);
         return NULL;
     }
@@ -2819,7 +2817,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
             goto type_init_failed;
         }
     }
-    SET_SYS("flags", make_flags(tstate));
+    SET_SYS("flags", make_flags(tstate->interp));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2941,8 +2939,9 @@ sys_create_xoptions_dict(const PyConfig *config)
 int
 _PySys_UpdateConfig(PyThreadState *tstate)
 {
-    PyObject *sysdict = tstate->interp->sysdict;
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    PyInterpreterState *interp = tstate->interp;
+    PyObject *sysdict = interp->sysdict;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     int res;
 
 #define COPY_LIST(KEY, VALUE) \
@@ -2985,11 +2984,11 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // sys.flags
-    PyObject *flags = _PySys_GetObject(tstate, "flags");  // borrowed ref
+    PyObject *flags = _PySys_GetObject(interp, "flags"); // borrowed ref
     if (flags == NULL) {
         return -1;
     }
-    if (set_flags_from_config(flags, tstate) < 0) {
+    if (set_flags_from_config(interp, flags) < 0) {
         return -1;
     }
 
@@ -3129,8 +3128,8 @@ PySys_SetPath(const wchar_t *path)
     PyObject *v;
     if ((v = makepathobject(path, DELIM)) == NULL)
         Py_FatalError("can't create sys.path");
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (sys_set_object_id(tstate, &PyId_path, v) != 0) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (sys_set_object_id(interp, &PyId_path, v) != 0) {
         Py_FatalError("can't assign sys.path");
     }
     Py_DECREF(v);
@@ -3171,7 +3170,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (av == NULL) {
         Py_FatalError("no mem for sys.argv");
     }
-    if (sys_set_object_str(tstate, "argv", av) != 0) {
+    if (sys_set_object_str(tstate->interp, "argv", av) != 0) {
         Py_DECREF(av);
         Py_FatalError("can't assign sys.argv");
     }

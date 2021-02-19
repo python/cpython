@@ -106,9 +106,9 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(PyThreadState *tstate)
+_PyList_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_list_state *state = &tstate->interp->list;
+    struct _Py_list_state *state = &interp->list;
     while (state->numfree) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
@@ -117,11 +117,11 @@ _PyList_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyList_Fini(PyThreadState *tstate)
+_PyList_Fini(PyInterpreterState *interp)
 {
-    _PyList_ClearFreeList(tstate);
+    _PyList_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_list_state *state = &tstate->interp->list;
+    struct _Py_list_state *state = &interp->list;
     state->numfree = -1;
 #endif
 }
