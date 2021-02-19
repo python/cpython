@@ -5719,7 +5719,7 @@ _PyLong_Init(PyThreadState *tstate)
         tstate->interp->small_ints[i] = v;
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         /* initialize int_info */
         if (Int_InfoType.tp_name == NULL) {
             if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {

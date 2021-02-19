@@ -1327,7 +1327,7 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 PyStatus
 _PyGILState_Init(PyThreadState *tstate)
 {
-    if (!_Py_IsMainInterpreter(tstate)) {
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
         return _PyStatus_OK();
