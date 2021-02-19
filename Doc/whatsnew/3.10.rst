@@ -934,6 +934,14 @@ Porting to Python 3.10
   bugs like ``if (PyList_SET_ITEM (a, b, c) < 0) ...`` test.
   (Contributed by Zackery Spytz and Victor Stinner in :issue:`30459`.)
 
+* The non-limited API files ``odictobject.h``, ``parser_interface.h``,
+  ``picklebufobject.h``, ``pyarena.h``, ``pyctype.h``, ``pydebug.h``,
+  ``pyfpe.h``, and ``pytime.h`` have been moved to the ``Include/cpython``
+  directory. These files must not be included directly, as they are already
+  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  been included directly, consider including ``Python.h`` instead.
+  (Contributed by Nicholas Sim in :issue:`35134`)
+
 Deprecated
 ----------
 
