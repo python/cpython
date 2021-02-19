@@ -1,0 +1,7 @@
+.. bpo: 43155
+.. date: 2021-02-10-04-16-51
+.. nonce: O1tURk
+.. release date: 2021-02-19
+.. section: Windows
+
+:c:func:`PyCMethod_New` is now present in ``python3.lib``.
