@@ -23,7 +23,7 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     int (*func)(void *),
     void *arg);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -55,7 +55,7 @@ extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
 extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
 #endif
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
-extern void _PyEval_FiniGIL(PyThreadState *tstate);
+extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 

@@ -3063,9 +3063,9 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyThreadState *tstate)
+_PyBytes_Init(PyInterpreterState *interp)
 {
-    struct _Py_bytes_state *state = &tstate->interp->bytes;
+    struct _Py_bytes_state *state = &interp->bytes;
     if (bytes_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
@@ -3074,9 +3074,9 @@ _PyBytes_Init(PyThreadState *tstate)
 
 
 void
-_PyBytes_Fini(PyThreadState *tstate)
+_PyBytes_Fini(PyInterpreterState *interp)
 {
-    struct _Py_bytes_state* state = &tstate->interp->bytes;
+    struct _Py_bytes_state* state = &interp->bytes;
     for (int i = 0; i < UCHAR_MAX + 1; i++) {
         Py_CLEAR(state->characters[i]);
     }

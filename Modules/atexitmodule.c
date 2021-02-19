@@ -52,9 +52,9 @@ atexit_cleanup(struct atexit_state *state)
 
 
 PyStatus
-_PyAtExit_Init(PyThreadState *tstate)
+_PyAtExit_Init(PyInterpreterState *interp)
 {
-    struct atexit_state *state = &tstate->interp->atexit;
+    struct atexit_state *state = &interp->atexit;
     // _PyAtExit_Init() must only be called once
     assert(state->callbacks == NULL);
 
@@ -109,9 +109,9 @@ atexit_callfuncs(struct atexit_state *state)
 
 
 void
-_PyAtExit_Call(PyThreadState *tstate)
+_PyAtExit_Call(PyInterpreterState *interp)
 {
-    struct atexit_state *state = &tstate->interp->atexit;
+    struct atexit_state *state = &interp->atexit;
     atexit_callfuncs(state);
 }
 
