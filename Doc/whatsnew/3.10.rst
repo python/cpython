@@ -285,6 +285,10 @@ Other Language Changes
   ``__globals__['__builtins__']``.
   (Contributed by Mark Shannon in :issue:`42990`.)
 
+* `**=` will try ``__pow__``/``__rpow__`` when ``__ipow__`` returns
+  :class:`NotImplemented` as defined by the language specification.
+  (Contributed by Brett Cannon in :issue:`38302`.)
+
 
 New Modules
 ===========

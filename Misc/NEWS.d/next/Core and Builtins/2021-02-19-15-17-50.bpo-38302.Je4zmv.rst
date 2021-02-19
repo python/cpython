@@ -1,0 +1,1 @@
+When __ipow__ returns NotImplemented, fall back to trying __pow__/__rpow__.
