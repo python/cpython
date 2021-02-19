@@ -3903,6 +3903,25 @@ order (MRO) for bases """
         a = C()
         a **= 2
 
+    def test_pow_fallback_for_ipow(self):
+        # If __ipow__ returns NotImplemented, call __pow__.
+        # https://bugs.python.org/issue38302
+        class C:
+            def __init__(self, val):
+                self._val = val
+
+            def __ipow__(self, other):
+                return NotImplemented
+
+            def __pow__(self, other):
+                return self._val ** other
+
+        base = 3
+        exponent = 5
+        a = C(base)
+        a **= exponent
+        self.assertEqual(a, base ** exponent)
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 

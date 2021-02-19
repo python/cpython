@@ -846,6 +846,31 @@ binop_type_error(PyObject *v, PyObject *w, const char *op_name)
 }
 
 static PyObject *
+ternaryop_type_error(PyObject *v, PyObject *w, PyObject *z, const char *op_name)
+{
+    if (z == Py_None) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "unsupported operand type(s) for %.100s: "
+            "'%.100s' and '%.100s'",
+            op_name,
+            Py_TYPE(v)->tp_name,
+            Py_TYPE(w)->tp_name);
+    }
+    else {
+        PyErr_Format(
+            PyExc_TypeError,
+            "unsupported operand type(s) for %.100s: "
+            "'%.100s', '%.100s', '%.100s'",
+            op_name,
+            Py_TYPE(v)->tp_name,
+            Py_TYPE(w)->tp_name,
+            Py_TYPE(z)->tp_name);
+    }
+    return NULL;
+}
+
+static PyObject *
 binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 {
     PyObject *result = BINARY_OP1(v, w, op_slot, op_name);
@@ -952,24 +977,7 @@ ternary_op(PyObject *v,
         }
     }
 
-    if (z == Py_None) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "unsupported operand type(s) for ** or pow(): "
-            "'%.100s' and '%.100s'",
-            Py_TYPE(v)->tp_name,
-            Py_TYPE(w)->tp_name);
-    }
-    else {
-        PyErr_Format(
-            PyExc_TypeError,
-            "unsupported operand type(s) for pow(): "
-            "'%.100s', '%.100s', '%.100s'",
-            Py_TYPE(v)->tp_name,
-            Py_TYPE(w)->tp_name,
-            Py_TYPE(z)->tp_name);
-    }
-    return NULL;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 #ifdef NDEBUG
@@ -1077,7 +1085,12 @@ PyNumber_Remainder(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 {
-    return TERNARY_OP(v, w, z, NB_SLOT(nb_power), "** or pow()");
+    PyObject *result = TERNARY_OP(v, w, z, NB_SLOT(nb_power), "** or pow()");
+    if (result == Py_NotImplemented) {
+        Py_DECREF(result);
+        return ternaryop_type_error(v, w, z, "** or pow()");
+    }
+    return result;
 }
 
 /* Binary in-place operators */
@@ -1237,13 +1250,16 @@ PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
-    if (Py_TYPE(v)->tp_as_number &&
-        Py_TYPE(v)->tp_as_number->nb_inplace_power != NULL) {
-        return TERNARY_OP(v, w, z, NB_SLOT(nb_inplace_power), "**=");
+    PyObject *result = TERNARY_OP(v, w, z, NB_SLOT(nb_inplace_power), "**=");
+    if (result == Py_NotImplemented) {
+        Py_DECREF(result);
+        result = TERNARY_OP(v, w, z, NB_SLOT(nb_power), "**=");
+        if (result == Py_NotImplemented) {
+            Py_DECREF(result);
+            return ternaryop_type_error(v, w, z, "**=");
+        }
     }
-    else {
-        return TERNARY_OP(v, w, z, NB_SLOT(nb_power), "**=");
-    }
+    return result;
 }
 
 
