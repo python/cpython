@@ -1,0 +1,2 @@
+Add the "regen-frozen" makefile target that regenerates the code for the
+frozen ``__hello__`` module.
