@@ -316,7 +316,7 @@ PEGEN_OBJS=		\
 
 
 PEGEN_HEADERS= \
-		$(srcdir)/Include/parser_interface.h \
+		$(srcdir)/Include/cpython/parser_interface.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
@@ -1056,17 +1056,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/namespaceobject.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
-		$(srcdir)/Include/odictobject.h \
 		$(srcdir)/Include/opcode.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
-		$(srcdir)/Include/picklebufobject.h \
 		$(srcdir)/Include/pycapsule.h \
-		$(srcdir)/Include/pydebug.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
-		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyframe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
@@ -1116,9 +1112,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
+		$(srcdir)/Include/cpython/odictobject.h \
+		$(srcdir)/Include/cpython/picklebufobject.h \
 		$(srcdir)/Include/cpython/pyarena.h \
 		$(srcdir)/Include/cpython/pyctype.h \
+		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
+		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
