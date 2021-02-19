@@ -1237,13 +1237,15 @@ pysqlite_check_thread(pysqlite_Connection *self)
 }
 
 static PyObject *
-pysqlite_connection_get_isolation_level(pysqlite_Connection *self, void *unused)
+pysqlite_connection_get_isolation_level(pysqlite_Connection *self,
+                                        void *Py_UNUSED(unused))
 {
     return Py_NewRef(self->isolation_level);
 }
 
 static PyObject *
-pysqlite_connection_get_total_changes(pysqlite_Connection *self, void *unused)
+pysqlite_connection_get_total_changes(pysqlite_Connection *self,
+                                      void *Py_UNUSED(unused))
 {
     if (!pysqlite_check_connection(self)) {
         return NULL;
@@ -1253,7 +1255,8 @@ pysqlite_connection_get_total_changes(pysqlite_Connection *self, void *unused)
 }
 
 static PyObject *
-pysqlite_connection_get_in_transaction(pysqlite_Connection *self, void *unused)
+pysqlite_connection_get_in_transaction(pysqlite_Connection *self,
+                                       void *Py_UNUSED(unused))
 {
     if (!pysqlite_check_connection(self)) {
         return NULL;
