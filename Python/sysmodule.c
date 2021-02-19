@@ -838,8 +838,7 @@ sys_exit_impl(PyObject *module, PyObject *status)
 /*[clinic end generated code: output=13870986c1ab2ec0 input=b86ca9497baa94f2]*/
 {
     /* Raise SystemExit so callers may catch it or clean up. */
-    PyThreadState *tstate = _PyThreadState_GET();
-    _PyErr_SetObject(tstate, PyExc_SystemExit, status);
+    PyErr_SetObject(PyExc_SystemExit, status);
     return NULL;
 }
 
@@ -905,15 +904,14 @@ static PyObject *
 sys_intern_impl(PyObject *module, PyObject *s)
 /*[clinic end generated code: output=be680c24f5c9e5d6 input=849483c006924e2f]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (PyUnicode_CheckExact(s)) {
         Py_INCREF(s);
         PyUnicode_InternInPlace(&s);
         return s;
     }
     else {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "can't intern %.400s", Py_TYPE(s)->tp_name);
+        PyErr_Format(PyExc_TypeError,
+                     "can't intern %.400s", Py_TYPE(s)->tp_name);
         return NULL;
     }
 }
@@ -1141,10 +1139,9 @@ static PyObject *
 sys_setswitchinterval_impl(PyObject *module, double interval)
 /*[clinic end generated code: output=65a19629e5153983 input=561b477134df91d9]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     if (interval <= 0.0) {
-        _PyErr_SetString(tstate, PyExc_ValueError,
-                         "switch interval must be strictly positive");
+        PyErr_SetString(PyExc_ValueError,
+                        "switch interval must be strictly positive");
         return NULL;
     }
     _PyEval_SetSwitchInterval((unsigned long) (1e6 * interval));
@@ -1277,7 +1274,6 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
     static char *keywords[] = {"firstiter", "finalizer", NULL};
     PyObject *firstiter = NULL;
     PyObject *finalizer = NULL;
-    PyThreadState *tstate = _PyThreadState_GET();
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kw, "|OO", keywords,
@@ -1287,9 +1283,9 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "callable finalizer expected, got %.50s",
-                          Py_TYPE(finalizer)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "callable finalizer expected, got %.50s",
+                         Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
         if (_PyEval_SetAsyncGenFinalizer(finalizer) < 0) {
@@ -1302,9 +1298,9 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 
     if (firstiter && firstiter != Py_None) {
         if (!PyCallable_Check(firstiter)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "callable firstiter expected, got %.50s",
-                          Py_TYPE(firstiter)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "callable firstiter expected, got %.50s",
+                         Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
         if (_PyEval_SetAsyncGenFirstiter(firstiter) < 0) {
@@ -1505,7 +1501,6 @@ sys_getwindowsversion_impl(PyObject *module)
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
     DWORD verblock_size;
-    PyThreadState *tstate = _PyThreadState_GET();
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
@@ -1556,11 +1551,10 @@ sys_getwindowsversion_impl(PyObject *module)
         realBuild
     ));
 
-    if (_PyErr_Occurred(tstate)) {
+    if (PyErr_Occurred()) {
         Py_DECREF(version);
         return NULL;
     }
-
     return version;
 }
 
