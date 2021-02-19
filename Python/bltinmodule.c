@@ -2853,11 +2853,11 @@ static struct PyModuleDef builtinsmodule = {
 
 
 PyObject *
-_PyBuiltin_Init(PyThreadState *tstate)
+_PyBuiltin_Init(PyInterpreterState *interp)
 {
     PyObject *mod, *dict, *debug;
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     if (PyType_Ready(&PyFilter_Type) < 0 ||
         PyType_Ready(&PyMap_Type) < 0 ||

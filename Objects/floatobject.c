@@ -2026,9 +2026,9 @@ _PyFloat_Init(void)
 }
 
 void
-_PyFloat_ClearFreeList(PyThreadState *tstate)
+_PyFloat_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_float_state *state = &tstate->interp->float_state;
+    struct _Py_float_state *state = &interp->float_state;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
@@ -2040,11 +2040,11 @@ _PyFloat_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyFloat_Fini(PyThreadState *tstate)
+_PyFloat_Fini(PyInterpreterState *interp)
 {
-    _PyFloat_ClearFreeList(tstate);
+    _PyFloat_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_float_state *state = &tstate->interp->float_state;
+    struct _Py_float_state *state = &interp->float_state;
     state->numfree = -1;
 #endif
 }

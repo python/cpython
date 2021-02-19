@@ -1007,10 +1007,10 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 void
-_PyTuple_ClearFreeList(PyThreadState *tstate)
+_PyTuple_ClearFreeList(PyInterpreterState *interp)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = &tstate->interp->tuple;
+    struct _Py_tuple_state *state = &interp->tuple;
     for (Py_ssize_t i = 1; i < PyTuple_MAXSAVESIZE; i++) {
         PyTupleObject *p = state->free_list[i];
         state->free_list[i] = NULL;
@@ -1027,9 +1027,9 @@ _PyTuple_ClearFreeList(PyThreadState *tstate)
 
 
 PyStatus
-_PyTuple_Init(PyThreadState *tstate)
+_PyTuple_Init(PyInterpreterState *interp)
 {
-    struct _Py_tuple_state *state = &tstate->interp->tuple;
+    struct _Py_tuple_state *state = &interp->tuple;
     if (tuple_create_empty_tuple_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
@@ -1038,14 +1038,14 @@ _PyTuple_Init(PyThreadState *tstate)
 
 
 void
-_PyTuple_Fini(PyThreadState *tstate)
+_PyTuple_Fini(PyInterpreterState *interp)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    struct _Py_tuple_state *state = &tstate->interp->tuple;
+    struct _Py_tuple_state *state = &interp->tuple;
     // The empty tuple singleton must not be tracked by the GC
     assert(!_PyObject_GC_IS_TRACKED(state->free_list[0]));
     Py_CLEAR(state->free_list[0]);
-    _PyTuple_ClearFreeList(tstate);
+    _PyTuple_ClearFreeList(interp);
 #ifdef Py_DEBUG
     state->numfree[0] = -1;
 #endif
