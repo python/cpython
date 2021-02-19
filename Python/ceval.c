@@ -298,7 +298,7 @@ PyStatus
 _PyEval_InitGIL(PyThreadState *tstate)
 {
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    if (!_Py_IsMainInterpreter(tstate)) {
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
@@ -326,7 +326,7 @@ void
 _PyEval_FiniGIL(PyThreadState *tstate)
 {
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    if (!_Py_IsMainInterpreter(tstate)) {
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
