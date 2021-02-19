@@ -734,208 +734,6 @@ class MinidomTest(unittest.TestCase):
         self.check_clone_node_entity(False)
         self.check_clone_node_entity(True)
 
-    def testNormalize(self):
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createTextNode("first"))
-        root.appendChild(doc.createTextNode("second"))
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2,
-                "testNormalize -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 1
-                and root.childNodes.length == 1
-                and root.firstChild is root.lastChild
-                and root.firstChild.data == "firstsecond"
-                , "testNormalize -- result")
-        doc.unlink()
-
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createTextNode(""))
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 0
-                and root.childNodes.length == 0,
-                "testNormalize -- single empty node removed")
-        doc.unlink()
-
-    def testNormalizeCombineAndNextSibling(self):
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createTextNode("first"))
-        root.appendChild(doc.createTextNode("second"))
-        root.appendChild(doc.createElement("i"))
-        self.confirm(len(root.childNodes) == 3
-                and root.childNodes.length == 3,
-                "testNormalizeCombineAndNextSibling -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2
-                and root.firstChild.data == "firstsecond"
-                and root.firstChild is not root.lastChild
-                and root.firstChild.nextSibling is root.lastChild
-                and root.firstChild.previousSibling is None
-                and root.lastChild.previousSibling is root.firstChild
-                and root.lastChild.nextSibling is None
-                , "testNormalizeCombinedAndNextSibling -- result")
-        doc.unlink()
-
-    def testNormalizeDeleteWithPrevSibling(self):
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createTextNode("first"))
-        root.appendChild(doc.createTextNode(""))
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2,
-                "testNormalizeDeleteWithPrevSibling -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 1
-                and root.childNodes.length == 1
-                and root.firstChild.data == "first"
-                and root.firstChild is root.lastChild
-                and root.firstChild.nextSibling is None
-                and root.firstChild.previousSibling is None
-                , "testNormalizeDeleteWithPrevSibling -- result")
-        doc.unlink()
-
-    def testNormalizeDeleteWithNextSibling(self):
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createTextNode(""))
-        root.appendChild(doc.createTextNode("second"))
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2,
-                "testNormalizeDeleteWithNextSibling -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 1
-                and root.childNodes.length == 1
-                and root.firstChild.data == "second"
-                and root.firstChild is root.lastChild
-                and root.firstChild.nextSibling is None
-                and root.firstChild.previousSibling is None
-                , "testNormalizeDeleteWithNextSibling -- result")
-        doc.unlink()
-
-    def testNormalizeDeleteWithTwoNonTextSiblings(self):
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createElement("i"))
-        root.appendChild(doc.createTextNode(""))
-        root.appendChild(doc.createElement("i"))
-        self.confirm(len(root.childNodes) == 3
-                and root.childNodes.length == 3,
-                "testNormalizeDeleteWithTwoSiblings -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2
-                and root.firstChild is not root.lastChild
-                and root.firstChild.nextSibling is root.lastChild
-                and root.firstChild.previousSibling is None
-                and root.lastChild.previousSibling is root.firstChild
-                and root.lastChild.nextSibling is None
-                , "testNormalizeDeleteWithTwoSiblings -- result")
-        doc.unlink()
-
-    def testNormalizeDeleteAndCombine(self):
-        doc = parseString("<doc/>")
-        root = doc.documentElement
-        root.appendChild(doc.createTextNode(""))
-        root.appendChild(doc.createTextNode("second"))
-        root.appendChild(doc.createTextNode(""))
-        root.appendChild(doc.createTextNode("fourth"))
-        root.appendChild(doc.createTextNode(""))
-        self.confirm(len(root.childNodes) == 5
-                and root.childNodes.length == 5,
-                "testNormalizeDeleteAndCombine -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 1
-                and root.childNodes.length == 1
-                and root.firstChild is root.lastChild
-                and root.firstChild.data == "secondfourth"
-                and root.firstChild.previousSibling is None
-                and root.firstChild.nextSibling is None
-                , "testNormalizeDeleteAndCombine -- result")
-        doc.unlink()
-
-    def testNormalizeRecursion(self):
-        doc = parseString("<doc>"
-                            "<o>"
-                              "<i/>"
-                              "t"
-                              #
-                              #x
-                            "</o>"
-                            "<o>"
-                              "<o>"
-                                "t2"
-                                #x2
-                              "</o>"
-                              "t3"
-                              #x3
-                            "</o>"
-                            #
-                          "</doc>")
-        root = doc.documentElement
-        root.childNodes[0].appendChild(doc.createTextNode(""))
-        root.childNodes[0].appendChild(doc.createTextNode("x"))
-        root.childNodes[1].childNodes[0].appendChild(doc.createTextNode("x2"))
-        root.childNodes[1].appendChild(doc.createTextNode("x3"))
-        root.appendChild(doc.createTextNode(""))
-        self.confirm(len(root.childNodes) == 3
-                and root.childNodes.length == 3
-                and len(root.childNodes[0].childNodes) == 4
-                and root.childNodes[0].childNodes.length == 4
-                and len(root.childNodes[1].childNodes) == 3
-                and root.childNodes[1].childNodes.length == 3
-                and len(root.childNodes[1].childNodes[0].childNodes) == 2
-                and root.childNodes[1].childNodes[0].childNodes.length == 2
-                , "testNormalize2 -- preparation")
-        doc.normalize()
-        self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2
-                and len(root.childNodes[0].childNodes) == 2
-                and root.childNodes[0].childNodes.length == 2
-                and len(root.childNodes[1].childNodes) == 2
-                and root.childNodes[1].childNodes.length == 2
-                and len(root.childNodes[1].childNodes[0].childNodes) == 1
-                and root.childNodes[1].childNodes[0].childNodes.length == 1
-                , "testNormalize2 -- childNodes lengths")
-        self.confirm(root.childNodes[0].childNodes[1].data == "tx"
-                and root.childNodes[1].childNodes[0].childNodes[0].data == "t2x2"
-                and root.childNodes[1].childNodes[1].data == "t3x3"
-                , "testNormalize2 -- joined text fields")
-        self.confirm(root.childNodes[0].childNodes[1].nextSibling is None
-                and root.childNodes[0].childNodes[1].previousSibling
-                        is root.childNodes[0].childNodes[0]
-                and root.childNodes[0].childNodes[0].previousSibling is None
-                and root.childNodes[0].childNodes[0].nextSibling
-                        is root.childNodes[0].childNodes[1]
-                and root.childNodes[1].childNodes[1].nextSibling is None
-                and root.childNodes[1].childNodes[1].previousSibling
-                        is root.childNodes[1].childNodes[0]
-                and root.childNodes[1].childNodes[0].previousSibling is None
-                and root.childNodes[1].childNodes[0].nextSibling
-                        is root.childNodes[1].childNodes[1]
-                , "testNormalize2 -- sibling pointers")
-        doc.unlink()
-
-
-    def testBug0777884(self):
-        doc = parseString("<o>text</o>")
-        text = doc.documentElement.childNodes[0]
-        self.assertEqual(text.nodeType, Node.TEXT_NODE)
-        # Should run quietly, doing nothing.
-        text.normalize()
-        doc.unlink()
-
-    def testBug1433694(self):
-        doc = parseString("<o><i/>t</o>")
-        node = doc.documentElement
-        node.childNodes[1].nodeValue = ""
-        node.normalize()
-        self.confirm(node.childNodes[-1].nextSibling is None,
-                     "Final child's .nextSibling should be None")
-
     def testSiblings(self):
         doc = parseString("<doc><?pi?>text?<elm/></doc>")
         root = doc.documentElement
@@ -1755,6 +1553,94 @@ class MinidomTest(unittest.TestCase):
         # remove non existing Node
         self.assertRaises(xml.dom.NotFoundErr,
                           parentNode.removeChild, existingNode)
+
+    def test_normalize_text_nodes(self):
+        """Test normalize two text nodes."""
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        root.appendChild(doc.createTextNode("first"))
+        root.appendChild(doc.createTextNode("second"))
+        # Two text nodes have been created
+        # len(root.childNodes) == 2
+        # root.firstChild.data == 'first'
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 1)
+        self.assertEqual(root.firstChild.data, 'firstsecond')
+        self.assertEqual(root.toxml(), '<doc>firstsecond</doc>')
+
+
+    def test_normalize_empty_text_node(self):
+        """Test normalize removing the childNode of an empty text node."""
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        root.appendChild(doc.createTextNode(""))
+        # len(root.childNodes) == 1
+        # root.firstChild.data == ''
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 0)
+        self.assertIs(root.firstChild, None)
+        self.assertEqual(root.toxml(), '<doc/>')
+
+
+    def test_normalize_text_node_and_element_node(self):
+        """Test normalize merges two text nodes but not element node."""
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        root.appendChild(doc.createTextNode("first"))
+        root.appendChild(doc.createTextNode("second"))
+        root.appendChild(doc.createElement("element"))
+        # len(root.childNodes) == 3
+        # root.firstChild.data == 'first'
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 2)
+        self.assertEqual(root.firstChild.data, 'firstsecond')
+        self.assertEqual(root.toxml(), '<doc>firstsecond<element/></doc>')
+
+    def test_normalize_two_text_nodes_with_first_empty(self):
+        """Test that normalize removes the first empty text node only."""
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        root.appendChild(doc.createTextNode(""))
+        root.appendChild(doc.createTextNode("second"))
+        # Two text nodes have been created
+        # len(root.childNodes) == 2
+        # root.firstChild.data == ''
+        # root.lastChild.data == 'second'
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 1)
+        self.assertEqual(root.firstChild.data, 'second')
+        self.assertEqual(root.toxml(), '<doc>second</doc>')
+
+    def test_normalize_two_text_nodes_with_last_empty(self):
+        """Test that normalize removes the last empty text node only."""
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        root.appendChild(doc.createTextNode("first"))
+        root.appendChild(doc.createTextNode(""))
+        # Two text nodes have been created
+        # len(root.childNodes) == 2
+        # root.firstChild.data == 'first'
+        # root.lastChild.data == ''
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 1)
+        self.assertEqual(root.firstChild.data, 'first')
+        self.assertEqual(root.toxml(), '<doc>first</doc>')
+
+    def test_normalize_two_element_nodes_with_empty_text_node(self):
+        """Test that normalize removes the empty text node in between."""
+        doc = parseString("<doc/>")
+        root = doc.documentElement
+        root.appendChild(doc.createElement('first'))
+        root.appendChild(doc.createTextNode(''))
+        root.appendChild(doc.createElement('second'))
+        # Two text nodes have been created
+        # len(root.childNodes) == 3
+        # root.toxml() == '<doc><first/><second/></doc>'
+        doc.normalize()
+        self.assertEqual(len(root.childNodes), 2)
+        self.assertEqual(root.toxml(), '<doc><first/><second/></doc>')
+
+# HERE
 
 if __name__ == "__main__":
     unittest.main()
