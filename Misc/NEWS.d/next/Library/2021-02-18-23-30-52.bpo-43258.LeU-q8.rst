@@ -1,0 +1,2 @@
+Prevent needless allocation of :mod:`sqlite3` aggregate function context
+when no rows match an aggregate query. Patch by Erlend E. Aasland.
