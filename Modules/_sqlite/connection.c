@@ -600,7 +600,8 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
     return args;
 }
 
-void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value** argv)
+static void
+_pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
     PyObject* args;
     PyObject* py_func;
