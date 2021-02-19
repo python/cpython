@@ -479,56 +479,6 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItemNS,
                           "http://xml.python.org/", "b")
 
-    def _testCloneElementCopiesAttributes(self, e1, e2, test):
-        attrs1 = e1.attributes
-        attrs2 = e2.attributes
-        keys1 = list(attrs1.keys())
-        keys2 = list(attrs2.keys())
-        keys1.sort()
-        keys2.sort()
-        self.confirm(keys1 == keys2, "clone of element has same attribute keys")
-        for i in range(len(keys1)):
-            a1 = attrs1.item(i)
-            a2 = attrs2.item(i)
-            self.confirm(a1 is not a2
-                    and a1.value == a2.value
-                    and a1.nodeValue == a2.nodeValue
-                    and a1.namespaceURI == a2.namespaceURI
-                    and a1.localName == a2.localName
-                    , "clone of attribute node has proper attribute values")
-            self.confirm(a2.ownerElement is e2,
-                    "clone of attribute node correctly owned")
-
-    def _setupCloneElement(self, deep):
-        dom = parseString("<doc attr='value'><foo/></doc>")
-        root = dom.documentElement
-        clone = root.cloneNode(deep)
-        self._testCloneElementCopiesAttributes(
-            root, clone, "testCloneElement" + (deep and "Deep" or "Shallow"))
-        # mutilate the original so shared data is detected
-        root.tagName = root.nodeName = "MODIFIED"
-        root.setAttribute("attr", "NEW VALUE")
-        root.setAttribute("added", "VALUE")
-        return dom, clone
-
-    def testCloneElementShallow(self):
-        dom, clone = self._setupCloneElement(0)
-        self.confirm(len(clone.childNodes) == 0
-                and clone.childNodes.length == 0
-                and clone.parentNode is None
-                and clone.toxml() == '<doc attr="value"/>'
-                , "testCloneElementShallow")
-        dom.unlink()
-
-    def testCloneElementDeep(self):
-        dom, clone = self._setupCloneElement(1)
-        self.confirm(len(clone.childNodes) == 1
-                and clone.childNodes.length == 1
-                and clone.parentNode is None
-                and clone.toxml() == '<doc attr="value"><foo/></doc>'
-                , "testCloneElementDeep")
-        dom.unlink()
-
     def testCloneDocumentShallow(self):
         doc = parseString("<?xml version='1.0'?>\n"
                     "<!-- comment -->"
@@ -1677,6 +1627,53 @@ class MinidomTest(unittest.TestCase):
         # Final child's .nextSibling should be None
         self.assertIsNone(root.childNodes[-1].nextSibling)
 
+    def test_cloneNode_with_simple_element(self):
+        """Test cloneNode for a simple Element Node."""
+        doc = parseString("<doc><el/></doc>")
+        root = doc.documentElement
+        new_clone = root.cloneNode(deep=True)
+        self.assertEqual(new_clone.toxml(), root.toxml())
+        self.assertEqual(new_clone.nodeType, root.nodeType)
+        new_clone = root.cloneNode(deep=False)
+        self.assertEqual(new_clone.toxml(), '<doc/>')
+
+    def test_cloneNode_with_text_node(self):
+        """Test cloneNode with text node."""
+        doc = parseString("<doc>text</doc>")
+        root = doc.documentElement
+        new_clone = root.cloneNode(deep=True)
+        self.assertEqual(new_clone.toxml(), root.toxml())
+        self.assertEqual(new_clone.nodeType, root.nodeType)
+        new_clone = root.cloneNode(deep=False)
+        self.assertEqual(new_clone.toxml(), '<doc/>')
+
+    def test_cloneNode_with_text_and_element_nodes(self):
+        """Test cloneNode with text and element nodes."""
+        doc = parseString("<doc><el/>text</doc>")
+        root = doc.documentElement
+        new_clone = root.cloneNode(deep=True)
+        self.assertEqual(new_clone.toxml(), root.toxml())
+        self.assertEqual(new_clone.nodeType, root.nodeType)
+        new_clone = root.cloneNode(deep=False)
+        self.assertEqual(new_clone.toxml(), '<doc/>')
+
+    def test_cloneNode_with_element_node_with_attribute(self):
+        """Test cloneNode with element nodes with attribute."""
+        doc = parseString("<doc><el attr='value'/></doc>")
+        root = doc.documentElement
+        new_clone = root.cloneNode(deep=True)
+        self.assertEqual(new_clone.toxml(), root.toxml())
+        self.assertEqual(new_clone.nodeType, root.nodeType)
+        new_clone = root.cloneNode(deep=False)
+        self.assertEqual(new_clone.toxml(), '<doc/>')
+
+    def test_cloneNode_parentNode_None(self):
+        """Test cloneNode that the parent node is None."""
+        doc = parseString("<doc><el/></doc>")
+        root = doc.documentElement
+        new_clone = root.firstChild.cloneNode(deep=True)
+        self.assertEqual(new_clone.toxml(), '<el/>')
+        self.assertIsNone(new_clone.parentNode)
 
 if __name__ == "__main__":
     unittest.main()

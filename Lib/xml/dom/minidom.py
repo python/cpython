@@ -188,6 +188,12 @@ class Node(xml.dom.Node):
         return oldChild
 
     def normalize(self):
+        """Transform a node into its normalized form.
+
+        Removes empty exclusive Text nodes and concatenates the data of
+        remaining contiguous exclusive Text nodes into the first of
+        their nodes.
+        """
         L = []
         for child in self.childNodes:
             if child.nodeType == Node.TEXT_NODE:
@@ -215,6 +221,7 @@ class Node(xml.dom.Node):
         self.childNodes[:] = L
 
     def cloneNode(self, deep):
+        """The Node.cloneNode() method returns a duplicate of the node."""
         return _clone_node(self, deep, self.ownerDocument or self)
 
     def isSupported(self, feature, version):
@@ -1334,6 +1341,7 @@ class DocumentType(Identified, Childless, Node):
         return self.internalSubset
 
     def cloneNode(self, deep):
+        """The Node.cloneNode() method returns a duplicate of the node."""
         if self.ownerDocument is None:
             # it's ok
             clone = DocumentType(None)
@@ -1897,7 +1905,9 @@ defproperty(Document, "documentElement",
 
 def _clone_node(node, deep, newOwnerDocument):
     """
-    Clone a node and give it the new owner document.
+    Returns a copy of node.
+
+    If deep is true, the copy also includes the node’s descendants.
     Called by Node.cloneNode and Document.importNode
     """
     if node.ownerDocument.isSameNode(newOwnerDocument):
