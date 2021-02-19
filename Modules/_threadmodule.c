@@ -828,27 +828,26 @@ local_traverse(localobject *self, visitproc visit, void *arg)
 static int
 local_clear(localobject *self)
 {
-    PyThreadState *tstate;
     Py_CLEAR(self->args);
     Py_CLEAR(self->kw);
     Py_CLEAR(self->dummies);
     Py_CLEAR(self->wr_callback);
     /* Remove all strong references to dummies from the thread states */
-    if (self->key
-        && (tstate = PyThreadState_Get())
-        && tstate->interp) {
-        for(tstate = PyInterpreterState_ThreadHead(tstate->interp);
-            tstate;
-            tstate = PyThreadState_Next(tstate))
-            if (tstate->dict) {
-                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-                if (v == NULL) {
-                    PyErr_Clear();
-                }
-                else {
-                    Py_DECREF(v);
-                }
+    if (self->key) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        for(; tstate; tstate = PyThreadState_Next(tstate)) {
+            if (tstate->dict == NULL) {
+                continue;
             }
+            PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
+            if (v != NULL) {
+                Py_DECREF(v);
+            }
+            else {
+                PyErr_Clear();
+            }
+        }
     }
     return 0;
 }
