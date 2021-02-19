@@ -15701,7 +15701,7 @@ _PyUnicode_Init(PyThreadState *tstate)
         return _PyStatus_NO_MEMORY();
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         /* initialize the linebreak bloom filter */
         bloom_linebreak = make_bloom_mask(
             PyUnicode_2BYTE_KIND, linebreak,

@@ -286,7 +286,7 @@ void
 _PyType_Fini(PyThreadState *tstate)
 {
     _PyType_ClearCache(&tstate->interp->type_cache);
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         clear_slotdefs();
     }
 }
