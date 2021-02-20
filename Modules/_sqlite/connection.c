@@ -643,7 +643,7 @@ _pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv
     PyGILState_Release(threadstate);
 }
 
-static void _pysqlite_step_callback(sqlite3_context* context, int argc, sqlite3_value** params)
+static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_value** params)
 {
     PyObject* args;
     PyObject* function_result = NULL;
