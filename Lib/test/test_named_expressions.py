@@ -1,4 +1,5 @@
 import unittest
+from test.support import use_old_parser
 
 GLOBAL_VAR = None
 
@@ -167,6 +168,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(f"lambda: {code}", {}) # Function scope
 
+    @unittest.skipIf(use_old_parser(), "Old parser does not support walruses in set comprehensions")
     def test_named_expression_invalid_rebinding_set_comprehension_iteration_variable(self):
         cases = [
             ("Local reuse", 'i', "{i := 0 for i in range(5)}"),
@@ -199,6 +201,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(f"lambda: {code}", {}) # Function scope
 
+    @unittest.skipIf(use_old_parser(), "Old parser does not support walruses in set comprehensions")
     def test_named_expression_invalid_set_comprehension_iterable_expression(self):
         cases = [
             ("Top level", "{i for i in (i := range(5))}"),

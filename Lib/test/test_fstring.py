@@ -374,10 +374,10 @@ x = (
         # check the call
         call = middle.value
         self.assertEqual(type(call), ast.Call)
-        self.assertEqual(call.lineno, 5)
-        self.assertEqual(call.end_lineno, 5)
-        self.assertEqual(call.col_offset, 27)
-        self.assertEqual(call.end_col_offset, 31)
+        self.assertEqual(call.lineno, 4 if use_old_parser() else 5)
+        self.assertEqual(call.end_lineno, 4 if use_old_parser() else 5)
+        self.assertEqual(call.col_offset, 13 if use_old_parser() else 27)
+        self.assertEqual(call.end_col_offset, 17 if use_old_parser() else 31)
         # check the second wat
         self.assertEqual(type(wat2), ast.Constant)
         self.assertEqual(wat2.lineno, 4)

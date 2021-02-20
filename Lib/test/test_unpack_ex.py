@@ -1,5 +1,7 @@
 # Tests for extended unpacking, starred expressions.
 
+from test.support import use_old_parser
+
 doctests = """
 
 Unpack tuple
@@ -346,6 +348,26 @@ Now some general starred expressions (all fail).
       ...
     SyntaxError: can't use starred expression here
 
+Some size constraints (all fail.)
+
+    >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"
+    >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+     ...
+    SyntaxError: too many expressions in star-unpacking assignment
+
+    >>> s = ", ".join("a%d" % i for i in range(1<<8 + 1)) + ", *rest = range(1<<8 + 2)"
+    >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+     ...
+    SyntaxError: too many expressions in star-unpacking assignment
+
+(there is an additional limit, on the number of expressions after the
+'*rest', but it's 1<<24 and testing it takes too much memory.)
+
+"""
+
+new_parser_doctests = """\
     >>> (*x),y = 1, 2 # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
@@ -370,27 +392,12 @@ Now some general starred expressions (all fail).
     Traceback (most recent call last):
       ...
     SyntaxError: can't use starred expression here
-
-Some size constraints (all fail.)
-
-    >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"
-    >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
-    Traceback (most recent call last):
-     ...
-    SyntaxError: too many expressions in star-unpacking assignment
-
-    >>> s = ", ".join("a%d" % i for i in range(1<<8 + 1)) + ", *rest = range(1<<8 + 2)"
-    >>> compile(s, 'test', 'exec') # doctest:+ELLIPSIS
-    Traceback (most recent call last):
-     ...
-    SyntaxError: too many expressions in star-unpacking assignment
-
-(there is an additional limit, on the number of expressions after the
-'*rest', but it's 1<<24 and testing it takes too much memory.)
-
 """
 
-__test__ = {'doctests' : doctests}
+if use_old_parser():
+    __test__ = {'doctests' : doctests}
+else:
+    __test__ = {'doctests' : doctests + new_parser_doctests}
 
 def test_main(verbose=False):
     from test import support
