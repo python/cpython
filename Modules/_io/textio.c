@@ -1646,7 +1646,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     if (self->encodefunc != NULL) {
         if (PyUnicode_IS_ASCII(text) &&
                 // See bpo-43260
-                PyUnicode_GET_LENGTH(text) < self->chunk_size &&
+                PyUnicode_GET_LENGTH(text) <= self->chunk_size &&
                 is_asciicompat_encoding(self->encodefunc)) {
             b = text;
             Py_INCREF(b);
