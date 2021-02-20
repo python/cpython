@@ -1678,8 +1678,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     // bpo-43260: If `b` is large, leaving it in pending_bytes may cause
     // MemoryError and we can not recover from it forever.
     // So do not leave the large data in pending_bytes buffer.
-    // 1MiB is just a heuristics.
-    if (bytes_len > 1024*1024) {
+    if (bytes_len > self->chunk_size) {
         if (_textiowrapper_writeflush(self)) {
             Py_DECREF(b);
             return NULL;
