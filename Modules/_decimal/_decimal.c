@@ -1551,7 +1551,7 @@ current_context_from_dict(void)
 
     /* Cache the context of the current thread, assuming that it
      * will be accessed several times before a thread switch. */
-    tstate = PyThreadState_GET();
+    tstate = PyThreadState_Get();
     if (tstate) {
         cached_context = (PyDecContextObject *)tl_context;
         cached_context->tstate = tstate;
@@ -1567,7 +1567,7 @@ current_context(void)
 {
     PyThreadState *tstate;
 
-    tstate = PyThreadState_GET();
+    tstate = PyThreadState_Get();
     if (cached_context && cached_context->tstate == tstate) {
         return (PyObject *)cached_context;
     }
