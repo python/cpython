@@ -1,0 +1,3 @@
+Add a new :c:func:`PySet_CheckExact` function to the C-API to check if an
+object is an instance of :class:`set` but not an instance of a subtype.
+Patch by Pablo Galindo.
