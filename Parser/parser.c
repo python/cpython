@@ -16,7 +16,7 @@ static KeywordToken *reserved_keywords[] = {
         {"in", 518},
         {"as", 520},
         {"is", 527},
-        {"or", 531},
+        {"or", 533},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -25,7 +25,7 @@ static KeywordToken *reserved_keywords[] = {
         {"for", 517},
         {"def", 523},
         {"not", 526},
-        {"and", 532},
+        {"and", 534},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -35,7 +35,8 @@ static KeywordToken *reserved_keywords[] = {
         {"else", 516},
         {"with", 519},
         {"True", 528},
-        {"None", 530},
+        {"true", 529},
+        {"None", 532},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -44,7 +45,8 @@ static KeywordToken *reserved_keywords[] = {
         {"break", 506},
         {"while", 512},
         {"class", 524},
-        {"False", 529},
+        {"False", 530},
+        {"false", 531},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -10761,7 +10763,9 @@ slice_rule(Parser *p)
 // atom:
 //     | NAME
 //     | 'True'
+//     | 'true'
 //     | 'False'
+//     | 'false'
 //     | 'None'
 //     | &STRING strings
 //     | NUMBER
@@ -10840,6 +10844,39 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'True'"));
     }
+    { // 'true'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'true'"));
+        Token * _keyword;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 529))  // token='true'
+        )
+        {
+            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'true'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _Py_Constant ( Py_True , NULL , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'true'"));
+    }
     { // 'False'
         if (p->error_indicator) {
             D(p->level--);
@@ -10848,7 +10885,7 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 529))  // token='False'
+            (_keyword = _PyPegen_expect_token(p, 530))  // token='False'
         )
         {
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -10873,6 +10910,39 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'False'"));
     }
+    { // 'false'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'false'"));
+        Token * _keyword;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 531))  // token='false'
+        )
+        {
+            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'false'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _Py_Constant ( Py_False , NULL , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'false'"));
+    }
     { // 'None'
         if (p->error_indicator) {
             D(p->level--);
@@ -10881,7 +10951,7 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 530))  // token='None'
+            (_keyword = _PyPegen_expect_token(p, 532))  // token='None'
         )
         {
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -25220,7 +25290,7 @@ _tmp_152_rule(Parser *p)
         Token * _keyword;
         expr_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 531))  // token='or'
+            (_keyword = _PyPegen_expect_token(p, 533))  // token='or'
             &&
             (c = conjunction_rule(p))  // conjunction
         )
@@ -25264,7 +25334,7 @@ _tmp_153_rule(Parser *p)
         Token * _keyword;
         expr_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 532))  // token='and'
+            (_keyword = _PyPegen_expect_token(p, 534))  // token='and'
             &&
             (c = inversion_rule(p))  // inversion
         )
