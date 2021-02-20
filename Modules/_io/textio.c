@@ -1644,7 +1644,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 
     /* XXX What if we were just reading? */
     if (self->encodefunc != NULL) {
-        if (PyUnicode_IS_ASCII(text) && is_asciicompat_encoding(self->encodefunc)) {
+        if (PyUnicode_IS_ASCII(text) &&
+                // See bpo-43260
+                PyUnicode_GET_LENGTH(text) < self->chunk_size &&
+                is_asciicompat_encoding(self->encodefunc)) {
             b = text;
             Py_INCREF(b);
         }
@@ -1653,8 +1656,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         }
         self->encoding_start_of_stream = 0;
     }
-    else
+    else {
         b = PyObject_CallMethodOneArg(self->encoder, _PyIO_str_encode, text);
+    }
 
     Py_DECREF(text);
     if (b == NULL)
@@ -1675,26 +1679,18 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         bytes_len = PyBytes_GET_SIZE(b);
     }
 
-    // bpo-43260: If `b` is large, leaving it in pending_bytes may cause
-    // MemoryError and we can not recover from it forever.
-    // So do not leave the large data in pending_bytes buffer.
-    if (bytes_len > self->chunk_size) {
-        if (_textiowrapper_writeflush(self)) {
+    if (self->pending_bytes == NULL) {
+        self->pending_bytes_count = 0;
+        self->pending_bytes = b;
+    }
+    else if (self->pending_bytes_count + bytes_len > self->chunk_size) {
+        // bpo-43260: If `b` is very large, leaving it in pending_bytes may
+        // cause MemoryError and we can not recover from it forever.
+        // So do not leave the large data in pending_bytes buffer.
+        if (_textiowrapper_writeflush(self) < 0) {
             Py_DECREF(b);
             return NULL;
         }
-        self->pending_bytes = b;
-        self->pending_bytes_count = bytes_len;
-        if (_textiowrapper_writeflush(self)) {
-            Py_CLEAR(self->pending_bytes);
-            self->pending_bytes_count = 0;
-            return NULL;
-        }
-        return PyLong_FromSsize_t(textlen);
-    }
-
-    if (self->pending_bytes == NULL) {
-        self->pending_bytes_count = 0;
         self->pending_bytes = b;
     }
     else if (!PyList_CheckExact(self->pending_bytes)) {
@@ -1716,7 +1712,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
 
     self->pending_bytes_count += bytes_len;
-    if (self->pending_bytes_count > self->chunk_size || needflush ||
+    if (self->pending_bytes_count >= self->chunk_size || needflush ||
         text_needflush) {
         if (_textiowrapper_writeflush(self) < 0)
             return NULL;
