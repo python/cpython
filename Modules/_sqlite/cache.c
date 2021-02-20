@@ -291,7 +291,8 @@ static PyType_Spec cache_spec = {
 };
 PyTypeObject *pysqlite_CacheType = NULL;
 
-extern int pysqlite_cache_setup_types(PyObject *mod)
+int
+pysqlite_cache_setup_types(PyObject *mod)
 {
     pysqlite_NodeType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &node_spec, NULL);
     if (pysqlite_NodeType == NULL) {
