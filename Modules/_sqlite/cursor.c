@@ -1017,7 +1017,7 @@ static PyType_Spec cursor_spec = {
 
 PyTypeObject *pysqlite_CursorType = NULL;
 
-extern int pysqlite_cursor_setup_types(PyObject* module)
+extern int pysqlite_cursor_setup_types(PyObject *module)
 {
     pysqlite_CursorType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &cursor_spec, NULL);
     if (pysqlite_CursorType == NULL) {
