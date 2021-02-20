@@ -1,16 +1,23 @@
 /*
-Implementation by the Keccak, Keyak and Ketje Teams, namely, Guido Bertoni,
-Joan Daemen, Michaël Peeters, Gilles Van Assche and Ronny Van Keer, hereby
-denoted as "the implementer".
+The eXtended Keccak Code Package (XKCP)
+https://github.com/XKCP/XKCP
 
-For more information, feedback or questions, please refer to our websites:
-http://keccak.noekeon.org/
-http://keyak.noekeon.org/
-http://ketje.noekeon.org/
+Implementation by Gilles Van Assche and Ronny Van Keer, hereby denoted as "the implementer".
+
+For more information, feedback or questions, please refer to the Keccak Team website:
+https://keccak.team/
 
 To the extent possible under law, the implementer has waived all copyright
 and related or neighboring rights to the source code in this file.
 http://creativecommons.org/publicdomain/zero/1.0/
+
+---
+
+This file contains macros that help implement a permutation in a SnP-compatible way.
+It converts an implementation that implement state input/output functions
+in a lane-oriented fashion (i.e., using SnP_AddLanes() and SnP_AddBytesInLane,
+and similarly for Overwite, Extract and ExtractAndAdd) to the byte-oriented SnP.
+Please refer to SnP-documentation.h for more details.
 */
 
 #ifndef _SnP_Relaned_h_

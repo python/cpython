@@ -1,12 +1,13 @@
 /*
-Implementation by the Keccak, Keyak and Ketje Teams, namely, Guido Bertoni,
-Joan Daemen, Michaël Peeters, Gilles Van Assche and Ronny Van Keer, hereby
-denoted as "the implementer".
+The eXtended Keccak Code Package (XKCP)
+https://github.com/XKCP/XKCP
 
-For more information, feedback or questions, please refer to our websites:
-http://keccak.noekeon.org/
-http://keyak.noekeon.org/
-http://ketje.noekeon.org/
+Keccak, designed by Guido Bertoni, Joan Daemen, Michaël Peeters and Gilles Van Assche.
+
+Implementation by the designers, hereby denoted as "the implementer".
+
+For more information, feedback or questions, please refer to the Keccak Team website:
+https://keccak.team/
 
 To the extent possible under law, the implementer has waived all copyright
 and related or neighboring rights to the source code in this file.
@@ -19,7 +20,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
     #include "displayIntermediateValues.h"
 #endif
 
-#ifndef KeccakP200_excluded
+#ifdef XKCP_has_KeccakP200
     #include "KeccakP-200-SnP.h"
 
     #define prefix KeccakWidth200
@@ -37,7 +38,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
     #undef SnP_FastLoop_Absorb
 #endif
 
-#ifndef KeccakP400_excluded
+#ifdef XKCP_has_KeccakP400
     #include "KeccakP-400-SnP.h"
 
     #define prefix KeccakWidth400
@@ -55,7 +56,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
     #undef SnP_FastLoop_Absorb
 #endif
 
-#ifndef KeccakP800_excluded
+#ifdef XKCP_has_KeccakP800
     #include "KeccakP-800-SnP.h"
 
     #define prefix KeccakWidth800
@@ -73,7 +74,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
     #undef SnP_FastLoop_Absorb
 #endif
 
-#ifndef KeccakP1600_excluded
+#ifdef XKCP_has_KeccakP1600
     #include "KeccakP-1600-SnP.h"
 
     #define prefix KeccakWidth1600
@@ -82,6 +83,24 @@ http://creativecommons.org/publicdomain/zero/1.0/
     #define SnP_Permute KeccakP1600_Permute_24rounds
     #if defined(KeccakF1600_FastLoop_supported)
         #define SnP_FastLoop_Absorb KeccakF1600_FastLoop_Absorb
+    #endif
+        #include "KeccakSponge.inc"
+    #undef prefix
+    #undef SnP
+    #undef SnP_width
+    #undef SnP_Permute
+    #undef SnP_FastLoop_Absorb
+#endif
+
+#ifdef XKCP_has_KeccakP1600
+    #include "KeccakP-1600-SnP.h"
+
+    #define prefix KeccakWidth1600_12rounds
+    #define SnP KeccakP1600
+    #define SnP_width 1600
+    #define SnP_Permute KeccakP1600_Permute_12rounds
+    #if defined(KeccakP1600_12rounds_FastLoop_supported)
+        #define SnP_FastLoop_Absorb KeccakP1600_12rounds_FastLoop_Absorb
     #endif
         #include "KeccakSponge.inc"
     #undef prefix

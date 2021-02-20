@@ -37,6 +37,10 @@ def cleanup(f):
         if "brg_endian.h" in line:
             buf.append("/* %s */\n" % line.strip())
             continue
+        # remove #include "config.h"
+        if '#include "config.h"' in line:
+            buf.append("/* %s */\n" % line.strip())
+            continue
         # transform C++ comments into ANSI C comments
         line = CPP1.sub(r"/*\1 */\n", line)
         line = CPP2.sub(r" /*\1 */\n", line)

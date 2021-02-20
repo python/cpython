@@ -22,14 +22,13 @@
 /* **************************************************************************
  *                          SHA-3 (Keccak) and SHAKE
  *
- * The code is based on KeccakCodePackage from 2016-04-23
- * commit 647f93079afc4ada3d23737477a6e52511ca41fd
+ * The code is based on eXtended Keccak Code Package from 2021-01-20
+ * commit cf2a63166998349447539626ea08c27a44f4857e
  *
  * The reference implementation is altered in this points:
- *  - C++ comments are converted to ANSI C comments.
  *  - all function names are mangled
- *  - typedef for UINT64 is commented out.
  *  - brg_endian.h is removed
+ *  - config.h is removed
  *
  * *************************************************************************/
 
@@ -37,21 +36,12 @@
   /* opt64 uses un-aligned memory access that causes a BUS error with msg
    * 'invalid address alignment' on SPARC. */
   #define KeccakOpt 32
-#elif PY_BIG_ENDIAN
-  /* opt64 is not yet supported on big endian platforms */
-  #define KeccakOpt 32
 #elif SIZEOF_VOID_P == 8
-  /* opt64 works only on little-endian 64bit platforms with unsigned int64 */
+  /* opt64 works only on 64bit platforms with unsigned int64 */
   #define KeccakOpt 64
 #else
   /* opt32 is used for the remaining 32 and 64bit platforms */
   #define KeccakOpt 32
-#endif
-
-#if KeccakOpt == 64
-  /* 64bit platforms with unsigned int64 */
-  typedef uint64_t UINT64;
-  typedef unsigned char UINT8;
 #endif
 
 /* replacement for brg_endian.h */
@@ -84,6 +74,7 @@
 #define KeccakP1600_OverwriteBytesInLane _PySHA3_KeccakP1600_OverwriteBytesInLane
 #define KeccakP1600_OverwriteLanes _PySHA3_KeccakP1600_OverwriteLanes
 #define KeccakP1600_OverwriteWithZeroes _PySHA3_KeccakP1600_OverwriteWithZeroes
+#define KeccakP1600_Permute_Nrounds _PySHA3_KeccakP1600_Permute_Nrounds
 #define KeccakP1600_Permute_12rounds _PySHA3_KeccakP1600_Permute_12rounds
 #define KeccakP1600_Permute_24rounds _PySHA3_KeccakP1600_Permute_24rounds
 #define KeccakWidth1600_Sponge _PySHA3_KeccakWidth1600_Sponge
@@ -95,12 +86,12 @@
 #define KeccakP1600_AddByte _PySHA3_KeccakP1600_AddByte
 #define KeccakP1600_Permute_Nrounds _PySHA3_KeccakP1600_Permute_Nrounds
 #define KeccakP1600_SetBytesInLaneToZero _PySHA3_KeccakP1600_SetBytesInLaneToZero
+#elif KeccakOpt == 64
+#define KeccakP1600_12rounds_FastLoop_Absorb _PySHA3_KeccakP1600_12rounds_FastLoop_Absorb
 #endif
 
 /* we are only interested in KeccakP1600 */
-#define KeccakP200_excluded 1
-#define KeccakP400_excluded 1
-#define KeccakP800_excluded 1
+#define XKCP_has_KeccakP1600 1
 
 /* inline all Keccak dependencies */
 #include "kcp/KeccakHash.h"
@@ -243,7 +234,7 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
         else {
             res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
         }
-        if (res != SUCCESS) {
+        if (res != KECCAK_SUCCESS) {
             PyErr_SetString(PyExc_RuntimeError,
                             "internal error in SHA3 Update()");
             goto error;
@@ -322,7 +313,7 @@ _sha3_sha3_224_digest_impl(SHA3object *self)
     SHA3_copystate(temp, self->hash_state);
     LEAVE_HASHLIB(self);
     res = SHA3_done(&temp, digest);
-    if (res != SUCCESS) {
+    if (res != KECCAK_SUCCESS) {
         PyErr_SetString(PyExc_RuntimeError, "internal error in SHA3 Final()");
         return NULL;
     }
@@ -350,7 +341,7 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
     SHA3_copystate(temp, self->hash_state);
     LEAVE_HASHLIB(self);
     res = SHA3_done(&temp, digest);
-    if (res != SUCCESS) {
+    if (res != KECCAK_SUCCESS) {
         PyErr_SetString(PyExc_RuntimeError, "internal error in SHA3 Final()");
         return NULL;
     }
@@ -396,7 +387,7 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
         res = SHA3_process(&self->hash_state, buf.buf, buf.len * 8);
     }
 
-    if (res != SUCCESS) {
+    if (res != KECCAK_SUCCESS) {
         PyBuffer_Release(&buf);
         PyErr_SetString(PyExc_RuntimeError,
                         "internal error in SHA3 Update()");
@@ -618,12 +609,12 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     SHA3_copystate(temp, self->hash_state);
     LEAVE_HASHLIB(self);
     res = SHA3_done(&temp, NULL);
-    if (res != SUCCESS) {
+    if (res != KECCAK_SUCCESS) {
         PyErr_SetString(PyExc_RuntimeError, "internal error in SHA3 done()");
         goto error;
     }
     res = SHA3_squeeze(&temp, digest, digestlen * 8);
-    if (res != SUCCESS) {
+    if (res != KECCAK_SUCCESS) {
         PyErr_SetString(PyExc_RuntimeError, "internal error in SHA3 Squeeze()");
         return NULL;
     }

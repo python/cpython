@@ -1,12 +1,13 @@
 /*
-Implementation by the Keccak, Keyak and Ketje Teams, namely, Guido Bertoni,
-Joan Daemen, Michaël Peeters, Gilles Van Assche and Ronny Van Keer, hereby
-denoted as "the implementer".
+The eXtended Keccak Code Package (XKCP)
+https://github.com/XKCP/XKCP
 
-For more information, feedback or questions, please refer to our websites:
-http://keccak.noekeon.org/
-http://keyak.noekeon.org/
-http://ketje.noekeon.org/
+Keccak, designed by Guido Bertoni, Joan Daemen, Michaël Peeters and Gilles Van Assche.
+
+Implementation by the designers, hereby denoted as "the implementer".
+
+For more information, feedback or questions, please refer to the Keccak Team website:
+https://keccak.team/
 
 To the extent possible under law, the implementer has waived all copyright
 and related or neighboring rights to the source code in this file.
@@ -16,14 +17,21 @@ http://creativecommons.org/publicdomain/zero/1.0/
 #ifndef _KeccakHashInterface_h_
 #define _KeccakHashInterface_h_
 
-#ifndef KeccakP1600_excluded
+/* #include "config.h" */
+#ifdef XKCP_has_KeccakP1600
 
-#include "KeccakSponge.h"
+#include <stdint.h>
 #include <string.h>
+#include "KeccakSponge.h"
 
-typedef unsigned char BitSequence;
-typedef size_t DataLength;
-typedef enum { SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2 } HashReturn;
+#ifndef _Keccak_BitTypes_
+#define _Keccak_BitTypes_
+typedef uint8_t BitSequence;
+
+typedef size_t BitLength;
+#endif
+
+typedef enum { KECCAK_SUCCESS = 0, KECCAK_FAIL = 1, KECCAK_BAD_HASHLEN = 2 } HashReturn;
 
 typedef struct {
     KeccakWidth1600_SpongeInstance sponge;
@@ -44,7 +52,7 @@ typedef struct {
   *                         formatted like the @a delimitedData parameter of
   *                         the Keccak_SpongeAbsorbLastFewBits() function.
   * @pre    One must have r+c=1600 and the rate a multiple of 8 bits in this implementation.
-  * @return SUCCESS if successful, FAIL otherwise.
+  * @return KECCAK_SUCCESS if successful, KECCAK_FAIL otherwise.
   */
 HashReturn Keccak_HashInitialize(Keccak_HashInstance *hashInstance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimitedSuffix);
 
@@ -78,11 +86,13 @@ HashReturn Keccak_HashInitialize(Keccak_HashInstance *hashInstance, unsigned int
   * @param  data        Pointer to the input data.
   *                     When @a databitLen is not a multiple of 8, the last bits of data must be
   *                     in the least significant bits of the last byte (little-endian convention).
+  *                     In this case, the (8 - @a databitLen mod 8) most significant bits
+  *                     of the last byte are ignored.
   * @param  databitLen  The number of input bits provided in the input data.
   * @pre    In the previous call to Keccak_HashUpdate(), databitlen was a multiple of 8.
-  * @return SUCCESS if successful, FAIL otherwise.
+  * @return KECCAK_SUCCESS if successful, KECCAK_FAIL otherwise.
   */
-HashReturn Keccak_HashUpdate(Keccak_HashInstance *hashInstance, const BitSequence *data, DataLength databitlen);
+HashReturn Keccak_HashUpdate(Keccak_HashInstance *hashInstance, const BitSequence *data, BitLength databitlen);
 
 /**
   * Function to call after all input blocks have been input and to get
@@ -92,9 +102,8 @@ HashReturn Keccak_HashUpdate(Keccak_HashInstance *hashInstance, const BitSequenc
   *     output bits is equal to @a hashbitlen.
   * If @a hashbitlen was 0 in the call to Keccak_HashInitialize(), the output bits
   *     must be extracted using the Keccak_HashSqueeze() function.
-  * @param  state       Pointer to the state of the sponge function initialized by Init().
   * @param  hashval     Pointer to the buffer where to store the output data.
-  * @return SUCCESS if successful, FAIL otherwise.
+  * @return KECCAK_SUCCESS if successful, KECCAK_FAIL otherwise.
   */
 HashReturn Keccak_HashFinal(Keccak_HashInstance *hashInstance, BitSequence *hashval);
 
@@ -105,10 +114,12 @@ HashReturn Keccak_HashFinal(Keccak_HashInstance *hashInstance, BitSequence *hash
   * @param  databitlen  The number of output bits desired (must be a multiple of 8).
   * @pre    Keccak_HashFinal() must have been already called.
   * @pre    @a databitlen is a multiple of 8.
-  * @return SUCCESS if successful, FAIL otherwise.
+  * @return KECCAK_SUCCESS if successful, KECCAK_FAIL otherwise.
   */
-HashReturn Keccak_HashSqueeze(Keccak_HashInstance *hashInstance, BitSequence *data, DataLength databitlen);
+HashReturn Keccak_HashSqueeze(Keccak_HashInstance *hashInstance, BitSequence *data, BitLength databitlen);
 
+#else
+#error This requires an implementation of Keccak-p[1600]
 #endif
 
 #endif
