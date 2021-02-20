@@ -1039,12 +1039,14 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             // define __match_args__. This is natural behavior for subclasses:
             // it's as if __match_args__ is some "magic" value that is lost as
             // soon as they redefine it.
+            match_args = PyTuple_New(0);
             match_self = PyType_HasFeature((PyTypeObject*)type,
                                             _Py_TPFLAGS_MATCH_SELF);
         }
         else {
             goto fail;
         }
+        assert(PyTuple_CheckExact(match_args));
         Py_ssize_t allowed = match_self ? 1 : PyTuple_GET_SIZE(match_args);
         if (allowed < nargs) {
             const char *plural = (allowed == 1) ? "" : "s";

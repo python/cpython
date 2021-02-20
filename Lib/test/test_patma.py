@@ -2830,6 +2830,17 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 2)
         self.assertEqual(z, 0)
 
+    @no_perf
+    def test_patma_281(self):
+        x = range(10)
+        y = None
+        with self.assertRaises(TypeError):
+            match x:
+                case range(10):
+                    y = 0
+        self.assertEqual(x, range(10))
+        self.assertIs(y, None)
+
 
 class PerfPatma(TestPatma):
 
