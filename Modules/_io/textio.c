@@ -1585,6 +1585,8 @@ _textiowrapper_writeflush(textio *self)
         ret = PyObject_CallMethodOneArg(self->buffer, _PyIO_str_write, b);
     } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
+    // NOTE: We cleared buffer but we don't know how many bytes are actually written
+    // when an error occurred.
     if (ret == NULL)
         return -1;
     Py_DECREF(ret);
@@ -1671,6 +1673,25 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
     else {
         bytes_len = PyBytes_GET_SIZE(b);
+    }
+
+    // bpo-43260: If `b` is large, leaving it in pending_bytes may cause
+    // MemoryError and we can not recover from it forever.
+    // So do not leave the large data in pending_bytes buffer.
+    // 1MiB is just a heuristics.
+    if (bytes_len > 1024*1024) {
+        if (_textiowrapper_writeflush(self)) {
+            Py_DECREF(b);
+            return NULL;
+        }
+        self->pending_bytes = b;
+        self->pending_bytes_count = bytes_len;
+        if (_textiowrapper_writeflush(self)) {
+            Py_CLEAR(self->pending_bytes);
+            self->pending_bytes_count = 0;
+            return NULL;
+        }
+        return PyLong_FromSsize_t(textlen);
     }
 
     if (self->pending_bytes == NULL) {
