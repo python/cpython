@@ -65,6 +65,12 @@ the constructor functions work with any iterable Python object.
    Return true if *p* is a :class:`set` object, a :class:`frozenset` object, or an
    instance of a subtype.  This function always succeeds.
 
+.. c:function:: int PySet_CheckExact(PyObject *p)
+
+   Return true if *p* is a :class:`set` object but not an instance of a
+   subtype.  This function always succeeds.
+
+   .. versionadded:: 3.10
 
 .. c:function:: int PyAnySet_CheckExact(PyObject *p)
 
