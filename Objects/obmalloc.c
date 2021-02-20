@@ -841,6 +841,7 @@ static int running_on_valgrind = -1;
 #if SIZEOF_VOID_P == 8
 #define WITH_RADIX_TREE
 #endif
+#define WITH_RADIX_TREE
 
 /*
  * Alignment of addresses returned to the user. 8-bytes alignment works
@@ -2807,16 +2808,41 @@ _PyObject_DebugMallocStats(FILE *out)
      20 -> ideal aligned arena
    ----
      64
+
+   key format (2^20 arena size)
+     12 -> MAP3
+     20 -> ideal aligned arena
+   ----
+     32
+
 */
 
+#if SIZEOF_VOID_P == 8
 /* number of bits in a pointer */
 #define BITS 64
 
-#if SIZEOF_VOID_P != 8
- /* Currently this code works for 64-bit pointers only.  For 32-bits, we
-  * could use a two-layer tree but it hasn't been implemented yet.  */
-#error "Radix tree requires 64-bit pointers."
-#endif
+/* Current 64-bit processors are limited to 48-bit physical addresses.  For
+ * now, the top 17 bits of addresses will all be equal to bit 2**47.  If that
+ * changes in the future, this must be adjusted upwards.
+ */
+#define PHYSICAL_BITS 48
+
+/* need more layers of tree */
+#define USE_INTERIOR_NODES
+
+#define arena_root_t arena_map1_t
+
+#elif SIZEOF_VOID_P == 4
+#define BITS 32
+#define PHYSICAL_BITS 32
+
+#else
+
+ /* Currently this code works for 64-bit or 32-bit pointers only.  */
+#error "obmalloc radix tree requires 64-bit or 32-bit pointers."
+
+#endif /* SIZEOF_VOID_P */
+
 
 #define ARENA_MASK (ARENA_SIZE - 1)
 
@@ -2825,14 +2851,12 @@ _PyObject_DebugMallocStats(FILE *out)
 #   error "arena size must be < 2^32"
 #endif
 
-/* Current 64-bit processors are limited to 48-bit physical addresses.  For
- * now, the top 17 bits of addresses will all be equal to bit 2**47.  If that
- * changes in the future, this must be adjusted upwards.
- */
-#define PHYSICAL_BITS 48
-
+#ifdef USE_INTERIOR_NODES
 /* bits used for MAP1 and MAP2 nodes */
 #define INTERIOR_BITS ((PHYSICAL_BITS - ARENA_BITS + 2) / 3)
+#else
+#define INTERIOR_BITS 0
+#endif
 
 #define MAP1_BITS INTERIOR_BITS
 #define MAP1_LENGTH (1 << MAP1_BITS)
@@ -2854,7 +2878,12 @@ _PyObject_DebugMallocStats(FILE *out)
 #define MAP3_INDEX(p) ((AS_UINT(p) >> MAP3_SHIFT) & MAP3_MASK)
 #define MAP2_INDEX(p) ((AS_UINT(p) >> MAP2_SHIFT) & MAP2_MASK)
 #define MAP1_INDEX(p) ((AS_UINT(p) >> MAP1_SHIFT) & MAP1_MASK)
+#if PHYSICAL_BITS > BITS
 #define HIGH_BITS(p) (AS_UINT(p) >> PHYSICAL_BITS)
+#else
+#define HIGH_BITS(p) 0
+#endif
+
 
 /* See arena_map_mark_used() for the meaning of these members. */
 typedef struct {
@@ -2870,6 +2899,7 @@ typedef struct arena_map3 {
     arena_coverage_t arenas[MAP3_LENGTH];
 } arena_map3_t;
 
+#ifdef USE_INTERIOR_NODES
 typedef struct arena_map2 {
     struct arena_map3 *ptrs[MAP2_LENGTH];
 } arena_map2_t;
@@ -2877,12 +2907,14 @@ typedef struct arena_map2 {
 typedef struct arena_map1 {
     struct arena_map2 *ptrs[MAP1_LENGTH];
 } arena_map1_t;
+#endif
 
 /* The root of tree (MAP1) and contains all MAP2 nodes.  Note that by
  * initializing like this, the memory should be in the BSS.  The OS will
  * only map pages as the MAP2 nodes get used (OS pages are demand loaded
  * as needed).
  */
+#ifdef USE_INTERIOR_NODES
 static arena_map1_t arena_map_root;
 
 /* Return a pointer to a MAP3 node, return NULL if it doesn't exist
@@ -2918,6 +2950,20 @@ arena_map_get(block *p, int create)
     }
     return arena_map_root.ptrs[i1]->ptrs[i2];
 }
+
+#else /* !USE_INTERIOR_NODES */
+static arena_map3_t arena_map_root;
+
+/* Return a pointer to a MAP3 node, return NULL if it doesn't exist
+ * or it cannot be created */
+static arena_map3_t *
+arena_map_get(block *p, int create)
+{
+    return &arena_map_root;
+}
+
+#endif
+
 
 /* The radix tree only tracks arenas.  So, for 16 MiB arenas, we throw
  * away 24 bits of the address.  That reduces the space requirement of
