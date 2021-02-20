@@ -185,6 +185,8 @@ class BoolTest(unittest.TestCase):
         self.assertIs(isinstance(False, int), True)
         self.assertIs(isinstance(1, bool), False)
         self.assertIs(isinstance(0, bool), False)
+        self.assertIs(false, False)
+        self.assertIs(true, True)
 
     def test_issubclass(self):
         self.assertIs(issubclass(bool, int), True)

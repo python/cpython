@@ -1,0 +1,2 @@
+Added `true` and `false` keywords as aliases for `True` and `False`
+Patch by Parsa Shahmaleki

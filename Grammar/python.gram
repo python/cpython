@@ -498,6 +498,8 @@ atom[expr_ty]:
     | NAME
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
+    | 'true' { _Py_Constant(Py_True, NULL, EXTRA) }
+    | 'false' { _Py_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
     | &STRING strings
     | NUMBER
