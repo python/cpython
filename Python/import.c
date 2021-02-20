@@ -301,16 +301,16 @@ _PyImport_GetModuleId(struct _Py_Identifier *nameid)
 int
 _PyImport_SetModule(PyObject *name, PyObject *m)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *modules = tstate->interp->modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *modules = interp->modules;
     return PyObject_SetItem(modules, name, m);
 }
 
 int
 _PyImport_SetModuleString(const char *name, PyObject *m)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *modules = tstate->interp->modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *modules = interp->modules;
     return PyMapping_SetItemString(modules, name, m);
 }
 
@@ -342,9 +342,8 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 
 
 static int
-import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
+import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
-    PyInterpreterState *interp = tstate->interp;
     PyObject *spec;
 
     _Py_IDENTIFIER(_lock_unlock_module);
@@ -441,7 +440,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         return -1;
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         if (def->m_size == -1) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
@@ -1530,7 +1529,7 @@ PyImport_GetModule(PyObject *name)
 
     mod = import_get_module(tstate, name);
     if (mod != NULL && mod != Py_None) {
-        if (import_ensure_initialized(tstate, mod, name) < 0) {
+        if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
             Py_DECREF(mod);
             remove_importlib_frames(tstate);
             return NULL;
@@ -1594,7 +1593,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     if (mod != NULL && mod != Py_None) {
-        if (import_ensure_initialized(tstate, mod, name) < 0) {
+        if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
             goto error;
         }
     }

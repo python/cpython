@@ -72,6 +72,59 @@ New Features
 
 .. _whatsnew310-pep563:
 
+Parenthesized context managers
+------------------------------
+
+Using enclosing parentheses for continuation across multiple lines
+in context managers is now supported. This allows formatting a long
+collection of context managers in multiple lines in a similar way
+as it was previously possible with import statements. For instance,
+all these examples are now valid:
+
+.. code-block:: python
+
+    with (CtxManager() as example):
+        ...
+
+    with (
+        CtxManager1(),
+        CtxManager2()
+    ):
+        ...
+
+    with (CtxManager1() as example,
+          CtxManager2()):
+        ...
+
+    with (CtxManager1(),
+          CtxManager2() as example):
+        ...
+
+    with (
+        CtxManager1() as example1,
+        CtxManager2() as example2
+    ):
+        ...
+
+it is also possible to use a trailing comma at the end of the
+enclosed group:
+
+.. code-block:: python
+
+    with (
+        CtxManager1() as example1,
+        CtxManager2() as example2,
+        CtxManager3() as example3,
+    ):
+        ...
+
+This new syntax uses the non LL(1) capacities of the new parser.
+Check :pep:`617` for more details.
+
+(Contributed by Guido van Rossum, Pablo Galindo and Lysandros Nikolaou
+in :issue:`12782` and :issue:`40334`.)
+
+
 PEP 563: Postponed Evaluation of Annotations Becomes Default
 ------------------------------------------------------------
 
@@ -140,7 +193,13 @@ Type hints can now be written in a more succinct manner::
        return number ** 2
 
 
-See :pep:`604` for more details.
+This new syntax is also accepted as the second argument to :func:`isinstance`
+and :func:`issubclass`::
+
+   >>> isinstance(1, int | str)
+   True
+
+See :ref:`types-union` and :pep:`604` for more details.
 
 (Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
@@ -221,6 +280,11 @@ Other Language Changes
 * Assignment expressions can now be used unparenthesized within set literals
   and set comprehensions, as well as in sequence indexes (but not slices).
 
+* Functions have a new ``__builtins__`` attribute which is used to look for
+  builtin symbols when a function is executed, instead of looking into
+  ``__globals__['__builtins__']``.
+  (Contributed by Mark Shannon in :issue:`42990`.)
+
 
 New Modules
 ===========
@@ -288,8 +352,20 @@ The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
 they are provided by the underlying curses library.
 (Contributed by Zackery Spytz in :issue:`39273`.)
 
+.. _distutils-deprecated:
+
 distutils
 ---------
+
+The entire ``distutils`` package is deprecated, to be removed in Python
+3.12. Its functionality for specifying package builds has already been
+completely replaced by third-party packages ``setuptools`` and
+``packaging``, and most other commonly used APIs are available elsewhere
+in the standard library (such as :mod:`platform`, :mod:`shutil`,
+:mod:`subprocess` or :mod:`sysconfig`). There are no plans to migrate
+any other functionality from ``distutils``, and applications that are
+using other functions should plan to make private copies of the code.
+Refer to :pep:`632` for discussion.
 
 The ``bdist_wininst`` command deprecated in Python 3.8 has been removed.
 The ``bdist_wheel`` command is now recommended to distribute binary packages
@@ -346,6 +422,10 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
+Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
+and :data:`~os.O_NOFOLLOW_ANY` for macOS.
+(Contributed by Dong-hee Na in :issue:`43106`.)
+
 pathlib
 -------
 
@@ -369,6 +449,14 @@ py_compile
 
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
+
+pyclbr
+------
+
+Added an ``end_lineno`` attribute to the ``Function`` and ``Class``
+objects in the tree returned by :func:`pyclbr.readline` and
+:func:`pyclbr.readline_ex`.  It matches the existing (start) ``lineno``.
+(Contributed by Aviral Srivastava in :issue:`38307`.)
 
 shelve
 ------
@@ -396,7 +484,7 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
-Add :data:`sys.module_names`, containing the list of the standard library
+Add :data:`sys.stdlib_module_names`, containing the list of the standard library
 module names.
 (Contributed by Victor Stinner in :issue:`42955`.)
 
@@ -463,6 +551,19 @@ Add new method :meth:`~unittest.TestCase.assertNoLogs` to complement the
 existing :meth:`~unittest.TestCase.assertLogs`. (Contributed by Kit Yan Choi
 in :issue:`39385`.)
 
+urllib.parse
+------------
+
+Python versions earlier than Python 3.10 allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally.  For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
 xml
 ---
 
@@ -491,10 +592,10 @@ Optimizations
   (Contributed by Victor Stinner in :issue:`41006`.)
 
 * The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.  It
-  is about 36% faster now. This makes optimized ``LOAD_ATTR`` instructions the
-  current most performance attribute access method (faster than slots).
-  (Contributed by Pablo Galindo and Yury Selivanov in :issue:`42093`, based on
-  ideas implemented originally in PyPy and MicroPython.)
+  is about 36% faster now for regular attributes and 44% faster for slots.
+  (Contributed by Pablo Galindo and Yury Selivanov in :issue:`42093` and Guido
+  van Rossum in :issue:`42927`, based on ideas implemented originally in PyPy
+  and MicroPython.)
 
 * When building Python with ``--enable-optimizations`` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.
@@ -530,6 +631,14 @@ Deprecated
   as appropriate to help identify code which needs updating during
   this transition.
 
+* The entire ``distutils`` namespace is deprecated, to be removed in
+  Python 3.12. Refer to the :ref:`module changes <distutils-deprecated>`
+  section for more information.
+
+* Non-integer arguments to :func:`random.randrange` are deprecated.
+  The :exc:`ValueError` is deprecated in favor of a :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka and Raymond Hettinger in :issue:`37319`.)
+
 * The various ``load_module()`` methods of :mod:`importlib` have been
   documented as deprecated since Python 3.6, but will now also trigger
   a :exc:`DeprecationWarning`. Use
@@ -553,7 +662,7 @@ Deprecated
 * The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly
   discouraged by the SQLite3 documentation.  See `the SQLite3 docs
-  <https://sqlite.org/c3ref/enable_shared_cache.html/>`_ for more details.
+  <https://sqlite.org/c3ref/enable_shared_cache.html>`_ for more details.
   If shared cache must be used, open the database in URI mode using the
   ``cache=shared`` query parameter.
   (Contributed by Erlend E. Aasland in :issue:`24464`.)
@@ -716,6 +825,12 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`42856`.)
 
+* Add a new configure ``--without-static-libpython`` option to not build the
+  ``libpythonMAJOR.MINOR.a`` static library and not install the ``python.o``
+  object file.
+
+  (Contributed by Victor Stinner in :issue:`43103`.)
+
 
 C API Changes
 =============
@@ -818,6 +933,14 @@ Porting to Python 3.10
   ``PyList_SET_ITEM(a, b, c) = x`` now fail with a compiler error. It prevents
   bugs like ``if (PyList_SET_ITEM (a, b, c) < 0) ...`` test.
   (Contributed by Zackery Spytz and Victor Stinner in :issue:`30459`.)
+
+* The non-limited API files ``odictobject.h``, ``parser_interface.h``,
+  ``picklebufobject.h``, ``pyarena.h``, ``pyctype.h``, ``pydebug.h``,
+  ``pyfpe.h``, and ``pytime.h`` have been moved to the ``Include/cpython``
+  directory. These files must not be included directly, as they are already
+  included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
+  been included directly, consider including ``Python.h`` instead.
+  (Contributed by Nicholas Sim in :issue:`35134`)
 
 Deprecated
 ----------

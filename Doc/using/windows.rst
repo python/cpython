@@ -339,6 +339,11 @@ full write access to shared locations such as ``TEMP`` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
 
+For more detail on the technical basis for these limitations, please consult
+Microsoft's documentation on packaged full-trust apps, currently available at
+`docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
+<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
+
 
 .. _windows-nuget:
 
@@ -1143,8 +1148,6 @@ For extension modules, consult :ref:`building-on-windows`.
       or "Creating Python extensions in C/C++ with SWIG and compiling them with
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
-
-   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

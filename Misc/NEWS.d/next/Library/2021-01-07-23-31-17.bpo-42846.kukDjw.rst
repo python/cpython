@@ -1,3 +1,0 @@
-Convert the 6 CJK codec extension modules (_codecs_cn, _codecs_hk,
-_codecs_iso2022, _codecs_jp, _codecs_kr and _codecs_tw) to the multiphase
-initialization API (:pep:`489`). Patch by Victor Stinner.

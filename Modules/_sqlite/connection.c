@@ -600,7 +600,8 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
     return args;
 }
 
-void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value** argv)
+static void
+_pysqlite_func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
     PyObject* args;
     PyObject* py_func;
@@ -696,7 +697,8 @@ error:
     PyGILState_Release(threadstate);
 }
 
-void _pysqlite_final_callback(sqlite3_context* context)
+static void
+_pysqlite_final_callback(sqlite3_context *context)
 {
     PyObject* function_result;
     PyObject** aggregate_instance;
@@ -708,8 +710,12 @@ void _pysqlite_final_callback(sqlite3_context* context)
 
     threadstate = PyGILState_Ensure();
 
-    aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
-    if (!*aggregate_instance) {
+    aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, 0);
+    if (aggregate_instance == NULL) {
+        /* No rows matched the query; the step handler was never called. */
+        goto error;
+    }
+    else if (!*aggregate_instance) {
         /* this branch is executed if there was an exception in the aggregate's
          * __init__ */
 
@@ -1582,7 +1588,7 @@ finally:
 /*[clinic input]
 _sqlite3.Connection.backup as pysqlite_connection_backup
 
-    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType') = NULL
+    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
     *
     pages: int = -1
     progress: object = None
@@ -1597,7 +1603,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
                                 double sleep)
-/*[clinic end generated code: output=306a3e6a38c36334 input=2f3497ea530144b1]*/
+/*[clinic end generated code: output=306a3e6a38c36334 input=30ae45fc420bfd3b]*/
 {
     int rc;
     int callback_error = 0;
@@ -1772,7 +1778,11 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
                                   (callable != Py_None) ? callable : NULL,
                                   (callable != Py_None) ? pysqlite_collation_callback : NULL);
     if (rc != SQLITE_OK) {
-        PyDict_DelItem(self->collations, uppercase_name);
+        if (callable != Py_None) {
+            if (PyDict_DelItem(self->collations, uppercase_name) < 0) {
+                PyErr_Clear();
+            }
+        }
         _pysqlite_seterror(self->db, NULL);
         goto finally;
     }

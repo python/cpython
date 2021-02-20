@@ -22,6 +22,7 @@
  */
 
 #include "Python.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 
 #include "Python-ast.h"
@@ -520,9 +521,7 @@ compiler_unit_check(struct compiler_unit *u)
 {
     basicblock *block;
     for (block = u->u_blocks; block != NULL; block = block->b_list) {
-        assert((uintptr_t)block != 0xcbcbcbcbU);
-        assert((uintptr_t)block != 0xfbfbfbfbU);
-        assert((uintptr_t)block != 0xdbdbdbdbU);
+        assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
             assert(block->b_iused >= 0);
@@ -667,25 +666,30 @@ compiler_enter_scope(struct compiler *c, identifier name,
 static void
 compiler_exit_scope(struct compiler *c)
 {
-    Py_ssize_t n;
-    PyObject *capsule;
+    // Don't call PySequence_DelItem() with an exception raised
+    PyObject *exc_type, *exc_val, *exc_tb;
+    PyErr_Fetch(&exc_type, &exc_val, &exc_tb);
 
     c->c_nestlevel--;
     compiler_unit_free(c->u);
     /* Restore c->u to the parent unit. */
-    n = PyList_GET_SIZE(c->c_stack) - 1;
+    Py_ssize_t n = PyList_GET_SIZE(c->c_stack) - 1;
     if (n >= 0) {
-        capsule = PyList_GET_ITEM(c->c_stack, n);
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, n);
         c->u = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
-        if (PySequence_DelItem(c->c_stack, n) < 0)
-            Py_FatalError("compiler_exit_scope()");
+        if (PySequence_DelItem(c->c_stack, n) < 0) {
+            _PyErr_WriteUnraisableMsg("on removing the last compiler "
+                                      "stack item", NULL);
+        }
         compiler_unit_check(c->u);
     }
-    else
+    else {
         c->u = NULL;
+    }
 
+    PyErr_Restore(exc_type, exc_val, exc_tb);
 }
 
 static int
@@ -898,8 +902,6 @@ compiler_next_instr(basicblock *b)
    * 1 -- when jump
    * -1 -- maximal
  */
-/* XXX Make the stack effect of WITH_CLEANUP_START and
-   WITH_CLEANUP_FINISH deterministic. */
 static int
 stack_effect(int opcode, int oparg, int jump)
 {
@@ -1896,17 +1898,15 @@ get_ref_type(struct compiler *c, PyObject *name)
         return CELL;
     scope = PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
-        _Py_FatalErrorFormat(__func__,
-           "unknown scope for %.100s in %.100s(%s)\n"
-           "symbols: %s\nlocals: %s\nglobals: %s",
-           PyUnicode_AsUTF8(name),
-           PyUnicode_AsUTF8(c->u->u_name),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_id)),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_ste->ste_symbols)),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_varnames)),
-           PyUnicode_AsUTF8(PyObject_Repr(c->u->u_names)));
+        PyErr_Format(PyExc_SystemError,
+                     "PyST_GetScope(name=%R) failed: "
+                     "unknown scope in unit %S (%R); "
+                     "symbols: %R; locals: %R; globals: %R",
+                     name,
+                     c->u->u_name, c->u->u_ste->ste_id,
+                     c->u->u_ste->ste_symbols, c->u->u_varnames, c->u->u_names);
+        return -1;
     }
-
     return scope;
 }
 
@@ -1921,7 +1921,8 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 }
 
 static int
-compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, PyObject *qualname)
+compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
+                      PyObject *qualname)
 {
     Py_ssize_t i, free = PyCode_GetNumFree(co);
     if (qualname == NULL)
@@ -1933,7 +1934,6 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
             PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
-            int arg, reftype;
 
             /* Special case: If a class contains a method with a
                free variable that has the same name as a method,
@@ -1941,20 +1941,27 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
                class.  It should be handled by the closure, as
                well as by the normal name lookup logic.
             */
-            reftype = get_ref_type(c, name);
-            if (reftype == CELL)
+            int reftype = get_ref_type(c, name);
+            if (reftype == -1) {
+                return 0;
+            }
+            int arg;
+            if (reftype == CELL) {
                 arg = compiler_lookup_arg(c->u->u_cellvars, name);
-            else /* (reftype == FREE) */
+            }
+            else {
                 arg = compiler_lookup_arg(c->u->u_freevars, name);
+            }
             if (arg == -1) {
-                _Py_FatalErrorFormat(__func__,
-                    "lookup %s in %s %d %d\n"
-                    "freevars of %s: %s\n",
-                    PyUnicode_AsUTF8(PyObject_Repr(name)),
-                    PyUnicode_AsUTF8(c->u->u_name),
-                    reftype, arg,
-                    PyUnicode_AsUTF8(co->co_name),
-                    PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
+                PyErr_Format(PyExc_SystemError,
+                    "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
+                    "freevars of code %S: %R",
+                    name,
+                    reftype,
+                    c->u->u_name,
+                    co->co_name,
+                    co->co_freevars);
+                return 0;
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
         }
@@ -2292,7 +2299,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    compiler_make_closure(c, co, funcflags, qualname);
+    if (!compiler_make_closure(c, co, funcflags, qualname)) {
+        Py_DECREF(qualname);
+        Py_DECREF(co);
+        return 0;
+    }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -2417,7 +2428,10 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    compiler_make_closure(c, co, 0, NULL);
+    if (!compiler_make_closure(c, co, 0, NULL)) {
+        Py_DECREF(co);
+        return 0;
+    }
     Py_DECREF(co);
 
     /* 4. load class name */
@@ -2690,10 +2704,16 @@ compiler_lambda(struct compiler *c, expr_ty e)
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
-    if (co == NULL)
+    if (co == NULL) {
+        Py_DECREF(qualname);
         return 0;
+    }
 
-    compiler_make_closure(c, co, funcflags, qualname);
+    if (!compiler_make_closure(c, co, funcflags, qualname)) {
+        Py_DECREF(qualname);
+        Py_DECREF(co);
+        return 0;
+    }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -4656,8 +4676,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     if (co == NULL)
         goto error;
 
-    if (!compiler_make_closure(c, co, 0, qualname))
+    if (!compiler_make_closure(c, co, 0, qualname)) {
         goto error;
+    }
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -5464,8 +5485,10 @@ stackdepth(struct compiler *c)
             struct instr *instr = &b->b_instr[i];
             int effect = stack_effect(instr->i_opcode, instr->i_oparg, 0);
             if (effect == PY_INVALID_STACK_EFFECT) {
-                _Py_FatalErrorFormat(__func__,
-                    "opcode = %d", instr->i_opcode);
+                PyErr_Format(PyExc_SystemError,
+                             "compiler stack_effect(opcode=%d, arg=%i) failed",
+                             instr->i_opcode, instr->i_oparg);
+                return -1;
             }
             int new_depth = depth + effect;
             if (new_depth > maxdepth) {
@@ -5554,9 +5577,8 @@ assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
         if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
             return 0;
     }
-    unsigned char *lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-
+    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(a->a_lnotab);
+    lnotab += a->a_lnotab_off;
     a->a_lnotab_off += 2;
     *lnotab++ = bdelta;
     *lnotab++ = ldelta;
@@ -5784,14 +5806,12 @@ compute_code_flags(struct compiler *c)
     return flags;
 }
 
-// Merge *tuple* with constant cache.
+// Merge *obj* with constant cache.
 // Unlike merge_consts_recursive(), this function doesn't work recursively.
 static int
-merge_const_tuple(struct compiler *c, PyObject **tuple)
+merge_const_one(struct compiler *c, PyObject **obj)
 {
-    assert(PyTuple_CheckExact(*tuple));
-
-    PyObject *key = _PyCode_ConstantKey(*tuple);
+    PyObject *key = _PyCode_ConstantKey(*obj);
     if (key == NULL) {
         return 0;
     }
@@ -5802,14 +5822,18 @@ merge_const_tuple(struct compiler *c, PyObject **tuple)
     if (t == NULL) {
         return 0;
     }
-    if (t == key) {  // tuple is new constant.
+    if (t == key) {  // obj is new constant.
         return 1;
     }
 
-    PyObject *u = PyTuple_GET_ITEM(t, 1);
-    Py_INCREF(u);
-    Py_DECREF(*tuple);
-    *tuple = u;
+    if (PyTuple_CheckExact(t)) {
+        // t is still borrowed reference
+        t = PyTuple_GET_ITEM(t, 1);
+    }
+
+    Py_INCREF(t);
+    Py_DECREF(*obj);
+    *obj = t;
     return 1;
 }
 
@@ -5839,10 +5863,10 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
     if (!freevars)
         goto error;
 
-    if (!merge_const_tuple(c, &names) ||
-            !merge_const_tuple(c, &varnames) ||
-            !merge_const_tuple(c, &cellvars) ||
-            !merge_const_tuple(c, &freevars))
+    if (!merge_const_one(c, &names) ||
+            !merge_const_one(c, &varnames) ||
+            !merge_const_one(c, &cellvars) ||
+            !merge_const_one(c, &freevars))
     {
         goto error;
     }
@@ -5859,7 +5883,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
     if (consts == NULL) {
         goto error;
     }
-    if (!merge_const_tuple(c, &consts)) {
+    if (!merge_const_one(c, &consts)) {
         Py_DECREF(consts);
         goto error;
     }
@@ -6006,10 +6030,18 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)
+    if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0) {
         goto error;
-    if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0)
+    }
+    if (!merge_const_one(c, &a.a_lnotab)) {
         goto error;
+    }
+    if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
+        goto error;
+    }
+    if (!merge_const_one(c, &a.a_bytecode)) {
+        goto error;
+    }
 
     co = makecode(c, &a, consts);
  error:
@@ -6564,27 +6596,14 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
         if (b->b_iused > 0) {
             struct instr *b_last_instr = &b->b_instr[b->b_iused - 1];
-            if (b_last_instr->i_opcode == POP_JUMP_IF_FALSE ||
-                b_last_instr->i_opcode == POP_JUMP_IF_TRUE ||
-                b_last_instr->i_opcode == JUMP_ABSOLUTE ||
+            if (b_last_instr->i_opcode == JUMP_ABSOLUTE ||
                 b_last_instr->i_opcode == JUMP_FORWARD) {
                 if (b_last_instr->i_target == b->b_next) {
                     assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
-                    switch(b_last_instr->i_opcode) {
-                        case POP_JUMP_IF_FALSE:
-                        case POP_JUMP_IF_TRUE:
-                            b_last_instr->i_opcode = POP_TOP;
-                            b_last_instr->i_target = NULL;
-                            b_last_instr->i_oparg = 0;
-                            break;
-                        case JUMP_ABSOLUTE:
-                        case JUMP_FORWARD:
-                            b_last_instr->i_opcode = NOP;
-                            clean_basic_block(b, -1);
-                            maybe_empty_blocks = 1;
-                            break;
-                    }
+                    b_last_instr->i_opcode = NOP;
+                    clean_basic_block(b, -1);
+                    maybe_empty_blocks = 1;
                 }
             }
         }
@@ -6671,4 +6690,3 @@ PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
     Py_INCREF(code);
     return code;
 }
-

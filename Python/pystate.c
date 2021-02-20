@@ -56,7 +56,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
     // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
     // is called multiple times.
-    int64_t unicode_next_index = runtime->unicode_ids.next_index;
+    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
 
     memset(runtime, 0, sizeof(*runtime));
 
@@ -324,7 +324,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-    _PyGC_Fini(tstate);
+    _PyGC_Fini(interp);
 
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
@@ -1146,7 +1146,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
         HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
-        _PyEval_SignalAsyncExc(tstate);
+        _PyEval_SignalAsyncExc(tstate->interp);
         return 1;
     }
     HEAD_UNLOCK(runtime);
@@ -1327,7 +1327,7 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 PyStatus
 _PyGILState_Init(PyThreadState *tstate)
 {
-    if (!_Py_IsMainInterpreter(tstate)) {
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
         return _PyStatus_OK();
@@ -1357,9 +1357,9 @@ _PyGILState_GetInterpreterStateUnsafe(void)
 }
 
 void
-_PyGILState_Fini(PyThreadState *tstate)
+_PyGILState_Fini(PyInterpreterState *interp)
 {
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+    struct _gilstate_runtime_state *gilstate = &interp->runtime->gilstate;
     PyThread_tss_delete(&gilstate->autoTSSkey);
     gilstate->autoInterpreterState = NULL;
 }
