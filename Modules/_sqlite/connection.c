@@ -920,7 +920,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
-static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2, const char* dbname, const char* access_attempt_source)
+static int _authorizer_callback(void* user_arg, int action, const char* arg1, const char* arg2 , const char* dbname, const char* access_attempt_source)
 {
     PyObject *ret;
     int rc;
