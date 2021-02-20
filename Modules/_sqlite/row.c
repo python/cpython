@@ -152,7 +152,7 @@ pysqlite_row_subscript(pysqlite_Row *self, PyObject *idx)
 }
 
 static Py_ssize_t
-pysqlite_row_length(pysqlite_Row *self)
+pysqlite_row_length(pysqlite_Row* self)
 {
     return PyTuple_GET_SIZE(self->data);
 }
@@ -186,20 +186,17 @@ pysqlite_row_keys_impl(pysqlite_Row *self)
     return list;
 }
 
-static PyObject *
-pysqlite_iter(pysqlite_Row *self)
+static PyObject* pysqlite_iter(pysqlite_Row* self)
 {
     return PyObject_GetIter(self->data);
 }
 
-static Py_hash_t
-pysqlite_row_hash(pysqlite_Row *self)
+static Py_hash_t pysqlite_row_hash(pysqlite_Row *self)
 {
     return PyObject_Hash(self->description) ^ PyObject_Hash(self->data);
 }
 
-static PyObject *
-pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
+static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
 {
     if (opid != Py_EQ && opid != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
@@ -246,8 +243,7 @@ static PyType_Spec row_spec = {
 
 PyTypeObject *pysqlite_RowType = NULL;
 
-int
-pysqlite_row_setup_types(PyObject *module)
+extern int pysqlite_row_setup_types(PyObject *module)
 {
     pysqlite_RowType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &row_spec, NULL);
     if (pysqlite_RowType == NULL) {

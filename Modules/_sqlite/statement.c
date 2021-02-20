@@ -48,9 +48,7 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
-int
-pysqlite_statement_create(pysqlite_Statement *self,
-                          pysqlite_Connection *connection, PyObject *sql)
+int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql)
 {
     const char* tail;
     int rc;
@@ -114,9 +112,7 @@ pysqlite_statement_create(pysqlite_Statement *self,
     return rc;
 }
 
-int
-pysqlite_statement_bind_parameter(pysqlite_Statement *self, int pos,
-                                  PyObject *parameter)
+int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
 {
     int rc = SQLITE_OK;
     const char *string;
@@ -194,8 +190,7 @@ final:
 }
 
 /* returns 0 if the object is one of Python's internal ones that don't need to be adapted */
-static int
-_need_adapt(PyObject *obj)
+static int _need_adapt(PyObject* obj)
 {
     if (pysqlite_BaseTypeAdapted) {
         return 1;
@@ -209,9 +204,7 @@ _need_adapt(PyObject *obj)
     }
 }
 
-void
-pysqlite_statement_bind_parameters(pysqlite_Statement *self,
-                                   PyObject *parameters)
+void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters)
 {
     PyObject* current_param;
     PyObject* adapted;
@@ -334,8 +327,7 @@ pysqlite_statement_bind_parameters(pysqlite_Statement *self,
     }
 }
 
-int
-pysqlite_statement_finalize(pysqlite_Statement *self)
+int pysqlite_statement_finalize(pysqlite_Statement* self)
 {
     int rc;
 
@@ -352,8 +344,7 @@ pysqlite_statement_finalize(pysqlite_Statement *self)
     return rc;
 }
 
-int
-pysqlite_statement_reset(pysqlite_Statement *self)
+int pysqlite_statement_reset(pysqlite_Statement* self)
 {
     int rc;
 
@@ -372,8 +363,7 @@ pysqlite_statement_reset(pysqlite_Statement *self)
     return rc;
 }
 
-void
-pysqlite_statement_mark_dirty(pysqlite_Statement *self)
+void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
 {
     self->in_use = 1;
 }
@@ -409,8 +399,7 @@ pysqlite_statement_dealloc(pysqlite_Statement *self)
  *
  * Returns 1 if there is more left than should be. 0 if ok.
  */
-static int
-pysqlite_check_remaining_sql(const char *tail)
+static int pysqlite_check_remaining_sql(const char* tail)
 {
     const char* pos = tail;
 
@@ -491,8 +480,7 @@ static PyType_Spec stmt_spec = {
 };
 PyTypeObject *pysqlite_StatementType = NULL;
 
-int
-pysqlite_statement_setup_types(PyObject *module)
+extern int pysqlite_statement_setup_types(PyObject *module)
 {
     pysqlite_StatementType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
     if (pysqlite_StatementType == NULL) {

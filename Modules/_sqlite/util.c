@@ -24,8 +24,7 @@
 #include "module.h"
 #include "connection.h"
 
-int
-pysqlite_step(sqlite3_stmt *statement, pysqlite_Connection *connection)
+int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
 {
     int rc;
 
@@ -46,8 +45,7 @@ pysqlite_step(sqlite3_stmt *statement, pysqlite_Connection *connection)
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int
-_pysqlite_seterror(sqlite3 *db, sqlite3_stmt *st)
+int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 {
     int errorcode = sqlite3_errcode(db);
 
@@ -106,7 +104,7 @@ _pysqlite_seterror(sqlite3 *db, sqlite3_stmt *st)
 #endif
 
 sqlite_int64
-_pysqlite_long_as_int64(PyObject *py_val)
+_pysqlite_long_as_int64(PyObject * py_val)
 {
     int overflow;
     long long value = PyLong_AsLongLongAndOverflow(py_val, &overflow);

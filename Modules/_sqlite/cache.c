@@ -117,8 +117,7 @@ pysqlite_cache_dealloc(pysqlite_Cache *self)
     Py_DECREF(tp);
 }
 
-PyObject *
-pysqlite_cache_get(pysqlite_Cache *self, PyObject *key)
+PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
 {
     pysqlite_Node* node;
     pysqlite_Node* ptr;
@@ -297,8 +296,7 @@ static PyType_Spec cache_spec = {
 };
 PyTypeObject *pysqlite_CacheType = NULL;
 
-int
-pysqlite_cache_setup_types(PyObject *mod)
+extern int pysqlite_cache_setup_types(PyObject *mod)
 {
     pysqlite_NodeType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &node_spec, NULL);
     if (pysqlite_NodeType == NULL) {

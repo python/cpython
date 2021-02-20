@@ -56,8 +56,8 @@ PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
 
-static PyObject *
-module_connect(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
+        kwargs)
 {
     /* Python seems to have no way of extracting a single keyword-arg at
      * C-level, so this code is redundant with the one in connection_init in
@@ -256,8 +256,7 @@ pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
     return pysqlite_microprotocols_adapt(obj, proto, alt);
 }
 
-static int
-converters_init(PyObject *module)
+static int converters_init(PyObject* module)
 {
     _pysqlite_converters = PyDict_New();
     if (!_pysqlite_converters) {
@@ -282,8 +281,7 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-static int
-add_integer_constants(PyObject *module) {
+static int add_integer_constants(PyObject *module) {
     int ret = 0;
 
     ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
@@ -363,8 +361,7 @@ do {                                                            \
     }                                                           \
 } while (0)
 
-PyMODINIT_FUNC
-PyInit__sqlite3(void)
+PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module;
 

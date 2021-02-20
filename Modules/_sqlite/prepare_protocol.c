@@ -55,8 +55,7 @@ static PyType_Spec type_spec = {
 
 PyTypeObject *pysqlite_PrepareProtocolType = NULL;
 
-int
-pysqlite_prepare_protocol_setup_types(PyObject *module)
+extern int pysqlite_prepare_protocol_setup_types(PyObject *module)
 {
     pysqlite_PrepareProtocolType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &type_spec, NULL);
     if (pysqlite_PrepareProtocolType == NULL) {
