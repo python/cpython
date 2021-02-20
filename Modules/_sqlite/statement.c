@@ -48,7 +48,7 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
-extern int
+int
 pysqlite_statement_create(pysqlite_Statement *self,
                           pysqlite_Connection *connection, PyObject *sql)
 {
@@ -114,7 +114,7 @@ pysqlite_statement_create(pysqlite_Statement *self,
     return rc;
 }
 
-extern int
+int
 pysqlite_statement_bind_parameter(pysqlite_Statement *self, int pos,
                                   PyObject *parameter)
 {
@@ -209,7 +209,7 @@ _need_adapt(PyObject *obj)
     }
 }
 
-extern void
+void
 pysqlite_statement_bind_parameters(pysqlite_Statement *self,
                                    PyObject *parameters)
 {
@@ -334,7 +334,7 @@ pysqlite_statement_bind_parameters(pysqlite_Statement *self,
     }
 }
 
-extern int
+int
 pysqlite_statement_finalize(pysqlite_Statement *self)
 {
     int rc;
@@ -352,7 +352,7 @@ pysqlite_statement_finalize(pysqlite_Statement *self)
     return rc;
 }
 
-extern int
+int
 pysqlite_statement_reset(pysqlite_Statement *self)
 {
     int rc;
@@ -372,7 +372,7 @@ pysqlite_statement_reset(pysqlite_Statement *self)
     return rc;
 }
 
-extern void
+void
 pysqlite_statement_mark_dirty(pysqlite_Statement *self)
 {
     self->in_use = 1;
@@ -491,7 +491,7 @@ static PyType_Spec stmt_spec = {
 };
 PyTypeObject *pysqlite_StatementType = NULL;
 
-extern int
+int
 pysqlite_statement_setup_types(PyObject *module)
 {
     pysqlite_StatementType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &stmt_spec, NULL);

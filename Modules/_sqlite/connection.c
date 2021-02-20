@@ -259,7 +259,7 @@ pysqlite_connection_dealloc(pysqlite_Connection *self)
  *
  * 0 => error; 1 => ok
  */
-extern int
+int
 pysqlite_connection_register_cursor(pysqlite_Connection *connection,
                                     PyObject *cursor)
 {
@@ -362,7 +362,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
  *
  * 0 => error; 1 => ok
  */
-extern int
+int
 pysqlite_check_connection(pysqlite_Connection *con)
 {
     if (!con->initialized) {
@@ -378,7 +378,7 @@ pysqlite_check_connection(pysqlite_Connection *con)
     }
 }
 
-extern PyObject *
+PyObject *
 _pysqlite_connection_begin(pysqlite_Connection *self)
 {
     int rc;
@@ -1220,7 +1220,7 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
 }
 #endif
 
-extern int
+int
 pysqlite_check_thread(pysqlite_Connection *self)
 {
     if (self->check_same_thread) {
@@ -1952,7 +1952,7 @@ static PyType_Spec connection_spec = {
 
 PyTypeObject *pysqlite_ConnectionType = NULL;
 
-extern int
+int
 pysqlite_connection_setup_types(PyObject *module)
 {
     pysqlite_ConnectionType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &connection_spec, NULL);
