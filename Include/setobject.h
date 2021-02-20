@@ -88,7 +88,7 @@ PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
 PyAPI_FUNC(Py_ssize_t) PySet_Size(PyObject *anyset);
 
 #define PyFrozenSet_CheckExact(ob) Py_IS_TYPE(ob, &PyFrozenSet_Type)
-#define   PyFrozenSet_Check(ob) \
+#define PyFrozenSet_Check(ob) \
     (Py_IS_TYPE(ob, &PyFrozenSet_Type) || \
       PyType_IsSubtype(Py_TYPE(ob), &PyFrozenSet_Type))
 
