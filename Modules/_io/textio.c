@@ -1684,7 +1684,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->pending_bytes = b;
     }
     else if (self->pending_bytes_count + bytes_len > self->chunk_size) {
-        // Prevent to concatinate more than chunk_size data.
+        // Prevent to concatenate more than chunk_size data.
         if (_textiowrapper_writeflush(self) < 0) {
             Py_DECREF(b);
             return NULL;
