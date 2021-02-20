@@ -917,7 +917,7 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (dummy == NULL) {
         goto fail;
     }
-    values = PyTuple_New(nkeys);
+    values = PyList_New(0);
     if (values == NULL) {
         goto fail;
     }
@@ -942,11 +942,13 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             // Return None:
             Py_INCREF(Py_None);
             values = Py_None;
-            break;
+            goto done;
         }
-        PyTuple_SET_ITEM(values, i, value);
+        PyList_Append(values, value);
     }
+    Py_SETREF(values, PyList_AsTuple(values));
     // Success:
+done:
     Py_DECREF(get);
     Py_DECREF(dummy);
     Py_DECREF(seen);
@@ -1002,7 +1004,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         return NULL;
     }
     // So far so good:
-    PyObject *attrs = PyTuple_New(nargs + PyTuple_GET_SIZE(kwargs));
+    PyObject *attrs = PyList_New(0);
     if (attrs == NULL) {
         return NULL;
     }
@@ -1059,7 +1061,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
             Py_INCREF(subject);
-            PyTuple_SET_ITEM(attrs, 0, subject);
+            PyList_Append(attrs, subject);
         }
         else {
             for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -1075,7 +1077,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                PyTuple_SET_ITEM(attrs, i, attr);
+                PyList_Append(attrs, attr);
             }
         }
         Py_CLEAR(match_args);
@@ -1087,9 +1089,10 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (attr == NULL) {
             goto fail;
         }
-        PyTuple_SET_ITEM(attrs, nargs + i, attr);
+        PyList_Append(attrs, attr);
     }
     Py_DECREF(seen);
+    Py_SETREF(attrs, PyList_AsTuple(attrs));
     return attrs;
 fail:
     // We really don't care whether an error was raised or not... that's our
