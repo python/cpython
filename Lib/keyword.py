@@ -17,8 +17,10 @@ __all__ = ["iskeyword", "issoftkeyword", "kwlist", "softkwlist"]
 
 kwlist = [
     'False',
+    'false',
     'None',
     'True',
+    'true',
     'and',
     'as',
     'assert',
