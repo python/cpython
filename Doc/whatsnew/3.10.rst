@@ -893,6 +893,9 @@ New Features
 * The :c:func:`PyType_GetSlot` function can accept static types.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
+* Add a new :c:func:`PySet_CheckExact` function to the C-API to check if an
+  object is an instance of :class:`set` but not an instance of a subtype.
+  (Contributed by Pablo Galindo in :issue:`43277`.)
 
 Porting to Python 3.10
 ----------------------
