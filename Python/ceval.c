@@ -889,10 +889,11 @@ static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
+    PyThreadState *tstate = PyThreadState_GET();
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         return NULL;
     }
@@ -906,10 +907,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *res = _PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
-    Py_DECREF(builtins);
-    return res;
+    return _PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
 }
 
 
@@ -4733,12 +4731,13 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                   PyObject *const *defs, int defcount,
                   PyObject *kwdefs, PyObject *closure)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *res;
     PyObject *defaults = _PyTuple_FromArray(defs, defcount);
     if (defaults == NULL) {
         return NULL;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         Py_DECREF(defaults);
         return NULL;
@@ -4797,7 +4796,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_kwdefaults = kwdefs,
         .fc_closure = closure
     };
-    PyThreadState *tstate = _PyThreadState_GET();
     res = _PyEval_Vector(tstate, &constr, locals,
                          allargs, argcount,
                          kwnames);
@@ -5316,14 +5314,20 @@ PyEval_GetFrame(void)
 }
 
 PyObject *
+_PyEval_GetBuiltins(PyThreadState *tstate)
+{
+    PyFrameObject *frame = tstate->frame;
+    if (frame != NULL) {
+        return frame->f_builtins;
+    }
+    return tstate->interp->builtins;
+}
+
+PyObject *
 PyEval_GetBuiltins(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->frame;
-    if (current_frame == NULL)
-        return tstate->interp->builtins;
-    else
-        return current_frame->f_builtins;
+    return _PyEval_GetBuiltins(tstate);
 }
 
 /* Convenience function to get a builtin from its name */
