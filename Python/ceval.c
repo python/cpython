@@ -3214,9 +3214,10 @@ main_loop:
                                 Py_ssize_t hint = la->hint;
                                 Py_INCREF(dict);
                                 res = NULL;
+                                assert(!_PyErr_Occurred(tstate));
                                 la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
-
                                 if (res != NULL) {
+                                    assert(la->hint >= 0);
                                     if (la->hint == hint && hint >= 0) {
                                         // Our hint has helped -- cache hit.
                                         OPCACHE_STAT_ATTR_HIT();
@@ -3231,18 +3232,22 @@ main_loop:
                                     Py_DECREF(owner);
                                     Py_DECREF(dict);
                                     DISPATCH();
-                                } else {
+                                }
+                                else {
+                                    _PyErr_Clear(tstate);
                                     // This attribute can be missing sometimes;
                                     // we don't want to optimize this lookup.
                                     OPCACHE_DEOPT_LOAD_ATTR();
                                     Py_DECREF(dict);
                                 }
-                            } else {
+                            }
+                            else {
                                 // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
                                 OPCACHE_DEOPT_LOAD_ATTR();
                             }
                         }
-                    } else {
+                    }
+                    else {
                         // The type of the object has either been updated,
                         // or is different.  Maybe it will stabilize?
                         OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
@@ -3298,7 +3303,8 @@ main_loop:
                         }
                         // Else it's some other kind of descriptor that we don't handle.
                         OPCACHE_DEOPT_LOAD_ATTR();
-                    } else if (type->tp_dictoffset > 0) {
+                    }
+                    else if (type->tp_dictoffset > 0) {
                         // We found an instance with a __dict__.
                         dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
                         dict = *dictptr;
@@ -3306,6 +3312,7 @@ main_loop:
                         if (dict != NULL && PyDict_CheckExact(dict)) {
                             Py_INCREF(dict);
                             res = NULL;
+                            assert(!_PyErr_Occurred(tstate));
                             Py_ssize_t hint = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
                             if (res != NULL) {
                                 Py_INCREF(res);
@@ -3322,9 +3329,13 @@ main_loop:
                                 la = &co_opcache->u.la;
                                 la->type = type;
                                 la->tp_version_tag = type->tp_version_tag;
+                                assert(hint >= 0);
                                 la->hint = hint;
 
                                 DISPATCH();
+                            }
+                            else {
+                                _PyErr_Clear(tstate);
                             }
                             Py_DECREF(dict);
                         } else {
