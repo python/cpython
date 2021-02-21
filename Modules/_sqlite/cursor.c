@@ -212,10 +212,6 @@ _pysqlite_build_column_name(pysqlite_Cursor *self, const char *colname)
     const char* pos;
     Py_ssize_t len;
 
-    if (!colname) {
-        Py_RETURN_NONE;
-    }
-
     if (self->connection->detect_types & PARSE_COLNAMES) {
         for (pos = colname; *pos; pos++) {
             if (*pos == '[') {
