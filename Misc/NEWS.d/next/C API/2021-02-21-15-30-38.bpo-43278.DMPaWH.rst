@@ -1,0 +1,1 @@
+remove unnecessary leading '\n' for unify 'welcome message' behave across different compilers.
