@@ -308,7 +308,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                     converted = PyUnicode_FromStringAndSize(text, nbytes);
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
-                        const char *colname = sqlite3_column_name(self->statement->st, i);
+                        colname = sqlite3_column_name(self->statement->st, i);
                         if (colname == NULL) {
                             PyErr_NoMemory();
                             goto error;
