@@ -879,6 +879,31 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST(MULTIARCH_CPPFLAGS)
 
+# check for unstable platforms
+# unstable platforms are not tested by Python's buildbot CI
+# See https://www.python.org/dev/peps/pep-0011/
+AC_MSG_CHECKING(for --enable-unstable-platforms)
+AC_ARG_ENABLE(unstable-platforms,
+              AS_HELP_STRING([--enable-unstable-platforms], [enable platforms that are no officially supported and tested (default is no)]))
+if test "x$enable_unstable_platforms" != xyes; then
+    enable_unstable_platforms="no"
+fi
+AC_MSG_RESULT($enable_unstable_platforms)
+
+AC_MSG_CHECKING(for unstable platforms without buildbot CI)
+case "$PLATFORM_TRIPLET" in
+    alpha-linux*|hppa-linux*|ia64-linux*|m68k-linux*|or1k-linux*|sh4-linux*|riscv32-linux*|riscv64-linux*)
+        AS_IF(
+            [test "x$enable_unstable_platforms" = xyes],
+            [AC_MSG_RESULT([enabling unstable platform "$PLATFORM_TRIPLET"])],
+            [AC_MSG_ERROR([platform "$PLATFORM_TRIPLET" is untested and unstable platforms are not enabled (PEP 11).])]
+        )
+        ;;
+    *)
+        AC_MSG_RESULT(["$PLATFORM_TRIPLET" is supported])
+        ;;
+esac
+
 AC_MSG_CHECKING([for -Wl,--no-as-needed])
 save_LDFLAGS="$LDFLAGS"
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
