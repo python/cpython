@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 import textwrap
 import contextlib
+import unittest
 
 from test.support.os_helper import FS_NONASCII
 from typing import Dict, Union
@@ -218,6 +219,9 @@ class LocalPackage:
         self.addCleanup(self.fixtures.close)
         self.fixtures.enter_context(tempdir_as_cwd())
         build_files(self.files)
+
+    def skip(self, reason):
+        raise unittest.SkipTest(reason)
 
 
 def build_files(file_defs, prefix=pathlib.Path()):
