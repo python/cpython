@@ -726,28 +726,29 @@ with objects that get input from and send output to the Shell window.
 The original values stored in ``sys.__stdin__``, ``sys.__stdout__``, and
 ``sys.__stderr__`` are not touched, but may be ``None``.
 
-When Shell has the focus, it controls the keyboard and screen.  This is
-normally transparent, but functions that directly access the keyboard
-and screen will not work.  These include system-specific functions that
-determine whether a key has been pressed and if so, which.
-
 IDLE's standard stream replacements are not inherited by subprocesses
-created in the execution process, whether directly by user code or by modules
-such as multiprocessing.  If such subprocess use ``input`` from sys.stdin
-or ``print`` or ``write`` to sys.stdout or sys.stderr,
+created in the execution process, whether directly by user code or by
+modules such as multiprocessing.  If such subprocess use ``input`` from
+sys.stdin or ``print`` or ``write`` to sys.stdout or sys.stderr,
 IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
-
-The IDLE code running in the execution process adds frames to the call stack
-that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
-``sys.setrecursionlimit`` to reduce the effect of the additional stack frames.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
 
-When user code raises SystemExit either directly or by calling sys.exit, IDLE
-returns to a Shell prompt instead of exiting.
+When Shell has the focus, it controls the keyboard and screen.  This is
+normally transparent, but functions that directly access the keyboard
+and screen will not work.  These include system-specific functions that
+determine whether a key has been pressed and if so, which.
+
+The IDLE code running in the execution process adds frames to the call stack
+that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
+``sys.setrecursionlimit`` to reduce the effect of the additional stack
+frames.
+
+When user code raises SystemExit either directly or by calling sys.exit,
+IDLE returns to a Shell prompt instead of exiting.
 
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^
