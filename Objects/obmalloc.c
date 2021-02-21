@@ -907,8 +907,8 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#define ARENA_BITS              18
-#define ARENA_SIZE              (1 << ARENA_BITS)     /* 256 KiB */
+#define ARENA_BITS              20
+#define ARENA_SIZE              (1 << ARENA_BITS)     /* 1 MiB */
 #define ARENA_SIZE_MASK         (ARENA_SIZE - 1)
 
 #ifdef WITH_MEMORY_LIMITS
@@ -918,8 +918,8 @@ static int running_on_valgrind = -1;
 /*
  * Size of the pools used for small blocks.  Must be a power of 2.
  */
-#define POOL_BITS               12                  /* 4 KiB */
-#define POOL_SIZE               (1 << POOL_BITS)    /* 4 KiB */
+#define POOL_BITS               14                  /* 16 KiB */
+#define POOL_SIZE               (1 << POOL_BITS)
 #define POOL_SIZE_MASK          (POOL_SIZE - 1)
 
 #define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
