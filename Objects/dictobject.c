@@ -1439,11 +1439,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 
 Py_ssize_t
 _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
-                     Py_ssize_t hint, PyObject **value)
+                    Py_ssize_t hint, PyObject **value)
 {
-    Py_hash_t hash;
-    PyThreadState *tstate;
-
     assert(*value == NULL);
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
@@ -1467,39 +1464,15 @@ _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
         }
     }
 
-    if ((hash = ((PyASCIIObject *) key)->hash) == -1)
-    {
+    Py_hash_t hash = ((PyASCIIObject *) key)->hash;
+    if (hash == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
-            PyErr_Clear();
             return -1;
         }
     }
 
-    // We can arrive here with a NULL tstate during initialization: try
-    // running "python -Wi" for an example related to string interning
-    tstate = _PyThreadState_UncheckedGet();
-    Py_ssize_t ix = 0;
-    if (tstate != NULL && tstate->curexc_type != NULL) {
-        /* preserve the existing exception */
-        PyObject *err_type, *err_value, *err_tb;
-        PyErr_Fetch(&err_type, &err_value, &err_tb);
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, value);
-        /* ignore errors */
-        PyErr_Restore(err_type, err_value, err_tb);
-        if (ix < 0) {
-            return -1;
-        }
-    }
-    else {
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, value);
-        if (ix < 0) {
-            PyErr_Clear();
-            return -1;
-        }
-    }
-
-    return ix;
+    return (mp->ma_keys->dk_lookup)(mp, key, hash, value);
 }
 
 /* Same as PyDict_GetItemWithError() but with hash supplied by caller.
