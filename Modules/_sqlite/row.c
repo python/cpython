@@ -243,7 +243,8 @@ static PyType_Spec row_spec = {
 
 PyTypeObject *pysqlite_RowType = NULL;
 
-extern int pysqlite_row_setup_types(PyObject *module)
+int
+pysqlite_row_setup_types(PyObject *module)
 {
     pysqlite_RowType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &row_spec, NULL);
     if (pysqlite_RowType == NULL) {
