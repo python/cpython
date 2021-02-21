@@ -25,7 +25,8 @@
 #include <limits.h>
 
 /* only used internally */
-pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
+static pysqlite_Node *
+pysqlite_new_node(PyObject *key, PyObject *data)
 {
     pysqlite_Node* node;
 
@@ -43,7 +44,8 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
     return node;
 }
 
-void pysqlite_node_dealloc(pysqlite_Node* self)
+static void
+pysqlite_node_dealloc(pysqlite_Node *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -54,7 +56,8 @@ void pysqlite_node_dealloc(pysqlite_Node* self)
     Py_DECREF(tp);
 }
 
-int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
+static int
+pysqlite_cache_init(pysqlite_Cache *self, PyObject *args, PyObject *kwargs)
 {
     PyObject* factory;
     int size = 10;
@@ -85,7 +88,8 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
     return 0;
 }
 
-void pysqlite_cache_dealloc(pysqlite_Cache* self)
+static void
+pysqlite_cache_dealloc(pysqlite_Cache *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     pysqlite_Node* node;
@@ -217,7 +221,8 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
     return Py_NewRef(node->data);
 }
 
-PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
+static PyObject *
+pysqlite_cache_display(pysqlite_Cache *self, PyObject *args)
 {
     pysqlite_Node* ptr;
     PyObject* prevkey;

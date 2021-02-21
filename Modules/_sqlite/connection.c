@@ -57,8 +57,9 @@ static const char * const begin_statements[] = {
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
-
-int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+static int
+pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
+                         PyObject *kwargs)
 {
     static char *kwlist[] = {
         "database", "timeout", "detect_types", "isolation_level",
@@ -193,7 +194,9 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
 }
 
 /* action in (ACTION_RESET, ACTION_FINALIZE) */
-void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset_cursors)
+static void
+pysqlite_do_all_statements(pysqlite_Connection *self, int action,
+                           int reset_cursors)
 {
     int i;
     PyObject* weakref;
@@ -225,7 +228,8 @@ void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset
     }
 }
 
-void pysqlite_connection_dealloc(pysqlite_Connection* self)
+static void
+pysqlite_connection_dealloc(pysqlite_Connection *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -546,7 +550,9 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     return 0;
 }
 
-PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_value** argv)
+static PyObject *
+_pysqlite_build_py_params(sqlite3_context *context, int argc,
+                          sqlite3_value **argv)
 {
     PyObject* args;
     int i;
@@ -1288,7 +1294,9 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
     return 0;
 }
 
-PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+static PyObject *
+pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
+                         PyObject *kwargs)
 {
     PyObject* sql;
     pysqlite_Statement* statement;
