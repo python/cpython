@@ -813,8 +813,9 @@ def move(src, dst, copy_function=copy2):
             if _destinsrc(src, dst):
                 raise Error("Cannot move a directory '%s' into itself"
                             " '%s'." % (src, dst))
-            if ((not os.access(src, os.W_OK) and os.listdir(src))
-                    or _is_immutable(src)):
+            if (_is_immutable(src)
+                    or (not os.access(src, os.W_OK) and os.listdir(src)
+                        and sys.platform == 'darwin')):
                 raise PermissionError("Cannot move the non-empty directory "
                                       "'%s': Lacking write permission to '%s'."
                                       % (src, src))
