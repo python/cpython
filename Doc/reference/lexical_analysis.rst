@@ -351,11 +351,14 @@ exactly as written here:
    assert     del        global     not        with
    async      elif       if         or         yield
 
+.. _soft_keywords:
 
 Soft Keywords
 -------------
 
-.. index:: soft keyword, keyword
+.. index::
+   single: soft keyword; keyword
+   pair: soft; keyword
 
 .. versionadded:: 3.10
 
