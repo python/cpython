@@ -478,8 +478,8 @@ allowing any pending :keyword:`finally` clauses to execute.
 .. index::
    single: from; yield from expression
 
-When ``yield from <expr>`` is used, it treats the supplied expression as
-a subiterator. All values produced by that subiterator are passed directly
+When ``yield from <expr>`` is used, the supplied expression must be an
+iterable. The values produced by iterating that iterable are passed directly
 to the caller of the current generator's methods. Any values passed in with
 :meth:`~generator.send` and any exceptions passed in with
 :meth:`~generator.throw` are passed to the underlying iterator if it has the
