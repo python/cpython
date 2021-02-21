@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 import textwrap
 import contextlib
+import unittest
 
 
 @contextlib.contextmanager
@@ -219,6 +220,9 @@ class FileBuilder:
             return '☃'
         return test.support.FS_NONASCII or \
             self.skip("File system does not support non-ascii.")
+
+    def skip(self, reason):
+        raise unittest.SkipTest(reason)
 
 
 def DALS(str):
