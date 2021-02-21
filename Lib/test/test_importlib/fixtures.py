@@ -176,9 +176,6 @@ class LocalPackage:
         self.fixtures.enter_context(tempdir_as_cwd())
         build_files(self.files)
 
-    def skip(self, reason):
-        raise unittest.SkipTest(reason)
-
 
 def build_files(file_defs, prefix=pathlib.Path()):
     """Build a set of files/directories, as described by the
@@ -223,6 +220,9 @@ class FileBuilder:
             return '☃'
         return test.support.FS_NONASCII or \
             self.skip("File system does not support non-ascii.")
+
+    def skip(self, reason):
+        raise unittest.SkipTest(reason)
 
 
 def DALS(str):
