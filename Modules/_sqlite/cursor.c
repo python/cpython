@@ -32,8 +32,6 @@ class _sqlite3.Cursor "pysqlite_Cursor *" "pysqlite_CursorType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2072d8db95411d5]*/
 
-PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
-
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
 /*[clinic input]
@@ -746,7 +744,8 @@ error:
     }
 }
 
-PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
+static PyObject *
+pysqlite_cursor_iternext(pysqlite_Cursor *self)
 {
     PyObject* next_row_tuple;
     PyObject* next_row;

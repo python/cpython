@@ -23,12 +23,15 @@
 
 #include "prepare_protocol.h"
 
-int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* args, PyObject* kwargs)
+static int
+pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol *self, PyObject *args,
+                               PyObject *kwargs)
 {
     return 0;
 }
 
-void pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol* self)
+static void
+pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
