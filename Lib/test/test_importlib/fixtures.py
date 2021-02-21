@@ -220,8 +220,6 @@ class LocalPackage:
         self.fixtures.enter_context(tempdir_as_cwd())
         build_files(self.files)
 
-    def skip(self, reason):
-        raise unittest.SkipTest(reason)
 
 
 def build_files(file_defs, prefix=pathlib.Path()):
@@ -261,6 +259,9 @@ def build_files(file_defs, prefix=pathlib.Path()):
 class FileBuilder:
     def unicode_filename(self):
         return FS_NONASCII or self.skip("File system does not support non-ascii.")
+
+    def skip(self, reason):
+        raise unittest.SkipTest(reason)
 
 
 def DALS(str):
