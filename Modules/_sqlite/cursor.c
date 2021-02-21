@@ -154,6 +154,7 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             const char *colname = sqlite3_column_name(self->statement->st, i);
             if (colname == NULL) {
                 PyErr_NoMemory();
+                Py_CLEAR(self->row_cast_map);
                 return -1;
             }
             const char *type_start = NULL;
