@@ -909,6 +909,7 @@ static int running_on_valgrind = -1;
  */
 #define ARENA_BITS              18
 #define ARENA_SIZE              (1 << ARENA_BITS)     /* 256 KiB */
+#define ARENA_SIZE_MASK         (ARENA_SIZE - 1)
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS              (SMALL_MEMORY_LIMIT / ARENA_SIZE)
@@ -1235,18 +1236,21 @@ _Py_GetAllocatedBlocks(void)
 }
 
 /*==========================================================================*/
-/* radix tree for tracking arena coverage
+/* radix tree for tracking arena usage
 
-   key format (2^20 arena size)
-     15 -> MAP1
-     15 -> MAP2
-     14 -> MAP3
+   bit allocation for keys (2^20 arena size)
+
+   64-bit pointers:
+     16 -> ignored (BITS - PHYSICAL_BITS)
+     10 -> MAP_TOP
+     10 -> MAP_MID
+      8 -> MAP_BOT
      20 -> ideal aligned arena
    ----
      64
 
-   key format (2^20 arena size)
-     12 -> MAP3
+   32-bit pointers:
+     12 -> MAP_BOT
      20 -> ideal aligned arena
    ----
      32
@@ -1264,10 +1268,8 @@ _Py_GetAllocatedBlocks(void)
  */
 #define PHYSICAL_BITS 48
 
-/* need more layers of radix tree */
+/* use the top and mid layers of the radix tree */
 #define USE_INTERIOR_NODES
-
-#define arena_root_t arena_map1_t
 
 #elif SIZEOF_VOID_P == 4
 
@@ -1281,130 +1283,123 @@ _Py_GetAllocatedBlocks(void)
 
 #endif /* SIZEOF_VOID_P */
 
-#define ARENA_MASK (ARENA_SIZE - 1)
-
 /* arena_coverage_t members require this to be true  */
 #if ARENA_BITS >= 32
 #   error "arena size must be < 2^32"
 #endif
 
 #ifdef USE_INTERIOR_NODES
-/* bits used for MAP1 and MAP2 nodes */
+/* number of bits used for MAP_TOP and MAP_MID nodes */
 #define INTERIOR_BITS ((PHYSICAL_BITS - ARENA_BITS + 2) / 3)
 #else
 #define INTERIOR_BITS 0
 #endif
 
-#define MAP1_BITS INTERIOR_BITS
-#define MAP1_LENGTH (1 << MAP1_BITS)
-#define MAP1_MASK (MAP3_LENGTH - 1)
+#define MAP_TOP_BITS INTERIOR_BITS
+#define MAP_TOP_LENGTH (1 << MAP_TOP_BITS)
+#define MAP_TOP_MASK (MAP_BOT_LENGTH - 1)
 
-#define MAP2_BITS INTERIOR_BITS
-#define MAP2_LENGTH (1 << MAP2_BITS)
-#define MAP2_MASK (MAP2_LENGTH - 1)
+#define MAP_MID_BITS INTERIOR_BITS
+#define MAP_MID_LENGTH (1 << MAP_MID_BITS)
+#define MAP_MID_MASK (MAP_MID_LENGTH - 1)
 
-#define MAP3_BITS (PHYSICAL_BITS - ARENA_BITS - 2*INTERIOR_BITS)
-#define MAP3_LENGTH (1 << MAP3_BITS)
-#define MAP3_MASK (MAP3_LENGTH - 1)
+#define MAP_BOT_BITS (PHYSICAL_BITS - ARENA_BITS - 2*INTERIOR_BITS)
+#define MAP_BOT_LENGTH (1 << MAP_BOT_BITS)
+#define MAP_BOT_MASK (MAP_BOT_LENGTH - 1)
 
-#define MAP3_SHIFT ARENA_BITS
-#define MAP2_SHIFT (MAP3_BITS + MAP3_SHIFT)
-#define MAP1_SHIFT (MAP2_BITS + MAP2_SHIFT)
+#define MAP_BOT_SHIFT ARENA_BITS
+#define MAP_MID_SHIFT (MAP_BOT_BITS + MAP_BOT_SHIFT)
+#define MAP_TOP_SHIFT (MAP_MID_BITS + MAP_MID_SHIFT)
 
 #define AS_UINT(p) ((uintptr_t)(p))
-#define MAP3_INDEX(p) ((AS_UINT(p) >> MAP3_SHIFT) & MAP3_MASK)
-#define MAP2_INDEX(p) ((AS_UINT(p) >> MAP2_SHIFT) & MAP2_MASK)
-#define MAP1_INDEX(p) ((AS_UINT(p) >> MAP1_SHIFT) & MAP1_MASK)
+#define MAP_BOT_INDEX(p) ((AS_UINT(p) >> MAP_BOT_SHIFT) & MAP_BOT_MASK)
+#define MAP_MID_INDEX(p) ((AS_UINT(p) >> MAP_MID_SHIFT) & MAP_MID_MASK)
+#define MAP_TOP_INDEX(p) ((AS_UINT(p) >> MAP_TOP_SHIFT) & MAP_TOP_MASK)
 
 #if PHYSICAL_BITS > BITS
+/* Return non-physical bits of pointer.  Should be same for all valid
+ * pointers if PHYSICAL_BITS set correctly. */
 #define HIGH_BITS(p) (AS_UINT(p) >> PHYSICAL_BITS)
 #else
 #define HIGH_BITS(p) 0
 #endif
 
 
-/* See arena_map_mark_used() for the meaning of these members. */
+/* This is the leaf of the radix tree.  See arena_map_mark_used() for the
+ * meaning of these members. */
 typedef struct {
     int32_t tail_hi;
     int32_t tail_lo;
 } arena_coverage_t;
 
-typedef struct arena_map3 {
+typedef struct arena_map_bot {
     /* The members tail_hi and tail_lo are accessed together.  So, it
      * better to have them as an array of structs, rather than two
      * arrays.
      */
-    arena_coverage_t arenas[MAP3_LENGTH];
-} arena_map3_t;
+    arena_coverage_t arenas[MAP_BOT_LENGTH];
+} arena_map_bot_t;
 
 #ifdef USE_INTERIOR_NODES
-typedef struct arena_map2 {
-    struct arena_map3 *ptrs[MAP2_LENGTH];
-} arena_map2_t;
+typedef struct arena_map_mid {
+    struct arena_map_bot *ptrs[MAP_MID_LENGTH];
+} arena_map_mid_t;
 
-typedef struct arena_map1 {
-    struct arena_map2 *ptrs[MAP1_LENGTH];
-} arena_map1_t;
+typedef struct arena_map_top {
+    struct arena_map_mid *ptrs[MAP_TOP_LENGTH];
+} arena_map_top_t;
 #endif
 
-/* The root of tree (MAP1) and contains all MAP2 nodes.  Note that by
- * initializing like this, the memory should be in the BSS.  The OS will
- * only map pages as the MAP2 nodes get used (OS pages are demand loaded
- * as needed).
+/* The root of radix tree.  Note that by initializing like this, the memory
+ * should be in the BSS.  The OS will only memory map pages as the MAP_MID
+ * nodes get used (OS pages are demand loaded as needed).
  */
 #ifdef USE_INTERIOR_NODES
-static arena_map1_t arena_map_root;
+static arena_map_top_t arena_map_root;
+/* accounting for number of used interior nodes */
+static int arena_map_top_count;
+static int arena_map_mid_count;
+#else
+static arena_map_bot_t arena_map_root;
+#endif
 
-/* number of used radix tree nodes */
-static int arena_map1_count;
-static int arena_map2_count;
-
-/* Return a pointer to a MAP3 node, return NULL if it doesn't exist
- * or it cannot be created */
-static arena_map3_t *
+/* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
+ * it cannot be created */
+static arena_map_bot_t *
 arena_map_get(block *p, int create)
 {
+#ifdef USE_INTERIOR_NODES
     /* sanity check that PHYSICAL_BITS is correct */
     assert(HIGH_BITS(p) == HIGH_BITS(&arena_map_root));
-    int i1 = MAP1_INDEX(p);
+    int i1 = MAP_TOP_INDEX(p);
     if (arena_map_root.ptrs[i1] == NULL) {
         if (!create) {
             return NULL;
         }
-        arena_map2_t *n = PyMem_RawCalloc(1, sizeof(arena_map2_t));
+        arena_map_mid_t *n = PyMem_RawCalloc(1, sizeof(arena_map_mid_t));
         if (n == NULL) {
             return NULL;
         }
         arena_map_root.ptrs[i1] = n;
-        arena_map1_count++;
+        arena_map_top_count++;
     }
-    int i2 = MAP2_INDEX(p);
+    int i2 = MAP_MID_INDEX(p);
     if (arena_map_root.ptrs[i1]->ptrs[i2] == NULL) {
         if (!create) {
             return NULL;
         }
-        arena_map3_t *n = PyMem_RawCalloc(1, sizeof(arena_map3_t));
+        arena_map_bot_t *n = PyMem_RawCalloc(1, sizeof(arena_map_bot_t));
         if (n == NULL) {
             return NULL;
         }
         arena_map_root.ptrs[i1]->ptrs[i2] = n;
-        arena_map2_count++;
+        arena_map_mid_count++;
     }
     return arena_map_root.ptrs[i1]->ptrs[i2];
-}
-
-#else /* !USE_INTERIOR_NODES */
-static arena_map3_t arena_map_root;
-
-/* Return a pointer to a MAP3 node, return NULL if it doesn't exist
- * or it cannot be created */
-static arena_map3_t *
-arena_map_get(block *p, int create)
-{
+#else
     return &arena_map_root;
-}
-
 #endif
+}
 
 
 /* The radix tree only tracks arenas.  So, for 16 MiB arenas, we throw
@@ -1436,22 +1431,22 @@ arena_map_mark_used(uintptr_t arena_base, int is_used)
 {
     /* sanity check that PHYSICAL_BITS is correct */
     assert(HIGH_BITS(arena_base) == HIGH_BITS(&arena_map_root));
-    arena_map3_t *n_hi = arena_map_get((block *)arena_base, is_used);
+    arena_map_bot_t *n_hi = arena_map_get((block *)arena_base, is_used);
     if (n_hi == NULL) {
         assert(is_used); /* otherwise node should already exist */
         return 0; /* failed to allocate space for node */
     }
-    int i3 = MAP3_INDEX((block *)arena_base);
-    int32_t tail = (int32_t)(arena_base & ARENA_MASK);
+    int i3 = MAP_BOT_INDEX((block *)arena_base);
+    int32_t tail = (int32_t)(arena_base & ARENA_SIZE_MASK);
     if (tail == 0) {
         /* is ideal arena address */
         n_hi->arenas[i3].tail_hi = is_used ? -1 : 0;
     }
     else {
         /* arena_base address is not ideal (aligned to arena size) and
-         * so it potentially covers two MAP3 nodes.  Get the MAP3 node
-         * for the next arena.  Note that it might be in different MAP1
-         * and MAP2 nodes as well so we need to call arena_map_get()
+         * so it potentially covers two MAP_BOT nodes.  Get the MAP_BOT node
+         * for the next arena.  Note that it might be in different MAP_TOP
+         * and MAP_MID nodes as well so we need to call arena_map_get()
          * again (do the full tree traversal).
          */
         n_hi->arenas[i3].tail_hi = is_used ? tail : 0;
@@ -1461,13 +1456,13 @@ arena_map_mark_used(uintptr_t arena_base, int is_used)
          * must overflow to 0.  However, that would mean arena_base was
          * "ideal" and we should not be in this case. */
         assert(arena_base < arena_base_next);
-        arena_map3_t *n_lo = arena_map_get((block *)arena_base_next, is_used);
+        arena_map_bot_t *n_lo = arena_map_get((block *)arena_base_next, is_used);
         if (n_lo == NULL) {
             assert(is_used); /* otherwise should already exist */
             n_hi->arenas[i3].tail_hi = 0;
             return 0; /* failed to allocate space for node */
         }
-        int i3_next = MAP3_INDEX(arena_base_next);
+        int i3_next = MAP_BOT_INDEX(arena_base_next);
         n_lo->arenas[i3_next].tail_lo = is_used ? tail : 0;
     }
     return 1;
@@ -1476,17 +1471,17 @@ arena_map_mark_used(uintptr_t arena_base, int is_used)
 /* Return true if 'p' is a pointer inside an obmalloc arena.
  * _PyObject_Free() calls this so it needs to be very fast. */
 static int
-arena_map_is_marked(block *p)
+arena_map_is_used(block *p)
 {
-    arena_map3_t *n = arena_map_get(p, 0);
+    arena_map_bot_t *n = arena_map_get(p, 0);
     if (n == NULL) {
         return 0;
     }
-    int i3 = MAP3_INDEX(p);
+    int i3 = MAP_BOT_INDEX(p);
     /* ARENA_BITS must be < 32 so that the tail is a non-negative int32_t. */
     int32_t hi = n->arenas[i3].tail_hi;
     int32_t lo = n->arenas[i3].tail_lo;
-    int32_t tail = (int32_t)(AS_UINT(p) & ARENA_MASK);
+    int32_t tail = (int32_t)(AS_UINT(p) & ARENA_SIZE_MASK);
     return (tail < lo) || (tail >= hi && hi != 0);
 }
 
@@ -1606,7 +1601,7 @@ new_arena(void)
 static bool
 address_in_range(void *p, poolp pool)
 {
-    return arena_map_is_marked(p);
+    return arena_map_is_used(p);
 }
 
 
@@ -1954,7 +1949,7 @@ insert_to_freepool(poolp pool)
         ao->nextarena = unused_arena_objects;
         unused_arena_objects = ao;
 
-        /* mark arena as not under control of obmalloc */
+        /* mark arena region as not under control of obmalloc */
         arena_map_mark_used(ao->address, 0);
 
         /* Free the entire arena. */
@@ -2199,8 +2194,6 @@ _PyObject_Realloc(void *ctx, void *ptr, size_t nbytes)
 
     return PyMem_RawRealloc(ptr, nbytes);
 }
-
-
 
 #else   /* ! WITH_PYMALLOC */
 
@@ -2903,8 +2896,8 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "# arenas highwater mark", narenas_highwater);
     (void)printone(out, "# arenas allocated current", narenas);
 #ifdef USE_INTERIOR_NODES
-    (void)printone(out, "# arena map level 1 nodes", arena_map1_count);
-    (void)printone(out, "# arena map level 2 nodes", arena_map2_count);
+    (void)printone(out, "# arena map top nodes", arena_map_top_count);
+    (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
     fputc('\n', out);
 #endif
 
@@ -2929,6 +2922,5 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "Total", total);
     return 1;
 }
-
 
 #endif /* #ifdef WITH_PYMALLOC */
