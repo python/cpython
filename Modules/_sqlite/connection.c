@@ -1927,7 +1927,8 @@ static PyType_Spec connection_spec = {
 
 PyTypeObject *pysqlite_ConnectionType = NULL;
 
-extern int pysqlite_connection_setup_types(PyObject *module)
+int
+pysqlite_connection_setup_types(PyObject *module)
 {
     pysqlite_ConnectionType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &connection_spec, NULL);
     if (pysqlite_ConnectionType == NULL) {
