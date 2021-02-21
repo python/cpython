@@ -368,7 +368,8 @@ void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
     self->in_use = 1;
 }
 
-void pysqlite_statement_dealloc(pysqlite_Statement* self)
+static void
+pysqlite_statement_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
