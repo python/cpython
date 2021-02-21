@@ -818,6 +818,7 @@ with_universal_archs
 with_framework_name
 enable_framework
 with_cxx_main
+enable_unstable_platforms
 with_suffix
 enable_shared
 enable_profiling
@@ -1497,6 +1498,9 @@ Optional Features:
                           Unix install. optional INSTALLDIR specifies the
                           installation path. see Mac/README.rst (default is
                           no)
+  --enable-unstable-platforms
+                          enable platforms that are no officially supported
+                          and tested (default is no)
   --enable-shared         enable building a shared Python library (default is
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
@@ -5377,6 +5381,40 @@ if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
 
+
+# check for unstable platforms
+# unstable platforms are not tested by Python's buildbot CI
+# See https://www.python.org/dev/peps/pep-0011/
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-unstable-platforms" >&5
+$as_echo_n "checking for --enable-unstable-platforms... " >&6; }
+# Check whether --enable-unstable-platforms was given.
+if test "${enable_unstable_platforms+set}" = set; then :
+  enableval=$enable_unstable_platforms;
+fi
+
+if test "x$enable_unstable_platforms" != xyes; then
+    enable_unstable_platforms="no"
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_unstable_platforms" >&5
+$as_echo "$enable_unstable_platforms" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for unstable platforms without buildbot CI" >&5
+$as_echo_n "checking for unstable platforms without buildbot CI... " >&6; }
+case "$PLATFORM_TRIPLET" in
+    alpha-linux*|hppa-linux*|ia64-linux*|m68k-linux*|or1k-linux*|sh4-linux*|riscv32-linux*|riscv64-linux*)
+        if test "x$enable_unstable_platforms" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling unstable platform \"$PLATFORM_TRIPLET\"" >&5
+$as_echo "enabling unstable platform \"$PLATFORM_TRIPLET\"" >&6; }
+else
+  as_fn_error $? "platform \"$PLATFORM_TRIPLET\" is untested and unstable platforms are not enabled (PEP 11)." "$LINENO" 5
+
+fi
+        ;;
+    *)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$PLATFORM_TRIPLET\" is supported" >&5
+$as_echo "\"$PLATFORM_TRIPLET\" is supported" >&6; }
+        ;;
+esac
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 $as_echo_n "checking for -Wl,--no-as-needed... " >&6; }
