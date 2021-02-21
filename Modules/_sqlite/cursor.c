@@ -553,6 +553,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                 const char *colname = sqlite3_column_name(self->statement->st, i);
                 if (colname == NULL) {
                     PyErr_NoMemory();
+                    Py_DECREF(descriptor);
                     goto error;
                 }
                 PyObject* colname_obj = _pysqlite_build_column_name(self, colname);
