@@ -41,7 +41,7 @@ PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
 
 /* --- PyPreConfig ----------------------------------------------- */
 
-typedef struct {
+typedef struct PyPreConfig {
     int _config_init;     /* _PyConfigInitEnum value */
 
     /* Parse Py_PreInitializeFromBytesArgs() arguments?
@@ -127,296 +127,84 @@ PyAPI_FUNC(void) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 
 /* --- PyConfig ---------------------------------------------- */
 
-typedef struct {
+/* This structure is best documented in the Doc/c-api/init_config.rst file. */
+typedef struct PyConfig {
     int _config_init;     /* _PyConfigInitEnum value */
 
-    int isolated;         /* Isolated mode? see PyPreConfig.isolated */
-    int use_environment;  /* Use environment variables? see PyPreConfig.use_environment */
-    int dev_mode;         /* Python Development Mode? See PyPreConfig.dev_mode */
-
-    /* Install signal handlers? Yes by default. */
+    int isolated;
+    int use_environment;
+    int dev_mode;
     int install_signal_handlers;
-
-    int use_hash_seed;      /* PYTHONHASHSEED=x */
+    int use_hash_seed;
     unsigned long hash_seed;
-
-    /* Enable faulthandler?
-       Set to 1 by -X faulthandler and PYTHONFAULTHANDLER. -1 means unset. */
     int faulthandler;
-
-    /* Enable tracemalloc?
-       Set by -X tracemalloc=N and PYTHONTRACEMALLOC. -1 means unset */
     int tracemalloc;
-
-    int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
-    int show_ref_count;     /* -X showrefcount */
-    int dump_refs;          /* PYTHONDUMPREFS */
-    int malloc_stats;       /* PYTHONMALLOCSTATS */
-
-    /* Python filesystem encoding and error handler:
-       sys.getfilesystemencoding() and sys.getfilesystemencodeerrors().
-
-       Default encoding and error handler:
-
-       * if Py_SetStandardStreamEncoding() has been called: they have the
-         highest priority;
-       * PYTHONIOENCODING environment variable;
-       * The UTF-8 Mode uses UTF-8/surrogateescape;
-       * If Python forces the usage of the ASCII encoding (ex: C locale
-         or POSIX locale on FreeBSD or HP-UX), use ASCII/surrogateescape;
-       * locale encoding: ANSI code page on Windows, UTF-8 on Android and
-         VxWorks, LC_CTYPE locale encoding on other platforms;
-       * On Windows, "surrogateescape" error handler;
-       * "surrogateescape" error handler if the LC_CTYPE locale is "C" or "POSIX";
-       * "surrogateescape" error handler if the LC_CTYPE locale has been coerced
-         (PEP 538);
-       * "strict" error handler.
-
-       Supported error handlers: "strict", "surrogateescape" and
-       "surrogatepass". The surrogatepass error handler is only supported
-       if Py_DecodeLocale() and Py_EncodeLocale() use directly the UTF-8 codec;
-       it's only used on Windows.
-
-       initfsencoding() updates the encoding to the Python codec name.
-       For example, "ANSI_X3.4-1968" is replaced with "ascii".
-
-       On Windows, sys._enablelegacywindowsfsencoding() sets the
-       encoding/errors to mbcs/replace at runtime.
-
-
-       See Py_FileSystemDefaultEncoding and Py_FileSystemDefaultEncodeErrors.
-       */
+    int import_time;
+    int show_ref_count;
+    int dump_refs;
+    int malloc_stats;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
-
-    wchar_t *pycache_prefix;  /* PYTHONPYCACHEPREFIX, -X pycache_prefix=PATH */
-    int parse_argv;           /* Parse argv command line arguments? */
-
-    /* Command line arguments (sys.argv).
-
-       Set parse_argv to 1 to parse argv as Python command line arguments
-       and then strip Python arguments from argv.
-
-       If argv is empty, an empty string is added to ensure that sys.argv
-       always exists and is never empty. */
+    wchar_t *pycache_prefix;
+    int parse_argv;
+    PyWideStringList orig_argv;
     PyWideStringList argv;
-
-    /* Program name:
-
-       - If Py_SetProgramName() was called, use its value.
-       - On macOS, use PYTHONEXECUTABLE environment variable if set.
-       - If WITH_NEXT_FRAMEWORK macro is defined, use __PYVENV_LAUNCHER__
-         environment variable is set.
-       - Use argv[0] if available and non-empty.
-       - Use "python" on Windows, or "python3 on other platforms. */
-    wchar_t *program_name;
-
-    PyWideStringList xoptions;     /* Command line -X options */
-
-    /* Warnings options: lowest to highest priority. warnings.filters
-       is built in the reverse order (highest to lowest priority). */
+    PyWideStringList xoptions;
     PyWideStringList warnoptions;
-
-    /* If equal to zero, disable the import of the module site and the
-       site-dependent manipulations of sys.path that it entails. Also disable
-       these manipulations if site is explicitly imported later (call
-       site.main() if you want them to be triggered).
-
-       Set to 0 by the -S command line option. If set to -1 (default), it is
-       set to !Py_NoSiteFlag. */
     int site_import;
-
-    /* Bytes warnings:
-
-       * If equal to 1, issue a warning when comparing bytes or bytearray with
-         str or bytes with int.
-       * If equal or greater to 2, issue an error.
-
-       Incremented by the -b command line option. If set to -1 (default), inherit
-       Py_BytesWarningFlag value. */
     int bytes_warning;
-
-    /* If greater than 0, enable inspect: when a script is passed as first
-       argument or the -c option is used, enter interactive mode after
-       executing the script or the command, even when sys.stdin does not appear
-       to be a terminal.
-
-       Incremented by the -i command line option. Set to 1 if the PYTHONINSPECT
-       environment variable is non-empty. If set to -1 (default), inherit
-       Py_InspectFlag value. */
     int inspect;
-
-    /* If greater than 0: enable the interactive mode (REPL).
-
-       Incremented by the -i command line option. If set to -1 (default),
-       inherit Py_InteractiveFlag value. */
     int interactive;
-
-    /* Optimization level.
-
-       Incremented by the -O command line option. Set by the PYTHONOPTIMIZE
-       environment variable. If set to -1 (default), inherit Py_OptimizeFlag
-       value. */
     int optimization_level;
-
-    /* If greater than 0, enable the debug mode: turn on parser debugging
-       output (for expert only, depending on compilation options).
-
-       Incremented by the -d command line option. Set by the PYTHONDEBUG
-       environment variable. If set to -1 (default), inherit Py_DebugFlag
-       value. */
     int parser_debug;
-
-    /* If equal to 0, Python won't try to write ``.pyc`` files on the
-       import of source modules.
-
-       Set to 0 by the -B command line option and the PYTHONDONTWRITEBYTECODE
-       environment variable. If set to -1 (default), it is set to
-       !Py_DontWriteBytecodeFlag. */
     int write_bytecode;
-
-    /* If greater than 0, enable the verbose mode: print a message each time a
-       module is initialized, showing the place (filename or built-in module)
-       from which it is loaded.
-
-       If greater or equal to 2, print a message for each file that is checked
-       for when searching for a module. Also provides information on module
-       cleanup at exit.
-
-       Incremented by the -v option. Set by the PYTHONVERBOSE environment
-       variable. If set to -1 (default), inherit Py_VerboseFlag value. */
     int verbose;
-
-    /* If greater than 0, enable the quiet mode: Don't display the copyright
-       and version messages even in interactive mode.
-
-       Incremented by the -q option. If set to -1 (default), inherit
-       Py_QuietFlag value. */
     int quiet;
-
-   /* If greater than 0, don't add the user site-packages directory to
-      sys.path.
-
-      Set to 0 by the -s and -I command line options , and the PYTHONNOUSERSITE
-      environment variable. If set to -1 (default), it is set to
-      !Py_NoUserSiteDirectory. */
     int user_site_directory;
-
-    /* If non-zero, configure C standard steams (stdio, stdout,
-       stderr):
-
-       - Set O_BINARY mode on Windows.
-       - If buffered_stdio is equal to zero, make streams unbuffered.
-         Otherwise, enable streams buffering if interactive is non-zero. */
     int configure_c_stdio;
-
-    /* If equal to 0, enable unbuffered mode: force the stdout and stderr
-       streams to be unbuffered.
-
-       Set to 0 by the -u option. Set by the PYTHONUNBUFFERED environment
-       variable.
-       If set to -1 (default), it is set to !Py_UnbufferedStdioFlag. */
     int buffered_stdio;
-
-    /* Encoding of sys.stdin, sys.stdout and sys.stderr.
-       Value set from PYTHONIOENCODING environment variable and
-       Py_SetStandardStreamEncoding() function.
-       See also 'stdio_errors' attribute. */
     wchar_t *stdio_encoding;
-
-    /* Error handler of sys.stdin and sys.stdout.
-       Value set from PYTHONIOENCODING environment variable and
-       Py_SetStandardStreamEncoding() function.
-       See also 'stdio_encoding' attribute. */
     wchar_t *stdio_errors;
-
 #ifdef MS_WINDOWS
-    /* If greater than zero, use io.FileIO instead of WindowsConsoleIO for sys
-       standard streams.
-
-       Set to 1 if the PYTHONLEGACYWINDOWSSTDIO environment variable is set to
-       a non-empty string. If set to -1 (default), inherit
-       Py_LegacyWindowsStdioFlag value.
-
-       See PEP 528 for more details. */
     int legacy_windows_stdio;
 #endif
-
-    /* Value of the --check-hash-based-pycs command line option:
-
-       - "default" means the 'check_source' flag in hash-based pycs
-         determines invalidation
-       - "always" causes the interpreter to hash the source file for
-         invalidation regardless of value of 'check_source' bit
-       - "never" causes the interpreter to always assume hash-based pycs are
-         valid
-
-       The default value is "default".
-
-       See PEP 552 "Deterministic pycs" for more details. */
     wchar_t *check_hash_pycs_mode;
 
     /* --- Path configuration inputs ------------ */
-
-    /* If greater than 0, suppress _PyPathConfig_Calculate() warnings on Unix.
-       The parameter has no effect on Windows.
-
-       If set to -1 (default), inherit !Py_FrozenFlag value. */
     int pathconfig_warnings;
-
-    wchar_t *pythonpath_env; /* PYTHONPATH environment variable */
-    wchar_t *home;          /* PYTHONHOME environment variable,
-                               see also Py_SetPythonHome(). */
+    wchar_t *program_name;
+    wchar_t *pythonpath_env;
+    wchar_t *home;
+    wchar_t *platlibdir;
 
     /* --- Path configuration outputs ----------- */
-
-    int module_search_paths_set;  /* If non-zero, use module_search_paths */
-    PyWideStringList module_search_paths;  /* sys.path paths. Computed if
-                                       module_search_paths_set is equal
-                                       to zero. */
-
-    wchar_t *executable;        /* sys.executable */
-    wchar_t *base_executable;   /* sys._base_executable */
-    wchar_t *prefix;            /* sys.prefix */
-    wchar_t *base_prefix;       /* sys.base_prefix */
-    wchar_t *exec_prefix;       /* sys.exec_prefix */
-    wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
-    wchar_t *platlibdir;        /* sys.platlibdir */
+    int module_search_paths_set;
+    PyWideStringList module_search_paths;
+    wchar_t *executable;
+    wchar_t *base_executable;
+    wchar_t *prefix;
+    wchar_t *base_prefix;
+    wchar_t *exec_prefix;
+    wchar_t *base_exec_prefix;
 
     /* --- Parameter only used by Py_Main() ---------- */
-
-    /* Skip the first line of the source ('run_filename' parameter), allowing use of non-Unix forms of
-       "#!cmd".  This is intended for a DOS specific hack only.
-
-       Set by the -x command line option. */
     int skip_source_first_line;
-
-    wchar_t *run_command;   /* -c command line argument */
-    wchar_t *run_module;    /* -m command line argument */
-    wchar_t *run_filename;  /* Trailing command line argument without -c or -m */
+    wchar_t *run_command;
+    wchar_t *run_module;
+    wchar_t *run_filename;
 
     /* --- Private fields ---------------------------- */
 
-    /* Install importlib? If set to 0, importlib is not initialized at all.
-       Needed by freeze_importlib. */
+    // Install importlib? If equals to 0, importlib is not initialized at all.
+    // Needed by freeze_importlib.
     int _install_importlib;
 
-    /* If equal to 0, stop Python initialization before the "main" phase */
+    // If equal to 0, stop Python initialization before the "main" phase.
     int _init_main;
 
-    /* If non-zero, disallow threads, subprocesses, and fork.
-       Default: 0. */
+    // If non-zero, disallow threads, subprocesses, and fork.
+    // Default: 0.
     int _isolated_interpreter;
-
-    /* The list of the original command line arguments passed to the Python
-       executable.
-
-       If 'orig_argv' list is empty and 'argv' is not a list only containing an
-       empty string, PyConfig_Read() copies 'argv' into 'orig_argv' before
-       modifying 'argv' (if 'parse_argv is non-zero).
-
-       _PyConfig_Write() initializes Py_GetArgcArgv() to this list. */
-    PyWideStringList orig_argv;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

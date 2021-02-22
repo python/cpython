@@ -1,8 +1,9 @@
 import os
+import io
 
 from . import _common
 from ._common import as_file, files
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from importlib.abc import ResourceLoader
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
@@ -10,6 +11,8 @@ from types import ModuleType
 from typing import ContextManager, Iterable, Union
 from typing import cast
 from typing.io import BinaryIO, TextIO
+from collections.abc import Sequence
+from functools import singledispatch
 
 
 __all__ = [
@@ -102,22 +105,26 @@ def path(
     """
     reader = _common.get_resource_reader(_common.get_package(package))
     return (
-        _path_from_reader(reader, resource)
+        _path_from_reader(reader, _common.normalize_path(resource))
         if reader else
         _common.as_file(
             _common.files(package).joinpath(_common.normalize_path(resource)))
         )
 
 
-@contextmanager
 def _path_from_reader(reader, resource):
-    norm_resource = _common.normalize_path(resource)
+    return _path_from_resource_path(reader, resource) or \
+        _path_from_open_resource(reader, resource)
+
+
+def _path_from_resource_path(reader, resource):
     with suppress(FileNotFoundError):
-        yield Path(reader.resource_path(norm_resource))
-        return
-    opener_reader = reader.open_resource(norm_resource)
-    with _common._tempfile(opener_reader.read, suffix=norm_resource) as res:
-        yield res
+        return Path(reader.resource_path(resource))
+
+
+def _path_from_open_resource(reader, resource):
+    saved = io.BytesIO(reader.open_resource(resource).read())
+    return _common._tempfile(saved.read, suffix=resource)
 
 
 def is_resource(package: Package, name: str) -> bool:
@@ -146,7 +153,7 @@ def contents(package: Package) -> Iterable[str]:
     package = _common.get_package(package)
     reader = _common.get_resource_reader(package)
     if reader is not None:
-        return reader.contents()
+        return _ensure_sequence(reader.contents())
     # Is the package a namespace package?  By definition, namespace packages
     # cannot have resources.
     namespace = (
@@ -156,3 +163,13 @@ def contents(package: Package) -> Iterable[str]:
     if namespace or not package.__spec__.has_location:
         return ()
     return list(item.name for item in _common.from_package(package).iterdir())
+
+
+@singledispatch
+def _ensure_sequence(iterable):
+    return list(iterable)
+
+
+@_ensure_sequence.register(Sequence)
+def _(iterable):
+    return iterable

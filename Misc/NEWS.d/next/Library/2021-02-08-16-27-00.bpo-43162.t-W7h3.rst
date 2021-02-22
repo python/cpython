@@ -1,0 +1,2 @@
+deprecate unsupported ability to access enum members as attributes of other
+enum members

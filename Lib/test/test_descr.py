@@ -4,6 +4,8 @@ import gc
 import itertools
 import math
 import pickle
+import random
+import string
 import sys
 import types
 import unittest
@@ -844,6 +846,14 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         else:
             self.fail("inheriting from ModuleType and str at the same time "
                       "should fail")
+
+        # Issue 34805: Verify that definition order is retained
+        def random_name():
+            return ''.join(random.choices(string.ascii_letters, k=10))
+        class A:
+            pass
+        subclasses = [type(random_name(), (A,), {}) for i in range(100)]
+        self.assertEqual(A.__subclasses__(), subclasses)
 
     def test_multiple_inheritance(self):
         # Testing multiple inheritance...

@@ -1,12 +1,11 @@
 /* Frame object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
+#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
-#include "code.h"
-#include "frameobject.h"
-#include "opcode.h"
+#include "frameobject.h"          // PyFrameObject
+#include "opcode.h"               // EXTENDED_ARG
 #include "structmember.h"         // PyMemberDef
 
 #define OFF(x) offsetof(PyFrameObject, x)
@@ -21,7 +20,6 @@ static PyMemberDef frame_memberlist[] = {
     {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
 };
-
 
 static struct _Py_frame_state *
 get_frame_state(void)
@@ -44,7 +42,7 @@ int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_trace) {
+    if (f->f_lineno != 0) {
         return f->f_lineno;
     }
     else {
@@ -249,36 +247,22 @@ explain_incompatible_block_stack(int64_t to_stack)
 static int *
 marklines(PyCodeObject *code, int len)
 {
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(code, &bounds);
+    assert (bounds.ar_end == 0);
+
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
         return NULL;
     }
-    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
-    int line = code->co_firstlineno;
-    int addr = 0;
-    int index = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (index*2 < addr) {
-            linestarts[index++] = line;
-        }
-        while (index*2 < addr) {
-            linestarts[index++] = -1;
-            if (index >= len) {
-                break;
-            }
-        }
-        line += (signed char)*p;
-        p++;
+    for (int i = 0; i < len; i++) {
+        linestarts[i] = -1;
     }
-    if (index < len) {
-        linestarts[index++] = line;
+
+    while (PyLineTable_NextAddressRange(&bounds)) {
+        assert(bounds.ar_start/2 < len);
+        linestarts[bounds.ar_start/2] = bounds.ar_line;
     }
-    while (index < len) {
-        linestarts[index++] = -1;
-    }
-    assert(index == len);
     return linestarts;
 }
 
@@ -490,8 +474,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_block_stack = pop_block(start_block_stack);
     }
 
-    /* Finally set the new f_lineno and f_lasti and return OK. */
-    f->f_lineno = new_lineno;
+    /* Finally set the new f_lasti and return OK. */
+    f->f_lineno = 0;
     f->f_lasti = best_addr;
     return 0;
 }
@@ -512,11 +496,9 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    /* We rely on f_lineno being accurate when f_trace is set. */
-    f->f_lineno = PyFrame_GetLineNumber(f);
-
-    if (v == Py_None)
+    if (v == Py_None) {
         v = NULL;
+    }
     Py_XINCREF(v);
     Py_XSETREF(f->f_trace, v);
 
@@ -779,9 +761,7 @@ _Py_IDENTIFIER(__builtins__);
 static inline PyFrameObject*
 frame_alloc(PyCodeObject *code)
 {
-    PyFrameObject *f;
-
-    f = code->co_zombieframe;
+    PyFrameObject *f = code->co_zombieframe;
     if (f != NULL) {
         code->co_zombieframe = NULL;
         _Py_NewReference((PyObject *)f);
@@ -820,130 +800,71 @@ frame_alloc(PyCodeObject *code)
         _Py_NewReference((PyObject *)f);
     }
 
-    f->f_code = code;
     extras = code->co_nlocals + ncells + nfrees;
     f->f_valuestack = f->f_localsplus + extras;
-    for (Py_ssize_t i=0; i<extras; i++) {
+    for (Py_ssize_t i=0; i < extras; i++) {
         f->f_localsplus[i] = NULL;
     }
-    f->f_locals = NULL;
-    f->f_trace = NULL;
     return f;
-}
-
-
-static inline PyObject *
-frame_get_builtins(PyFrameObject *back, PyObject *globals)
-{
-    PyObject *builtins;
-
-    if (back != NULL && back->f_globals == globals) {
-        /* If we share the globals, we share the builtins.
-           Save a lookup and a call. */
-        builtins = back->f_builtins;
-        assert(builtins != NULL);
-        Py_INCREF(builtins);
-        return builtins;
-    }
-
-    builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
-    if (builtins != NULL && PyModule_Check(builtins)) {
-        builtins = PyModule_GetDict(builtins);
-        assert(builtins != NULL);
-    }
-    if (builtins != NULL) {
-        Py_INCREF(builtins);
-        return builtins;
-    }
-
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
-    /* No builtins! Make up a minimal one.
-       Give them 'None', at least. */
-    builtins = PyDict_New();
-    if (builtins == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(builtins, "None", Py_None) < 0) {
-        Py_DECREF(builtins);
-        return NULL;
-    }
-    return builtins;
 }
 
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
-                     PyObject *globals, PyObject *locals)
+_PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
-#ifdef Py_DEBUG
-    if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
-        (locals != NULL && !PyMapping_Check(locals))) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-#endif
+    assert(con != NULL);
+    assert(con->fc_globals != NULL);
+    assert(con->fc_builtins != NULL);
+    assert(con->fc_code != NULL);
+    assert(locals == NULL || PyMapping_Check(locals));
 
-    PyFrameObject *back = tstate->frame;
-    PyObject *builtins = frame_get_builtins(back, globals);
-    if (builtins == NULL) {
-        return NULL;
-    }
-
-    PyFrameObject *f = frame_alloc(code);
+    PyFrameObject *f = frame_alloc((PyCodeObject *)con->fc_code);
     if (f == NULL) {
-        Py_DECREF(builtins);
         return NULL;
     }
 
+    f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
+    f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
+    f->f_builtins = Py_NewRef(con->fc_builtins);
+    f->f_globals = Py_NewRef(con->fc_globals);
+    f->f_locals = Py_XNewRef(locals);
+    // f_valuestack initialized by frame_alloc()
+    f->f_trace = NULL;
     f->f_stackdepth = 0;
-    f->f_builtins = builtins;
-    Py_XINCREF(back);
-    f->f_back = back;
-    Py_INCREF(code);
-    Py_INCREF(globals);
-    f->f_globals = globals;
-    /* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
-    if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) ==
-        (CO_NEWLOCALS | CO_OPTIMIZED))
-        ; /* f_locals = NULL; will be set by PyFrame_FastToLocals() */
-    else if (code->co_flags & CO_NEWLOCALS) {
-        locals = PyDict_New();
-        if (locals == NULL) {
-            Py_DECREF(f);
-            return NULL;
-        }
-        f->f_locals = locals;
-    }
-    else {
-        if (locals == NULL)
-            locals = globals;
-        Py_INCREF(locals);
-        f->f_locals = locals;
-    }
-
+    f->f_trace_lines = 1;
+    f->f_trace_opcodes = 0;
+    f->f_gen = NULL;
     f->f_lasti = -1;
-    f->f_lineno = code->co_firstlineno;
+    f->f_lineno = 0;
     f->f_iblock = 0;
     f->f_state = FRAME_CREATED;
-    f->f_gen = NULL;
-    f->f_trace_opcodes = 0;
-    f->f_trace_lines = 1;
-
-    assert(f->f_code != NULL);
-
+    // f_blockstack and f_localsplus initialized by frame_alloc()
     return f;
 }
 
+/* Legacy API */
 PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, code, globals, locals);
-    if (f)
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
+    if (builtins == NULL) {
+        return NULL;
+    }
+    PyFrameConstructor desc = {
+        .fc_globals = globals,
+        .fc_builtins = builtins,
+        .fc_name = code->co_name,
+        .fc_qualname = code->co_name,
+        .fc_code = (PyObject *)code,
+        .fc_defaults = NULL,
+        .fc_kwdefaults = NULL,
+        .fc_closure = NULL
+    };
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc, locals);
+    if (f) {
         _PyObject_GC_TRACK(f);
+    }
     return f;
 }
 
@@ -1187,9 +1108,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(PyThreadState *tstate)
+_PyFrame_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     while (state->free_list != NULL) {
         PyFrameObject *f = state->free_list;
         state->free_list = state->free_list->f_back;
@@ -1200,11 +1121,11 @@ _PyFrame_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyFrame_Fini(PyThreadState *tstate)
+_PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(tstate);
+    _PyFrame_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     state->numfree = -1;
 #endif
 }
@@ -1238,4 +1159,22 @@ PyFrame_GetBack(PyFrameObject *frame)
     PyFrameObject *back = frame->f_back;
     Py_XINCREF(back);
     return back;
+}
+
+PyObject*
+_PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
+{
+    PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    if (builtins) {
+        if (PyModule_Check(builtins)) {
+            builtins = PyModule_GetDict(builtins);
+            assert(builtins != NULL);
+        }
+        return builtins;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return _PyEval_GetBuiltins(tstate);
 }
