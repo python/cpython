@@ -572,8 +572,21 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
                 break;
             case SQLITE_BLOB: {
                 const void *blob = sqlite3_value_blob(cur_value);
-                Py_ssize_t size = sqlite3_value_bytes(cur_value);
-                cur_py_value = PyBytes_FromStringAndSize(blob, size);
+
+                if (blob) {
+                    Py_ssize_t size = sqlite3_value_bytes(cur_value);
+                    cur_py_value = PyBytes_FromStringAndSize(blob, size);
+                }
+                else {
+                    sqlite3 *db = sqlite3_context_db_handle(context);
+                    assert(db != NULL);
+                    if (sqlite3_errcode(db) == SQLITE_NOMEM) {
+                        PyErr_NoMemory();
+                        goto error;
+                    }
+                    // Zero-sized blob.
+                    cur_py_value = PyBytes_FromStringAndSize(NULL, 0);
+                }
                 break;
             }
             case SQLITE_NULL:
@@ -582,8 +595,7 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
         }
 
         if (!cur_py_value) {
-            Py_DECREF(args);
-            return NULL;
+            goto error;
         }
 
         PyTuple_SetItem(args, i, cur_py_value);
@@ -591,6 +603,10 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
     }
 
     return args;
+
+error:
+    Py_DECREF(args);
+    return NULL;
 }
 
 static void
