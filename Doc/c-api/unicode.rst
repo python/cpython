@@ -19,8 +19,7 @@ points must be below 1114112 (which is the full Unicode range).
 
 :c:type:`Py_UNICODE*` and UTF-8 representations are created on demand and cached
 in the Unicode object.  The :c:type:`Py_UNICODE*` representation is deprecated
-and inefficient; it should be avoided in performance- or memory-sensitive
-situations.
+and inefficient.
 
 Due to the transition between the old APIs and the new APIs, Unicode objects
 can internally be in two states depending on how they were created:
@@ -434,7 +433,7 @@ APIs:
 
    If *u* is ``NULL``, this function behaves like :c:func:`PyUnicode_FromUnicode`
    with the buffer set to ``NULL``.  This usage is deprecated in favor of
-   :c:func:`PyUnicode_New`.
+   :c:func:`PyUnicode_New`, and will be removed in Python 3.12.
 
 
 .. c:function:: PyObject *PyUnicode_FromString(const char *u)
@@ -676,7 +675,7 @@ APIs:
 Deprecated Py_UNICODE APIs
 """"""""""""""""""""""""""
 
-.. deprecated-removed:: 3.3 4.0
+.. deprecated-removed:: 3.3 3.12
 
 These API functions are deprecated with the implementation of :pep:`393`.
 Extension modules can continue using them, as they will not be removed in Python
