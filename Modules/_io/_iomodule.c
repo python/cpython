@@ -519,7 +519,7 @@ When encoding is not None, just return it.
 Otherwise, return the default text encoding (i.e. "locale").
 
 This function emits EncodingWarning if *encoding* is None and
-sys.flags.encoding_warning is true.
+sys.flags.warn_default_encoding is true.
 
 This function can be used in APIs having encoding=None option.
 But please consider encoding="utf-8" for new APIs.
@@ -527,11 +527,11 @@ But please consider encoding="utf-8" for new APIs.
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=fd956a85976afd07]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=31cd163789637f39]*/
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (_PyInterpreterState_GetConfig(interp)->encoding_warning) {
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
             PyErr_WarnEx(PyExc_EncodingWarning,
                          "'encoding' option is omitted", stacklevel + 1);
         }

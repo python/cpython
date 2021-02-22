@@ -4237,7 +4237,7 @@ class MiscIOTest(unittest.TestCase):
 
             pathlib.Path({filename!r}).read_text()  # line 8
         ''')
-        proc = assert_python_ok('-X', 'warn_encoding', '-c', code)
+        proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 2)
         self.assertTrue(

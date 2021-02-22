@@ -102,7 +102,7 @@ typedef struct {
     int isolated;             /* -I option */
     int use_environment;      /* -E option */
     int dev_mode;             /* -X dev and PYTHONDEVMODE */
-    int encoding_warning;     /* -X warn_encoding and PYTHONWARNENCODING */
+    int warn_default_encoding;     /* -X warn_default_encoding and PYTHONWARNDEFAULTENCODING */
 } _PyPreCmdline;
 
 #define _PyPreCmdline_INIT \
@@ -110,7 +110,7 @@ typedef struct {
         .use_environment = -1, \
         .isolated = -1, \
         .dev_mode = -1, \
-        .encoding_warning = -1}
+        .warn_default_encoding = -1}
 /* Note: _PyPreCmdline_INIT sets other fields to 0/NULL */
 
 extern void _PyPreCmdline_Clear(_PyPreCmdline *cmdline);
