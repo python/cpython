@@ -210,7 +210,7 @@ is :meth:`loop.run_in_executor`.
 Running an asyncio Program
 ==========================
 
-.. function:: run(coro, \*, debug=False)
+.. function:: run(coro, *, debug=False)
 
     Execute the :term:`coroutine` *coro* and return the result.
 
@@ -247,7 +247,7 @@ Running an asyncio Program
 Creating Tasks
 ==============
 
-.. function:: create_task(coro, \*, name=None)
+.. function:: create_task(coro, *, name=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
@@ -283,7 +283,7 @@ Creating Tasks
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
+.. coroutinefunction:: sleep(delay, result=None)
 
    Block for *delay* seconds.
 
@@ -293,8 +293,9 @@ Sleeping
    ``sleep()`` always suspends the current task, allowing other tasks
    to run.
 
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
+   Setting the delay to 0 provides an optimized path to allow other
+   tasks to run. This can be used by long-running functions to avoid
+   blocking the event loop for the full duration of the function call.
 
    .. _asyncio_example_sleep:
 
@@ -319,7 +320,7 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. awaitablefunction:: gather(\*aws, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(*aws, return_exceptions=False)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence *concurrently*.
@@ -347,9 +348,6 @@ Running Tasks Concurrently
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
 
    .. _asyncio_example_gather:
 
@@ -387,6 +385,14 @@ Running Tasks Concurrently
       #     Task C: Compute factorial(4)...
       #     Task C: factorial(4) = 24
 
+   .. note::
+      If *return_exceptions* is False, cancelling gather() after it
+      has been marked done won't cancel any submitted awaitables.
+      For instance, gather can be marked done after propagating an
+      exception to the caller, therefore, calling ``gather.cancel()``
+      after catching an exception (raised by one of the awaitables) from
+      gather won't cancel any other awaitables.
+
    .. versionchanged:: 3.7
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
@@ -395,7 +401,7 @@ Running Tasks Concurrently
 Shielding From Cancellation
 ===========================
 
-.. awaitablefunction:: shield(aw, \*, loop=None)
+.. awaitablefunction:: shield(aw)
 
    Protect an :ref:`awaitable object <asyncio-awaitables>`
    from being :meth:`cancelled <Task.cancel>`.
@@ -428,14 +434,11 @@ Shielding From Cancellation
        except CancelledError:
            res = None
 
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
-
 
 Timeouts
 ========
 
-.. coroutinefunction:: wait_for(aw, timeout, \*, loop=None)
+.. coroutinefunction:: wait_for(aw, timeout)
 
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
@@ -457,9 +460,6 @@ Timeouts
    happens during cancellation, it is propagated.
 
    If the wait is cancelled, the future *aw* is also cancelled.
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
 
    .. _asyncio_example_waitfor:
 
@@ -492,14 +492,13 @@ Timeouts
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, \*, loop=None, timeout=None,\
-                            return_when=ALL_COMPLETED)
+.. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently and block until the condition specified
+   iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* set must not be empty.
+   The *aws* iterable must not be empty.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -545,10 +544,6 @@ Waiting Primitives
       ``wait()`` directly is deprecated as it leads to
       :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      The *loop* parameter.
-
    .. _asyncio_example_wait_coroutine:
    .. note::
 
@@ -582,18 +577,15 @@ Waiting Primitives
       deprecated.
 
 
-.. function:: as_completed(aws, \*, loop=None, timeout=None)
+.. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of coroutines.
+   iterable concurrently.  Return an iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
-   result from the set of the remaining awaitables.
+   result from the iterable of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
 
    Example::
 
@@ -605,12 +597,12 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, \*args, \*\*kwargs)
+.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
 
    Asynchronously run function *func* in a separate thread.
 
    Any \*args and \*\*kwargs supplied for this function are directly passed
-   to *func*. Also, the current :class:`contextvars.Context` is propogated,
+   to *func*. Also, the current :class:`contextvars.Context` is propagated,
    allowing context variables from the event loop thread to be accessed in the
    separate thread.
 
@@ -735,7 +727,7 @@ Introspection
 Task Object
 ===========
 
-.. class:: Task(coro, \*, loop=None, name=None)
+.. class:: Task(coro, *, loop=None, name=None)
 
    A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
@@ -901,7 +893,7 @@ Task Object
       See the documentation of :meth:`Future.remove_done_callback`
       for more details.
 
-   .. method:: get_stack(\*, limit=None)
+   .. method:: get_stack(*, limit=None)
 
       Return the list of stack frames for this Task.
 
@@ -922,7 +914,7 @@ Task Object
       stack are returned, but the oldest frames of a traceback are
       returned.  (This matches the behavior of the traceback module.)
 
-   .. method:: print_stack(\*, limit=None, file=None)
+   .. method:: print_stack(*, limit=None, file=None)
 
       Print the stack or traceback for this Task.
 
@@ -961,31 +953,6 @@ Task Object
       in the :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
-
-   .. classmethod:: all_tasks(loop=None)
-
-      Return a set of all tasks for an event loop.
-
-      By default all tasks for the current event loop are returned.
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
-         function instead.
-
-   .. classmethod:: current_task(loop=None)
-
-      Return the currently running task or ``None``.
-
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method.  Use the
-         :func:`asyncio.current_task` function instead.
 
 
 .. _asyncio_generator_based_coro:

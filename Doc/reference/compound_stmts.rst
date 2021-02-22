@@ -44,7 +44,8 @@ executed::
 
 Summarizing:
 
-.. productionlist::
+
+.. productionlist:: python-grammar
    compound_stmt: `if_stmt`
                 : | `while_stmt`
                 : | `for_stmt`
@@ -89,7 +90,7 @@ The :keyword:`!if` statement
 
 The :keyword:`if` statement is used for conditional execution:
 
-.. productionlist::
+.. productionlist:: python-grammar
    if_stmt: "if" `assignment_expression` ":" `suite`
           : ("elif" `assignment_expression` ":" `suite`)*
           : ["else" ":" `suite`]
@@ -115,7 +116,7 @@ The :keyword:`!while` statement
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
 
-.. productionlist::
+.. productionlist:: python-grammar
    while_stmt: "while" `assignment_expression` ":" `suite`
              : ["else" ":" `suite`]
 
@@ -151,7 +152,7 @@ The :keyword:`!for` statement
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
-.. productionlist::
+.. productionlist:: python-grammar
    for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
@@ -234,7 +235,7 @@ The :keyword:`!try` statement
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
-.. productionlist::
+.. productionlist:: python-grammar
    try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
@@ -253,7 +254,8 @@ present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if it is the class or a base class of the exception
-object or a tuple containing an item compatible with the exception.
+object, or a tuple containing an item that is the class or a base class of
+the exception object.
 
 If no except clause matches the exception, the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
@@ -300,9 +302,27 @@ Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  :func:`sys.exc_info`
-values are restored to their previous values (before the call) when returning
-from a function that handled an exception.
+the point in the program where the exception occurred.  The details about the
+exception accessed via :func:`sys.exc_info` are restored to their previous values
+when leaving an exception handler::
+
+   >>> print(sys.exc_info())
+   (None, None, None)
+   >>> try:
+   ...     raise TypeError
+   ... except:
+   ...     print(sys.exc_info())
+   ...     try:
+   ...          raise ValueError
+   ...     except:
+   ...         print(sys.exc_info())
+   ...     print(sys.exc_info())
+   ...
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
+   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
+   >>> print(sys.exc_info())
+   (None, None, None)
 
 .. index::
    keyword: else
@@ -390,8 +410,9 @@ methods defined by a context manager (see section :ref:`context-managers`).
 This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
-.. productionlist::
-   with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
+.. productionlist:: python-grammar
+   with_stmt: "with" ( "(" `with_stmt_contents` ","? ")" | `with_stmt_contents` ) ":" `suite`
+   with_stmt_contents: `with_item` ("," `with_item`)*
    with_item: `expression` ["as" `target`]
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
@@ -468,8 +489,20 @@ is semantically equivalent to::
        with B() as b:
            SUITE
 
+You can also write multi-item context managers in multiple lines if
+the items are surrounded by parentheses. For example::
+
+   with (
+       A() as a,
+       B() as b,
+   ):
+       SUITE
+
 .. versionchanged:: 3.1
    Support for multiple context expressions.
+
+.. versionchanged:: 3.10
+   Support for using grouping parentheses to break the statement in multiple lines.
 
 .. seealso::
 
@@ -503,7 +536,7 @@ Function definitions
 A function definition defines a user-defined function object (see section
 :ref:`types`):
 
-.. productionlist::
+.. productionlist:: python-grammar
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
@@ -571,9 +604,9 @@ value --- this is a syntactic restriction that is not expressed by the grammar.
 **Default parameter values are evaluated from left to right when the function
 definition is executed.** This means that the expression is evaluated once, when
 the function is defined, and that the same "pre-computed" value is used for each
-call.  This is especially important to understand when a default parameter is a
+call.  This is especially important to understand when a default parameter value is a
 mutable object, such as a list or a dictionary: if the function modifies the
-object (e.g. by appending an item to a list), the default value is in effect
+object (e.g. by appending an item to a list), the default parameter value is in effect
 modified.  This is generally not what was intended.  A way around this is to use
 ``None`` as the default, and explicitly test for it in the body of the function,
 e.g.::
@@ -609,13 +642,9 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.  If the ``annotations`` import from
-:mod:`__future__` is used, annotations are preserved as strings at runtime which
-enables postponed evaluation.  Otherwise, they are evaluated when the function
-definition is executed.  In this case annotations may be evaluated in
-a different order than they appear in the source code.
+semantics of a function.  The annotation values are available as string values
+in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.
 
 .. index:: pair: lambda; expression
 
@@ -670,7 +699,7 @@ Class definitions
 
 A class definition defines a class object (see section :ref:`types`):
 
-.. productionlist::
+.. productionlist:: python-grammar
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
@@ -762,7 +791,7 @@ Coroutines
 Coroutine function definition
 -----------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
                 : ["->" `expression`] ":" `suite`
 
@@ -771,10 +800,8 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
-``async`` identifiers become reserved keywords; :keyword:`await` expressions,
-:keyword:`async for` and :keyword:`async with` can only be used in
-coroutine function bodies.
+(see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
+:keyword:`async with` can only be used in the body of a coroutine function.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
@@ -788,6 +815,9 @@ An example of a coroutine function::
         do_stuff()
         await some_coroutine()
 
+.. versionchanged:: 3.7
+   ``await`` and ``async`` are now keywords; previously they were only
+   treated as such inside the body of a coroutine function.
 
 .. index:: statement: async for
 .. _`async for`:
@@ -795,15 +825,15 @@ An example of a coroutine function::
 The :keyword:`!async for` statement
 -----------------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
-An :term:`asynchronous iterable` is able to call asynchronous code in its
-*iter* implementation, and :term:`asynchronous iterator` can call asynchronous
-code in its *next* method.
+An :term:`asynchronous iterable` provides an ``__aiter__`` method that directly
+returns an :term:`asynchronous iterator`, which can call asynchronous code in
+its ``__anext__`` method.
 
 The ``async for`` statement allows convenient iteration over asynchronous
-iterators.
+iterables.
 
 The following code::
 
@@ -840,7 +870,7 @@ body of a coroutine function.
 The :keyword:`!async with` statement
 ------------------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_with_stmt: "async" `with_stmt`
 
 An :term:`asynchronous context manager` is a :term:`context manager` that is

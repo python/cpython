@@ -1813,13 +1813,26 @@ test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     const Py_UNICODE *e;
     Py_ssize_clean_t e_length;
 
-    if (!_PyArg_ParseStack(args, nargs, "uuZu#Z#:test_Py_UNICODE_converter",
-        &a, &b, &c, &d, &d_length, &e, &e_length)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
+        _PyUnicode_WideCharString_Converter, &a, _PyUnicode_WideCharString_Converter, &b, _PyUnicode_WideCharString_Opt_Converter, &c, &d, &d_length, &e, &e_length)) {
         goto exit;
     }
     return_value = test_Py_UNICODE_converter_impl(module, a, b, c, d, d_length, e, e_length);
 
 exit:
+    /* Cleanup for a */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)a);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for b */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)b);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for c */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)c);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -1830,7 +1843,7 @@ test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
                                Py_ssize_clean_t d_length,
                                const Py_UNICODE *e,
                                Py_ssize_clean_t e_length)
-/*[clinic end generated code: output=dd0a09a1b772e57b input=064a3b68ad7f04b0]*/
+/*[clinic end generated code: output=ef45e982fedf0b3d input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]

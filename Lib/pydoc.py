@@ -504,7 +504,7 @@ class Doc:
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
             object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
-                docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__.lower())
+                docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
             else:
                 docloc = os.path.join(docloc, object.__name__.lower() + ".html")
         else:

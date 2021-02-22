@@ -180,9 +180,9 @@ typedef int Py_ssize_clean_t;
  */
 
 #if defined(_MSC_VER)
-#  if defined(PY_LOCAL_AGGRESSIVE)
-   /* enable more aggressive optimization for visual studio */
-#  pragma optimize("agtw", on)
+#  if defined(PY_LOCAL_AGGRESSIVE) && !defined(Py_DEBUG)
+   /* enable more aggressive optimization for MSVC */
+#  pragma optimize("gt", on)
 #endif
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)
@@ -515,6 +515,26 @@ extern "C" {
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
 
+#if defined(__clang__)
+#define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_POP _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
+#define _Py_COMP_DIAG_PUSH _Pragma("GCC diagnostic push")
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define _Py_COMP_DIAG_POP _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+#define _Py_COMP_DIAG_PUSH __pragma(warning(push))
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS __pragma(warning(disable: 4996))
+#define _Py_COMP_DIAG_POP __pragma(warning(pop))
+#else
+#define _Py_COMP_DIAG_PUSH
+#define _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+#define _Py_COMP_DIAG_POP
+#endif
 
 /* _Py_HOT_FUNCTION
  * The hot attribute on a function is used to inform the compiler that the
@@ -821,12 +841,16 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif
 
 #if defined(__ANDROID__) || defined(__VXWORKS__)
-   /* Ignore the locale encoding: force UTF-8 */
+   // Use UTF-8 as the locale encoding, ignore the LC_CTYPE locale.
+   // See _Py_GetLocaleEncoding(), PyUnicode_DecodeLocale()
+   // and PyUnicode_EncodeLocale().
 #  define _Py_FORCE_UTF8_LOCALE
 #endif
 
 #if defined(_Py_FORCE_UTF8_LOCALE) || defined(__APPLE__)
-   /* Use UTF-8 as filesystem encoding */
+   // Use UTF-8 as the filesystem encoding.
+   // See PyUnicode_DecodeFSDefaultAndSize(), PyUnicode_EncodeFSDefault(),
+   // Py_DecodeLocale() and Py_EncodeLocale().
 #  define _Py_FORCE_UTF8_FS_ENCODING
 #endif
 
@@ -844,5 +868,17 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #else
 #  define _Py_NO_RETURN
 #endif
+
+
+// Preprocessor check for a builtin preprocessor function. Always return 0
+// if __has_builtin() macro is not defined.
+//
+// __has_builtin() is available on clang and GCC 10.
+#ifdef __has_builtin
+#  define _Py__has_builtin(x) __has_builtin(x)
+#else
+#  define _Py__has_builtin(x) 0
+#endif
+
 
 #endif /* Py_PYPORT_H */

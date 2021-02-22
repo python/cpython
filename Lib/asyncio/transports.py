@@ -29,8 +29,8 @@ class BaseTransport:
 
         Buffered data will be flushed asynchronously.  No more data
         will be received.  After all buffered data is flushed, the
-        protocol's connection_lost() method will (eventually) called
-        with None as its argument.
+        protocol's connection_lost() method will (eventually) be
+        called with None as its argument.
         """
         raise NotImplementedError
 

@@ -158,9 +158,9 @@ Directory and files operations
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
-   should be strings.  If *dst* specifies a directory, the file will be
-   copied into *dst* using the base filename from *src*.  Returns the
-   path to the newly created file.
+   should be :term:`path-like objects <path-like object>` or strings.  If
+   *dst* specifies a directory, the file will be copied into *dst* using the
+   base filename from *src*.  Returns the path to the newly created file.
 
    If *follow_symlinks* is false, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*
@@ -218,7 +218,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: ignore_patterns(\*patterns)
+.. function:: ignore_patterns(*patterns)
 
    This factory function creates a function that can be used as a callable for
    :func:`copytree`\'s *ignore* argument, ignoring files and directories that
@@ -349,7 +349,7 @@ Directory and files operations
    will be created in or as *dst* and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments
-   *src* and *dst*, and will be used to copy *src* to *dest* if
+   *src* and *dst*, and will be used to copy *src* to *dst* if
    :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the :func:`copy_function`. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
@@ -443,8 +443,9 @@ Directory and files operations
 Platform-dependent efficient copy operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting from Python 3.8 all functions involving a file copy (:func:`copyfile`,
-:func:`copy`, :func:`copy2`, :func:`copytree`, and :func:`move`) may use
+Starting from Python 3.8, all functions involving a file copy
+(:func:`copyfile`, :func:`~shutil.copy`, :func:`copy2`,
+:func:`copytree`, and :func:`move`) may use
 platform-specific "fast-copy" syscalls in order to copy the file more
 efficiently (see :issue:`33671`).
 "fast-copy" means that the copying operation occurs within the kernel, avoiding

@@ -27,7 +27,6 @@ __all__ = [
 ]
 
 import _collections_abc
-import heapq as _heapq
 import sys as _sys
 
 from itertools import chain as _chain
@@ -50,22 +49,6 @@ try:
     from _collections import defaultdict
 except ImportError:
     pass
-
-
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3, "
-                      "and in 3.10 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
 
 ################################################################################
@@ -424,7 +407,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     namespace = {
         '_tuple_new': tuple_new,
-        '__builtins__': None,
+        '__builtins__': {},
         '__name__': f'namedtuple_{typename}',
     }
     code = f'lambda _cls, {arg_list}: _tuple_new(_cls, ({arg_list}))'
@@ -608,7 +591,10 @@ class Counter(dict):
         # Emulate Bag.sortedByCount from Smalltalk
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
-        return _heapq.nlargest(n, self.items(), key=_itemgetter(1))
+
+        # Lazy import to speedup Python startup time
+        import heapq
+        return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.
@@ -999,7 +985,7 @@ class ChainMap(_collections_abc.MutableMapping):
     def __iter__(self):
         d = {}
         for mapping in reversed(self.maps):
-            d.update(mapping)                   # reuses stored hash values if possible
+            d.update(dict.fromkeys(mapping))    # reuses stored hash values if possible
         return iter(d)
 
     def __contains__(self, key):
