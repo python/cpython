@@ -2888,6 +2888,23 @@ error:
     return NULL;
 }
 
+static PyObject *
+type_vectorcall(PyObject *metatype, PyObject *const *args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs == 1 && metatype == (PyObject *)&PyType_Type){
+        if (!_PyArg_NoKwnames("type", kwnames)) {
+            return NULL;
+        }
+        return Py_NewRef(Py_TYPE(args[0]));
+    }
+    /* In other (much less common) cases, fall back to
+       more flexible calling conventions. */
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_MakeTpCall(tstate, metatype, args, nargs, kwnames);
+}
+
 /* An array of type slot offsets corresponding to Py_tp_* constants,
   * for use in e.g. PyType_Spec and PyType_GetSlot.
   * Each entry has two offsets: "slot_offset" and "subslot_offset".
@@ -3896,6 +3913,7 @@ PyTypeObject PyType_Type = {
     type_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     (inquiry)type_is_gc,                        /* tp_is_gc */
+    .tp_vectorcall = type_vectorcall,
 };
 
 
