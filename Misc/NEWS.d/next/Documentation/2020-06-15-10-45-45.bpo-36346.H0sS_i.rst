@@ -1,0 +1,2 @@
+Update some deprecated unicode APIs which are documented as "will be removed
+in 4.0" to "3.12". See :pep:`623` for detail.
