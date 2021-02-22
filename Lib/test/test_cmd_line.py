@@ -46,7 +46,11 @@ class CmdLineTest(unittest.TestCase):
 
     def test_usage(self):
         rc, out, err = assert_python_ok('-h')
-        self.assertIn(b'usage', out)
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
@@ -148,6 +152,14 @@ class CmdLineTest(unittest.TestCase):
         command = ("assert(ord(%r) == %s)"
                    % (os_helper.FS_NONASCII, ord(os_helper.FS_NONASCII)))
         assert_python_ok('-c', command)
+
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
+    def test_coding(self):
+        # bpo-32381: the -c command ignores the coding cookie
+        ch = os_helper.FS_NONASCII
+        cmd = f"# coding: latin1\nprint(ascii('{ch}'))"
+        res = assert_python_ok('-c', cmd)
+        self.assertEqual(res.out.rstrip(), ascii(ch).encode('ascii'))
 
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
     # command line, but how subprocess does decode bytes to unicode. Python

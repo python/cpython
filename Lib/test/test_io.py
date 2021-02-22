@@ -2519,19 +2519,17 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
 
     codecEnabled = False
 
-    @classmethod
-    def lookupTestDecoder(cls, name):
-        if cls.codecEnabled and name == 'test_decoder':
-            latin1 = codecs.lookup('latin-1')
-            return codecs.CodecInfo(
-                name='test_decoder', encode=latin1.encode, decode=None,
-                incrementalencoder=None,
-                streamreader=None, streamwriter=None,
-                incrementaldecoder=cls)
 
-# Register the previous decoder for testing.
-# Disabled by default, tests will enable it.
-codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
+# bpo-41919: This method is separated from StatefulIncrementalDecoder to avoid a resource leak
+# when registering codecs and cleanup functions.
+def lookupTestDecoder(name):
+    if StatefulIncrementalDecoder.codecEnabled and name == 'test_decoder':
+        latin1 = codecs.lookup('latin-1')
+        return codecs.CodecInfo(
+            name='test_decoder', encode=latin1.encode, decode=None,
+            incrementalencoder=None,
+            streamreader=None, streamwriter=None,
+            incrementaldecoder=StatefulIncrementalDecoder)
 
 
 class StatefulIncrementalDecoderTest(unittest.TestCase):
@@ -2583,6 +2581,8 @@ class TextIOWrapperTest(unittest.TestCase):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ascii")
         os_helper.unlink(os_helper.TESTFN)
+        codecs.register(lookupTestDecoder)
+        self.addCleanup(codecs.unregister, lookupTestDecoder)
 
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
@@ -3766,6 +3766,33 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t = self.TextIOWrapper(self.BytesIO(), encoding='ascii')
         with self.assertRaises(AttributeError):
             del t._CHUNK_SIZE
+
+    def test_internal_buffer_size(self):
+        # bpo-43260: TextIOWrapper's internal buffer should not store
+        # data larger than chunk size.
+        chunk_size = 8192  # default chunk size, updated later
+
+        class MockIO(self.MockRawIO):
+            def write(self, data):
+                if len(data) > chunk_size:
+                    raise RuntimeError
+                return super().write(data)
+
+        buf = MockIO()
+        t = self.TextIOWrapper(buf, encoding="ascii")
+        chunk_size = t._CHUNK_SIZE
+        t.write("abc")
+        t.write("def")
+        # default chunk size is 8192 bytes so t don't write data to buf.
+        self.assertEqual([], buf._write_stack)
+
+        with self.assertRaises(RuntimeError):
+            t.write("x"*(chunk_size+1))
+
+        self.assertEqual([b"abcdef"], buf._write_stack)
+        t.write("ghi")
+        t.write("x"*chunk_size)
+        self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest):

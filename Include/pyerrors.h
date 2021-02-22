@@ -30,12 +30,6 @@ PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
    macro is defined. */
 PyAPI_FUNC(void) _Py_NO_RETURN Py_FatalError(const char *message);
 
-#if defined(Py_DEBUG) || defined(Py_LIMITED_API)
-#define _PyErr_OCCURRED() PyErr_Occurred()
-#else
-#define _PyErr_OCCURRED() (PyThreadState_GET()->curexc_type)
-#endif
-
 /* Error testing and normalization */
 PyAPI_FUNC(int) PyErr_GivenExceptionMatches(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyErr_ExceptionMatches(PyObject *);

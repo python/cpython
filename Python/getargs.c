@@ -202,7 +202,7 @@ static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
     if (ptr) {
-        PyMem_FREE(ptr);
+        PyMem_Free(ptr);
     }
     return 0;
 }
@@ -246,7 +246,7 @@ cleanreturn(int retval, freelist_t *freelist)
       }
     }
     if (freelist->entries_malloced)
-        PyMem_FREE(freelist->entries);
+        PyMem_Free(freelist->entries);
     return retval;
 }
 
@@ -1014,7 +1014,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'u': /* raw unicode buffer (Py_UNICODE *) */
     case 'Z': /* raw unicode buffer or None */
     {
-        // TODO: Raise DeprecationWarning
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "getargs: The '%c' format is deprecated. Use 'U' instead.", c)) {
+            return NULL;
+        }
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);

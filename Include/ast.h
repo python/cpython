@@ -15,7 +15,7 @@ PyAPI_FUNC(PyObject *) _PyAST_ExprAsUnicode(expr_ty);
 /* Return the borrowed reference to the first literal string in the
    sequence of statements or NULL if it doesn't start from a literal string.
    Doesn't set exception. */
-PyAPI_FUNC(PyObject *) _PyAST_GetDocString(asdl_seq *);
+PyAPI_FUNC(PyObject *) _PyAST_GetDocString(asdl_stmt_seq *);
 
 #ifdef __cplusplus
 }

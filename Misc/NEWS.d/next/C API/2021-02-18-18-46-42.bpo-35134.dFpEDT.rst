@@ -1,0 +1,3 @@
+Move odictobject.h, parser_interface.h, picklebufobject.h, pydebug.h, and
+pyfpe.h into the cpython/ directory. They must not be included directly, as
+they are already included by Python.h: :ref:`Include Files <api-includes>`.

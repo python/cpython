@@ -150,7 +150,6 @@ typedef struct {
 #define IO_STATE() _PyIO_get_module_state()
 
 extern _PyIO_State *_PyIO_get_module_state(void);
-extern PyObject *_PyIO_get_locale_module(_PyIO_State *);
 
 #ifdef MS_WINDOWS
 extern char _PyIO_get_console_type(PyObject *);

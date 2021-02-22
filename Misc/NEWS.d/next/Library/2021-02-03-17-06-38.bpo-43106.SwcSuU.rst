@@ -1,0 +1,2 @@
+Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
+and :data:`~os.O_NOFOLLOW_ANY` for macOS. Patch by Dong-hee Na.

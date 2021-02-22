@@ -18,7 +18,6 @@ import time
 import unittest
 from unittest import mock
 
-import test.support
 from test.support import os_helper
 from test.support import (is_jython, swap_attr, swap_item, cpython_only)
 from test.support.import_helper import (
@@ -480,7 +479,7 @@ class ImportTests(unittest.TestCase):
             os.path.dirname(pydname),
             "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
 
-        with test.support.temp_dir() as tmp:
+        with os_helper.temp_dir() as tmp:
             tmp2 = os.path.join(tmp, "DLLs")
             os.mkdir(tmp2)
 

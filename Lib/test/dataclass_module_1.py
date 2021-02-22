@@ -1,9 +1,3 @@
-#from __future__ import annotations
-USING_STRINGS = False
-
-# dataclass_module_1.py and dataclass_module_1_str.py are identical
-# except only the latter uses string annotations.
-
 import dataclasses
 import typing
 

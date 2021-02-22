@@ -15,6 +15,7 @@ this type and there is exactly one in existence.
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "structmember.h"         // PyMemberDef
 
@@ -96,9 +97,8 @@ PyObject _Py_EllipsisObject = {
 /* Slice object implementation */
 
 
-void _PySlice_Fini(PyThreadState *tstate)
+void _PySlice_Fini(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = tstate->interp;
     PySliceObject *obj = interp->slice_cache;
     if (obj != NULL) {
         interp->slice_cache = NULL;
@@ -388,7 +388,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = _PyLong_One;
+        step = _PyLong_GetOne();
         Py_INCREF(step);
         step_is_negative = 0;
     }
@@ -417,7 +417,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = _PyLong_Zero;
+        lower = _PyLong_GetZero();
         Py_INCREF(lower);
         upper = length;
         Py_INCREF(upper);

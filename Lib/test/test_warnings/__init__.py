@@ -7,14 +7,20 @@ import sys
 import textwrap
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_warnings.data import stacklevel as warning_tests
 
 import warnings as original_warnings
 
-py_warnings = support.import_fresh_module('warnings', blocked=['_warnings'])
-c_warnings = support.import_fresh_module('warnings', fresh=['_warnings'])
+
+py_warnings = import_helper.import_fresh_module('warnings',
+                                                blocked=['_warnings'])
+c_warnings = import_helper.import_fresh_module('warnings',
+                                               fresh=['_warnings'])
 
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
@@ -440,7 +446,7 @@ class WarnTests(BaseTest):
 
     def test_stacklevel_import(self):
         # Issue #24305: With stacklevel=2, module-level warnings should work.
-        support.unload('test.test_warnings.data.import_warning')
+        import_helper.unload('test.test_warnings.data.import_warning')
         with warnings_state(self.module):
             with original_warnings.catch_warnings(record=True,
                     module=self.module) as w:
@@ -543,7 +549,7 @@ class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings
 
     # As an early adopter, we sanity check the
-    # test.support.import_fresh_module utility function
+    # test.import_helper.import_fresh_module utility function
     def test_accelerated(self):
         self.assertIsNot(original_warnings, self.module)
         self.assertFalse(hasattr(self.module.warn, '__code__'))
@@ -552,7 +558,7 @@ class PyWarnTests(WarnTests, unittest.TestCase):
     module = py_warnings
 
     # As an early adopter, we sanity check the
-    # test.support.import_fresh_module utility function
+    # test.import_helper.import_fresh_module utility function
     def test_pure_python(self):
         self.assertIsNot(original_warnings, self.module)
         self.assertTrue(hasattr(self.module.warn, '__code__'))
@@ -927,9 +933,9 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
 
     def test_tracemalloc(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        with open(support.TESTFN, 'w') as fp:
+        with open(os_helper.TESTFN, 'w') as fp:
             fp.write(textwrap.dedent("""
                 def func():
                     f = open(__file__)
@@ -949,8 +955,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             return stderr
 
         # tracemalloc disabled
-        filename = os.path.abspath(support.TESTFN)
-        stderr = run('-Wd', support.TESTFN)
+        filename = os.path.abspath(os_helper.TESTFN)
+        stderr = run('-Wd', os_helper.TESTFN)
         expected = textwrap.dedent(f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
@@ -959,7 +965,7 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         self.assertEqual(stderr, expected)
 
         # tracemalloc enabled
-        stderr = run('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+        stderr = run('-Wd', '-X', 'tracemalloc=2', os_helper.TESTFN)
         expected = textwrap.dedent(f'''
             {filename}:5: ResourceWarning: unclosed file <...>
               f = None
@@ -1093,7 +1099,7 @@ class CatchWarningTests(BaseTest):
         wmod = self.module
         if wmod is not sys.modules['warnings']:
             self.skipTest('module to test is not loaded warnings module')
-        with support.check_warnings(quiet=False) as w:
+        with warnings_helper.check_warnings(quiet=False) as w:
             self.assertEqual(w.warnings, [])
             wmod.simplefilter("always")
             wmod.warn("foo")
@@ -1105,18 +1111,18 @@ class CatchWarningTests(BaseTest):
             w.reset()
             self.assertEqual(w.warnings, [])
 
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             # defaults to quiet=True without argument
             pass
-        with support.check_warnings(('foo', UserWarning)):
+        with warnings_helper.check_warnings(('foo', UserWarning)):
             wmod.warn("foo")
 
         with self.assertRaises(AssertionError):
-            with support.check_warnings(('', RuntimeWarning)):
+            with warnings_helper.check_warnings(('', RuntimeWarning)):
                 # defaults to quiet=False with argument
                 pass
         with self.assertRaises(AssertionError):
-            with support.check_warnings(('foo', RuntimeWarning)):
+            with warnings_helper.check_warnings(('foo', RuntimeWarning)):
                 wmod.warn("foo")
 
 class CCatchWarningTests(CatchWarningTests, unittest.TestCase):
@@ -1198,7 +1204,7 @@ class EnvironmentVariableTests(BaseTest):
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
     def test_nonascii(self):
-        PYTHONWARNINGS="ignore:DeprecationWarning" + support.FS_NONASCII
+        PYTHONWARNINGS="ignore:DeprecationWarning" + os_helper.FS_NONASCII
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
@@ -1218,7 +1224,7 @@ class BootstrapTest(unittest.TestCase):
         # "import encodings" emits a warning whereas the warnings is not loaded
         # or not completely loaded (warnings imports indirectly encodings by
         # importing linecache) yet
-        with support.temp_cwd() as cwd, support.temp_cwd('encodings'):
+        with os_helper.temp_cwd() as cwd, os_helper.temp_cwd('encodings'):
             # encodings loaded by initfsencoding()
             assert_python_ok('-c', 'pass', PYTHONPATH=cwd)
 

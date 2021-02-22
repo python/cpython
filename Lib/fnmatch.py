@@ -52,7 +52,7 @@ def _compile_pattern(pat):
     return re.compile(res).match
 
 def filter(names, pat):
-    """Return the subset of the list NAMES that match PAT."""
+    """Construct a list from those elements of the iterable NAMES that match PAT."""
     result = []
     pats = pat if isinstance(pat, tuple) else (pat,)
     matches = []

@@ -545,6 +545,24 @@ exit:
 
 #endif /* defined(HAVE_LIBINTL_H) && defined(HAVE_BIND_TEXTDOMAIN_CODESET) */
 
+PyDoc_STRVAR(_locale__get_locale_encoding__doc__,
+"_get_locale_encoding($module, /)\n"
+"--\n"
+"\n"
+"Get the current locale encoding.");
+
+#define _LOCALE__GET_LOCALE_ENCODING_METHODDEF    \
+    {"_get_locale_encoding", (PyCFunction)_locale__get_locale_encoding, METH_NOARGS, _locale__get_locale_encoding__doc__},
+
+static PyObject *
+_locale__get_locale_encoding_impl(PyObject *module);
+
+static PyObject *
+_locale__get_locale_encoding(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _locale__get_locale_encoding_impl(module);
+}
+
 #ifndef _LOCALE_STRCOLL_METHODDEF
     #define _LOCALE_STRCOLL_METHODDEF
 #endif /* !defined(_LOCALE_STRCOLL_METHODDEF) */
@@ -584,4 +602,4 @@ exit:
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=fe944779cd572d8e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd703c8a3a75fcf4 input=a9049054013a1b77]*/
