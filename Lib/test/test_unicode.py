@@ -2368,12 +2368,14 @@ class UnicodeTest(string_tests.CommonTest,
             text = 'a' * length + 'b'
 
             # fill wstr internal field
-            abc = getargs_u(text)
+            with self.assertWarns(DeprecationWarning):
+                abc = getargs_u(text)
             self.assertEqual(abc, text)
 
             # resize text: wstr field must be cleared and then recomputed
             text += 'c'
-            abcdef = getargs_u(text)
+            with self.assertWarns(DeprecationWarning):
+                abcdef = getargs_u(text)
             self.assertNotEqual(abc, abcdef)
             self.assertEqual(abcdef, text)
 
