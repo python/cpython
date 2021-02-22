@@ -21,6 +21,19 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
    supported by this module.
 
 
+.. impl-detail::
+
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
+   However, threading is still an appropriate model if you want to run
+   multiple I/O-bound tasks simultaneously.
+
+
 This module defines the following functions:
 
 
@@ -422,19 +435,6 @@ since it is impossible to detect the termination of alien threads.
 
       Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
-
-
-.. impl-detail::
-
-   In CPython, due to the :term:`Global Interpreter Lock
-   <global interpreter lock>`, only one thread
-   can execute Python code at once (even though certain performance-oriented
-   libraries might overcome this limitation).
-   If you want your application to make better use of the computational
-   resources of multi-core machines, you are advised to use
-   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
-   However, threading is still an appropriate model if you want to run
-   multiple I/O-bound tasks simultaneously.
 
 
 .. _lock-objects:
