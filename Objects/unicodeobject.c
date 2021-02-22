@@ -5069,17 +5069,16 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
 
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
     assert(_Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T));
-    if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help allocation */
         const char *_p = p;
         Py_UCS1 * q = dest;
-        while (_p < aligned_end) {
+        while (_p + SIZEOF_SIZE_T <= end) {
             size_t value = *(const size_t *) _p;
             if (value & ASCII_CHAR_MASK)
                 break;
@@ -5099,10 +5098,10 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help allocation */
             const char *_p = p;
-            while (_p < aligned_end) {
+            while (_p + SIZEOF_SIZE_T <= end) {
                 size_t value = *(const size_t *) _p;
                 if (value & ASCII_CHAR_MASK)
                     break;

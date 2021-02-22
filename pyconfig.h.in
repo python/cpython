@@ -16,6 +16,9 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* The normal alignment of `long', in bytes. */
+#undef ALIGNOF_LONG
+
 /* The normal alignment of `size_t', in bytes. */
 #undef ALIGNOF_SIZE_T
 

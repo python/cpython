@@ -323,6 +323,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_SHORT 2
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
+#define ALIGNOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 #define SIZEOF_DOUBLE 8
 #define SIZEOF_FLOAT 4

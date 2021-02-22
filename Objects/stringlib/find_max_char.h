@@ -20,14 +20,12 @@ Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *) begin;
-    const unsigned char *aligned_end =
-            (const unsigned char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
 
     while (p < end) {
-        if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help register allocation */
             const unsigned char *_p = p;
-            while (_p < aligned_end) {
+            while (_p + SIZEOF_SIZE_T <= end) {
                 size_t value = *(const size_t *) _p;
                 if (value & UCS1_ASCII_CHAR_MASK)
                     return 255;
