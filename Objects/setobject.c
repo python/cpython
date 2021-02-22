@@ -522,7 +522,7 @@ set_repr(PySetObject *so)
         goto done;
     listrepr = tmp;
 
-    if (!Py_IS_TYPE(so, &PySet_Type))
+    if (!PySet_CheckExact(so))
         result = PyUnicode_FromFormat("%s({%U})",
                                       Py_TYPE(so)->tp_name,
                                       listrepr);

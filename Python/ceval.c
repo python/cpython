@@ -298,7 +298,7 @@ PyStatus
 _PyEval_InitGIL(PyThreadState *tstate)
 {
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    if (!_Py_IsMainInterpreter(tstate)) {
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
@@ -323,10 +323,10 @@ _PyEval_InitGIL(PyThreadState *tstate)
 }
 
 void
-_PyEval_FiniGIL(PyThreadState *tstate)
+_PyEval_FiniGIL(PyInterpreterState *interp)
 {
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    if (!_Py_IsMainInterpreter(tstate)) {
+    if (!_Py_IsMainInterpreter(interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
@@ -335,9 +335,9 @@ _PyEval_FiniGIL(PyThreadState *tstate)
 #endif
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-    struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
 #else
-    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
+    struct _gil_runtime_state *gil = &interp->runtime->ceval.gil;
 #endif
     if (!gil_created(gil)) {
         /* First Py_InitializeFromConfig() call: the GIL doesn't exist
@@ -502,10 +502,9 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
    raised. */
 
 void
-_PyEval_SignalAsyncExc(PyThreadState *tstate)
+_PyEval_SignalAsyncExc(PyInterpreterState *interp)
 {
-    assert(is_tstate_valid(tstate));
-    SIGNAL_ASYNC_EXC(tstate->interp);
+    SIGNAL_ASYNC_EXC(interp);
 }
 
 PyThreadState *
@@ -690,10 +689,8 @@ handle_signals(PyThreadState *tstate)
 }
 
 static int
-make_pending_calls(PyThreadState *tstate)
+make_pending_calls(PyInterpreterState *interp)
 {
-    assert(is_tstate_valid(tstate));
-
     /* only execute pending calls on main thread */
     if (!_Py_ThreadCanHandlePendingCalls()) {
         return 0;
@@ -708,11 +705,11 @@ make_pending_calls(PyThreadState *tstate)
 
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS(tstate->interp);
+    UNSIGNAL_PENDING_CALLS(interp);
     int res = 0;
 
     /* perform a bounded number of calls, in case of recursion */
-    struct _pending_calls *pending = &tstate->interp->ceval.pending;
+    struct _pending_calls *pending = &interp->ceval.pending;
     for (int i=0; i<NPENDINGCALLS; i++) {
         int (*func)(void *) = NULL;
         void *arg = NULL;
@@ -737,7 +734,7 @@ make_pending_calls(PyThreadState *tstate)
 
 error:
     busy = 0;
-    SIGNAL_PENDING_CALLS(tstate->interp);
+    SIGNAL_PENDING_CALLS(interp);
     return res;
 }
 
@@ -745,6 +742,7 @@ void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
+    assert(is_tstate_valid(tstate));
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
 
@@ -752,7 +750,7 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
         return;
     }
 
-    if (make_pending_calls(tstate) < 0) {
+    if (make_pending_calls(tstate->interp) < 0) {
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         PyErr_BadInternalCall();
@@ -769,6 +767,7 @@ Py_MakePendingCalls(void)
     assert(PyGILState_Check());
 
     PyThreadState *tstate = _PyThreadState_GET();
+    assert(is_tstate_valid(tstate));
 
     /* Python signal handler doesn't really queue a callback: it only signals
        that a signal was received, see _PyEval_SignalReceived(). */
@@ -777,7 +776,7 @@ Py_MakePendingCalls(void)
         return res;
     }
 
-    res = make_pending_calls(tstate);
+    res = make_pending_calls(tstate->interp);
     if (res != 0) {
         return res;
     }
@@ -1113,10 +1112,11 @@ static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
+    PyThreadState *tstate = PyThreadState_GET();
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         return NULL;
     }
@@ -1130,10 +1130,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *res = _PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
-    Py_DECREF(builtins);
-    return res;
+    return _PyEval_Vector(tstate, &desc, locals, NULL, 0, NULL);
 }
 
 
@@ -1173,7 +1170,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
     /* Pending calls */
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
     if (_Py_atomic_load_relaxed(&ceval2->pending.calls_to_do)) {
-        if (make_pending_calls(tstate) != 0) {
+        if (make_pending_calls(tstate->interp) != 0) {
             return -1;
         }
     }
@@ -2973,7 +2970,7 @@ main_loop:
                                        (PyDictObject *)f->f_builtins,
                                        name);
                 if (v == NULL) {
-                    if (!_PyErr_OCCURRED()) {
+                    if (!_PyErr_Occurred(tstate)) {
                         /* _PyDict_LoadGlobal() returns NULL without raising
                          * an exception if the key doesn't exist */
                         format_exc_check_arg(tstate, PyExc_NameError,
@@ -3440,9 +3437,10 @@ main_loop:
                                 Py_ssize_t hint = la->hint;
                                 Py_INCREF(dict);
                                 res = NULL;
+                                assert(!_PyErr_Occurred(tstate));
                                 la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
-
                                 if (res != NULL) {
+                                    assert(la->hint >= 0);
                                     if (la->hint == hint && hint >= 0) {
                                         // Our hint has helped -- cache hit.
                                         OPCACHE_STAT_ATTR_HIT();
@@ -3457,18 +3455,22 @@ main_loop:
                                     Py_DECREF(owner);
                                     Py_DECREF(dict);
                                     DISPATCH();
-                                } else {
+                                }
+                                else {
+                                    _PyErr_Clear(tstate);
                                     // This attribute can be missing sometimes;
                                     // we don't want to optimize this lookup.
                                     OPCACHE_DEOPT_LOAD_ATTR();
                                     Py_DECREF(dict);
                                 }
-                            } else {
+                            }
+                            else {
                                 // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
                                 OPCACHE_DEOPT_LOAD_ATTR();
                             }
                         }
-                    } else {
+                    }
+                    else {
                         // The type of the object has either been updated,
                         // or is different.  Maybe it will stabilize?
                         OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
@@ -3524,7 +3526,8 @@ main_loop:
                         }
                         // Else it's some other kind of descriptor that we don't handle.
                         OPCACHE_DEOPT_LOAD_ATTR();
-                    } else if (type->tp_dictoffset > 0) {
+                    }
+                    else if (type->tp_dictoffset > 0) {
                         // We found an instance with a __dict__.
                         dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
                         dict = *dictptr;
@@ -3532,6 +3535,7 @@ main_loop:
                         if (dict != NULL && PyDict_CheckExact(dict)) {
                             Py_INCREF(dict);
                             res = NULL;
+                            assert(!_PyErr_Occurred(tstate));
                             Py_ssize_t hint = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
                             if (res != NULL) {
                                 Py_INCREF(res);
@@ -3548,9 +3552,13 @@ main_loop:
                                 la = &co_opcache->u.la;
                                 la->type = type;
                                 la->tp_version_tag = type->tp_version_tag;
+                                assert(hint >= 0);
                                 la->hint = hint;
 
                                 DISPATCH();
+                            }
+                            else {
+                                _PyErr_Clear(tstate);
                             }
                             Py_DECREF(dict);
                         } else {
@@ -5114,12 +5122,13 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                   PyObject *const *defs, int defcount,
                   PyObject *kwdefs, PyObject *closure)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *res;
     PyObject *defaults = _PyTuple_FromArray(defs, defcount);
     if (defaults == NULL) {
         return NULL;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         Py_DECREF(defaults);
         return NULL;
@@ -5178,7 +5187,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         .fc_kwdefaults = kwdefs,
         .fc_closure = closure
     };
-    PyThreadState *tstate = _PyThreadState_GET();
     res = _PyEval_Vector(tstate, &constr, locals,
                          allargs, argcount,
                          kwnames);
@@ -5697,14 +5705,20 @@ PyEval_GetFrame(void)
 }
 
 PyObject *
+_PyEval_GetBuiltins(PyThreadState *tstate)
+{
+    PyFrameObject *frame = tstate->frame;
+    if (frame != NULL) {
+        return frame->f_builtins;
+    }
+    return tstate->interp->builtins;
+}
+
+PyObject *
 PyEval_GetBuiltins(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->frame;
-    if (current_frame == NULL)
-        return tstate->interp->builtins;
-    else
-        return current_frame->f_builtins;
+    return _PyEval_GetBuiltins(tstate);
 }
 
 /* Convenience function to get a builtin from its name */

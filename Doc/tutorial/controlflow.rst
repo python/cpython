@@ -297,7 +297,8 @@ referenced.
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
 passed using *call by value* (where the *value* is always an object *reference*,
-not the value of the object). [#]_ When a function calls another function, a new
+not the value of the object). [#]_ When a function calls another function,
+or calls itself recursively, a new
 local symbol table is created for that call.
 
 A function definition associates the function name with the function object in

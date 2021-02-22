@@ -114,9 +114,9 @@ init_filters(void)
 
 /* Initialize the given warnings module state. */
 int
-_PyWarnings_InitState(PyThreadState *tstate)
+_PyWarnings_InitState(PyInterpreterState *interp)
 {
-    WarningsState *st = &tstate->interp->warnings;
+    WarningsState *st = &interp->warnings;
 
     if (st->filters == NULL) {
         st->filters = init_filters();

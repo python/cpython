@@ -318,7 +318,7 @@ _ready:
 
     /* Don't access tstate if the thread must exit */
     if (tstate->async_exc != NULL) {
-        _PyEval_SignalAsyncExc(tstate);
+        _PyEval_SignalAsyncExc(tstate->interp);
     }
 
     MUTEX_UNLOCK(gil->mutex);

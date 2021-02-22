@@ -847,7 +847,7 @@ PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         return NULL;
     }
@@ -862,7 +862,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_closure = NULL
     };
     PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc, locals);
-    Py_DECREF(builtins);
     if (f) {
         _PyObject_GC_TRACK(f);
     }
@@ -1109,9 +1108,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(PyThreadState *tstate)
+_PyFrame_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     while (state->free_list != NULL) {
         PyFrameObject *f = state->free_list;
         state->free_list = state->free_list->f_back;
@@ -1122,11 +1121,11 @@ _PyFrame_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyFrame_Fini(PyThreadState *tstate)
+_PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(tstate);
+    _PyFrame_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     state->numfree = -1;
 #endif
 }
@@ -1163,7 +1162,7 @@ PyFrame_GetBack(PyFrameObject *frame)
 }
 
 PyObject*
-_PyEval_BuiltinsFromGlobals(PyObject *globals)
+_PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
 {
     PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
     if (builtins) {
@@ -1171,21 +1170,11 @@ _PyEval_BuiltinsFromGlobals(PyObject *globals)
             builtins = PyModule_GetDict(builtins);
             assert(builtins != NULL);
         }
-        return Py_NewRef(builtins);
+        return builtins;
     }
-
     if (PyErr_Occurred()) {
         return NULL;
     }
 
-    /* No builtins! Make up a minimal one. Give them 'None', at least. */
-    builtins = PyDict_New();
-    if (builtins == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(builtins, "None", Py_None) < 0) {
-        Py_DECREF(builtins);
-        return NULL;
-    }
-    return builtins;
+    return _PyEval_GetBuiltins(tstate);
 }

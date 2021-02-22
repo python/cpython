@@ -1,0 +1,2 @@
+Fix test_importlib to correctly skip Unicode file tests if the fileystem
+does not support them.

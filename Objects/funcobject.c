@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "structmember.h"         // PyMemberDef
 
 PyObject *
@@ -12,6 +13,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     assert(globals != NULL);
     assert(PyDict_Check(globals));
     Py_INCREF(globals);
+
+    PyThreadState *tstate = _PyThreadState_GET();
 
     PyCodeObject *code_obj = (PyCodeObject *)code;
     Py_INCREF(code_obj);
@@ -42,15 +45,16 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     _Py_IDENTIFIER(__name__);
     PyObject *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
     PyObject *builtins = NULL;
-    if (module == NULL && PyErr_Occurred()) {
+    if (module == NULL && _PyErr_Occurred(tstate)) {
         goto error;
     }
     Py_XINCREF(module);
 
-    builtins = _PyEval_BuiltinsFromGlobals(globals);
+    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
     if (builtins == NULL) {
         goto error;
     }
+    Py_INCREF(builtins);
 
     PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL) {

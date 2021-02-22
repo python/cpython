@@ -316,7 +316,7 @@ PEGEN_OBJS=		\
 
 
 PEGEN_HEADERS= \
-		$(srcdir)/Include/parser_interface.h \
+		$(srcdir)/Include/cpython/parser_interface.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
@@ -761,7 +761,7 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen
+	regen-pegen-metaparser regen-pegen regen-frozen
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
@@ -870,6 +870,11 @@ regen-opcode:
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
+.PHONY: regen-frozen
+regen-frozen:
+	# Regenerate code for frozen module "__hello__".
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/freeze/regen_frozen.py $(srcdir)/Python/frozen_hello.h
+
 .PHONY: regen-token
 regen-token:
 	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
@@ -974,7 +979,7 @@ Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
 		$(srcdir)/Python/condvar.h
 
 Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
-		$(srcdir)/Python/importlib_zipimport.h
+		$(srcdir)/Python/importlib_zipimport.h $(srcdir)/Python/frozen_hello.h
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -1051,17 +1056,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/namespaceobject.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
-		$(srcdir)/Include/odictobject.h \
 		$(srcdir)/Include/opcode.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
-		$(srcdir)/Include/picklebufobject.h \
 		$(srcdir)/Include/pycapsule.h \
-		$(srcdir)/Include/pydebug.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
-		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyframe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
@@ -1111,9 +1112,13 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
+		$(srcdir)/Include/cpython/odictobject.h \
+		$(srcdir)/Include/cpython/picklebufobject.h \
 		$(srcdir)/Include/cpython/pyarena.h \
 		$(srcdir)/Include/cpython/pyctype.h \
+		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
+		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
