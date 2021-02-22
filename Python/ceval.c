@@ -969,8 +969,7 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // to raise TypeErrors for repeated lookups. On failure, return NULL (with
     // no error set). Use _PyErr_Occurred(tstate) to disambiguate.
     assert(PyUnicode_CheckExact(name));
-    // XXX: Why doesn't PySet_CheckExact exist?
-    assert(Py_IS_TYPE(seen, &PySet_Type));
+    assert(PySet_CheckExact(seen));
     if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
         if (!_PyErr_Occurred(tstate)) {
             // Seen it before!
