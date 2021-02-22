@@ -4,6 +4,7 @@ import string
 import sys
 from test import support
 from test.support import import_helper
+from test.support import warnings_helper
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
@@ -979,42 +980,66 @@ class String_TestCase(unittest.TestCase):
     @support.requires_legacy_unicode_capi
     def test_u(self):
         from _testcapi import getargs_u
-        self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
-        self.assertRaises(ValueError, getargs_u, 'nul:\0')
-        self.assertRaises(TypeError, getargs_u, b'bytes')
-        self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_u, None)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, getargs_u, 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u, None)
 
     @support.requires_legacy_unicode_capi
     def test_u_hash(self):
         from _testcapi import getargs_u_hash
-        self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
-        self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
-        self.assertRaises(TypeError, getargs_u_hash, b'bytes')
-        self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_u_hash, None)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_u_hash, None)
 
     @support.requires_legacy_unicode_capi
     def test_Z(self):
         from _testcapi import getargs_Z
-        self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
-        self.assertRaises(ValueError, getargs_Z, 'nul:\0')
-        self.assertRaises(TypeError, getargs_Z, b'bytes')
-        self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
-        self.assertIsNone(getargs_Z(None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(ValueError, getargs_Z, 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(getargs_Z(None))
 
     @support.requires_legacy_unicode_capi
     def test_Z_hash(self):
         from _testcapi import getargs_Z_hash
-        self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
-        self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
-        self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
-        self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
-        self.assertIsNone(getargs_Z_hash(None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(getargs_Z_hash(None))
 
 
 class Object_TestCase(unittest.TestCase):
@@ -1053,6 +1078,8 @@ class Test6012(unittest.TestCase):
 
 class SkipitemTest(unittest.TestCase):
 
+    # u, and Z raises DeprecationWarning
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_skipitem(self):
         """
         If this test failed, you probably added a new "format unit"
@@ -1220,6 +1247,14 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and name.endswith('_code'))
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_u_code(self):
+        _testcapi.test_u_code()
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_Z_code(self):
+        _testcapi.test_Z_code()
 
 
 if __name__ == "__main__":
