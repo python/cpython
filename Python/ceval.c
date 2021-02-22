@@ -944,18 +944,19 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             goto done;
         }
         PyList_Append(values, value);
+        Py_DECREF(value);
     }
     Py_SETREF(values, PyList_AsTuple(values));
     // Success:
 done:
     Py_DECREF(get);
-    Py_DECREF(dummy);
     Py_DECREF(seen);
+    Py_DECREF(dummy);
     return values;
 fail:
     Py_XDECREF(get);
-    Py_XDECREF(dummy);
     Py_XDECREF(seen);
+    Py_XDECREF(dummy);
     Py_XDECREF(values);
     return NULL;
 }
@@ -1003,13 +1004,13 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         return NULL;
     }
     // So far so good:
-    PyObject *attrs = PyList_New(0);
-    if (attrs == NULL) {
-        return NULL;
-    }
     PyObject *seen = PySet_New(NULL);
     if (seen == NULL) {
-        Py_DECREF(attrs);
+        return NULL;
+    }
+    PyObject *attrs = PyList_New(0);
+    if (attrs == NULL) {
+        Py_DECREF(seen);
         return NULL;
     }
     // NOTE: From this point on, goto fail on failure:
@@ -1059,7 +1060,6 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            Py_INCREF(subject);
             PyList_Append(attrs, subject);
         }
         else {
@@ -1077,6 +1077,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                     goto fail;
                 }
                 PyList_Append(attrs, attr);
+                Py_DECREF(attr);
             }
         }
         Py_CLEAR(match_args);
@@ -1089,16 +1090,17 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             goto fail;
         }
         PyList_Append(attrs, attr);
+        Py_DECREF(attr);
     }
-    Py_DECREF(seen);
     Py_SETREF(attrs, PyList_AsTuple(attrs));
+    Py_DECREF(seen);
     return attrs;
 fail:
     // We really don't care whether an error was raised or not... that's our
     // caller's problem. All we know is that the match failed.
-    Py_DECREF(attrs);
-    Py_DECREF(seen);
     Py_XDECREF(match_args);
+    Py_DECREF(seen);
+    Py_DECREF(attrs);
     return NULL;
 }
 
@@ -3863,16 +3865,17 @@ main_loop:
             PyObject *subject = SECOND();
             assert(PyTuple_CheckExact(names));
             PyObject *attrs = match_class(tstate, subject, type, oparg, names);
+            Py_DECREF(names);
             if (attrs) {
                 // Success!
                 assert(PyTuple_CheckExact(attrs));
-                Py_DECREF(type);
+                Py_DECREF(subject);
                 SET_SECOND(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
                 goto error;
             }
-            Py_DECREF(names);
+            Py_DECREF(type);
             SET_TOP(PyBool_FromLong(!!attrs));
             DISPATCH();
         }

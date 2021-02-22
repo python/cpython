@@ -5537,9 +5537,9 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
         }
     }
     // Success!
-    basicblock *end;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    if (!compiler_addop_load_const(c, Py_True) ||
+    basicblock *end = compiler_new_block(c);
+    if (end == NULL ||
+        !compiler_addop_load_const(c, Py_True) ||
         !compiler_addop_j(c, JUMP_FORWARD, end))
     {
         goto error;
