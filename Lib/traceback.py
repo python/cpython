@@ -528,7 +528,9 @@ class TracebackException:
                     cause = None
 
                 if compact:
-                    need_context = cause is None and not e.__suppress_context__
+                    need_context = (cause is None and
+                                    e is not None and
+                                    not e.__suppress_context__)
                 else:
                     need_context = True
                 if (e and e.__context__ is not None
