@@ -460,6 +460,9 @@ PyCArg_dealloc(PyCArgObject *self)
 static PyObject *
 PyCArg_repr(PyCArgObject *self)
 {
+    PyObject *f;
+    PyObject *r;
+    char *value;
     switch(self->tag) {
     case 'b':
     case 'B':
@@ -477,25 +480,22 @@ PyCArg_repr(PyCArgObject *self)
     case 'L':
         return PyString_FromFormat("<cparam '%c' (%ld)>",
             self->tag, self->value.l);
-
-#ifdef HAVE_LONG_LONG
     case 'q':
     case 'Q':
-        return PyString_FromFormat("<cparam '%c' (%" PY_FORMAT_LONG_LONG "d)>",
+        return PyString_FromFormat("<cparam '%c' (%lld)>",
             self->tag, self->value.q);
-#endif
     case 'd':
     case 'f': {
-        PyObject *f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
+        f = PyFloat_FromDouble((self->tag == 'f') ? self->value.f : self->value.d);
         if (f == NULL) {
             return NULL;
         }
-        PyObject *r = PyObject_Repr(f);
+        r = PyObject_Repr(f);
         Py_DECREF(f);
         if (r == NULL) {
             return NULL;
         }
-        char *value = PyString_AsString(r);
+        value = PyString_AsString(r);
         Py_DECREF(r);
         if (value == NULL) {
             return NULL;
