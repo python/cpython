@@ -5,5 +5,6 @@ equivalent to the offset '+00:00', however this behavior is not defined for
 lowercase 'z'. This change ensures a ValueError is thrown when encountering
 the original example, as follows:
 
->>> from datetime import datetime >>> datetime.strptime('z', '%z')
+>>> from datetime import datetime
+>>> datetime.strptime('z', '%z')
 ValueError: time data 'z' does not match format '%z'
