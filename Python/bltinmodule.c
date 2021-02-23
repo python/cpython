@@ -566,9 +566,7 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     lz->it = it;
-    PyObject *func = args[0];
-    Py_INCREF(func);
-    lz->func = func;
+    lz->func = Py_NewRef(args[0]);
     return (PyObject *)lz;
 }
 
