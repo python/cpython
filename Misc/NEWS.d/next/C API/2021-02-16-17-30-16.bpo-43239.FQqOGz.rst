@@ -1,0 +1,2 @@
+The :c:func:`PyCFunction_New` function is now exported in the ABI when
+compiled with ``-fvisibility=hidden``.
