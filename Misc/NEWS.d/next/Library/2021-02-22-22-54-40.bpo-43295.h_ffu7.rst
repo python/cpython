@@ -3,8 +3,8 @@ Previously, datetime.strptime would match 'z' with the format string '%z'
 as a timestamp. As a special case, '%z' matches the string 'Z' which is
 equivalent to the offset '+00:00', however this behavior is not defined for
 lowercase 'z'. This change ensures a ValueError is thrown when encountering
-the original example, as follows:
+the original example, as follows::
 
->>> from datetime import datetime
->>> datetime.strptime('z', '%z')
-ValueError: time data 'z' does not match format '%z'
+    >>> from datetime import datetime
+    >>> datetime.strptime('z', '%z')
+    ValueError: time data 'z' does not match format '%z'
