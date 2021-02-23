@@ -5568,14 +5568,13 @@ error:
     return 0;
 }
 
-
+// Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
+// UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
+// starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
 static int
 pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
                                Py_ssize_t star, pattern_context *pc)
 {
-    // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
-    // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
-    // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
     basicblock *end, *fail_pop_1;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
@@ -5617,10 +5616,10 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
 }
 
 
+// Like compiler_pattern, but turn off checks for irrefutability.
 static int
 compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    // Like compiler_pattern, but turn off checks for irrefutability.
     int allow_irrefutable = pc->allow_irrefutable;
     pc->allow_irrefutable = 1;
     RETURN_IF_FALSE(compiler_pattern(c, p, pc));

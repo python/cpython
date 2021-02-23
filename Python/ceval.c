@@ -884,11 +884,11 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 // PEP 634: Structural Pattern Matching
 
 
+// Return a tuple of values corresponding to keys, with error checks for
+// duplicate/missing keys.
 static PyObject*
 match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
-    // Return a tuple of values corresponding to keys, with error checks for
-    // duplicate/missing keys.
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
     if (!nkeys) {
@@ -961,13 +961,13 @@ fail:
     return NULL;
 }
 
+// Extract a named attribute from the subject, with additional bookkeeping to
+// raise TypeErrors for repeated lookups. On failure, return NULL (with no
+// error set). Use _PyErr_Occurred(tstate) to disambiguate.
 static PyObject*
 match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
                  PyObject *name, PyObject *seen)
 {
-    // Extract a named attribute from the subject, with additional bookkeeping
-    // to raise TypeErrors for repeated lookups. On failure, return NULL (with
-    // no error set). Use _PyErr_Occurred(tstate) to disambiguate.
     assert(PyUnicode_CheckExact(name));
     assert(PySet_CheckExact(seen));
     if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
@@ -986,12 +986,12 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
     return attr;
 }
 
+// On success (match), return a tuple of extracted attributes. On failure (no
+// match), return NULL. Use _PyErr_Occurred(tstate) to disambiguate.
 static PyObject*
 match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             Py_ssize_t nargs, PyObject *kwargs)
 {
-    // On success (match), return a tuple of extracted attributes. On failure
-    // (no match), return NULL. Use _PyErr_Occurred(tstate) to disambiguate.
     if (!PyType_Check(type)) {
         const char *e = "called match pattern must be a type";
         _PyErr_Format(tstate, PyExc_TypeError, e);
