@@ -91,7 +91,10 @@ def _parse_value_tb(exc, value, tb):
     if (value is _sentinel) != (tb is _sentinel):
         raise ValueError("Both or neither of value and tb must be given")
     if value is tb is _sentinel:
-        return exc, exc.__traceback__
+        if exc is not None:
+            return exc, exc.__traceback__
+        else:
+            return None, None
     return value, tb
 
 
