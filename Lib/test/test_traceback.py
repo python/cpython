@@ -235,6 +235,10 @@ class TracebackCases(unittest.TestCase):
     def test_exception_is_None(self):
         NONE_EXC_STRING = 'NoneType: None\n'
         excfile = StringIO()
+        traceback.print_exception(None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        excfile = StringIO()
         traceback.print_exception(None, None, None, file=excfile)
         self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
 
@@ -243,6 +247,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
 
         self.assertEqual(traceback.format_exc(None), NONE_EXC_STRING)
+        self.assertEqual(traceback.format_exception(None), [NONE_EXC_STRING])
         self.assertEqual(
             traceback.format_exception(None, None, None), [NONE_EXC_STRING])
         self.assertEqual(
