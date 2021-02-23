@@ -513,12 +513,13 @@ the items are surrounded by parentheses. For example::
 
 .. _match:
 
-The match statement
-===================
+The :keyword:`!match` statement
+===============================
 
 .. index::
    ! statement: match
    ! keyword: case
+   ! single: pattern matching
    keyword: if
    keyword: as
    pair: match; case
@@ -526,98 +527,180 @@ The match statement
 
 .. versionadded:: 3.10
 
-The match statement is used for pattern matching.  Pattern matching takes a
-pattern as input (following ``case``) and a subject value (following ``match``).
-The pattern (which may contain subpatterns) is matched against the subject value.
-The outcome of which is a successful match or a failure, and matched values are
-bound to a name.
+The match statement is used for pattern matching.  Syntax:
 
 .. productionlist:: python-grammar
    match_stmt: "match" `subject_expr` ':' NEWLINE INDENT `case_block`+ DEDENT
    subject_expr: `star_named_expression` ',' `star_named_expressions`?
                : | `named_expression`
    case_block: "case" `patterns` [`guard`] ':' `block`
-   guard: 'if' `named_expression`
 
-The match and case keywords are :ref:`soft keywords <soft_keywords>`, i.e. they
-are not reserved words in other grammatical contexts (including at the start of
-a line if there is no colon where expected).  This implies that they are
-recognized as keywords when part of a match statement or case block only, and
-are allowed to be used in all other contexts as variable or argument names.
+Pattern matching takes a pattern as input (following ``case``) and a subject
+value (following ``match``).  The pattern (which may contain subpatterns) is
+matched against the subject value.  The outcomes are:
+
+* A match success or failure (also termed a pattern success or failure).
+
+* Possible binding of matched values to a name.  The prerequisites for this are
+  further discussed below.
+
+The ``match`` and ``case`` keywords are :ref:`soft keywords <soft_keywords>`.
+This means ``match`` and ``case`` have the following characteristics:
+
+* They are not reserved words in other grammatical contexts, including at the
+  start of a line if there is no colon where expected.
+
+* They are recognized as keywords when part of a match statement or case block
+  only.
+
+* They can be used in all other contexts as variable or argument names
+
 
 The rules ``star_named_expression``, ``star_named_expressions``,
 ``named_expression`` and ``block`` are part of the
 :doc:`standard Python grammar <./grammar>`.  While ``patterns`` is specified
 further below.
 
+Overview
+--------
+
 Here's an overview of the logical flow:
 
 #. The subject expression ``subject_expr`` is evaluated and a resulting subject
-   value obtained.
+   value obtained.  If the subject expression contains a comma, a tuple is
+   constructed using :ref:`the standard rules <typesseq-tuple>`.
 
 #. The first ``case_block`` whose patterns succeed in matching the subject
    value and whose ``guard`` condition (if present) is "truthy" is selected.
 
-   - If no case blocks qualify, the match statement is completed.
+   * If no case blocks qualify, the match statement is completed.
 
       .. note::
 
-         During failed pattern matches, some subpatterns may succeed.  User code
-         including a match statement shouldn't rely on the bindings being made
-         for a failed match, but also shouldn't assume that variables are unchanged
-         by a failed match.  The exact behavior is dependent on implementation and
-         may vary.  This is an intentional decision made to allow different
-         implementations to add optimizations.
+         During failed pattern matches, some subpatterns may succeed.  Do not
+         rely on bindings being made for a failed match.  Conversely, do not
+         rely on variables remaining unchanged after a failed match.  The exact
+         behavior is dependent on implementation and may vary.  This is an
+         intentional decision made to allow different implementations to add
+         optimizations.
 
-   - Otherwise, name bindings occur and the ``block`` inside ``case_block`` is
+   * Otherwise, name bindings occur and the ``block`` inside ``case_block`` is
      executed.  The precise pattern binding rules vary per pattern type and are
      specified below.  **Name bindings made during a successful pattern match
      outlive the executed block and can be used after the match statement**.
 
 .. note::
 
-   Users should generally never rely on the number of times a pattern is written
-   in a match statement as a measurement of the number of times a pattern's
-   expression is executed.  Depending on implementation, the interpreter may
-   cache values or use other optimizations which reduce evaluations.
+   Users should generally never rely on a pattern being evaluated.  Depending on
+   implementation, the interpreter may cache values or use other optimizations
+   which skip repeated evaluations.
 
+A sample match statement::
+
+   >>> flag = False
+   >>> match (100, 200):
+   ...    case (100, 300):
+   ...        print('Case 1')
+   ...    case (100, 200) if flag:
+   ...        print('Case 2')
+   ...    case (100, y):
+   ...        print(f'Case 3, y: {y}')
+   ...    case _:
+   ...        print('Case 4, I match anything!')
+   ...
+   Case 3, y: 200
+
+
+In this case, ``if flag`` is a guard.  Read more about that in the next section.
 
 Guards
 ------
 
-If a ``guard`` is present in a case block, it is evaluated if and only if the
-pattern(s) in a case block succeed.  If this raises an exception, the exception
-bubbles up.  Otherwise, if the guard condition is "truthy", the case block is
-selected; if it is "falsy" the case block is not selected.
+.. index:: ! guard
 
-Since guards are expressions they are allowed to have side effects.  Guard
+.. productionlist:: python-grammar
+   guard: 'if' `named_expression`
+
+A ``guard`` (which is part of the ``case``) must succeed for code inside
+the ``case`` block to execute.  It takes the form: :keyword:`if` followed by an
+expression.  Conceptually it's similar to a
+:ref:`conditional expression <if_expr>`.  An example guard::
+
+   >>> match 100:
+   ...    case x if x < 0:
+   ...        print(f'{x} is negative!')
+   ...    case x:
+   ...        print(f'{x} is non-negative!')
+   ...
+   100 is non-negative!
+
+
+The logical flow of a ``case`` block with a ``guard`` follows:
+
+#. Check that the pattern in the ``case`` block succeeded.  If the pattern
+   failed, the ``guard`` is not evaluated and the next ``case`` block is
+   checked.
+
+#. If the pattern succeeded, evaluate the ``guard``.
+
+   * If the ``guard`` condition evaluates to "truthy", the case block is
+     selected.
+
+   * If the ``guard`` condition evaluates to "falsy", the case block is not
+     selected.
+
+   * If the ``guard`` raises an exception during evaluation, the exception
+     bubbles up.
+
+Guards are allowed to have side effects as they are expressions.  Guard
 evaluation must proceed from the first to the last case block, one at a time,
 skipping case blocks whose pattern(s) don't all succeed. (I.e.,
 guard evaluation must happen in order.) Guard evaluation must stop once a case
 block is selected.
 
-Irrefutable case blocks
+
+.. _irrefutable_case:
+
+Irrefutable Case Blocks
 -----------------------
 
-A pattern is considered irrefutable if we can prove from its syntax alone that
-it will always succeed.  In particular, capture patterns and wildcard patterns
-are irrefutable, and so are :ref:`AS patterns <as_pattern>` whose left-hand
-side is irrefutable, :ref:`OR patterns <or_pattern>` containing at least one
-irrefutable pattern, and parenthesized irrefutable patterns.
+.. index:: irrefutable case block, case block
+
+An irrefutable case block is a catch-all case block.  A match statement may have
+at most one irrefutable case block, and it must be last.
 
 A case block is considered irrefutable if it has no guard and its pattern is
-irrefutable.
+irrefutable.  A pattern is considered irrefutable if we can prove from its
+syntax alone that it will always succeed.  The following patterns are
+irrefutable:
 
-A match statement may have at most one irrefutable case block, and it must be
-last.
+* :ref:`as_patterns` whose left-hand side is irrefutable
+
+* :ref:`or_patterns` containing at least one irrefutable pattern
+
+* :ref:`capture_patterns`
+
+* :ref:`wildcard_patterns`
+
+* parenthesized irrefutable patterns
+
 
 Patterns
 --------
 
-The top-level syntax for patterns is as follows.  Note that the notation
-``SEP.RULE+`` is shorthand for ``RULE (SEP RULE)*``.  Grammar further below
-may also have the notation ``!RULE`` which is shorthand for a negative lookahead
-assertion:
+.. index::
+   single: ! patterns
+   single: AS pattern, OR pattern, capture pattern, wildcard pattern
+
+.. note::
+   This section uses grammar notations beyond standard EBNF:
+
+   * the notation ``SEP.RULE+`` is shorthand for ``RULE (SEP RULE)*``
+
+   * the notation ``!RULE`` is shorthand for a negative lookahead assertion
+
+
+The top-level syntax for ``patterns`` is:
 
 .. productionlist:: python-grammar
    patterns: `open_sequence_pattern` | `pattern`
@@ -633,124 +716,246 @@ assertion:
                  : | `mapping_pattern`
                  : | `class_pattern`
 
-.. _as_pattern:
+The following is a very brief overview of the different patterns and an
+approximation of their behavior (credits to Raymond Hettinger for the idea):
 
-* ``as_pattern``: An AS pattern matches the OR pattern on the left of the as
-  keyword against the subject.  If this fails, the AS pattern fails.
-  Otherwise, the AS pattern binds the subject to the name on the right of the
-  as keyword and succeeds.  Note that ``capture_pattern`` cannot be a a ``_``.
++--------------------------+-------------------+----------------------------------------------------------+
+| Pattern Type             | Pattern Form      | Logical behavior                                         |
++==========================+===================+==========================================================+
+| :ref:`or_patterns`       | ``p1 | p2 | ...`` | 1. test ``p1``                                           |
+|                          |                   |                                                          |
+|                          |                   | 2. if failure, test ``p2``                               |
+|                          |                   |                                                          |
+|                          |                   | 3. if failure test ...                                   |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`as_patterns`       | ``or_pattern``    | 1. test ``or_pattern``                                   |
+|                          |  :keyword:`as`    |                                                          |
+|                          |  ``capture``      | 2. if success, bind names in                             |
+|                          |                   |    ``capture``                                           |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`literal_patterns`  | ``"literal"``     | ``subject == "literal"``                                 |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`capture_patterns`  | ``name``          | ``name = subject``                                       |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`wildcard_patterns` | ``_``             | ``pass``                                                 |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`value_patterns`    | ``x.y``           | ``subject == x.y``                                       |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`group_patterns`    | ``( pattern )``   | test ``pattern``                                         |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`sequence_patterns` | ``[p1, p2, ...]`` | 1. check ``isinstance(subject, collections.abc.Sequence``|
+|                          |                   |                                                          |
+|                          |                   | 2. check ``len(subject) == len(sequence_pattern)``       |
+|                          |                   |                                                          |
+|                          |                   | 3. test ``p1`` against ``subject_value[0]``              |
+|                          |                   |                                                          |
+|                          |                   | 4. test ``p2`` against ``subject_value[1]``              |
+|                          |                   |                                                          |
+|                          |                   | 5. repeat step 4. for subsequent patterns and indexes    |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`mapping_patterns`  | ``{p1: p2, ...}`` | 1. check ``isinstance(subject, collections.abc.Mapping)``|
+|                          |                   |                                                          |
+|                          |                   | 2. test ``p1 in subject``                                |
+|                          |                   |                                                          |
+|                          |                   | 3. test ``p2`` matches ``subject[p1]``                   |
+|                          |                   |                                                          |
+|                          |                   | 4. repeat steps 2. and 3. for subsequent key and value   |
+|                          |                   |    patterns.                                             |
++--------------------------+-------------------+----------------------------------------------------------+
+| :ref:`class_patterns`    | ``K(p1, name=p2)``| 1. check ``isinstance(K, type)``                         |
+|                          |                   |                                                          |
+|                          |                   | 2. check ``isinstance(subject, K)``                      |
+|                          |                   |                                                          |
+|                          |                   | 3. check ``hasattr(subject, name)``                      |
+|                          |                   |                                                          |
+|                          |                   | 4. test ``p2`` matches ``subject.name``                  |
+|                          |                   |                                                          |
+|                          |                   | 5. convert ``p1`` to a keyword pattern using             |
+|                          |                   |    ``K.__match_args__`` and repeat steps 2. and 3.       |
++--------------------------+-------------------+----------------------------------------------------------+
 
-.. _or_pattern:
+Note that this table purely for illustration purposes and **may not** reflect
+the underlying implementation.  Furthermore, they do not cover all valid forms.
+Read the pattern's respective section to learn more.
 
-* ``or_pattern``: An OR pattern is two or more patterns separated by vertical
-  bars ``|``.  Only the final subpattern may be irrefutable, and each subpattern
-  must bind the same set of names to avoid ambiguity.  An OR pattern matches
-  each of its subpatterns in turn to the subject value, until one succeeds.  The
-  OR pattern is then considered successful. Otherwise, if none of the
-  subpatterns succeed, the OR pattern fails.
+
+.. _or_patterns:
+
+OR Patterns
+^^^^^^^^^^^
+
+.. productionlist:: python-grammar
+   or_pattern: '|'.`closed_pattern`+
+
+``or_pattern``: An OR pattern is two or more patterns separated by vertical
+bars ``|``.  Only the final subpattern may be
+:ref:`irrefutable <irrefutable_case>`, and each subpattern
+must bind the same set of names to avoid ambiguity.
+
+An OR pattern matches each of its subpatterns in turn to the subject value,
+until one succeeds.  The OR pattern is then considered successful.  Otherwise,
+if none of the subpatterns succeed, the OR pattern fails.
+
+
+..
+   @TODO: NOTE TO SELF: EVERYTHING ONWARDS FROM HERE IS A TODO.
+
+
+.. _as_patterns:
+
+AS Patterns
+^^^^^^^^^^^
+
+.. productionlist:: python-grammar
+   as_pattern: `or_pattern` 'as' `capture_pattern`
+
+``as_pattern``: An AS pattern matches the OR pattern on the left of the as
+keyword against the subject.  If this fails, the AS pattern fails.
+Otherwise, the AS pattern binds the subject to the name on the right of the
+as keyword and succeeds.  Note that ``capture_pattern`` cannot be a a ``_``.
+
+
 
 The following belong to ``closed_pattern``:
 
-* ``literal_pattern``: A literal pattern corresponds to most
-  :ref:`literals <literals>` in Python.  Syntax:
+.. _literal_patterns:
 
-  .. productionlist:: python-grammar
-     literal_pattern: signed_number
-                    : | signed_number '+' NUMBER
-                    : | signed_number '-' NUMBER
-                    : | strings
-                    : | 'None'
-                    : | 'True'
-                    : | 'False'
-                    : | signed_number: NUMBER | '-' NUMBER
+Literal Patterns
+^^^^^^^^^^^^^^^^
 
-  The rule ``strings`` and the token ``NUMBER`` are defined in the
-  :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
-  supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
-  not supported.
+``literal_pattern``: A literal pattern corresponds to most
+:ref:`literals <literals>` in Python.  Syntax:
 
-  The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
-  for expressing :ref:`complex numbers <imaginary>`; they require a real number
-  on the left and an imaginary number on the right. E.g. ``3 + 4j``.
+.. productionlist:: python-grammar
+  literal_pattern: signed_number
+                 : | signed_number '+' NUMBER
+                 : | signed_number '-' NUMBER
+                 : | strings
+                 : | 'None'
+                 : | 'True'
+                 : | 'False'
+                 : | signed_number: NUMBER | '-' NUMBER
 
-* ``capture_pattern``: A capture pattern binds the subject value to the name.
-  Syntax:
+The rule ``strings`` and the token ``NUMBER`` are defined in the
+:doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
+supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
+not supported.
 
-  .. productionlist:: python-grammar
-     capture_pattern: !"_" NAME
+The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
+for expressing :ref:`complex numbers <imaginary>`; they require a real number
+on the left and an imaginary number on the right. E.g. ``3 + 4j``.
 
-  A single underscore ``_`` is not a capture pattern (this is what ``!"_"``
-  expresses). And is instead treated as a :token:`wildcard_pattern`.
+.. _capture_patterns:
 
-  In a given pattern, a given name can only be bound once.  E.g.
-  ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
+Capture Patterns
+^^^^^^^^^^^^^^^^
 
-  Capture patterns always succeed.  The binding follows scoping rules
-  established by the assignment expression operator in :pep`572`, where the
-  name becomes a local variable in the closest containing function scope unless
-  there's an applicable :keyword:`global` or :keyword:`nonlocal` statement.
+``capture_pattern``: A capture pattern binds the subject value to the name.
+Syntax:
 
-* ``wildcard_pattern``: A wildcard pattern always succeeds (matches anything)
-  and binds no name.  Syntax:
+.. productionlist:: python-grammar
+  capture_pattern: !"_" NAME
 
-  .. productionlist:: python-grammar
-     wildcard_pattern: "_"
+A single underscore ``_`` is not a capture pattern (this is what ``!"_"``
+expresses). And is instead treated as a :token:`wildcard_pattern`.
 
-* ``value_pattern``: A value pattern corresponds to a named value in Python.
-  Syntax:
+In a given pattern, a given name can only be bound once.  E.g.
+``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
 
-  .. productionlist:: python-grammar
-     value_pattern: `attr`
-     attr: `name_or_attr` '.' NAME
-     name_or_attr: `attr` | NAME
+Capture patterns always succeed.  The binding follows scoping rules
+established by the assignment expression operator in :pep`572`, where the
+name becomes a local variable in the closest containing function scope unless
+there's an applicable :keyword:`global` or :keyword:`nonlocal` statement.
 
-  The dotted name in the pattern is looked up using standard Python
-  :ref:`name resolution rules <resolve_names>`.  The pattern succeeds if the
-  value found compares equal to the subject value (using the ``==`` equality
-  operator).
+.. _wildcard_patterns:
 
-  .. note::
+Wildcard Patterns
+^^^^^^^^^^^^^^^^^
 
-    If the same value occurs multiple times in the same match statement, the
-    interpreter may cache the first value found and reuse it rather than repeat
-    the same lookup.  This cache is strictly tied to a given execution of a
-    given match statement.
+``wildcard_pattern``: A wildcard pattern always succeeds (matches anything)
+and binds no name.  Syntax:
 
-* ``group_pattern``: TODO
+.. productionlist:: python-grammar
+  wildcard_pattern: "_"
 
-  .. productionlist:: python-grammar
-     group_pattern: '(' `pattern` ')'
+.. _value_patterns:
 
+Value Patterns
+^^^^^^^^^^^^^^
 
-* ``sequence_pattern``: TODO
+``value_pattern``: A value pattern corresponds to a named value in Python.
+Syntax:
 
-  .. productionlist:: python-grammar
-     sequence_pattern: '[' [`maybe_sequence_pattern`] ']'
-                     : | '(' [`open_sequence_pattern`] ')'
-     open_sequence_pattern: `maybe_star_pattern` ',' [`maybe_sequence_pattern`]
-     maybe_sequence_pattern: ','.`maybe_star_pattern`+ ','?
-     maybe_star_pattern: `star_pattern` | `pattern`
-     star_pattern: '*' (`capture_pattern` | `wildcard_pattern`)
+.. productionlist:: python-grammar
+  value_pattern: `attr`
+  attr: `name_or_attr` '.' NAME
+  name_or_attr: `attr` | NAME
 
+The dotted name in the pattern is looked up using standard Python
+:ref:`name resolution rules <resolve_names>`.  The pattern succeeds if the
+value found compares equal to the subject value (using the ``==`` equality
+operator).
 
-* ``mapping_pattern``: TODO
+.. note::
 
-  .. productionlist:: python-grammar
-     mapping_pattern: '{' [`items_pattern`] '}'
-     items_pattern: ','.`key_value_pattern`+ ','?
-     key_value_pattern: (`literal_pattern` | `value_pattern`) ':' `pattern`
-                      : | `double_star_pattern`
-     double_star_pattern: '**' `capture_pattern`
+ If the same value occurs multiple times in the same match statement, the
+ interpreter may cache the first value found and reuse it rather than repeat
+ the same lookup.  This cache is strictly tied to a given execution of a
+ given match statement.
 
-* ``class_pattern``: TODO
+.. _group_patterns:
 
-  .. productionlist:: python-grammar
-     class_pattern: `name_or_attr` '(' [`pattern_arguments` ','?] ')'
-     pattern_arguments: `positional_patterns` [',' `keyword_patterns`]
-                      : | `keyword_patterns`
-     positional_patterns: ','.`pattern`+
-     keyword_patterns: ','.`keyword_pattern`+
-     keyword_pattern: NAME '=' `pattern`
+Group Patterns
+^^^^^^^^^^^^^^
+
+``group_pattern``: TODO
+
+.. productionlist:: python-grammar
+  group_pattern: '(' `pattern` ')'
+
+.. _sequence_patterns:
+
+Sequence Patterns
+^^^^^^^^^^^^^^^^^
+
+``sequence_pattern``: TODO
+
+.. productionlist:: python-grammar
+  sequence_pattern: '[' [`maybe_sequence_pattern`] ']'
+                  : | '(' [`open_sequence_pattern`] ')'
+  open_sequence_pattern: `maybe_star_pattern` ',' [`maybe_sequence_pattern`]
+  maybe_sequence_pattern: ','.`maybe_star_pattern`+ ','?
+  maybe_star_pattern: `star_pattern` | `pattern`
+  star_pattern: '*' (`capture_pattern` | `wildcard_pattern`)
+
+.. _mapping_patterns:
+
+Mapping Patterns
+^^^^^^^^^^^^^^^^
+
+``mapping_pattern``: TODO
+
+.. productionlist:: python-grammar
+  mapping_pattern: '{' [`items_pattern`] '}'
+  items_pattern: ','.`key_value_pattern`+ ','?
+  key_value_pattern: (`literal_pattern` | `value_pattern`) ':' `pattern`
+                   : | `double_star_pattern`
+  double_star_pattern: '**' `capture_pattern`
+
+.. _class_patterns:
+
+Class Patterns
+^^^^^^^^^^^^^^
+
+``class_pattern``: TODO
+
+.. productionlist:: python-grammar
+  class_pattern: `name_or_attr` '(' [`pattern_arguments` ','?] ')'
+  pattern_arguments: `positional_patterns` [',' `keyword_patterns`]
+                   : | `keyword_patterns`
+  positional_patterns: ','.`pattern`+
+  keyword_patterns: ','.`keyword_pattern`+
+  keyword_pattern: NAME '=' `pattern`
 
 
 Full Grammar
