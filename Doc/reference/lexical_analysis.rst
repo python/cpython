@@ -356,6 +356,19 @@ exactly as written here:
    single: __, identifiers
 .. _id-classes:
 
+Soft Keywords
+-------------
+
+.. versionadded:: 3.10
+
+The identifiers ``match`` and ``case`` can syntactically act as keywords in some
+specific contexts, but this distinction is done at the parser level, not when
+tokenizing.
+
+This is done to allow their use in the pattern matching statement, while still
+preserving compatibility with existing code that uses "match" and "case" as
+identifier names.
+
 Reserved classes of identifiers
 -------------------------------
 
