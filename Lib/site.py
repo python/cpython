@@ -75,6 +75,8 @@ import builtins
 import _sitebuiltins
 import io
 
+is_pypy = '__pypy__' in sys.builtin_module_names
+
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
 # Enable per user site-packages directory
@@ -258,6 +260,13 @@ def check_enableusersite():
 #
 # See https://bugs.python.org/issue29585
 
+# Copy of sysconfig._get_implementation()
+def _get_implementation():
+    if is_pypy:
+        return 'PyPy'
+    return 'Python'
+
+
 # Copy of sysconfig._getuserbase()
 def _getuserbase():
     env_base = os.environ.get("PYTHONUSERBASE", None)
@@ -273,7 +282,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        return joinuser(base, _get_implementation())
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -286,14 +295,16 @@ def _getuserbase():
 def _get_path(userbase):
     version = sys.version_info
 
+    implementation = _get_implementation()
+    implementation_lower = implementation.lower()
     if os.name == 'nt':
         ver_nodot = sys.winver.replace('.', '')
-        return f'{userbase}\\Python{ver_nodot}\\site-packages'
+        return f'{userbase}\\{implementation}{ver_nodot}\\site-packages'
 
     if sys.platform == 'darwin' and sys._framework:
-        return f'{userbase}/lib/python/site-packages'
+        return f'{userbase}/lib/{implementation_lower}/site-packages'
 
-    return f'{userbase}/lib/python{version[0]}.{version[1]}/site-packages'
+    return f'{userbase}/lib/{implementation_lower}{version[0]}.{version[1]}/site-packages'
 
 
 def getuserbase():
@@ -409,6 +420,9 @@ def setcopyright():
         builtins.credits = _sitebuiltins._Printer(
             "credits",
             "Jython is maintained by the Jython developers (www.jython.org).")
+    elif is_pypy:
+        credits = "PyPy is maintained by the PyPy developers: http://pypy.org/"
+        license = "See https://foss.heptapod.net/pypy/pypy/src/default/LICENSE"
     else:
         builtins.credits = _sitebuiltins._Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
