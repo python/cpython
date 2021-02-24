@@ -14,7 +14,7 @@ _copy_raw_string(PyObject *strobj)
     if (str == NULL) {
         return NULL;
     }
-    char *copied = PyMem_Malloc(strlen(str)+1);
+    char *copied = PyMem_RawMalloc(strlen(str)+1);
     if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -59,7 +59,7 @@ static void
 _sharednsitem_clear(struct _sharednsitem *item)
 {
     if (item->name != NULL) {
-        PyMem_Free(item->name);
+        PyMem_RawFree(item->name);
         item->name = NULL;
     }
     _PyCrossInterpreterData_Release(&item->data);
