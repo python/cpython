@@ -31,7 +31,6 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pydtrace.h"
-#include "pytime.h"             // _PyTime_GetMonotonicClock()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -162,9 +161,9 @@ _PyGC_InitState(GCState *gcstate)
 
 
 PyStatus
-_PyGC_Init(PyThreadState *tstate)
+_PyGC_Init(PyInterpreterState *interp)
 {
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = &interp->gc;
 
     gcstate->garbage = PyList_New(0);
     if (gcstate->garbage == NULL) {
@@ -1037,15 +1036,15 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
  * Clearing the free lists may give back memory to the OS earlier.
  */
 static void
-clear_freelists(PyThreadState *tstate)
+clear_freelists(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(tstate);
-    _PyTuple_ClearFreeList(tstate);
-    _PyFloat_ClearFreeList(tstate);
-    _PyList_ClearFreeList(tstate);
-    _PyDict_ClearFreeList(tstate);
-    _PyAsyncGen_ClearFreeLists(tstate);
-    _PyContext_ClearFreeList(tstate);
+    _PyFrame_ClearFreeList(interp);
+    _PyTuple_ClearFreeList(interp);
+    _PyFloat_ClearFreeList(interp);
+    _PyList_ClearFreeList(interp);
+    _PyDict_ClearFreeList(interp);
+    _PyAsyncGen_ClearFreeLists(interp);
+    _PyContext_ClearFreeList(interp);
 }
 
 // Show stats for objects in each generations
@@ -1324,7 +1323,7 @@ gc_collect_main(PyThreadState *tstate, int generation,
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists(tstate);
+        clear_freelists(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {
@@ -2093,9 +2092,9 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
 }
 
 void
-_PyGC_DumpShutdownStats(PyThreadState *tstate)
+_PyGC_DumpShutdownStats(PyInterpreterState *interp)
 {
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = &interp->gc;
     if (!(gcstate->debug & DEBUG_SAVEALL)
         && gcstate->garbage != NULL && PyList_GET_SIZE(gcstate->garbage) > 0) {
         const char *message;
@@ -2130,9 +2129,9 @@ _PyGC_DumpShutdownStats(PyThreadState *tstate)
 }
 
 void
-_PyGC_Fini(PyThreadState *tstate)
+_PyGC_Fini(PyInterpreterState *interp)
 {
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 }

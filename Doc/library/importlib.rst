@@ -1476,7 +1476,7 @@ an :term:`importer`.
 
    If  **name** has no leading dots, then **name** is simply returned. This
    allows for usage such as
-   ``importlib.util.resolve_name('sys', __package__)`` without doing a
+   ``importlib.util.resolve_name('sys', __spec__.parent)`` without doing a
    check to see if the **package** argument is needed.
 
    :exc:`ImportError` is raised if **name** is a relative module name but

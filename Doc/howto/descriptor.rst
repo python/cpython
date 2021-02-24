@@ -42,8 +42,8 @@ add new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor that always returns the constant ``10``
-from its :meth:`__get__` method:
+The :class:`Ten` class is a descriptor whose :meth:`__get__` method always
+returns the constant ``10``:
 
 .. testcode::
 
@@ -70,10 +70,10 @@ and descriptor lookup:
     >>> a.y                         # Descriptor lookup
     10
 
-In the ``a.x`` attribute lookup, the dot operator finds the key ``x`` and the
-value ``5`` in the class dictionary.  In the ``a.y`` lookup, the dot operator
-finds a descriptor instance, recognized by its ``__get__`` method, and calls
-that method which returns ``10``.
+In the ``a.x`` attribute lookup, the dot operator finds ``'x': 5``
+in the class dictionary.  In the ``a.y`` lookup, the dot operator
+finds a descriptor instance, recognized by its ``__get__`` method.
+Calling that method returns ``10``.
 
 Note that the value ``10`` is not stored in either the class dictionary or the
 instance dictionary.  Instead, the value ``10`` is computed on demand.
@@ -300,7 +300,7 @@ used in cases where a descriptor needs to know either the class where it was
 created or the name of class variable it was assigned to.  (This method, if
 present, is called even if the class is not a descriptor.)
 
-Descriptors get invoked by the dot "operator" during attribute lookup.  If a
+Descriptors get invoked by the dot operator during attribute lookup.  If a
 descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
 the descriptor instance is returned without invoking it.
 
@@ -497,7 +497,7 @@ Definition and introduction
 
 In general, a descriptor is an attribute value that has one of the methods in
 the descriptor protocol.  Those methods are :meth:`__get__`, :meth:`__set__`,
-and :meth:`__delete__`.  If any of those methods are defined for an the
+and :meth:`__delete__`.  If any of those methods are defined for an
 attribute, it is said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
@@ -934,32 +934,42 @@ here is a pure Python equivalent:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
+            self._name = ''
+
+        def __set_name__(self, owner, name):
+            self._name = name
 
         def __get__(self, obj, objtype=None):
             if obj is None:
                 return self
             if self.fget is None:
-                raise AttributeError("unreadable attribute")
+                raise AttributeError(f'unreadable attribute {self._name}')
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
-                raise AttributeError("can't set attribute")
+                raise AttributeError(f"can't set attribute {self._name}")
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
-                raise AttributeError("can't delete attribute")
+                raise AttributeError(f"can't delete attribute {self._name}")
             self.fdel(obj)
 
         def getter(self, fget):
-            return type(self)(fget, self.fset, self.fdel, self.__doc__)
+            prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
+            prop._name = self._name
+            return prop
 
         def setter(self, fset):
-            return type(self)(self.fget, fset, self.fdel, self.__doc__)
+            prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
+            prop._name = self._name
+            return prop
 
         def deleter(self, fdel):
-            return type(self)(self.fget, self.fset, fdel, self.__doc__)
+            prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
+            prop._name = self._name
+            return prop
 
 .. testcode::
     :hide:
@@ -1370,7 +1380,10 @@ takes 48 bytes with ``__slots__`` and 152 bytes without.  This `flyweight
 design pattern <https://en.wikipedia.org/wiki/Flyweight_pattern>`_ likely only
 matters when a large number of instances are going to be created.
 
-4. Blocks tools like :func:`functools.cached_property` which require an
+4. Improves speed.  Reading instance variables is 35% faster with
+``__slots__`` (as measured with Python 3.10 on an Apple M1 processor).
+
+5. Blocks tools like :func:`functools.cached_property` which require an
 instance dictionary to function correctly:
 
 .. testcode::

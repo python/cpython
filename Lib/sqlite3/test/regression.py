@@ -1,7 +1,6 @@
-#-*- coding: iso-8859-1 -*-
 # pysqlite2/test/regression.py: pysqlite regression tests
 #
-# Copyright (C) 2006-2010 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2006-2010 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -35,12 +34,12 @@ class RegressionTests(unittest.TestCase):
     def tearDown(self):
         self.con.close()
 
-    def CheckPragmaUserVersion(self):
+    def test_pragma_user_version(self):
         # This used to crash pysqlite because this pragma command returns NULL for the column name
         cur = self.con.cursor()
         cur.execute("pragma user_version")
 
-    def CheckPragmaSchemaVersion(self):
+    def test_pragma_schema_version(self):
         # This still crashed pysqlite <= 2.2.1
         con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_COLNAMES)
         try:
@@ -50,7 +49,7 @@ class RegressionTests(unittest.TestCase):
             cur.close()
             con.close()
 
-    def CheckStatementReset(self):
+    def test_statement_reset(self):
         # pysqlite 2.1.0 to 2.2.0 have the problem that not all statements are
         # reset before a rollback, but only those that are still in the
         # statement cache. The others are not accessible from the connection object.
@@ -65,7 +64,7 @@ class RegressionTests(unittest.TestCase):
 
         con.rollback()
 
-    def CheckColumnNameWithSpaces(self):
+    def test_column_name_with_spaces(self):
         cur = self.con.cursor()
         cur.execute('select 1 as "foo bar [datetime]"')
         self.assertEqual(cur.description[0][0], "foo bar [datetime]")
@@ -73,7 +72,7 @@ class RegressionTests(unittest.TestCase):
         cur.execute('select 1 as "foo baz"')
         self.assertEqual(cur.description[0][0], "foo baz")
 
-    def CheckStatementFinalizationOnCloseDb(self):
+    def test_statement_finalization_on_close_db(self):
         # pysqlite versions <= 2.3.3 only finalized statements in the statement
         # cache when closing the database. statements that were still
         # referenced in cursors weren't closed and could provoke "
@@ -87,7 +86,7 @@ class RegressionTests(unittest.TestCase):
             cur.execute("select 1 x union select " + str(i))
         con.close()
 
-    def CheckOnConflictRollback(self):
+    def test_on_conflict_rollback(self):
         con = sqlite.connect(":memory:")
         con.execute("create table foo(x, unique(x) on conflict rollback)")
         con.execute("insert into foo(x) values (1)")
@@ -101,7 +100,7 @@ class RegressionTests(unittest.TestCase):
         except sqlite.OperationalError:
             self.fail("pysqlite knew nothing about the implicit ROLLBACK")
 
-    def CheckWorkaroundForBuggySqliteTransferBindings(self):
+    def test_workaround_for_buggy_sqlite_transfer_bindings(self):
         """
         pysqlite would crash with older SQLite versions unless
         a workaround is implemented.
@@ -110,14 +109,14 @@ class RegressionTests(unittest.TestCase):
         self.con.execute("drop table foo")
         self.con.execute("create table foo(bar)")
 
-    def CheckEmptyStatement(self):
+    def test_empty_statement(self):
         """
         pysqlite used to segfault with SQLite versions 3.5.x. These return NULL
         for "no-operation" statements
         """
         self.con.execute("")
 
-    def CheckTypeMapUsage(self):
+    def test_type_map_usage(self):
         """
         pysqlite until 2.4.1 did not rebuild the row_cast_map when recompiling
         a statement. This test exhibits the problem.
@@ -132,7 +131,7 @@ class RegressionTests(unittest.TestCase):
         con.execute("insert into foo(bar) values (5)")
         con.execute(SELECT)
 
-    def CheckBindMutatingList(self):
+    def test_bind_mutating_list(self):
         # Issue41662: Crash when mutate a list of parameters during iteration.
         class X:
             def __conform__(self, protocol):
@@ -145,7 +144,7 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(IndexError):
             con.execute("insert into foo(bar, baz) values (?, ?)", parameters)
 
-    def CheckErrorMsgDecodeError(self):
+    def test_error_msg_decode_error(self):
         # When porting the module to Python 3.0, the error message about
         # decoding errors disappeared. This verifies they're back again.
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -154,13 +153,13 @@ class RegressionTests(unittest.TestCase):
         msg = "Could not decode to UTF-8 column 'colname' with text 'xxx"
         self.assertIn(msg, str(cm.exception))
 
-    def CheckRegisterAdapter(self):
+    def test_register_adapter(self):
         """
         See issue 3312.
         """
         self.assertRaises(TypeError, sqlite.register_adapter, {}, None)
 
-    def CheckSetIsolationLevel(self):
+    def test_set_isolation_level(self):
         # See issue 27881.
         class CustomStr(str):
             def upper(self):
@@ -190,7 +189,7 @@ class RegressionTests(unittest.TestCase):
                     con.isolation_level = value
                 self.assertEqual(con.isolation_level, "DEFERRED")
 
-    def CheckCursorConstructorCallCheck(self):
+    def test_cursor_constructor_call_check(self):
         """
         Verifies that cursor methods check whether base class __init__ was
         called.
@@ -207,14 +206,14 @@ class RegressionTests(unittest.TestCase):
                                     r'^Base Cursor\.__init__ not called\.$'):
             cur.close()
 
-    def CheckStrSubclass(self):
+    def test_str_subclass(self):
         """
         The Python 3.0 port of the module didn't cope with values of subclasses of str.
         """
         class MyStr(str): pass
         self.con.execute("select ?", (MyStr("abc"),))
 
-    def CheckConnectionConstructorCallCheck(self):
+    def test_connection_constructor_call_check(self):
         """
         Verifies that connection methods check whether base class __init__ was
         called.
@@ -227,7 +226,7 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
 
-    def CheckCursorRegistration(self):
+    def test_cursor_registration(self):
         """
         Verifies that subclassed cursor classes are correctly registered with
         the connection object, too.  (fetch-across-rollback problem)
@@ -249,7 +248,7 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.InterfaceError):
             cur.fetchall()
 
-    def CheckAutoCommit(self):
+    def test_auto_commit(self):
         """
         Verifies that creating a connection in autocommit mode works.
         2.5.3 introduced a regression so that these could no longer
@@ -257,7 +256,7 @@ class RegressionTests(unittest.TestCase):
         """
         con = sqlite.connect(":memory:", isolation_level=None)
 
-    def CheckPragmaAutocommit(self):
+    def test_pragma_autocommit(self):
         """
         Verifies that running a PRAGMA statement that does an autocommit does
         work. This did not work in 2.5.3/2.5.4.
@@ -269,21 +268,21 @@ class RegressionTests(unittest.TestCase):
         cur.execute("pragma page_size")
         row = cur.fetchone()
 
-    def CheckConnectionCall(self):
+    def test_connection_call(self):
         """
         Call a connection with a non-string SQL request: check error handling
         of the statement constructor.
         """
         self.assertRaises(TypeError, self.con, 1)
 
-    def CheckCollation(self):
+    def test_collation(self):
         def collation_cb(a, b):
             return 1
         self.assertRaises(sqlite.ProgrammingError, self.con.create_collation,
             # Lone surrogate cannot be encoded to the default encoding (utf8)
             "\uDC80", collation_cb)
 
-    def CheckRecursiveCursorUse(self):
+    def test_recursive_cursor_use(self):
         """
         http://bugs.python.org/issue10811
 
@@ -304,7 +303,7 @@ class RegressionTests(unittest.TestCase):
             cur.executemany("insert into b (baz) values (?)",
                             ((i,) for i in foo()))
 
-    def CheckConvertTimestampMicrosecondPadding(self):
+    def test_convert_timestamp_microsecond_padding(self):
         """
         http://bugs.python.org/issue14720
 
@@ -330,13 +329,13 @@ class RegressionTests(unittest.TestCase):
             datetime.datetime(2012, 4, 4, 15, 6, 0, 123456),
         ])
 
-    def CheckInvalidIsolationLevelType(self):
+    def test_invalid_isolation_level_type(self):
         # isolation level is a string, not an integer
         self.assertRaises(TypeError,
                           sqlite.connect, ":memory:", isolation_level=123)
 
 
-    def CheckNullCharacter(self):
+    def test_null_character(self):
         # Issue #21147
         con = sqlite.connect(":memory:")
         self.assertRaises(ValueError, con, "\0select 1")
@@ -345,7 +344,7 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(ValueError, cur.execute, " \0select 2")
         self.assertRaises(ValueError, cur.execute, "select 2\0")
 
-    def CheckCommitCursorReset(self):
+    def test_commit_cursor_reset(self):
         """
         Connection.commit() did reset cursors, which made sqlite3
         to return rows multiple times when fetched from cursors
@@ -376,7 +375,7 @@ class RegressionTests(unittest.TestCase):
                 counter += 1
         self.assertEqual(counter, 3, "should have returned exactly three rows")
 
-    def CheckBpo31770(self):
+    def test_bpo31770(self):
         """
         The interpreter shouldn't crash in case Cursor.__init__() is called
         more than once.
@@ -392,11 +391,11 @@ class RegressionTests(unittest.TestCase):
         del ref
         support.gc_collect()
 
-    def CheckDelIsolation_levelSegfault(self):
+    def test_del_isolation_level_segfault(self):
         with self.assertRaises(AttributeError):
             del self.con.isolation_level
 
-    def CheckBpo37347(self):
+    def test_bpo37347(self):
         class Printer:
             def log(self, *args):
                 return sqlite.SQLITE_OK
@@ -413,10 +412,12 @@ class RegressionTests(unittest.TestCase):
 
 
 def suite():
-    regression_suite = unittest.makeSuite(RegressionTests, "Check")
-    return unittest.TestSuite((
-        regression_suite,
-    ))
+    tests = [
+        RegressionTests
+    ]
+    return unittest.TestSuite(
+        [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
+    )
 
 def test():
     runner = unittest.TextTestRunner()

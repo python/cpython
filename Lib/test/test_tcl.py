@@ -138,10 +138,14 @@ class TclTest(unittest.TestCase):
 
     def get_integers(self):
         integers = (0, 1, -1, 2**31-1, -2**31, 2**31, -2**31-1, 2**63-1, -2**63)
-        # bignum was added in Tcl 8.5, but its support is able only since 8.5.8
-        if (get_tk_patchlevel() >= (8, 6, 0, 'final') or
-            (8, 5, 8) <= get_tk_patchlevel() < (8, 6)):
-            integers += (2**63, -2**63-1, 2**1000, -2**1000)
+        # bignum was added in Tcl 8.5, but its support is able only since 8.5.8.
+        # Actually it is determined at compile time, so using get_tk_patchlevel()
+        # is not reliable.
+        # TODO: expose full static version.
+        if tcl_version >= (8, 5):
+            v = get_tk_patchlevel()
+            if v >= (8, 6, 0, 'final') or (8, 5, 8) <= v < (8, 6):
+                integers += (2**63, -2**63-1, 2**1000, -2**1000)
         return integers
 
     def test_getint(self):
@@ -445,7 +449,7 @@ class TclTest(unittest.TestCase):
             else:
                 self.assertEqual(result, str(i))
                 self.assertIsInstance(result, str)
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
+        if get_tk_patchlevel() < (8, 5):  # bignum was added in Tcl 8.5
             self.assertRaises(TclError, tcl.call, 'expr', str(2**1000))
 
     def test_passing_values(self):

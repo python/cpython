@@ -1,0 +1,3 @@
+Functions have a new ``__builtins__`` attribute which is used to look for
+builtin symbols when a function is executed, instead of looking into
+``__globals__['__builtins__']``. Patch by Mark Shannon and Victor Stinner.

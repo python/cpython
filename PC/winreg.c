@@ -680,7 +680,7 @@ _Py_COMP_DIAG_POP
                     assert(size > 0);
                     len = PyUnicode_AsWideChar(t, P, size);
                     assert(len >= 0);
-                    assert(len < size);
+                    assert((unsigned)len < size);
                     size -= (DWORD)len + 1;
                     P += len + 1;
                 }

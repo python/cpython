@@ -26,8 +26,6 @@
 #include "symtable.h"             // PySymtable_BuildObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
-#include "parser_interface.h"      // PyParser_ASTFrom*
-
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
 #endif
