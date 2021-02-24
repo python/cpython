@@ -1,6 +1,7 @@
-What's New in IDLE 3.10.0 (since 3.9.0)
+What's New in IDLE 3.10.0
+(since 3.9.0)
 Released on 2021-10-04?
-======================================
+=========================
 
 
 bpo-43283: Document why printing to IDLE's Shell is often slower than
