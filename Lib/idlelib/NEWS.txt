@@ -1,6 +1,6 @@
-What's New in IDLE 3.9.2
-Released on 2021-02-15?
-======================================
+What's New in IDLE 3.9.z
+(since 3.9.0)
+=========================
 
 
 bpo-43283: Document why printing to IDLE's Shell is often slower than
@@ -17,11 +17,6 @@ bpo-33065: Fix problem debugging user classes with __repr__ method.
 
 bpo-32631: Finish zzdummy example extension module: make menu entries
 work; add docstrings and tests with 100% coverage.
-
-
-What's New in IDLE 3.9.1
-Released on 2020-12-07
-======================================
 
 bpo-42508: Keep IDLE running on macOS.  Remove obsolete workaround
 that prevented running files with shortcuts when using new universal2
