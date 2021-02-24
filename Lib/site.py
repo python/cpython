@@ -416,17 +416,6 @@ def setquit():
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
-    if sys.platform[:4] == 'java':
-        builtins.credits = _sitebuiltins._Printer(
-            "credits",
-            "Jython is maintained by the Jython developers (www.jython.org).")
-    elif is_pypy:
-        credits = "PyPy is maintained by the PyPy developers: http://pypy.org/"
-        license = "See https://foss.heptapod.net/pypy/pypy/src/default/LICENSE"
-    else:
-        builtins.credits = _sitebuiltins._Printer("credits", """\
-    Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
-    for supporting Python development.  See www.python.org for more information.""")
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.
@@ -434,10 +423,28 @@ def setcopyright():
         here = os.path.dirname(os.__file__)
         files.extend(["LICENSE.txt", "LICENSE"])
         dirs.extend([os.path.join(here, os.pardir), here, os.curdir])
-    builtins.license = _sitebuiltins._Printer(
-        "license",
-        "See https://www.python.org/psf/license/",
-        files, dirs)
+
+    if sys.platform[:4] == 'java':
+        builtins.credits = _sitebuiltins._Printer(
+            "credits",
+            "Jython is maintained by the Jython developers (www.jython.org).")
+        builtins.license = _sitebuiltins._Printer("license",
+            "See https://www.python.org/psf/license/",
+            files, dirs)
+    elif is_pypy:
+        builtins.credits = _sitebuiltins._Printer("credits", """\
+    PyPy is maintained by the PyPy developers and contributors (http://pypy.org)
+    It is heavily based on CPython and the great work of the Python community.""")
+        builtins.license = _sitebuiltins._Printer("license",
+            "See https://foss.heptapod.net/pypy/pypy/src/default/LICENSE",
+            files, dirs)
+    else:  # CPython
+        builtins.credits = _sitebuiltins._Printer("credits", """\
+    Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
+    for supporting Python development.  See www.python.org for more information.""")
+        builtins.license = _sitebuiltins._Printer("license",
+            "See https://www.python.org/psf/license/",
+            files, dirs)
 
 
 def sethelper():
