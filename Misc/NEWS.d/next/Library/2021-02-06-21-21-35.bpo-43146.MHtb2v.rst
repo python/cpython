@@ -1,0 +1,1 @@
+Fix recent regression in None argument handling in :mod:`~traceback` module functions.
