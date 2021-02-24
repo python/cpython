@@ -227,6 +227,45 @@ def check_symbols(parser_args):
         sys.exit(1)
 
 
+def compare_symbols(parser_args):
+    with open(parser_args.stable_abi_file, "r") as filename:
+        linux_abi_funcs = {
+            symbol
+            for symbol in filename.read().splitlines()
+            if symbol and not symbol.startswith("#")
+        }
+
+    windows_abi_pattern = r'(?:EXPORT_FUNC|EXPORT_DATA)\(([0-9a-zA-Z_]+)\)'
+    pref_list = ['/', '#', ' ']
+    with open(parser_args.python3_dll_file, "r") as filename:
+        windows_abi_funcs = {
+            re.match(windows_abi_pattern, symbol).group(1)
+            for symbol in filename.read().splitlines()
+            if symbol and not list(filter(symbol.startswith, pref_list))
+        }
+
+    missing_symbols = linux_abi_funcs - windows_abi_funcs
+    print(f"""
+Some symbols from the limited API on windows are missing:
+{', '.join(missing_symbols)}
+
+This error normally means that there are some missing symbols on windows.
+
+Check if this was a mistake and if not, update the file containing the limited
+API symbols. This file is located at:
+
+{parser_args.python3_dll_file}
+
+You can read more about the limited API and its contracts at:
+
+https://docs.python.org/3/c-api/stable.html
+
+And in PEP 384:
+
+https://www.python.org/dev/peps/pep-0384/
+""")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Process some integers.")
     subparsers = parser.add_subparsers()
@@ -245,6 +284,18 @@ def main():
         "output_file", type=str, help="File to dump the symbols to"
     )
     generate_parser.set_defaults(func=generate_limited_api_symbols)
+    compare_parser = subparsers.add_parser(
+        "compare", help="Check that all exported symbols on unix "
+    )
+    compare_parser.add_argument(
+        "stable_abi_file",
+        type=str, help="File with the stable abi functions"
+    )
+    compare_parser.add_argument(
+        "python3_dll_file",
+        type=str, help="File with the stable abi functions on windows"
+    )
+    compare_parser.set_defaults(func=compare_symbols)
     args = parser.parse_args()
     if "func" not in args:
         parser.error("Either 'check' or 'generate' must be used")
