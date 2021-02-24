@@ -726,6 +726,15 @@ with objects that get input from and send output to the Shell window.
 The original values stored in ``sys.__stdin__``, ``sys.__stdout__``, and
 ``sys.__stderr__`` are not touched, but may be ``None``.
 
+Sending print output from one process to a text widget in another is
+slower than printing to a system terminal in the same process.
+This has the most effect when printing multiple arguments, as the string
+for each argument, each separator, the newline are sent separately.
+For development, this is usually not a problem, but if one wants to
+print faster in IDLE, format and join together everything one wants
+displayed together and then print a single string.  Both format strings
+and :meth:`str.join` can help combine fields and lines.
+
 IDLE's standard stream replacements are not inherited by subprocesses
 created in the execution process, whether directly by user code or by
 modules such as multiprocessing.  If such subprocess use ``input`` from
