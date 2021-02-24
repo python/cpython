@@ -894,6 +894,18 @@ static int running_on_valgrind = -1;
 #endif
 #endif
 
+/* use radix-tree to track arena memory regions, for address_in_range() */
+#define USE_RADIX_TREE
+
+#if SIZEOF_VOID_P > 4
+/* on 64-bit platforms use larger pools and arenas if we can */
+#define USE_LARGE_ARENAS
+#ifdef USE_RADIX_TREE
+/* large pools only supported if radix-tree is enabled */
+#define USE_LARGE_POOLS
+#endif
+#endif
+
 /*
  * The allocator sub-allocates <Big> blocks of memory (called arenas) aligned
  * on a page boundary. This is a reserved virtual address space for the
@@ -907,7 +919,7 @@ static int running_on_valgrind = -1;
  * Arenas are allocated with mmap() on systems supporting anonymous memory
  * mappings to reduce heap fragmentation.
  */
-#if SIZEOF_VOID_P > 4
+#ifdef USE_LARGE_ARENAS
 #define ARENA_BITS              20                    /* 1 MiB */
 #else
 #define ARENA_BITS              18                    /* 256 KiB */
@@ -922,13 +934,19 @@ static int running_on_valgrind = -1;
 /*
  * Size of the pools used for small blocks.  Must be a power of 2.
  */
-#if SIZEOF_VOID_P > 4
+#ifdef USE_LARGE_POOLS
 #define POOL_BITS               14                  /* 16 KiB */
 #else
 #define POOL_BITS               12                  /* 4 KiB */
 #endif
 #define POOL_SIZE               (1 << POOL_BITS)
 #define POOL_SIZE_MASK          (POOL_SIZE - 1)
+
+#ifndef USE_RADIX_TREE
+#if POOL_SIZE != SYSTEM_PAGE_SIZE
+#   error "pool size must be system page size"
+#endif
+#endif
 
 #define MAX_POOLS_IN_ARENA  (ARENA_SIZE / POOL_SIZE)
 #if MAX_POOLS_IN_ARENA * POOL_SIZE != ARENA_SIZE
@@ -1243,12 +1261,13 @@ _Py_GetAllocatedBlocks(void)
     return n;
 }
 
+#ifdef USE_RADIX_TREE
 /*==========================================================================*/
 /* radix tree for tracking arena usage
 
-   bit allocation for keys (2^20 arena size)
+   bit allocation for keys
 
-   64-bit pointers:
+   64-bit pointers and 2^20 arena size:
      16 -> ignored (BITS - PHYSICAL_BITS)
      10 -> MAP_TOP
      10 -> MAP_MID
@@ -1257,9 +1276,9 @@ _Py_GetAllocatedBlocks(void)
    ----
      64
 
-   32-bit pointers:
-     12 -> MAP_BOT
-     20 -> ideal aligned arena
+   32-bit pointers and 2^18 arena size:
+     14 -> MAP_BOT
+     18 -> ideal aligned arena
    ----
      32
 
@@ -1495,6 +1514,7 @@ arena_map_is_used(block *p)
 
 /* end of radix tree logic */
 /*==========================================================================*/
+#endif /* USE_RADIX_TREE */
 
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
@@ -1565,6 +1585,7 @@ new_arena(void)
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
     address = _PyObject_Arena.alloc(_PyObject_Arena.ctx, ARENA_SIZE);
+#ifdef USE_RADIX_TREE
     if (address != NULL) {
         if (!arena_map_mark_used((uintptr_t)address, 1)) {
             /* marking arena in radix tree failed, abort */
@@ -1572,6 +1593,7 @@ new_arena(void)
             address = NULL;
         }
     }
+#endif
     if (address == NULL) {
         /* The allocation failed: return NULL after putting the
          * arenaobj back.
@@ -1603,6 +1625,7 @@ new_arena(void)
 
 
 
+#ifdef USE_RADIX_TREE
 /* Return true if and only if P is an address that was allocated by
    pymalloc.  When the radix tree is used, 'poolp' is unused.
  */
@@ -1611,7 +1634,99 @@ address_in_range(void *p, poolp pool)
 {
     return arena_map_is_used(p);
 }
+#else
+/*
+address_in_range(P, POOL)
 
+Return true if and only if P is an address that was allocated by pymalloc.
+POOL must be the pool address associated with P, i.e., POOL = POOL_ADDR(P)
+(the caller is asked to compute this because the macro expands POOL more than
+once, and for efficiency it's best for the caller to assign POOL_ADDR(P) to a
+variable and pass the latter to the macro; because address_in_range is
+called on every alloc/realloc/free, micro-efficiency is important here).
+
+Tricky:  Let B be the arena base address associated with the pool, B =
+arenas[(POOL)->arenaindex].address.  Then P belongs to the arena if and only if
+
+    B <= P < B + ARENA_SIZE
+
+Subtracting B throughout, this is true iff
+
+    0 <= P-B < ARENA_SIZE
+
+By using unsigned arithmetic, the "0 <=" half of the test can be skipped.
+
+Obscure:  A PyMem "free memory" function can call the pymalloc free or realloc
+before the first arena has been allocated.  `arenas` is still NULL in that
+case.  We're relying on that maxarenas is also 0 in that case, so that
+(POOL)->arenaindex < maxarenas  must be false, saving us from trying to index
+into a NULL arenas.
+
+Details:  given P and POOL, the arena_object corresponding to P is AO =
+arenas[(POOL)->arenaindex].  Suppose obmalloc controls P.  Then (barring wild
+stores, etc), POOL is the correct address of P's pool, AO.address is the
+correct base address of the pool's arena, and P must be within ARENA_SIZE of
+AO.address.  In addition, AO.address is not 0 (no arena can start at address 0
+(NULL)).  Therefore address_in_range correctly reports that obmalloc
+controls P.
+
+Now suppose obmalloc does not control P (e.g., P was obtained via a direct
+call to the system malloc() or realloc()).  (POOL)->arenaindex may be anything
+in this case -- it may even be uninitialized trash.  If the trash arenaindex
+is >= maxarenas, the macro correctly concludes at once that obmalloc doesn't
+control P.
+
+Else arenaindex is < maxarena, and AO is read up.  If AO corresponds to an
+allocated arena, obmalloc controls all the memory in slice AO.address :
+AO.address+ARENA_SIZE.  By case assumption, P is not controlled by obmalloc,
+so P doesn't lie in that slice, so the macro correctly reports that P is not
+controlled by obmalloc.
+
+Finally, if P is not controlled by obmalloc and AO corresponds to an unused
+arena_object (one not currently associated with an allocated arena),
+AO.address is 0, and the second test in the macro reduces to:
+
+    P < ARENA_SIZE
+
+If P >= ARENA_SIZE (extremely likely), the macro again correctly concludes
+that P is not controlled by obmalloc.  However, if P < ARENA_SIZE, this part
+of the test still passes, and the third clause (AO.address != 0) is necessary
+to get the correct result:  AO.address is 0 in this case, so the macro
+correctly reports that P is not controlled by obmalloc (despite that P lies in
+slice AO.address : AO.address + ARENA_SIZE).
+
+Note:  The third (AO.address != 0) clause was added in Python 2.5.  Before
+2.5, arenas were never free()'ed, and an arenaindex < maxarena always
+corresponded to a currently-allocated arena, so the "P is not controlled by
+obmalloc, AO corresponds to an unused arena_object, and P < ARENA_SIZE" case
+was impossible.
+
+Note that the logic is excruciating, and reading up possibly uninitialized
+memory when P is not controlled by obmalloc (to get at (POOL)->arenaindex)
+creates problems for some memory debuggers.  The overwhelming advantage is
+that this test determines whether an arbitrary address is controlled by
+obmalloc in a small constant time, independent of the number of arenas
+obmalloc controls.  Since this test is needed at every entry point, it's
+extremely desirable that it be this fast.
+*/
+
+static bool _Py_NO_SANITIZE_ADDRESS
+            _Py_NO_SANITIZE_THREAD
+            _Py_NO_SANITIZE_MEMORY
+address_in_range(void *p, poolp pool)
+{
+    // Since address_in_range may be reading from memory which was not allocated
+    // by Python, it is important that pool->arenaindex is read only once, as
+    // another thread may be concurrently modifying the value without holding
+    // the GIL. The following dance forces the compiler to read pool->arenaindex
+    // only once.
+    uint arenaindex = *((volatile uint *)&pool->arenaindex);
+    return arenaindex < maxarenas &&
+        (uintptr_t)p - arenas[arenaindex].address < ARENA_SIZE &&
+        arenas[arenaindex].address != 0;
+}
+
+#endif /* !USE_RADIX_TREE */
 
 /*==========================================================================*/
 
@@ -1957,8 +2072,10 @@ insert_to_freepool(poolp pool)
         ao->nextarena = unused_arena_objects;
         unused_arena_objects = ao;
 
+#ifdef USE_RADIX_TREE
         /* mark arena region as not under control of obmalloc */
         arena_map_mark_used(ao->address, 0);
+#endif
 
         /* Free the entire arena. */
         _PyObject_Arena.free(_PyObject_Arena.ctx,
