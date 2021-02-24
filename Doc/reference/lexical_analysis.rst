@@ -351,13 +351,11 @@ exactly as written here:
    assert     del        global     not        with
    async      elif       if         or         yield
 
-.. index::
-   single: _, identifiers
-   single: __, identifiers
-.. _id-classes:
 
 Soft Keywords
 -------------
+
+.. index:: soft keyword, keyword
 
 .. versionadded:: 3.10
 
@@ -368,6 +366,12 @@ tokenizing.
 This is done to allow their use in the pattern matching statement, while still
 preserving compatibility with existing code that uses "match" and "case" as
 identifier names.
+
+
+.. index::
+   single: _, identifiers
+   single: __, identifiers
+.. _id-classes:
 
 Reserved classes of identifiers
 -------------------------------
