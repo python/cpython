@@ -102,21 +102,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     Py_INCREF(&PyUnicode_Type);
     Py_XSETREF(self->text_factory, (PyObject*)&PyUnicode_Type);
 
-#ifdef SQLITE_OPEN_URI
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_open_v2(database, &self->db,
                          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
-#else
-    if (uri) {
-        PyErr_SetString(pysqlite_NotSupportedError, "URIs not supported");
-        return -1;
-    }
-    Py_BEGIN_ALLOW_THREADS
-    /* No need to use sqlite3_open_v2 as sqlite3_open(filename, db) is the
-       same as sqlite3_open_v2(filename, db, SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE, NULL). */
-    rc = sqlite3_open(database, &self->db);
-#endif
     Py_END_ALLOW_THREADS
 
     Py_DECREF(database_obj);
