@@ -3155,13 +3155,7 @@ PyType_FromSpec(PyType_Spec *spec)
 PyObject *
 PyType_GetName(PyTypeObject *type)
 {
-    assert(PyType_Check(type));
-    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        PyHeapTypeObject *ht_type = (PyHeapTypeObject *)type;
-        Py_INCREF(ht_type->ht_name);
-        return ht_type->ht_name;
-    }
-    return PyUnicode_FromString(_PyType_Name(type));
+    return type_name(type);
 }
 
 void *
