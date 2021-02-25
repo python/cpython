@@ -894,13 +894,17 @@ static int running_on_valgrind = -1;
 #endif
 #endif
 
-/* use radix-tree to track arena memory regions, for address_in_range() */
-#define USE_RADIX_TREE
+#if !defined(WITH_PYMALLOC_RADIX_TREE)
+/* Use radix-tree to track arena memory regions, for address_in_range().
+ * Enable by default since it allows larger pool sizes.  Can be disabled
+ * using -DWITH_PYMALLOC_RADIX_TREE=0 */
+#define WITH_PYMALLOC_RADIX_TREE 1
+#endif
 
 #if SIZEOF_VOID_P > 4
 /* on 64-bit platforms use larger pools and arenas if we can */
 #define USE_LARGE_ARENAS
-#ifdef USE_RADIX_TREE
+#if WITH_PYMALLOC_RADIX_TREE
 /* large pools only supported if radix-tree is enabled */
 #define USE_LARGE_POOLS
 #endif
@@ -942,9 +946,9 @@ static int running_on_valgrind = -1;
 #define POOL_SIZE               (1 << POOL_BITS)
 #define POOL_SIZE_MASK          (POOL_SIZE - 1)
 
-#ifndef USE_RADIX_TREE
+#if !WITH_PYMALLOC_RADIX_TREE
 #if POOL_SIZE != SYSTEM_PAGE_SIZE
-#   error "pool size must be system page size"
+#   error "pool size must be equal to system page size"
 #endif
 #endif
 
@@ -1261,7 +1265,7 @@ _Py_GetAllocatedBlocks(void)
     return n;
 }
 
-#ifdef USE_RADIX_TREE
+#if WITH_PYMALLOC_RADIX_TREE
 /*==========================================================================*/
 /* radix tree for tracking arena usage
 
@@ -1514,7 +1518,7 @@ arena_map_is_used(block *p)
 
 /* end of radix tree logic */
 /*==========================================================================*/
-#endif /* USE_RADIX_TREE */
+#endif /* WITH_PYMALLOC_RADIX_TREE */
 
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
@@ -1585,7 +1589,7 @@ new_arena(void)
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
     address = _PyObject_Arena.alloc(_PyObject_Arena.ctx, ARENA_SIZE);
-#ifdef USE_RADIX_TREE
+#if WITH_PYMALLOC_RADIX_TREE
     if (address != NULL) {
         if (!arena_map_mark_used((uintptr_t)address, 1)) {
             /* marking arena in radix tree failed, abort */
@@ -1625,7 +1629,7 @@ new_arena(void)
 
 
 
-#ifdef USE_RADIX_TREE
+#if WITH_PYMALLOC_RADIX_TREE
 /* Return true if and only if P is an address that was allocated by
    pymalloc.  When the radix tree is used, 'poolp' is unused.
  */
@@ -1726,7 +1730,7 @@ address_in_range(void *p, poolp pool)
         arenas[arenaindex].address != 0;
 }
 
-#endif /* !USE_RADIX_TREE */
+#endif /* !WITH_PYMALLOC_RADIX_TREE */
 
 /*==========================================================================*/
 
@@ -2072,7 +2076,7 @@ insert_to_freepool(poolp pool)
         ao->nextarena = unused_arena_objects;
         unused_arena_objects = ao;
 
-#ifdef USE_RADIX_TREE
+#if WITH_PYMALLOC_RADIX_TREE
         /* mark arena region as not under control of obmalloc */
         arena_map_mark_used(ao->address, 0);
 #endif
