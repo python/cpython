@@ -14,7 +14,7 @@ from test.support.warnings_helper import check_warnings
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
-                       _get_default_scheme, _expand_vars,
+                       get_default_scheme, _expand_vars,
                        get_scheme_names, get_config_var, _main)
 import _osx_support
 
@@ -94,7 +94,7 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_paths(self):
         scheme = get_paths()
-        default_scheme = _get_default_scheme()
+        default_scheme = get_default_scheme()
         wanted = _expand_vars(default_scheme, None)
         wanted = sorted(wanted.items())
         scheme = sorted(scheme.items())

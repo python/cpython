@@ -212,13 +212,38 @@ def _expand_vars(scheme, vars):
     return res
 
 
-def _get_default_scheme():
+def get_default_scheme():
     if os.name == 'posix':
         # the default scheme for posix is posix_prefix
         return 'posix_prefix'
     return os.name
 
 
+def _get_preferred_schemes():
+    if os.name == 'nt':
+        return {
+            'prefix': 'nt',
+            'home': 'posix_home',
+            'user': 'nt_user',
+        }
+    if sys.platform == 'darwin' and sys._framework:
+        return {
+            'prefix': 'posix_prefix',
+            'home': 'posix_home',
+            'user': 'osx_framework_user',
+        }
+    return {
+        'prefix': 'posix_prefix',
+        'home': 'posix_home',
+        'user': 'posix_user',
+    }
+
+
+def get_preferred_scheme(key):
+    scheme = _get_preferred_schemes()[key]
+    if scheme not in _INSTALL_SCHEMES:
+        raise KeyError(key)
+    return scheme
 
 
 def _parse_makefile(filename, vars=None):
@@ -517,7 +542,7 @@ def get_path_names():
     return _SCHEME_KEYS
 
 
-def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
+def get_paths(scheme=get_default_scheme(), vars=None, expand=True):
     """Return a mapping containing an install scheme.
 
     ``scheme`` is the install scheme name. If not provided, it will
@@ -529,7 +554,7 @@ def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
         return _INSTALL_SCHEMES[scheme]
 
 
-def get_path(name, scheme=_get_default_scheme(), vars=None, expand=True):
+def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
     """Return a path corresponding to the scheme.
 
     ``scheme`` is the install scheme name.
@@ -731,7 +756,7 @@ def _main():
         return
     print('Platform: "%s"' % get_platform())
     print('Python version: "%s"' % get_python_version())
-    print('Current installation scheme: "%s"' % _get_default_scheme())
+    print('Current installation scheme: "%s"' % get_default_scheme())
     print()
     _print_dict('Paths', get_paths())
     print()
