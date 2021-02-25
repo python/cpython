@@ -432,7 +432,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
             goto error;
         }
 
-        rc = pysqlite_step(statement, self);
+        rc = pysqlite_step(statement);
         if (rc != SQLITE_DONE) {
             _pysqlite_seterror(self->db);
         }
@@ -482,7 +482,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
             goto error;
         }
 
-        rc = pysqlite_step(statement, self);
+        rc = pysqlite_step(statement);
         if (rc != SQLITE_DONE) {
             _pysqlite_seterror(self->db);
         }

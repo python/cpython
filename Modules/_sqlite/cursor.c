@@ -568,7 +568,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             goto error;
         }
 
-        rc = pysqlite_step(self->statement->st, self->connection);
+        rc = pysqlite_step(self->statement->st);
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
@@ -773,7 +773,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
 
         /* execute statement, and ignore results of SELECT statements */
         do {
-            rc = pysqlite_step(statement, self->connection);
+            rc = pysqlite_step(statement);
             if (PyErr_Occurred()) {
                 (void)sqlite3_finalize(statement);
                 goto error;
@@ -847,7 +847,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
 
     if (self->statement) {
-        rc = pysqlite_step(self->statement->st, self->connection);
+        rc = pysqlite_step(self->statement->st);
         if (PyErr_Occurred()) {
             (void)pysqlite_statement_reset(self->statement);
             Py_DECREF(next_row);
