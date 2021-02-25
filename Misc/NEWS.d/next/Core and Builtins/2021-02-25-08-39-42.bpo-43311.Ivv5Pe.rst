@@ -1,0 +1,1 @@
+Fix :func:`PyInterpreterState_New` use thread-specific data tstate before key create .  Patch by Junyi Xie.

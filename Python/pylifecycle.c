@@ -563,6 +563,13 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+    
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
+
+    if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    
     return _PyStatus_OK();
 }
 
