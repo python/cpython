@@ -1,0 +1,3 @@
+Set the chunk size for the ``gzip`` module main function to
+io.DEFAULT_BUFFER_SIZE. This is slightly faster than the 1024 bytes constant
+that was used previously.
