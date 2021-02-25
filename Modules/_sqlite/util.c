@@ -29,7 +29,6 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
     int rc;
 
     Py_BEGIN_ALLOW_THREADS
-    /* returns SQLITE_MISUSE if called with a NULL argument */
     rc = sqlite3_step(statement);
     Py_END_ALLOW_THREADS
 
