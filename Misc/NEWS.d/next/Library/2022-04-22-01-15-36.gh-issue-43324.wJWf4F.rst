@@ -1,0 +1,2 @@
+Maked getfqdn and gethostbyaddr blocking functions async functions by
+running in executor
