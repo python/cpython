@@ -859,6 +859,16 @@ class BaseEventLoop(events.AbstractEventLoop):
         return await self.run_in_executor(
             None, socket.getnameinfo, sockaddr, flags)
 
+    async def getfqdn(self, name):
+        return await self.run_in_executor(
+            None, socket.getfqdn, name
+        )
+
+    async def gethostbyaddr(self, ip_address):
+        return await self.run_in_executor(
+            None, socket.gethostbyaddr, ip_address
+        )
+
     async def sock_sendfile(self, sock, file, offset=0, count=None,
                             *, fallback=True):
         if self._debug and sock.gettimeout() != 0:

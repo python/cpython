@@ -298,6 +298,12 @@ class AbstractEventLoop:
     async def getnameinfo(self, sockaddr, flags=0):
         raise NotImplementedError
 
+    async def getfqdn(self, name):
+        raise NotImplementedError
+
+    async def gethostbyaddr(self, ip_address):
+        raise NotImplementedError
+
     async def create_connection(
             self, protocol_factory, host=None, port=None,
             *, ssl=None, family=0, proto=0,
