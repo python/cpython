@@ -1,0 +1,1 @@
+Always put compiler and system information on the first line of the REPL welcome message.
