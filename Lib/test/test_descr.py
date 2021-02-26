@@ -3903,6 +3903,48 @@ order (MRO) for bases """
         a = C()
         a **= 2
 
+    def test_ipow_returns_not_implemented(self):
+        class A:
+            def __ipow__(self, other):
+                return NotImplemented
+
+        class B(A):
+            def __rpow__(self, other):
+                return 1
+
+        class C(A):
+            def __pow__(self, other):
+                return 2
+        a = A()
+        b = B()
+        c = C()
+
+        a **= b
+        self.assertEqual(a, 1)
+
+        c **= b
+        self.assertEqual(c, 2)
+
+    def test_no_ipow(self):
+        class B:
+            def __rpow__(self, other):
+                return 1
+
+        a = object()
+        b = B()
+        a **= b
+        self.assertEqual(a, 1)
+
+    def test_ipow_exception_text(self):
+        x = None
+        with self.assertRaises(TypeError) as cm:
+            x **= 2
+        self.assertIn('unsupported operand type(s) for **=', str(cm.exception))
+
+        with self.assertRaises(TypeError) as cm:
+            y = x ** 2
+        self.assertIn('unsupported operand type(s) for **', str(cm.exception))
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 
