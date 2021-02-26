@@ -687,6 +687,10 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(new_func.__globals__['__builtins__'], {})
         self.assertEqual(new_func.__builtins__, {})
 
+    def test_match_args(self):
+        Point = namedtuple('Point', 'x y')
+        self.assertEqual(Point.__match_args__, ('x', 'y'))
+
 
 ################################################################################
 ### Abstract Base Classes

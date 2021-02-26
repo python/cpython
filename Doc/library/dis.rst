@@ -752,6 +752,49 @@ iterations of the loop.
    .. versionadded:: 3.2
 
 
+.. opcode:: COPY_DICT_WITHOUT_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  Replace TOS
+   with a :class:`dict` formed from the items of TOS1, but without any of the
+   keys in TOS.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: GET_LEN
+
+   Push ``len(TOS)`` onto the stack.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAPPING
+
+   If TOS is an instance of :class:`collections.abc.Mapping`, push ``True`` onto
+   the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQUENCE
+
+   If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an
+   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, push ``True``
+   onto the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
+   contains all of the keys in TOS, push a :class:`tuple` containing the
+   corresponding values, followed by ``True``. Otherwise, push ``None``,
+   followed by ``False``.
+
+   .. versionadded:: 3.10
+
+
 All of the following opcodes use their arguments.
 
 .. opcode:: STORE_NAME (namei)
@@ -1190,6 +1233,19 @@ All of the following opcodes use their arguments.
    result is pushed on the stack.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: MATCH_CLASS (count)
+
+   TOS is a tuple of keyword attribute names, TOS1 is the class being matched
+   against, and TOS2 is the match subject.  *count* is the number of positional
+   sub-patterns.
+
+   Pop TOS.  If TOS2 is an instance of TOS1 and has the positional and keyword
+   attributes required by *count* and TOS, set TOS to ``True`` and TOS1 to a
+   tuple of extracted attributes.  Otherwise, set TOS to ``False``.
+
+   .. versionadded:: 3.10
 
 
 .. opcode:: HAVE_ARGUMENT
