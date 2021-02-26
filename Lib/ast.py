@@ -1478,6 +1478,13 @@ class _Unparser(NodeVisitor):
             self.write(":")
             self.traverse(node.step)
 
+    def visit_Match(self, node):
+        self.fill("match ")
+        self.traverse(node.subject)
+        with self.block():
+            for case in node.cases:
+                self.traverse(case)
+
     def visit_arg(self, node):
         self.write(node.arg)
         if node.annotation:
@@ -1561,6 +1568,26 @@ class _Unparser(NodeVisitor):
         if node.optional_vars:
             self.write(" as ")
             self.traverse(node.optional_vars)
+
+    def visit_match_case(self, node):
+        self.fill("case ")
+        self.traverse(node.pattern)
+        if node.guard:
+            self.write(" if ")
+            self.traverse(node.guard)
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_MatchAs(self, node):
+        with self.require_parens(_Precedence.TEST, node):
+            self.set_precedence(_Precedence.BOR, node.pattern)
+            self.traverse(node.pattern)
+            self.write(f" as {node.name}")
+
+    def visit_MatchOr(self, node):
+        with self.require_parens(_Precedence.BOR, node):
+            self.set_precedence(_Precedence.BOR.next(), *node.patterns)
+            self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
 
 def unparse(ast_obj):
     unparser = _Unparser()
