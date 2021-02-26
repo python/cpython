@@ -85,6 +85,7 @@ compound_stmt[stmt_ty]:
     | &('for' | ASYNC) for_stmt
     | &'try' try_stmt
     | &'while' while_stmt
+    | match_stmt
 
 # NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
 assignment[stmt_ty]:
@@ -206,6 +207,114 @@ except_block[excepthandler_ty]:
     | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_block
 finally_block[asdl_stmt_seq*]: 'finally' ':' a=block { a }
+
+match_stmt[stmt_ty]:
+    | "match" subject=subject_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
+        CHECK_VERSION(stmt_ty, 10, "Pattern matching is", _Py_Match(subject, cases, EXTRA)) }
+subject_expr[expr_ty]:
+    | value=star_named_expression ',' values=star_named_expressions? {
+        _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
+    | named_expression
+case_block[match_case_ty]:
+    | "case" pattern=patterns guard=guard? ':' body=block {
+        _Py_match_case(pattern, guard, body, p->arena) }
+guard[expr_ty]: 'if' guard=named_expression { guard }
+
+patterns[expr_ty]:
+    | values[asdl_expr_seq*]=open_sequence_pattern {
+        _Py_Tuple(values, Load, EXTRA) }
+    | pattern
+pattern[expr_ty]:
+    | as_pattern
+    | or_pattern
+as_pattern[expr_ty]:
+    | pattern=or_pattern 'as' target=capture_pattern {
+        _Py_MatchAs(pattern, target->v.Name.id, EXTRA) }
+or_pattern[expr_ty]:
+    | patterns[asdl_expr_seq*]='|'.closed_pattern+ {
+        asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _Py_MatchOr(patterns, EXTRA) }
+closed_pattern[expr_ty]:
+    | literal_pattern
+    | capture_pattern
+    | wildcard_pattern
+    | value_pattern
+    | group_pattern
+    | sequence_pattern
+    | mapping_pattern
+    | class_pattern
+
+literal_pattern[expr_ty]:
+    | signed_number !('+' | '-')
+    | real=signed_number '+' imag=NUMBER { _Py_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_number '-' imag=NUMBER  { _Py_BinOp(real, Sub, imag, EXTRA) }
+    | strings
+    | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
+    | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
+    | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
+signed_number[expr_ty]:
+    | NUMBER
+    | '-' number=NUMBER { _Py_UnaryOp(USub, number, EXTRA) }
+
+capture_pattern[expr_ty]:
+    | !"_" name=NAME !('.' | '(' | '=') {
+        _PyPegen_set_expr_context(p, name, Store) }
+
+wildcard_pattern[expr_ty]:
+    | "_" { _Py_Name(CHECK(PyObject*, _PyPegen_new_identifier(p, "_")), Store, EXTRA) }
+
+value_pattern[expr_ty]:
+    | attr=attr !('.' | '(' | '=') { attr }
+attr[expr_ty]:
+    | value=name_or_attr '.' attr=NAME {
+        _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
+name_or_attr[expr_ty]:
+    | attr
+    | NAME
+
+group_pattern[expr_ty]:
+    | '(' pattern=pattern ')' { pattern }
+
+sequence_pattern[expr_ty]:
+    | '[' values=maybe_sequence_pattern? ']' { _Py_List(values, Load, EXTRA) }
+    | '(' values=open_sequence_pattern? ')' { _Py_Tuple(values, Load, EXTRA) }
+open_sequence_pattern[asdl_seq*]:
+    | value=maybe_star_pattern ',' values=maybe_sequence_pattern? {
+        _PyPegen_seq_insert_in_front(p, value, values) }
+maybe_sequence_pattern[asdl_seq*]:
+    | values=','.maybe_star_pattern+ ','? { values }
+maybe_star_pattern[expr_ty]:
+    | star_pattern
+    | pattern
+star_pattern[expr_ty]:
+    | '*' value=(capture_pattern | wildcard_pattern) {
+        _Py_Starred(value, Store, EXTRA) }
+
+mapping_pattern[expr_ty]:
+    | '{' items=items_pattern? '}' {
+        _Py_Dict(CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, items)), CHECK(asdl_expr_seq*, _PyPegen_get_values(p, items)), EXTRA) }
+items_pattern[asdl_seq*]:
+    | items=','.key_value_pattern+ ','? { items }
+key_value_pattern[KeyValuePair*]:
+    | key=(literal_pattern | value_pattern) ':' value=pattern {
+        _PyPegen_key_value_pair(p, key, value) }
+    | double_star_pattern
+double_star_pattern[KeyValuePair*]:
+    | '**' value=capture_pattern { _PyPegen_key_value_pair(p, NULL, value) }
+
+class_pattern[expr_ty]:
+    | func=name_or_attr '(' ')' { _Py_Call(func, NULL, NULL, EXTRA) }
+    | func=name_or_attr '(' args=positional_patterns ','? ')' {
+        _Py_Call(func, args, NULL, EXTRA) }
+    | func=name_or_attr '(' keywords=keyword_patterns ','? ')' {
+        _Py_Call(func, NULL, keywords, EXTRA) }
+    | func=name_or_attr '(' args=positional_patterns ',' keywords=keyword_patterns ','? ')' {
+        _Py_Call(func, args, keywords, EXTRA) }
+positional_patterns[asdl_expr_seq*]:
+    | args[asdl_expr_seq*]=','.pattern+ { args }
+keyword_patterns[asdl_keyword_seq*]:
+    | keywords[asdl_keyword_seq*]=','.keyword_pattern+ { keywords }
+keyword_pattern[keyword_ty]:
+    | arg=NAME '=' value=pattern { _Py_keyword(arg->v.Name.id, value, EXTRA) }
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }
@@ -676,7 +785,7 @@ invalid_assignment:
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
     | a=star_expressions augassign (yield_expr | star_expressions) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a,
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)

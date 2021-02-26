@@ -5261,6 +5261,10 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+
+    if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
+        type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
+    }
 }
 
 static int
