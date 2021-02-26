@@ -588,7 +588,7 @@ in the configuration, the string ``'cfg://handlers'`` would resolve to
 the dict with key ``handlers``, the string ``'cfg://handlers.email``
 would resolve to the dict with key ``email`` in the ``handlers`` dict,
 and so on.  The string ``'cfg://handlers.email.toaddrs[1]`` would
-resolve to ``'dev_team.domain.tld'`` and the string
+resolve to ``'dev_team@domain.tld'`` and the string
 ``'cfg://handlers.email.toaddrs[0]'`` would resolve to the value
 ``'support_team@domain.tld'``. The ``subject`` value could be accessed
 using either ``'cfg://handlers.email.subject'`` or, equivalently,
