@@ -658,9 +658,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     /* For # codes */
 #define REQUIRE_PY_SSIZE_T_CLEAN \
     if (!(flags & FLAG_SIZE_T)) { \
-        PyErr_SetString(PyExc_SystemError, \
-                        "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
-        return NULL; \
+        const char *msg = "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"; \
+        PyErr_SetString(PyExc_SystemError, msg); \
+        return msg; \
     }
 #define RETURN_ERR_OCCURRED return msgbuf
 
