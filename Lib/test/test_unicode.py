@@ -1098,6 +1098,12 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('{0:^8s}'.format('result'), ' result ')
         self.assertEqual('{0:^9s}'.format('result'), ' result  ')
         self.assertEqual('{0:^10s}'.format('result'), '  result  ')
+        self.assertEqual('{0:8s}'.format('result'), 'result  ')
+        self.assertEqual('{0:0s}'.format('result'), 'result')
+        self.assertEqual('{0:08s}'.format('result'), 'result00')
+        self.assertEqual('{0:<08s}'.format('result'), 'result00')
+        self.assertEqual('{0:>08s}'.format('result'), '00result')
+        self.assertEqual('{0:^08s}'.format('result'), '0result0')
         self.assertEqual('{0:10000}'.format('a'), 'a' + ' ' * 9999)
         self.assertEqual('{0:10000}'.format(''), ' ' * 10000)
         self.assertEqual('{0:10000000}'.format(''), ' ' * 10000000)
@@ -2362,12 +2368,14 @@ class UnicodeTest(string_tests.CommonTest,
             text = 'a' * length + 'b'
 
             # fill wstr internal field
-            abc = getargs_u(text)
+            with self.assertWarns(DeprecationWarning):
+                abc = getargs_u(text)
             self.assertEqual(abc, text)
 
             # resize text: wstr field must be cleared and then recomputed
             text += 'c'
-            abcdef = getargs_u(text)
+            with self.assertWarns(DeprecationWarning):
+                abcdef = getargs_u(text)
             self.assertNotEqual(abc, abcdef)
             self.assertEqual(abcdef, text)
 

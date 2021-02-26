@@ -260,26 +260,26 @@ get_dict_state(void)
 
 
 void
-_PyDict_ClearFreeList(PyThreadState *tstate)
+_PyDict_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_dict_state *state = &tstate->interp->dict_state;
+    struct _Py_dict_state *state = &interp->dict_state;
     while (state->numfree) {
         PyDictObject *op = state->free_list[--state->numfree];
         assert(PyDict_CheckExact(op));
         PyObject_GC_Del(op);
     }
     while (state->keys_numfree) {
-        PyObject_FREE(state->keys_free_list[--state->keys_numfree]);
+        PyObject_Free(state->keys_free_list[--state->keys_numfree]);
     }
 }
 
 
 void
-_PyDict_Fini(PyThreadState *tstate)
+_PyDict_Fini(PyInterpreterState *interp)
 {
-    _PyDict_ClearFreeList(tstate);
+    _PyDict_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_state *state = &interp->dict_state;
     state->numfree = -1;
     state->keys_numfree = -1;
 #endif
@@ -597,7 +597,7 @@ new_keys_object(Py_ssize_t size)
     }
     else
     {
-        dk = PyObject_MALLOC(sizeof(PyDictKeysObject)
+        dk = PyObject_Malloc(sizeof(PyDictKeysObject)
                              + es * size
                              + sizeof(PyDictKeyEntry) * usable);
         if (dk == NULL) {
@@ -636,11 +636,11 @@ free_keys_object(PyDictKeysObject *keys)
         state->keys_free_list[state->keys_numfree++] = keys;
         return;
     }
-    PyObject_FREE(keys);
+    PyObject_Free(keys);
 }
 
 #define new_values(size) PyMem_NEW(PyObject *, size)
-#define free_values(values) PyMem_FREE(values)
+#define free_values(values) PyMem_Free(values)
 
 /* Consumes a reference to the keys object */
 static PyObject *
@@ -1303,7 +1303,7 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
             state->keys_free_list[state->keys_numfree++] = oldkeys;
         }
         else {
-            PyObject_FREE(oldkeys);
+            PyObject_Free(oldkeys);
         }
     }
 
@@ -1439,11 +1439,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 
 Py_ssize_t
 _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
-                     Py_ssize_t hint, PyObject **value)
+                    Py_ssize_t hint, PyObject **value)
 {
-    Py_hash_t hash;
-    PyThreadState *tstate;
-
     assert(*value == NULL);
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
@@ -1467,39 +1464,15 @@ _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
         }
     }
 
-    if ((hash = ((PyASCIIObject *) key)->hash) == -1)
-    {
+    Py_hash_t hash = ((PyASCIIObject *) key)->hash;
+    if (hash == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1) {
-            PyErr_Clear();
             return -1;
         }
     }
 
-    // We can arrive here with a NULL tstate during initialization: try
-    // running "python -Wi" for an example related to string interning
-    tstate = _PyThreadState_UncheckedGet();
-    Py_ssize_t ix = 0;
-    if (tstate != NULL && tstate->curexc_type != NULL) {
-        /* preserve the existing exception */
-        PyObject *err_type, *err_value, *err_tb;
-        PyErr_Fetch(&err_type, &err_value, &err_tb);
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, value);
-        /* ignore errors */
-        PyErr_Restore(err_type, err_value, err_tb);
-        if (ix < 0) {
-            return -1;
-        }
-    }
-    else {
-        ix = (mp->ma_keys->dk_lookup)(mp, key, hash, value);
-        if (ix < 0) {
-            PyErr_Clear();
-            return -1;
-        }
-    }
-
-    return ix;
+    return (mp->ma_keys->dk_lookup)(mp, key, hash, value);
 }
 
 /* Same as PyDict_GetItemWithError() but with hash supplied by caller.
@@ -3989,6 +3962,11 @@ dictiter_iternextitem(dictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(oldkey);
         Py_DECREF(oldvalue);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     }
     else {
         result = PyTuple_New(2);
@@ -4104,6 +4082,11 @@ dictreviter_iternext(dictiterobject *di)
             Py_INCREF(result);
             Py_DECREF(oldkey);
             Py_DECREF(oldvalue);
+            // bpo-42536: The GC may have untracked this result tuple. Since
+            // we're recycling it, make sure it's tracked again:
+            if (!_PyObject_GC_IS_TRACKED(result)) {
+                _PyObject_GC_TRACK(result);
+            }
         }
         else {
             result = PyTuple_New(2);
@@ -4472,7 +4455,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
-    if (Py_IS_TYPE(other, &PySet_Type) && len_self <= PyObject_Size(other)) {
+    if (PySet_CheckExact(other) && len_self <= PyObject_Size(other)) {
         _Py_IDENTIFIER(intersection);
         return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
     }

@@ -1,4 +1,5 @@
 import unittest
+import sys
 import tkinter
 from tkinter import ttk
 from test import support
@@ -136,6 +137,10 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                 with self.subTest(theme=theme, name=name):
                     if support.verbose >= 2:
                         print('configure', theme, name, default)
+                    if (theme in ('vista', 'xpnative')
+                            and sys.getwindowsversion()[:2] == (6, 1)):
+                        # Fails on the Windows 7 buildbot
+                        continue
                     newname = f'C.{name}'
                     self.assertEqual(style.configure(newname), None)
                     style.configure(newname, **default)
@@ -158,6 +163,10 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                 with self.subTest(theme=theme, name=name):
                     if support.verbose >= 2:
                         print('map', theme, name, default)
+                    if (theme in ('vista', 'xpnative')
+                            and sys.getwindowsversion()[:2] == (6, 1)):
+                        # Fails on the Windows 7 buildbot
+                        continue
                     newname = f'C.{name}'
                     self.assertEqual(style.map(newname), {})
                     style.map(newname, **default)

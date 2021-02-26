@@ -487,7 +487,6 @@ class ThreadTests(BaseTestCase):
                 if not pid:
                     print("child process ok", file=sys.stderr, flush=True)
                     # child process
-                    sys.exit()
                 else:
                     wait_process(pid, exitcode=0)
 
@@ -855,6 +854,26 @@ class ThreadTests(BaseTestCase):
             atexit = Atexit()
         """)
         self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
+
+    def test_boolean_target(self):
+        # bpo-41149: A thread that had a boolean value of False would not
+        # run, regardless of whether it was callable. The correct behaviour
+        # is for a thread to do nothing if its target is None, and to call
+        # the target otherwise.
+        class BooleanTarget(object):
+            def __init__(self):
+                self.ran = False
+            def __bool__(self):
+                return False
+            def __call__(self):
+                self.ran = True
+
+        target = BooleanTarget()
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join()
+        self.assertTrue(target.ran)
+
 
 
 class ThreadJoinOnShutdown(BaseTestCase):

@@ -74,7 +74,7 @@ typedef struct {
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, https://www.libtom.net
  */
 
 /* rotate the hard way (platform optimizations could be done) */
@@ -342,7 +342,7 @@ static void
 MD5_dealloc(PyObject *ptr)
 {
     PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_Del(ptr);
+    PyObject_Free(ptr);
     Py_DECREF(tp);
 }
 

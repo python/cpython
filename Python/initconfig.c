@@ -38,7 +38,8 @@ Options and arguments (and corresponding environment variables):\n\
          and comparing bytes/bytearray with str. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
--d     : debug output from parser; also PYTHONDEBUG=x\n\
+-d     : turn on parser debugging output (for experts only, only works on\n\
+         debug builds); also PYTHONDEBUG=x\n\
 -E     : ignore PYTHON* environment variables (such as PYTHONPATH)\n\
 -h     : print this help message and exit (also --help)\n\
 ";
@@ -2908,8 +2909,8 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* pre config */
-    PyThreadState *tstate = _PyThreadState_GET();
-    const PyPreConfig *pre_config = &tstate->interp->runtime->preconfig;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    const PyPreConfig *pre_config = &interp->runtime->preconfig;
     dict = _PyPreConfig_AsDict(pre_config);
     if (dict == NULL) {
         goto error;
@@ -2920,7 +2921,7 @@ _Py_GetConfigsAsDict(void)
     Py_CLEAR(dict);
 
     /* core config */
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     dict = _PyConfig_AsDict(config);
     if (dict == NULL) {
         goto error;

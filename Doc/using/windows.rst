@@ -23,8 +23,8 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows Vista and newer. If you require Windows XP
-support then please install Python 3.4.
+Python |version| supports Windows 8.1 and newer. If you require Windows 7
+support, please install Python 3.8.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
@@ -338,6 +338,11 @@ Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
+
+For more detail on the technical basis for these limitations, please consult
+Microsoft's documentation on packaged full-trust apps, currently available at
+`docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
+<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
 
 
 .. _windows-nuget:
@@ -1143,8 +1148,6 @@ For extension modules, consult :ref:`building-on-windows`.
       or "Creating Python extensions in C/C++ with SWIG and compiling them with
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
-
-   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

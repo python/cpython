@@ -467,14 +467,14 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     type->tp_members = members;
 
     if (PyType_Ready(type) < 0) {
-        PyMem_FREE(members);
+        PyMem_Free(members);
         return -1;
     }
     Py_INCREF(type);
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
-        PyMem_FREE(members);
+        PyMem_Free(members);
         Py_DECREF(type);
         return -1;
     }
@@ -526,7 +526,7 @@ PyStructSequence_NewType(PyStructSequence_Desc *desc)
     spec.slots = slots;
 
     type = (PyTypeObject *)PyType_FromSpecWithBases(&spec, (PyObject *)&PyTuple_Type);
-    PyMem_FREE(members);
+    PyMem_Free(members);
     if (type == NULL) {
         return NULL;
     }

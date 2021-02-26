@@ -1133,7 +1133,7 @@ if test $enable_shared = "yes"; then
 	      PY3LIBRARY=libpython3.so
 	  fi
           ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
@@ -1325,7 +1325,7 @@ AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
 AC_MSG_CHECKING(PROFILE_TASK)
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo'
+	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
 fi
 AC_MSG_RESULT($PROFILE_TASK)
 
@@ -2798,7 +2798,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;
+		LINKFORSHARED='-Wl,-export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -2980,7 +2980,7 @@ validate_tzpath() {
 
     # Bad paths are those that don't start with /
     dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-    if ( echo $1 | grep -qE '(^|:)(@<:@^/@:>@|$)' ); then
+    if ( echo $1 | grep '\(^\|:\)\(@<:@^/@:>@\|$\)' > /dev/null); then
         AC_MSG_ERROR([--with-tzpath must contain only absolute paths, not $1])
         return 1;
     fi
@@ -3311,10 +3311,10 @@ if test "$posix_threads" = "yes"; then
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],
       [ac_cv_pthread_system_supported=no],
@@ -4728,7 +4728,7 @@ then
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
   ]])],
   [ac_cv_wchar_t_signed=yes],
@@ -4786,12 +4786,7 @@ if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
 fi
 
 AC_SUBST(EXT_SUFFIX)
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
@@ -4843,6 +4838,22 @@ else
 fi
 AC_SUBST(LIBPL)
 
+# Check for --with-wheel-pkg-dir=PATH
+AC_SUBST(WHEEL_PKG_DIR)
+WHEEL_PKG_DIR=""
+AC_MSG_CHECKING(for --with-wheel-pkg-dir)
+AC_ARG_WITH(wheel-pkg-dir,
+            AS_HELP_STRING([--with-wheel-pkg-dir=PATH],
+            [Directory of wheel packages used by ensurepip (default: none)]),
+[
+if test -n "$withval"; then
+  AC_MSG_RESULT(yes)
+  WHEEL_PKG_DIR="$withval"
+else
+  AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
 AC_MSG_CHECKING(whether right shift extends the sign bit)
@@ -4850,7 +4861,7 @@ AC_CACHE_VAL(ac_cv_rshift_extends_sign, [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 ]])],
 [ac_cv_rshift_extends_sign=yes],
@@ -4880,92 +4891,124 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
+AC_ARG_WITH([readline],
+  [AS_HELP_STRING([--with(out)-readline@<:@=editline@:>@],
+    [use Editline for backend or disable readline module])],
+    [],
+    [with_readline=yes])
+
 # check where readline lives
+py_cv_lib_readline=no
 # save the value of LIBS so we don't actually link Python with readline
 LIBS_no_readline=$LIBS
 
-# On some systems we need to link readline to a termcap compatible
-# library.  NOTE: Keep the precedence of listed libraries synchronised
-# with setup.py.
-py_cv_lib_readline=no
-AC_MSG_CHECKING([how to link readline libs])
-for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
-  if test -z "$py_libtermcap"; then
-    READLINE_LIBS="-lreadline"
+if test "$with_readline" != no; then
+  case "$with_readline" in
+  editline|edit)
+    LIBREADLINE=edit
+    AC_DEFINE(WITH_EDITLINE, 1,
+      [Define to build the readline module against Editline.])
+    ;;
+  yes|readline)
+    LIBREADLINE=readline
+    ;;
+  *)
+    AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline@:>@])
+    ;;
+  esac
+
+  # On some systems we need to link readline to a termcap compatible
+  # library.  NOTE: Keep the precedence of listed libraries synchronised
+  # with setup.py.
+  AC_MSG_CHECKING([how to link readline libs])
+  for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
+    if test -z "$py_libtermcap"; then
+      READLINE_LIBS="-l$LIBREADLINE"
+    else
+      READLINE_LIBS="-l$LIBREADLINE -l$py_libtermcap"
+    fi
+    LIBS="$READLINE_LIBS $LIBS_no_readline"
+    AC_LINK_IFELSE(
+      [AC_LANG_CALL([],[readline])],
+      [py_cv_lib_readline=yes])
+    if test $py_cv_lib_readline = yes; then
+      break
+    fi
+  done
+
+  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
+  #AC_SUBST([READLINE_LIBS])
+  if test $py_cv_lib_readline = no; then
+    AC_MSG_RESULT([none])
   else
-    READLINE_LIBS="-lreadline -l$py_libtermcap"
+    AC_MSG_RESULT([$READLINE_LIBS])
+    AC_DEFINE(HAVE_LIBREADLINE, 1,
+      [Define to build the readline module.])
   fi
-  LIBS="$READLINE_LIBS $LIBS_no_readline"
-  AC_LINK_IFELSE(
-    [AC_LANG_CALL([],[readline])],
-    [py_cv_lib_readline=yes])
-  if test $py_cv_lib_readline = yes; then
-    break
-  fi
-done
-# Uncomment this line if you want to use READINE_LIBS in Makefile or scripts
-#AC_SUBST([READLINE_LIBS])
-if test $py_cv_lib_readline = no; then
-  AC_MSG_RESULT([none])
-else
-  AC_MSG_RESULT([$READLINE_LIBS])
-  AC_DEFINE(HAVE_LIBREADLINE, 1,
-    [Define if you have the readline library (-lreadline).])
 fi
 
-# check for readline 2.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_completion_append_character;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
-  [Define if you have readline 2.2]), )
-  AC_EGREP_HEADER([extern int rl_completion_suppress_append;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
-  [Define if you have rl_completion_suppress_append]), )
+if test "$py_cv_lib_readline" = yes; then
+  # check for readline 2.2
+  AC_CHECK_DECL(rl_completion_append_character,
+    AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
+      [Define if you have readline 2.2]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+  AC_CHECK_DECL(rl_completion_suppress_append,
+    AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
+      [Define if you have rl_completion_suppress_append]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  # check for readline 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_pre_input_hook,
+    AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_display_matches_hook,
+    AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0, but not in editline
+  AC_CHECK_LIB($LIBREADLINE, rl_resize_terminal,
+    AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # check for readline 4.2
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_matches,
+    AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
+      [Define if you have readline 4.2]),,$READLINE_LIBS)
+
+  # also in readline 4.2
+  AC_CHECK_DECL(rl_catch_signals,
+    AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
+      [Define if you can turn off readline's signal handling.]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  AC_CHECK_LIB($LIBREADLINE, append_history,
+    AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
+      [Define if readline supports append_history]),,$READLINE_LIBS)
 fi
-
-# check for readline 4.0
-AC_CHECK_LIB(readline, rl_pre_input_hook,
-	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0
-AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
-	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0, but not in editline
-AC_CHECK_LIB(readline, rl_resize_terminal,
-	AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# check for readline 4.2
-AC_CHECK_LIB(readline, rl_completion_matches,
-	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]), ,$READLINE_LIBS)
-
-# also in readline 4.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_catch_signals;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
-  [Define if you can turn off readline's signal handling.]), )
-fi
-
-AC_CHECK_LIB(readline, append_history,
-	AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
-        [Define if readline supports append_history]), ,$READLINE_LIBS)
 
 # End of readline checks: restore LIBS
 LIBS=$LIBS_no_readline
@@ -4997,6 +5040,7 @@ AC_MSG_CHECKING(for broken poll())
 AC_CACHE_VAL(ac_cv_broken_poll,
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {
@@ -5590,14 +5634,15 @@ if test "$have_stdatomic_h" = yes; then
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 fi
 
-# Check for GCC >= 4.7 __atomic builtins
-AC_MSG_CHECKING(for GCC >= 4.7 __atomic builtins)
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_MSG_CHECKING(for builtin __atomic_load_n and __atomic_store_n functions)
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
-    volatile int val = 1;
+    int val;
     int main() {
-      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
     }
   ]])
@@ -5606,7 +5651,7 @@ AC_LINK_IFELSE(
 AC_MSG_RESULT($have_builtin_atomic)
 
 if test "$have_builtin_atomic" = yes; then
-    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin atomics])
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 fi
 
 # ensurepip option
@@ -5837,6 +5882,47 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+AC_MSG_CHECKING(for --with-static-libpython)
+AC_ARG_WITH(static-libpython,
+  AS_HELP_STRING([--without-static-libpython],
+                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+  STATIC_LIBPYTHON=0
+else
+  AC_MSG_RESULT(yes);
+fi],
+[AC_MSG_RESULT(yes)])
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+if test "$PY_ENABLE_SHARED" = 1; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+else
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+fi
+AC_SUBST(STATIC_LIBPYTHON)
+AC_SUBST(LIBRARY_DEPS)
+
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+AC_MSG_CHECKING(for --disable-test-modules)
+AC_ARG_ENABLE(test-modules,
+              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+    AC_MSG_RESULT(yes)
+else
+    TEST_MODULES=yes
+    AC_MSG_RESULT(no)
+fi
+AC_SUBST(TEST_MODULES)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
@@ -5863,4 +5949,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
 fi
-

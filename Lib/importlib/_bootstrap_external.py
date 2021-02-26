@@ -312,6 +312,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a1 3430 (Make 'annotations' future by default)
 #     Python 3.10a1 3431 (New line number table format -- PEP 626)
 #     Python 3.10a2 3432 (Function annotation for MAKE_FUNCTION is changed from dict to tuple bpo-42202)
+#     Python 3.10a2 3433 (RERAISE restores f_lasti if oparg != 0)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -321,7 +322,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3432).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3433).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -832,7 +833,8 @@ class _LoaderBasics:
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
-        """This module is deprecated."""
+        """This method is deprecated."""
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
 
@@ -1007,7 +1009,7 @@ class FileLoader:
         """
         # The only reason for this method is for the name check.
         # Issue #14857: Avoid the zero-argument form of super so the implementation
-        # of that form can be updated without breaking the frozen module
+        # of that form can be updated without breaking the frozen module.
         return super(FileLoader, self).load_module(fullname)
 
     @_check_name
@@ -1253,6 +1255,7 @@ class _NamespaceLoader:
         # The import system never calls this method.
         _bootstrap._verbose_message('namespace module loaded with path {!r}',
                                     self._path)
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
 

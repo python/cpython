@@ -1373,14 +1373,14 @@ prepare_s(PyStructObject *self)
 
     self->s_size = size;
     self->s_len = len;
-    codes = PyMem_MALLOC((ncodes + 1) * sizeof(formatcode));
+    codes = PyMem_Malloc((ncodes + 1) * sizeof(formatcode));
     if (codes == NULL) {
         PyErr_NoMemory();
         return -1;
     }
     /* Free any s_codes value left over from a previous initialization. */
     if (self->s_codes != NULL)
-        PyMem_FREE(self->s_codes);
+        PyMem_Free(self->s_codes);
     self->s_codes = codes;
 
     s = fmt;
@@ -1442,8 +1442,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = alloc_func(type, 0);
     if (self != NULL) {
         PyStructObject *s = (PyStructObject*)self;
-        Py_INCREF(Py_None);
-        s->s_format = Py_None;
+        s->s_format = Py_NewRef(Py_None);
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;
@@ -1502,7 +1501,7 @@ s_dealloc(PyStructObject *s)
     if (s->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)s);
     if (s->s_codes != NULL) {
-        PyMem_FREE(s->s_codes);
+        PyMem_Free(s->s_codes);
     }
     Py_XDECREF(s->s_format);
     freefunc free_func = PyType_GetSlot(Py_TYPE(s), Py_tp_free);

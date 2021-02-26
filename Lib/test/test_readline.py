@@ -102,8 +102,15 @@ class TestHistoryManipulation (unittest.TestCase):
 
         # test 'no such file' behaviour
         os.unlink(hfilename)
-        with self.assertRaises(FileNotFoundError):
+        try:
             readline.append_history_file(1, hfilename)
+        except FileNotFoundError:
+            pass  # Some implementations return this error (libreadline).
+        else:
+            os.unlink(hfilename)  # Some create it anyways (libedit).
+            # If the file wasn't created, unlink will fail.
+        # We're just testing that one of the two expected behaviors happens
+        # instead of an incorrect error.
 
         # write_history_file can create the target
         readline.write_history_file(hfilename)
@@ -228,7 +235,17 @@ print("history", ascii(readline.get_history_item(1)))
         output = run_pty(script, input)
         self.assertIn(b"text 't\\xeb'\r\n", output)
         self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
-        self.assertIn(b"indexes 11 13\r\n", output)
+        if sys.platform == "darwin" or not is_editline:
+            self.assertIn(b"indexes 11 13\r\n", output)
+            # Non-macOS libedit does not handle non-ASCII bytes
+            # the same way and generates character indices
+            # rather than byte indices via get_begidx() and
+            # get_endidx().  Ex: libedit2 3.1-20191231-2 on Debian
+            # winds up with "indexes 10 12".  Stemming from the
+            # start and end values calls back into readline.c's
+            # rl_attempted_completion_function = flex_complete with:
+            # (11, 13) instead of libreadline's (12, 15).
+
         if not is_editline and hasattr(readline, "set_pre_input_hook"):
             self.assertIn(b"substitution 't\\xeb'\r\n", output)
             self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)

@@ -34,7 +34,7 @@ is_generic_alias_in_args(PyObject *args) {
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
-        if (Py_TYPE(arg) == &Py_GenericAliasType) {
+        if (PyObject_TypeCheck(arg, &Py_GenericAliasType)) {
             return 0;
         }
     }
@@ -237,8 +237,8 @@ dedup_and_flatten_args(PyObject* args)
         PyObject* i_element = PyTuple_GET_ITEM(args, i);
         for (Py_ssize_t j = i + 1; j < arg_length; j++) {
             PyObject* j_element = PyTuple_GET_ITEM(args, j);
-            int is_ga = Py_TYPE(i_element) == &Py_GenericAliasType &&
-                        Py_TYPE(j_element) == &Py_GenericAliasType;
+            int is_ga = PyObject_TypeCheck(i_element, &Py_GenericAliasType) &&
+                        PyObject_TypeCheck(j_element, &Py_GenericAliasType);
             // RichCompare to also deduplicate GenericAlias types (slower)
             is_duplicate = is_ga ? PyObject_RichCompareBool(i_element, j_element, Py_EQ)
                 : i_element == j_element;
@@ -296,7 +296,7 @@ is_unionable(PyObject *obj)
         is_new_type(obj) ||
         is_special_form(obj) ||
         PyType_Check(obj) ||
-        type == &Py_GenericAliasType ||
+        PyObject_TypeCheck(obj, &Py_GenericAliasType) ||
         type == &_Py_UnionType);
 }
 

@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length, byteorder, \*, signed=False)
+.. method:: int.to_bytes(length, byteorder, *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -531,7 +531,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
-.. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -4959,6 +4959,11 @@ All parameterized generics implement special read-only attributes.
       (~T,)
 
 
+   .. note::
+      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
+      have correct ``__parameters__`` after substitution because
+      :class:`typing.ParamSpec` is intended primarily for static type checking.
+
 .. seealso::
 
    * :pep:`585` -- "Type Hinting Generics In Standard Collections"
@@ -5017,8 +5022,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       str | None == typing.Optional[str]
 
 .. describe:: isinstance(obj, union_object)
+.. describe:: issubclass(obj, union_object)
 
-   Calls to :func:`isinstance` are also supported with a union object::
+   Calls to :func:`isinstance` and :func:`issubclass` are also supported with a
+   union object::
 
       >>> isinstance("", int | str)
       True
@@ -5030,21 +5037,6 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
-
-.. describe:: issubclass(obj, union_object)
-
-   Calls to :func:`issubclass` are also supported with a union object::
-
-      >>> issubclass(bool, int | str)
-      True
-
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
-
-      >>> issubclass(bool, bool | list[str])
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: issubclass() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
@@ -5353,8 +5345,8 @@ types, where they are relevant.  Some of these are not reported by the
 .. method:: class.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.
-   Example::
+   method returns a list of all those references still alive.  The list is in
+   definition order.  Example::
 
       >>> int.__subclasses__()
       [<class 'bool'>]

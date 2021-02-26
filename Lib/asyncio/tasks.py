@@ -61,30 +61,6 @@ def all_tasks(loop=None):
             if futures._get_loop(t) is loop and not t.done()}
 
 
-def _all_tasks_compat(loop=None):
-    # Different from "all_task()" by returning *all* Tasks, including
-    # the completed ones.  Used to implement deprecated "Tasks.all_task()"
-    # method.
-    if loop is None:
-        loop = events.get_event_loop()
-    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
-    # thread while we do so. Therefore we cast it to list prior to filtering. The list
-    # cast itself requires iteration, so we repeat it several times ignoring
-    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
-    # details.
-    i = 0
-    while True:
-        try:
-            tasks = list(_all_tasks)
-        except RuntimeError:
-            i += 1
-            if i >= 1000:
-                raise
-        else:
-            break
-    return {t for t in tasks if futures._get_loop(t) is loop}
-
-
 def _set_task_name(task, name):
     if name is not None:
         try:
@@ -461,7 +437,10 @@ async def wait_for(fut, timeout):
                 return fut.result()
             else:
                 fut.remove_done_callback(cb)
-                fut.cancel()
+                # We must ensure that the task is not running
+                # after wait_for() returns.
+                # See https://bugs.python.org/issue32751
+                await _cancel_and_wait(fut, loop=loop)
                 raise
 
         if fut.done():

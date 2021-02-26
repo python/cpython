@@ -55,6 +55,7 @@ Iterator                        Arguments                       Results         
 :func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
+:func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') --> AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
 :func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n
@@ -475,6 +476,22 @@ loops that truncate the stream.
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
 
+.. function:: pairwise(iterable)
+
+   Return successive overlapping pairs taken from the input *iterable*.
+
+   The number of 2-tuples in the output iterator will be one fewer than the
+   number of inputs.  It will be empty if the input iterable has fewer than
+   two values.
+
+   Roughly equivalent to::
+
+        def pairwise(iterable):
+            # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+            a, b = tee(iterable)
+            next(b, None)
+            return zip(a, b)
+
 
 .. function:: permutations(iterable, r=None)
 
@@ -565,7 +582,7 @@ loops that truncate the stream.
 
    Before :func:`product` runs, it completely consumes the input iterables,
    keeping pools of values in memory to generate the products.  Accordingly,
-   it only useful with finite inputs.
+   it is only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
@@ -769,6 +786,18 @@ which incur interpreter overhead.
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
 
+   def convolve(signal, kernel):
+       # See:  https://betterexplained.com/articles/intuitive-convolution/
+       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
+       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
+       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       kernel = tuple(kernel)[::-1]
+       n = len(kernel)
+       window = collections.deque([0], maxlen=n) * n
+       for x in chain(signal, repeat(0, n-1)):
+           window.append(x)
+           yield sum(map(operator.mul, kernel, window))
+
    def flatten(list_of_lists):
        "Flatten one level of nesting"
        return chain.from_iterable(list_of_lists)
@@ -781,12 +810,6 @@ which incur interpreter overhead.
        if times is None:
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
-
-   def pairwise(iterable):
-       "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-       a, b = tee(iterable)
-       next(b, None)
-       return zip(a, b)
 
    def grouper(iterable, n, fillvalue=None):
        "Collect data into fixed-length chunks or blocks"

@@ -364,8 +364,6 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
 }
 
-#undef PyExceptionClass_Name
-
 const char *
 PyExceptionClass_Name(PyObject *ob)
 {
@@ -2531,9 +2529,9 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif /* MS_WINDOWS */
 
 PyStatus
-_PyExc_Init(PyThreadState *tstate)
+_PyExc_Init(PyInterpreterState *interp)
 {
-    struct _Py_exc_state *state = &tstate->interp->exc_state;
+    struct _Py_exc_state *state = &interp->exc_state;
 
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
@@ -2768,9 +2766,9 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 }
 
 void
-_PyExc_Fini(PyThreadState *tstate)
+_PyExc_Fini(PyInterpreterState *interp)
 {
-    struct _Py_exc_state *state = &tstate->interp->exc_state;
+    struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
 }

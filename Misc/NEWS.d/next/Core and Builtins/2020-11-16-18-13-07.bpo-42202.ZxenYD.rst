@@ -1,2 +1,0 @@
-Change function parameters annotations internal representation to tuple
-of strings. Patch provided by Yurii Karabas.

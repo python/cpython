@@ -9,7 +9,8 @@ There are two functions specifically for working with iterators.
 
 .. c:function:: int PyIter_Check(PyObject *o)
 
-   Return true if the object *o* supports the iterator protocol.
+   Return non-zero if the object *o* supports the iterator protocol, and ``0``
+   otherwise.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyIter_Next(PyObject *o)

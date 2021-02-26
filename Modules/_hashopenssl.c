@@ -341,7 +341,7 @@ EVP_dealloc(EVPobject *self)
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
     EVP_MD_CTX_free(self->ctx);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -1453,7 +1453,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 
 error:
     if (ctx) HMAC_CTX_free(ctx);
-    if (self) PyObject_Del(self);
+    if (self) PyObject_Free(self);
     return NULL;
 }
 
@@ -1546,7 +1546,7 @@ _hmac_dealloc(HMACobject *self)
         PyThread_free_lock(self->lock);
     }
     HMAC_CTX_free(self->ctx);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 

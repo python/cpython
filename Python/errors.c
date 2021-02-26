@@ -290,12 +290,14 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
                           PyObject **val, PyObject **tb)
 {
     int recursion_depth = 0;
+    tstate->recursion_headroom++;
     PyObject *type, *value, *initial_tb;
 
   restart:
     type = *exc;
     if (type == NULL) {
         /* There was no exception, so nothing to do. */
+        tstate->recursion_headroom--;
         return;
     }
 
@@ -347,6 +349,7 @@ _PyErr_NormalizeException(PyThreadState *tstate, PyObject **exc,
     }
     *exc = type;
     *val = value;
+    tstate->recursion_headroom--;
     return;
 
   error:
@@ -1531,9 +1534,6 @@ PyErr_WriteUnraisable(PyObject *obj)
 }
 
 
-extern PyObject *PyModule_GetWarningsModule(void);
-
-
 void
 PyErr_SyntaxLocation(const char *filename, int lineno)
 {
@@ -1697,13 +1697,18 @@ after_loop:
 PyObject *
 PyErr_ProgramText(const char *filename, int lineno)
 {
-    FILE *fp;
-    if (filename == NULL || *filename == '\0' || lineno <= 0) {
+    if (filename == NULL) {
         return NULL;
     }
-    PyThreadState *tstate = _PyThreadState_GET();
-    fp = _Py_fopen(filename, "r" PY_STDIOTEXTMODE);
-    return err_programtext(tstate, fp, lineno);
+
+    PyObject *filename_obj = PyUnicode_DecodeFSDefault(filename);
+    if (filename_obj == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+    PyObject *res = PyErr_ProgramTextObject(filename_obj, lineno);
+    Py_DECREF(filename_obj);
+    return res;
 }
 
 PyObject *
