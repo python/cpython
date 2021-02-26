@@ -595,7 +595,7 @@ def main():
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
         while True:
-            chunk = f.read(1024)
+            chunk = f.read(io.DEFAULT_BUFFER_SIZE)
             if not chunk:
                 break
             g.write(chunk)
