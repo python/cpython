@@ -357,7 +357,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
         if (!converted) {
             goto error;
         }
-        PyTuple_SetItem(row, i, converted);
+        PyTuple_SET_ITEM(row, i, converted);
     }
 
     if (PyErr_Occurred())
@@ -406,7 +406,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     PyObject* func_args;
     PyObject* result;
     int numcols;
-    PyObject* descriptor;
     PyObject* column_name;
     sqlite_int64 lastrowid;
 
@@ -470,9 +469,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     if (!func_args) {
         goto error;
     }
-    if (PyTuple_SetItem(func_args, 0, Py_NewRef(operation)) != 0) {
-        goto error;
-    }
+    PyTuple_SET_ITEM(func_args, 0, Py_NewRef(operation));
 
     if (self->statement) {
         (void)pysqlite_statement_reset(self->statement);
@@ -557,15 +554,14 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                 goto error;
             }
             for (i = 0; i < numcols; i++) {
-                descriptor = PyTuple_New(7);
-                if (!descriptor) {
-                    goto error;
-                }
                 const char *colname;
                 colname = sqlite3_column_name(self->statement->st, i);
                 if (colname == NULL) {
                     PyErr_NoMemory();
-                    Py_DECREF(descriptor);
+                    goto error;
+                }
+                PyObject *descriptor = PyTuple_New(7);
+                if (descriptor == NULL) {
                     goto error;
                 }
                 column_name = _pysqlite_build_column_name(self, colname);
@@ -573,14 +569,14 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                     Py_DECREF(descriptor);
                     goto error;
                 }
-                PyTuple_SetItem(descriptor, 0, column_name);
-                PyTuple_SetItem(descriptor, 1, Py_NewRef(Py_None));
-                PyTuple_SetItem(descriptor, 2, Py_NewRef(Py_None));
-                PyTuple_SetItem(descriptor, 3, Py_NewRef(Py_None));
-                PyTuple_SetItem(descriptor, 4, Py_NewRef(Py_None));
-                PyTuple_SetItem(descriptor, 5, Py_NewRef(Py_None));
-                PyTuple_SetItem(descriptor, 6, Py_NewRef(Py_None));
-                PyTuple_SetItem(self->description, i, descriptor);
+                PyTuple_SET_ITEM(descriptor, 0, column_name);
+                PyTuple_SET_ITEM(descriptor, 1, Py_NewRef(Py_None));
+                PyTuple_SET_ITEM(descriptor, 2, Py_NewRef(Py_None));
+                PyTuple_SET_ITEM(descriptor, 3, Py_NewRef(Py_None));
+                PyTuple_SET_ITEM(descriptor, 4, Py_NewRef(Py_None));
+                PyTuple_SET_ITEM(descriptor, 5, Py_NewRef(Py_None));
+                PyTuple_SET_ITEM(descriptor, 6, Py_NewRef(Py_None));
+                PyTuple_SET_ITEM(self->description, i, descriptor);
             }
         }
 
