@@ -2577,6 +2577,8 @@ that the number of arguments in the pattern must be smaller than or equal to the
 of elements in *__match_args__*; if it is larger, the pattern match attempt will raise
 a *TypeError*.
 
+.. versionadded:: 3.10
+
 .. seealso::
 
    :pep:`634` - Structural Pattern Matching
