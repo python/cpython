@@ -1070,10 +1070,10 @@ subject value:
    II. If all keyword patterns succeed, the class pattern succeeds.
 
    If any positional patterns are present, they are converted to keyword
-   patterns using the ``__match_args__`` attribute on the class
+   patterns using the :data:`~class.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of getattr(cls, "__match_args__", ())) is called.
+   I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
 
       * If this raises an exception, the exception bubbles up.
 
@@ -1088,6 +1088,8 @@ subject value:
         be a string; if not :exc:`TypeError` is raised.
 
       * If there are duplicate keywords, :exc:`TypeError` is raised.
+
+      .. seealso:: :ref:`class-pattern-matching`
 
    II. Once all positional patterns have been converted to keyword patterns,
        the match proceeds as if there were only keyword patterns.
