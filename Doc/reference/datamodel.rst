@@ -2553,7 +2553,7 @@ For more information on context managers, see :ref:`typecontextmanager`.
       statement.
 
 
-.. _pattern-matching:
+.. _class-pattern-matching:
 
 Customizing positional arguments in class pattern matching
 ----------------------------------------------------------
