@@ -107,7 +107,7 @@ static long dxp[256];
 #endif
 
 /* per opcode cache */
-static int opcache_min_runs = 1024;  /* create opcache when code executed this time */
+static int opcache_min_runs = 1024;  /* create opcache when code executed this many times */
 #define OPCODE_CACHE_MAX_TRIES 20
 #define OPCACHE_STATS 0  /* Enable stats */
 
