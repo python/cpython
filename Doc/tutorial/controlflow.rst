@@ -36,6 +36,9 @@ to avoid excessive indentation.  An  :keyword:`!if` ... :keyword:`!elif` ...
 :keyword:`!elif` ... sequence is a substitute for the ``switch`` or
 ``case`` statements found in other languages.
 
+If you're making comparison with constants, or checking for specific types or
+attributes, you may also find the :keyword:`!match` statement useful. For more
+details see :ref:`tut-match`.
 
 .. _tut-for:
 
