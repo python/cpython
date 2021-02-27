@@ -2563,7 +2563,7 @@ allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without spe
 support in ``MyClass``. To be able to use that kind of patterns, the class needs to
 define a *__match_args__* attribute.
 
-.. data:: class.__match_args__
+.. data:: object.__match_args__
 
    This class variable can be assigned a tuple or list of strings. When this class is
    used in a class pattern with positional arguments, each positional argument will
