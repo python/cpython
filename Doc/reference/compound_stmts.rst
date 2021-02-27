@@ -691,8 +691,6 @@ The top-level syntax for ``patterns`` is:
 .. productionlist:: python-grammar
    patterns: `open_sequence_pattern` | `pattern`
    pattern: `as_pattern` | `or_pattern`
-   as_pattern: `or_pattern` "as" `capture_pattern`
-   or_pattern: "|".`closed_pattern`+
    closed_pattern: | `literal_pattern`
                  : | `capture_pattern`
                  : | `wildcard_pattern`
@@ -714,21 +712,21 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |                   |                                                          |
 |                          |                   | 3. if failure test ...                                   |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`as-patterns`       | ``pattern``       | 1. test ``pattern``                                     |
+| :ref:`as-patterns`       | ``pattern``       | 1. test ``pattern``                                      |
 |                          |  :keyword:`as`    |                                                          |
 |                          |  ``capture``      | 2. if success, bind name into                            |
 |                          |                   |    ``capture``                                           |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`literal-patterns`  | ``"literal"``     | for strings and numbers, test ``subject == "literal"``         |
+| :ref:`literal-patterns`  | ``"literal"``     | for strings and numbers, test ``subject == "literal"``   |
 |                          |                   |                                                          |
 |                          |                   | otherwise, for singletons like ``None`` and :func:`bool`,|
-|                          |                   | test ``subject is literal``                                  |
+|                          |                   | test ``subject is literal``                              |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`capture-patterns`  | ``name``          | bind ``name = subject``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`wildcard-patterns` | ``_``             | ``pass``                                                 |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`value-patterns`    | ``x.y``           | test ``subject == x.y``                            |
+| :ref:`value-patterns`    | ``x.y``           | test ``subject == x.y``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`group-patterns`    | ``( pattern )``   | test ``pattern``                                         |
 +--------------------------+-------------------+----------------------------------------------------------+
