@@ -1643,7 +1643,12 @@ expression support in the :mod:`re` module).
    intended to remove all case distinctions in a string. For example, the German
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
-   converts it to ``"ss"``.
+   converts it to ``"ss"``, as follows::
+
+      >>> 'ß'.casefold()
+      'ss'
+      >>> 'ß'.lower()
+      'ß'
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
@@ -1970,19 +1975,14 @@ expression support in the :mod:`re` module).
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase.
+   lowercase. For example::
+
+      >>> 'Lower Method Example'.lower()
+      'lower method example'
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
-
-<<<<<<< HEAD
-=======
-   The lowercasing algorithm used is described in section 3.13 of the Unicode
-   Standard.
-
-   See also :meth:`casefold`, :meth:`swapcase` and :meth:`upper`.
->>>>>>> 58b11f169d ([Doc] Added snippet code to str.upper method)
 
 .. method:: str.lstrip([chars])
 
