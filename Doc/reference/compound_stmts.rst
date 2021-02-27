@@ -530,11 +530,14 @@ The :keyword:`!match` statement
 The match statement is used for pattern matching.  Syntax:
 
 .. productionlist:: python-grammar
-   match_stmt: "match" `subject_expr` ':' NEWLINE INDENT `case_block`+ DEDENT
-   subject_expr: `star_named_expression` ',' `star_named_expressions`?
+   match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
+   subject_expr: `star_named_expression` "," `star_named_expressions`?
                : | `named_expression`
-   case_block: "case" `patterns` [`guard`] ':' `block`
+   case_block: 'case' `patterns` [`guard`] ':' `block`
 
+.. note::
+   This section uses single quotes to denote
+   :ref:`soft keywords <soft-keywords>`.
 
 Pattern matching takes a pattern as input (following ``case``) and a subject
 value (following ``match``).  The pattern (which may contain subpatterns) is
@@ -545,7 +548,7 @@ matched against the subject value.  The outcomes are:
 * Possible binding of matched values to a name.  The prerequisites for this are
   further discussed below.
 
-The ``match`` and ``case`` keywords are :ref:`soft keywords <soft_keywords>`.
+The ``match`` and ``case`` keywords are :ref:`soft keywords <soft-keywords>`.
 
 .. seealso::
 
@@ -611,7 +614,7 @@ Guards
 .. index:: ! guard
 
 .. productionlist:: python-grammar
-   guard: 'if' `named_expression`
+   guard: "if" `named_expression`
 
 A ``guard`` (which is part of the ``case``) must succeed for code inside
 the ``case`` block to execute.  It takes the form: :keyword:`if` followed by an
@@ -657,13 +660,13 @@ irrefutable.  A pattern is considered irrefutable if we can prove from its
 syntax alone that it will always succeed.  The following patterns are
 irrefutable:
 
-* :ref:`as_patterns` whose left-hand side is irrefutable
+* :ref:`as-patterns` whose left-hand side is irrefutable
 
-* :ref:`or_patterns` containing at least one irrefutable pattern
+* :ref:`or-patterns` containing at least one irrefutable pattern
 
-* :ref:`capture_patterns`
+* :ref:`capture-patterns`
 
-* :ref:`wildcard_patterns`
+* :ref:`wildcard-patterns`
 
 * parenthesized irrefutable patterns
 
@@ -688,8 +691,8 @@ The top-level syntax for ``patterns`` is:
 .. productionlist:: python-grammar
    patterns: `open_sequence_pattern` | `pattern`
    pattern: `as_pattern` | `or_pattern`
-   as_pattern: `or_pattern` 'as' `capture_pattern`
-   or_pattern: '|'.`closed_pattern`+
+   as_pattern: `or_pattern` "as" `capture_pattern`
+   or_pattern: "|".`closed_pattern`+
    closed_pattern: | `literal_pattern`
                  : | `capture_pattern`
                  : | `wildcard_pattern`
@@ -705,30 +708,30 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 +--------------------------+-------------------+----------------------------------------------------------+
 | Pattern Type             | Pattern Form      | Logical behavior                                         |
 +==========================+===================+==========================================================+
-| :ref:`or_patterns`       | ``p1 | p2 | ...`` | 1. test ``p1``                                           |
+| :ref:`or-patterns`       | ``p1 | p2 | ...`` | 1. test ``p1``                                           |
 |                          |                   |                                                          |
 |                          |                   | 2. if failure, test ``p2``                               |
 |                          |                   |                                                          |
 |                          |                   | 3. if failure test ...                                   |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`as_patterns`       | ``pattern``       | 1. test ``patttern``                                     |
+| :ref:`as-patterns`       | ``pattern``       | 1. test ``patttern``                                     |
 |                          |  :keyword:`as`    |                                                          |
 |                          |  ``capture``      | 2. if success, bind name into                            |
 |                          |                   |    ``capture``                                           |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`literal_patterns`  | ``"literal"``     | test ``subject == "literal"``                            |
+| :ref:`literal-patterns`  | ``"literal"``     | test ``subject == "literal"``                            |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`capture_patterns`  | ``name``          | bind ``name = subject``                                  |
+| :ref:`capture-patterns`  | ``name``          | bind ``name = subject``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`wildcard_patterns` | ``_``             | ``pass``                                                 |
+| :ref:`wildcard-patterns` | ``_``             | ``pass``                                                 |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`value_patterns`    | ``x.y``           | For strings and numbers, test ``subject == x.y``         |
+| :ref:`value-patterns`    | ``x.y``           | For strings and numbers, test ``subject == x.y``         |
 |                          |                   | Otherwise, for singletons like ``None`` and :func:`bool`,|
 |                          |                   | test ``subject is x.y``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`group_patterns`    | ``( pattern )``   | test ``pattern``                                         |
+| :ref:`group-patterns`    | ``( pattern )``   | test ``pattern``                                         |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`sequence_patterns` | ``[p1, p2, ...]`` | 1. check ``isinstance(subject, collections.abc.Sequence``|
+| :ref:`sequence-patterns` | ``[p1, p2, ...]`` | 1. check ``isinstance(subject, collections.abc.Sequence``|
 |                          |                   |                                                          |
 |                          |                   | 2. check ``len(subject) == len(sequence_pattern)``       |
 |                          |                   |                                                          |
@@ -738,7 +741,7 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |                   |                                                          |
 |                          |                   | 5. repeat step 4. for subsequent patterns and indexes    |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`mapping_patterns`  | ``{p1: p2, ...}`` | 1. check ``isinstance(subject, collections.abc.Mapping)``|
+| :ref:`mapping-patterns`  | ``{p1: p2, ...}`` | 1. check ``isinstance(subject, collections.abc.Mapping)``|
 |                          |                   |                                                          |
 |                          |                   | 2. test ``p1 in subject``                                |
 |                          |                   |                                                          |
@@ -747,7 +750,7 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |                   | 4. repeat steps 2. and 3. for subsequent key and value   |
 |                          |                   |    patterns.                                             |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`class_patterns`    | ``K(p1, name=p2)``| 1. check ``isinstance(K, type)``                         |
+| :ref:`class-patterns`    | ``K(p1, name=p2)``| 1. check ``isinstance(K, type)``                         |
 |                          |                   |                                                          |
 |                          |                   | 2. check ``isinstance(subject, K)``                      |
 |                          |                   |                                                          |
@@ -764,7 +767,7 @@ the underlying implementation.  Furthermore, they do not cover all valid forms.
 Read the pattern's respective sections to learn more.
 
 
-.. _or_patterns:
+.. _or-patterns:
 
 OR Patterns
 ^^^^^^^^^^^
@@ -773,7 +776,7 @@ An OR pattern is two or more patterns separated by vertical
 bars ``|``.  Syntax:
 
 .. productionlist:: python-grammar
-   or_pattern: '|'.`closed_pattern`+
+   or_pattern: "|".`closed_pattern`+
 
 Only the final subpattern may be :ref:`irrefutable <irrefutable_case>`, and each
 subpattern must bind the same set of names to avoid ambiguity.
@@ -782,7 +785,7 @@ An OR pattern matches each of its subpatterns in turn to the subject value,
 until one succeeds.  The OR pattern is then considered successful.  Otherwise,
 if none of the subpatterns succeed, the OR pattern fails.
 
-.. _as_patterns:
+.. _as-patterns:
 
 AS Patterns
 ^^^^^^^^^^^
@@ -791,13 +794,13 @@ An AS pattern matches an OR pattern on the left of the :keyword:`as`
 keyword against a subject.  Syntax:
 
 .. productionlist:: python-grammar
-   as_pattern: `or_pattern` 'as' `capture_pattern`
+   as_pattern: `or_pattern` "as" `capture_pattern`
 
 If the OR pattern fails, the AS pattern fails.  Otherwise, the AS pattern binds
 the subject to the name on the right of the as keyword and succeeds.
 ``capture_pattern`` cannot be a a ``_``.
 
-.. _literal_patterns:
+.. _literal-patterns:
 
 Literal Patterns
 ^^^^^^^^^^^^^^^^
@@ -807,13 +810,13 @@ A literal pattern corresponds to most
 
 .. productionlist:: python-grammar
    literal_pattern: `signed_number`
-                  : | `signed_number` '+' NUMBER
-                  : | `signed_number` '-' NUMBER
+                  : | `signed_number` "+" NUMBER
+                  : | `signed_number` "-" NUMBER
                   : | `strings`
-                  : | 'None'
-                  : | 'True'
-                  : | 'False'
-                  : | `signed_number`: NUMBER | '-' NUMBER
+                  : | "None"
+                  : | "True"
+                  : | "False"
+                  : | `signed_number`: NUMBER | "-" NUMBER
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
@@ -824,7 +827,7 @@ The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
 for expressing :ref:`complex numbers <imaginary>`; they require a real number
 on the left and an imaginary number on the right. E.g. ``3 + 4j``.
 
-.. _capture_patterns:
+.. _capture-patterns:
 
 Capture Patterns
 ^^^^^^^^^^^^^^^^
@@ -833,9 +836,9 @@ A capture pattern binds the subject value to a name.
 Syntax:
 
 .. productionlist:: python-grammar
-   capture_pattern: !"_" NAME
+   capture_pattern: !'_' NAME
 
-A single underscore ``_`` is not a capture pattern (this is what ``!"_"``
+A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
 expresses). And is instead treated as a :token:`wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
@@ -846,7 +849,7 @@ established by the assignment expression operator in :pep`572`; the
 name becomes a local variable in the closest containing function scope unless
 there's an applicable :keyword:`global` or :keyword:`nonlocal` statement.
 
-.. _wildcard_patterns:
+.. _wildcard-patterns:
 
 Wildcard Patterns
 ^^^^^^^^^^^^^^^^^
@@ -855,11 +858,11 @@ A wildcard pattern always succeeds (matches anything)
 and binds no name.  Syntax:
 
 .. productionlist:: python-grammar
-   wildcard_pattern: "_"
+   wildcard_pattern: '_'
 
-``_`` is a :ref:`soft keyword <soft_keywords>`.
+``_`` is a :ref:`soft keyword <soft-keywords>`.
 
-.. _value_patterns:
+.. _value-patterns:
 
 Value Patterns
 ^^^^^^^^^^^^^^
@@ -869,7 +872,7 @@ Syntax:
 
 .. productionlist:: python-grammar
    value_pattern: `attr`
-   attr: `name_or_attr` '.' NAME
+   attr: `name_or_attr` "." NAME
    name_or_attr: `attr` | NAME
 
 The dotted name in the pattern is looked up using standard Python
@@ -884,7 +887,7 @@ operator).
   the same lookup.  This cache is strictly tied to a given execution of a
   given match statement.
 
-.. _group_patterns:
+.. _group-patterns:
 
 Group Patterns
 ^^^^^^^^^^^^^^
@@ -896,7 +899,7 @@ Syntax:
 .. productionlist:: python-grammar
    group_pattern: '(' `pattern` ')'
 
-.. _sequence_patterns:
+.. _sequence-patterns:
 
 Sequence Patterns
 ^^^^^^^^^^^^^^^^^
@@ -905,12 +908,12 @@ A sequence pattern contains a sequence of subpatterns.  The syntax is
 similar to the construction of a list or tuple.
 
 .. productionlist:: python-grammar
-  sequence_pattern: '[' [`maybe_sequence_pattern`] ']'
-                  : | '(' [`open_sequence_pattern`] ')'
-  open_sequence_pattern: `maybe_star_pattern` ',' [`maybe_sequence_pattern`]
-  maybe_sequence_pattern: ','.`maybe_star_pattern`+ ','?
+  sequence_pattern: "[" [`maybe_sequence_pattern`] "]"
+                  : | "(" [`open_sequence_pattern`] ")"
+  open_sequence_pattern: `maybe_star_pattern` "," [`maybe_sequence_pattern`]
+  maybe_sequence_pattern: ",".`maybe_star_pattern`+ ","?
   maybe_star_pattern: `star_pattern` | `pattern`
-  star_pattern: '*' (`capture_pattern` | `wildcard_pattern`)
+  star_pattern: "*" (`capture_pattern` | `wildcard_pattern`)
 
 
 There is no difference if parentheses (``(...)``) or square brackets (``[...]``)
@@ -918,7 +921,7 @@ are used for sequence patterns.
 
 .. note::
    A single pattern enclosed in parentheses without a trailing comma
-   (e.g. ``(3 | 4)``) is a :ref:`group pattern <group_patterns>`.
+   (e.g. ``(3 | 4)``) is a :ref:`group pattern <group-patterns>`.
    While a single pattern enclosed in square brackets (e.g. ``[3 | 4]``) is
    still a sequence pattern.
 
@@ -967,10 +970,10 @@ subject value:
    .. note:: The length of the subject sequence is obtained via
       :func:`len` (i.e. via the :meth:`__len__` protocol).  This length may be
       cached by the interpreter in a similar manner as
-      :ref:`value patterns <value_patterns>`.
+      :ref:`value patterns <value-patterns>`.
 
 
-.. _mapping_patterns:
+.. _mapping-patterns:
 
 Mapping Patterns
 ^^^^^^^^^^^^^^^^
@@ -980,11 +983,11 @@ similar to the construction of a dictionary.
 Syntax:
 
 .. productionlist:: python-grammar
-   mapping_pattern: '{' [`items_pattern`] '}'
-   items_pattern: ','.`key_value_pattern`+ ','?
-   key_value_pattern: (`literal_pattern` | `value_pattern`) ':' `pattern`
+   mapping_pattern: "{" [`items_pattern`] "}"
+   items_pattern: ",".`key_value_pattern`+ ","?
+   key_value_pattern: (`literal_pattern` | `value_pattern`) ":" `pattern`
                     : | `double_star_pattern`
-   double_star_pattern: '**' `capture_pattern`
+   double_star_pattern: "**" `capture_pattern`
 
 At most one double star pattern may be in a mapping pattern.  The double star
 pattern must be the last subpattern in the mapping pattern.
@@ -1012,7 +1015,7 @@ subject value:
    :meth:`__getitem__`.
 
 
-.. _class_patterns:
+.. _class-patterns:
 
 Class Patterns
 ^^^^^^^^^^^^^^
@@ -1021,12 +1024,12 @@ A class pattern represents a class and its positional and keyword arguments
 (if any).  Syntax:
 
 .. productionlist:: python-grammar
-  class_pattern: `name_or_attr` '(' [`pattern_arguments` ','?] ')'
-  pattern_arguments: `positional_patterns` [',' `keyword_patterns`]
+  class_pattern: `name_or_attr` "(" [`pattern_arguments` ","?] ")"
+  pattern_arguments: `positional_patterns` ["," `keyword_patterns`]
                    : | `keyword_patterns`
-  positional_patterns: ','.`pattern`+
-  keyword_patterns: ','.`keyword_pattern`+
-  keyword_pattern: NAME '=' `pattern`
+  positional_patterns: ",".`pattern`+
+  keyword_patterns: ",".`keyword_pattern`+
+  keyword_pattern: NAME "=" `pattern`
 
 The same keyword should not be repeated in class patterns.
 

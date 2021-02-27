@@ -352,7 +352,7 @@ exactly as written here:
    async      elif       if         or         yield
 
 
-.. _soft_keywords:
+.. _soft-keywords:
 
 Soft Keywords
 -------------
