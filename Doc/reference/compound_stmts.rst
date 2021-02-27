@@ -719,15 +719,16 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |  ``capture``      | 2. if success, bind name into                            |
 |                          |                   |    ``capture``                                           |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`literal-patterns`  | ``"literal"``     | test ``subject == "literal"``                            |
+| :ref:`literal-patterns`  | ``"literal"``     | for strings and numbers, test ``subject == x.y``         |
+|                          |                   |                                                          |
+|                          |                   | otherwise, for singletons like ``None`` and :func:`bool`,|
+|                          |                   | test ``subject is x.y``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`capture-patterns`  | ``name``          | bind ``name = subject``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`wildcard-patterns` | ``_``             | ``pass``                                                 |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`value-patterns`    | ``x.y``           | For strings and numbers, test ``subject == x.y``         |
-|                          |                   | Otherwise, for singletons like ``None`` and :func:`bool`,|
-|                          |                   | test ``subject is x.y``                                  |
+| :ref:`value-patterns`    | ``x.y``           | test ``subject == "literal"``                            |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`group-patterns`    | ``( pattern )``   | test ``pattern``                                         |
 +--------------------------+-------------------+----------------------------------------------------------+
@@ -759,7 +760,8 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |                   | 4. test ``p2`` matches ``subject.name``                  |
 |                          |                   |                                                          |
 |                          |                   | 5. convert ``p1`` to a keyword pattern using             |
-|                          |                   |    ``K.__match_args__`` and repeat steps 2. and 3.       |
+|                          |                   |    ``K.__match_args__`` and repeat steps 2. to 4.        |
+|                          |                   |    using ``p1``                                          |
 +--------------------------+-------------------+----------------------------------------------------------+
 
 Note that this table purely for illustration purposes and **may not** reflect
