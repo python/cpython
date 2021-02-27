@@ -112,7 +112,7 @@ static int opcache_min_runs = 1024;  /* create opcache when code executed this t
 #define OPCACHE_STATS 0  /* Enable stats */
 
 void
-_PyEval_DeactivateOpCache()
+_PyEval_DeactivateOpCache(void)
 {
     opcache_min_runs = 0;
 }
