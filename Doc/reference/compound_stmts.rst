@@ -535,9 +535,6 @@ The match statement is used for pattern matching.  Syntax:
                : | `named_expression`
    case_block: "case" `patterns` [`guard`] ':' `block`
 
-The rules ``star_named_expression``, ``star_named_expressions``,
-``named_expression`` and ``block`` are part of the
-:doc:`standard Python grammar <./grammar>`.
 
 Pattern matching takes a pattern as input (following ``case``) and a subject
 value (following ``match``).  The pattern (which may contain subpatterns) is
@@ -549,15 +546,6 @@ matched against the subject value.  The outcomes are:
   further discussed below.
 
 The ``match`` and ``case`` keywords are :ref:`soft keywords <soft_keywords>`.
-This means ``match`` and ``case`` have the following characteristics:
-
-* They are not reserved words in other grammatical contexts, including at the
-  start of a line if there is no colon where expected.
-
-* They are recognized as keywords when part of a match statement or case block
-  only.
-
-* They can be used in all other contexts as variable or argument names.
 
 .. seealso::
 
@@ -627,16 +615,7 @@ Guards
 
 A ``guard`` (which is part of the ``case``) must succeed for code inside
 the ``case`` block to execute.  It takes the form: :keyword:`if` followed by an
-expression.  Conceptually it's similar to a
-:ref:`conditional expression <if_expr>`.  An example guard::
-
-   >>> match 100:
-   ...    case x if x < 0:
-   ...        print(f'{x} is negative!')
-   ...    case x:
-   ...        print(f'{x} is non-negative!')
-   ...
-   100 is non-negative!
+expression.
 
 
 The logical flow of a ``case`` block with a ``guard`` follows:
@@ -734,12 +713,12 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`as_patterns`       | ``or_pattern``    | 1. test ``or_pattern``                                   |
 |                          |  :keyword:`as`    |                                                          |
-|                          |  ``capture``      | 2. if success, bind names in                             |
+|                          |  ``capture``      | 2. if success, bind name into                             |
 |                          |                   |    ``capture``                                           |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`literal_patterns`  | ``"literal"``     | test ``subject == "literal"``                            |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`capture_patterns`  | ``name``          | test ``name = subject``                                  |
+| :ref:`capture_patterns`  | ``name``          | bind ``name = subject``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`wildcard_patterns` | ``_``             | ``pass``                                                 |
 +--------------------------+-------------------+----------------------------------------------------------+
