@@ -714,21 +714,21 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |                   |                                                          |
 |                          |                   | 3. if failure test ...                                   |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`as-patterns`       | ``pattern``       | 1. test ``patttern``                                     |
+| :ref:`as-patterns`       | ``pattern``       | 1. test ``pattern``                                     |
 |                          |  :keyword:`as`    |                                                          |
 |                          |  ``capture``      | 2. if success, bind name into                            |
 |                          |                   |    ``capture``                                           |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`literal-patterns`  | ``"literal"``     | for strings and numbers, test ``subject == x.y``         |
+| :ref:`literal-patterns`  | ``"literal"``     | for strings and numbers, test ``subject == "literal"``         |
 |                          |                   |                                                          |
 |                          |                   | otherwise, for singletons like ``None`` and :func:`bool`,|
-|                          |                   | test ``subject is x.y``                                  |
+|                          |                   | test ``subject is literal``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`capture-patterns`  | ``name``          | bind ``name = subject``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`wildcard-patterns` | ``_``             | ``pass``                                                 |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`value-patterns`    | ``x.y``           | test ``subject == "literal"``                            |
+| :ref:`value-patterns`    | ``x.y``           | test ``subject == x.y``                            |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`group-patterns`    | ``( pattern )``   | test ``pattern``                                         |
 +--------------------------+-------------------+----------------------------------------------------------+
