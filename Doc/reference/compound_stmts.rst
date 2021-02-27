@@ -711,9 +711,9 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 |                          |                   |                                                          |
 |                          |                   | 3. if failure test ...                                   |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`as_patterns`       | ``or_pattern``    | 1. test ``or_pattern``                                   |
+| :ref:`as_patterns`       | ``pattern``       | 1. test ``patttern``                                     |
 |                          |  :keyword:`as`    |                                                          |
-|                          |  ``capture``      | 2. if success, bind name into                             |
+|                          |  ``capture``      | 2. if success, bind name into                            |
 |                          |                   |    ``capture``                                           |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`literal_patterns`  | ``"literal"``     | test ``subject == "literal"``                            |
@@ -722,7 +722,9 @@ approximation of their behavior (credits to Raymond Hettinger for the idea):
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`wildcard_patterns` | ``_``             | ``pass``                                                 |
 +--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`value_patterns`    | ``x.y``           | test ``subject == x.y``                                  |
+| :ref:`value_patterns`    | ``x.y``           | For strings and numbers, test ``subject == x.y``         |
+|                          |                   | Otherwise, for singletons like ``None`` and :func:`bool`,|
+|                          |                   | test ``subject is x.y``                                  |
 +--------------------------+-------------------+----------------------------------------------------------+
 | :ref:`group_patterns`    | ``( pattern )``   | test ``pattern``                                         |
 +--------------------------+-------------------+----------------------------------------------------------+
@@ -854,6 +856,8 @@ and binds no name.  Syntax:
 
 .. productionlist:: python-grammar
    wildcard_pattern: "_"
+
+``_`` is a :ref:`soft keyword <soft_keywords>`.
 
 .. _value_patterns:
 
