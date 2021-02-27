@@ -189,7 +189,7 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     Py_ssize_t period = 1;
 
     while (candidate + k < len_needle) {
-        // loop increases candidate + k by 1 at each step
+        // each loop increases candidate + k + max_suffix
         STRINGLIB_CHAR a = needle[candidate + k];
         STRINGLIB_CHAR b = needle[max_suffix + k];
         // check if the suffix at candidate is better than max_suffix
@@ -286,11 +286,11 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
     return cut;
 }
 
-#define SHIFT_TYPE uint16_t
+#define SHIFT_TYPE uint8_t
 #define NOT_FOUND ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
 #define SHIFT_OVERFLOW (NOT_FOUND - 1U)
 
-#define TABLE_SIZE_BITS 7
+#define TABLE_SIZE_BITS 6
 #define TABLE_SIZE (1U << TABLE_SIZE_BITS)
 #define TABLE_MASK (TABLE_SIZE - 1U)
 
@@ -315,8 +315,14 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     p->is_periodic = (0 == memcmp(needle,
                                   needle + p->period,
                                   p->cut * STRINGLIB_SIZEOF_CHAR));
-    assert(!p->is_periodic || (p->cut <= len_needle/2
-                               && p->cut < p->period));
+    if (p->is_periodic) {
+        assert(p->cut <= len_needle/2);
+        assert(p->cut < p->period);
+    }
+    else {
+        // A lower bound on the period
+        p->period = Py_MAX(p->cut, len_needle - p->cut) + 1;
+    }
     // Now fill up a table
     memset(&(p->table[0]), 0xff, TABLE_SIZE*sizeof(SHIFT_TYPE));
     assert(p->table[0] == NOT_FOUND);
@@ -344,11 +350,13 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     const STRINGLIB_CHAR *needle = p->needle;
     const STRINGLIB_CHAR *window = haystack;
     const STRINGLIB_CHAR *last_window = haystack + len_haystack - len_needle;
+    SHIFT_TYPE *table = p->table;
     LOG("===== Two-way: \"%s\" in \"%s\". =====\n", needle, haystack);
 
     if (p->is_periodic) {
         LOG("Needle is periodic.\n");
         Py_ssize_t memory = 0;
+      periodicwindowloop:
         while (window <= last_window) {
             Py_ssize_t i = Py_MAX(cut, memory);
 
@@ -364,7 +372,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 // as well jump to line up the character *after* the
                 // current window.
                 STRINGLIB_CHAR first_outside = window[len_needle];
-                SHIFT_TYPE shift = p->table[first_outside & TABLE_MASK];
+                SHIFT_TYPE shift = table[first_outside & TABLE_MASK];
                 if (shift == NOT_FOUND) {
                     LOG("\"%c\" not found. Skipping entirely.\n",
                         first_outside);
@@ -376,42 +384,36 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     window += Py_MAX(shift, memory_shift);
                 }
                 memory = 0;
-                continue;
+                goto periodicwindowloop;
             }
-
-            i++;
-            while (i < len_needle && needle[i] == window[i]) {
-                i++;
-            }
-            if (i >= len_needle) {
-                LOG("Right half matches.\n");
-                i = cut - 1;
-                while (i >= memory && needle[i] == window[i]) {
-                    i--;
+            for (i = i + 1; i < len_needle; i++) {
+                if (needle[i] != window[i]) {
+                    LOG("Right half does not match. Jump ahead by %d.\n",
+                        i - cut + 1);
+                    window += i - cut + 1;
+                    memory = 0;
+                    goto periodicwindowloop;
                 }
-                if (i < memory) {
-                    LOG("Left half matches. Returning %d.\n",
-                        window - haystack);
-                    return window - haystack;
+            }
+            for (i = memory; i < cut; i++) {
+                if (needle[i] != window[i]) {
+                    LOG("Left half does not match. Jump ahead by period %d.\n",
+                        period);
+                    window += period;
+                    memory = len_needle - period;
+                    goto periodicwindowloop;
                 }
-                LOG("Left half does not match. Jump ahead by period %d.\n",
-                    period);
-                window += period;
-                memory = len_needle - period;
             }
-            else {
-                LOG("Right half does not match. Jump ahead by %d.\n",
-                    i - cut + 1);
-                window += i - cut + 1;
-                memory = 0;
-            }
+            LOG("Left half matches. Returning %d.\n",
+                window - haystack);
+            return window - haystack;
         }
     }
     else {
-        period = Py_MAX(cut, len_needle - cut) + 1;
         LOG("Needle is not periodic.\n");
         assert(cut < len_needle);
         STRINGLIB_CHAR needle_cut = needle[cut];
+      windowloop:
         while (window <= last_window) {
 
             // Visualize the line-up:
@@ -426,7 +428,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 // as well jump to line up the character *after* the
                 // current window.
                 STRINGLIB_CHAR first_outside = window[len_needle];
-                SHIFT_TYPE shift = p->table[first_outside & TABLE_MASK];
+                SHIFT_TYPE shift = table[first_outside & TABLE_MASK];
                 if (shift == NOT_FOUND) {
                     LOG("\"%c\" not found. Skipping entirely.\n",
                         first_outside);
@@ -436,33 +438,26 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     LOG("Shifting to line up \"%c\".\n", first_outside);
                     window += shift;
                 }
-                continue;
+                goto windowloop;
             }
-
-            Py_ssize_t i = cut + 1;
-            while (i < len_needle && needle[i] == window[i]) {
-                i++;
-            }
-            if (i >= len_needle) {
-                LOG("Right half matches.\n");
-                i = cut - 1;
-                while (i >= 0 && needle[i] == window[i]) {
-                    i--;
+            for (Py_ssize_t i = cut + 1; i < len_needle; i++) {
+                if (needle[i] != window[i]) {
+                    LOG("Right half does not match. Advance by %d.\n",
+                        i - cut + 1);
+                    window += i - cut + 1;
+                    goto windowloop;
                 }
-                if (i < 0){
-                    LOG("Left half matches. Returning %d.\n",
-                        window - haystack);
-                    return window - haystack;
+            }
+            for (Py_ssize_t i = 0; i < cut; i++) {
+                if (needle[i] != window[i]) {
+                    LOG("Left half does not match. Advance by period %d.\n",
+                        period);
+                    window += period;
+                    goto windowloop;
                 }
-                LOG("Left half does not match. Advance by period %d.\n",
-                    period);
-                window += period;
             }
-            else {
-                LOG("Right half does not match. Advance by %d.\n",
-                    i - cut + 1);
-                window += i - cut + 1;
-            }
+            LOG("Left half matches. Returning %d.\n", window - haystack);
+            return window - haystack;
         }
     }
     LOG("Not found. Returning -1.\n");

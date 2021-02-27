@@ -339,8 +339,8 @@ class BaseTest:
                                 text, 'find', p)
 
     def test_find_shift_table_overflow(self):
-        """When the table of 16-bit shifts overflows."""
-        N = 2**16 + 100 # Overflow the 16-bit shift table
+        """When the table of 8-bit shifts overflows."""
+        N = 2**8 + 100
 
         # first check the periodic case
         # here, the shift for 'b' is N + 1.

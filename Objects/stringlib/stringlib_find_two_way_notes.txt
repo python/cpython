@@ -156,7 +156,7 @@ have linear time.
 
 The sets of inequalities listed so far seem too good to be true in
 the general case. Indeed, they fail when a needle is periodic:
-there's no way to split 'AAbAAbAAbA' in two such that 
+there's no way to split 'AAbAAbAAbA' in two such that
 
     (the stuff n characters to the left of the split)
     cannot equal
@@ -166,8 +166,8 @@ there's no way to split 'AAbAAbAAbA' in two such that
 This is because no matter how you cut it, you'll get
 s[cut-3:cut] == s[cut:cut+3]. So what do we do? We still cut the
 needle in two so that n can be as big as possible. If we were to
-split it as 
-    
+split it as
+
     AAbA + AbAAbA
 
 then A == A at the split, so this is bad (we failed at length 1), but
@@ -194,9 +194,9 @@ require that k go up to max(len(left_part), len(right_part)).
 So long as the period exceeds that, we're good.
 
 The more general shorter-period case is a bit harder. The essentials
-are the same, except we use the periodicity to our advantage by 
+are the same, except we use the periodicity to our advantage by
 "remembering" periods that we've already compared. In our running
-example, say we're computing 
+example, say we're computing
 
     "AAbAAbAAbA" in "bbbAbbAAbAAbAAbbbAAbAAbAAbAA".
 
@@ -233,7 +233,7 @@ We cut as AA + bAAbAAbA, and then the algorithm runs as follows:
 
         bbbAbbAAbAAbAAbbbAAbAAbAAbAA
                AAbAAbAAbA
-                ~                   A != b at the cut 
+                ~                   A != b at the cut
         bbbAbbAAbAAbAAbbbAAbAAbAAbAA
                 AAbAAbAAbA
                 ~~                  AA != bA at the cut
@@ -421,7 +421,7 @@ more tricks for speed in fastsearch.h:
        For this reason, if the needle and haystack are long enough,
        only automatically start with two-way if the needle's length
        is a small percentage of the length of the haystack.
-    
+
     3. In cases where the needle and haystack are large but the needle
        makes up a significant percentage of the length of the
        haystack, don't pay the expensive two-way preprocessing cost
