@@ -655,6 +655,7 @@ static const char *
 convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
               char *msgbuf, size_t bufsize, freelist_t *freelist)
 {
+#define RETURN_ERR_OCCURRED return msgbuf
     /* For # codes */
 #define REQUIRE_PY_SSIZE_T_CLEAN \
     if (!(flags & FLAG_SIZE_T)) { \
@@ -662,7 +663,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                         "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
         RETURN_ERR_OCCURRED; \
     }
-#define RETURN_ERR_OCCURRED return msgbuf
 
     const char *format = *p_format;
     char c = *format++;
