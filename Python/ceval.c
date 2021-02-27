@@ -111,6 +111,9 @@ static int opcache_min_runs = 1024;  /* create opcache when code executed this m
 #define OPCODE_CACHE_MAX_TRIES 20
 #define OPCACHE_STATS 0  /* Enable stats */
 
+// This function allows to deactivate the opcode cache. As different cache mechanisms may hold
+// references, this can mess with the reference leak detector functionality so the cache needs
+// to be deactivated in such scenarios to avoid false positives. See bpo-3714 for more information.
 void
 _PyEval_DeactivateOpCache(void)
 {
