@@ -412,6 +412,9 @@ Several other key features of this statement:
           case Color.BLUE:
               print("I'm feeling the blues :(")
 
+For a more detailed explanation and additional examples, you can look into
+:pep:`636` which is written in a tutorial format.
+
 .. _tut-functions:
 
 Defining Functions
