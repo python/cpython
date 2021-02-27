@@ -1584,8 +1584,16 @@ expression support in the :mod:`re` module).
 
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
-   interpreted as in slice notation.
+   interpreted as in slice notation. For example::
 
+      >>> 'spam, spam, spam'.count('spam')
+      3
+      >>> 'spam, spam, spam'.count('spam', 5)
+      2
+      >>> 'spam, spam, spam'.count('spam', 5, 10)
+      1
+      >>> 'spam, spam, spam'.count('eggs')
+      0
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
