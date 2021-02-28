@@ -361,9 +361,11 @@ Soft Keywords
 
 .. versionadded:: 3.10
 
-The identifiers ``match``, ``case`` and ``_`` can syntactically act as keywords in some
-specific contexts related to the pattern matching statement, but this distinction is done
-at the parser level, not when tokenizing.
+Some identifiers are only reserved under specific contexts. These are known as
+*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
+syntactically act as keywords in contexts related to the pattern matching
+statement, but this distinction is done at the parser level, not when
+tokenizing.
 
 This is done to allow their use while still
 preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
