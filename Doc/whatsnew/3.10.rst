@@ -228,10 +228,10 @@ See :class:`typing.Callable`, :class:`typing.ParamSpec`,
 PEP 634: Structural Pattern Matching
 ------------------------------------
 
-Structural pattern matching has been added in the form of a *match statement*,
-a data object (which consists of sequences, mappings, primitive data types as well as class
-instances) and *case statements* of patterns with associated actions. Pattern
-matching enables programs to extract information from complex data types,
+Structural pattern matching has been added in the form of a *match statement*
+and *case statements* of patterns with associated actions. Patterns 
+consist of sequences, mappings, primitive data types as well as class instances.
+Pattern matching enables programs to extract information from complex data types,
 branch on the structure of data, and apply specific actions based on different
 forms of data.
 
@@ -252,9 +252,9 @@ The generic syntax of pattern matching is::
 
 A match statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  Specifically, pattern matching
-operates by::
+operates by:
 
-    1. using a data object with type and shape (the ``subject``)
+    1. using data with type and shape (the ``subject``)
     2. evaluating the ``subject`` in the ``match`` statement
     3. comparing the subject with each pattern in a ``case`` statement
        from top to bottom until a match is confirmed.
@@ -263,7 +263,7 @@ operates by::
     5. If an exact match is not confirmed, the last case, a wildcard ``_``,
        if provided, will be used as the matching case. If an exact match is
        not confirmed and a wildcard case does not exists, the entire match
-       block is a no-op
+       block is a no-op.
 
 Declarative approach
 ~~~~~~~~~~~~~~~~~~~~
@@ -306,13 +306,36 @@ The associated action to the case is executed after a match::
             case _:
                 return "Something's wrong with the Internet"
 
+If the above function is passed a ``status`` of 418, "I'm a teapot" is returned.
+If the above function is passed a ``status`` of 500, the case statement with
+``_`` will match as a wildcard, and "Something's wrong with the Internet" is
+returned.
 Note the last block: the variable name, ``_``, acts as a *wildcard* and insures
-the subject will always match.
+the subject will always match. The use of ``_`` is optional.
 
 You can combine several literals in a single pattern using ``|`` ("or")::
 
             case 401 | 403 | 404:
                 return "Not allowed"
+
+Behavior without the wildcard
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If we modify the above example by removing the last case block, the example
+becomes::
+
+    def http_error(status):
+        match status:
+            case 400:
+                return "Bad request"
+            case 404:
+                return "Not found"
+            case 418:
+                return "I'm a teapot"
+
+Without the use of ``_`` in a case statement, a match may not exist. If no
+match exists, the behavior is a no-op. For example, if ``status`` of 500 is
+passed, a no-op occurs.
 
 Pattterns with a literal and variable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -395,6 +418,22 @@ list of points, it could be matched like this::
             print(f"Two points on the Y axis at {y1}, {y2} are in the list.")
         case _:
             print("Something else is found in the list.")
+
+Complex patterns and the wildcard
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To this point, the examples have used ``_`` alone in the last case statement.
+A wildcard can be used in more complex patterns, such as ``('error', code, _)``.
+For example::
+
+   match test_variable:
+       case ('warning', code, 40):
+           print("A warning has been received.")
+       case ('error', code, _):
+           print(f"An error {code} occured.")
+
+In the above case, ``test_variable`` will match for ('error', code, 100) and
+('error', code, 800).
 
 Guard
 ~~~~~
