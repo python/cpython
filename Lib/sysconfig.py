@@ -59,6 +59,21 @@ _INSTALL_SCHEMES = {
     }
 
 
+_is_pypy = '__pypy__' in sys.builtin_module_names
+
+# NOTE: site.py has copy of this function.
+# Sync it when modify this function.
+def _get_impllibdir(os_name):
+    if not _is_pypy and os_name != 'nt':
+        return 'python'
+    elif not _is_pypy and os_name == 'nt':
+        return 'Python'
+    elif _is_pypy and os_name != 'nt':
+        return 'pypy'
+    elif _is_pypy and os_name == 'nt':
+        return 'PyPy'
+
+
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
 def _getuserbase():
@@ -129,20 +144,6 @@ _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
-
-_is_pypy = '__pypy__' in sys.builtin_module_names
-
-# NOTE: site.py has copy of this function.
-# Sync it when modify this function.
-def _get_impllibdir(os_name):
-    if not _is_pypy and os_name != 'nt':
-        return 'python'
-    elif not _is_pypy and os_name == 'nt':
-        return 'Python'
-    elif _is_pypy and os_name != 'nt':
-        return 'pypy'
-    elif _is_pypy and os_name == 'nt':
-        return 'PyPy'
 
 
 def _safe_realpath(path):
