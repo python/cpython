@@ -229,7 +229,7 @@ PEP 634: Structural Pattern Matching
 ------------------------------------
 
 Structural pattern matching has been added in the form of a *match statement*
-and *case statements* of patterns with associated actions. Patterns 
+and *case statements* of patterns with associated actions. Patterns
 consist of sequences, mappings, primitive data types as well as class instances.
 Pattern matching enables programs to extract information from complex data types,
 branch on the structure of data, and apply specific actions based on different
