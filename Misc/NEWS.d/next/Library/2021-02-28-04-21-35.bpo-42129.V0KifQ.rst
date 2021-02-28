@@ -1,0 +1,3 @@
+``importlib.resources`` now honors namespace packages, merging resources
+from each location in the namespace (same as found in importlib_resources
+5.0).
