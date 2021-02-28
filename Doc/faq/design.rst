@@ -259,7 +259,7 @@ Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
 You can do this easily enough with a sequence of ``if... elif... elif... else``.
-For literal values, or constants within a namespace, you can also use a 
+For literal values, or constants within a namespace, you can also use a
 ``match ... case`` statement.
 
 For cases where you need to choose from a very large number of possibilities,
