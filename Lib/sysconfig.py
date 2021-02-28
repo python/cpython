@@ -130,6 +130,7 @@ _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
 
+_is_pypy = '__pypy__' in sys.builtin_module_names
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
