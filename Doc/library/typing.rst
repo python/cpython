@@ -1250,7 +1250,6 @@ These are not used in annotations. They are building blocks for declaring types.
    The type info for introspection can be accessed via ``Point2D.__annotations__``,
    ``Point2D.__total__``, ``Point2D.__required_keys__``, and
    ``Point2D.__optional_keys__``.
-   
    To allow using this feature with older versions of Python that do not
    support :pep:`526`, ``TypedDict`` supports two additional equivalent
    syntactic forms::
@@ -1983,4 +1982,3 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
-
