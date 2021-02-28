@@ -1,0 +1,1 @@
+Extend the ``INSTALL_SCHEMA`` in sysconfig.py to handle additional python implementations (like PyPy)
