@@ -561,14 +561,17 @@ Overview
 
 Here's an overview of the logical flow of a match statement:
 
+
 #. The subject expression ``subject_expr`` is evaluated and a resulting subject
-   value obtained.  If the subject expression contains a comma, a tuple is
+   value obtained. If the subject expression contains a comma, a tuple is
    constructed using :ref:`the standard rules <typesseq-tuple>`.
 
-#. The first ``case_block`` whose patterns succeed in matching the subject
-   value and whose ``guard`` condition (if present) is "truthy" is selected.
-
-   * If no case blocks qualify, the match statement is completed.
+#. Each pattern in a ``case_block`` is attempted to match with the subject value. The
+   specific rules for success or failure are described below. The match attempt can also
+   bind some or all of the standalone names within the pattern. The precise 
+   pattern binding rules vary per pattern type and are
+   specified below.  **Name bindings made during a successful pattern match
+   outlive the executed block and can be used after the match statement**.
 
       .. note::
 
@@ -579,10 +582,15 @@ Here's an overview of the logical flow of a match statement:
          intentional decision made to allow different implementations to add
          optimizations.
 
-   * Otherwise, name bindings occur and the ``block`` inside ``case_block`` is
-     executed.  The precise pattern binding rules vary per pattern type and are
-     specified below.  **Name bindings made during a successful pattern match
-     outlive the executed block and can be used after the match statement**.
+#. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
+   this case all name bindings are guaranteed to have happened.
+
+   * If the guard evaluates as truthy or missing, the ``block`` inside ``case_block`` is
+     executed.
+
+   * Otherwise, the next ``case_block`` is attempted as described above.
+
+   * If there are no further case blocks, the match statement is completed.
 
 .. note::
 
