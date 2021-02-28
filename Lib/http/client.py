@@ -901,8 +901,9 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _tunnel(self):
-        connect_str = "CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
-            self._tunnel_port)
+        connect_str = "CONNECT %s:%d %s\r\n" % (self._tunnel_host,
+            self._tunnel_port,
+            self._http_vsn_str)
         connect_bytes = connect_str.encode("ascii")
         self.send(connect_bytes)
         for header, value in self._tunnel_headers.items():
