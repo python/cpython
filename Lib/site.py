@@ -282,7 +282,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, _get_implementation())
+        return joinuser(base, _get_impllibdir())
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -295,7 +295,7 @@ def _getuserbase():
 def _get_path(userbase):
     version = sys.version_info
 
-    implementation = _get_implementation()
+    implementation = _get_impllibdir()
     implementation_lower = implementation.lower()
     if os.name == 'nt':
         ver_nodot = sys.winver.replace('.', '')
