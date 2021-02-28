@@ -1,4 +1,5 @@
 #include "pegen.h"
+#include "pycore_arena.h"        //struct PyArena
 
 PyObject *
 _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *arena)

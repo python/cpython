@@ -5,6 +5,8 @@
 
 #include "Python.h"
 
+#include "pycore_arena.h"
+
 #ifdef Py_BUILD_CORE
 #  include "pycore_ast.h"           // struct ast_state
 #  include "pycore_interp.h"        // _PyInterpreterState.ast

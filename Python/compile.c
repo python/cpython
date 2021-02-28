@@ -22,6 +22,7 @@
  */
 
 #include "Python.h"
+#include "pycore_arena.h"         // struct PyArena
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 

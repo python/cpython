@@ -145,7 +145,6 @@
     <ClInclude Include="..\Include\cpython\odictobject.h" />
     <ClInclude Include="..\Include\cpython\parser_interface.h" />
     <ClInclude Include="..\Include\cpython\picklebufobject.h" />
-    <ClInclude Include="..\Include\cpython\pyarena.h" />
     <ClInclude Include="..\Include\cpython\pyctype.h" />
     <ClInclude Include="..\Include\cpython\pydebug.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
@@ -173,6 +172,7 @@
     <ClInclude Include="..\Include\funcobject.h" />
     <ClInclude Include="..\Include\genobject.h" />
     <ClInclude Include="..\Include\import.h" />
+    <ClInclude Include="..\Include\internal\pycore_arena.h" />
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />

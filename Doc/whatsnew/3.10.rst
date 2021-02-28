@@ -957,6 +957,10 @@ Porting to Python 3.10
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`)
 
+* The non-limited API file ``pyarena.h`` has been moved to the
+  ``Include/internal/pycore_arena.h``.
+  (Contributed by Hai Shi in :issue:`43244`.)
+
 Deprecated
 ----------
 

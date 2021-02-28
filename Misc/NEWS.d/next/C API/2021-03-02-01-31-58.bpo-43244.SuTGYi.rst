@@ -1,0 +1,2 @@
+The non-limited API file ``pyarena.h`` has been moved to the
+``Include/internal/pycore_arena.h``.

@@ -13,6 +13,7 @@
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 
+#include "pycore_arena.h"         // struct PyArena
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch

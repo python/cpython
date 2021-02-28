@@ -429,9 +429,6 @@
     <ClInclude Include="..\Include\cpython\picklebufobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\pyarena.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\pyctype.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -476,6 +473,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_arena.h">
+      <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_warnings.h">
       <Filter>Include\internal</Filter>

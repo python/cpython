@@ -8,6 +8,7 @@ extern "C" {
 
 #ifndef Py_LIMITED_API
 #include "asdl.h"
+#include "pycore_arena.h"
 
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 

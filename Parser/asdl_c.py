@@ -1499,6 +1499,7 @@ def write_header(mod, f):
     f.write('\n')
     f.write('#ifndef Py_LIMITED_API\n')
     f.write('#include "asdl.h"\n')
+    f.write('#include "pycore_arena.h"\n')
     f.write('\n')
     f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
     f.write('\n')
@@ -1549,6 +1550,8 @@ def write_source(mod, f, internal_h_file):
         #include <stddef.h>
 
         #include "Python.h"
+
+        #include "pycore_arena.h"
     """), file=f)
 
     generate_module_def(mod, f, internal_h_file)
