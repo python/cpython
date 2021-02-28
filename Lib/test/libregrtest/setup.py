@@ -62,6 +62,7 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
+        sys._deactivate_opcache()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
