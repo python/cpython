@@ -1,0 +1,1 @@
+In ctypes, now packed bitfields are calculated properly and the first item of packed bitfields is now shrank correctly.
