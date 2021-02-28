@@ -25,24 +25,24 @@ _ALWAYS_STR = {
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{impllibdir_lower}{py_version_short}',
+        'platstdlib': '{platbase}/{platlibdir}/{impllibdir_lower}{py_version_short}',
+        'purelib': '{base}/lib/{impllibdir_lower}{py_version_short}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{impllibdir_lower}{py_version_short}/site-packages',
         'include':
-            '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
+            '{installed_base}/include/{impllibdir_lower}{py_version_short}{abiflags}',
         'platinclude':
-            '{installed_platbase}/include/{implementation_lower}{py_version_short}{abiflags}',
+            '{installed_platbase}/include/{impllibdir_lower}{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
     'posix_home': {
-        'stdlib': '{installed_base}/lib/{implementation_lower}',
-        'platstdlib': '{base}/lib/{implementation_lower}',
-        'purelib': '{base}/lib/{implementation_lower}',
-        'platlib': '{base}/lib/{implementation_lower}',
-        'include': '{installed_base}/include/{implementation_lower}',
-        'platinclude': '{installed_base}/include/{implementation_lower}',
+        'stdlib': '{installed_base}/lib/{impllibdir_lower}',
+        'platstdlib': '{base}/lib/{impllibdir_lower}',
+        'purelib': '{base}/lib/{impllibdir_lower}',
+        'platlib': '{base}/lib/{impllibdir_lower}',
+        'include': '{installed_base}/include/{impllibdir_lower}',
+        'platinclude': '{installed_base}/include/{impllibdir_lower}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -98,19 +98,19 @@ if _HAS_USER_BASE:
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
-            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
-            'platlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
-            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{impllibdir_lower}{py_version_short}',
+            'platstdlib': '{userbase}/{platlibdir}/{impllibdir_lower}{py_version_short}',
+            'purelib': '{userbase}/lib/{impllibdir_lower}{py_version_short}/site-packages',
+            'platlib': '{userbase}/{platlibdir}/{impllibdir_lower}{py_version_short}/site-packages',
+            'include': '{userbase}/include/{impllibdir_lower}{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
         'osx_framework_user': {
-            'stdlib': '{userbase}/lib/{implementation_lower}',
-            'platstdlib': '{userbase}/lib/{implementation_lower}',
-            'purelib': '{userbase}/lib/{implementation_lower}/site-packages',
-            'platlib': '{userbase}/lib/{implementation_lower}/site-packages',
+            'stdlib': '{userbase}/lib/{impllibdir_lower}',
+            'platstdlib': '{userbase}/lib/{impllibdir_lower}',
+            'purelib': '{userbase}/lib/{impllibdir_lower}/site-packages',
+            'platlib': '{userbase}/lib/{impllibdir_lower}/site-packages',
             'include': '{userbase}/include',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
@@ -133,7 +133,7 @@ _USER_BASE = None
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
-def _get_implementation():
+def _get_impllibdir():
     if '__pypy__' in sys.builtin_module_names:
         return 'PyPy'
     return 'Python'
@@ -576,8 +576,8 @@ def get_config_vars(*args):
         except AttributeError:
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
-        _CONFIG_VARS['implementation'] = _get_implementation()
-        _CONFIG_VARS['implementation_lower'] = _get_implementation().lower()
+        _CONFIG_VARS['impllibdir'] = _get_impllibdir()
+        _CONFIG_VARS['impllibdir_lower'] = _get_impllibdir().lower()
         try:
             _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
         except AttributeError:

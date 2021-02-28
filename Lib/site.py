@@ -75,7 +75,7 @@ import builtins
 import _sitebuiltins
 import io
 
-is_pypy = '__pypy__' in sys.builtin_module_names
+_is_pypy = '__pypy__' in sys.builtin_module_names
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -260,9 +260,9 @@ def check_enableusersite():
 #
 # See https://bugs.python.org/issue29585
 
-# Copy of sysconfig._get_implementation()
-def _get_implementation():
-    if is_pypy:
+# Copy of sysconfig._get_impllibdir()
+def _get_impllibdir():
+    if _is_pypy:
         return 'PyPy'
     return 'Python'
 
@@ -431,7 +431,7 @@ def setcopyright():
         builtins.license = _sitebuiltins._Printer("license",
             "See https://www.python.org/psf/license/",
             files, dirs)
-    elif is_pypy:
+    elif _is_pypy:
         builtins.credits = _sitebuiltins._Printer("credits", """\
     PyPy is maintained by the PyPy developers and contributors (http://pypy.org)
     It is heavily based on CPython and the great work of the Python community.""")
