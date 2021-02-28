@@ -1068,7 +1068,7 @@ subject value:
    II. If all keyword patterns succeed, the class pattern succeeds.
 
    If any positional patterns are present, they are converted to keyword
-   patterns using the :data:`~class.__match_args__` attribute on the class
+   patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
    I. The equivalent of ``getattr(cls, "__match_args__", ()))`` is called.
