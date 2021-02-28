@@ -25,24 +25,24 @@ _ALWAYS_STR = {
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/{impllibdir_lower}{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/{impllibdir_lower}{py_version_short}',
-        'purelib': '{base}/lib/{impllibdir_lower}{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/{impllibdir_lower}{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{impllibdir}{py_version_short}',
+        'platstdlib': '{platbase}/{platlibdir}/{impllibdir}{py_version_short}',
+        'purelib': '{base}/lib/{impllibdir}{py_version_short}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{impllibdir}{py_version_short}/site-packages',
         'include':
-            '{installed_base}/include/{impllibdir_lower}{py_version_short}{abiflags}',
+            '{installed_base}/include/{impllibdir}{py_version_short}{abiflags}',
         'platinclude':
-            '{installed_platbase}/include/{impllibdir_lower}{py_version_short}{abiflags}',
+            '{installed_platbase}/include/{impllibdir}{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
     'posix_home': {
-        'stdlib': '{installed_base}/lib/{impllibdir_lower}',
-        'platstdlib': '{base}/lib/{impllibdir_lower}',
-        'purelib': '{base}/lib/{impllibdir_lower}',
-        'platlib': '{base}/lib/{impllibdir_lower}',
-        'include': '{installed_base}/include/{impllibdir_lower}',
-        'platinclude': '{installed_base}/include/{impllibdir_lower}',
+        'stdlib': '{installed_base}/lib/{impllibdir}',
+        'platstdlib': '{base}/lib/{impllibdir}',
+        'purelib': '{base}/lib/{impllibdir}',
+        'platlib': '{base}/lib/{impllibdir}',
+        'include': '{installed_base}/include/{impllibdir}',
+        'platinclude': '{installed_base}/include/{impllibdir}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -75,7 +75,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        return joinuser(base, _get_impllibdir(os.name))
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -89,28 +89,28 @@ if _HAS_USER_BASE:
     _INSTALL_SCHEMES |= {
         # NOTE: When modifying "purelib" scheme, update site._get_path() too.
         'nt_user': {
-            'stdlib': '{userbase}/Python{py_version_nodot_plat}',
-            'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
-            'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-            'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-            'include': '{userbase}/Python{py_version_nodot_plat}/Include',
-            'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
+            'stdlib': '{userbase}/{impllibdir}{py_version_nodot_plat}',
+            'platstdlib': '{userbase}/{impllibdir}{py_version_nodot_plat}',
+            'purelib': '{userbase}/{impllibdir}{py_version_nodot_plat}/site-packages',
+            'platlib': '{userbase}/{impllibdir}{py_version_nodot_plat}/site-packages',
+            'include': '{userbase}/{impllibdir}{py_version_nodot_plat}/Include',
+            'scripts': '{userbase}/{impllibdir}{py_version_nodot_plat}/Scripts',
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/{impllibdir_lower}{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/{impllibdir_lower}{py_version_short}',
-            'purelib': '{userbase}/lib/{impllibdir_lower}{py_version_short}/site-packages',
-            'platlib': '{userbase}/{platlibdir}/{impllibdir_lower}{py_version_short}/site-packages',
-            'include': '{userbase}/include/{impllibdir_lower}{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{impllibdir}{py_version_short}',
+            'platstdlib': '{userbase}/{platlibdir}/{impllibdir}{py_version_short}',
+            'purelib': '{userbase}/lib/{impllibdir}{py_version_short}/site-packages',
+            'platlib': '{userbase}/{platlibdir}/{impllibdir}{py_version_short}/site-packages',
+            'include': '{userbase}/include/{impllibdir}{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
         'osx_framework_user': {
-            'stdlib': '{userbase}/lib/{impllibdir_lower}',
-            'platstdlib': '{userbase}/lib/{impllibdir_lower}',
-            'purelib': '{userbase}/lib/{impllibdir_lower}/site-packages',
-            'platlib': '{userbase}/lib/{impllibdir_lower}/site-packages',
+            'stdlib': '{userbase}/lib/{impllibdir}',
+            'platstdlib': '{userbase}/lib/{impllibdir}',
+            'purelib': '{userbase}/lib/{impllibdir}/site-packages',
+            'platlib': '{userbase}/lib/{impllibdir}/site-packages',
             'include': '{userbase}/include',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
@@ -133,10 +133,16 @@ _USER_BASE = None
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
-def _get_impllibdir():
-    if '__pypy__' in sys.builtin_module_names:
+def _get_impllibdir(os_name):
+    if not _is_pypy and os_name != 'nt':
+        return 'python'
+    elif not _is_pypy and os_name == 'nt':
+        return 'Python'
+    elif _is_pypy and os_name != 'nt':
+        return 'pypy'
+    elif _is_pypy and os_name == 'nt':
         return 'PyPy'
-    return 'Python'
+
 
 def _safe_realpath(path):
     try:
@@ -576,8 +582,7 @@ def get_config_vars(*args):
         except AttributeError:
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
-        _CONFIG_VARS['impllibdir'] = _get_impllibdir()
-        _CONFIG_VARS['impllibdir_lower'] = _get_impllibdir().lower()
+        _CONFIG_VARS['impllibdir'] = _get_impllibdir(os.name)
         try:
             _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
         except AttributeError:
