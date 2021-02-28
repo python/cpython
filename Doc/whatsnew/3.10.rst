@@ -442,7 +442,7 @@ Several other key features:
 
 - Named constants may be used in patterns.  These named constants must be
   dotted names to prevent the constant from being interpreted as a capture
-   variable::
+  variable::
 
       from enum import Enum
       class Color(Enum):
