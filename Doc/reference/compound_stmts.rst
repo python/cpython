@@ -568,7 +568,7 @@ Here's an overview of the logical flow of a match statement:
 
 #. Each pattern in a ``case_block`` is attempted to match with the subject value. The
    specific rules for success or failure are described below. The match attempt can also
-   bind some or all of the standalone names within the pattern. The precise 
+   bind some or all of the standalone names within the pattern. The precise
    pattern binding rules vary per pattern type and are
    specified below.  **Name bindings made during a successful pattern match
    outlive the executed block and can be used after the match statement**.
@@ -708,71 +708,15 @@ The top-level syntax for ``patterns`` is:
                  : | `mapping_pattern`
                  : | `class_pattern`
 
-The following is a very brief overview of the different patterns and an
-approximation of their behavior (credits to Raymond Hettinger for the idea):
-
-+--------------------------+-------------------+----------------------------------------------------------+
-| Pattern Type             | Pattern Form      | Logical behavior                                         |
-+==========================+===================+==========================================================+
-| :ref:`or-patterns`       | ``p1 | p2 | ...`` | 1. test ``p1``                                           |
-|                          |                   |                                                          |
-|                          |                   | 2. if failure, test ``p2``                               |
-|                          |                   |                                                          |
-|                          |                   | 3. if failure test ...                                   |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`as-patterns`       | ``pattern``       | 1. test ``pattern``                                      |
-|                          |  :keyword:`as`    |                                                          |
-|                          |  ``capture``      | 2. if success, bind name into                            |
-|                          |                   |    ``capture``                                           |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`literal-patterns`  | ``"literal"``     | for strings and numbers, test ``subject == "literal"``   |
-|                          |                   |                                                          |
-|                          |                   | otherwise, for singletons like ``None`` and :func:`bool`,|
-|                          |                   | test ``subject is literal``                              |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`capture-patterns`  | ``name``          | bind ``name = subject``                                  |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`wildcard-patterns` | ``_``             | ``pass``                                                 |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`value-patterns`    | ``x.y``           | test ``subject == x.y``                                  |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`group-patterns`    | ``( pattern )``   | test ``pattern``                                         |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`sequence-patterns` | ``[p1, p2, ...]`` | 1. check ``isinstance(subject, collections.abc.Sequence``|
-|                          |                   |                                                          |
-|                          |                   | 2. check ``len(subject) == len(sequence_pattern)``       |
-|                          |                   |                                                          |
-|                          |                   | 3. test ``p1`` against ``subject_value[0]``              |
-|                          |                   |                                                          |
-|                          |                   | 4. test ``p2`` against ``subject_value[1]``              |
-|                          |                   |                                                          |
-|                          |                   | 5. repeat step 4. for subsequent patterns and indexes    |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`mapping-patterns`  | ``{p1: p2, ...}`` | 1. check ``isinstance(subject, collections.abc.Mapping)``|
-|                          |                   |                                                          |
-|                          |                   | 2. test ``p1 in subject``                                |
-|                          |                   |                                                          |
-|                          |                   | 3. test ``p2`` matches ``subject[p1]``                   |
-|                          |                   |                                                          |
-|                          |                   | 4. repeat steps 2. and 3. for subsequent key and value   |
-|                          |                   |    patterns.                                             |
-+--------------------------+-------------------+----------------------------------------------------------+
-| :ref:`class-patterns`    | ``K(p1, name=p2)``| 1. check ``isinstance(K, type)``                         |
-|                          |                   |                                                          |
-|                          |                   | 2. check ``isinstance(subject, K)``                      |
-|                          |                   |                                                          |
-|                          |                   | 3. check ``hasattr(subject, name)``                      |
-|                          |                   |                                                          |
-|                          |                   | 4. test ``p2`` matches ``subject.name``                  |
-|                          |                   |                                                          |
-|                          |                   | 5. convert ``p1`` to a keyword pattern using             |
-|                          |                   |    ``K.__match_args__`` and repeat steps 2. to 4.        |
-|                          |                   |    using ``p1``                                          |
-+--------------------------+-------------------+----------------------------------------------------------+
-
-Note that this table purely for illustration purposes and **may not** reflect
+The descriptions below will include a description "in simple terms" of what a pattern
+does for illustration purposes (credits to Raymond Hettinger for a document that
+inspired most of the descriptions). Note that these descriptions are purely for
+illustration purposes and **may not** reflect
 the underlying implementation.  Furthermore, they do not cover all valid forms.
-Read the pattern's respective sections to learn more.
+
+The following is a very brief overview of the different patterns and an
+approximation of their behavior:
+
 
 
 .. _or-patterns:
@@ -793,6 +737,9 @@ An OR pattern matches each of its subpatterns in turn to the subject value,
 until one succeeds.  The OR pattern is then considered successful.  Otherwise,
 if none of the subpatterns succeed, the OR pattern fails.
 
+In simple terms, ``P1 | P2 | ...`` will try to match ``P1``, if it fails it will try to
+match ``P2``, succeeding immediately if any succeeds, failing otherwise.
+
 .. _as-patterns:
 
 AS Patterns
@@ -807,6 +754,10 @@ keyword against a subject.  Syntax:
 If the OR pattern fails, the AS pattern fails.  Otherwise, the AS pattern binds
 the subject to the name on the right of the as keyword and succeeds.
 ``capture_pattern`` cannot be a a ``_``.
+
+In simple terms ``P as NAME`` will match with ``P``, and on success it will
+set ``NAME = <subject>``.
+
 
 .. _literal-patterns:
 
@@ -835,6 +786,9 @@ The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
 for expressing :ref:`complex numbers <imaginary>`; they require a real number
 on the left and an imaginary number on the right. E.g. ``3 + 4j``.
 
+In simple terms, ``LITERAL`` will succeed only if ``<subject> == LITERAL``. For
+the singletons ``None``, ``True`` and ``False``, the :keyword:`is` operator is used.
+
 .. _capture-patterns:
 
 Capture Patterns
@@ -853,9 +807,11 @@ In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
 
 Capture patterns always succeed.  The binding follows scoping rules
-established by the assignment expression operator in :pep`572`; the
+established by the assignment expression operator in :pep:`572`; the
 name becomes a local variable in the closest containing function scope unless
 there's an applicable :keyword:`global` or :keyword:`nonlocal` statement.
+
+In simple terms ``NAME`` will always succeed and it will set ``NAME = <subject>``.
 
 .. _wildcard-patterns:
 
@@ -869,6 +825,8 @@ and binds no name.  Syntax:
    wildcard_pattern: '_'
 
 ``_`` is a :ref:`soft keyword <soft-keywords>`.
+
+In simple terms, ``_`` will always succeed.
 
 .. _value-patterns:
 
@@ -887,6 +845,8 @@ The dotted name in the pattern is looked up using standard Python
 :ref:`name resolution rules <resolve_names>`.  The pattern succeeds if the
 value found compares equal to the subject value (using the ``==`` equality
 operator).
+
+In simple terms ``NAME1.NAME2`` will succeed only if ``<subject> == NAME1.NAME2``
 
 .. note::
 
@@ -907,13 +867,15 @@ Syntax:
 .. productionlist:: python-grammar
    group_pattern: '(' `pattern` ')'
 
+In simple terms ``(P)`` has the same effect as ``P``.
+
 .. _sequence-patterns:
 
 Sequence Patterns
 ^^^^^^^^^^^^^^^^^
 
-A sequence pattern contains a sequence of subpatterns.  The syntax is
-similar to the construction of a list or tuple.
+A sequence pattern contains several subpatterns to be matched against sequence elements.
+The syntax is similar to the unpacking of a list or tuple.
 
 .. productionlist:: python-grammar
   sequence_pattern: "[" [`maybe_sequence_pattern`] "]"
@@ -923,9 +885,8 @@ similar to the construction of a list or tuple.
   maybe_star_pattern: `star_pattern` | `pattern`
   star_pattern: "*" (`capture_pattern` | `wildcard_pattern`)
 
-
-There is no difference if parentheses (``(...)``) or square brackets (``[...]``)
-are used for sequence patterns.
+There is no difference if parentheses  or square brackets
+are used for sequence patterns (i.e. ``(...)`` vs ``[...]`` ).
 
 .. note::
    A single pattern enclosed in parentheses without a trailing comma
@@ -981,6 +942,15 @@ subject value:
       :ref:`value patterns <value-patterns>`.
 
 
+In simple terms ``[P1, P2, P3,`` ... ``, P<N>]`` matches only if all the following
+happens:
+
+* ``isinstance(<subject>, collections.abc.Sequence)``
+* ``len(subject) == <N>``
+* ``P1`` matches ``<subject>[0]`` (note that this match can also bind names)
+* ``P2`` matches ``<subject>[1]`` (note that this match can also bind names)
+* ... and so on for the corresponding pattern/element.
+
 .. _mapping-patterns:
 
 Mapping Patterns
@@ -1021,6 +991,14 @@ subject value:
    subject's ``get()`` method.  Matched key-value pairs must already be present
    in the mapping, and not created on-the-fly via :meth:`__missing__` or
    :meth:`__getitem__`.
+
+In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
+happens:
+
+* ``isinstance(<subject>, collections.abc.Mapping)``
+* ``KEY1 in <subject>``
+* ``P1`` matches ``<subject>[KEY1]``
+* ... and so on for the corresponding KEY/pattern pair.
 
 
 .. _class-patterns:
@@ -1115,6 +1093,18 @@ subject value:
    * :class:`str`
    * :class:`tuple`
 
+   These classes accept a single positional argument, and the pattern there is matched
+   against the whole object rather than an attribute. For example ``int(0|1)`` matches
+   the value ``0``, but not the values ``0.0`` or ``False``.
+
+In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
+
+* ``isinstance(<subject>, CLS)``
+* convert ``P1`` to a keyword pattern using ``CLS.__match_args__``
+* For each keyword argument ``attr=P2``:
+   * ``hasattr(<subject>, "attr")``
+   * ``P2`` matches ``<subject>.attr``
+* ... and so on for the corresponding keyword argument/pattern pair.
 
 .. seealso::
 
