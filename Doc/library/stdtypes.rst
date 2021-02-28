@@ -1884,7 +1884,7 @@ expression support in the :mod:`re` module).
    See :meth:`str.removeprefix` for a method that will remove a single prefix
    string rather than all of a set of characters.  For example::
 
-      >>> 'Arthur: three!'.lstrip('Arthur: '
+      >>> 'Arthur: three!'.lstrip('Arthur: ')
       'ee!'
       >>> 'Arthur: three!'.removeprefix('Arthur: ')
       'three!'
