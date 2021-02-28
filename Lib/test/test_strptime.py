@@ -466,11 +466,6 @@ class StrptimeTests(unittest.TestCase):
                 time.strptime("Feb 29", "%b %d"),
                 time.strptime("Mar 1", "%b %d"))
 
-    def test_timezone_offset_cannot_parse_z(self):
-        # Check ValueError is raised when matching "z" (ordinary letter)
-        # with "%z" (timezone offset)
-        self.assertRaises(ValueError, _strptime._strptime_time, "z", "%z")
-
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 

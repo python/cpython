@@ -1,10 +1,2 @@
-Previously, datetime.strptime would match 'z' with the format string '%z'
-(for UTC offsets), throwing an IndexError by erroneously trying to parse 'z'
-as a timestamp. As a special case, '%z' matches the string 'Z' which is
-equivalent to the offset '+00:00', however this behavior is not defined for
-lowercase 'z'. This change ensures a ValueError is thrown when encountering
-the original example, as follows::
-
-    >>> from datetime import datetime
-    >>> datetime.strptime('z', '%z')
-    ValueError: time data 'z' does not match format '%z'
+Previously, :meth:`datetime.datetime.strptime` would fail with `IndexError` when the string `'z'`
+was found for the `%z` format specifier. This has been fixed to properly raise `ValueError` instead.
