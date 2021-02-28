@@ -2575,7 +2575,7 @@ For example if ``MyClass.__match_args__`` is ``("left", "center", "right")`` tha
 that ``case MyClass(x, y)`` is equivalent to ``case MyClass(left=x, center=y)``. Note
 that the number of arguments in the pattern must be smaller than or equal to the number
 of elements in *__match_args__*; if it is larger, the pattern match attempt will raise
-a *TypeError*.
+a :exc:`TypeError`.
 
 .. versionadded:: 3.10
 
