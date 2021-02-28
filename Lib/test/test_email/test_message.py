@@ -779,6 +779,11 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         m = self._str_msg('Subject: long line' + ' ab'*50 + '\n\n')
         self.assertEqual(len(str(m).strip().splitlines()), 3)
 
+    def test_invalid_message_id_exception(self):
+        m = EmailMessage()
+        m['Message-ID'] = '<[>'
+        self.assertEqual(str(m), 'Message-ID: <\n\n')
+
     def test_str_defaults_to_utf8(self):
         m = EmailMessage()
         m['Subject'] = 'unicöde'
