@@ -107,16 +107,18 @@ static long dxp[256];
 #endif
 
 /* per opcode cache */
-#ifdef Py_DEBUG
-// --with-pydebug is used to find memory leak.  opcache makes it harder.
-// So we disable opcache when Py_DEBUG is defined.
-// See bpo-37146
-#define OPCACHE_MIN_RUNS 0  /* disable opcache */
-#else
-#define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
-#endif
+static int opcache_min_runs = 1024;  /* create opcache when code executed this many times */
 #define OPCODE_CACHE_MAX_TRIES 20
 #define OPCACHE_STATS 0  /* Enable stats */
+
+// This function allows to deactivate the opcode cache. As different cache mechanisms may hold
+// references, this can mess with the reference leak detector functionality so the cache needs
+// to be deactivated in such scenarios to avoid false positives. See bpo-3714 for more information.
+void
+_PyEval_DeactivateOpCache(void)
+{
+    opcache_min_runs = 0;
+}
 
 #if OPCACHE_STATS
 static size_t opcache_code_objects = 0;
@@ -1705,9 +1707,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     f->f_stackdepth = -1;
     f->f_state = FRAME_EXECUTING;
 
-    if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
+    if (co->co_opcache_flag < opcache_min_runs) {
         co->co_opcache_flag++;
-        if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
+        if (co->co_opcache_flag == opcache_min_runs) {
             if (_PyCode_InitOpcache(co) < 0) {
                 goto exit_eval_frame;
             }

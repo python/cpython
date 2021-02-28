@@ -28,3 +28,5 @@ PyAPI_FUNC(Py_ssize_t) _PyEval_RequestCodeExtraIndex(freefunc);
 
 PyAPI_FUNC(int) _PyEval_SliceIndex(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
+
+PyAPI_FUNC(void) _PyEval_DeactivateOpCache(void);
