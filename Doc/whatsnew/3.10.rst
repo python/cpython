@@ -229,7 +229,7 @@ PEP 634: Structural Pattern Matching
 ------------------------------------
 
 Structural pattern matching has been added in the form of a *match statement*,
-a data object (sequences, mappings, primitive data types as well as class
+a data object (which consists of sequences, mappings, primitive data types as well as class
 instances) and *case statements* of patterns with associated actions. Pattern
 matching enables programs to extract information from complex data types,
 branch on the structure of data, and apply specific actions based on different
@@ -240,29 +240,30 @@ Syntax and operations
 
 The generic syntax of pattern matching is::
 
-    def function(subject):
-        match {subject}:
-            case {pattern_1}:
-                {action_1}
-            case {pattern_2}:
-                {action_2}
-            case {pattern_3}:
-                {action_3}
-            case _:
-                {action_wildcard}
+      match subject:
+          case <pattern_1>:
+              <action_1>
+          case <pattern_2>:
+              <action_2>
+          case <pattern_3>:
+              <action_3>
+          case _:
+              <action_wildcard>
 
 A match statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  Specifically, pattern matching
 operates by::
 
-    1. taking a data object ``subject`` with type and shape
-    2. substituting the ``subject`` into a ``match`` statement
-    3. comparing the match subject with each pattern in a ``case`` statement
-       from top to bottom until a match is confirmed. If an exact match is not
-       confirmed, the last case, a wildcard ``_``, will be used as the matching
-       case.
-    4. executing the actions associated with the pattern of the confirmed
+    1. using a data object with type and shape (the ``subject``)
+    2. evaluating the ``subject`` in the ``match`` statement
+    3. comparing the subject with each pattern in a ``case`` statement
+       from top to bottom until a match is confirmed.
+    4. executing the action associated with the pattern of the confirmed
        match
+    5. If an exact match is not confirmed, the last case, a wildcard ``_``,
+       if provided, will be used as the matching case. If an exact match is
+       not confirmed and a wildcard case does not exists, the entire match
+       block is a no-op
 
 Declarative approach
 ~~~~~~~~~~~~~~~~~~~~
@@ -271,11 +272,11 @@ Readers may be aware of pattern matching through the simple example of matching
 a subject (data object) to a literal (pattern) with the switch statement found
 in C, Java or JavaScript (and many other languages). Often the switch statement
 is used for comparison of an object/expression with case statements containing
-literals. 
+literals.
 
 More powerful examples of pattern matching can be found in languages, such as
-Elixir. With structural pattern matching, the approach is "declarative" and
-explicitly states the conditions (the patterns) for data to match. 
+Scala and Elixir. With structural pattern matching, the approach is "declarative" and
+explicitly states the conditions (the patterns) for data to match.
 
 While an "imperative" series of instructions using nested "if" statements
 could be used to accomplish something similar to structural pattern matching,
@@ -283,14 +284,14 @@ it is less clear than the "declarative" approach. Instead the "declarative"
 approach states the conditions to meet for a match and is more readable through
 its explicit patterns. While structural pattern matching can be used in its
 simplest form comparing a variable to a literal in a case statement, its
-true value for Python lies in its handling of data's type and shape.
+true value for Python lies in its handling of the subject's type and shape.
 
 Simple pattern: match to a literal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let's look at this example as pattern matching in its simplest form: a value, 
+Let's look at this example as pattern matching in its simplest form: a value,
 the subject, being matched to several literals, the patterns. In the example
-below, ``status`` is the subject of the match statement. The patterns are 
+below, ``status`` is the subject of the match statement. The patterns are
 each of the case statements, where literals represent request status codes.
 The associated action to the case is executed after a match::
 
@@ -359,7 +360,7 @@ pattern has the ability to capture class attributes into variables::
             case Point(x=x, y=0):
                 print(f"X={x} and the point is on the x-axis.")
             case Point():
-                print("The point is located somewhere else on the graph.")
+                print("The point is located somewhere else on the plane.")
             case _:
                 print("Not a point")
 
@@ -416,8 +417,8 @@ Several other key features:
 - Like unpacking assignments, tuple and list patterns have exactly the
   same meaning and actually match arbitrary sequences. Technically,
   the subject must be an instance of ``collections.abc.Sequence``.
-  Therefore, an important exception is that patterns don't match iterators 
-  or strings.
+  Therefore, an important exception is that patterns don't match iterators.
+  Also, to prevent a common mistake, sequence patterns don't match strings.
 
 - Sequence patterns support wildcards: ``[x, y, *rest]`` and ``(x, y,
   *rest)`` work similar to wildcards in unpacking assignments.  The
@@ -432,6 +433,9 @@ Several other key features:
 - Subpatterns may be captured using the ``as`` keyword::
 
       case (Point(x1, y1), Point(x2, y2) as p2): ...
+
+  This binds x1, y1, x2, y2 like you would expect without the ``as`` clause,
+  and p2 to the entire second item of the subject.
 
 - Most literals are compared by equality. However, the singletons ``True``,
   ``False`` and ``None`` are compared by identity.
