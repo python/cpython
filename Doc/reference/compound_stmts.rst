@@ -665,7 +665,7 @@ at most one irrefutable case block, and it must be last.
 
 A case block is considered irrefutable if it has no guard and its pattern is
 irrefutable.  A pattern is considered irrefutable if we can prove from its
-syntax alone that it will always succeed.  The following patterns are
+syntax alone that it will always succeed.  Only the following patterns are
 irrefutable:
 
 * :ref:`as-patterns` whose left-hand side is irrefutable
