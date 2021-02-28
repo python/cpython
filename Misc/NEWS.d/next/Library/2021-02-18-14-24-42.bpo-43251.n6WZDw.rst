@@ -1,0 +1,2 @@
+Improve :mod:`sqlite3` error handling: ``sqlite3_column_name()`` failures
+now result in :exc:`MemoryError`. Patch by Erlend E. Aasland.

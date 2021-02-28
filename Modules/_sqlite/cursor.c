@@ -135,7 +135,6 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
 {
     int i;
     const char* pos;
-    const char* colname;
     const char* decltype;
     PyObject* converter;
 
@@ -152,21 +151,24 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
         converter = NULL;
 
         if (self->connection->detect_types & PARSE_COLNAMES) {
-            colname = sqlite3_column_name(self->statement->st, i);
-            if (colname) {
-                const char *type_start = NULL;
-                for (pos = colname; *pos != 0; pos++) {
-                    if (*pos == '[') {
-                        type_start = pos + 1;
+            const char *colname = sqlite3_column_name(self->statement->st, i);
+            if (colname == NULL) {
+                PyErr_NoMemory();
+                Py_CLEAR(self->row_cast_map);
+                return -1;
+            }
+            const char *type_start = NULL;
+            for (pos = colname; *pos != 0; pos++) {
+                if (*pos == '[') {
+                    type_start = pos + 1;
+                }
+                else if (*pos == ']' && type_start != NULL) {
+                    converter = _pysqlite_get_converter(type_start, pos - type_start);
+                    if (!converter && PyErr_Occurred()) {
+                        Py_CLEAR(self->row_cast_map);
+                        return -1;
                     }
-                    else if (*pos == ']' && type_start != NULL) {
-                        converter = _pysqlite_get_converter(type_start, pos - type_start);
-                        if (!converter && PyErr_Occurred()) {
-                            Py_CLEAR(self->row_cast_map);
-                            return -1;
-                        }
-                        break;
-                    }
+                    break;
                 }
             }
         }
@@ -209,10 +211,6 @@ _pysqlite_build_column_name(pysqlite_Cursor *self, const char *colname)
 {
     const char* pos;
     Py_ssize_t len;
-
-    if (!colname) {
-        Py_RETURN_NONE;
-    }
 
     if (self->connection->detect_types & PARSE_COLNAMES) {
         for (pos = colname; *pos; pos++) {
@@ -311,8 +309,9 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                     if (!converted && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
                         PyErr_Clear();
                         colname = sqlite3_column_name(self->statement->st, i);
-                        if (!colname) {
-                            colname = "<unknown column name>";
+                        if (colname == NULL) {
+                            PyErr_NoMemory();
+                            goto error;
                         }
                         PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column '%s' with text '%s'",
                                      colname , text);
@@ -550,9 +549,15 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                 if (!descriptor) {
                     goto error;
                 }
-                column_name = _pysqlite_build_column_name(self,
-                                sqlite3_column_name(self->statement->st, i));
-                if (!column_name) {
+                const char *colname;
+                colname = sqlite3_column_name(self->statement->st, i);
+                if (colname == NULL) {
+                    PyErr_NoMemory();
+                    Py_DECREF(descriptor);
+                    goto error;
+                }
+                column_name = _pysqlite_build_column_name(self, colname);
+                if (column_name == NULL) {
                     Py_DECREF(descriptor);
                     goto error;
                 }
