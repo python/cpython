@@ -1,3 +1,0 @@
-Move pyarena.h, pyctype.h, and pytime.h into the cpython/ directory. They
-must not be included directly, as they are already included by Python.h:
-:ref:`Include Files <api-includes>`.

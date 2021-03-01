@@ -1,2 +1,0 @@
-Fix ``SystemError`` raised when ``PyArg_Parse*()`` is used with ``#`` but
-without ``PY_SSIZE_T_CLEAN`` defined.
