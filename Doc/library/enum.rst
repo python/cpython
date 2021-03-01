@@ -282,7 +282,7 @@ overridden::
 
 .. note::
 
-    The goal of the default :meth:`_generate_next_value_` methods is to provide
+    The goal of the default :meth:`_generate_next_value_` method is to provide
     the next :class:`int` in sequence with the last :class:`int` provided, but
     the way it does this is an implementation detail and may change.
 
