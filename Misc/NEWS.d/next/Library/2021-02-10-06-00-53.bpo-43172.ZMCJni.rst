@@ -1,4 +1,0 @@
-The readline module now passes its tests when built directly against
-libedit. Existing irreconcilable API differences remain in
-:func:`readline.get_begidx` and :func:`readline.get_endidx` behavior based
-on libreadline vs libedit use.

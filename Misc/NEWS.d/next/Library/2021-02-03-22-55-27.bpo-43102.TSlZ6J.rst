@@ -1,2 +1,0 @@
-The namedtuple __new__ method had its __builtins__ set to None instead
-of an actual dictionary.  This created problems for introspection tools.

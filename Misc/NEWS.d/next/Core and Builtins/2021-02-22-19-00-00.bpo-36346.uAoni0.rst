@@ -1,2 +1,0 @@
-``PyArg_Parse*()`` functions now emits ``DeprecationWarning`` when ``u`` or
-``Z`` format is used. See :pep:`623` for detail.

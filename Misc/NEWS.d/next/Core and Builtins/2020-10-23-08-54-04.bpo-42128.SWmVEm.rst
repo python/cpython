@@ -1,1 +1,0 @@
-Implement :pep:`634` (structural pattern matching). Patch by Brandt Bucher.
