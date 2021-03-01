@@ -1240,6 +1240,128 @@ Control flow
             type_ignores=[])
 
 
+.. class:: Match(subject, cases)
+
+   A ``match`` statement. ``subject`` holds the subject of the match (the object
+   that is being matched against the cases) and ``cases`` contains an iterable of
+   :class:`match_case` nodes with the different cases.
+
+
+.. class:: match_case(context_expr, optional_vars)
+
+    A single case pattern in a ``match`` statement. ``pattern`` contains the
+    match pattern that will be used to match the subject against. Notice that
+    the meaning of the :class:`AST` nodes in this attribute have a different
+    meaning than in other places, as they represent patterns to match against.
+    The ``guard`` attribute contains an expression that will be evaluated if
+    the pattern matches the subject. If the pattern matches and the ``guard`` condition
+    is truthy, the body of the case shall be executed. ``body`` contains a list
+    of nodes to execute if the guard is truthy.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] if x>0:
+        ...         ...
+        ...     case tuple():
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=List(
+                                elts=[
+                                    Name(id='x', ctx=Store())],
+                                ctx=Load()),
+                            guard=Compare(
+                                left=Name(id='x', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=0)]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=Call(
+                                func=Name(id='tuple', ctx=Load()),
+                                args=[],
+                                keywords=[]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchAs(pattern, name)
+
+    A match "as-pattern".  The as-pattern matches whatever pattern is on its
+    left-hand side, but also binds the value to a name. ``pattern`` contains
+    the match pattern that will be used to match the subject agsinst. The ``name``
+    attribute contains the name that will be binded if the pattern is successful.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] as y:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchAs(
+                                pattern=List(
+                                    elts=[
+                                        Name(id='x', ctx=Store())],
+                                    ctx=Load()),
+                                name='y'),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+
+.. class:: MatchOr(patterns)
+
+    A match "or-pattern". An or-pattern matches each of its subpatterns in turn
+    to the subject, until one succeeds. The or-pattern is then deemed to
+    succeed. If none of the subpatterns succeed the or-pattern fails. The
+    ``patterns`` attribute contains a list of match patterns nodes that will be
+    matched against the subject.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] | (y):
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchOr(
+                                patterns=[
+                                    List(
+                                        elts=[
+                                            Name(id='x', ctx=Store())],
+                                        ctx=Load()),
+                                    Name(id='y', ctx=Store())]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
