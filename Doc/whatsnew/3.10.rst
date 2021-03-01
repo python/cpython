@@ -1123,6 +1123,12 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`43103`.)
 
+* The ``configure`` script now uses the ``pkg-config`` utility, if available,
+  to detect the location of Tcl/Tk headers and libraries.  As before, those
+  locations can be explicitly specified with the ``--with-tcltk-includes``
+  and ``--with-tcltk-libs`` configuration options.
+  (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
+
 
 C API Changes
 =============
