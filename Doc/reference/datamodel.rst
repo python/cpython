@@ -2571,7 +2571,7 @@ define a *__match_args__* attribute.
    *__match_args__* as the keyword. The absence of this attribute is equivalent to
    setting it to ``()``.
 
-For example if ``MyClass.__match_args__`` is ``("left", "center", "right")`` that means
+For example, if ``MyClass.__match_args__`` is ``("left", "center", "right")`` that means
 that ``case MyClass(x, y)`` is equivalent to ``case MyClass(left=x, center=y)``. Note
 that the number of arguments in the pattern must be smaller than or equal to the number
 of elements in *__match_args__*; if it is larger, the pattern match attempt will raise
