@@ -1,7 +1,0 @@
-Make configure script use pkg-config to detect the location of Tcl/Tk
-headers and libraries, used to build tkinter.
-
-On macOS, a Tcl/Tk configuration provided by pkg-config will be preferred
-over Tcl/Tk frameworks installed in ``/{System/,}Library/Frameworks``.
-If both exist and the latter is preferred, the appropriate
-``--with-tcltk-*`` configuration options need to be explicitly set.
