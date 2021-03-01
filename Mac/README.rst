@@ -359,7 +359,7 @@ them symbolic links to files in ``/Library/Frameworks/Python.framework/Versions/
 Weak linking support
 ====================
 
-The CPython sources support building with the latest SDK while targetting deployment
+The CPython sources support building with the latest SDK while targeting deployment
 to macOS 10.9. This is done through weak linking of symbols introduced in macOS
 10.10 or later and checking for their availability at runtime.
 
