@@ -241,7 +241,9 @@ class TypeVarTupleTests(BaseTestCase):
     def test_basic_plain(self):
         Ts = TypeVarTuple('Ts')
         self.assertEqual(Ts, Ts)
+        self.assertEqual(Unpack[Ts], Unpack[Ts])
         self.assertIsInstance(Ts, TypeVarTuple)
+        self.assertIsInstance(Unpack[Ts], _UnpackedTypeVarTuple)
 
     def test_repr(self):
         Ts = TypeVarTuple('Ts')
@@ -356,7 +358,6 @@ class TypeVarTupleTests(BaseTestCase):
     def test_class(self):
         Ts = TypeVarTuple('Ts')
 
-        class C(Generic[Unpack[Ts]]): pass
         class C(Generic[Unpack[Ts]]): pass
         C[int]
         C[int, str]
