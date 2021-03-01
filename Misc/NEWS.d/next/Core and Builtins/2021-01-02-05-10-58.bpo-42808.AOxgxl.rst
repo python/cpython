@@ -1,2 +1,0 @@
-Simple calls to ``type(object)`` are now faster due to the
-``vectorcall`` calling convention. Patch by Dennis Sweeney.
