@@ -121,6 +121,10 @@ directory containing the virtual environment):
 |             | PowerShell      | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
 +-------------+-----------------+-----------------------------------------+
 
+When a virtual environment is active, the :envvar:`VIRTUAL_ENV` environment
+variable is set to the path of the virtual environment. This can be used to
+check if one is running inside a virtual environment.
+
 You don't specifically *need* to activate an environment; activation just
 prepends the virtual environment's binary directory to your path, so that
 "python" invokes the virtual environment's Python interpreter and you can run
