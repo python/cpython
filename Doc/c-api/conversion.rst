@@ -25,7 +25,7 @@ functions :c:func:`snprintf` and :c:func:`vsnprintf`. Their purpose is to
 guarantee consistent behavior in corner cases, which the Standard C functions do
 not.
 
-The wrappers ensure that *str*[*size*-1] is always ``'\0'`` upon return. They
+The wrappers ensure that ``str[size-1]`` is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
 Both functions require that ``str != NULL``, ``size > 0`` and ``format !=
 NULL``.
@@ -38,13 +38,13 @@ The return value (*rv*) for these functions should be interpreted as follows:
 
 * When ``0 <= rv < size``, the output conversion was successful and *rv*
   characters were written to *str* (excluding the trailing ``'\0'`` byte at
-  *str*[*rv*]).
+  ``str[rv]``).
 
 * When ``rv >= size``, the output conversion was truncated and a buffer with
-  ``rv + 1`` bytes would have been needed to succeed. *str*[*size*-1] is ``'\0'``
+  ``rv + 1`` bytes would have been needed to succeed. ``str[size-1]`` is ``'\0'``
   in this case.
 
-* When ``rv < 0``, "something bad happened." *str*[*size*-1] is ``'\0'`` in
+* When ``rv < 0``, "something bad happened." ``str[size-1]`` is ``'\0'`` in
   this case too, but the rest of *str* is undefined. The exact cause of the error
   depends on the underlying platform.
 
