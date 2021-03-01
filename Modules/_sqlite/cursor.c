@@ -462,10 +462,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         goto error;
     }
 
-    if (self->statement) {
-        (void)pysqlite_statement_reset(self->statement);
-    }
-
     Py_XSETREF(self->statement,
               (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
     Py_DECREF(func_args);
