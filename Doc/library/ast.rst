@@ -1254,7 +1254,7 @@ Control flow
     the meaning of the :class:`AST` nodes in this attribute have a different
     meaning than in other places, as they represent patterns to match against.
     The ``guard`` attribute contains an expression that will be evaluated if
-    the pattern matches the subject and if the pattern matches and the condition
+    the pattern matches the subject. If the pattern matches and the ``guard`` condition
     is truthy, the body of the case shall be executed. ``body`` contains a list
     of nodes to execute if the guard is truthy.
 
