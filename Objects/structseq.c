@@ -24,7 +24,7 @@ _Py_IDENTIFIER(n_sequence_fields);
 _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);
 
-static ssize_t
+static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, _Py_Identifier *id)
 {
     PyObject *name = _PyUnicode_FromId(id);

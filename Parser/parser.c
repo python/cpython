@@ -18550,8 +18550,8 @@ _loop0_1_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // NEWLINE
         if (p->error_indicator) {
             D(p->level--);
@@ -18616,8 +18616,8 @@ _loop0_2_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // NEWLINE
         if (p->error_indicator) {
             D(p->level--);
@@ -18682,8 +18682,8 @@ _loop0_4_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
             D(p->level--);
@@ -18796,8 +18796,8 @@ _loop0_6_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
             D(p->level--);
@@ -18910,8 +18910,8 @@ _loop0_8_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
             D(p->level--);
@@ -19024,8 +19024,8 @@ _loop0_10_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' expression
         if (p->error_indicator) {
             D(p->level--);
@@ -19138,8 +19138,8 @@ _loop1_11_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // statement
         if (p->error_indicator) {
             D(p->level--);
@@ -19209,8 +19209,8 @@ _loop0_13_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ';' simple_stmt
         if (p->error_indicator) {
             D(p->level--);
@@ -19771,8 +19771,8 @@ _loop1_22_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
             D(p->level--);
@@ -19952,8 +19952,8 @@ _loop0_26_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' NAME
         if (p->error_indicator) {
             D(p->level--);
@@ -20066,8 +20066,8 @@ _loop0_28_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' NAME
         if (p->error_indicator) {
             D(p->level--);
@@ -20279,8 +20279,8 @@ _loop0_31_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('.' | '...')
         if (p->error_indicator) {
             D(p->level--);
@@ -20345,8 +20345,8 @@ _loop1_32_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('.' | '...')
         if (p->error_indicator) {
             D(p->level--);
@@ -20416,8 +20416,8 @@ _loop0_34_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' import_from_as_name
         if (p->error_indicator) {
             D(p->level--);
@@ -20574,8 +20574,8 @@ _loop0_37_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' dotted_as_name
         if (p->error_indicator) {
             D(p->level--);
@@ -20732,8 +20732,8 @@ _loop0_40_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
             D(p->level--);
@@ -20846,8 +20846,8 @@ _loop0_42_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
             D(p->level--);
@@ -20960,8 +20960,8 @@ _loop0_44_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
             D(p->level--);
@@ -21074,8 +21074,8 @@ _loop0_46_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' with_item
         if (p->error_indicator) {
             D(p->level--);
@@ -21262,8 +21262,8 @@ _loop1_48_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // except_block
         if (p->error_indicator) {
             D(p->level--);
@@ -21377,8 +21377,8 @@ _loop1_50_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // case_block
         if (p->error_indicator) {
             D(p->level--);
@@ -21448,8 +21448,8 @@ _loop0_52_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // '|' closed_pattern
         if (p->error_indicator) {
             D(p->level--);
@@ -21765,8 +21765,8 @@ _loop0_57_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' maybe_star_pattern
         if (p->error_indicator) {
             D(p->level--);
@@ -21934,8 +21934,8 @@ _loop0_60_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' key_value_pattern
         if (p->error_indicator) {
             D(p->level--);
@@ -22103,8 +22103,8 @@ _loop0_63_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' pattern
         if (p->error_indicator) {
             D(p->level--);
@@ -22217,8 +22217,8 @@ _loop0_65_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' keyword_pattern
         if (p->error_indicator) {
             D(p->level--);
@@ -22502,8 +22502,8 @@ _loop0_70_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22568,8 +22568,8 @@ _loop0_71_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22634,8 +22634,8 @@ _loop0_72_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22700,8 +22700,8 @@ _loop1_73_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22771,8 +22771,8 @@ _loop0_74_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22837,8 +22837,8 @@ _loop1_75_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22908,8 +22908,8 @@ _loop1_76_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -22979,8 +22979,8 @@ _loop1_77_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23050,8 +23050,8 @@ _loop0_78_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23116,8 +23116,8 @@ _loop1_79_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23187,8 +23187,8 @@ _loop0_80_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23253,8 +23253,8 @@ _loop1_81_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23324,8 +23324,8 @@ _loop0_82_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_maybe_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23390,8 +23390,8 @@ _loop1_83_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_maybe_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23461,8 +23461,8 @@ _loop1_84_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('@' named_expression NEWLINE)
         if (p->error_indicator) {
             D(p->level--);
@@ -23579,8 +23579,8 @@ _loop1_86_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (',' star_expression)
         if (p->error_indicator) {
             D(p->level--);
@@ -23650,8 +23650,8 @@ _loop0_88_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' star_named_expression
         if (p->error_indicator) {
             D(p->level--);
@@ -23764,8 +23764,8 @@ _loop1_89_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (',' expression)
         if (p->error_indicator) {
             D(p->level--);
@@ -23835,8 +23835,8 @@ _loop0_90_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23901,8 +23901,8 @@ _loop0_91_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -23967,8 +23967,8 @@ _loop0_92_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24033,8 +24033,8 @@ _loop1_93_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24104,8 +24104,8 @@ _loop0_94_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24170,8 +24170,8 @@ _loop1_95_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24241,8 +24241,8 @@ _loop1_96_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24312,8 +24312,8 @@ _loop1_97_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24383,8 +24383,8 @@ _loop0_98_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24449,8 +24449,8 @@ _loop1_99_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24520,8 +24520,8 @@ _loop0_100_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24586,8 +24586,8 @@ _loop1_101_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24657,8 +24657,8 @@ _loop0_102_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_maybe_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24723,8 +24723,8 @@ _loop1_103_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_maybe_default
         if (p->error_indicator) {
             D(p->level--);
@@ -24794,8 +24794,8 @@ _loop1_104_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('or' conjunction)
         if (p->error_indicator) {
             D(p->level--);
@@ -24865,8 +24865,8 @@ _loop1_105_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('and' inversion)
         if (p->error_indicator) {
             D(p->level--);
@@ -24936,8 +24936,8 @@ _loop1_106_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // compare_op_bitwise_or_pair
         if (p->error_indicator) {
             D(p->level--);
@@ -25048,8 +25048,8 @@ _loop0_109_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' slice
         if (p->error_indicator) {
             D(p->level--);
@@ -25428,8 +25428,8 @@ _loop1_114_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // STRING
         if (p->error_indicator) {
             D(p->level--);
@@ -25601,8 +25601,8 @@ _loop0_118_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' double_starred_kvpair
         if (p->error_indicator) {
             D(p->level--);
@@ -25715,8 +25715,8 @@ _loop1_119_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // for_if_clause
         if (p->error_indicator) {
             D(p->level--);
@@ -25786,8 +25786,8 @@ _loop0_120_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('if' disjunction)
         if (p->error_indicator) {
             D(p->level--);
@@ -25852,8 +25852,8 @@ _loop0_121_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ('if' disjunction)
         if (p->error_indicator) {
             D(p->level--);
@@ -25918,8 +25918,8 @@ _loop0_123_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' (starred_expression | named_expression !'=')
         if (p->error_indicator) {
             D(p->level--);
@@ -26076,8 +26076,8 @@ _loop0_126_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' kwarg_or_starred
         if (p->error_indicator) {
             D(p->level--);
@@ -26190,8 +26190,8 @@ _loop0_128_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
         if (p->error_indicator) {
             D(p->level--);
@@ -26304,8 +26304,8 @@ _loop0_130_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' kwarg_or_starred
         if (p->error_indicator) {
             D(p->level--);
@@ -26418,8 +26418,8 @@ _loop0_132_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' kwarg_or_double_starred
         if (p->error_indicator) {
             D(p->level--);
@@ -26532,8 +26532,8 @@ _loop0_133_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (',' star_target)
         if (p->error_indicator) {
             D(p->level--);
@@ -26598,8 +26598,8 @@ _loop0_135_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' star_target
         if (p->error_indicator) {
             D(p->level--);
@@ -26712,8 +26712,8 @@ _loop1_136_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (',' star_target)
         if (p->error_indicator) {
             D(p->level--);
@@ -26821,8 +26821,8 @@ _loop0_139_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' del_target
         if (p->error_indicator) {
             D(p->level--);
@@ -26935,8 +26935,8 @@ _loop0_141_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' target
         if (p->error_indicator) {
             D(p->level--);
@@ -27107,8 +27107,8 @@ _loop0_143_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // star_named_expressions
         if (p->error_indicator) {
             D(p->level--);
@@ -27173,8 +27173,8 @@ _loop0_144_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
             D(p->level--);
@@ -27239,8 +27239,8 @@ _loop0_145_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // (star_targets '=')
         if (p->error_indicator) {
             D(p->level--);
@@ -27489,8 +27489,8 @@ _loop0_149_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -27555,8 +27555,8 @@ _loop1_150_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -27626,8 +27626,8 @@ _loop0_151_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_no_default
         if (p->error_indicator) {
             D(p->level--);
@@ -27692,8 +27692,8 @@ _loop1_152_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // lambda_param_with_default
         if (p->error_indicator) {
             D(p->level--);
@@ -27953,8 +27953,8 @@ _loop0_157_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' (expression ['as' star_target])
         if (p->error_indicator) {
             D(p->level--);
@@ -28067,8 +28067,8 @@ _loop0_159_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    ssize_t _children_capacity = 1;
-    ssize_t _n = 0;
+    Py_ssize_t _children_capacity = 1;
+    Py_ssize_t _n = 0;
     { // ',' (expressions ['as' star_target])
         if (p->error_indicator) {
             D(p->level--);

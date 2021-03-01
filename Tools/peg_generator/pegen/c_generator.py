@@ -583,8 +583,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!_children")
-            self.print("ssize_t _children_capacity = 1;")
-            self.print("ssize_t _n = 0;")
+            self.print("Py_ssize_t _children_capacity = 1;")
+            self.print("Py_ssize_t _n = 0;")
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(
