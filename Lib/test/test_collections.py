@@ -75,7 +75,7 @@ class TestUserObjects(unittest.TestCase):
             def __missing__(self, key):
                 return 456
         self.assertEqual(A()[123], 456)
-        # Get ignores __missing__ on dict
+        # get() ignores __missing__ on dict
         self.assertIs(A().get(123), None)
 
 
