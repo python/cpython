@@ -1299,7 +1299,7 @@ Control flow
 .. class:: MatchAs(pattern, name)
 
     A match "as-pattern".  The as-pattern matches whatever pattern is on its
-    left-hand side, but also binds the value to a name. ``pattern`` contains 
+    left-hand side, but also binds the value to a name. ``pattern`` contains
     the match pattern that will be used to match the subject agsinst. The ``name``
     attribute contains the name that will be binded if the pattern is successful.
 
