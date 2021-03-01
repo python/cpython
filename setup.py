@@ -1879,18 +1879,34 @@ class PyBuildExt(build_ext):
             self.add(Extension('xxlimited', ['xxlimited.c']))
             self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
-    def detect_tkinter_explicitly(self):
-        # Build _tkinter using explicit locations for Tcl/Tk.
+    def detect_tkinter_fromenv(self):
+        # Build _tkinter using the Tcl/Tk locations specified by
+        # the _TCLTK_INCLUDES and _TCLTK_LIBS environment variables.
+        # This method is meant to be invoked by detect_tkinter().
         #
-        # This is enabled when both arguments are given to ./configure:
+        # The variables can be set via one of the following ways.
         #
+        # - Automatically, at configuration time, by using pkg-config.
+        #   The tool is called by the configure script.
+        #   Additional pkg-config configuration paths can be set via the
+        #   PKG_CONFIG_PATH environment variable.
+        #
+        #     PKG_CONFIG_PATH=".../lib/pkgconfig" ./configure ...
+        #
+        # - Explicitly, at configuration time by setting both
+        #   --with-tcltk-includes and --with-tcltk-libs.
+        #
+        #     ./configure ... \
         #     --with-tcltk-includes="-I/path/to/tclincludes \
         #                            -I/path/to/tkincludes"
         #     --with-tcltk-libs="-L/path/to/tcllibs -ltclm.n \
         #                        -L/path/to/tklibs -ltkm.n"
         #
-        # These values can also be specified or overridden via make:
-        #    make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
+        #  - Explicitly, at compile time, by passing TCLTK_INCLUDES and
+        #    TCLTK_LIBS to the make target.
+        #    This will override any configuration-time option.
+        #
+        #      make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
         #
         # This can be useful for building and testing tkinter with multiple
         # versions of Tcl/Tk.  Note that a build of Tk depends on a particular
@@ -1914,6 +1930,7 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter_darwin(self):
         # Build default _tkinter on macOS using Tcl and Tk frameworks.
+        # This method is meant to be invoked by detect_tkinter().
         #
         # The macOS native Tk (AKA Aqua Tk) and Tcl are most commonly
         # built and installed as macOS framework bundles.  However,
@@ -1932,16 +1949,20 @@ class PyBuildExt(build_ext):
         #    search only the SDK's /Library/Frameworks (normally empty)
         #    and /System/Library/Frameworks.
         #
-        # Any other use case should be able to be handled explicitly by
-        # using the options described above in detect_tkinter_explicitly().
-        # In particular it would be good to handle here the case where
+        # Any other use cases are handled either by detect_tkinter_fromenv(),
+        # or detect_tkinter(). The former handles non-standard locations of
+        # Tcl/Tk, defined via the _TCLTK_INCLUDES and _TCLTK_LIBS environment
+        # variables. The latter handles any Tcl/Tk versions installed in
+        # standard Unix directories.
+        #
+        # It would be desirable to also handle here the case where
         # you want to build and link with a framework build of Tcl and Tk
         # that is not in /Library/Frameworks, say, in your private
         # $HOME/Library/Frameworks directory or elsewhere. It turns
         # out to be difficult to make that work automatically here
         # without bringing into play more tools and magic. That case
         # can be handled using a recipe with the right arguments
-        # to detect_tkinter_explicitly().
+        # to detect_tkinter_fromenv().
         #
         # Note also that the fallback case here is to try to use the
         # Apple-supplied Tcl and Tk frameworks in /System/Library but
@@ -2041,12 +2062,17 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter(self):
         # The _tkinter module.
+        #
+        # Detection of Tcl/Tk is attempted in the following order:
+        #   - Through environment variables.
+        #   - Platform specific detection of Tcl/Tk (currently only macOS).
+        #   - Search of various standard Unix header/library paths.
+        #
+        # Detection stops at the first successful method.
 
-        # Check whether --with-tcltk-includes and --with-tcltk-libs were
-        # configured or passed into the make target.  If so, use these values
-        # to build tkinter and bypass the searches for Tcl and TK in standard
-        # locations.
-        if self.detect_tkinter_explicitly():
+        # Check for Tcl and Tk at the locations indicated by _TCLTK_INCLUDES
+        # and _TCLTK_LIBS environment variables.
+        if self.detect_tkinter_fromenv():
             return True
 
         # Rather than complicate the code below, detecting and building
