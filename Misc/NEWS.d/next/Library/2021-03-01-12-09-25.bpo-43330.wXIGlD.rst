@@ -1,0 +1,1 @@
+Pass uri query parametters along xmlrpc requests
