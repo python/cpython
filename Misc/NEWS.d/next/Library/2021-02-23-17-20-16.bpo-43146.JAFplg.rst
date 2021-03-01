@@ -1,1 +1,0 @@
-Handle None in single-arg versions of :func:`~traceback.print_exception` and :func:`~traceback.format_exception`.
