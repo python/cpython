@@ -5903,7 +5903,7 @@ else
 fi],
 [AC_MSG_RESULT(yes)])
 LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
-if test "$PY_ENABLE_SHARED" = 1; then
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
     if test "$STATIC_LIBPYTHON" = 1; then
         LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
