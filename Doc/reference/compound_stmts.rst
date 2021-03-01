@@ -714,10 +714,6 @@ inspired most of the descriptions). Note that these descriptions are purely for
 illustration purposes and **may not** reflect
 the underlying implementation.  Furthermore, they do not cover all valid forms.
 
-The following is a very brief overview of the different patterns and an
-approximation of their behavior:
-
-
 
 .. _or-patterns:
 
