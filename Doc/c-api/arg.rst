@@ -151,7 +151,7 @@ which disallows mutable objects such as :class:`bytearray`.
       Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -160,7 +160,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Unicode data buffer, the second one its length.  This variant allows
    null code points.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -168,7 +168,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Like ``u``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to ``NULL``.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -176,7 +176,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Like ``u#``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to ``NULL``.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
