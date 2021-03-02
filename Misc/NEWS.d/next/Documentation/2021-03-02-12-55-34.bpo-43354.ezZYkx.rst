@@ -1,1 +1,1 @@
-Fix type documentation for `Fault.faultCode`; the type has to be `int` instead of `str`.
+Fix type documentation for ``Fault.faultCode``; the type has to be ``int`` instead of ``str``.
