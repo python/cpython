@@ -61,10 +61,10 @@ jobs:
       - name: Build CPython
         run: |
           # Build Python with the libpython dynamic library
-          ./configure --with-pydebug --enable-shared
+          ./configure --with-pydebug --enable-shared PYTHON_FOR_REGEN=./python
           make -j4
-          PYTHON_FOR_REGEN=./python make -j4 regen-all
-          PYTHON_FOR_REGEN=./python make regen-stdlib-module-names
+          LD_LIBRARY_PATH=. make -j4 regen-all
+          LD_LIBRARY_PATH=. make regen-stdlib-module-names
       - name: Check for changes
         run: |
           changes=$(git status --porcelain)
