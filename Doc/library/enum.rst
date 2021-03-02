@@ -1222,8 +1222,8 @@ Private names are not converted to Enum members, but remain normal attributes.
 :class:`Enum` members are instances of their :class:`Enum` class, and are
 normally accessed as ``EnumClass.member``.  In Python versions ``3.5`` to
 ``3.9`` you could access members from other members -- this practice was
-discouraged, and in ``3.11`` :class:`Enum` will return to not allowing it,
-while in ``3.10`` it will raise a :exc:`DeprecationWarning`::
+discouraged, and in ``3.12`` :class:`Enum` will return to not allowing it,
+while in ``3.10`` and ``3.11`` it will raise a :exc:`DeprecationWarning`::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -1232,7 +1232,7 @@ while in ``3.10`` it will raise a :exc:`DeprecationWarning`::
     ...
     >>> FieldTypes.value.size       # doctest: +SKIP
     DeprecationWarning: accessing one member from another is not supported,
-      and will be disabled in 3.11
+      and will be disabled in 3.12
     <FieldTypes.size: 2>
 
 .. versionchanged:: 3.5
