@@ -555,6 +555,10 @@ class CursorTests(unittest.TestCase):
         ]
         self.assertEqual(results, expected)
 
+    def test_same_query_in_multiple_cursors(self):
+        cursors = [self.cx.execute("select 1") for _ in range(3)]
+        for cu in cursors:
+            self.assertEqual(cu.fetchall(), [(1,)])
 
 class ThreadTests(unittest.TestCase):
     def setUp(self):
