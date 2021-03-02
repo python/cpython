@@ -1,0 +1,2 @@
+Fail fast in :func:`shutil.move()` to avoid creating destination directories on
+failure.
