@@ -40,10 +40,11 @@ from queue import Queue, SimpleQueue
 from weakref import WeakSet, ReferenceType, ref
 import typing
 
-from typing import TypeVar
+from typing import TypeVar, TypeVarTuple
 T = TypeVar('T')
 K = TypeVar('K')
 V = TypeVar('V')
+Ts = TypeVarTuple('Ts)')
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
@@ -170,7 +171,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__args__, (int,))
         self.assertEqual(a.__parameters__, ())
 
-    def test_parameters(self):
+    def test_parameters_typevar(self):
         from typing import List, Dict, Callable
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
@@ -187,6 +188,34 @@ class BaseTest(unittest.TestCase):
         D2b = dict[T, T]
         self.assertEqual(D2b.__args__, (T, T))
         self.assertEqual(D2b.__parameters__, (T,))
+        L0 = list[str]
+        self.assertEqual(L0.__args__, (str,))
+        self.assertEqual(L0.__parameters__, ())
+        L1 = list[T]
+        self.assertEqual(L1.__args__, (T,))
+        self.assertEqual(L1.__parameters__, (T,))
+        L2 = list[list[T]]
+        self.assertEqual(L2.__args__, (list[T],))
+        self.assertEqual(L2.__parameters__, (T,))
+        L3 = list[List[T]]
+        self.assertEqual(L3.__args__, (List[T],))
+        self.assertEqual(L3.__parameters__, (T,))
+        L4a = list[Dict[K, V]]
+        self.assertEqual(L4a.__args__, (Dict[K, V],))
+        self.assertEqual(L4a.__parameters__, (K, V))
+        L4b = list[Dict[T, int]]
+        self.assertEqual(L4b.__args__, (Dict[T, int],))
+        self.assertEqual(L4b.__parameters__, (T,))
+        L5 = list[Callable[[K, V], K]]
+        self.assertEqual(L5.__args__, (Callable[[K, V], K],))
+        self.assertEqual(L5.__parameters__, (K, V))
+
+    def test_parameters_typevartuple(self):
+        from typing import List, Dict, Callable
+        T0 = tuple[*Ts]
+        self.assertEqual(T0.__args__, (Ts._unpacked,))
+        self.assertEqual(T0.__parameters__, (T,))
+
         L0 = list[str]
         self.assertEqual(L0.__args__, (str,))
         self.assertEqual(L0.__parameters__, ())
@@ -390,6 +419,10 @@ class BaseTest(unittest.TestCase):
             C1 = Callable[typing.Concatenate[int, P], int]
             self.assertEqual(repr(C1), "collections.abc.Callable"
                                        "[typing.Concatenate[int, ~P], int]")
+
+        with self.subTest("Testing TypeVarTuple uses"):
+            Ts = typing.TypeVarTuple('Ts')
+            tuple[*Ts]
 
 if __name__ == "__main__":
     unittest.main()
