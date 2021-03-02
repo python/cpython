@@ -202,6 +202,7 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
     assert(state != NULL);
 
     HashReturn res;
+    Py_buffer buf = {NULL, NULL};
     if (type == state->sha3_224_type) {
         res = Keccak_HashInitialize_SHA3_224(&self->hash_state);
     } else if (type == state->sha3_256_type) {
@@ -229,7 +230,6 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
         goto error;
     }
 
-    Py_buffer buf = {NULL, NULL};
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
