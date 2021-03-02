@@ -261,7 +261,6 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
         return NULL;
     }
     FLOCKFILE(stream);
-    c = 'x'; /* Shut up gcc warning */
     while (--n > 0 && (c = GETC(stream)) != EOF ) {
         if (skipnextlf ) {
             skipnextlf = 0;
