@@ -237,6 +237,15 @@ class DeclTypesTests(unittest.TestCase):
         # if the converter is not used, it's an int instead of a float
         self.assertEqual(type(value), float)
 
+    def test_convert_zero_sized_blob(self):
+        self.con.execute("create table b(b cblob)")
+        sqlite.converters["CBLOB"] = lambda x: b'blobish'
+        self.con.execute("insert into b(b) values (?)", (b'',))
+        cur = self.con.execute("select b from b")
+        self.assertEqual(cur.fetchone()[0], b'blobish')
+        del sqlite.converters["CBLOB"]
+
+
 class ColNamesTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_COLNAMES)
