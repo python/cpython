@@ -1,0 +1,1 @@
+Add a small test for frozen code co_lines().
