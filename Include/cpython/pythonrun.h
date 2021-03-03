@@ -129,3 +129,6 @@ PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject 
 /* Stuff with no proper home (yet) */
 PyAPI_FUNC(char *) PyOS_Readline(FILE *, FILE *, const char *);
 PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
+
+PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
+                                PyObject *value, PyObject *tb);
