@@ -403,14 +403,7 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
 
     // Prepare and set __match_args__
     Py_ssize_t i, k;
-    Py_ssize_t n_match_args = 0;
-    for (i = k = 0; i < desc->n_in_sequence; ++i) {
-        if (desc->fields[i].name == PyStructSequence_UnnamedField) {
-            continue;
-        }
-        n_match_args++;
-    }
-    PyObject* keys = PyTuple_New(n_match_args);
+    PyObject* keys = PyTuple_New(desc->n_in_sequence);
     if (keys == NULL) {
         return -1;
     }
@@ -421,18 +414,26 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         }
         PyObject* new_member = PyUnicode_FromString(desc->fields[i].name);
         if (new_member == NULL) {
-            Py_DECREF(keys);
-            return -1;                                                         \
+            goto error;
         }
         PyTuple_SET_ITEM(keys, k, new_member);
         k++;
     }
-    if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
-        Py_DECREF(keys);
-        return -1;
+
+    if (_PyTuple_Resize(&keys, k) == -1) {
+        goto error;
     }
+
+    if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
+        goto error;
+    }
+
     Py_DECREF(keys);
     return 0;
+
+error:
+    Py_DECREF(keys);
+    return -1;
 }
 
 static void
