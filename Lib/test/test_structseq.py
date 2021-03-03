@@ -122,5 +122,13 @@ class StructSeqTest(unittest.TestCase):
                     self.assertEqual(list(t[start:stop:step]),
                                      L[start:stop:step])
 
+    def test_match_args(self):
+        t = time.gmtime()
+        expected_args = ('tm_year', 'tm_mon', 'tm_mday', 'tm_hour', 'tm_min',
+                         'tm_sec', 'tm_wday', 'tm_yday', 'tm_isdst', 'tm_zone',
+                         'tm_gmtoff')
+        self.assertEqual(t.__match_args__, expected_args)
+
+
 if __name__ == "__main__":
     unittest.main()
