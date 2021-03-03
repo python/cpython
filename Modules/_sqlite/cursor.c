@@ -333,12 +333,8 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
             } else {
                 /* coltype == SQLITE_BLOB */
                 const char *blob = sqlite3_column_blob(self->statement->st, i);
-                if (!blob) {
-                    converted = Py_NewRef(Py_None);
-                } else {
-                    nbytes = sqlite3_column_bytes(self->statement->st, i);
-                    converted = PyBytes_FromStringAndSize(blob, nbytes);
-                }
+                nbytes = sqlite3_column_bytes(self->statement->st, i);
+                converted = PyBytes_FromStringAndSize(blob, nbytes);
             }
         }
 
