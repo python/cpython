@@ -1032,17 +1032,28 @@ _NEEDS_LOADING = object()
 
 def _find_and_load(name, import_):
     """Find and load the module."""
-    with _ModuleLockManager(name):
-        module = sys.modules.get(name, _NEEDS_LOADING)
-        if module is _NEEDS_LOADING:
-            return _find_and_load_unlocked(name, import_)
+
+    # Optimization: we avoid unneeded module locking if the module
+    # already exists in sys.modules and is fully initialized.
+    module = sys.modules.get(name, _NEEDS_LOADING)
+    if (module is _NEEDS_LOADING or
+        getattr(getattr(module, "__spec__", None), "_initializing", False)):
+        with _ModuleLockManager(name):
+            module = sys.modules.get(name, _NEEDS_LOADING)
+            if module is _NEEDS_LOADING:
+                return _find_and_load_unlocked(name, import_)
+
+        # Optimization: only call _bootstrap._lock_unlock_module() if
+        # module.__spec__._initializing is True.
+        # NOTE: because of this, initializing must be set *before*
+        # putting the new module in sys.modules.
+        _lock_unlock_module(name)
 
     if module is None:
         message = ('import of {} halted; '
                    'None in sys.modules'.format(name))
         raise ModuleNotFoundError(message, name=name)
 
-    _lock_unlock_module(name)
     return module
 
 
