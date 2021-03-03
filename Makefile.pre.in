@@ -761,9 +761,10 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen
+	regen-pegen-metaparser regen-pegen regen-frozen \
+	regen-stdlib-module-names
 	@echo
-	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
+	@echo "Note: autoconf should be run manually"
 
 ############################################################################
 # Special rules for object files
