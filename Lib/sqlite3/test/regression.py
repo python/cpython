@@ -409,6 +409,10 @@ class RegressionTests(unittest.TestCase):
             self.con.execute("select 1")  # trigger seg fault
             method(None)
 
+    def test_return_empty_bytestring(self):
+        cur = self.con.execute("select X''")
+        val = cur.fetchone()[0]
+        self.assertEqual(val, b'')
 
 
 def suite():
