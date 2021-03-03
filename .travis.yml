@@ -168,10 +168,9 @@ install:
 # Travis provides only 2 cores, so don't overdo the parallelism and waste memory.
 before_script:
   # -Og is much faster than -O0
-  - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
-  - eval "$(pyenv init -)"
-  - pyenv global 3.8
-  - PYTHON_FOR_REGEN=python3.8 make -j4 regen-all
+  - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug PYTHON_FOR_REGEN=./python
+  - make -j4
+  - make -j4 regen-all
   - make regen-stdlib-module-names
   - changes=`git status --porcelain`
   - |
@@ -182,7 +181,6 @@ before_script:
         echo "$changes"
         exit 1
       fi
-  - make -j4
   - make pythoninfo
 
 script:
