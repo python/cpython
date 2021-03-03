@@ -280,8 +280,8 @@ Without the use of ``_`` in a case statement, a match may not exist. If no
 match exists, the behavior is a no-op. For example, if ``status`` of 500 is
 passed, a no-op occurs.
 
-Pattterns with a literal and variable
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Patterns with a literal and variable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Patterns can look like unpacking assignments, and a pattern may be used to bind
 variables. In this example, a data point can be unpacked to its x-coordinate
