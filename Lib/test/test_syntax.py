@@ -825,6 +825,24 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> match x
+   ...   case list():
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x:
+   ...   case list()
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x:
+   ...   case [y] if y > 0
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -1158,6 +1176,24 @@ def func2():
 
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
+
+    def test_match_call_does_not_raise_syntax_error(self):
+        code = """
+def match(x):
+    return 1+1
+
+match(34)
+"""
+        compile(code, "<string>", "exec")
+
+    def test_case_call_does_not_raise_syntax_error(self):
+        code = """
+def case(x):
+    return 1+1
+
+case(34)
+"""
+        compile(code, "<string>", "exec")
 
 
 def test_main():
