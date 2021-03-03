@@ -1,6 +1,4 @@
 Change the regen-frozen target to use BUILDPYTHON rather than
-PYTHON_FOR_REGEN.
-
-The marshaled data for code objects has changed with bpo-42246, commit
-877df85. Update the frozen code for ``__hello__`` and the expected code
-sizes in ctypes test_frozentable.
+PYTHON_FOR_REGEN. The marshaled data for code objects has changed with
+bpo-42246, commit 877df85. Update the frozen code for ``__hello__`` and update
+the expected code sizes in ctypes test_frozentable.
