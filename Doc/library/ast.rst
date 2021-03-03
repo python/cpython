@@ -140,6 +140,11 @@ Node classes
    In the meantime, instantiating them will return an instance of
    a different class.
 
+.. note::
+    The descriptions of the specific node classes displayed here
+    were initially adapted from the fantastic `Green Tree
+    Snakes <https://greentreesnakes.readthedocs.io/en/latest/>`__ project and
+    all its contributors.
 
 Literals
 ^^^^^^^^
