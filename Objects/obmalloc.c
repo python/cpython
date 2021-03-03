@@ -1272,7 +1272,7 @@ _Py_GetAllocatedBlocks(void)
    bit allocation for keys
 
    64-bit pointers and 2^20 arena size:
-     16 -> ignored (BITS - PHYSICAL_BITS)
+     16 -> ignored (POINTER_BITS - ADDRESS_BITS)
      10 -> MAP_TOP
      10 -> MAP_MID
       8 -> MAP_BOT
@@ -1291,21 +1291,21 @@ _Py_GetAllocatedBlocks(void)
 #if SIZEOF_VOID_P == 8
 
 /* number of bits in a pointer */
-#define BITS 64
+#define POINTER_BITS 64
 
 /* Current 64-bit processors are limited to 48-bit physical addresses.  For
  * now, the top 17 bits of addresses will all be equal to bit 2**47.  If that
  * changes in the future, this must be adjusted upwards.
  */
-#define PHYSICAL_BITS 48
+#define ADDRESS_BITS 48
 
 /* use the top and mid layers of the radix tree */
 #define USE_INTERIOR_NODES
 
 #elif SIZEOF_VOID_P == 4
 
-#define BITS 32
-#define PHYSICAL_BITS 32
+#define POINTER_BITS 32
+#define ADDRESS_BITS 32
 
 #else
 
@@ -1321,7 +1321,7 @@ _Py_GetAllocatedBlocks(void)
 
 #ifdef USE_INTERIOR_NODES
 /* number of bits used for MAP_TOP and MAP_MID nodes */
-#define INTERIOR_BITS ((PHYSICAL_BITS - ARENA_BITS + 2) / 3)
+#define INTERIOR_BITS ((ADDRESS_BITS - ARENA_BITS + 2) / 3)
 #else
 #define INTERIOR_BITS 0
 #endif
@@ -1334,7 +1334,7 @@ _Py_GetAllocatedBlocks(void)
 #define MAP_MID_LENGTH (1 << MAP_MID_BITS)
 #define MAP_MID_MASK (MAP_MID_LENGTH - 1)
 
-#define MAP_BOT_BITS (PHYSICAL_BITS - ARENA_BITS - 2*INTERIOR_BITS)
+#define MAP_BOT_BITS (ADDRESS_BITS - ARENA_BITS - 2*INTERIOR_BITS)
 #define MAP_BOT_LENGTH (1 << MAP_BOT_BITS)
 #define MAP_BOT_MASK (MAP_BOT_LENGTH - 1)
 
@@ -1347,10 +1347,13 @@ _Py_GetAllocatedBlocks(void)
 #define MAP_MID_INDEX(p) ((AS_UINT(p) >> MAP_MID_SHIFT) & MAP_MID_MASK)
 #define MAP_TOP_INDEX(p) ((AS_UINT(p) >> MAP_TOP_SHIFT) & MAP_TOP_MASK)
 
-#if PHYSICAL_BITS > BITS
-/* Return non-physical bits of pointer.  Should be same for all valid
- * pointers if PHYSICAL_BITS set correctly. */
-#define HIGH_BITS(p) (AS_UINT(p) >> PHYSICAL_BITS)
+#if ADDRESS_BITS > POINTER_BITS
+/* Return non-physical address bits of a pointer.  Those bits should be same
+ * for all valid pointers if ADDRESS_BITS set correctly.  Linux has support for
+ * 57-bit address space (Intel 5-level paging) but will not currently give
+ * those addresses to user space.
+ */
+#define HIGH_BITS(p) (AS_UINT(p) >> ADDRESS_BITS)
 #else
 #define HIGH_BITS(p) 0
 #endif
@@ -1400,7 +1403,7 @@ static arena_map_bot_t *
 arena_map_get(block *p, int create)
 {
 #ifdef USE_INTERIOR_NODES
-    /* sanity check that PHYSICAL_BITS is correct */
+    /* sanity check that ADDRESS_BITS is correct */
     assert(HIGH_BITS(p) == HIGH_BITS(&arena_map_root));
     int i1 = MAP_TOP_INDEX(p);
     if (arena_map_root.ptrs[i1] == NULL) {
@@ -1460,7 +1463,7 @@ arena_map_get(block *p, int create)
 static int
 arena_map_mark_used(uintptr_t arena_base, int is_used)
 {
-    /* sanity check that PHYSICAL_BITS is correct */
+    /* sanity check that ADDRESS_BITS is correct */
     assert(HIGH_BITS(arena_base) == HIGH_BITS(&arena_map_root));
     arena_map_bot_t *n_hi = arena_map_get((block *)arena_base, is_used);
     if (n_hi == NULL) {
