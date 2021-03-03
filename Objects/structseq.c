@@ -402,13 +402,20 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
 
     // Prepare and set __match_args__
-    PyObject* keys = PyTuple_New(n_members - n_unnamed_members);
+    Py_ssize_t i, k;
+    Py_ssize_t n_match_args = 0;
+    for (i = k = 0; i < desc->n_in_sequence; ++i) {
+        if (desc->fields[i].name == PyStructSequence_UnnamedField) {
+            continue;
+        }
+        n_match_args++;
+    }
+    PyObject* keys = PyTuple_New(n_match_args);
     if (keys == NULL) {
         return -1;
     }
 
-    Py_ssize_t i, k;
-    for (i = k = 0; i < n_members; ++i) {
+    for (i = k = 0; i < desc->n_in_sequence; ++i) {
         if (desc->fields[i].name == PyStructSequence_UnnamedField) {
             continue;
         }
