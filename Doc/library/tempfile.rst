@@ -248,6 +248,11 @@ The module defines the following user-callable items:
    The result of this search is cached, see the description of
    :data:`tempdir` below.
 
+   .. versionchanged:: 3.10
+
+      Always returns a str.  Previously it would return any :data:`tempdir`
+      value regardless of type so long as it was not ``None``.
+
 .. function:: gettempdirb()
 
    Same as :func:`gettempdir` but the return value is in bytes.
@@ -269,17 +274,29 @@ The module uses a global variable to store the name of the directory
 used for temporary files returned by :func:`gettempdir`.  It can be
 set directly to override the selection process, but this is discouraged.
 All functions in this module take a *dir* argument which can be used
-to specify the directory and this is the recommended approach.
+to specify the directory. This is the recommended approach that does
+not surprise other unsuspecting code by changing global API behavior.
 
 .. data:: tempdir
 
    When set to a value other than ``None``, this variable defines the
    default value for the *dir* argument to the functions defined in this
-   module.
+   module, including its type, bytes or str.  It cannot be a
+   :term:`path-like object`.
 
    If ``tempdir`` is ``None`` (the default) at any call to any of the above
    functions except :func:`gettempprefix` it is initialized following the
    algorithm described in :func:`gettempdir`.
+
+   .. note::
+
+      Beware that if you set ``tempdir`` to a bytes value, there is a
+      nasty side effect: The global default return type of
+      :func:`mkstemp` and :func:`mkdtemp` changes to bytes when no
+      explicit ``prefix``, ``suffix``, or ``dir`` arguments of type
+      str are supplied. Please do not write code expecting or
+      depending on this. This awkward behavior is maintained for
+      compatibility with the historcal implementation.
 
 .. _tempfile-examples:
 
