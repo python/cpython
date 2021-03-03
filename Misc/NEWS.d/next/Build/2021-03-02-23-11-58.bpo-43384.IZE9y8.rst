@@ -1,0 +1,1 @@
+Include "regen-stdlib-module-names" as part of "regen-all".
