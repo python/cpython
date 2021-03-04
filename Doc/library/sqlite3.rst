@@ -72,8 +72,8 @@ example::
 
    # Do this instead
    t = ('RHAT',)
-   c.execute('SELECT * FROM stocks WHERE symbol=?', t)
-   print(c.fetchone())
+   cur = c.execute('SELECT * FROM stocks WHERE symbol=?', t)
+   print(cur.fetchone())
 
    # Larger example that inserts many records at a time
    purchases = [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
