@@ -255,7 +255,7 @@ class DeclTypesTests(unittest.TestCase):
     def test_convert_zero_sized_blob(self):
         self.con.execute("insert into test(cbin) values (?)", (b"",))
         cur = self.con.execute("select cbin from test")
-        self.assertEqual(cur.fetchone()[0], b'blobish')
+        self.assertEqual(cur.fetchone()[0], b"blobish")
 
 
 class ColNamesTests(unittest.TestCase):
