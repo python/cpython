@@ -903,8 +903,9 @@ Optimizations
 
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
-  bytecode level.  It is now around 100% faster to create a function with parameter
-  annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+  bytecode level. It is now around 2 times faster to create a function with
+  parameter annotations.  (Contributed by Yurii Karabas and Inada Naoki
+  in :issue:`42202`)
 
 * Substring search functions such as ``str1 in str2`` and ``str2.find(str1)``
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
