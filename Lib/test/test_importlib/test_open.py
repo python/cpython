@@ -29,39 +29,44 @@ class OpenTests:
             self.assertEqual(result, 'Hello, UTF-8 world!\n')
 
     def test_open_text_given_encoding(self):
-        with resources.open_text(
-                self.data, 'utf-16.file', 'utf-16', 'strict') as fp:
+        with resources.open_text(self.data, 'utf-16.file', 'utf-16', 'strict') as fp:
             result = fp.read()
         self.assertEqual(result, 'Hello, UTF-16 world!\n')
 
     def test_open_text_with_errors(self):
         # Raises UnicodeError without the 'errors' argument.
-        with resources.open_text(
-                self.data, 'utf-16.file', 'utf-8', 'strict') as fp:
+        with resources.open_text(self.data, 'utf-16.file', 'utf-8', 'strict') as fp:
             self.assertRaises(UnicodeError, fp.read)
-        with resources.open_text(
-                self.data, 'utf-16.file', 'utf-8', 'ignore') as fp:
+        with resources.open_text(self.data, 'utf-16.file', 'utf-8', 'ignore') as fp:
             result = fp.read()
         self.assertEqual(
             result,
             'H\x00e\x00l\x00l\x00o\x00,\x00 '
             '\x00U\x00T\x00F\x00-\x001\x006\x00 '
-            '\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00')
+            '\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00',
+        )
 
     def test_open_binary_FileNotFoundError(self):
         self.assertRaises(
-            FileNotFoundError,
-            resources.open_binary, self.data, 'does-not-exist')
+            FileNotFoundError, resources.open_binary, self.data, 'does-not-exist'
+        )
 
     def test_open_text_FileNotFoundError(self):
         self.assertRaises(
-            FileNotFoundError,
-            resources.open_text, self.data, 'does-not-exist')
+            FileNotFoundError, resources.open_text, self.data, 'does-not-exist'
+        )
 
 
 class OpenDiskTests(OpenTests, unittest.TestCase):
     def setUp(self):
         self.data = data01
+
+
+class OpenDiskNamespaceTests(OpenTests, unittest.TestCase):
+    def setUp(self):
+        from . import namespacedata01
+
+        self.data = namespacedata01
 
 
 class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
