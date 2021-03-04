@@ -228,6 +228,15 @@ class ConnectionTests(unittest.TestCase):
                 self.assertTrue(hasattr(self.cx, exc))
                 self.assertIs(getattr(sqlite, exc), getattr(self.cx, exc))
 
+    def test_interrupt_on_closed_db(self):
+        cx = sqlite.connect(":memory:")
+        cx.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            cx.interrupt()
+
+    def test_interrupt(self):
+        self.assertIsNone(self.cx.interrupt())
+
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
