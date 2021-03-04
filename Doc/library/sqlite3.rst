@@ -26,14 +26,14 @@ represents the database.  Here the data will be stored in the
 :file:`example.db` file::
 
    import sqlite3
-   conn = sqlite3.connect('example.db')
+   con = sqlite3.connect('example.db')
 
 You can also supply the special name ``:memory:`` to create a database in RAM.
 
 Once you have a :class:`Connection`, you can create a :class:`Cursor`  object
 and call its :meth:`~Cursor.execute` method to perform SQL commands::
 
-   c = conn.cursor()
+   c = con.cursor()
 
    # Create table
    c.execute('''CREATE TABLE stocks
@@ -43,17 +43,17 @@ and call its :meth:`~Cursor.execute` method to perform SQL commands::
    c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
    # Save (commit) the changes
-   conn.commit()
+   con.commit()
 
    # We can also close the connection if we are done with it.
    # Just be sure any changes have been committed or they will be lost.
-   conn.close()
+   con.close()
 
 The data you've saved is persistent and is available in subsequent sessions::
 
    import sqlite3
-   conn = sqlite3.connect('example.db')
-   c = conn.cursor()
+   con = sqlite3.connect('example.db')
+   c = con.cursor()
 
 Usually your SQL operations will need to use values from Python variables.  You
 shouldn't assemble your query using Python's string operations because doing so
@@ -764,20 +764,20 @@ Row Objects
 
 Let's assume we initialize a table as in the example given above::
 
-   conn = sqlite3.connect(":memory:")
-   c = conn.cursor()
+   con = sqlite3.connect(":memory:")
+   c = con.cursor()
    c.execute('''create table stocks
    (date text, trans text, symbol text,
     qty real, price real)''')
    c.execute("""insert into stocks
              values ('2006-01-05','BUY','RHAT',100,35.14)""")
-   conn.commit()
+   con.commit()
    c.close()
 
 Now we plug :class:`Row` in::
 
-   >>> conn.row_factory = sqlite3.Row
-   >>> c = conn.cursor()
+   >>> con.row_factory = sqlite3.Row
+   >>> c = con.cursor()
    >>> c.execute('select * from stocks')
    <sqlite3.Cursor object at 0x7f4e7dd8fa80>
    >>> r = c.fetchone()
