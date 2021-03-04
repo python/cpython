@@ -1,0 +1,1 @@
+Use file-relative include for ``initconfig.h`` in ``pystate.h``.
