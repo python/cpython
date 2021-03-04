@@ -237,6 +237,11 @@ class ConnectionTests(unittest.TestCase):
     def test_interrupt(self):
         self.assertIsNone(self.cx.interrupt())
 
+    def test_drop_unused_refs(self):
+        for n in range(500):
+            cu = self.cx.execute(f"select {n}")
+            self.assertEqual(cu.fetchone()[0], n)
+
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
