@@ -4,5 +4,9 @@
     <String Id="ShortDescriptor">executable</String>
     <String Id="ShortcutName">Python {{ShortVersion}} ({{Bitness}})</String>
     <String Id="ShortcutDescription">Launches the !(loc.ProductName) interpreter.</String>
+    <String Id="EnableUTF8ModeShortcutName">Enable UTF-8 mode</String>
+    <String Id="EnableUTF8MdoeShortcutDescription">set PYTHONUTF8=1 environment variable. (Caution: This affects all Pythons)</String>
+    <String Id="DisableUTF8ModeShortcutName">Disable UTF-8 mode</String>
+    <String Id="DisableUTF8MdoeShortcutDescription">unset PYTHONUTF8 environment variable. (Caution: This affects all Pythons)</String>
     <String Id="SupportUrl">http://www.python.org/</String>
 </WixLocalization>

@@ -23,6 +23,18 @@
                           Name="!(loc.ShortcutName)"
                           Description="!(loc.ShortcutDescription)"
                           WorkingDirectory="InstallDirectory" />
+                <Shortcut Id="enable_utf8mode"
+                          Target="[WindowsFolder]System32\setx.exe"
+                          Arguments="PYTHONUTF8 1"
+                          Name="!(loc.EnableUTF8ModeShortcutName)"
+                          Description="!(loc.EnableUTF8MdoeShortcutDescription)"
+                          WorkingDirectory="InstallDirectory" />
+                <Shortcut Id="disable_utf8mode"
+                          Target="[WindowsFolder]System32\setx.exe"
+                          Arguments="PYTHONUTF8 &quot;&quot;"
+                          Name="!(loc.DisableUTF8ModeShortcutName)"
+                          Description="!(loc.DisableUTF8MdoeShortcutDescription)"
+                          WorkingDirectory="InstallDirectory" />
                 <RemoveFolder Id="Remove_MenuDir" Directory="MenuDir" On="uninstall" />
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
                     <RegistryValue Key="InstalledFeatures" Name="Shortcuts" Type="string" Value="$(var.Version)" />
