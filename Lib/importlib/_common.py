@@ -9,6 +9,8 @@ import importlib
 from typing import Union, Any, Optional
 from .abc import ResourceReader
 
+from ._adapters import wrap_spec
+
 Package = Union[types.ModuleType, str]
 
 
@@ -43,18 +45,15 @@ def get_resource_reader(package):
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
     spec = package.__spec__
-    reader = getattr(spec.loader, 'get_resource_reader', None)
+    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore
     if reader is None:
         return None
-    return reader(spec.name)
+    return reader(spec.name)  # type: ignore
 
 
 def resolve(cand):
     # type: (Package) -> types.ModuleType
-    return (
-        cand if isinstance(cand, types.ModuleType)
-        else importlib.import_module(cand)
-        )
+    return cand if isinstance(cand, types.ModuleType) else importlib.import_module(cand)
 
 
 def get_package(package):
@@ -64,7 +63,7 @@ def get_package(package):
     Raise an exception if the resolved module is not a package.
     """
     resolved = resolve(package)
-    if resolved.__spec__.submodule_search_locations is None:
+    if wrap_spec(resolved).submodule_search_locations is None:
         raise TypeError('{!r} is not a package'.format(package))
     return resolved
 
@@ -74,7 +73,7 @@ def from_package(package):
     Return a Traversable object for the given package.
 
     """
-    spec = package.__spec__
+    spec = wrap_spec(package)
     reader = spec.loader.get_resource_reader(spec.name)
     return reader.files()
 
