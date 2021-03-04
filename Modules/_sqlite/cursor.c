@@ -340,7 +340,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 }
             } else {
                 /* coltype == SQLITE_BLOB */
-                const char *blob = sqlite3_column_blob(self->statement->st, i);
+                const void *blob = sqlite3_column_blob(self->statement->st, i);
                 if (blob == NULL && sqlite3_errcode(db) == SQLITE_NOMEM) {
                     PyErr_NoMemory();
                     goto error;
