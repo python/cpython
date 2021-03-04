@@ -95,7 +95,10 @@ class sigset_t_converter(CConverter):
 
 static volatile struct {
     _Py_atomic_int tripped;
-    PyObject *func;
+    /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
+     * (even though it would probably be otherwise, anyway).
+     */
+    _Py_atomic_address func;
 } Handlers[NSIG];
 
 #ifdef MS_WINDOWS
@@ -131,6 +134,16 @@ static HANDLE sigint_event = NULL;
 #if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
 static PyObject *ItimerError;
 #endif
+
+Py_LOCAL_INLINE(PyObject *)
+GetHandler(int i) {
+    return (PyObject *)_Py_atomic_load(&Handlers[i].func);
+}
+
+Py_LOCAL_INLINE(void)
+SetHandler(int i, PyObject* func) {
+    _Py_atomic_store(&Handlers[i].func, (uintptr_t)func);
+}
 
 #ifdef HAVE_GETITIMER
 /* auxiliary functions for setitimer */
@@ -505,8 +518,8 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
 
-    old_handler = Handlers[signalnum].func;
-    Handlers[signalnum].func = Py_NewRef(handler);
+    old_handler = GetHandler(signalnum);
+    SetHandler(signalnum, Py_NewRef(handler));
 
     if (old_handler != NULL) {
         return old_handler;
@@ -542,7 +555,7 @@ signal_getsignal_impl(PyObject *module, int signalnum)
                         "signal number out of range");
         return NULL;
     }
-    old_handler = Handlers[signalnum].func;
+    old_handler = GetHandler(signalnum);
     if (old_handler != NULL) {
         return Py_NewRef(old_handler);
     }
@@ -1573,17 +1586,21 @@ signal_module_exec(PyObject *m)
         }
         // If signal_module_exec() is called more than one, we must
         // clear the strong reference to the previous function.
-        Py_XSETREF(Handlers[signum].func, Py_NewRef(func));
+        PyObject* old_func = GetHandler(signum);
+        SetHandler(signum, Py_NewRef(func));
+        Py_XDECREF(old_func);
     }
 
     // Instal Python SIGINT handler which raises KeyboardInterrupt
-    if (Handlers[SIGINT].func == DefaultHandler) {
+    PyObject* sigint_func = GetHandler(SIGINT);
+    if (sigint_func == DefaultHandler) {
         PyObject *int_handler = PyMapping_GetItemString(d, "default_int_handler");
         if (!int_handler) {
             return -1;
         }
 
-        Py_SETREF(Handlers[SIGINT].func, int_handler);
+        SetHandler(SIGINT, int_handler);
+        Py_DECREF(sigint_func);
         PyOS_setsig(SIGINT, signal_handler);
     }
 
@@ -1619,9 +1636,9 @@ _PySignal_Fini(void)
 {
     // Restore default signals and clear handlers
     for (int signum = 1; signum < NSIG; signum++) {
-        PyObject *func = Handlers[signum].func;
+        PyObject *func = GetHandler(signum);
         _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
-        Handlers[signum].func = NULL;
+        SetHandler(signum, NULL);
         if (func != NULL
             && func != Py_None
             && func != DefaultHandler
@@ -1701,7 +1718,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
          * signal handler for it by the time PyErr_CheckSignals() is called
          * (see bpo-43406).
          */
-        PyObject *func = Handlers[i].func;
+        PyObject *func = GetHandler(i);
         if (func == NULL || func == Py_None || func == IgnoreHandler ||
             func == DefaultHandler) {
             /* No Python signal handler due to aforementioned race condition.
@@ -1757,8 +1774,8 @@ _PyErr_CheckSignals(void)
 void
 PyErr_SetInterruptEx(int signum)
 {
-    if ((Handlers[signum].func != IgnoreHandler) &&
-        (Handlers[signum].func != DefaultHandler)) {
+    PyObject* func = GetHandler(signum);
+    if (func != IgnoreHandler && func != DefaultHandler) {
         trip_signal(signum);
     }
 }
