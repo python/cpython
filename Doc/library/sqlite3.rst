@@ -37,7 +37,7 @@ and call its :meth:`~Cursor.execute` method to perform SQL commands::
 
    # Create table
    cur.execute('''CREATE TABLE stocks
-                (date text, trans text, symbol text, qty real, price real)''')
+                  (date text, trans text, symbol text, qty real, price real)''')
 
    # Insert a row of data
    cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
@@ -770,7 +770,7 @@ Let's assume we initialize a table as in the example given above::
    (date text, trans text, symbol text,
     qty real, price real)''')
    cur.execute("""insert into stocks
-             values ('2006-01-05','BUY','RHAT',100,35.14)""")
+               values ('2006-01-05','BUY','RHAT',100,35.14)""")
    con.commit()
    cur.close()
 
