@@ -1252,6 +1252,8 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
+                         "test needs SIGUSR1")
     def test_stress_modifying_handlers(self):
         # bpo-43406: race condition between trip_signal() and signal.signal
         signum = signal.SIGUSR1
@@ -1281,7 +1283,16 @@ class StressTest(unittest.TestCase):
         t = threading.Thread(target=set_interrupts)
         t.start()
         try:
-            cycle_handlers()
+            with support.catch_unraisable_exception() as cm:
+                cycle_handlers()
+                if cm.unraisable is not None:
+                    # An unraisable exception may be printed out when
+                    # a signal is ignored due to the aforementioned
+                    # race condition, check it.
+                    self.assertIsInstance(cm.unraisable.exc_value, OSError)
+                    self.assertIn(
+                        f"Signal {signum} ignored due to race condition",
+                        str(cm.unraisable.exc_value))
             # Sanity check that some signals were received, but not all
             self.assertGreater(num_received_signals, 0)
             self.assertLess(num_received_signals, num_sent_signals)

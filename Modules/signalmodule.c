@@ -1709,17 +1709,24 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
         /* Signal handlers can be modified while a signal is received,
          * and therefore the fact that trip_signal() or PyErr_SetInterrupt()
          * was called doesn't guarantee that there is still a Python
-         * signal handler for it by the time PyErr_CheckSignals() is called.
+         * signal handler for it by the time PyErr_CheckSignals() is called
+         * (see bpo-43406).
          */
         PyObject *func = Handlers[i].func;
         if (func == NULL || func == Py_None || func == IgnoreHandler ||
             func == DefaultHandler) {
-            /* No Python signal handler, continue
-             * XXX this means the signal isn't handled by anyone
-             * (should we call raise() here?), but it's better than
-             * raising cryptic exceptions asynchronously
-             * such as "TypeError: 'int' object is not callable".
+            /* No Python signal handler due to aforementioned race condition.
+             * We can't call raise() as it would break the assumption
+             * that PyErr_SetInterrupt() only *simulates* an incoming
+             * signal (i.e. it will never kill the process).
+             * We also don't want to interrupt user code with a cryptic
+             * asynchronous exception, so instead just write out an
+             * unraisable error.
              */
+            PyErr_Format(PyExc_OSError,
+                         "Signal %i ignored due to race condition",
+                         i);
+            PyErr_WriteUnraisable(Py_None);
             continue;
         }
 
