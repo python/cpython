@@ -8,6 +8,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"    // _PyThreadState_GET()
 
 #ifndef MS_WINDOWS
@@ -47,18 +48,6 @@
 
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
-#endif
-
-#ifndef NSIG
-# if defined(_NSIG)
-#  define NSIG _NSIG            /* For BSD/SysV */
-# elif defined(_SIGMAX)
-#  define NSIG (_SIGMAX + 1)    /* For QNX */
-# elif defined(SIGMAX)
-#  define NSIG (SIGMAX + 1)     /* For djgpp */
-# else
-#  define NSIG 64               /* Use a reasonable default value */
-# endif
 #endif
 
 #include "clinic/signalmodule.c.h"
@@ -1761,18 +1750,23 @@ _PyErr_CheckSignals(void)
 }
 
 
-/* Simulate the effect of a signal.SIGINT signal arriving. The next time
-   PyErr_CheckSignals is called,  the Python SIGINT signal handler will be
-   raised.
+/* Simulate the effect of a signal arriving. The next time PyErr_CheckSignals
+   is called,  the corresponding Python signal handler will be raised.
 
-   Missing signal handler for the SIGINT signal is silently ignored. */
+   Missing signal handler for the given signal number is silently ignored. */
+void
+PyErr_SetInterruptEx(int signum)
+{
+    if ((Handlers[signum].func != IgnoreHandler) &&
+        (Handlers[signum].func != DefaultHandler)) {
+        trip_signal(signum);
+    }
+}
+
 void
 PyErr_SetInterrupt(void)
 {
-    if ((Handlers[SIGINT].func != IgnoreHandler) &&
-        (Handlers[SIGINT].func != DefaultHandler)) {
-        trip_signal(SIGINT);
-    }
+    PyErr_SetInterruptEx(SIGINT);
 }
 
 static int

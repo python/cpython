@@ -505,29 +505,68 @@ Signal Handling
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   This function interacts with Python's signal handling.  It checks whether a
-   signal has been sent to the processes and if so, invokes the corresponding
-   signal handler.  If the :mod:`signal` module is supported, this can invoke a
-   signal handler written in Python.  In all cases, the default effect for
-   :const:`SIGINT` is to raise the  :exc:`KeyboardInterrupt` exception.  If an
-   exception is raised the error indicator is set and the function returns ``-1``;
-   otherwise the function returns ``0``.  The error indicator may or may not be
-   cleared if it was previously set.
+   This function interacts with Python's signal handling.
+
+   If the function is called from the main thread and under the main Python
+   interpreter, it checks whether a signal has been sent to the processes
+   and if so, invokes the corresponding signal handler.  If the :mod:`signal`
+   module is supported, this can invoke a signal handler written in Python.
+
+   If an exception is raised by a Python signal handler, the error indicator
+   is set and the function returns ``-1``; otherwise the function returns
+   ``0``.  The error indicator may or may not be cleared if it was previously
+   set.
+
+   If the function is called from a non-main thread, or under a non-main
+   Python interpreter, it does nothing and returns ``0``.
+
+   This function can be called by long-running C code that wants to
+   be interruptible by user requests (such as by pressing Ctrl-C).
+
+   .. note::
+      The default Python signal handler for :const:`SIGINT` raises the
+      :exc:`KeyboardInterrupt` exception.
 
 
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
+      module: signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :const:`SIGINT` signal arriving. The next time
-   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
-   :const:`SIGINT` will be called.
+   Simulate the effect of a :const:`SIGINT` signal arriving.
+   This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
-   If :const:`SIGINT` isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
-   nothing.
+   .. note::
+      This function is async-signal-safe.  It can be called without
+      the :term:`GIL` and from a C signal handler.
+
+
+.. c:function:: void PyErr_SetInterruptEx(int signum)
+
+   .. index::
+      module: signal
+      single: KeyboardInterrupt (built-in exception)
+
+   Simulate the effect of a signal arriving. The next time
+   :c:func:`PyErr_CheckSignals` is called,  the Python signal handler for
+   the given signal number will be called.
+
+   This function can be called by C code that sets up its own signal handling
+   and wants Python signal handlers to be invoked as expected when an
+   interruption is requested (for example when the user presses Ctrl-C
+   to interrupt an operation).
+
+   If the given signal isn't handled by Python (it was set to
+   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+
+   .. note::
+      This function is async-signal-safe.  It can be called without
+      the :term:`GIL` and from a C signal handler.
+
+   .. versionadded:: 3.10
+
 
 .. c:function:: int PySignal_SetWakeupFd(int fd)
 
