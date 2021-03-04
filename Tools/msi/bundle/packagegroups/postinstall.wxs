@@ -20,6 +20,22 @@
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
+            <MsiPackage Id="utf8mode_AllUsers"
+                        SourceFile="utf8mode.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="yes"
+                        InstallCondition="InstallAllUsers and EnableUTF8Mode and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
+            <MsiPackage Id="utf8mode_JustForMe"
+                        SourceFile="utf8mode.msi"
+                        Compressed="$(var.CompressMSI)"
+                        DownloadUrl="$(var.DownloadUrl)"
+                        ForcePerMachine="no"
+                        InstallCondition="not InstallAllUsers and EnableUTF8Mode and not LauncherOnly">
+                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+            </MsiPackage>
             
             <?define CompileAllCommand=-E -s -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TargetDir]\Lib"?>
             <ExePackage Id="compileall_AllUsers"

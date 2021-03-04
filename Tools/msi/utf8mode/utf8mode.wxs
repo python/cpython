@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Language="!(loc.LCID)" Name="!(loc.Title)" Version="$(var.Version)" Manufacturer="!(loc.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
+        
+        <PropertyRef Id="UpgradeTable" />
+        <PropertyRef Id="REGISTRYKEY" />
+        
+        <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <Component Id="Utf8Mode_CU" Directory="InstallDirectory" Guid="{94CB4858-2299-4AF5-A46A-E294C38653F3}" >
+                <Condition>NOT ALLUSERS=1</Condition>
+                <CreateFolder />
+                <Environment Id="PYTHONUTF8_CU" Action="set" Name="PYTHONUTF8" Value="1" />
+            </Component>
+            <Component Id="Utf8Mode_LM" Directory="InstallDirectory" Guid="{819FACC3-CF93-4095-A658-3BA50F4A0EB5}" >
+                <Condition>ALLUSERS=1</Condition>
+                <CreateFolder />
+                <Environment Id="PYTHONUTF8_LM" Action="set" Name="PYTHONUTF8" Value="1" System="yes"/>
+            </Component>
+        </Feature>
+    </Product>
+</Wix>
+

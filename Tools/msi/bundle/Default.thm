@@ -24,8 +24,9 @@
         <Button Name="InstallButton" X="185" Y="101" Width="-11" Height="109" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
         <Button Name="InstallCustomButton" X="185" Y="221" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
 
-        <Checkbox Name="InstallLauncherAllUsers" X="185" Y="-37" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortInstallLauncherAllUsersLabel)</Checkbox>
-        <Checkbox Name="PrependPath" X="185" Y="-13" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>
+        <Checkbox Name="InstallLauncherAllUsers" X="185" Y="-61" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortInstallLauncherAllUsersLabel)</Checkbox>
+        <Checkbox Name="PrependPath" X="185" Y="-37" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>
+        <Checkbox Name="EnableUTF8Mode" X="185" Y="-13" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortUTF8ModeLabel)</Checkbox>
 
         <Button Name="InstallCancelButton" X="-11" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0">#(loc.CancelButton)</Button>
     </Page>
@@ -80,9 +81,10 @@
         <Checkbox Name="AssociateFiles" X="185" Y="76" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.AssociateFilesLabel)</Checkbox>
         <Checkbox Name="Shortcuts" X="185" Y="101" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.ShortcutsLabel)</Checkbox>
         <Checkbox Name="PrependPath" X="185" Y="126" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrependPathLabel)</Checkbox>
-        <Checkbox Name="CompileAll" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrecompileLabel)</Checkbox>
-        <Checkbox Name="Include_symbols" X="185" Y="176" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_symbolsLabel)</Checkbox>
-        <Checkbox Name="Include_debug" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_debugLabel)</Checkbox>
+        <Checkbox Name="EnableUTF8Mode" X="185" Y="151" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.UTF8ModeLabel)</Checkbox>
+        <Checkbox Name="CompileAll" X="185" Y="176" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrecompileLabel)</Checkbox>
+        <Checkbox Name="Include_symbols" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_symbolsLabel)</Checkbox>
+        <Checkbox Name="Include_debug" X="185" Y="225" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_debugLabel)</Checkbox>
 
         <Text X="185" Y="256" Width="-11" Height="17" FontId="3">#(loc.CustomLocationLabel)</Text>
         <Editbox Name="TargetDir" X="185" Y="277" Width="-101" Height="27" TabStop="yes" FontId="3" FileSystemAutoComplete="yes" />

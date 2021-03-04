@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="Descriptor">Enable UTF-8 mode (NOTE: This option set PYTHONUTF8 environment variable. It affects to all Python</String>
+    <String Id="ShortDescriptor">UTF-8 mode</String>
+    <String Id="NoPython">No !(loc.ProductName) installation was detected.</String>
+</WixLocalization>
