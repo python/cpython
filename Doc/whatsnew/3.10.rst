@@ -386,9 +386,9 @@ guard is false, ``match`` goes on to try the next case block.  Note
 that value capture happens before the guard is evaluated::
 
     match point:
-        case Point(x, y) if x == y:
+        case Point(x=x, y=y) if x == y:
             print(f"The point is located on the diagonal Y=X at {x}.")
-        case Point(x, y):
+        case Point(x=x, y=y):
             print(f"Point is not on the diagonal.")
 
 Other Key Features
