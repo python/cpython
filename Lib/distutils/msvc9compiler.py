@@ -54,6 +54,7 @@ else:
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'amd64',
+    'win-arm64' : 'arm64',
 }
 
 class Reg:
@@ -342,7 +343,7 @@ class MSVCCompiler(CCompiler) :
         if plat_name is None:
             plat_name = get_platform()
         # sanity check for platforms to prevent obscure errors later.
-        ok_plats = 'win32', 'win-amd64'
+        ok_plats = 'win32', 'win-amd64', 'win-arm64'
         if plat_name not in ok_plats:
             raise DistutilsPlatformError("--plat-name must be one of %s" %
                                          (ok_plats,))
@@ -371,6 +372,9 @@ class MSVCCompiler(CCompiler) :
             vc_env = query_vcvarsall(VERSION, plat_spec)
 
             self.__paths = vc_env['path'].split(os.pathsep)
+            if plat_name == 'win-arm64':
+                self.__paths = (
+                    vc_env['path'].replace('HostX64', 'HostX86').split(os.pathsep))
             os.environ['lib'] = vc_env['lib']
             os.environ['include'] = vc_env['include']
 
@@ -385,6 +389,12 @@ class MSVCCompiler(CCompiler) :
             self.lib = self.find_exe("lib.exe")
             self.rc = self.find_exe("rc.exe")   # resource compiler
             self.mc = self.find_exe("mc.exe")   # message compiler
+            if plat_name == 'win-arm64':
+                self.cc = self.cc.replace('HostX64', 'Hostx86')
+                self.linker = self.linker.replace('HostX64', 'Hostx86')
+                self.lib = self.lib.replace('HostX64', 'Hostx86')
+                self.rc = self.rc.replace('x64', 'arm64')
+                self.mc = self.mc.replace('x64', 'arm64')
             #self.set_path_env_var('lib')
             #self.set_path_env_var('include')
 
@@ -633,6 +643,17 @@ class MSVCCompiler(CCompiler) :
                 ld_args[:0] = extra_preargs
             if extra_postargs:
                 ld_args.extend(extra_postargs)
+
+            if get_platform() == 'win-arm64':
+                ld_args_arm = []
+                for ld_arg in ld_args:
+                    # VS tries to use the x86 linker
+                    ld_arg_arm = ld_arg.replace(r'\um\x86', r'\um\arm64')
+                    # A larger memory address is required on ARM64
+                    ld_arg_arm = ld_arg_arm.replace("0x1", "0x10")
+                    ld_args_arm += [ld_arg_arm]
+
+                ld_args = list(ld_args_arm)
 
             self.mkpath(os.path.dirname(output_filename))
             try:
