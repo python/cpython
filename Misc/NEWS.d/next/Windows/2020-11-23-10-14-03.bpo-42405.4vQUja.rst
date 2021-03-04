@@ -1,1 +1,1 @@
-Fix C extensions build on Windows ARM64
+In distutils, add support for building C extensions on Windows ARM64.
