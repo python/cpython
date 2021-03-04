@@ -15,6 +15,7 @@
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
 static const char unnamed_fields_key[] = "n_unnamed_fields";
+static const char match_args_key[] = "__match_args__";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
@@ -399,7 +400,40 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     SET_DICT_FROM_SIZE(visible_length_key, desc->n_in_sequence);
     SET_DICT_FROM_SIZE(real_length_key, n_members);
     SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
+
+    // Prepare and set __match_args__
+    Py_ssize_t i, k;
+    PyObject* keys = PyTuple_New(desc->n_in_sequence);
+    if (keys == NULL) {
+        return -1;
+    }
+
+    for (i = k = 0; i < desc->n_in_sequence; ++i) {
+        if (desc->fields[i].name == PyStructSequence_UnnamedField) {
+            continue;
+        }
+        PyObject* new_member = PyUnicode_FromString(desc->fields[i].name);
+        if (new_member == NULL) {
+            goto error;
+        }
+        PyTuple_SET_ITEM(keys, k, new_member);
+        k++;
+    }
+
+    if (_PyTuple_Resize(&keys, k) == -1) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(keys);
     return 0;
+
+error:
+    Py_DECREF(keys);
+    return -1;
 }
 
 static void
