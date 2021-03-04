@@ -1,4 +1,3 @@
-import os.path
 import sys
 import unittest
 import uuid
@@ -216,9 +215,15 @@ class DeletingZipsTest(unittest.TestCase):
 
 
 class ResourceFromNamespaceTest01(unittest.TestCase):
+    site_dir = str(pathlib.Path(__file__).parent)
+
     @classmethod
     def setUpClass(cls):
-        sys.path.append(os.path.abspath(os.path.join(__file__, '..')))
+        sys.path.append(cls.site_dir)
+
+    @classmethod
+    def tearDownClass(cls):
+        sys.path.remove(cls.site_dir)
 
     def test_is_submodule_resource(self):
         self.assertTrue(

@@ -1,5 +1,6 @@
 import os.path
 import sys
+import pathlib
 import unittest
 
 from importlib import import_module
@@ -9,7 +10,8 @@ from importlib.readers import MultiplexedPath, NamespaceReader
 class MultiplexedPathTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.folder = os.path.abspath(os.path.join(__file__, '..', 'namespacedata01'))
+        path = pathlib.Path(__file__).parent / 'namespacedata01'
+        cls.folder = str(path)
 
     def test_init_no_paths(self):
         with self.assertRaises(FileNotFoundError):
@@ -83,9 +85,15 @@ class MultiplexedPathTest(unittest.TestCase):
 
 
 class NamespaceReaderTest(unittest.TestCase):
+    site_dir = str(pathlib.Path(__file__).parent)
+
     @classmethod
     def setUpClass(cls):
-        sys.path.append(os.path.abspath(os.path.join(__file__, '..')))
+        sys.path.append(cls.site_dir)
+
+    @classmethod
+    def tearDownClass(cls):
+        sys.path.remove(cls.site_dir)
 
     def test_init_error(self):
         with self.assertRaises(ValueError):
