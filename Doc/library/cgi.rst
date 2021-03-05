@@ -347,7 +347,7 @@ Caring about security
 .. index:: pair: CGI; security
 
 There's one important rule: if you invoke an external program (via the
-:func:`os.system` or :func:`os.popen` functions. or others with similar
+:func:`os.system` or :func:`os.popen` functions or others with similar
 functionality), make very sure you don't pass arbitrary strings received from
 the client to the shell.  This is a well-known security hole whereby clever
 hackers anywhere on the Web can exploit a gullible CGI script to invoke
@@ -424,7 +424,7 @@ above on installing your CGI script carefully can save you a lot of time.  If
 you wonder whether you have understood the installation procedure correctly, try
 installing a copy of this module file (:file:`cgi.py`) as a CGI script.  When
 invoked as a script, the file will dump its environment and the contents of the
-form in HTML form. Give it the right mode etc, and send it a request.  If it's
+form in HTML form. Give it the right mode etc., and send it a request.  If it's
 installed in the standard :file:`cgi-bin` directory, it should be possible to
 send it a request by entering a URL into your browser of the form:
 
