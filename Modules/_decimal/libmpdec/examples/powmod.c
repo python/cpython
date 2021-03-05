@@ -26,28 +26,55 @@
  */
 
 
-#ifndef LIBMPDEC_MPALLOC_H_
-#define LIBMPDEC_MPALLOC_H_
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <mpdecimal.h>
 
 
-#include "mpdecimal.h"
+int
+main(int argc, char **argv)
+{
+	mpd_context_t ctx;
+	mpd_t *a, *b, *c;
+	mpd_t *result;
+	char *rstring;
+	char status_str[MPD_MAX_FLAG_STRING];
+	clock_t start_clock, end_clock;
 
-#include <stdint.h>
+	if (argc != 4) {
+		fprintf(stderr, "powmod: usage: ./powmod x y z\n");
+		exit(1);
+	}
+
+	mpd_init(&ctx, 38);
+	ctx.traps = 0;
+
+	result = mpd_new(&ctx);
+	a = mpd_new(&ctx);
+	b = mpd_new(&ctx);
+	c = mpd_new(&ctx);
+	mpd_set_string(a, argv[1], &ctx);
+	mpd_set_string(b, argv[2], &ctx);
+	mpd_set_string(c, argv[3], &ctx);
+
+	start_clock = clock();
+	mpd_powmod(result, a, b, c, &ctx);
+	end_clock = clock();
+	fprintf(stderr, "time: %f\n\n",
+	           (double)(end_clock-start_clock)/(double)CLOCKS_PER_SEC);
+
+	rstring = mpd_to_sci(result, 1);
+	mpd_snprint_flags(status_str, MPD_MAX_FLAG_STRING, ctx.status);
+	printf("%s  %s\n", rstring, status_str);
+
+	mpd_del(a);
+	mpd_del(b);
+	mpd_del(c);
+	mpd_del(result);
+	mpd_free(rstring);
+
+	return 0;
+}
 
 
-/* Internal header file: all symbols have local scope in the DSO */
-MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
-
-
-int mpd_switch_to_dyn(mpd_t *result, mpd_ssize_t nwords, uint32_t *status);
-int mpd_switch_to_dyn_zero(mpd_t *result, mpd_ssize_t nwords, uint32_t *status);
-int mpd_realloc_dyn(mpd_t *result, mpd_ssize_t nwords, uint32_t *status);
-
-int mpd_switch_to_dyn_cxx(mpd_t *result, mpd_ssize_t nwords);
-int mpd_realloc_dyn_cxx(mpd_t *result, mpd_ssize_t nwords);
-
-
-MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
-
-
-#endif /* LIBMPDEC_MPALLOC_H_ */
